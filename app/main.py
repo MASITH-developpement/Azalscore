@@ -4,20 +4,27 @@ ERP décisionnel critique - Sécurité by design
 """
 
 from fastapi import FastAPI
+from app.core.database import check_database_connection
 
 app = FastAPI(
     title="AZALS",
     description="ERP décisionnel critique",
     version="0.1.0",
-    docs_url=None,  # Désactivé en prod pour sécurité
-    redoc_url=None  # Désactivé en prod pour sécurité
+    docs_url=None,
+    redoc_url=None
 )
 
 
 @app.get("/health")
 async def health_check():
     """
-    Endpoint de santé pour vérifier que l'API répond.
-    Utilisé par Fly.io pour les health checks.
+    Endpoint de santé.
+    Vérifie que l'API et la base de données fonctionnent.
     """
-    return {"status": "ok"}
+    db_ok = check_database_connection()
+    
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "api": True,
+        "database": db_ok
+    }
