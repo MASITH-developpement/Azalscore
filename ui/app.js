@@ -3,6 +3,104 @@
  * Gestion des interactions, bulles d'aide, et appels API
  */
 
+// ==================== CONFIGURATION API ====================
+
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000'
+    : window.location.origin;
+
+// ==================== GESTION DE L'AUTHENTIFICATION ====================
+
+/**
+ * Récupère le token JWT depuis sessionStorage
+ */
+function getToken() {
+    return sessionStorage.getItem('azals_token');
+}
+
+/**
+ * Récupère le tenant ID depuis sessionStorage
+ */
+function getTenantId() {
+    return sessionStorage.getItem('azals_tenant_id');
+}
+
+/**
+ * Stocke les informations d'authentification
+ */
+function setAuth(token, tenantId, userEmail) {
+    sessionStorage.setItem('azals_token', token);
+    sessionStorage.setItem('azals_tenant_id', tenantId);
+    sessionStorage.setItem('azals_user_email', userEmail);
+}
+
+/**
+ * Supprime les informations d'authentification
+ */
+function clearAuth() {
+    sessionStorage.removeItem('azals_token');
+    sessionStorage.removeItem('azals_tenant_id');
+    sessionStorage.removeItem('azals_user_email');
+}
+
+/**
+ * Vérifie si l'utilisateur est authentifié
+ */
+function isAuthenticated() {
+    return !!(getToken() && getTenantId());
+}
+
+/**
+ * Déconnexion
+ */
+function logout() {
+    clearAuth();
+    window.location.href = '/';
+}
+
+/**
+ * Vérifie l'authentification au chargement d'une page protégée
+ */
+function checkAuth() {
+    if (document.body.dataset.requireAuth === 'true' && !isAuthenticated()) {
+        window.location.href = '/';
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Fetch avec headers d'authentification automatiques
+ */
+async function authenticatedFetch(url, options = {}) {
+    const token = getToken();
+    const tenantId = getTenantId();
+    
+    if (!token || !tenantId) {
+        throw new Error('Non authentifié');
+    }
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'X-Tenant-ID': tenantId,
+        ...options.headers
+    };
+    
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+    
+    if (response.status === 401) {
+        clearAuth();
+        window.location.href = '/';
+        throw new Error('Session expirée');
+    }
+    
+    return response;
+}
+
 // ==================== GESTION DES BULLES D'AIDE ====================
 
 /**
@@ -40,38 +138,71 @@ function initHelpBubbles() {
 // ==================== FORMULAIRE DE CONNEXION ====================
 
 /**
- * Gère la soumission du formulaire d'entrée
+ * Gère la soumission du formulaire de connexion
  */
 function initLoginForm() {
     const form = document.getElementById('loginForm');
     if (!form) return;
     
+    const errorDiv = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('loginButton');
+    
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const intentInput = document.getElementById('userIntent');
-        const intent = intentInput.value.trim();
+        const tenantId = document.getElementById('tenantId').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
         
-        // Simulation d'une entrée dans le système
-        console.log('Intention utilisateur:', intent);
+        if (!tenantId || !email || !password) {
+            showError('Tous les champs sont requis');
+            return;
+        }
         
-        // Vérifier la santé de l'API (appel réel)
+        // Désactiver le bouton
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>Connexion...</span>';
+        
         try {
-            const health = await checkAPIHealth();
-            console.log('État API:', health);
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Tenant-ID': tenantId
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
             
-            if (health.status === 'ok') {
-                // Redirection vers le dashboard
-                window.location.href = '/dashboard';
-            } else {
-                alert('Le système est temporairement indisponible. Veuillez réessayer.');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Échec de la connexion');
             }
+            
+            const data = await response.json();
+            
+            // Stocker le token et les infos
+            setAuth(data.access_token, tenantId, email);
+            
+            // Redirection
+            window.location.href = '/dashboard';
+            
         } catch (error) {
             console.error('Erreur de connexion:', error);
-            // En mode développement, rediriger quand même
-            window.location.href = '/dashboard';
+            showError(error.message || 'Erreur de connexion. Vérifiez vos identifiants.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Se connecter</span><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 3L14 10L7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         }
     });
+    
+    function showError(message) {
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
 }
 
 // ==================== APPEL API SANTÉ ====================
@@ -235,16 +366,51 @@ function drawEvolutionChart() {
 // ==================== INITIALISATION ====================
 
 /**
+ * Charge les données utilisateur dans le dashboard
+ */
+async function loadUserData() {
+    const userEmail = sessionStorage.getItem('azals_user_email');
+    
+    if (userEmail) {
+        const initials = userEmail.substring(0, 2).toUpperCase();
+        document.getElementById('userAvatar').textContent = initials;
+        document.getElementById('userName').textContent = userEmail;
+        document.getElementById('userRole').textContent = 'Utilisateur';
+    }
+    
+    // Charger les données protégées (exemple)
+    try {
+        const response = await authenticatedFetch(`${API_BASE_URL}/protected/me`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Données utilisateur:', data);
+        }
+    } catch (error) {
+        console.error('Erreur chargement utilisateur:', error);
+    }
+}
+
+/**
  * Initialise l'application au chargement de la page
  */
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 AZALS - Application chargée');
+    
+    // Vérifier l'authentification pour les pages protégées
+    if (!checkAuth()) {
+        return;
+    }
     
     // Initialiser les bulles d'aide
     initHelpBubbles();
     
     // Initialiser le formulaire de connexion (si présent)
     initLoginForm();
+    
+    // Charger les données utilisateur (si dashboard)
+    if (document.body.dataset.requireAuth === 'true') {
+        loadUserData();
+    }
     
     // Dessiner le graphique (si présent)
     drawEvolutionChart();

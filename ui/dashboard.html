@@ -6,7 +6,7 @@
     <title>Cockpit - AZALS</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="dashboard-page">
+<body class="dashboard-page" data-require-auth="true">
     <!-- Layout principal -->
     <div class="dashboard-layout">
         
@@ -69,12 +69,13 @@
 
             <div class="sidebar-footer">
                 <div class="user-profile">
-                    <div class="user-avatar">JD</div>
+                    <div class="user-avatar" id="userAvatar">--</div>
                     <div class="user-info">
-                        <div class="user-name">J. Dupont</div>
-                        <div class="user-role">Dirigeant</div>
+                        <div class="user-name" id="userName">Chargement...</div>
+                        <div class="user-role" id="userRole">--</div>
                     </div>
                 </div>
+                <button onclick="logout()" style="margin-top:0.5rem;padding:0.5rem;background:rgba(255,255,255,0.1);border:none;border-radius:0.375rem;color:#fff;cursor:pointer;font-size:0.75rem;width:100%;">Déconnexion</button>
             </div>
         </aside>
 

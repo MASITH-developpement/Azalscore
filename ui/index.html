@@ -25,21 +25,52 @@
             <!-- Formulaire d'entrée -->
             <form id="loginForm" class="login-form">
                 <div class="form-group">
-                    <label for="userIntent" class="form-label">
-                        Votre intention
-                        <span class="help-icon" data-help="Décrivez ce que vous souhaitez consulter ou piloter aujourd'hui">ⓘ</span>
+                    <label for="tenantId" class="form-label">
+                        Organisation
+                        <span class="help-icon" data-help="Identifiant de votre organisation (tenant-id)">ⓘ</span>
                     </label>
                     <input 
                         type="text" 
-                        id="userIntent" 
+                        id="tenantId" 
                         class="form-input" 
-                        placeholder="Ex: Consulter la trésorerie du mois"
+                        placeholder="ex: acme-corp"
+                        required
                         autocomplete="off"
                     >
                 </div>
 
-                <button type="submit" class="btn-primary">
-                    <span>Entrer dans le système</span>
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        Email
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        class="form-input" 
+                        placeholder="votre@email.com"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        Mot de passe
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="form-input" 
+                        placeholder="••••••••"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <div id="errorMessage" style="display:none;color:#ef4444;font-size:0.875rem;margin-bottom:1rem;"></div>
+
+                <button type="submit" class="btn-primary" id="loginButton">
+                    <span>Se connecter</span>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path d="M7 3L14 10L7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -49,6 +80,7 @@
             <!-- Footer discret -->
             <div class="login-footer">
                 <p>Version 1.0 • Sécurisé • Support 24/7</p>
+                <p style="margin-top:0.5rem;font-size:0.75rem;color:#9ca3af;">Test: tenant-demo / user@demo.com / demo123</p>
             </div>
         </div>
     </div>
