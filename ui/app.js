@@ -390,6 +390,8 @@ async function loadUserData() {
     }
 }
 
+// ==================== COCKPIT DIRIGEANT ====================
+
 /**
  * Charge les données de trésorerie réelles
  */
@@ -403,95 +405,327 @@ async function loadTreasuryData() {
         
         const data = await response.json();
         
-        // Afficher le solde actuel
-        const currentBalance = document.getElementById('currentBalance');
-        currentBalance.textContent = formatEuros(data.balance);
-        
-        // Afficher la prévision J+30
-        const forecast30 = document.getElementById('forecast30');
-        const forecastValue = data.forecast_30d;
-        loadTreasuryData();
-        forecast30.textContent = formatEuros(forecastValue);
-        forecast30.className = `metric-small-value ${forecastValue >= 0 ? 'positive' : 'negative'}`;
-        
-        // Afficher la date de mise à jour
-        const lastUpdate = document.getElementById('lastUpdate');
-        const updateDate = new Date(data.last_update);
-        lastUpdate.textContent = updateDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-        
-        // Déterminer le statut (🟢🟠🔴)
-        const statusIndicator = document.getElementById('treasuryStatus');
-        const treasuryActions = document.getElementById('treasuryActions');
-        const criticalCard = document.getElementById('criticalAlertCard');
-        
-        if (data.balance < 10000) {
-            statusIndicator.textContent = '🔴';
-            treasuryActions.style.display = 'block';
-            // Afficher l'alerte critique si trésorerie 🔴
-            await loadCriticalDecision(data);
-        } else if (data.balance < 50000) {
-            statusIndicator.textContent = '🟠';
-            treasuryActions.style.display = 'none';
-            criticalCard.style.display = 'none';
-        } else {
-            statusIndicator.textContent = '🟢';
-            treasuryActions.style.display = 'none';
-            criticalCard.style.display = 'none';
+        if (!data) {
+            return {
+                module: 'treasury',
+                status: 'warning',
+                priority: 2,
+                data: null,
+                error: 'Aucune donnée de trésorerie disponible'
+            };
         }
         
-        // Cacher l'erreur si tout va bien
-        document.getElementById('treasuryError').style.display = 'none';
+        // Déterminer le statut (🟢🟠🔴)
+        let status, priority;
+        if (data.forecast_balance < 0) {
+            status = 'critical';
+            priority = 0;
+        } else if (data.opening_balance < 10000) {
+            status = 'warning';
+            priority = 1;
+        } else {
+            status = 'healthy';
+            priority = 2;
+        }
+        
+        return {
+            module: 'treasury',
+            status: status,
+            priority: priority,
+            data: data,
+            decisionRequired: data.forecast_balance < 0
+        };
         
     } catch (error) {
         console.error('Erreur chargement trésorerie:', error);
-        
-        // Afficher un message d'erreur
-        const errorDiv = document.getElementById('treasuryError');
-        errorDiv.textContent = '⚠️ Impossible de charger les données de trésorerie. Vérifiez votre connexion.';
-        errorDiv.style.display = 'block';
-        
-        // Afficher des valeurs par défaut
-        document.getElementById('currentBalance').textContent = '-- €';
-        document.getElementById('forecast30').textContent = '-- €';
-        document.getElementById('lastUpdate').textContent = 'Indisponible';
-        document.getElementById('treasuryStatus').textContent = '⚠️';
+        return {
+            module: 'treasury',
+            status: 'error',
+            priority: 3,
+            data: null,
+            error: error.message
+        };
     }
+}
+
+/**
+ * Charge les données de comptabilité (placeholder)
+ */
+async function loadAccountingData() {
+    return {
+        module: 'accounting',
+        status: 'healthy',
+        priority: 2,
+        data: {
+            pending_entries: 12,
+            reconciliation: '87%',
+            lettrage: '92%'
+        }
+    };
+}
+
+/**
+ * Charge les données fiscales (placeholder)
+ */
+async function loadTaxData() {
+    const nextDeadline = new Date();
+    nextDeadline.setDate(nextDeadline.getDate() + 15);
+    
+    return {
+        module: 'tax',
+        status: nextDeadline.getDate() < 10 ? 'warning' : 'healthy',
+        priority: nextDeadline.getDate() < 10 ? 1 : 2,
+        data: {
+            next_deadline: nextDeadline.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+            tva: 'À jour',
+            is: 'Acompte prévu'
+        }
+    };
+}
+
+/**
+ * Charge les données RH (placeholder)
+ */
+async function loadHRData() {
+    return {
+        module: 'hr',
+        status: 'healthy',
+        priority: 2,
+        data: {
+            headcount: 23,
+            payroll: 'En cours',
+            leaves: '8 validés'
+        }
+    };
 }
 
 /**
  * Charge la décision critique liée à la trésorerie
  */
-async function loadCriticalDecision(treasuryData) {
+async function loadCriticalDecision(treasuryStatus) {
+    if (treasuryStatus.status !== 'critical') {
+        return null;
+    }
+    
     try {
         const response = await authenticatedFetch(`${API_BASE_URL}/decision/latest?status=RED`);
         
         if (!response.ok) {
-            return;
+            return {
+                module: 'decision',
+                status: 'critical',
+                priority: -1,
+                data: {
+                    title: 'Trésorerie critique',
+                    description: `Solde prévisionnel : ${formatEuros(treasuryStatus.data.forecast_balance)}`,
+                    red_report_id: null
+                }
+            };
         }
         
         const decision = await response.json();
         
-        // Afficher la carte d'alerte critique
-        const criticalCard = document.getElementById('criticalAlertCard');
-        criticalCard.style.display = 'block';
-        
-        // Remplir les détails
-        document.getElementById('alertTitle').textContent = decision.title || 'Trésorerie critique';
-        document.getElementById('alertDescription').textContent = 
-            decision.context || `Solde actuel : ${formatEuros(treasuryData.balance)} • Seuil critique atteint`;
-        
-        // Bouton vers le rapport
-        const viewReportBtn = document.getElementById('viewReportBtn');
-        if (decision.red_report_id) {
-            viewReportBtn.onclick = () => viewRedReport(decision.red_report_id);
-            viewReportBtn.style.display = 'inline-block';
-        } else {
-            viewReportBtn.style.display = 'none';
-        }
+        return {
+            module: 'decision',
+            status: 'critical',
+            priority: -1,
+            data: {
+                title: decision.title || 'Décision critique',
+                description: decision.context || `Solde : ${formatEuros(treasuryStatus.data.forecast_balance)}`,
+                red_report_id: decision.red_report_id
+            }
+        };
         
     } catch (error) {
         console.error('Erreur chargement décision critique:', error);
+        return null;
     }
+}
+
+/**
+ * Construit le cockpit dirigeant complet
+ */
+async function buildCockpit() {
+    const grid = document.getElementById('cockpitGrid');
+    if (!grid) return;
+    
+    // Charger toutes les données en parallèle
+    const [treasury, accounting, tax, hr] = await Promise.all([
+        loadTreasuryData(),
+        loadAccountingData(),
+        loadTaxData(),
+        loadHRData()
+    ]);
+    
+    // Charger les décisions critiques si nécessaire
+    let criticalDecision = null;
+    if (treasury.decisionRequired) {
+        criticalDecision = await loadCriticalDecision(treasury);
+    }
+    
+    // Créer la liste des modules
+    const modules = [treasury, accounting, tax, hr];
+    if (criticalDecision) {
+        modules.push(criticalDecision);
+    }
+    
+    // Trier par priorité (0 = 🔴, 1 = 🟠, 2 = 🟢, -1 = décision critique en premier)
+    modules.sort((a, b) => a.priority - b.priority);
+    
+    // Vider la grille
+    grid.innerHTML = '';
+    
+    // Afficher chaque module
+    modules.forEach(module => {
+        const card = renderModuleCard(module);
+        if (card) {
+            grid.appendChild(card);
+        }
+    });
+    
+    // Ajouter le graphique à la fin
+    const chartCard = renderChartCard();
+    grid.appendChild(chartCard);
+    
+    // Réinitialiser les bulles d'aide
+    initHelpBubbles();
+    
+    // Dessiner le graphique
+    setTimeout(drawEvolutionChart, 100);
+}
+
+/**
+ * Rend une carte de module
+ */
+function renderModuleCard(module) {
+    let template;
+    
+    switch(module.module) {
+        case 'treasury':
+            template = document.getElementById('treasuryCardTemplate');
+            break;
+        case 'accounting':
+            template = document.getElementById('accountingCardTemplate');
+            break;
+        case 'tax':
+            template = document.getElementById('taxCardTemplate');
+            break;
+        case 'hr':
+            template = document.getElementById('hrCardTemplate');
+            break;
+        case 'decision':
+            template = document.getElementById('criticalDecisionTemplate');
+            break;
+        default:
+            return null;
+    }
+    
+    const card = template.content.cloneNode(true).querySelector('.card');
+    
+    // Remplir selon le type
+    if (module.module === 'treasury') {
+        fillTreasuryCard(card, module);
+    } else if (module.module === 'decision') {
+        fillDecisionCard(card, module);
+    } else {
+        fillGenericCard(card, module);
+    }
+    
+    return card;
+}
+
+/**
+ * Remplit une carte trésorerie
+ */
+function fillTreasuryCard(card, module) {
+    const statusIndicator = card.querySelector('.status-indicator');
+    const metricValue = card.querySelector('.metric-value');
+    const metricSmallValues = card.querySelectorAll('.metric-small-value');
+    const actionsDiv = card.querySelector('.card-actions');
+    const errorDiv = card.querySelector('.card-error');
+    
+    if (module.error) {
+        metricValue.textContent = '-- €';
+        metricSmallValues[0].textContent = '-- €';
+        metricSmallValues[1].textContent = 'Indisponible';
+        statusIndicator.textContent = '⚠️';
+        errorDiv.textContent = '⚠️ ' + module.error;
+        errorDiv.style.display = 'block';
+    } else {
+        const data = module.data;
+        metricValue.textContent = formatEuros(data.opening_balance);
+        metricSmallValues[0].textContent = formatEuros(data.forecast_balance);
+        metricSmallValues[0].className = `metric-small-value ${data.forecast_balance >= 0 ? 'positive' : 'negative'}`;
+        
+        const updateDate = new Date(data.created_at);
+        metricSmallValues[1].textContent = updateDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        
+        if (module.status === 'critical') {
+            statusIndicator.textContent = '🔴';
+            actionsDiv.innerHTML = '<button class="btn-alert" onclick="examineDecision()">⚠️ Examiner la décision</button>';
+            actionsDiv.style.display = 'block';
+        } else if (module.status === 'warning') {
+            statusIndicator.textContent = '🟠';
+        } else {
+            statusIndicator.textContent = '🟢';
+        }
+    }
+}
+
+/**
+ * Remplit une carte décision critique
+ */
+function fillDecisionCard(card, module) {
+    const title = card.querySelector('.alert-title');
+    const description = card.querySelector('.alert-description');
+    const actions = card.querySelector('.card-actions');
+    
+    title.textContent = module.data.title;
+    description.textContent = module.data.description;
+    
+    actions.innerHTML = '';
+    if (module.data.red_report_id) {
+        actions.innerHTML = `
+            <button class="btn-alert" onclick="viewRedReport(${module.data.red_report_id})">Voir le rapport RED</button>
+            <button class="btn-ghost" onclick="buildCockpit()">Actualiser</button>
+        `;
+    } else {
+        actions.innerHTML = '<button class="btn-ghost" onclick="buildCockpit()">Actualiser</button>';
+    }
+}
+
+/**
+ * Remplit une carte générique
+ */
+function fillGenericCard(card, module) {
+    const statusIndicator = card.querySelector('.status-indicator');
+    const metricValue = card.querySelector('.metric-value');
+    const metricSmallValues = card.querySelectorAll('.metric-small-value');
+    
+    statusIndicator.textContent = module.status === 'critical' ? '🔴' : 
+                                  module.status === 'warning' ? '🟠' : '🟢';
+    
+    if (module.module === 'accounting') {
+        metricValue.textContent = module.data.pending_entries;
+        metricSmallValues[0].textContent = module.data.lettrage;
+        metricSmallValues[1].textContent = module.data.reconciliation;
+    } else if (module.module === 'tax') {
+        metricValue.textContent = module.data.next_deadline;
+        metricSmallValues[0].textContent = module.data.tva;
+        metricSmallValues[1].textContent = module.data.is;
+    } else if (module.module === 'hr') {
+        metricValue.textContent = module.data.headcount;
+        metricSmallValues[0].textContent = module.data.payroll;
+        metricSmallValues[1].textContent = module.data.leaves;
+    }
+}
+
+/**
+ * Rend la carte graphique
+ */
+function renderChartCard() {
+    const template = document.getElementById('chartCardTemplate');
+    return template.content.cloneNode(true).querySelector('.card');
 }
 
 /**
