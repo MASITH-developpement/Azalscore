@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     """
     
     database_url: str = Field(
-        ...,
-        description="URL de connexion PostgreSQL"
+        default="sqlite:///./azals.db",
+        description="URL de connexion PostgreSQL ou SQLite"
     )
     app_name: str = "AZALS"
     debug: bool = False
