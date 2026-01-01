@@ -804,3 +804,23 @@ function formatDate(date) {
         day: 'numeric'
     }).format(new Date(date));
 }
+
+// ============================================================
+// INITIALISATION
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialiser la page de login
+    initLoginForm();
+    
+    // Charger les données utilisateur (si dashboard)
+    if (document.body.dataset.requireAuth === 'true') {
+        loadUserData();
+        buildCockpit();
+    }
+    
+    // Vérifier l'état de l'API en arrière-plan
+    checkAPIHealth().then(health => {
+        console.log('📊 État de l\'API:', health);
+    });
+});
