@@ -102,38 +102,42 @@
             <div class="cards-grid">
                 
                 <!-- Carte Trésorerie -->
-                <div class="card card-treasury">
+                <div class="card card-treasury" id="treasuryCard">
                     <div class="card-header">
                         <h3 class="card-title">
                             Trésorerie
-                            <span class="help-icon" data-help="Solde bancaire actuel et projection sur 30 jours">ⓘ</span>
+                            <span class="help-icon" data-help="Solde bancaire actuel et projection sur 30 jours. Basé sur les flux entrants et sortants confirmés.">ⓘ</span>
                         </h3>
-                        <span class="status-indicator status-healthy">🟢</span>
+                        <span class="status-indicator" id="treasuryStatus">⏳</span>
                     </div>
                     <div class="card-body">
                         <div class="metric-primary">
-                            <span class="metric-value">247 580 €</span>
+                            <span class="metric-value" id="currentBalance">Chargement...</span>
                             <span class="metric-label">Solde actuel</span>
                         </div>
                         <div class="metric-grid">
                             <div class="metric-item">
                                 <span class="metric-small-label">Prévision J+30</span>
-                                <span class="metric-small-value positive">+12 400 €</span>
+                                <span class="metric-small-value" id="forecast30">--</span>
                             </div>
                             <div class="metric-item">
-                                <span class="metric-small-label">Écart budget</span>
-                                <span class="metric-small-value positive">+4,2 %</span>
+                                <span class="metric-small-label">Dernière mise à jour</span>
+                                <span class="metric-small-value" id="lastUpdate">--</span>
                             </div>
                         </div>
+                        <div id="treasuryActions" style="display:none;margin-top:1rem;">
+                            <button class="btn-alert" onclick="examineDecision()">⚠️ Examiner la décision</button>
+                        </div>
+                        <div id="treasuryError" style="display:none;margin-top:1rem;padding:0.75rem;background:#fef2f2;border-radius:0.375rem;color:#991b1b;font-size:0.875rem;"></div>
                     </div>
                 </div>
 
                 <!-- Carte Alerte critique -->
-                <div class="card card-alert">
+                <div class="card card-alert" id="criticalAlertCard" style="display:none;">
                     <div class="card-header">
                         <h3 class="card-title">
-                            Alerte critique
-                            <span class="help-icon" data-help="Notification nécessitant une action immédiate">ⓘ</span>
+                            Décision critique
+                            <span class="help-icon" data-help="Situation détectée nécessitant une décision ou action immédiate du dirigeant">ⓘ</span>
                         </h3>
                         <span class="status-indicator status-critical">🔴</span>
                     </div>
@@ -141,13 +145,13 @@
                         <div class="alert-content">
                             <div class="alert-icon">⚠️</div>
                             <div class="alert-text">
-                                <p class="alert-title">Facture client impayée</p>
-                                <p class="alert-description">Client "Société BETA" • 48 200 € • Échéance dépassée de 15 jours</p>
+                                <p class="alert-title" id="alertTitle">Chargement...</p>
+                                <p class="alert-description" id="alertDescription">--</p>
                             </div>
                         </div>
                         <div class="card-actions">
-                            <button class="btn-alert">Relancer</button>
-                            <button class="btn-ghost">Voir détails</button>
+                            <button class="btn-alert" id="viewReportBtn">Voir le rapport RED</button>
+                            <button class="btn-ghost" onclick="loadTreasuryData()">Actualiser</button>
                         </div>
                     </div>
                 </div>

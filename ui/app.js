@@ -391,6 +391,127 @@ async function loadUserData() {
 }
 
 /**
+ * Charge les données de trésorerie réelles
+ */
+async function loadTreasuryData() {
+    try {
+        const response = await authenticatedFetch(`${API_BASE_URL}/treasury/latest`);
+        
+        if (!response.ok) {
+            throw new Error('Impossible de charger les données de trésorerie');
+        }
+        
+        const data = await response.json();
+        
+        // Afficher le solde actuel
+        const currentBalance = document.getElementById('currentBalance');
+        currentBalance.textContent = formatEuros(data.balance);
+        
+        // Afficher la prévision J+30
+        const forecast30 = document.getElementById('forecast30');
+        const forecastValue = data.forecast_30d;
+        loadTreasuryData();
+        forecast30.textContent = formatEuros(forecastValue);
+        forecast30.className = `metric-small-value ${forecastValue >= 0 ? 'positive' : 'negative'}`;
+        
+        // Afficher la date de mise à jour
+        const lastUpdate = document.getElementById('lastUpdate');
+        const updateDate = new Date(data.last_update);
+        lastUpdate.textContent = updateDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        
+        // Déterminer le statut (🟢🟠🔴)
+        const statusIndicator = document.getElementById('treasuryStatus');
+        const treasuryActions = document.getElementById('treasuryActions');
+        const criticalCard = document.getElementById('criticalAlertCard');
+        
+        if (data.balance < 10000) {
+            statusIndicator.textContent = '🔴';
+            treasuryActions.style.display = 'block';
+            // Afficher l'alerte critique si trésorerie 🔴
+            await loadCriticalDecision(data);
+        } else if (data.balance < 50000) {
+            statusIndicator.textContent = '🟠';
+            treasuryActions.style.display = 'none';
+            criticalCard.style.display = 'none';
+        } else {
+            statusIndicator.textContent = '🟢';
+            treasuryActions.style.display = 'none';
+            criticalCard.style.display = 'none';
+        }
+        
+        // Cacher l'erreur si tout va bien
+        document.getElementById('treasuryError').style.display = 'none';
+        
+    } catch (error) {
+        console.error('Erreur chargement trésorerie:', error);
+        
+        // Afficher un message d'erreur
+        const errorDiv = document.getElementById('treasuryError');
+        errorDiv.textContent = '⚠️ Impossible de charger les données de trésorerie. Vérifiez votre connexion.';
+        errorDiv.style.display = 'block';
+        
+        // Afficher des valeurs par défaut
+        document.getElementById('currentBalance').textContent = '-- €';
+        document.getElementById('forecast30').textContent = '-- €';
+        document.getElementById('lastUpdate').textContent = 'Indisponible';
+        document.getElementById('treasuryStatus').textContent = '⚠️';
+    }
+}
+
+/**
+ * Charge la décision critique liée à la trésorerie
+ */
+async function loadCriticalDecision(treasuryData) {
+    try {
+        const response = await authenticatedFetch(`${API_BASE_URL}/decision/latest?status=RED`);
+        
+        if (!response.ok) {
+            return;
+        }
+        
+        const decision = await response.json();
+        
+        // Afficher la carte d'alerte critique
+        const criticalCard = document.getElementById('criticalAlertCard');
+        criticalCard.style.display = 'block';
+        
+        // Remplir les détails
+        document.getElementById('alertTitle').textContent = decision.title || 'Trésorerie critique';
+        document.getElementById('alertDescription').textContent = 
+            decision.context || `Solde actuel : ${formatEuros(treasuryData.balance)} • Seuil critique atteint`;
+        
+        // Bouton vers le rapport
+        const viewReportBtn = document.getElementById('viewReportBtn');
+        if (decision.red_report_id) {
+            viewReportBtn.onclick = () => viewRedReport(decision.red_report_id);
+            viewReportBtn.style.display = 'inline-block';
+        } else {
+            viewReportBtn.style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error('Erreur chargement décision critique:', error);
+    }
+}
+
+/**
+ * Examine la décision liée à la trésorerie
+ */
+function examineDecision() {
+    // Rediriger vers la section décisions ou afficher un modal
+    alert('🔴 Décision critique détectée\n\nLa trésorerie a franchi le seuil critique.\nConsultez le rapport RED pour les actions recommandées.');
+}
+
+/**
+ * Affiche un rapport RED
+ */
+function viewRedReport(reportId) {
+    // Pour l'instant, afficher un message
+    // Plus tard, ouvrir une modale ou une page dédiée
+    alert(`📊 Rapport RED #${reportId}\n\nFonctionnalité en développement.\nLe rapport détaillé sera affiché ici.`);
+}
+
+/**
  * Initialise l'application au chargement de la page
  */
 document.addEventListener('DOMContentLoaded', () => {
