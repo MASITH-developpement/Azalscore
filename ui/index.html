@@ -6,7 +6,7 @@
     <title>AZALS - Pilotage Décisionnel</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="login-page">
+<body class="login-page" data-page="login">
     <!-- Page d'entrée premium -->
     <div class="login-container">
         <div class="login-card">
@@ -31,7 +31,7 @@
                     </label>
                     <input 
                         type="text" 
-                        id="tenantId" 
+                        id="tenant_id" 
                         class="form-input" 
                         placeholder="ex: acme-corp"
                         required
@@ -67,7 +67,7 @@
                     >
                 </div>
 
-                <div id="errorMessage" style="display:none;color:#ef4444;font-size:0.875rem;margin-bottom:1rem;"></div>
+                <div id="error" style="display:none;color:#ef4444;font-size:0.875rem;margin-bottom:1rem;"></div>
 
                 <button type="submit" class="btn-primary" id="loginButton">
                     <span>Se connecter</span>

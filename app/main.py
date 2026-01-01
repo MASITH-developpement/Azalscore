@@ -3,10 +3,12 @@ AZALS - Point d'entrée principal
 ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 """
 
+import asyncio
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
+from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
 from app.core.middleware import TenantMiddleware
 from app.api.items import router as items_router
@@ -17,15 +19,31 @@ from app.api.decision import router as decision_router
 from app.api.red_workflow import router as red_workflow_router
 from app.api.treasury import router as treasury_router
 
-# Création des tables (en production : utiliser Alembic)
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle: création des tables au démarrage avec retry"""
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            Base.metadata.create_all(bind=engine)
+            print(f"✅ Base de données connectée (tentative {attempt + 1})")
+            break
+        except Exception as e:
+            print(f"⏳ Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(2)
+            else:
+                print("⚠️ DB non disponible, l'app démarre quand même")
+    yield
 
 app = FastAPI(
     title="AZALS",
     description="ERP décisionnel critique - Multi-tenant + Authentification JWT",
     version="0.3.0",
     docs_url=None,
-    redoc_url=None
+    redoc_url=None,
+    lifespan=lifespan
 )
 
 # Middleware multi-tenant : validation X-Tenant-ID pour TOUTES les requêtes
@@ -85,3 +103,11 @@ if UI_DIR.exists():
         if dashboard_path.exists():
             return FileResponse(dashboard_path)
         return {"message": "Dashboard non disponible"}
+    
+    @app.get("/favicon.ico")
+    async def serve_favicon():
+        """Servir le favicon"""
+        favicon_path = UI_DIR / "favicon.svg"
+        if favicon_path.exists():
+            return FileResponse(favicon_path, media_type="image/svg+xml")
+        return FileResponse(UI_DIR / "favicon.svg", status_code=404)

@@ -6,7 +6,7 @@
     <title>Cockpit - AZALS</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="dashboard-page" data-require-auth="true">
+<body class="dashboard-page" data-page="dashboard" data-require-auth="true">
     <!-- Layout principal -->
     <div class="dashboard-layout">
         
@@ -75,7 +75,7 @@
                         <div class="user-role" id="userRole">--</div>
                     </div>
                 </div>
-                <button onclick="logout()" style="margin-top:0.5rem;padding:0.5rem;background:rgba(255,255,255,0.1);border:none;border-radius:0.375rem;color:#fff;cursor:pointer;font-size:0.75rem;width:100%;">Déconnexion</button>
+                <button onclick="handleLogout()" style="margin-top:0.5rem;padding:0.5rem;background:rgba(255,255,255,0.1);border:none;border-radius:0.375rem;color:#fff;cursor:pointer;font-size:0.75rem;width:100%;">Déconnexion</button>
             </div>
         </aside>
 
@@ -84,7 +84,7 @@
             <!-- Header -->
             <header class="content-header">
                 <div>
-                    <h1 class="page-title">Tableau de bord</h1>
+                    <h1 class="page-title">Cockpit Dirigeant</h1>
                     <p class="page-subtitle">Vue d'ensemble de votre activité</p>
                 </div>
                 <div class="header-actions">
@@ -98,23 +98,65 @@
                 </div>
             </header>
 
-            <!-- Grille de cartes -->
-            <div id="cockpitGrid" class="cards-grid">
-                <!-- Les cartes seront insérées dynamiquement par ordre de criticité -->
-            </div>
-            </div>
+            <!-- ============================================= -->
+            <!-- COCKPIT DIRIGEANT - STRUCTURE ZONNÉE -->
+            <!-- ============================================= -->
+            
+            <!-- 
+                ZONE CRITIQUE (🔴) - Priorité maximale
+                Affiche UNE alerte dominante si état RED détecté
+                Masquée automatiquement si aucun RED actif
+            -->
+            <section id="zoneCritical" class="cockpit-zone zone-critical" data-priority="0" style="display:none;">
+                <div id="criticalAlertContainer">
+                    <!-- Alerte critique unique insérée dynamiquement -->
+                </div>
+            </section>
+
+            <!-- 
+                ZONE TENSION (🟠) - Surveillance active
+                Points d'attention nécessitant un suivi
+                Visible uniquement si éléments ORANGE présents
+            -->
+            <section id="zoneTension" class="cockpit-zone zone-tension" data-priority="1" style="display:none;">
+                <div class="zone-header" style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(251,191,36,0.2);">
+                    <h2 style="margin:0;font-size:0.875rem;font-weight:500;color:#fbbf24;text-transform:uppercase;letter-spacing:0.05em;">Points d'attention</h2>
+                </div>
+                <div id="tensionCardsContainer" class="cards-grid">
+                    <!-- Cartes ORANGE insérées dynamiquement -->
+                </div>
+            </section>
+
+            <!-- 
+                ZONE NORMALE (🟢) - Fonctionnement nominal
+                Indicateurs standards, toujours visible
+                Contient les modules métier principaux
+            -->
+            <section id="zoneNormal" class="cockpit-zone zone-normal" data-priority="2">
+                <div id="normalCardsContainer" class="cards-grid">
+                    <!-- Cartes VERTES insérées dynamiquement -->
+                </div>
+            </section>
+
+            <!-- 
+                ZONE ANALYSE - Graphiques et tendances
+                Toujours en bas, contexte visuel
+            -->
+            <section id="zoneAnalysis" class="cockpit-zone zone-analysis">
+                <div id="analysisContainer" class="cards-grid">
+                    <!-- Graphique inséré dynamiquement -->
+                </div>
+            </section>
         </main>
     </div>
 
-    <!-- Templates de cartes (cachés) -->
-    <template id="treasuryCardTemplate">
-    <!-- Templates de cartes (cachés) -->
+    <!-- Templates de cartes -->
     <template id="treasuryCardTemplate">
         <div class="card card-treasury">
             <div class="card-header">
                 <h3 class="card-title">
                     Trésorerie
-                    <span class="help-icon" data-help="Solde bancaire actuel et projection sur 30 jours. Basé sur les flux entrants et sortants confirmés.">ⓘ</span>
+                    <span class="help-icon" data-help="🟢 Solde > 10 000€ • 🟠 Solde < 10 000€ • 🔴 Prévision négative. La prévision J+30 intègre les encaissements et décaissements prévus.">ⓘ</span>
                 </h3>
                 <span class="status-indicator"></span>
             </div>
@@ -144,7 +186,7 @@
             <div class="card-header">
                 <h3 class="card-title">
                     Comptabilité
-                    <span class="help-icon" data-help="État des écritures comptables, rapprochements bancaires et clôtures périodiques.">ⓘ</span>
+                    <span class="help-icon" data-help="🟢 À jour • 🟠 Retard < 7j • 🔴 Retard > 7j. Lettrage = rapprochement clients/fournisseurs. Rapprochement = comparaison banque.">ⓘ</span>
                 </h3>
                 <span class="status-indicator"></span>
             </div>
@@ -163,7 +205,6 @@
                         <span class="metric-small-value"></span>
                     </div>
                 </div>
-                <div class="card-actions" style="display:none;margin-top:1rem;"></div>
             </div>
         </div>
     </template>
@@ -173,7 +214,7 @@
             <div class="card-header">
                 <h3 class="card-title">
                     Fiscalité
-                    <span class="help-icon" data-help="Échéances fiscales, déclarations et conformité réglementaire.">ⓘ</span>
+                    <span class="help-icon" data-help="🟢 > 15j avant échéance • 🟠 < 15j avant échéance • 🔴 Échéance dépassée. TVA mensuelle ou trimestrielle selon régime.">ⓘ</span>
                 </h3>
                 <span class="status-indicator"></span>
             </div>
@@ -192,7 +233,6 @@
                         <span class="metric-small-value"></span>
                     </div>
                 </div>
-                <div class="card-actions" style="display:none;margin-top:1rem;"></div>
             </div>
         </div>
     </template>
@@ -202,7 +242,7 @@
             <div class="card-header">
                 <h3 class="card-title">
                     Ressources Humaines
-                    <span class="help-icon" data-help="Effectifs, paie, congés et conformité sociale.">ⓘ</span>
+                    <span class="help-icon" data-help="🟢 Paie validée • 🟠 Paie à valider • 🔴 Retard DSN. Congés validés = solde des congés approuvés pour le mois en cours.">ⓘ</span>
                 </h3>
                 <span class="status-indicator"></span>
             </div>
@@ -221,7 +261,6 @@
                         <span class="metric-small-value"></span>
                     </div>
                 </div>
-                <div class="card-actions" style="display:none;margin-top:1rem;"></div>
             </div>
         </div>
     </template>
@@ -230,14 +269,12 @@
         <div class="card card-alert">
             <div class="card-header">
                 <h3 class="card-title">
-                    Décision critique
-                    <span class="help-icon" data-help="Situation détectée nécessitant une décision ou action immédiate du dirigeant.">ⓘ</span>
+                    ⚠️ Décision critique
                 </h3>
                 <span class="status-indicator status-critical">🔴</span>
             </div>
             <div class="card-body">
                 <div class="alert-content">
-                    <div class="alert-icon">⚠️</div>
                     <div class="alert-text">
                         <p class="alert-title"></p>
                         <p class="alert-description"></p>
@@ -251,14 +288,10 @@
     <template id="chartCardTemplate">
         <div class="card card-chart">
             <div class="card-header">
-                <h3 class="card-title">
-                    Évolution mensuelle
-                    <span class="help-icon" data-help="Chiffre d'affaires et charges des 6 derniers mois">ⓘ</span>
-                </h3>
+                <h3 class="card-title">Évolution mensuelle</h3>
                 <select class="chart-filter">
                     <option>6 derniers mois</option>
                     <option>12 derniers mois</option>
-                    <option>Année en cours</option>
                 </select>
             </div>
             <div class="card-body">
@@ -267,7 +300,7 @@
         </div>
     </template>
 
-    <!-- Bulle d'aide contextuelle -->
+    <!-- Bulle d'aide -->
     <div id="helpBubble" class="help-bubble hidden"></div>
 
     <script src="/static/app.js"></script>

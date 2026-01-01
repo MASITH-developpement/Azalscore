@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     @classmethod
     def validate_database_url(cls, v: str) -> str:
         """Valide que l'URL de la base de données est au format PostgreSQL ou SQLite."""
+        # Fly.io utilise postgres:// au lieu de postgresql://
+        if v.startswith('postgres://'):
+            v = v.replace('postgres://', 'postgresql://', 1)
         if not v.startswith(('postgresql://', 'postgresql+psycopg2://', 'sqlite:///')):
             raise ValueError('DATABASE_URL doit commencer par postgresql:// ou sqlite:///')
         if 'CHANGEME' in v:
