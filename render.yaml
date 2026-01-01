@@ -3,7 +3,7 @@ services:
   - type: web
     name: azalscore
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: chmod +x build.sh && ./build.sh
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
@@ -11,9 +11,9 @@ services:
           name: azalscore-db
           property: connectionString
       - key: SECRET_KEY
-        generateValue: true
+        value: "azals-production-secret-key-2026-render"
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.11.0"
 
 databases:
   - name: azalscore-db

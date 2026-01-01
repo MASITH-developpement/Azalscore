@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     app_name: str = "AZALS"
     debug: bool = False
     secret_key: str = Field(
-        default="dev-secret-key-CHANGE-IN-PRODUCTION",
+        default="dev-secret-key-CHANGE-IN-PRODUCTION-32ch",
         min_length=32,
         description="Clé secrète pour la sécurité (min 32 caractères)"
     )
