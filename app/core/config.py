@@ -37,9 +37,9 @@ class Settings(BaseSettings):
     @field_validator('database_url')
     @classmethod
     def validate_database_url(cls, v: str) -> str:
-        """Valide que l'URL de la base de données est au format PostgreSQL."""
-        if not v.startswith(('postgresql://', 'postgresql+psycopg2://')):
-            raise ValueError('DATABASE_URL doit commencer par postgresql://')
+        """Valide que l'URL de la base de données est au format PostgreSQL ou SQLite."""
+        if not v.startswith(('postgresql://', 'postgresql+psycopg2://', 'sqlite:///')):
+            raise ValueError('DATABASE_URL doit commencer par postgresql:// ou sqlite:///')
         if 'CHANGEME' in v:
             raise ValueError('DATABASE_URL contient un placeholder non remplacé')
         return v
