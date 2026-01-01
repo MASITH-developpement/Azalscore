@@ -1,0 +1,51 @@
+# AZALS - ERP Décisionnel Critique
+# Docker Compose - Orchestration des services
+
+version: '3.8'
+
+services:
+  # Service PostgreSQL - Base de données principale
+  postgres:
+    image: postgres:15-alpine
+    container_name: azals_postgres
+    environment:
+      POSTGRES_DB: azals
+      POSTGRES_USER: azals_user
+      POSTGRES_PASSWORD: azals_password_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U azals_user -d azals"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - azals_network
+
+  # Service API FastAPI
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: azals_api
+    environment:
+      DATABASE_URL: postgresql://azals_user:azals_password_dev@postgres:5432/azals
+      DEBUG: "false"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - azals_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  azals_network:
+    driver: bridge

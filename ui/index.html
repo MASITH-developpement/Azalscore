@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZALS - Pilotage Décisionnel</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="login-page">
+    <!-- Page d'entrée premium -->
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo et identité -->
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <rect x="8" y="8" width="32" height="32" rx="4" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 24L22 30L32 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h1 class="brand-name">AZALS</h1>
+                <p class="brand-tagline">Pilotage Décisionnel Critique</p>
+            </div>
+
+            <!-- Formulaire d'entrée -->
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="userIntent" class="form-label">
+                        Votre intention
+                        <span class="help-icon" data-help="Décrivez ce que vous souhaitez consulter ou piloter aujourd'hui">ⓘ</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="userIntent" 
+                        class="form-input" 
+                        placeholder="Ex: Consulter la trésorerie du mois"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <span>Entrer dans le système</span>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 3L14 10L7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Footer discret -->
+            <div class="login-footer">
+                <p>Version 1.0 • Sécurisé • Support 24/7</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulle d'aide contextuelle -->
+    <div id="helpBubble" class="help-bubble hidden"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

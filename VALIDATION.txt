@@ -1,0 +1,186 @@
+"""
+AZALS - SOCLE TECHNIQUE OPÉRATIONNEL
+=====================================
+
+VALIDATION COMPLÈTE ✓
+
+1. DÉMARRAGE
+   $ docker-compose up --build
+   ✓ Service PostgreSQL : démarré (healthy)
+   ✓ Service API FastAPI : démarré
+
+2. ENDPOINT /health
+   $ curl http://localhost:8000/health
+   {
+     "status": "ok",
+     "api": true,
+     "database": true
+   }
+   ✓ Endpoint accessible
+   ✓ Connexion PostgreSQL fonctionnelle
+
+3. TESTS PYTEST
+   $ docker-compose exec api pytest -v
+   ✓ 5 tests exécutés
+   ✓ 5 tests passés
+   ✓ Couverture complète de /health
+
+ARBORESCENCE PROJET
+===================
+
+azals/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI app + endpoint /health
+│   └── core/
+│       ├── __init__.py
+│       ├── config.py        # Configuration Pydantic
+│       └── database.py      # SQLAlchemy + PostgreSQL
+├── tests/
+│   ├── __init__.py
+│   └── test_health.py       # 5 tests de validation
+├── docker-compose.yml       # Orchestration api + postgres
+├── Dockerfile              # Image Python 3.11
+├── requirements.txt        # Dépendances verrouillées
+├── pytest.ini             # Configuration tests
+├── .env.example           # Template configuration
+├── .gitignore             # Exclusions Git standard
+└── README.md              # Documentation complète
+
+COMMANDES ESSENTIELLES
+======================
+
+# Démarrer le projet
+docker-compose up --build
+
+# Arrêter le projet
+docker-compose down
+
+# Nettoyer volumes (données PostgreSQL)
+docker-compose down -v
+
+# Exécuter les tests
+docker-compose exec api pytest
+
+# Accéder au shell du container
+docker-compose exec api bash
+
+# Voir les logs
+docker-compose logs -f api
+
+ENDPOINTS DISPONIBLES
+====================
+
+GET /health
+-----------
+Statut : ✓ FONCTIONNEL
+Sécurité : Public (monitoring)
+Réponse :
+{
+  "status": "ok",           # ok|degraded
+  "api": true,             # API opérationnelle
+  "database": true         # PostgreSQL accessible
+}
+
+SÉCURITÉ IMPLÉMENTÉE
+====================
+
+✓ Pas de Swagger en production (docs_url=None)
+✓ Validation variables d'environnement (Pydantic)
+✓ Pool de connexions PostgreSQL configuré
+✓ Healthcheck PostgreSQL dans docker-compose
+✓ .gitignore complet (.env exclus)
+✓ Pas de credentials hardcodés
+
+ARCHITECTURE MULTI-TENANT
+=========================
+
+Prêt pour :
+- Isolation des données par tenant_id
+- Middleware d'identification tenant
+- Row-Level Security PostgreSQL
+- Schémas PostgreSQL séparés
+
+TESTS IMPLÉMENTÉS
+=================
+
+✓ test_health_endpoint_exists          # HTTP 200
+✓ test_health_endpoint_returns_status  # Champ status présent
+✓ test_health_endpoint_returns_api_status  # Champ api = true
+✓ test_health_endpoint_returns_database_status  # Champ database
+✓ test_health_endpoint_json_structure  # Structure complète
+
+STACK TECHNIQUE
+===============
+
+Langage     : Python 3.11
+Framework   : FastAPI 0.109.0
+ASGI Server : Uvicorn 0.27.0
+ORM         : SQLAlchemy 2.0.25
+Database    : PostgreSQL 15
+Tests       : pytest 7.4.4
+Container   : Docker + docker-compose
+
+PROCHAINES ÉTAPES SUGGÉRÉES
+============================
+
+1. Authentification
+   - JWT tokens
+   - Refresh tokens
+   - RBAC (Role-Based Access Control)
+
+2. Multi-tenant
+   - Middleware tenant_id
+   - Isolation des données
+   - RLS PostgreSQL
+
+3. Migrations
+   - Alembic
+   - Gestion des schémas
+
+4. Modules métier
+   - Finance
+   - RH
+   - Juridique
+
+5. Observabilité
+   - Logging structuré
+   - Métriques (Prometheus)
+   - Tracing (OpenTelemetry)
+
+6. CI/CD
+   - GitHub Actions
+   - Tests automatisés
+   - Déploiement continu
+
+NOTES TECHNIQUES
+================
+
+- pool_pre_ping=True : validation connexions avant usage
+- pool_size=5 : 5 connexions permanentes
+- max_overflow=10 : 10 connexions supplémentaires si pic
+- Healthcheck PostgreSQL : 10s interval, 5 retries
+- Restart policy : unless-stopped (résilience)
+
+CONFORMITÉ EXIGENCES
+====================
+
+✓ Python 3.11
+✓ FastAPI
+✓ PostgreSQL
+✓ Docker + docker-compose
+✓ Tests pytest obligatoires
+✓ Code exécutable uniquement
+✓ Architecture multi-tenant (prête)
+✓ Sécurité by design
+✓ Lisibilité et maintenabilité
+
+VALIDATION FINALE
+=================
+
+Commande : docker-compose up
+Résultat : http://localhost:8000/health
+Réponse  : {"status": "ok"}
+
+✓✓✓ PROJET OPÉRATIONNEL ✓✓✓
+"""

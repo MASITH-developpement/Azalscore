@@ -3,17 +3,23 @@ AZALS - Connexion PostgreSQL
 Gestion sécurisée de la connexion base de données avec SQLAlchemy
 """
 
+import logging
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from app.core.config import get_settings
+
+# Configuration du logger
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
+    echo=settings.debug  # Log SQL en mode debug
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -40,7 +46,16 @@ def check_database_connection() -> bool:
     """
     try:
         with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
+            result = conn.execute(text("SELECT 1"))
+            result.fetchone()
+        logger.info("Connexion à la base de données : OK")
         return True
-    except Exception:
+    except OperationalError as e:
+        logger.error(f"Erreur de connexion à la base de données : {e}")
+        return False
+    except SQLAlchemyError as e:
+        logger.error(f"Erreur SQLAlchemy : {e}")
+        return False
+    except Exception as e:
+        logger.exception(f"Erreur inattendue lors du check DB : {e}")
         return False
