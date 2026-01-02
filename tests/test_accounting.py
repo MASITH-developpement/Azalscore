@@ -5,7 +5,7 @@ import pytest
 from datetime import datetime, timedelta
 from app.main import app
 from app.core.database import SessionLocal
-from app.core.models import JournalEntry, User, Tenant
+from app.core.models import JournalEntry, User
 from sqlalchemy.orm import Session
 
 
