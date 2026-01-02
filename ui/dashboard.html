@@ -266,6 +266,35 @@
         </div>
     </template>
 
+    <template id="legalCardTemplate">
+        <div class="card card-legal">
+            <div class="card-header">
+                <h3 class="card-title">
+                    Juridique
+                    <span class="help-icon" data-help="🟢 Conformité statutaire à jour • 🟠 Révision statutaire ou contrat à renouveler • 🔴 Non-conformité ou risque juridique. Responsabilité dirigeant engagée en cas 🔴.">ⓘ</span>
+                </h3>
+                <span class="status-indicator"></span>
+            </div>
+            <div class="card-body">
+                <div class="metric-primary">
+                    <span class="metric-value"></span>
+                    <span class="metric-label">Conformité statutaire</span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <span class="metric-small-label">Contrats sensibles</span>
+                        <span class="legal-contracts-count"></span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-small-label">Risques identifiés</span>
+                        <span class="legal-risks-count"></span>
+                    </div>
+                </div>
+                <div class="card-error"></div>
+            </div>
+        </div>
+    </template>
+
     <template id="criticalDecisionTemplate">
         <div class="card card-alert">
             <div class="card-header">

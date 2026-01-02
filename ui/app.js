@@ -180,12 +180,13 @@ async function buildCockpit() {
         // ============================================
         // CHARGEMENT DES DONNÉES
         // ============================================
-        const [journalData, treasuryData, accountingData, taxData, hrData] = await Promise.all([
+        const [journalData, treasuryData, accountingData, taxData, hrData, legalData] = await Promise.all([
             loadJournalData(),
             loadTreasuryData(),
             loadAccountingData(),
             loadTaxData(),
-            loadHRData()
+            loadHRData(),
+            loadLegalData()
         ]);
         
         // Vérifier si le workflow RED est complété (si trésorerie en déficit)
@@ -204,11 +205,12 @@ async function buildCockpit() {
         
         // ============================================
         // CONSTRUCTION DES MODULES AVEC DOMAINE
-        // Priorisation : Financier(0) > Juridique(1) > Fiscal(2) > Social(3) > Structurel(4)
+        // Priorisation : Financier(0) > Juridique(1) > Fiscal(2) > Social(3)
         // ============================================
         const modules = [
             { ...buildTreasuryModule(treasuryData, isWorkflowCompleted), domain: 'Financier', domainPriority: 0 },
             { ...buildAccountingModule(accountingData), domain: 'Financier', domainPriority: 0 },
+            { ...buildLegalModule(legalData), domain: 'Juridique', domainPriority: 1 },
             { ...buildTaxModule(taxData), domain: 'Fiscal', domainPriority: 2 },
             { ...buildHRModule(hrData), domain: 'Social', domainPriority: 3 }
         ];
@@ -600,6 +602,58 @@ function buildHRModule(data) {
         status: status,
         data: data,
         createCard: () => createHRCard(data, status),
+        criticalMessage: criticalMessage
+    };
+}
+
+/**
+ * Module Juridique
+ * Priorité: 🔴 Juridique < 🔴 Financier mais > 🔴 Fiscal/RH
+ * Domaine: Juridique (priorité 1)
+ */
+function buildLegalModule(data) {
+    // Gérer les erreurs
+    if (!data || data.error) {
+        return {
+            id: 'legal',
+            name: 'Juridique',
+            priority: 2, // Pas critique si erreur
+            status: '🟢',
+            data: data || {},
+            createCard: () => createLegalCard(data, '🟢'),
+            criticalMessage: null
+        };
+    }
+    
+    const status = data.status || '🟢';
+    
+    // Déterminer la priorité
+    let priority = 2; // Normal par défaut
+    if (status === '🔴') {
+        priority = 0; // Critique : responsabilité dirigeant
+    } else if (status === '🟠') {
+        priority = 1; // Tension : élément à surveiller
+    }
+    
+    // Message critique si non-conformité
+    let criticalMessage = null;
+    if (status === '🔴') {
+        if (data.statutory_compliance === 'Non conforme') {
+            criticalMessage = `⚠️ NON-CONFORMITÉ STATUTAIRE - Responsabilité dirigeant engagée. Forme juridique: ${data.legal_form || 'N/A'}. Action immédiate : révision statutaire et mise en conformité.`;
+        } else if (data.identified_risks > 0) {
+            criticalMessage = `⚠️ RISQUES JURIDIQUES IDENTIFIÉS (${data.identified_risks}) - Contentieux ou non-conformité réglementaire. Consultation juridique urgente requise.`;
+        } else {
+            criticalMessage = `⚠️ ALERTE JURIDIQUE CRITIQUE - Situation juridique à traiter en urgence. Responsabilité dirigeant.`;
+        }
+    }
+    
+    return {
+        id: 'legal',
+        name: 'Juridique',
+        priority: priority,
+        status: status,
+        data: data,
+        createCard: () => createLegalCard(data, status),
         criticalMessage: criticalMessage
     };
 }
@@ -1037,6 +1091,65 @@ function createHRCard(data, status) {
 }
 
 /**
+ * Carte Juridique (accepte data et status en paramètres)
+ */
+function createLegalCard(data, status) {
+    const template = document.getElementById('legalCardTemplate');
+    if (!template) return null;
+    
+    const card = template.content.cloneNode(true);
+    const cardEl = card.querySelector('.card');
+    
+    // Appliquer les classes de statut
+    if (status === '🔴') cardEl.classList.add('card-critical');
+    if (status === '🟠') cardEl.classList.add('card-warning');
+    if (status === '🟢') cardEl.classList.add('card-success');
+    
+    // Status indicator
+    const statusIndicator = card.querySelector('.status-indicator');
+    if (statusIndicator) statusIndicator.textContent = status || '🟢';
+    
+    // Gérer les erreurs
+    if (data?.error) {
+        const errorDiv = card.querySelector('.card-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            if (data.error === 'access_denied') {
+                errorDiv.textContent = 'Accès refusé aux données juridiques';
+            } else if (data.error === 'api_unavailable') {
+                errorDiv.textContent = 'Service juridique temporairement indisponible';
+            } else {
+                errorDiv.textContent = 'Erreur lors du chargement des données juridiques';
+            }
+        }
+        return card;
+    }
+    
+    // Conformité statutaire (valeur principale)
+    const metricValue = card.querySelector('.metric-value');
+    if (metricValue) {
+        metricValue.textContent = data?.statutory_compliance || 'N/A';
+    }
+    
+    // Contrats sensibles
+    const contractsCount = card.querySelector('.legal-contracts-count');
+    if (contractsCount) {
+        const count = data?.sensitive_contracts_count || 0;
+        const expiring = data?.expiring_contracts_soon || 0;
+        contractsCount.textContent = expiring > 0 ? `${count} (${expiring} expire)` : count.toString();
+    }
+    
+    // Risques identifiés
+    const risksCount = card.querySelector('.legal-risks-count');
+    if (risksCount) {
+        const count = data?.identified_risks || 0;
+        risksCount.textContent = count === 0 ? 'Aucun' : count.toString();
+    }
+    
+    return card;
+}
+
+/**
  * Carte Graphique
  */
 function createChartCard() {
@@ -1189,6 +1302,34 @@ async function loadHRData() {
         
     } catch (error) {
         console.error('Erreur RH (API indisponible):', error);
+        return { error: 'api_unavailable', message: 'Service indisponible' };
+    }
+}
+
+/**
+ * Charger les données juridiques
+ * Gère les erreurs : API indisponible, pas de données, accès refusé
+ */
+async function loadLegalData() {
+    try {
+        const response = await authenticatedFetch(`${API_BASE}/legal/status`);
+        
+        // Accès refusé
+        if (response.status === 401 || response.status === 403) {
+            console.error('Juridique: Accès refusé');
+            return { error: 'access_denied', message: 'Accès refusé' };
+        }
+        
+        // Erreur API
+        if (!response.ok) {
+            return { error: 'api_error', message: 'Erreur serveur' };
+        }
+        
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error('Erreur juridique (API indisponible):', error);
         return { error: 'api_unavailable', message: 'Service indisponible' };
     }
 }
