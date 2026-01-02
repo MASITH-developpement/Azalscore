@@ -185,12 +185,26 @@ async function buildCockpit() {
             loadTreasuryData()
         ]);
         
+        // Vérifier si le workflow RED est complété (si trésorerie en déficit)
+        let isWorkflowCompleted = false;
+        if (treasuryData && treasuryData.red_triggered && treasuryData.id) {
+            try {
+                const statusResponse = await authenticatedFetch(`${API_BASE}/decision/red/status/${treasuryData.id}`);
+                if (statusResponse.ok) {
+                    const workflowStatus = await statusResponse.json();
+                    isWorkflowCompleted = workflowStatus.is_fully_validated || false;
+                }
+            } catch (error) {
+                console.error('Erreur chargement workflow status:', error);
+            }
+        }
+        
         // ============================================
         // CONSTRUCTION DES MODULES AVEC DOMAINE
         // Priorisation : Financier(0) > Juridique(1) > Fiscal(2) > Social(3) > Structurel(4)
         // ============================================
         const modules = [
-            { ...buildTreasuryModule(treasuryData), domain: 'Financier', domainPriority: 0 },
+            { ...buildTreasuryModule(treasuryData, isWorkflowCompleted), domain: 'Financier', domainPriority: 0 },
             { ...buildAccountingModule(journalData), domain: 'Financier', domainPriority: 0 },
             { ...buildTaxModule(), domain: 'Fiscal', domainPriority: 2 },
             { ...buildHRModule(), domain: 'Social', domainPriority: 3 }
@@ -397,8 +411,9 @@ function getCockpitState() {
 /**
  * Module Trésorerie
  * Utilise red_triggered du backend pour déterminer l'état
+ * Si workflow complété, passe en 🟢 même si red_triggered = true
  */
-function buildTreasuryModule(data) {
+function buildTreasuryModule(data, isWorkflowCompleted = false) {
     let priority = 2; // 🟢 par défaut
     let status = '🟢';
     let decisionId = null;
@@ -420,10 +435,15 @@ function buildTreasuryModule(data) {
     
     if (data) {
         // Utiliser red_triggered du backend (source de vérité)
-        if (data.red_triggered) {
+        // MAIS si workflow complété, considérer comme traité (🟢)
+        if (data.red_triggered && !isWorkflowCompleted) {
             priority = 0; // 🔴
             status = '🔴';
             decisionId = data.id; // L'ID pour le rapport RED
+        } else if (data.red_triggered && isWorkflowCompleted) {
+            // RED validé → retour en normal avec indicateur
+            priority = 2; // 🟢
+            status = '✅'; // Indicateur validation complète
         } else if (data.opening_balance < 10000) {
             priority = 1; // 🟠
             status = '🟠';
@@ -438,7 +458,7 @@ function buildTreasuryModule(data) {
         data,
         decisionId,
         createCard: () => createTreasuryCard(data, status, decisionId),
-        criticalMessage: data?.red_triggered 
+        criticalMessage: data?.red_triggered && !isWorkflowCompleted
             ? `Déficit prévu : ${formatCurrency(data.forecast_balance)}` 
             : null
     };
