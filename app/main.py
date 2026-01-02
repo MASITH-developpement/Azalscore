@@ -67,8 +67,8 @@ app.include_router(protected_router)
 app.include_router(journal_router)
 app.include_router(decision_router)
 app.include_router(red_workflow_router)
-app.include_router(tccounting_router)
-app.include_router(areasury_router)
+app.include_router(accounting_router)
+app.include_router(treasury_router)
 app.include_router(admin_migration_router)  # TEMPORAIRE pour migration
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
