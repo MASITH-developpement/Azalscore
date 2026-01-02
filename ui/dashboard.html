@@ -238,11 +238,11 @@
     </template>
 
     <template id="hrCardTemplate">
-        <div class="card">
+        <div class="card card-hr">
             <div class="card-header">
                 <h3 class="card-title">
                     Ressources Humaines
-                    <span class="help-icon" data-help="🟢 Paie validée • 🟠 Paie à valider • 🔴 Retard DSN. Congés validés = solde des congés approuvés pour le mois en cours.">ⓘ</span>
+                    <span class="help-icon" data-help="🟢 Paie validée et DSN à jour • 🟠 Paie à valider ou absence critique • 🔴 Retard paie ou DSN. Données anonymisées - Aucune info nominative.">ⓘ</span>
                 </h3>
                 <span class="status-indicator"></span>
             </div>
@@ -253,14 +253,15 @@
                 </div>
                 <div class="metric-grid">
                     <div class="metric-item">
-                        <span class="metric-small-label">Paie en cours</span>
-                        <span class="metric-small-value"></span>
+                        <span class="metric-small-label">Paie</span>
+                        <span class="hr-payroll-status"></span>
                     </div>
                     <div class="metric-item">
-                        <span class="metric-small-label">Congés validés</span>
-                        <span class="metric-small-value"></span>
+                        <span class="metric-small-label">Absences critiques</span>
+                        <span class="hr-absences-count"></span>
                     </div>
                 </div>
+                <div class="card-error"></div>
             </div>
         </div>
     </template>

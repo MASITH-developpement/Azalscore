@@ -180,11 +180,12 @@ async function buildCockpit() {
         // ============================================
         // CHARGEMENT DES DONNÉES
         // ============================================
-        const [journalData, treasuryData, accountingData, taxData] = await Promise.all([
+        const [journalData, treasuryData, accountingData, taxData, hrData] = await Promise.all([
             loadJournalData(),
             loadTreasuryData(),
             loadAccountingData(),
-            loadTaxData()
+            loadTaxData(),
+            loadHRData()
         ]);
         
         // Vérifier si le workflow RED est complété (si trésorerie en déficit)
@@ -209,7 +210,7 @@ async function buildCockpit() {
             { ...buildTreasuryModule(treasuryData, isWorkflowCompleted), domain: 'Financier', domainPriority: 0 },
             { ...buildAccountingModule(accountingData), domain: 'Financier', domainPriority: 0 },
             { ...buildTaxModule(taxData), domain: 'Fiscal', domainPriority: 2 },
-            { ...buildHRModule(), domain: 'Social', domainPriority: 3 }
+            { ...buildHRModule(hrData), domain: 'Social', domainPriority: 3 }
         ];
         
         // Tri par domaine puis par priorité de risque
@@ -553,17 +554,53 @@ function buildTaxModule(data) {
 
 /**
  * Module RH
+ * Priorité: 🔴 RH < 🔴 Financier et Fiscal mais > Comptabilité normale
+ * Domaine: Social (priorité 3)
  */
-function buildHRModule() {
-    // Placeholder : toujours 🟢 pour l'instant
+function buildHRModule(data) {
+    // Gérer les erreurs
+    if (!data || data.error) {
+        return {
+            id: 'hr',
+            name: 'RH',
+            priority: 2, // Pas critique si erreur
+            status: '🟢',
+            data: data || {},
+            createCard: () => createHRCard(data, '🟢'),
+            criticalMessage: null
+        };
+    }
+    
+    const status = data.status || '🟢';
+    
+    // Déterminer la priorité
+    let priority = 2; // Normal par défaut
+    if (status === '🔴') {
+        priority = 0; // Critique : risque social
+    } else if (status === '🟠') {
+        priority = 1; // Tension : paie à valider
+    }
+    
+    // Message critique si risque social
+    let criticalMessage = null;
+    if (status === '🔴') {
+        if (data.payroll_status === 'En retard') {
+            criticalMessage = `⚠️ PAIE EN RETARD - Risque social majeur. Effectif: ${data.headcount}. Actions : valider et verser la paie immédiatement, vérifier DSN.`;
+        } else if (data.dsn_status === 'En retard') {
+            criticalMessage = `⚠️ DSN EN RETARD - Non-conformité sociale. Effectif: ${data.headcount}. Risques : pénalités URSSAF, contrôle social.`;
+        } else {
+            criticalMessage = `⚠️ ALERTE RH CRITIQUE - Effectif: ${data.headcount}. Situation sociale à traiter en urgence.`;
+        }
+    }
+    
     return {
         id: 'hr',
         name: 'RH',
-        priority: 2,
-        status: '🟢',
-        data: { status: 'À jour' },
-        createCard: () => createHRCard('🟢'),
-        criticalMessage: null
+        priority: priority,
+        status: status,
+        data: data,
+        createCard: () => createHRCard(data, status),
+        criticalMessage: criticalMessage
     };
 }
 
@@ -943,24 +980,58 @@ function createTaxCard(data, status) {
 }
 
 /**
- * Carte RH (accepte status en paramètre)
+ * Carte RH (accepte data et status en paramètres)
  */
-function createHRCard(status) {
+function createHRCard(data, status) {
     const template = document.getElementById('hrCardTemplate');
     if (!template) return null;
     
     const card = template.content.cloneNode(true);
     const cardEl = card.querySelector('.card');
     
+    // Appliquer les classes de statut
     if (status === '🔴') cardEl.classList.add('card-critical');
     if (status === '🟠') cardEl.classList.add('card-warning');
+    if (status === '🟢') cardEl.classList.add('card-success');
     
-    card.querySelector('.status-indicator').textContent = status || '🟢';
-    card.querySelector('.metric-value').textContent = '—';
+    // Status indicator
+    const statusIndicator = card.querySelector('.status-indicator');
+    if (statusIndicator) statusIndicator.textContent = status || '🟢';
     
-    const smallValues = card.querySelectorAll('.metric-small-value');
-    smallValues[0].textContent = 'À jour';
-    smallValues[1].textContent = '0';
+    // Gérer les erreurs
+    if (data?.error) {
+        const errorDiv = card.querySelector('.card-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            if (data.error === 'access_denied') {
+                errorDiv.textContent = 'Accès refusé aux données RH';
+            } else if (data.error === 'api_unavailable') {
+                errorDiv.textContent = 'Service RH temporairement indisponible';
+            } else {
+                errorDiv.textContent = 'Erreur lors du chargement des données RH';
+            }
+        }
+        return card;
+    }
+    
+    // Effectif (valeur principale)
+    const metricValue = card.querySelector('.metric-value');
+    if (metricValue) {
+        metricValue.textContent = data?.headcount?.toString() || '—';
+    }
+    
+    // Statut paie
+    const payrollStatus = card.querySelector('.hr-payroll-status');
+    if (payrollStatus) {
+        payrollStatus.textContent = data?.payroll_status || 'N/A';
+    }
+    
+    // Absences critiques
+    const absencesCount = card.querySelector('.hr-absences-count');
+    if (absencesCount) {
+        const count = data?.critical_absences || 0;
+        absencesCount.textContent = count === 0 ? 'Aucune' : count.toString();
+    }
     
     return card;
 }
@@ -1090,6 +1161,34 @@ async function loadTaxData() {
         
     } catch (error) {
         console.error('Erreur fiscalité (API indisponible):', error);
+        return { error: 'api_unavailable', message: 'Service indisponible' };
+    }
+}
+
+/**
+ * Charger les données RH
+ * Gère les erreurs : API indisponible, pas de données, accès refusé
+ */
+async function loadHRData() {
+    try {
+        const response = await authenticatedFetch(`${API_BASE}/hr/status`);
+        
+        // Accès refusé
+        if (response.status === 401 || response.status === 403) {
+            console.error('RH: Accès refusé');
+            return { error: 'access_denied', message: 'Accès refusé' };
+        }
+        
+        // Erreur API
+        if (!response.ok) {
+            return { error: 'api_error', message: 'Erreur serveur' };
+        }
+        
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error('Erreur RH (API indisponible):', error);
         return { error: 'api_unavailable', message: 'Service indisponible' };
     }
 }
