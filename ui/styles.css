@@ -1385,3 +1385,17 @@ body {
     font-size: 0.75rem;
     color: #9ca3af;
 }
+
+/* ================================ */
+/* Zone inactive (mode critique) */
+/* ================================ */
+.zone-inactive {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(30%);
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.zone-inactive .card {
+    background: rgba(248, 249, 251, 0.6);
+}

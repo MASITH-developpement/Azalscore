@@ -219,6 +219,7 @@ async function buildCockpit() {
             // ══════════════════════════════════════════
             // MODE CRITIQUE 🔴 - Affichage prioritaire
             // Les modules critiques sont affichés EN PREMIER au-dessus des autres
+            // Les autres zones sont visibles mais inactives (atténuées)
             // ══════════════════════════════════════════
             if (zoneCritical && criticalContainer) {
                 zoneCritical.style.display = 'block';
@@ -229,9 +230,10 @@ async function buildCockpit() {
                 if (criticalCard) criticalContainer.appendChild(criticalCard);
             }
             
-            // AFFICHER aussi les autres zones (mais la critique reste au-dessus)
+            // AFFICHER les autres zones mais en mode inactif (atténuées)
             if (zoneTension && tensionContainer && hasTension) {
                 zoneTension.style.display = 'block';
+                zoneTension.classList.add('zone-inactive');
                 tensionContainer.innerHTML = '';
                 for (const mod of tensionModules) {
                     const card = mod.createCard();
@@ -241,6 +243,7 @@ async function buildCockpit() {
             
             if (zoneNormal && normalContainer && normalModules.length > 0) {
                 zoneNormal.style.display = 'block';
+                zoneNormal.classList.add('zone-inactive');
                 normalContainer.innerHTML = '';
                 for (const mod of normalModules) {
                     const card = mod.createCard();
@@ -250,6 +253,7 @@ async function buildCockpit() {
             
             if (zoneAnalysis && analysisContainer) {
                 zoneAnalysis.style.display = 'block';
+                zoneAnalysis.classList.add('zone-inactive');
                 analysisContainer.innerHTML = '';
                 const chartCard = createChartCard();
                 if (chartCard) analysisContainer.appendChild(chartCard);
@@ -262,6 +266,7 @@ async function buildCockpit() {
             // ══════════════════════════════════════════
             if (zoneTension && tensionContainer) {
                 zoneTension.style.display = 'block';
+                zoneTension.classList.remove('zone-inactive');
                 tensionContainer.innerHTML = '';
                 
                 for (const mod of tensionModules) {
@@ -273,6 +278,7 @@ async function buildCockpit() {
             // Zone normale visible aussi (informations complémentaires)
             if (zoneNormal && normalContainer) {
                 zoneNormal.style.display = 'block';
+                zoneNormal.classList.remove('zone-inactive');
                 normalContainer.innerHTML = '';
                 for (const mod of normalModules) {
                     const card = mod.createCard();
@@ -283,6 +289,7 @@ async function buildCockpit() {
             // Graphiques visibles
             if (zoneAnalysis && analysisContainer) {
                 zoneAnalysis.style.display = 'block';
+                zoneAnalysis.classList.remove('zone-inactive');
                 analysisContainer.innerHTML = '';
                 const chartCard = createChartCard();
                 if (chartCard) analysisContainer.appendChild(chartCard);
@@ -295,6 +302,7 @@ async function buildCockpit() {
             // ══════════════════════════════════════════
             if (zoneNormal && normalContainer) {
                 zoneNormal.style.display = 'block';
+                zoneNormal.classList.remove('zone-inactive');
                 normalContainer.innerHTML = '';
                 
                 for (const mod of modules) {
@@ -306,6 +314,7 @@ async function buildCockpit() {
             // Graphiques visibles
             if (zoneAnalysis && analysisContainer) {
                 zoneAnalysis.style.display = 'block';
+                zoneAnalysis.classList.remove('zone-inactive');
                 analysisContainer.innerHTML = '';
                 const chartCard = createChartCard();
                 if (chartCard) analysisContainer.appendChild(chartCard);
