@@ -20,6 +20,7 @@ from app.api.decision import router as decision_router
 from app.api.red_workflow import router as red_workflow_router
 from app.api.treasury import router as treasury_router
 from app.api.accounting import router as accounting_router
+from app.api.tax import router as tax_router
 from app.api.admin_migration import router as admin_migration_router
 
 
@@ -69,6 +70,7 @@ app.include_router(decision_router)
 app.include_router(red_workflow_router)
 app.include_router(accounting_router)
 app.include_router(treasury_router)
+app.include_router(tax_router)
 app.include_router(admin_migration_router)  # TEMPORAIRE pour migration
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)

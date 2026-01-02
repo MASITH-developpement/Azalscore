@@ -180,10 +180,11 @@ async function buildCockpit() {
         // ============================================
         // CHARGEMENT DES DONNÉES
         // ============================================
-        const [journalData, treasuryData, accountingData] = await Promise.all([
+        const [journalData, treasuryData, accountingData, taxData] = await Promise.all([
             loadJournalData(),
             loadTreasuryData(),
-            loadAccountingData()
+            loadAccountingData(),
+            loadTaxData()
         ]);
         
         // Vérifier si le workflow RED est complété (si trésorerie en déficit)
@@ -207,7 +208,7 @@ async function buildCockpit() {
         const modules = [
             { ...buildTreasuryModule(treasuryData, isWorkflowCompleted), domain: 'Financier', domainPriority: 0 },
             { ...buildAccountingModule(accountingData), domain: 'Financier', domainPriority: 0 },
-            { ...buildTaxModule(), domain: 'Fiscal', domainPriority: 2 },
+            { ...buildTaxModule(taxData), domain: 'Fiscal', domainPriority: 2 },
             { ...buildHRModule(), domain: 'Social', domainPriority: 3 }
         ];
         
@@ -505,17 +506,48 @@ function buildAccountingModule(data) {
 
 /**
  * Module Fiscalité
+ * Priorité: 🔴 Fiscal < 🔴 Financier mais > 🔴 Social
+ * Domaine: Fiscal (priorité 2)
  */
-function buildTaxModule() {
-    // Placeholder : toujours 🟢 pour l'instant
+function buildTaxModule(data) {
+    // Gérer les erreurs
+    if (!data || data.error) {
+        return {
+            id: 'tax',
+            name: 'Fiscalité',
+            priority: 2, // Pas critique si erreur
+            status: '🟢',
+            data: data || {},
+            createCard: () => createTaxCard(data, '🟢'),
+            criticalMessage: null
+        };
+    }
+    
+    const status = data.status || '🟢';
+    
+    // Déterminer la priorité
+    let priority = 2; // Normal par défaut
+    if (status === '🔴') {
+        priority = 0; // Critique : retard fiscal
+    } else if (status === '🟠') {
+        priority = 1; // Tension : échéance proche
+    }
+    
+    // Message critique si retard
+    let criticalMessage = null;
+    if (status === '🔴') {
+        const deadlineType = data.next_deadline_type || 'fiscale';
+        criticalMessage = `⚠️ RETARD DÉCLARATION ${deadlineType.toUpperCase()} - Conformité fiscale compromise. Risques : pénalités, contrôle fiscal, responsabilité dirigeant.`;
+    }
+    
     return {
         id: 'tax',
         name: 'Fiscalité',
-        priority: 2,
-        status: '🟢',
-        data: { next_deadline: '15 Fév 2026' },
-        createCard: () => createTaxCard('🟢'),
-        criticalMessage: null
+        priority: priority,
+        status: status,
+        data: data,
+        createCard: () => createTaxCard(data, status),
+        criticalMessage: criticalMessage
     };
 }
 
@@ -845,24 +877,67 @@ function createAccountingCard(data, status) {
 }
 
 /**
- * Carte Fiscalité (accepte status en paramètre)
+ * Carte Fiscalité (accepte data et status en paramètres)
  */
-function createTaxCard(status) {
+function createTaxCard(data, status) {
     const template = document.getElementById('taxCardTemplate');
     if (!template) return null;
     
     const card = template.content.cloneNode(true);
     const cardEl = card.querySelector('.card');
     
+    // Appliquer les classes de statut
     if (status === '🔴') cardEl.classList.add('card-critical');
     if (status === '🟠') cardEl.classList.add('card-warning');
+    if (status === '🟢') cardEl.classList.add('card-success');
     
-    card.querySelector('.status-indicator').textContent = status || '🟢';
-    card.querySelector('.metric-value').textContent = '15 Fév';
+    // Status indicator
+    const statusIndicator = card.querySelector('.status-indicator');
+    if (statusIndicator) statusIndicator.textContent = status || '🟢';
     
-    const smallValues = card.querySelectorAll('.metric-small-value');
-    smallValues[0].textContent = 'À jour';
-    smallValues[1].textContent = 'À jour';
+    // Gérer les erreurs
+    if (data?.error) {
+        const errorDiv = card.querySelector('.card-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            if (data.error === 'access_denied') {
+                errorDiv.textContent = 'Accès refusé aux données fiscales';
+            } else if (data.error === 'api_unavailable') {
+                errorDiv.textContent = 'Service fiscal temporairement indisponible';
+            } else {
+                errorDiv.textContent = 'Erreur lors du chargement des données fiscales';
+            }
+        }
+        return card;
+    }
+    
+    // Prochaine échéance (valeur principale)
+    const metricValue = card.querySelector('.metric-value');
+    const metricLabel = card.querySelector('.metric-label');
+    if (metricValue && data?.next_deadline) {
+        const deadline = new Date(data.next_deadline);
+        metricValue.textContent = deadline.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    } else if (metricValue) {
+        metricValue.textContent = 'Non définie';
+    }
+    
+    if (metricLabel && data?.next_deadline_type) {
+        metricLabel.textContent = `Prochaine échéance ${data.next_deadline_type}`;
+    } else if (metricLabel) {
+        metricLabel.textContent = 'Prochaine échéance';
+    }
+    
+    // Statut TVA
+    const vatStatus = card.querySelector('.tax-vat-status');
+    if (vatStatus) {
+        vatStatus.textContent = data?.vat_status || 'N/A';
+    }
+    
+    // Statut IS
+    const corporateStatus = card.querySelector('.tax-corporate-status');
+    if (corporateStatus) {
+        corporateStatus.textContent = data?.corporate_tax_status || 'N/A';
+    }
     
     return card;
 }
@@ -988,6 +1063,34 @@ async function loadJournalData() {
     } catch (error) {
         console.error('Erreur journal:', error);
         return { count: 0 };
+    }
+}
+
+/**
+ * Charger les données fiscales
+ * Gère les erreurs : API indisponible, pas de données, accès refusé
+ */
+async function loadTaxData() {
+    try {
+        const response = await authenticatedFetch(`${API_BASE}/tax/status`);
+        
+        // Accès refusé
+        if (response.status === 401 || response.status === 403) {
+            console.error('Fiscalité: Accès refusé');
+            return { error: 'access_denied', message: 'Accès refusé' };
+        }
+        
+        // Erreur API
+        if (!response.ok) {
+            return { error: 'api_error', message: 'Erreur serveur' };
+        }
+        
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error('Erreur fiscalité (API indisponible):', error);
+        return { error: 'api_unavailable', message: 'Service indisponible' };
     }
 }
 

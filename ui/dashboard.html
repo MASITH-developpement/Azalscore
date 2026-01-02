@@ -209,29 +209,30 @@
     </template>
 
     <template id="taxCardTemplate">
-        <div class="card">
+        <div class="card card-tax">
             <div class="card-header">
                 <h3 class="card-title">
                     Fiscalité
-                    <span class="help-icon" data-help="🟢 > 15j avant échéance • 🟠 < 15j avant échéance • 🔴 Échéance dépassée. TVA mensuelle ou trimestrielle selon régime.">ⓘ</span>
+                    <span class="help-icon" data-help="🟢 Toutes déclarations à jour, échéance > 15j • 🟠 Échéance < 15j ou info manquante • 🔴 Retard de déclaration. Suivi TVA, IS et obligations fiscales pays-agnostique.">ⓘ</span>
                 </h3>
                 <span class="status-indicator"></span>
             </div>
             <div class="card-body">
                 <div class="metric-primary">
                     <span class="metric-value"></span>
-                    <span class="metric-label">Prochaine échéance</span>
+                    <span class="metric-label"></span>
                 </div>
                 <div class="metric-grid">
                     <div class="metric-item">
                         <span class="metric-small-label">TVA</span>
-                        <span class="metric-small-value"></span>
+                        <span class="tax-vat-status"></span>
                     </div>
                     <div class="metric-item">
                         <span class="metric-small-label">IS</span>
-                        <span class="metric-small-value"></span>
+                        <span class="tax-corporate-status"></span>
                     </div>
                 </div>
+                <div class="card-error"></div>
             </div>
         </div>
     </template>
