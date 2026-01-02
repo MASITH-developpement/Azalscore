@@ -727,6 +727,10 @@ body {
     border-left: 4px solid #ffa726;
 }
 
+.card-success {
+    border-left: 4px solid #66bb6a;
+}
+
 @keyframes pulse-critical {
     0%, 100% { box-shadow: 0 4px 6px rgba(239, 68, 68, 0.15); }
     50% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
