@@ -7,9 +7,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 import bcrypt
 from jose import JWTError, jwt
-from app.core.config import settings
+from app.core.config import get_settings
 
 # Configuration JWT
+settings = get_settings()
 SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
