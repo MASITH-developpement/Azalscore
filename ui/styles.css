@@ -1196,3 +1196,129 @@ body {
     top: var(--bubble-top, 0);
     left: var(--bubble-left, 0);
 }
+/* ================================ */
+/* Workflow de validation RED */
+/* ================================ */
+.workflow-validation {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.workflow-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+}
+
+.workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.workflow-step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1rem;
+    background: white;
+    border-radius: var(--border-radius-md);
+    border: 2px solid #e2e8f0;
+}
+
+.workflow-step.completed {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.workflow-step.pending {
+    border-color: var(--color-accent);
+    background: #eff6ff;
+}
+
+.step-icon {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 50%;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.workflow-step.completed .step-icon {
+    background: #10b981;
+    color: white;
+}
+
+.workflow-step.pending .step-icon {
+    background: var(--color-accent);
+    color: white;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-label {
+    font-weight: 500;
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+}
+
+.workflow-complete {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f0fdf4;
+    border: 2px solid #10b981;
+    border-radius: var(--border-radius-md);
+    text-align: center;
+}
+
+.workflow-complete p {
+    color: #166534;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.btn-success {
+    padding: 0.75rem 1.5rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.report-content {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: var(--border-radius-md);
+}
+
+.report-content p {
+    margin-bottom: 0.75rem;
+}
+
+.report-content pre {
+    background: var(--color-primary);
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: var(--border-radius-sm);
+    overflow-x: auto;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}

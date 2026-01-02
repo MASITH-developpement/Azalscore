@@ -1001,16 +1001,33 @@ async function examineRedDecision(entityType, entityId) {
 
 /**
  * Afficher le panneau de décision RED pour la trésorerie
- * Affiche le déficit et les options de financement
+ * Affiche le déficit et les options de financement avec workflow de validation
  */
-function showTreasuryRedPanel(data) {
+async function showTreasuryRedPanel(data) {
     const deficit = Math.abs(data.forecast_balance);
+    
+    // Récupérer le statut du workflow de validation
+    let workflowStatus = null;
+    try {
+        const statusResponse = await authenticatedFetch(`${API_BASE}/decision/red/status/${data.id}`);
+        if (statusResponse.ok) {
+            workflowStatus = await statusResponse.json();
+        }
+    } catch (error) {
+        console.error('Erreur récupération workflow:', error);
+    }
+    
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
+    modal.id = 'redValidationModal';
+    
+    // Générer le contenu du workflow
+    const workflowHtml = workflowStatus ? generateWorkflowSteps(data.id, workflowStatus) : '';
+    
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h2>⚠ Alerte Trésorerie</h2>
+                <h2>🔴 Décision RED - Validation requise</h2>
                 <button onclick="this.closest('.modal-overlay').remove()" class="btn-close">×</button>
             </div>
             
@@ -1036,10 +1053,9 @@ function showTreasuryRedPanel(data) {
                 </ul>
             </div>
             
+            ${workflowHtml}
+            
             <div class="modal-actions">
-                <button onclick="alert('Contact expert-comptable recommandé pour mise en place.')" class="btn-danger">
-                    Contacter un expert
-                </button>
                 <button onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">
                     Fermer
                 </button>
@@ -1047,6 +1063,137 @@ function showTreasuryRedPanel(data) {
         </div>
     `;
     document.body.appendChild(modal);
+}
+
+/**
+ * Générer les étapes du workflow de validation RED
+ */
+function generateWorkflowSteps(decisionId, status) {
+    const steps = [
+        { id: 'acknowledge', label: '1. Accusé de lecture des risques', endpoint: '/decision/red/acknowledge' },
+        { id: 'completeness', label: '2. Confirmation de complétude', endpoint: '/decision/red/confirm-completeness' },
+        { id: 'final', label: '3. Validation finale', endpoint: '/decision/red/confirm-final' }
+    ];
+    
+    const completedSteps = status.completed_steps || [];
+    const isFullyValidated = status.is_fully_validated || false;
+    
+    let html = '<div class="workflow-validation">';
+    html += '<h3 class="workflow-title">Workflow de validation</h3>';
+    html += '<div class="workflow-steps">';
+    
+    steps.forEach((step, index) => {
+        const isCompleted = completedSteps.includes(step.id);
+        const isPending = !isCompleted && (index === 0 || completedSteps.includes(steps[index - 1].id));
+        
+        html += `
+            <div class="workflow-step ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''}">
+                <div class="step-icon">${isCompleted ? '✓' : index + 1}</div>
+                <div class="step-content">
+                    <p class="step-label">${step.label}</p>
+                    ${isPending ? `
+                        <button class="btn-primary" onclick="validateRedStep(${decisionId}, '${step.endpoint}', '${step.id}')">
+                            Valider cette étape
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    if (isFullyValidated) {
+        html += `
+            <div class="workflow-complete">
+                <p>✓ Décision RED entièrement validée</p>
+                <button class="btn-success" onclick="viewRedReport(${decisionId})">
+                    📊 Consulter le rapport immutable
+                </button>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+/**
+ * Valider une étape du workflow RED
+ */
+async function validateRedStep(decisionId, endpoint, stepId) {
+    try {
+        const response = await authenticatedFetch(`${API_BASE}${endpoint}/${decisionId}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            alert(`Erreur : ${error.detail || 'Validation impossible'}`);
+            return;
+        }
+        
+        const result = await response.json();
+        alert(`✓ ${result.message}`);
+        
+        // Fermer et recharger le modal
+        document.getElementById('redValidationModal')?.remove();
+        
+        // Recharger les données de trésorerie pour rafraîchir l'état
+        const treasuryData = await loadTreasuryData();
+        if (treasuryData && treasuryData.red_triggered) {
+            showTreasuryRedPanel(treasuryData);
+        }
+        
+    } catch (error) {
+        console.error('Erreur validation:', error);
+        alert('Erreur lors de la validation');
+    }
+}
+
+/**
+ * Afficher le rapport RED immutable
+ */
+async function viewRedReport(decisionId) {
+    try {
+        const response = await authenticatedFetch(`${API_BASE}/decision/red/report/${decisionId}`);
+        
+        if (!response.ok) {
+            alert('Rapport non accessible. La décision doit être entièrement validée.');
+            return;
+        }
+        
+        const report = await response.json();
+        
+        // Afficher le rapport dans un nouveau modal
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📊 Rapport RED Immutable</h2>
+                    <button onclick="this.closest('.modal-overlay').remove()" class="btn-close">×</button>
+                </div>
+                <div class="report-content">
+                    <p><strong>ID Décision :</strong> ${report.decision_id}</p>
+                    <p><strong>Motif :</strong> ${report.decision_reason}</p>
+                    <p><strong>Validé le :</strong> ${new Date(report.validated_at).toLocaleString('fr-FR')}</p>
+                    <p><strong>Données déclencheurs :</strong></p>
+                    <pre>${JSON.stringify(report.trigger_data, null, 2)}</pre>
+                </div>
+                <div class="modal-actions">
+                    <button onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('Erreur consultation rapport:', error);
+        alert('Erreur lors de la consultation du rapport');
+    }
 }
 
 // =============================================
