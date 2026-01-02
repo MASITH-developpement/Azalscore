@@ -52,9 +52,9 @@ FORECAST_RESPONSE=$(curl -s -X POST "$BASE_URL/treasury/forecast" \
   -H "X-Tenant-ID: $TENANT_ID" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "opening_balance": 5000.0,
-    "inflows": 2000.0,
-    "outflows": 15000.0
+    "opening_balance": 5000,
+    "inflows": 2000,
+    "outflows": 15000
   }')
 
 echo "$FORECAST_RESPONSE" | jq . 2>/dev/null || echo "$FORECAST_RESPONSE"
