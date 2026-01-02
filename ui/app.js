@@ -373,6 +373,21 @@ function buildTreasuryModule(data) {
     let status = '🟢';
     let decisionId = null;
     
+    // Gérer les erreurs API (objet avec .error)
+    if (data && data.error) {
+        // Erreur API : rester en zone normale (🟢) mais afficher l'erreur
+        return {
+            id: 'treasury',
+            name: 'Trésorerie',
+            priority: 2,
+            status: '⚪',
+            data,
+            decisionId: null,
+            createCard: () => createTreasuryCard(data, '⚪', null),
+            criticalMessage: null
+        };
+    }
+    
     if (data) {
         // Utiliser red_triggered du backend (source de vérité)
         if (data.red_triggered) {
@@ -599,7 +614,30 @@ function createTreasuryCard(data, status, decisionId) {
     
     card.querySelector('.status-indicator').textContent = status || '⚪';
     
-    if (data) {
+    // Gérer les erreurs API
+    if (data && data.error) {
+        card.querySelector('.metric-value').textContent = '—';
+        card.querySelectorAll('.metric-small-value')[0].textContent = '—';
+        card.querySelectorAll('.metric-small-value')[1].textContent = '—';
+        
+        const errorDiv = card.querySelector('.card-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            
+            // Messages spécifiques selon le type d'erreur
+            if (data.error === 'api_unavailable') {
+                errorDiv.textContent = '⚠️ Service indisponible - L\'API Trésorerie ne répond pas. Réessayez dans quelques instants.';
+            } else if (data.error === 'access_denied') {
+                errorDiv.textContent = '🔒 Accès refusé - Vous n\'avez pas les droits pour consulter la trésorerie.';
+            } else {
+                errorDiv.textContent = data.message || 'Erreur inconnue';
+            }
+        }
+        return card;
+    }
+    
+    // Données valides présentes
+    if (data && !data.error) {
         card.querySelector('.metric-value').textContent = formatCurrency(data.opening_balance);
         
         const forecastEl = card.querySelectorAll('.metric-small-value')[0];
@@ -619,11 +657,11 @@ function createTreasuryCard(data, status, decisionId) {
             `;
         }
     } else {
+        // Aucune donnée (null)
         card.querySelector('.metric-value').textContent = '—';
         card.querySelectorAll('.metric-small-value')[0].textContent = '—';
         card.querySelectorAll('.metric-small-value')[1].textContent = '—';
         
-        // Afficher message "Aucune donnée"
         const errorDiv = card.querySelector('.card-error');
         if (errorDiv) {
             errorDiv.style.display = 'block';
@@ -873,8 +911,10 @@ function initHelpBubbles() {
             bubble.classList.remove('hidden');
             
             const rect = e.target.getBoundingClientRect();
-            bubble.style.top = (rect.bottom + 8) + 'px';
-            bubble.style.left = rect.left + 'px';
+            bubble.setAttribute('data-top', rect.bottom + 8);
+            bubble.setAttribute('data-left', rect.left);
+            bubble.style.setProperty('--bubble-top', (rect.bottom + 8) + 'px');
+            bubble.style.setProperty('--bubble-left', rect.left + 'px');
         });
         
         icon.addEventListener('mouseleave', () => {
@@ -969,27 +1009,27 @@ function showTreasuryRedPanel(data) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal-content" style="max-width:520px;background:#1a1f2e;border-radius:0.75rem;padding:1.5rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);border:1px solid #2d3548;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                <h2 style="margin:0;color:#f1f5f9;font-size:1.25rem;">⚠ Alerte Trésorerie</h2>
-                <button onclick="this.closest('.modal-overlay').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;">×</button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠ Alerte Trésorerie</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" class="btn-close">×</button>
             </div>
             
-            <div style="margin-bottom:1.25rem;padding:1rem;background:#2a1215;border-radius:0.5rem;border-left:4px solid #7f1d1d;">
-                <p style="margin:0 0 0.75rem 0;color:#fecaca;font-weight:600;font-size:1.1rem;">
+            <div class="alert-deficit">
+                <p class="deficit-title">
                     Déficit anticipé : ${formatCurrency(deficit)}
                 </p>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.875rem;color:#94a3b8;">
-                    <div>Solde actuel : <strong style="color:#e2e8f0">${formatCurrency(data.opening_balance)}</strong></div>
-                    <div>Prévision J+30 : <strong style="color:#dc2626">${formatCurrency(data.forecast_balance)}</strong></div>
-                    <div>Entrées prévues : <strong style="color:#4ade80">+${formatCurrency(data.inflows)}</strong></div>
-                    <div>Sorties prévues : <strong style="color:#dc2626">-${formatCurrency(data.outflows)}</strong></div>
+                <div class="deficit-grid">
+                    <div>Solde actuel : <strong>${formatCurrency(data.opening_balance)}</strong></div>
+                    <div>Prévision J+30 : <strong class="text-danger">${formatCurrency(data.forecast_balance)}</strong></div>
+                    <div>Entrées prévues : <strong class="text-success">+${formatCurrency(data.inflows)}</strong></div>
+                    <div>Sorties prévues : <strong class="text-danger">-${formatCurrency(data.outflows)}</strong></div>
                 </div>
             </div>
             
-            <div style="margin-bottom:1.25rem;">
-                <p style="margin:0 0 0.75rem 0;color:#e2e8f0;font-weight:500;">Options de financement :</p>
-                <ul style="margin:0;padding-left:1.25rem;color:#94a3b8;font-size:0.875rem;line-height:1.8;">
+            <div class="financing-options">
+                <p class="options-title">Options de financement :</p>
+                <ul class="options-list">
                     <li>Ligne de crédit court terme</li>
                     <li>Affacturage (cession de créances)</li>
                     <li>Négociation délais fournisseurs</li>
@@ -997,17 +1037,16 @@ function showTreasuryRedPanel(data) {
                 </ul>
             </div>
             
-            <div style="display:flex;gap:0.75rem;">
-                <button onclick="alert('Contact expert-comptable recommandé pour mise en place.')" style="flex:1;padding:0.75rem;background:#7f1d1d;color:#fecaca;border:none;border-radius:0.5rem;cursor:pointer;font-weight:500;">
+            <div class="modal-actions">
+                <button onclick="alert('Contact expert-comptable recommandé pour mise en place.')" class="btn-danger">
                     Contacter un expert
                 </button>
-                <button onclick="this.closest('.modal-overlay').remove()" style="flex:1;padding:0.75rem;background:#334155;color:#e2e8f0;border:none;border-radius:0.5rem;cursor:pointer;">
+                <button onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">
                     Fermer
                 </button>
             </div>
         </div>
     `;
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:1000;';
     document.body.appendChild(modal);
 }
 

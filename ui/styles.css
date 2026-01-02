@@ -1069,3 +1069,130 @@ body {
     font-size: 0.8125rem;
     color: rgba(254, 202, 202, 0.8);
 }
+/* ==================== MODAL OVERLAY ==================== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    max-width: 520px;
+    background: var(--color-primary);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--color-primary-lighter);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #f1f5f9;
+    font-size: 1.25rem;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.btn-close:hover {
+    color: #94a3b8;
+}
+
+.alert-deficit {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: #2a1215;
+    border-radius: var(--border-radius-md);
+    border-left: 4px solid #7f1d1d;
+}
+
+.deficit-title {
+    margin: 0 0 0.75rem 0;
+    color: #fecaca;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.deficit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+.deficit-grid strong {
+    color: #e2e8f0;
+}
+
+.text-danger {
+    color: var(--color-danger) !important;
+}
+
+.text-success {
+    color: var(--color-success) !important;
+}
+
+.financing-options {
+    margin-bottom: var(--spacing-lg);
+}
+
+.options-title {
+    margin: 0 0 0.75rem 0;
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.options-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    line-height: 1.8;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.modal-actions .btn-danger {
+    flex: 1;
+    padding: 0.75rem;
+    background: #7f1d1d;
+    color: #fecaca;
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.modal-actions .btn-danger:hover {
+    background: #991b1b;
+}
+
+.modal-actions .btn-secondary {
+    flex: 1;
+}
+
+/* Help bubble positioning with CSS variables */
+.help-bubble {
+    top: var(--bubble-top, 0);
+    left: var(--bubble-left, 0);
+}
