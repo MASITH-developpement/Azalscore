@@ -140,12 +140,21 @@ async function initDashboard() {
 }
 
 /**
- * Construction du cockpit dirigeant avec zones segmentées
- * Structure : Zone Critique (🔴) → Zone Tension (🟠) → Zone Normale (🟢) → Zone Analyse
- * Priorisation automatique et affichage conditionnel
+ * COCKPIT DIRIGEANT - Vue décisionnelle exclusive
+ * 
+ * RÈGLE FONDAMENTALE : Le dirigeant voit UN SEUL niveau à la fois
+ * - Si 🔴 présent → UNIQUEMENT zone critique (masque tout le reste)
+ * - Si 🟠 présent (sans 🔴) → UNIQUEMENT zone tension
+ * - Sinon → Zone normale avec tous les indicateurs
+ * 
+ * PRIORISATION DOMAINES : Financier > Juridique > Fiscal > Social > Structurel
+ * 
+ * OBJECTIF : Comprendre le risque principal en 3 secondes
  */
 async function buildCockpit() {
-    // Récupérer les containers de zone
+    // ============================================
+    // RÉCUPÉRATION DES ZONES HTML
+    // ============================================
     const zoneCritical = document.getElementById('zoneCritical');
     const zoneTension = document.getElementById('zoneTension');
     const zoneNormal = document.getElementById('zoneNormal');
@@ -156,115 +165,137 @@ async function buildCockpit() {
     const normalContainer = document.getElementById('normalCardsContainer');
     const analysisContainer = document.getElementById('analysisContainer');
     
-    // Fallback pour ancienne structure (compatibilité)
-    const legacyGrid = document.getElementById('cockpitGrid');
-    
-    // Afficher le loader
+    // Loader pendant le chargement
     if (normalContainer) {
-        normalContainer.innerHTML = '<div class="loading-state">Chargement des données...</div>';
-    } else if (legacyGrid) {
-        legacyGrid.innerHTML = '<div class="loading-state">Chargement des données...</div>';
+        normalContainer.innerHTML = '<div class="loading-state">Analyse des risques...</div>';
     }
     
+    // Masquer toutes les zones par défaut
+    if (zoneCritical) zoneCritical.style.display = 'none';
+    if (zoneTension) zoneTension.style.display = 'none';
+    if (zoneNormal) zoneNormal.style.display = 'none';
+    if (zoneAnalysis) zoneAnalysis.style.display = 'none';
+    
     try {
-        // Charger les données en parallèle
+        // ============================================
+        // CHARGEMENT DES DONNÉES
+        // ============================================
         const [treasuryData, journalData] = await Promise.all([
             loadTreasuryData(),
             loadJournalData()
         ]);
         
-        // Construire les modules avec leur statut
+        // ============================================
+        // CONSTRUCTION DES MODULES AVEC DOMAINE
+        // Priorisation : Financier(0) > Juridique(1) > Fiscal(2) > Social(3) > Structurel(4)
+        // ============================================
         const modules = [
-            buildTreasuryModule(treasuryData),
-            buildAccountingModule(journalData),
-            buildTaxModule(),
-            buildHRModule()
+            { ...buildTreasuryModule(treasuryData), domain: 'Financier', domainPriority: 0 },
+            { ...buildAccountingModule(journalData), domain: 'Financier', domainPriority: 0 },
+            { ...buildTaxModule(), domain: 'Fiscal', domainPriority: 2 },
+            { ...buildHRModule(), domain: 'Social', domainPriority: 3 }
         ];
         
-        // Séparer par priorité
+        // Tri par domaine puis par priorité de risque
+        modules.sort((a, b) => {
+            if (a.priority !== b.priority) return a.priority - b.priority;
+            return a.domainPriority - b.domainPriority;
+        });
+        
+        // Séparer par niveau de risque
         const criticalModules = modules.filter(m => m.priority === 0); // 🔴
         const tensionModules = modules.filter(m => m.priority === 1);  // 🟠
         const normalModules = modules.filter(m => m.priority === 2);   // 🟢
         
         // ============================================
-        // ZONE CRITIQUE (🔴) - Alerte dominante unique
+        // LOGIQUE D'AFFICHAGE EXCLUSIF
+        // Un seul niveau visible à la fois
         // ============================================
-        if (zoneCritical && criticalContainer) {
-            criticalContainer.innerHTML = '';
-            if (criticalModules.length > 0) {
-                // Afficher la zone critique
-                zoneCritical.style.display = 'block';
-                const alertCard = createCriticalCard(criticalModules);
-                if (alertCard) criticalContainer.appendChild(alertCard);
-            } else {
-                // Masquer si aucun RED
-                zoneCritical.style.display = 'none';
-            }
-        }
         
-        // ============================================
-        // ZONE TENSION (🟠) - Points d'attention
-        // ============================================
-        if (zoneTension && tensionContainer) {
-            tensionContainer.innerHTML = '';
-            if (tensionModules.length > 0) {
+        const hasCritical = criticalModules.length > 0;
+        const hasTension = tensionModules.length > 0;
+        
+        if (hasCritical) {
+            // ══════════════════════════════════════════
+            // MODE CRITIQUE 🔴 - Affichage exclusif
+            // Le dirigeant ne voit QUE le problème critique
+            // ══════════════════════════════════════════
+            if (zoneCritical && criticalContainer) {
+                zoneCritical.style.display = 'block';
+                criticalContainer.innerHTML = '';
+                
+                // Créer la carte d'alerte critique avec accès rapport
+                const criticalCard = createCockpitCriticalView(criticalModules);
+                if (criticalCard) criticalContainer.appendChild(criticalCard);
+            }
+            
+            // MASQUER tout le reste - focus total sur le critique
+            if (zoneTension) zoneTension.style.display = 'none';
+            if (zoneNormal) zoneNormal.style.display = 'none';
+            if (zoneAnalysis) zoneAnalysis.style.display = 'none';
+            
+        } else if (hasTension) {
+            // ══════════════════════════════════════════
+            // MODE TENSION 🟠 - Points d'attention
+            // Pas de critique, mais vigilance requise
+            // ══════════════════════════════════════════
+            if (zoneTension && tensionContainer) {
                 zoneTension.style.display = 'block';
+                tensionContainer.innerHTML = '';
+                
                 for (const mod of tensionModules) {
                     const card = mod.createCard();
                     if (card) tensionContainer.appendChild(card);
                 }
-            } else {
-                zoneTension.style.display = 'none';
-            }
-        }
-        
-        // ============================================
-        // ZONE NORMALE (🟢) - Indicateurs standards
-        // ============================================
-        if (normalContainer) {
-            normalContainer.innerHTML = '';
-            
-            // Inclure aussi les modules critiques et tension dans leurs cartes
-            // (ils ont déjà leur alerte en haut, mais la carte reste visible)
-            const allBusinessModules = [...criticalModules, ...tensionModules, ...normalModules];
-            
-            for (const mod of allBusinessModules) {
-                const card = mod.createCard();
-                if (card) normalContainer.appendChild(card);
-            }
-        } else if (legacyGrid) {
-            // Fallback ancienne structure
-            legacyGrid.innerHTML = '';
-            modules.sort((a, b) => a.priority - b.priority);
-            
-            if (criticalModules.length > 0) {
-                const alertCard = createCriticalCard(criticalModules);
-                if (alertCard) legacyGrid.appendChild(alertCard);
             }
             
-            for (const mod of modules) {
-                const card = mod.createCard();
-                if (card) legacyGrid.appendChild(card);
+            // Zone normale visible aussi (informations complémentaires)
+            if (zoneNormal && normalContainer) {
+                zoneNormal.style.display = 'block';
+                normalContainer.innerHTML = '';
+                for (const mod of normalModules) {
+                    const card = mod.createCard();
+                    if (card) normalContainer.appendChild(card);
+                }
             }
-        }
-        
-        // ============================================
-        // ZONE ANALYSE - Graphiques
-        // ============================================
-        if (analysisContainer) {
-            analysisContainer.innerHTML = '';
-            const chartCard = createChartCard();
-            if (chartCard) analysisContainer.appendChild(chartCard);
-        } else if (legacyGrid) {
-            const chartCard = createChartCard();
-            if (chartCard) legacyGrid.appendChild(chartCard);
+            
+            // Graphiques visibles
+            if (zoneAnalysis && analysisContainer) {
+                zoneAnalysis.style.display = 'block';
+                analysisContainer.innerHTML = '';
+                const chartCard = createChartCard();
+                if (chartCard) analysisContainer.appendChild(chartCard);
+            }
+            
+        } else {
+            // ══════════════════════════════════════════
+            // MODE NORMAL 🟢 - Tout va bien
+            // Affichage complet des indicateurs
+            // ══════════════════════════════════════════
+            if (zoneNormal && normalContainer) {
+                zoneNormal.style.display = 'block';
+                normalContainer.innerHTML = '';
+                
+                for (const mod of modules) {
+                    const card = mod.createCard();
+                    if (card) normalContainer.appendChild(card);
+                }
+            }
+            
+            // Graphiques visibles
+            if (zoneAnalysis && analysisContainer) {
+                zoneAnalysis.style.display = 'block';
+                analysisContainer.innerHTML = '';
+                const chartCard = createChartCard();
+                if (chartCard) analysisContainer.appendChild(chartCard);
+            }
         }
         
         // Réinitialiser les bulles d'aide
         initHelpBubbles();
         
         // Hook pour extensions futures
-        onCockpitReady({ criticalModules, tensionModules, normalModules });
+        onCockpitReady({ criticalModules, tensionModules, normalModules, displayMode: hasCritical ? 'critical' : hasTension ? 'tension' : 'normal' });
         
     } catch (error) {
         console.error('Erreur cockpit:', error);
@@ -421,7 +452,109 @@ function buildHRModule() {
 // =============================================
 
 /**
- * Carte Alerte Critique (liste des problèmes urgents)
+ * VUE CRITIQUE COCKPIT DIRIGEANT
+ * Affichage exclusif et immersif pour décisions critiques
+ * Le dirigeant comprend le risque en 3 secondes
+ * 
+ * @param {Array} criticalModules - Modules avec priority === 0
+ * @returns {HTMLElement} Vue critique complète
+ */
+function createCockpitCriticalView(criticalModules) {
+    if (!criticalModules.length) return null;
+    
+    // Trier par domaine (Financier en premier)
+    criticalModules.sort((a, b) => a.domainPriority - b.domainPriority);
+    
+    // Module principal = premier critique (le plus prioritaire)
+    const mainModule = criticalModules[0];
+    
+    // Créer le container de vue critique
+    const view = document.createElement('div');
+    view.className = 'cockpit-critical-view';
+    
+    // Générer la liste des risques
+    const risksList = criticalModules
+        .filter(m => m.criticalMessage)
+        .map(m => `
+            <div class="risk-item">
+                <span class="risk-domain">${m.domain}</span>
+                <span class="risk-name">${m.name}</span>
+                <span class="risk-message">${m.criticalMessage}</span>
+            </div>
+        `).join('');
+    
+    // Données du module principal pour affichage détaillé
+    const mainData = mainModule.data || {};
+    const deficit = mainData.forecast_balance ? Math.abs(mainData.forecast_balance) : 0;
+    
+    view.innerHTML = `
+        <!-- En-tête critique - Identification immédiate du risque -->
+        <div class="critical-header">
+            <div class="critical-icon">🔴</div>
+            <div class="critical-title">
+                <h2>Situation Critique</h2>
+                <p class="critical-domain">${mainModule.domain} - ${mainModule.name}</p>
+            </div>
+            <div class="critical-timestamp">
+                ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </div>
+        </div>
+        
+        <!-- Métrique principale - Chiffre clé en 3 secondes -->
+        <div class="critical-metric">
+            <div class="metric-value-large">${formatCurrency(deficit)}</div>
+            <div class="metric-label-large">Déficit anticipé J+30</div>
+        </div>
+        
+        <!-- Détail des données -->
+        <div class="critical-details">
+            <div class="detail-item">
+                <span class="detail-label">Solde actuel</span>
+                <span class="detail-value">${formatCurrency(mainData.opening_balance || 0)}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Entrées prévues</span>
+                <span class="detail-value positive">+${formatCurrency(mainData.inflows || 0)}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Sorties prévues</span>
+                <span class="detail-value negative">-${formatCurrency(mainData.outflows || 0)}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Prévision</span>
+                <span class="detail-value critical">${formatCurrency(mainData.forecast_balance || 0)}</span>
+            </div>
+        </div>
+        
+        <!-- Autres risques critiques (si plusieurs) -->
+        ${criticalModules.length > 1 ? `
+            <div class="other-risks">
+                <h3>Autres points critiques</h3>
+                <div class="risks-list">${risksList}</div>
+            </div>
+        ` : ''}
+        
+        <!-- Actions - Accès rapport RED uniquement (pas d'action risquée) -->
+        <div class="critical-actions">
+            <button class="btn-critical-primary" onclick="examineRedDecision('${mainModule.id}', ${mainModule.data?.id || 0})">
+                📊 Consulter le rapport RED
+            </button>
+            <button class="btn-critical-secondary" onclick="window.print()">
+                🖨️ Imprimer
+            </button>
+        </div>
+        
+        <!-- Message de guidance -->
+        <div class="critical-guidance">
+            <p>⚠️ Aucune autre information n'est affichée. Traitez cette situation en priorité.</p>
+        </div>
+    `;
+    
+    return view;
+}
+
+/**
+ * Carte Alerte Critique (liste des problèmes urgents) - Legacy
  */
 function createCriticalCard(criticalModules) {
     const template = document.getElementById('criticalDecisionTemplate');
