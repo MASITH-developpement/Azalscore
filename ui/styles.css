@@ -827,12 +827,12 @@ body {
 .zone-critical .tax-vat-status,
 .zone-critical .tax-corporate-status,
 .zone-critical .entries-status {
-    color: #ffffff;
-    font-weight: 600;
+    color: #1a1a1a;
+    font-weight: 700;
 }
 
 .zone-critical .metric-item {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.95);
 }
 
 .zone-critical .metric-small-label {
@@ -869,12 +869,12 @@ body {
 .zone-tension .metric-small-value,
 .zone-tension .hr-payroll-status,
 .zone-tension .hr-absences-count {
-    color: #ffffff;
-    font-weight: 600;
+    color: #1a1a1a;
+    font-weight: 700;
 }
 
 .zone-tension .metric-item {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.95);
 }
 
 .zone-tension .metric-small-label {
