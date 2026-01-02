@@ -9,12 +9,22 @@ import sys
 from pathlib import Path
 from sqlalchemy import create_engine, text
 
-# Configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./azals.db")
+# Configuration - Support DATABASE_URL pour PostgreSQL
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    DATABASE_URL = "sqlite:///./azals.db"
+    print("⚠️  DATABASE_URL non définie, utilisation SQLite local")
+else:
+    # PostgreSQL sur Render utilise postgres:// qu'il faut convertir en postgresql://
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+        print("✅ Conversion postgres:// → postgresql://")
+
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
 def run_migrations():
     """Exécute toutes les migrations SQL dans l'ordre"""
+    print(f"🔗 Database: {DATABASE_URL[:50]}...")
     engine = create_engine(DATABASE_URL)
     
     # Récupérer tous les fichiers .sql triés
