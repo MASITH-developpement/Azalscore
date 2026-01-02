@@ -3,6 +3,21 @@
  * ERP Premium - Interface décisionnelle
  * 
  * Vanilla JS uniquement - Aucune dépendance externe
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════════
+ * CORE AZALS V1.0 — FIGÉ LE 2 JANVIER 2026
+ * 
+ * Ce fichier contient le CORE du système de priorisation AZALS.
+ * Toute modification nécessite une décision d'architecture consciente.
+ * 
+ * RÈGLES FONDAMENTALES :
+ * - Un seul 🔴 visible à la fois
+ * - Ordre de priorité : Financier > Juridique > Fiscal > RH > Comptabilité
+ * - Souveraineté du dirigeant (aucune action automatique)
+ * - Pattern 🔴 (plan dominant) : affichage exclusif du risque prioritaire
+ * 
+ * DOCUMENTATION : /README_CORE_AZALS.md
+ * ══════════════════════════════════════════════════════════════════════════════════
  */
 
 // =============================================
@@ -86,9 +101,23 @@ function initAzalsTestPanel() {
  */
 const cockpitLog = [];
 
+// ══════════════════════════════════════════════════════════════════════════════════
+// CORE AZALS — NE PAS MODIFIER SANS DÉCISION D'ARCHITECTURE
+// ══════════════════════════════════════════════════════════════════════════════════
+
 /**
  * ORDRE DE PRIORITÉ STRICT (non modifiable)
  * Définit l'ordre absolu de traitement des alertes critiques
+ * 
+ * JUSTIFICATION :
+ * 1. Trésorerie : Sans liquidité, l'entreprise meurt immédiatement
+ * 2. Juridique : Responsabilité personnelle du dirigeant engagée
+ * 3. Fiscalité : Risques pénaux + pénalités exponentielles
+ * 4. RH : Risques URSSAF + contentieux prud'homaux
+ * 5. Comptabilité : Risque indirect (certification, audit)
+ * 
+ * ⚠️ MODIFICATION INTERDITE sans validation architecte ERP senior
+ * Documentation : /README_CORE_AZALS.md section "Règles de priorisation strictes"
  */
 const DOMAIN_PRIORITY = {
     'treasury': 1,      // Financier (Trésorerie)
@@ -330,6 +359,28 @@ async function buildCockpit() {
         }
     }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════════
+// CORE AZALS — PRIORISATION TRANSVERSE (FIGÉE)
+// ══════════════════════════════════════════════════════════════════════════════════
+//
+// Les 3 fonctions suivantes constituent le CŒUR du système AZALS :
+// - collectStates()    : Charge les états de tous les modules
+// - resolvePriority()  : Applique les 3 règles strictes de priorisation
+// - renderCockpit()    : Affiche le cockpit selon la décision
+//
+// RÈGLE ABSOLUE : Un seul 🔴 visible à la fois
+//
+// COMPORTEMENT :
+// - Si au moins un 🔴 → afficher UNIQUEMENT le 🔴 prioritaire (masquer tout le reste)
+// - Si aucun 🔴 → afficher les 🟠 classés par impact + les 🟢
+// - Traçabilité : journalisation de chaque décision
+// - Robustesse : module non répondant = 🟠 par défaut
+//
+// ⚠️ MODIFICATION INTERDITE sans validation architecte ERP senior
+// Documentation : /README_CORE_AZALS.md section "Système de priorisation"
+//
+// ══════════════════════════════════════════════════════════════════════════════════
 
 // =============================================
 // PRIORISATION TRANSVERSE - FONCTIONS ISOLÉES
