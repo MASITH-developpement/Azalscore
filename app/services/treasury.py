@@ -36,12 +36,15 @@ class TreasuryService:
         forecast_balance = opening_balance + inflows - outflows
         
         # Créer l'enregistrement de prévision
+        red_triggered_value = 1 if forecast_balance < 0 else 0
         forecast = TreasuryForecast(
             tenant_id=tenant_id,
+            user_id=user_id,
             opening_balance=opening_balance,
             inflows=inflows,
             outflows=outflows,
-            forecast_balance=forecast_balance
+            forecast_balance=forecast_balance,
+            red_triggered=red_triggered_value
         )
         self.db.add(forecast)
         self.db.commit()
