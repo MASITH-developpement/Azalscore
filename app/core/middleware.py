@@ -24,16 +24,20 @@ class TenantMiddleware(BaseHTTPMiddleware):
         Intercepte chaque requête HTTP.
         Valide la présence et le format du tenant_id.
         """
-        # Endpoints publics : bypass validation
-        # Vérifier si le chemin commence par un des chemins publics
-        if any(request.url.path == path or request.url.path.startswith(path + "/") 
-               for path in self.PUBLIC_PATHS):
-            return await call_next(request)
+        # Endpoints publics : bypass validation mais injecter tenant_id si présent
+        is_public_path = any(request.url.path == path or request.url.path.startswith(path + "/") 
+                            for path in self.PUBLIC_PATHS)
         
         # Extraction du header X-Tenant-ID
         tenant_id: Optional[str] = request.headers.get("X-Tenant-ID")
         
-        # Validation : header obligatoire
+        if is_public_path:
+            # Pour les paths publics, injecter tenant_id si présent et valide
+            if tenant_id and self._is_valid_tenant_id(tenant_id):
+                request.state.tenant_id = tenant_id
+            return await call_next(request)
+        
+        # Routes protégées : validation obligatoire
         if not tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

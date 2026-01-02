@@ -24,6 +24,11 @@ def get_tenant_id(request: Request) -> str:
         def list_items(tenant_id: str = Depends(get_tenant_id)):
             # tenant_id garanti valide ici
     """
+    if not hasattr(request.state, "tenant_id"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing X-Tenant-ID header"
+        )
     return request.state.tenant_id
 
 
