@@ -1101,9 +1101,9 @@ async function showTreasuryRedPanel(data) {
  */
 function generateWorkflowSteps(decisionId, status) {
     const steps = [
-        { id: 'acknowledge', label: '1. Accusé de lecture des risques', endpoint: '/decision/red/acknowledge' },
-        { id: 'completeness', label: '2. Confirmation de complétude', endpoint: '/decision/red/confirm-completeness' },
-        { id: 'final', label: '3. Validation finale', endpoint: '/decision/red/confirm-final' }
+        { id: 'ACKNOWLEDGE', label: '1. Accusé de lecture des risques', endpoint: '/decision/red/acknowledge' },
+        { id: 'COMPLETENESS', label: '2. Confirmation de complétude', endpoint: '/decision/red/confirm-completeness' },
+        { id: 'FINAL', label: '3. Validation finale', endpoint: '/decision/red/confirm-final' }
     ];
     
     const completedSteps = status.completed_steps || [];
