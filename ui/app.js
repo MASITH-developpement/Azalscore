@@ -12,6 +12,43 @@
 const API_BASE = '';
 
 // =============================================
+// JOURNALISATION COCKPIT
+// =============================================
+
+/**
+ * Journal des décisions de priorisation
+ * Trace toutes les règles appliquées pour audit
+ */
+const cockpitLog = [];
+
+/**
+ * ORDRE DE PRIORITÉ STRICT (non modifiable)
+ * Définit l'ordre absolu de traitement des alertes critiques
+ */
+const DOMAIN_PRIORITY = {
+    'treasury': 1,      // Financier (Trésorerie)
+    'legal': 2,         // Juridique / Structurel
+    'tax': 3,           // Fiscalité
+    'hr': 4,            // Ressources Humaines
+    'accounting': 5     // Comptabilité
+};
+
+/**
+ * Journaliser une décision de priorisation
+ */
+function logPriorityDecision(module, level, rule, details = {}) {
+    const entry = {
+        timestamp: new Date().toISOString(),
+        module: module,
+        level: level,
+        rule: rule,
+        details: details
+    };
+    cockpitLog.push(entry);
+    console.log(`[COCKPIT] ${rule} → ${module} (${level})`, details);
+}
+
+// =============================================
 // AUTHENTIFICATION
 // =============================================
 
@@ -142,14 +179,14 @@ async function initDashboard() {
 /**
  * COCKPIT DIRIGEANT - Vue décisionnelle exclusive
  * 
- * RÈGLE FONDAMENTALE : Le dirigeant voit UN SEUL niveau à la fois
- * - Si 🔴 présent → UNIQUEMENT zone critique (masque tout le reste)
- * - Si 🟠 présent (sans 🔴) → UNIQUEMENT zone tension
- * - Sinon → Zone normale avec tous les indicateurs
+ * RÈGLE ABSOLUE : Un seul 🔴 visible à la fois
+ * ORDRE DE PRIORITÉ : Trésorerie > Juridique > Fiscalité > RH > Comptabilité
  * 
- * PRIORISATION DOMAINES : Financier > Juridique > Fiscal > Social > Structurel
- * 
- * OBJECTIF : Comprendre le risque principal en 3 secondes
+ * COMPORTEMENT :
+ * - Si au moins un 🔴 → afficher UNIQUEMENT le 🔴 prioritaire, masquer tout le reste
+ * - Si aucun 🔴 → afficher les 🟠 classés par impact, puis les 🟢
+ * - Traçabilité : journalisation de chaque décision
+ * - Robustesse : module non répondant = 🟠 par défaut
  */
 async function buildCockpit() {
     // ============================================
@@ -178,176 +215,35 @@ async function buildCockpit() {
     
     try {
         // ============================================
-        // CHARGEMENT DES DONNÉES
+        // PHASE 1 : COLLECTE DES ÉTATS
         // ============================================
-        const [journalData, treasuryData, accountingData, taxData, hrData, legalData] = await Promise.all([
-            loadJournalData(),
-            loadTreasuryData(),
-            loadAccountingData(),
-            loadTaxData(),
-            loadHRData(),
-            loadLegalData()
-        ]);
-        
-        // Vérifier si le workflow RED est complété (si trésorerie en déficit)
-        let isWorkflowCompleted = false;
-        if (treasuryData && treasuryData.red_triggered && treasuryData.id) {
-            try {
-                const statusResponse = await authenticatedFetch(`${API_BASE}/decision/red/status/${treasuryData.id}`);
-                if (statusResponse.ok) {
-                    const workflowStatus = await statusResponse.json();
-                    isWorkflowCompleted = workflowStatus.is_fully_validated || false;
-                }
-            } catch (error) {
-                console.error('Erreur chargement workflow status:', error);
-            }
-        }
+        const states = await collectStates();
         
         // ============================================
-        // CONSTRUCTION DES MODULES AVEC DOMAINE
-        // Priorisation : Financier(0) > Juridique(1) > Fiscal(2) > Social(3)
+        // PHASE 2 : RÉSOLUTION DE PRIORITÉ
         // ============================================
-        const modules = [
-            { ...buildTreasuryModule(treasuryData, isWorkflowCompleted), domain: 'Financier', domainPriority: 0 },
-            { ...buildAccountingModule(accountingData), domain: 'Financier', domainPriority: 0 },
-            { ...buildLegalModule(legalData), domain: 'Juridique', domainPriority: 1 },
-            { ...buildTaxModule(taxData), domain: 'Fiscal', domainPriority: 2 },
-            { ...buildHRModule(hrData), domain: 'Social', domainPriority: 3 }
-        ];
-        
-        // Tri par domaine puis par priorité de risque
-        modules.sort((a, b) => {
-            if (a.priority !== b.priority) return a.priority - b.priority;
-            return a.domainPriority - b.domainPriority;
-        });
-        
-        // Séparer par niveau de risque
-        const criticalModules = modules.filter(m => m.priority === 0); // 🔴
-        const tensionModules = modules.filter(m => m.priority === 1);  // 🟠
-        const normalModules = modules.filter(m => m.priority === 2);   // 🟢
+        const priority = resolvePriority(states);
         
         // ============================================
-        // LOGIQUE D'AFFICHAGE EXCLUSIF
-        // Un seul niveau visible à la fois
+        // PHASE 3 : RENDU DU COCKPIT
         // ============================================
-        
-        const hasCritical = criticalModules.length > 0;
-        const hasTension = tensionModules.length > 0;
-        
-        if (hasCritical) {
-            // ══════════════════════════════════════════
-            // MODE CRITIQUE 🔴 - Affichage prioritaire
-            // Les modules critiques sont affichés EN PREMIER au-dessus des autres
-            // Les autres zones sont visibles mais inactives (atténuées)
-            // ══════════════════════════════════════════
-            if (zoneCritical && criticalContainer) {
-                zoneCritical.style.display = 'block';
-                criticalContainer.innerHTML = '';
-                
-                // Créer la carte d'alerte critique avec accès rapport
-                const criticalCard = createCockpitCriticalView(criticalModules);
-                if (criticalCard) criticalContainer.appendChild(criticalCard);
-            }
-            
-            // AFFICHER les autres zones mais en mode inactif (atténuées)
-            if (zoneTension && tensionContainer && hasTension) {
-                zoneTension.style.display = 'block';
-                zoneTension.classList.add('zone-inactive');
-                tensionContainer.innerHTML = '';
-                for (const mod of tensionModules) {
-                    const card = mod.createCard();
-                    if (card) tensionContainer.appendChild(card);
-                }
-            }
-            
-            if (zoneNormal && normalContainer && normalModules.length > 0) {
-                zoneNormal.style.display = 'block';
-                zoneNormal.classList.add('zone-inactive');
-                normalContainer.innerHTML = '';
-                for (const mod of normalModules) {
-                    const card = mod.createCard();
-                    if (card) normalContainer.appendChild(card);
-                }
-            }
-            
-            if (zoneAnalysis && analysisContainer) {
-                zoneAnalysis.style.display = 'block';
-                zoneAnalysis.classList.add('zone-inactive');
-                analysisContainer.innerHTML = '';
-                const chartCard = createChartCard();
-                if (chartCard) analysisContainer.appendChild(chartCard);
-            }
-            
-        } else if (hasTension) {
-            // ══════════════════════════════════════════
-            // MODE TENSION 🟠 - Points d'attention
-            // Pas de critique, mais vigilance requise
-            // ══════════════════════════════════════════
-            if (zoneTension && tensionContainer) {
-                zoneTension.style.display = 'block';
-                zoneTension.classList.remove('zone-inactive');
-                tensionContainer.innerHTML = '';
-                
-                for (const mod of tensionModules) {
-                    const card = mod.createCard();
-                    if (card) tensionContainer.appendChild(card);
-                }
-            }
-            
-            // Zone normale visible aussi (informations complémentaires)
-            if (zoneNormal && normalContainer) {
-                zoneNormal.style.display = 'block';
-                zoneNormal.classList.remove('zone-inactive');
-                normalContainer.innerHTML = '';
-                for (const mod of normalModules) {
-                    const card = mod.createCard();
-                    if (card) normalContainer.appendChild(card);
-                }
-            }
-            
-            // Graphiques visibles
-            if (zoneAnalysis && analysisContainer) {
-                zoneAnalysis.style.display = 'block';
-                zoneAnalysis.classList.remove('zone-inactive');
-                analysisContainer.innerHTML = '';
-                const chartCard = createChartCard();
-                if (chartCard) analysisContainer.appendChild(chartCard);
-            }
-            
-        } else {
-            // ══════════════════════════════════════════
-            // MODE NORMAL 🟢 - Tout va bien
-            // Affichage complet des indicateurs
-            // ══════════════════════════════════════════
-            if (zoneNormal && normalContainer) {
-                zoneNormal.style.display = 'block';
-                zoneNormal.classList.remove('zone-inactive');
-                normalContainer.innerHTML = '';
-                
-                for (const mod of modules) {
-                    const card = mod.createCard();
-                    if (card) normalContainer.appendChild(card);
-                }
-            }
-            
-            // Graphiques visibles
-            if (zoneAnalysis && analysisContainer) {
-                zoneAnalysis.style.display = 'block';
-                zoneAnalysis.classList.remove('zone-inactive');
-                analysisContainer.innerHTML = '';
-                const chartCard = createChartCard();
-                if (chartCard) analysisContainer.appendChild(chartCard);
-            }
-        }
+        renderCockpit(priority, states);
         
         // Réinitialiser les bulles d'aide
         initHelpBubbles();
         
         // Hook pour extensions futures
-        onCockpitReady({ criticalModules, tensionModules, normalModules, displayMode: hasCritical ? 'critical' : hasTension ? 'tension' : 'normal' });
+        onCockpitReady({
+            displayMode: priority.mode,
+            primaryModule: priority.primaryModule,
+            visibleModules: priority.visibleModules,
+            hiddenCount: priority.hiddenModules?.length || 0
+        });
         
     } catch (error) {
         console.error('Erreur cockpit:', error);
+        logPriorityDecision('system', 'error', 'BUILD_COCKPIT_ERROR', { error: error.message });
+        
         const errorHtml = `
             <div class="card card-alert">
                 <div class="card-header">
@@ -365,6 +261,459 @@ async function buildCockpit() {
             legacyGrid.innerHTML = errorHtml;
         }
     }
+}
+
+// =============================================
+// PRIORISATION TRANSVERSE - FONCTIONS ISOLÉES
+// =============================================
+
+/**
+ * PHASE 1 : COLLECTE DES ÉTATS
+ * Charge toutes les données des modules avec gestion d'erreurs robuste
+ * Si un module échoue → état 🟠 par défaut + journalisation
+ * 
+ * @returns {Object} États de tous les modules avec leurs données
+ */
+async function collectStates() {
+    logPriorityDecision('system', 'info', 'COLLECTE_ETATS_START', { timestamp: new Date().toISOString() });
+    
+    const states = {
+        treasury: { loaded: false, error: null, data: null, module: null },
+        accounting: { loaded: false, error: null, data: null, module: null },
+        legal: { loaded: false, error: null, data: null, module: null },
+        tax: { loaded: false, error: null, data: null, module: null },
+        hr: { loaded: false, error: null, data: null, module: null }
+    };
+    
+    // Charger toutes les données en parallèle avec gestion d'erreurs individuelles
+    const loadingPromises = [
+        // Trésorerie
+        (async () => {
+            try {
+                const treasuryData = await loadTreasuryData();
+                
+                // Vérifier workflow RED si nécessaire
+                let isWorkflowCompleted = false;
+                if (treasuryData && treasuryData.red_triggered && treasuryData.id) {
+                    try {
+                        const statusResponse = await authenticatedFetch(`${API_BASE}/decision/red/status/${treasuryData.id}`);
+                        if (statusResponse.ok) {
+                            const workflowStatus = await statusResponse.json();
+                            isWorkflowCompleted = workflowStatus.is_fully_validated || false;
+                        }
+                    } catch (error) {
+                        console.error('Erreur workflow status:', error);
+                    }
+                }
+                
+                states.treasury.data = treasuryData;
+                states.treasury.module = buildTreasuryModule(treasuryData, isWorkflowCompleted);
+                states.treasury.loaded = true;
+                logPriorityDecision('treasury', 'info', 'MODULE_LOADED', { 
+                    status: states.treasury.module?.status,
+                    priority: states.treasury.module?.priority 
+                });
+            } catch (error) {
+                states.treasury.error = error.message;
+                states.treasury.module = {
+                    id: 'treasury',
+                    name: 'Trésorerie',
+                    priority: 1,  // 🟠 par défaut en cas d'erreur
+                    status: '🟠',
+                    data: { error: 'unavailable' },
+                    createCard: () => createTreasuryCard({ error: 'unavailable' }, '🟠', null),
+                    criticalMessage: '⚠️ Données temporairement indisponibles'
+                };
+                logPriorityDecision('treasury', '🟠', 'MODULE_ERROR_FALLBACK', { error: error.message });
+            }
+        })(),
+        
+        // Comptabilité
+        (async () => {
+            try {
+                const accountingData = await loadAccountingData();
+                states.accounting.data = accountingData;
+                states.accounting.module = buildAccountingModule(accountingData);
+                states.accounting.loaded = true;
+                logPriorityDecision('accounting', 'info', 'MODULE_LOADED', { 
+                    status: states.accounting.module?.status,
+                    priority: states.accounting.module?.priority 
+                });
+            } catch (error) {
+                states.accounting.error = error.message;
+                states.accounting.module = {
+                    id: 'accounting',
+                    name: 'Comptabilité',
+                    priority: 1,
+                    status: '🟠',
+                    data: { error: 'unavailable' },
+                    createCard: () => createAccountingCard({ error: 'unavailable' }, '🟠'),
+                    criticalMessage: '⚠️ Données temporairement indisponibles'
+                };
+                logPriorityDecision('accounting', '🟠', 'MODULE_ERROR_FALLBACK', { error: error.message });
+            }
+        })(),
+        
+        // Juridique
+        (async () => {
+            try {
+                const legalData = await loadLegalData();
+                states.legal.data = legalData;
+                states.legal.module = buildLegalModule(legalData);
+                states.legal.loaded = true;
+                logPriorityDecision('legal', 'info', 'MODULE_LOADED', { 
+                    status: states.legal.module?.status,
+                    priority: states.legal.module?.priority 
+                });
+            } catch (error) {
+                states.legal.error = error.message;
+                states.legal.module = {
+                    id: 'legal',
+                    name: 'Juridique',
+                    priority: 1,
+                    status: '🟠',
+                    data: { error: 'unavailable' },
+                    createCard: () => createLegalCard({ error: 'unavailable' }, '🟠'),
+                    criticalMessage: '⚠️ Données temporairement indisponibles'
+                };
+                logPriorityDecision('legal', '🟠', 'MODULE_ERROR_FALLBACK', { error: error.message });
+            }
+        })(),
+        
+        // Fiscalité
+        (async () => {
+            try {
+                const taxData = await loadTaxData();
+                states.tax.data = taxData;
+                states.tax.module = buildTaxModule(taxData);
+                states.tax.loaded = true;
+                logPriorityDecision('tax', 'info', 'MODULE_LOADED', { 
+                    status: states.tax.module?.status,
+                    priority: states.tax.module?.priority 
+                });
+            } catch (error) {
+                states.tax.error = error.message;
+                states.tax.module = {
+                    id: 'tax',
+                    name: 'Fiscalité',
+                    priority: 1,
+                    status: '🟠',
+                    data: { error: 'unavailable' },
+                    createCard: () => createTaxCard({ error: 'unavailable' }, '🟠'),
+                    criticalMessage: '⚠️ Données temporairement indisponibles'
+                };
+                logPriorityDecision('tax', '🟠', 'MODULE_ERROR_FALLBACK', { error: error.message });
+            }
+        })(),
+        
+        // RH
+        (async () => {
+            try {
+                const hrData = await loadHRData();
+                states.hr.data = hrData;
+                states.hr.module = buildHRModule(hrData);
+                states.hr.loaded = true;
+                logPriorityDecision('hr', 'info', 'MODULE_LOADED', { 
+                    status: states.hr.module?.status,
+                    priority: states.hr.module?.priority 
+                });
+            } catch (error) {
+                states.hr.error = error.message;
+                states.hr.module = {
+                    id: 'hr',
+                    name: 'RH',
+                    priority: 1,
+                    status: '🟠',
+                    data: { error: 'unavailable' },
+                    createCard: () => createHRCard({ error: 'unavailable' }, '🟠'),
+                    criticalMessage: '⚠️ Données temporairement indisponibles'
+                };
+                logPriorityDecision('hr', '🟠', 'MODULE_ERROR_FALLBACK', { error: error.message });
+            }
+        })()
+    ];
+    
+    // Attendre toutes les promesses
+    await Promise.all(loadingPromises);
+    
+    logPriorityDecision('system', 'info', 'COLLECTE_ETATS_COMPLETE', {
+        loaded: Object.values(states).filter(s => s.loaded).length,
+        errors: Object.values(states).filter(s => s.error).length
+    });
+    
+    return states;
+}
+
+/**
+ * PHASE 2 : RÉSOLUTION DE PRIORITÉ
+ * Applique les règles de priorisation strictes
+ * 
+ * RÈGLE ABSOLUE : Un seul 🔴 visible à la fois
+ * ORDRE : Trésorerie > Juridique > Fiscalité > RH > Comptabilité
+ * 
+ * @param {Object} states - États collectés
+ * @returns {Object} Décision de priorisation avec modules à afficher/masquer
+ */
+function resolvePriority(states) {
+    logPriorityDecision('system', 'info', 'RESOLUTION_PRIORITE_START');
+    
+    // Construire la liste des modules avec priorité de domaine
+    const modules = [
+        { ...states.treasury.module, domain: 'Financier', domainPriority: DOMAIN_PRIORITY.treasury },
+        { ...states.accounting.module, domain: 'Financier', domainPriority: DOMAIN_PRIORITY.accounting },
+        { ...states.legal.module, domain: 'Juridique', domainPriority: DOMAIN_PRIORITY.legal },
+        { ...states.tax.module, domain: 'Fiscal', domainPriority: DOMAIN_PRIORITY.tax },
+        { ...states.hr.module, domain: 'Social', domainPriority: DOMAIN_PRIORITY.hr }
+    ];
+    
+    // Séparer par niveau de risque
+    const criticalModules = modules.filter(m => m.priority === 0);  // 🔴
+    const tensionModules = modules.filter(m => m.priority === 1);   // 🟠
+    const normalModules = modules.filter(m => m.priority === 2);    // 🟢
+    
+    logPriorityDecision('system', 'info', 'MODULES_REPARTITION', {
+        critical: criticalModules.length,
+        tension: tensionModules.length,
+        normal: normalModules.length
+    });
+    
+    let decision;
+    
+    if (criticalModules.length > 0) {
+        // ══════════════════════════════════════════
+        // RÈGLE 1 : AU MOINS UN 🔴 PRÉSENT
+        // → Afficher UNIQUEMENT le 🔴 prioritaire
+        // → Masquer TOUS les 🟠 et 🟢
+        // ══════════════════════════════════════════
+        
+        // Trier les critiques par priorité de domaine
+        criticalModules.sort((a, b) => a.domainPriority - b.domainPriority);
+        
+        const primaryModule = criticalModules[0];
+        const hiddenCriticals = criticalModules.slice(1);
+        
+        logPriorityDecision(primaryModule.id, '🔴', 'REGLE_CRITIQUE_UNIQUE', {
+            primaryModule: primaryModule.name,
+            domainPriority: primaryModule.domainPriority,
+            hiddenCriticals: hiddenCriticals.map(m => m.name),
+            hiddenTension: tensionModules.length,
+            hiddenNormal: normalModules.length
+        });
+        
+        decision = {
+            mode: 'critical',
+            rule: 'REGLE_CRITIQUE_UNIQUE',
+            primaryModule: primaryModule,
+            visibleModules: [primaryModule],
+            hiddenModules: [...hiddenCriticals, ...tensionModules, ...normalModules],
+            message: `⚠️ ${hiddenCriticals.length + tensionModules.length + normalModules.length} autres indicateurs masqués`
+        };
+        
+    } else if (tensionModules.length > 0) {
+        // ══════════════════════════════════════════
+        // RÈGLE 2 : AUCUN 🔴, AU MOINS UN 🟠
+        // → Afficher les 🟠 classés par impact
+        // → Afficher les 🟢 en complément
+        // ══════════════════════════════════════════
+        
+        // Trier par priorité de domaine
+        tensionModules.sort((a, b) => a.domainPriority - b.domainPriority);
+        
+        logPriorityDecision('system', '🟠', 'REGLE_TENSION_MULTIPLE', {
+            tensionCount: tensionModules.length,
+            tensionModules: tensionModules.map(m => ({ name: m.name, priority: m.domainPriority })),
+            normalCount: normalModules.length
+        });
+        
+        decision = {
+            mode: 'tension',
+            rule: 'REGLE_TENSION_MULTIPLE',
+            primaryModule: tensionModules[0],
+            visibleModules: [...tensionModules, ...normalModules],
+            hiddenModules: [],
+            message: `${tensionModules.length} point${tensionModules.length > 1 ? 's' : ''} d'attention`
+        };
+        
+    } else {
+        // ══════════════════════════════════════════
+        // RÈGLE 3 : AUCUN 🔴, AUCUN 🟠
+        // → Afficher tous les 🟢
+        // → Mode normal complet
+        // ══════════════════════════════════════════
+        
+        logPriorityDecision('system', '🟢', 'REGLE_NORMAL_COMPLET', {
+            normalCount: normalModules.length,
+            modules: normalModules.map(m => m.name)
+        });
+        
+        decision = {
+            mode: 'normal',
+            rule: 'REGLE_NORMAL_COMPLET',
+            primaryModule: null,
+            visibleModules: normalModules,
+            hiddenModules: [],
+            message: 'Tous les indicateurs sont normaux'
+        };
+    }
+    
+    logPriorityDecision('system', 'info', 'RESOLUTION_PRIORITE_COMPLETE', {
+        mode: decision.mode,
+        rule: decision.rule,
+        visible: decision.visibleModules.length,
+        hidden: decision.hiddenModules.length
+    });
+    
+    return decision;
+}
+
+/**
+ * PHASE 3 : RENDU DU COCKPIT
+ * Affiche le cockpit selon la décision de priorisation
+ * 
+ * @param {Object} priority - Décision de priorisation
+ * @param {Object} states - États des modules
+ */
+function renderCockpit(priority, states) {
+    logPriorityDecision('system', 'info', 'RENDER_COCKPIT_START', { mode: priority.mode });
+    
+    const zoneCritical = document.getElementById('zoneCritical');
+    const zoneTension = document.getElementById('zoneTension');
+    const zoneNormal = document.getElementById('zoneNormal');
+    const zoneAnalysis = document.getElementById('zoneAnalysis');
+    
+    const criticalContainer = document.getElementById('criticalAlertContainer');
+    const tensionContainer = document.getElementById('tensionCardsContainer');
+    const normalContainer = document.getElementById('normalCardsContainer');
+    const analysisContainer = document.getElementById('analysisContainer');
+    
+    // Réinitialiser toutes les zones
+    if (zoneCritical) {
+        zoneCritical.style.display = 'none';
+        zoneCritical.classList.remove('zone-inactive');
+    }
+    if (zoneTension) {
+        zoneTension.style.display = 'none';
+        zoneTension.classList.remove('zone-inactive');
+    }
+    if (zoneNormal) {
+        zoneNormal.style.display = 'none';
+        zoneNormal.classList.remove('zone-inactive');
+    }
+    if (zoneAnalysis) {
+        zoneAnalysis.style.display = 'none';
+        zoneAnalysis.classList.remove('zone-inactive');
+    }
+    
+    if (criticalContainer) criticalContainer.innerHTML = '';
+    if (tensionContainer) tensionContainer.innerHTML = '';
+    if (normalContainer) normalContainer.innerHTML = '';
+    if (analysisContainer) analysisContainer.innerHTML = '';
+    
+    if (priority.mode === 'critical') {
+        // ══════════════════════════════════════════
+        // MODE CRITIQUE 🔴
+        // Afficher UNIQUEMENT le module prioritaire
+        // ══════════════════════════════════════════
+        
+        if (zoneCritical && criticalContainer && priority.primaryModule) {
+            zoneCritical.style.display = 'block';
+            
+            // Créer vue critique avec un seul module
+            const criticalCard = createCockpitCriticalView([priority.primaryModule]);
+            if (criticalCard) {
+                criticalContainer.appendChild(criticalCard);
+            }
+            
+            // Ajouter message d'avertissement pour modules masqués
+            if (priority.hiddenModules.length > 0) {
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'priority-warning';
+                warningDiv.innerHTML = `
+                    <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); 
+                                border-radius: 8px; padding: 16px; margin-top: 16px; color: rgba(255,255,255,0.9);">
+                        <strong>⚠️ ${priority.hiddenModules.length} indicateur${priority.hiddenModules.length > 1 ? 's' : ''} masqué${priority.hiddenModules.length > 1 ? 's' : ''}</strong><br>
+                        <small>Traitez d'abord cette situation critique. Les autres indicateurs seront visibles ensuite.</small>
+                    </div>
+                `;
+                criticalContainer.appendChild(warningDiv);
+            }
+            
+            logPriorityDecision('render', 'info', 'AFFICHAGE_CRITIQUE_UNIQUE', {
+                visible: priority.primaryModule.name,
+                hidden: priority.hiddenModules.length
+            });
+        }
+        
+    } else if (priority.mode === 'tension') {
+        // ══════════════════════════════════════════
+        // MODE TENSION 🟠
+        // Afficher tous les modules en tension + normaux
+        // ══════════════════════════════════════════
+        
+        const tensionModules = priority.visibleModules.filter(m => m.priority === 1);
+        const normalModules = priority.visibleModules.filter(m => m.priority === 2);
+        
+        if (zoneTension && tensionContainer && tensionModules.length > 0) {
+            zoneTension.style.display = 'block';
+            
+            for (const mod of tensionModules) {
+                const card = mod.createCard();
+                if (card) tensionContainer.appendChild(card);
+            }
+            
+            logPriorityDecision('render', 'info', 'AFFICHAGE_TENSION', {
+                count: tensionModules.length
+            });
+        }
+        
+        if (zoneNormal && normalContainer && normalModules.length > 0) {
+            zoneNormal.style.display = 'block';
+            
+            for (const mod of normalModules) {
+                const card = mod.createCard();
+                if (card) normalContainer.appendChild(card);
+            }
+            
+            logPriorityDecision('render', 'info', 'AFFICHAGE_NORMAL_COMPLEMENTAIRE', {
+                count: normalModules.length
+            });
+        }
+        
+        // Graphiques
+        if (zoneAnalysis && analysisContainer) {
+            zoneAnalysis.style.display = 'block';
+            const chartCard = createChartCard();
+            if (chartCard) analysisContainer.appendChild(chartCard);
+        }
+        
+    } else {
+        // ══════════════════════════════════════════
+        // MODE NORMAL 🟢
+        // Afficher tous les modules
+        // ══════════════════════════════════════════
+        
+        if (zoneNormal && normalContainer) {
+            zoneNormal.style.display = 'block';
+            
+            for (const mod of priority.visibleModules) {
+                const card = mod.createCard();
+                if (card) normalContainer.appendChild(card);
+            }
+            
+            logPriorityDecision('render', 'info', 'AFFICHAGE_NORMAL_COMPLET', {
+                count: priority.visibleModules.length
+            });
+        }
+        
+        // Graphiques
+        if (zoneAnalysis && analysisContainer) {
+            zoneAnalysis.style.display = 'block';
+            const chartCard = createChartCard();
+            if (chartCard) analysisContainer.appendChild(chartCard);
+        }
+    }
+    
+    logPriorityDecision('system', 'info', 'RENDER_COCKPIT_COMPLETE', { mode: priority.mode });
 }
 
 /**
