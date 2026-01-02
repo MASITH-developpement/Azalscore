@@ -774,3 +774,80 @@ body {
     display: flex;
     gap: var(--spacing-sm);
 }
+
+/* ==================== COCKPIT ZONES ==================== */
+/* 
+ * Structure zonée du cockpit dirigeant
+ * Zone Critique (🔴) → Zone Tension (🟠) → Zone Normale (🟢) → Zone Analyse
+ */
+
+.cockpit-zone {
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Zone Critique - Alerte dominante */
+.zone-critical {
+    background: linear-gradient(135deg, #1a1215 0%, #2a1f1f 100%);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    border-left: 4px solid #dc2626;
+    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.15);
+    animation: pulse-zone-critical 4s ease-in-out infinite;
+}
+
+@keyframes pulse-zone-critical {
+    0%, 100% { box-shadow: 0 4px 20px rgba(220, 38, 38, 0.15); }
+    50% { box-shadow: 0 4px 30px rgba(220, 38, 38, 0.3); }
+}
+
+.zone-critical .card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.zone-critical .card-title,
+.zone-critical .metric-value {
+    color: #fecaca;
+}
+
+.zone-critical .metric-label,
+.zone-critical .metric-small-label {
+    color: rgba(254, 202, 202, 0.7);
+}
+
+/* Zone Tension - Points d'attention */
+.zone-tension {
+    background: linear-gradient(135deg, #1a1608 0%, #2a2510 100%);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    border-left: 4px solid #f59e0b;
+}
+
+.zone-tension .card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.zone-tension .card-title {
+    color: #fef3c7;
+}
+
+/* Zone Normale - Standard */
+.zone-normal {
+    /* Pas de style spécial, fond par défaut */
+}
+
+/* Zone Analyse - Graphiques */
+.zone-analysis {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Loading state */
+.loading-state {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
