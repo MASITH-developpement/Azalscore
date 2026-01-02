@@ -14,16 +14,12 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-# Création de l'engine avec connect_args pour PostgreSQL sur Fly.io
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
     pool_size=settings.db_pool_size,
     max_overflow=settings.db_max_overflow,
-    echo=settings.debug,  # Log SQL en mode debug
-    pool_timeout=30,
-    pool_recycle=1800,
-    connect_args={"connect_timeout": 10}
+    echo=settings.debug  # Log SQL en mode debug
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

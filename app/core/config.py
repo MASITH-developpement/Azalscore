@@ -16,13 +16,13 @@ class Settings(BaseSettings):
     """
     
     database_url: str = Field(
-        default="sqlite:///./azals.db",
-        description="URL de connexion PostgreSQL ou SQLite"
+        ...,
+        description="URL de connexion PostgreSQL"
     )
     app_name: str = "AZALS"
     debug: bool = False
     secret_key: str = Field(
-        default="dev-secret-key-CHANGE-IN-PRODUCTION-32ch",
+        default="dev-secret-key-CHANGE-IN-PRODUCTION",
         min_length=32,
         description="Clé secrète pour la sécurité (min 32 caractères)"
     )
@@ -37,12 +37,9 @@ class Settings(BaseSettings):
     @field_validator('database_url')
     @classmethod
     def validate_database_url(cls, v: str) -> str:
-        """Valide que l'URL de la base de données est au format PostgreSQL ou SQLite."""
-        # Fly.io utilise postgres:// au lieu de postgresql://
-        if v.startswith('postgres://'):
-            v = v.replace('postgres://', 'postgresql://', 1)
-        if not v.startswith(('postgresql://', 'postgresql+psycopg2://', 'sqlite:///')):
-            raise ValueError('DATABASE_URL doit commencer par postgresql:// ou sqlite:///')
+        """Valide que l'URL de la base de données est au format PostgreSQL."""
+        if not v.startswith(('postgresql://', 'postgresql+psycopg2://')):
+            raise ValueError('DATABASE_URL doit commencer par postgresql://')
         if 'CHANGEME' in v:
             raise ValueError('DATABASE_URL contient un placeholder non remplacé')
         return v
@@ -57,7 +54,9 @@ class Settings(BaseSettings):
             raise ValueError('SECRET_KEY contient un placeholder non remplacé')
         return v
 
-    model_config = {"env_file": ".env", "extra": "ignore"}
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache
@@ -67,7 +66,3 @@ def get_settings() -> Settings:
     Le cache évite de relire les variables à chaque appel.
     """
     return Settings()
-
-
-# Instance globale de settings pour compatibilité
-settings = Settings()

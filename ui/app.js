@@ -206,7 +206,7 @@ async function buildCockpit() {
         // ============================================
         const modules = [
             { ...buildTreasuryModule(treasuryData, isWorkflowCompleted), domain: 'Financier', domainPriority: 0 },
-            { ...buildAccountingModule(journalData), domain: 'Financier', domainPriority: 0 },
+            { ...buildAccountingModule(accountingData), domain: 'Financier', domainPriority: 0 },
             { ...buildTaxModule(), domain: 'Fiscal', domainPriority: 2 },
             { ...buildHRModule(), domain: 'Social', domainPriority: 3 }
         ];

@@ -8,10 +8,12 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: azals_postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: azals
-      POSTGRES_USER: azals_user
-      POSTGRES_PASSWORD: azals_password_dev
+      POSTGRES_DB: ${POSTGRES_DB:-azals}
+      POSTGRES_USER: ${POSTGRES_USER:-azals_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -30,9 +32,14 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: azals_api
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://azals_user:azals_password_dev@postgres:5432/azals
-      DEBUG: "false"
+      DATABASE_URL: ${DATABASE_URL}
+      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
     ports:
       - "8000:8000"
     depends_on:
