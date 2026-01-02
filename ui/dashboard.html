@@ -75,7 +75,7 @@
                         <div class="user-role" id="userRole">--</div>
                     </div>
                 </div>
-                <button onclick="handleLogout()" style="margin-top:0.5rem;padding:0.5rem;background:rgba(255,255,255,0.1);border:none;border-radius:0.375rem;color:#fff;cursor:pointer;font-size:0.75rem;width:100%;">Déconnexion</button>
+                <button onclick="handleLogout()" class="btn-logout">Déconnexion</button>
             </div>
         </aside>
 
@@ -107,7 +107,7 @@
                 Affiche UNE alerte dominante si état RED détecté
                 Masquée automatiquement si aucun RED actif
             -->
-            <section id="zoneCritical" class="cockpit-zone zone-critical" data-priority="0" style="display:none;">
+            <section id="zoneCritical" class="cockpit-zone zone-critical" data-priority="0">
                 <div id="criticalAlertContainer">
                     <!-- Alerte critique unique insérée dynamiquement -->
                 </div>
@@ -118,9 +118,9 @@
                 Points d'attention nécessitant un suivi
                 Visible uniquement si éléments ORANGE présents
             -->
-            <section id="zoneTension" class="cockpit-zone zone-tension" data-priority="1" style="display:none;">
-                <div class="zone-header" style="margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(251,191,36,0.2);">
-                    <h2 style="margin:0;font-size:0.875rem;font-weight:500;color:#fbbf24;text-transform:uppercase;letter-spacing:0.05em;">Points d'attention</h2>
+            <section id="zoneTension" class="cockpit-zone zone-tension" data-priority="1">
+                <div class="zone-header zone-header-tension">
+                    <h2 class="zone-title-tension">Points d'attention</h2>
                 </div>
                 <div id="tensionCardsContainer" class="cards-grid">
                     <!-- Cartes ORANGE insérées dynamiquement -->
@@ -175,8 +175,8 @@
                         <span class="metric-small-value"></span>
                     </div>
                 </div>
-                <div class="card-actions" style="display:none;margin-top:1rem;"></div>
-                <div class="card-error" style="display:none;margin-top:1rem;padding:0.75rem;background:#fef2f2;border-radius:0.375rem;color:#991b1b;font-size:0.875rem;"></div>
+                <div class="card-actions"></div>
+                <div class="card-error"></div>
             </div>
         </div>
     </template>

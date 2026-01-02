@@ -1322,3 +1322,53 @@ body {
     font-size: 0.875rem;
     margin-top: 0.5rem;
 }
+
+/* ================================ */
+/* Boutons et zones dashboard */
+/* ================================ */
+.btn-logout {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.75rem;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.zone-header-tension {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.zone-title-tension {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fbbf24;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.card-actions {
+    display: none;
+    margin-top: 1rem;
+}
+
+.card-error {
+    display: none;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #fef2f2;
+    border-radius: var(--border-radius-sm);
+    color: #991b1b;
+    font-size: 0.875rem;
+}
