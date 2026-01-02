@@ -104,6 +104,14 @@ if UI_DIR.exists():
             return FileResponse(dashboard_path)
         return {"message": "Dashboard non disponible"}
     
+    @app.get("/treasury")
+    async def serve_treasury():
+        """Servir la page Trésorerie"""
+        treasury_path = UI_DIR / "treasury.html"
+        if treasury_path.exists():
+            return FileResponse(treasury_path)
+        return {"message": "Page Trésorerie non disponible"}
+    
     @app.get("/favicon.ico")
     async def serve_favicon():
         """Servir le favicon"""

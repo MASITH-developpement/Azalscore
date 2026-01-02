@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trésorerie - AZALS</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="dashboard-page" data-page="treasury" data-require-auth="true">
+    <!-- Layout principal -->
+    <div class="dashboard-layout">
+        
+        <!-- Sidebar verticale -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">AZALS</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 10L10 3L17 10V17H12V13H8V17H3V10Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Accueil</span>
+                </a>
+
+                <a href="/treasury" class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 8L10 3L17 8V15C17 15.5 16.5 16 16 16H4C3.5 16 3 15.5 3 15V8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 16V10H13V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Trésorerie</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">--</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">Chargement...</div>
+                        <div class="user-role" id="userRole">--</div>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" style="margin-top:0.5rem;padding:0.5rem;background:rgba(255,255,255,0.1);border:none;border-radius:0.375rem;color:#fff;cursor:pointer;font-size:0.75rem;width:100%;">Déconnexion</button>
+            </div>
+        </aside>
+
+        <!-- Zone principale -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="content-header">
+                <div>
+                    <h1 class="page-title">Trésorerie</h1>
+                    <p class="page-subtitle">Gestion et prévisions de trésorerie</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 2V8L12 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        Temps réel
+                    </button>
+                </div>
+            </header>
+
+            <!-- Zone de contenu trésorerie -->
+            <section id="treasuryContent" class="cards-grid">
+                <!-- Carte trésorerie insérée dynamiquement -->
+            </section>
+        </main>
+    </div>
+
+    <!-- Template carte trésorerie -->
+    <template id="treasuryCardTemplate">
+        <div class="card card-treasury">
+            <div class="card-header">
+                <h3 class="card-title">
+                    Situation de trésorerie
+                    <span class="help-icon" data-help="🟢 Solde > 10 000€ • 🟠 Solde < 10 000€ • 🔴 Prévision négative. La prévision J+30 intègre les encaissements et décaissements prévus.">ⓘ</span>
+                </h3>
+                <span class="status-indicator"></span>
+            </div>
+            <div class="card-body">
+                <div class="metric-primary">
+                    <span class="metric-value"></span>
+                    <span class="metric-label">Solde actuel</span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <span class="metric-small-label">Prévision J+30</span>
+                        <span class="metric-small-value"></span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-small-label">Dernière MAJ</span>
+                        <span class="metric-small-value"></span>
+                    </div>
+                </div>
+                <div class="card-actions" style="display:none;margin-top:1rem;"></div>
+                <div class="card-error" style="display:none;margin-top:1rem;padding:0.75rem;background:#fef2f2;border-radius:0.375rem;color:#991b1b;font-size:0.875rem;"></div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Bulle d'aide -->
+    <div id="helpBubble" class="help-bubble hidden"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

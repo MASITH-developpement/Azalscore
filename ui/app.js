@@ -180,17 +180,16 @@ async function buildCockpit() {
         // ============================================
         // CHARGEMENT DES DONNÉES
         // ============================================
-        const [treasuryData, journalData] = await Promise.all([
-            loadTreasuryData(),
+        const [journalData] = await Promise.all([
             loadJournalData()
         ]);
         
         // ============================================
         // CONSTRUCTION DES MODULES AVEC DOMAINE
         // Priorisation : Financier(0) > Juridique(1) > Fiscal(2) > Social(3) > Structurel(4)
+        // Note: Trésorerie a sa propre page dédiée, pas dans le cockpit
         // ============================================
         const modules = [
-            { ...buildTreasuryModule(treasuryData), domain: 'Financier', domainPriority: 0 },
             { ...buildAccountingModule(journalData), domain: 'Financier', domainPriority: 0 },
             { ...buildTaxModule(), domain: 'Fiscal', domainPriority: 2 },
             { ...buildHRModule(), domain: 'Social', domainPriority: 3 }
@@ -1051,6 +1050,78 @@ function showTreasuryRedPanel(data) {
 }
 
 // =============================================
+// PAGE TRÉSORERIE DÉDIÉE
+// =============================================
+
+/**
+ * Initialisation de la page trésorerie dédiée
+ */
+async function initTreasuryPage() {
+    if (!checkAuth()) return;
+    
+    // Afficher le nom utilisateur
+    const userEmail = sessionStorage.getItem('user_email') || 'Utilisateur';
+    const userNameEl = document.getElementById('userName');
+    if (userNameEl) {
+        userNameEl.textContent = userEmail;
+    }
+    
+    // Initialiser les bulles d'aide
+    initHelpBubbles();
+    
+    // Charger et afficher la trésorerie
+    await loadAndDisplayTreasury();
+}
+
+/**
+ * Charger et afficher les données de trésorerie
+ */
+async function loadAndDisplayTreasury() {
+    const container = document.getElementById('treasuryContent');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading-state">Chargement des données de trésorerie...</div>';
+    
+    try {
+        const data = await loadTreasuryData();
+        
+        // Déterminer le statut
+        let status = '🟢';
+        if (data && data.error) {
+            status = '⚪';
+        } else if (data && data.red_triggered) {
+            status = '🔴';
+        } else if (data && data.opening_balance < 10000) {
+            status = '🟠';
+        }
+        
+        // Créer la carte
+        const card = createTreasuryCard(data, status, data?.id);
+        container.innerHTML = '';
+        if (card) {
+            container.appendChild(card);
+        }
+        
+        // Réinitialiser les bulles d'aide
+        initHelpBubbles();
+        
+    } catch (error) {
+        console.error('Erreur chargement trésorerie:', error);
+        container.innerHTML = `
+            <div class="card card-alert">
+                <div class="card-header">
+                    <h3 class="card-title">Erreur de chargement</h3>
+                    <span class="status-indicator">⚠️</span>
+                </div>
+                <div class="card-body">
+                    <p>${error.message}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// =============================================
 // INITIALISATION
 // =============================================
 
@@ -1067,6 +1138,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
         case 'dashboard':
             initDashboard();
+            break;
+            
+        case 'treasury':
+            initTreasuryPage();
             break;
     }
 });
