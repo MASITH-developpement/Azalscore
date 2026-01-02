@@ -180,16 +180,17 @@ async function buildCockpit() {
         // ============================================
         // CHARGEMENT DES DONNÉES
         // ============================================
-        const [journalData] = await Promise.all([
-            loadJournalData()
+        const [journalData, treasuryData] = await Promise.all([
+            loadJournalData(),
+            loadTreasuryData()
         ]);
         
         // ============================================
         // CONSTRUCTION DES MODULES AVEC DOMAINE
         // Priorisation : Financier(0) > Juridique(1) > Fiscal(2) > Social(3) > Structurel(4)
-        // Note: Trésorerie a sa propre page dédiée, pas dans le cockpit
         // ============================================
         const modules = [
+            { ...buildTreasuryModule(treasuryData), domain: 'Financier', domainPriority: 0 },
             { ...buildAccountingModule(journalData), domain: 'Financier', domainPriority: 0 },
             { ...buildTaxModule(), domain: 'Fiscal', domainPriority: 2 },
             { ...buildHRModule(), domain: 'Social', domainPriority: 3 }
