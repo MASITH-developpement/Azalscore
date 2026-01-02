@@ -217,8 +217,8 @@ async function buildCockpit() {
         
         if (hasCritical) {
             // ══════════════════════════════════════════
-            // MODE CRITIQUE 🔴 - Affichage exclusif
-            // Le dirigeant ne voit QUE le problème critique
+            // MODE CRITIQUE 🔴 - Affichage prioritaire
+            // Les modules critiques sont affichés EN PREMIER au-dessus des autres
             // ══════════════════════════════════════════
             if (zoneCritical && criticalContainer) {
                 zoneCritical.style.display = 'block';
@@ -229,10 +229,31 @@ async function buildCockpit() {
                 if (criticalCard) criticalContainer.appendChild(criticalCard);
             }
             
-            // MASQUER tout le reste - focus total sur le critique
-            if (zoneTension) zoneTension.style.display = 'none';
-            if (zoneNormal) zoneNormal.style.display = 'none';
-            if (zoneAnalysis) zoneAnalysis.style.display = 'none';
+            // AFFICHER aussi les autres zones (mais la critique reste au-dessus)
+            if (zoneTension && tensionContainer && hasTension) {
+                zoneTension.style.display = 'block';
+                tensionContainer.innerHTML = '';
+                for (const mod of tensionModules) {
+                    const card = mod.createCard();
+                    if (card) tensionContainer.appendChild(card);
+                }
+            }
+            
+            if (zoneNormal && normalContainer && normalModules.length > 0) {
+                zoneNormal.style.display = 'block';
+                normalContainer.innerHTML = '';
+                for (const mod of normalModules) {
+                    const card = mod.createCard();
+                    if (card) normalContainer.appendChild(card);
+                }
+            }
+            
+            if (zoneAnalysis && analysisContainer) {
+                zoneAnalysis.style.display = 'block';
+                analysisContainer.innerHTML = '';
+                const chartCard = createChartCard();
+                if (chartCard) analysisContainer.appendChild(chartCard);
+            }
             
         } else if (hasTension) {
             // ══════════════════════════════════════════
