@@ -17,7 +17,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
     """
     
     # Endpoints publics exclus de la validation tenant
-    PUBLIC_PATHS = {"/health", "/docs", "/openapi.json", "/", "/dashboard", "/treasury", "/static", "/favicon.ico"}
+    PUBLIC_PATHS = {"/health", "/docs", "/openapi.json", "/", "/dashboard", "/treasury", "/static", "/favicon.ico", "/admin"}
     
     async def dispatch(self, request: Request, call_next):
         """
