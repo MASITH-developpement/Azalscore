@@ -831,6 +831,14 @@ body {
     font-weight: 600;
 }
 
+.zone-critical .metric-item {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.zone-critical .metric-small-label {
+    color: rgba(255, 255, 255, 0.6);
+}
+
 /* Zone Tension - Points d'attention */
 .zone-tension {
     background: linear-gradient(135deg, #1a1608 0%, #2a2510 100%);
@@ -863,6 +871,14 @@ body {
 .zone-tension .hr-absences-count {
     color: #ffffff;
     font-weight: 600;
+}
+
+.zone-tension .metric-item {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.zone-tension .metric-small-label {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /* Zone Normale - Standard */
