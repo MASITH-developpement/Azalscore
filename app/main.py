@@ -18,6 +18,7 @@ from app.api.journal import router as journal_router
 from app.api.decision import router as decision_router
 from app.api.red_workflow import router as red_workflow_router
 from app.api.treasury import router as treasury_router
+from app.api.admin_migration import router as admin_migration_router
 
 
 @asynccontextmanager
@@ -58,6 +59,7 @@ app.include_router(journal_router)
 app.include_router(decision_router)
 app.include_router(red_workflow_router)
 app.include_router(treasury_router)
+app.include_router(admin_migration_router)  # TEMPORAIRE pour migration
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
