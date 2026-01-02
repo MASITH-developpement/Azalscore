@@ -848,6 +848,23 @@ body {
     color: #fef3c7;
 }
 
+.zone-tension .metric-value {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+    font-weight: 700;
+}
+
+.zone-tension .metric-label {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.zone-tension .metric-small-value,
+.zone-tension .hr-payroll-status,
+.zone-tension .hr-absences-count {
+    color: #ffffff;
+    font-weight: 600;
+}
+
 /* Zone Normale - Standard */
 .zone-normal {
     /* Pas de style spécial, fond par défaut */
