@@ -816,16 +816,30 @@ function createAccountingCard(data, status) {
     const card = template.content.cloneNode(true);
     const cardEl = card.querySelector('.card');
     
+    // Appliquer les classes de statut
     if (status === '🔴') cardEl.classList.add('card-critical');
     if (status === '🟠') cardEl.classList.add('card-warning');
+    if (status === '🟢') cardEl.classList.add('card-success');
     
-    card.querySelector('.status-indicator').textContent = status || '🟢';
-    card.querySelector('.metric-value').textContent = data?.count || '0';
-    card.querySelector('.metric-label').textContent = 'Écritures ce mois';
+    // Status indicator
+    const statusIndicator = card.querySelector('.status-indicator');
+    if (statusIndicator) statusIndicator.textContent = status || '🟢';
     
+    // État des écritures
+    const entriesStatus = card.querySelector('.entries-status');
+    if (entriesStatus) {
+        entriesStatus.textContent = data?.entries_up_to_date ? 'À jour' : 'En retard';
+    }
+    
+    // Métriques dans l'ordre du template
     const smallValues = card.querySelectorAll('.metric-small-value');
-    smallValues[0].textContent = 'OK';
-    smallValues[1].textContent = 'À jour';
+    if (smallValues[0]) {
+        smallValues[0].textContent = data?.pending_entries_count || '0';
+    }
+    if (smallValues[1]) {
+        const lastClosureDate = data?.last_closure_date || 'Jamais';
+        smallValues[1].textContent = lastClosureDate;
+    }
     
     return card;
 }
