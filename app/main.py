@@ -11,6 +11,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
 from app.core.middleware import TenantMiddleware
+from app.services.scheduler import scheduler_service
 from app.api.items import router as items_router
 from app.api.auth import router as auth_router
 from app.api.protected import router as protected_router
@@ -36,7 +37,14 @@ async def lifespan(app: FastAPI):
                 await asyncio.sleep(2)
             else:
                 print("⚠️ DB non disponible, l'app démarre quand même")
+    
+    # Démarrer le scheduler
+    scheduler_service.start()
+    
     yield
+    
+    # Arrêter le scheduler à l'arrêt
+    scheduler_service.shutdown()
 
 app = FastAPI(
     title="AZALS",

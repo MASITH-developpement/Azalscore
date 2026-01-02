@@ -17,6 +17,9 @@ pydantic-settings==2.1.0
 python-jose[cryptography]==3.3.0
 bcrypt==4.1.2
 
+# Tâches planifiées
+apscheduler==3.10.4
+
 # Tests
 pytest==7.4.4
 pytest-asyncio==0.23.3
