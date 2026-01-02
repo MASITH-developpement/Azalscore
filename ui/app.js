@@ -1167,13 +1167,16 @@ async function validateRedStep(decisionId, endpoint, stepId) {
         const result = await response.json();
         alert(`✓ ${result.message}`);
         
-        // Fermer et recharger le modal
-        document.getElementById('redValidationModal')?.remove();
-        
-        // Recharger les données de trésorerie pour rafraîchir l'état
-        const treasuryData = await loadTreasuryData();
-        if (treasuryData && treasuryData.red_triggered) {
-            showTreasuryRedPanel(treasuryData);
+        // Récupérer le statut mis à jour
+        const statusResponse = await authenticatedFetch(`${API_BASE}/decision/red/status/${decisionId}`);
+        if (statusResponse.ok) {
+            const updatedStatus = await statusResponse.json();
+            
+            // Mettre à jour l'affichage du workflow avec le nouveau statut
+            const workflowContainer = document.querySelector('.workflow-validation');
+            if (workflowContainer) {
+                workflowContainer.outerHTML = generateWorkflowSteps(decisionId, updatedStatus);
+            }
         }
         
     } catch (error) {
