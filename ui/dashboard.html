@@ -182,29 +182,28 @@
     </template>
 
     <template id="accountingCardTemplate">
-        <div class="card">
+        <div class="card card-accounting">
             <div class="card-header">
                 <h3 class="card-title">
                     Comptabilité
-                    <span class="help-icon" data-help="🟢 À jour • 🟠 Retard < 7j • 🔴 Retard > 7j. Lettrage = rapprochement clients/fournisseurs. Rapprochement = comparaison banque.">ⓘ</span>
+                    <span class="help-icon" data-help="🟢 Écritures à jour • 🟠 Écritures récentes mais clôture tardive. État des écritures déterminé par la date de dernière entrée. Clôture: date du dernier rapprochement bancaire.">ⓘ</span>
                 </h3>
                 <span class="status-indicator"></span>
             </div>
             <div class="card-body">
-                <div class="metric-primary">
-                    <span class="metric-value"></span>
-                    <span class="metric-label">Écritures en attente</span>
+                <div class="metric-item">
+                    <span class="metric-small-label">État écritures</span>
+                    <span class="entries-status"></span>
                 </div>
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <span class="metric-small-label">Lettrage</span>
-                        <span class="metric-small-value"></span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-small-label">Rapprochement</span>
-                        <span class="metric-small-value"></span>
-                    </div>
+                <div class="metric-item">
+                    <span class="metric-small-label">Écritures en attente (7j)</span>
+                    <span class="metric-small-value"></span>
                 </div>
+                <div class="metric-item">
+                    <span class="metric-small-label">Dernière clôture</span>
+                    <span class="closure-date"></span>
+                </div>
+                <div class="card-error"></div>
             </div>
         </div>
     </template>

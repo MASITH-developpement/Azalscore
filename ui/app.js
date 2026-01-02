@@ -180,9 +180,10 @@ async function buildCockpit() {
         // ============================================
         // CHARGEMENT DES DONNÉES
         // ============================================
-        const [journalData, treasuryData] = await Promise.all([
+        const [journalData, treasuryData, accountingData] = await Promise.all([
             loadJournalData(),
-            loadTreasuryData()
+            loadTreasuryData(),
+            loadAccountingData()
         ]);
         
         // Vérifier si le workflow RED est complété (si trésorerie en déficit)
@@ -468,15 +469,37 @@ function buildTreasuryModule(data, isWorkflowCompleted = false) {
  * Module Comptabilité
  */
 function buildAccountingModule(data) {
-    // Placeholder : toujours 🟢 pour l'instant
+    // Déterminer la priorité basée sur le statut
+    let priority = 2; // 🟢 par défaut
+    let status = '🟢';
+    
+    // Gestion des erreurs
+    if (data && data.error) {
+        return {
+            id: 'accounting',
+            name: 'Comptabilité',
+            priority: 2,
+            status: '⚪',
+            data,
+            createCard: () => createAccountingCard(data, '⚪'),
+            criticalMessage: null
+        };
+    }
+    
+    // Utiliser le statut fourni par l'API
+    if (data && data.status) {
+        status = data.status; // '🟢' ou '🟠'
+        priority = status === '🟠' ? 1 : 2;
+    }
+    
     return {
         id: 'accounting',
         name: 'Comptabilité',
-        priority: 2,
-        status: '🟢',
+        priority,
+        status,
         data,
-        createCard: () => createAccountingCard(data, '🟢'),
-        criticalMessage: null
+        createCard: () => createAccountingCard(data, status),
+        criticalMessage: status === '🟠' ? '⚠️ Audit comptable recommandé' : null
     };
 }
 
@@ -651,6 +674,67 @@ function createCriticalCard(criticalModules) {
  * Carte Trésorerie (accepte status et decisionId en paramètre)
  * Si red_triggered, affiche le bouton "Examiner la décision"
  */
+/**
+ * Créer une carte Comptabilité
+ */
+function createAccountingCard(data, status) {
+    const template = document.getElementById('accountingCardTemplate');
+    if (!template) return null;
+    
+    const card = template.content.cloneNode(true);
+    const cardEl = card.querySelector('.card');
+    
+    // Appliquer classes visuelles selon statut
+    if (status === '🟠') cardEl.classList.add('card-warning');
+    if (status === '🟢') cardEl.classList.add('card-success');
+    
+    card.querySelector('.status-indicator').textContent = status || '⚪';
+    
+    // Gérer les erreurs API
+    if (data && data.error) {
+        card.querySelector('.entries-status').textContent = 'Indisponible';
+        const metricsEl = card.querySelectorAll('.metric-small-value');
+        metricsEl.forEach(el => el.textContent = '—');
+        
+        const errorDiv = card.querySelector('.card-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            
+            if (data.error === 'api_unavailable') {
+                errorDiv.textContent = '⚠️ Service comptabilité indisponible';
+            } else if (data.error === 'access_denied') {
+                errorDiv.textContent = '🔒 Accès refusé aux données comptables';
+            } else {
+                errorDiv.textContent = data.message || 'Erreur inconnue';
+            }
+        }
+        return card;
+    }
+    
+    // Données valides
+    if (data && !data.error) {
+        // Afficher l'état des écritures
+        const statusText = data.entries_up_to_date ? '✓ À jour' : '⚠️ Décalage détecté';
+        card.querySelector('.entries-status').textContent = statusText;
+        
+        // Afficher les écritures en attente
+        const metricsEl = card.querySelectorAll('.metric-small-value');
+        metricsEl[0].textContent = `${data.pending_entries_count} écritures`;
+        
+        // Afficher la dernière clôture
+        if (data.last_closure_date) {
+            metricsEl[1].textContent = data.days_since_closure ? `${data.days_since_closure}j` : 'Récente';
+            if (data.days_since_closure && data.days_since_closure > 30) {
+                metricsEl[1].classList.add('negative');
+            }
+        } else {
+            metricsEl[1].textContent = 'N/A';
+        }
+    }
+    
+    return card;
+}
+
 function createTreasuryCard(data, status, decisionId) {
     const template = document.getElementById('treasuryCardTemplate');
     if (!template) return null;
@@ -815,6 +899,34 @@ function createChartCard() {
 // =============================================
 // CHARGEMENT DES DONNÉES
 // =============================================
+
+/**
+ * Charger les données comptables
+ * Gère les erreurs : API indisponible, pas de données, accès refusé
+ */
+async function loadAccountingData() {
+    try {
+        const response = await authenticatedFetch(`${API_BASE}/accounting/status`);
+        
+        // Accès refusé
+        if (response.status === 401 || response.status === 403) {
+            console.error('Comptabilité: Accès refusé');
+            return { error: 'access_denied', message: 'Accès refusé' };
+        }
+        
+        // Erreur API
+        if (!response.ok) {
+            return { error: 'api_error', message: 'Erreur serveur' };
+        }
+        
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error('Erreur comptabilité (API indisponible):', error);
+        return { error: 'api_unavailable', message: 'Service indisponible' };
+    }
+}
 
 /**
  * Charger les données de trésorerie
