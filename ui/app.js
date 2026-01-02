@@ -1130,6 +1130,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     switch (page) {
         case 'login':
+            // Si l'utilisateur est déjà connecté, rediriger vers le cockpit
+            const token = sessionStorage.getItem('token');
+            if (token) {
+                window.location.href = '/dashboard';
+                return;
+            }
+            
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', handleLogin);
