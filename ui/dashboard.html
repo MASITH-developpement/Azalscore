@@ -333,6 +333,123 @@
     <!-- Bulle d'aide -->
     <div id="helpBubble" class="help-bubble hidden"></div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- PANNEAU TEST AZALS (TEMPORAIRE)                                     -->
+    <!-- Visible uniquement si AZALS_TEST_MODE === true dans app.js         -->
+    <!-- Permet de forcer les états 🔴🟠🟢 pour tester la priorisation       -->
+    <!-- DÉSACTIVATION : mettre AZALS_TEST_MODE à false dans app.js         -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="azalsTestPanel" style="display: none; position: fixed; bottom: 20px; right: 20px; 
+                                     background: rgba(20, 20, 30, 0.95); border: 1px solid rgba(255,255,255,0.1);
+                                     border-radius: 12px; padding: 20px; z-index: 10000; 
+                                     box-shadow: 0 8px 32px rgba(0,0,0,0.4); min-width: 280px;
+                                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        
+        <!-- En-tête -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; 
+                    padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
+            <strong style="color: rgba(255,255,255,0.9); font-size: 13px; letter-spacing: 0.5px;">
+                AZALS · Test
+            </strong>
+            <span style="margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.4);">TEMPORAIRE</span>
+        </div>
+
+        <!-- Message d'info -->
+        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);
+                    border-radius: 6px; padding: 10px; margin-bottom: 16px;">
+            <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.5;">
+                Forcez les états pour tester la priorisation transverse.<br>
+                Les changements sont appliqués immédiatement.
+            </p>
+        </div>
+
+        <!-- Contrôles par module -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            
+            <!-- Trésorerie -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="flex: 1; font-size: 12px; color: rgba(255,255,255,0.8);">Trésorerie</label>
+                <select id="azalsTest_treasury" 
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                               color: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px;
+                               font-size: 12px; cursor: pointer; outline: none;">
+                    <option value="default" style="background: #1a1a2e;">— Normal —</option>
+                    <option value="green" style="background: #1a1a2e;">🟢 Normal</option>
+                    <option value="orange" style="background: #1a1a2e;">🟠 Attention</option>
+                    <option value="red" style="background: #1a1a2e;">🔴 Critique</option>
+                </select>
+            </div>
+
+            <!-- Juridique -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="flex: 1; font-size: 12px; color: rgba(255,255,255,0.8);">Juridique</label>
+                <select id="azalsTest_legal"
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                               color: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px;
+                               font-size: 12px; cursor: pointer; outline: none;">
+                    <option value="default" style="background: #1a1a2e;">— Normal —</option>
+                    <option value="green" style="background: #1a1a2e;">🟢 Normal</option>
+                    <option value="orange" style="background: #1a1a2e;">🟠 Attention</option>
+                    <option value="red" style="background: #1a1a2e;">🔴 Critique</option>
+                </select>
+            </div>
+
+            <!-- Fiscalité -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="flex: 1; font-size: 12px; color: rgba(255,255,255,0.8);">Fiscalité</label>
+                <select id="azalsTest_tax"
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                               color: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px;
+                               font-size: 12px; cursor: pointer; outline: none;">
+                    <option value="default" style="background: #1a1a2e;">— Normal —</option>
+                    <option value="green" style="background: #1a1a2e;">🟢 Normal</option>
+                    <option value="orange" style="background: #1a1a2e;">🟠 Attention</option>
+                    <option value="red" style="background: #1a1a2e;">🔴 Critique</option>
+                </select>
+            </div>
+
+            <!-- RH -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="flex: 1; font-size: 12px; color: rgba(255,255,255,0.8);">RH</label>
+                <select id="azalsTest_hr"
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                               color: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px;
+                               font-size: 12px; cursor: pointer; outline: none;">
+                    <option value="default" style="background: #1a1a2e;">— Normal —</option>
+                    <option value="green" style="background: #1a1a2e;">🟢 Normal</option>
+                    <option value="orange" style="background: #1a1a2e;">🟠 Attention</option>
+                    <option value="red" style="background: #1a1a2e;">🔴 Critique</option>
+                </select>
+            </div>
+
+            <!-- Comptabilité -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="flex: 1; font-size: 12px; color: rgba(255,255,255,0.8);">Comptabilité</label>
+                <select id="azalsTest_accounting"
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                               color: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px;
+                               font-size: 12px; cursor: pointer; outline: none;">
+                    <option value="default" style="background: #1a1a2e;">— Normal —</option>
+                    <option value="green" style="background: #1a1a2e;">🟢 Normal</option>
+                    <option value="orange" style="background: #1a1a2e;">🟠 Attention</option>
+                    <option value="red" style="background: #1a1a2e;">🔴 Critique</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="margin: 0; font-size: 10px; color: rgba(255,255,255,0.4); line-height: 1.4;">
+                Mode test interne · Frontend uniquement<br>
+                Désactiver : <code style="background: rgba(255,255,255,0.1); padding: 2px 4px; 
+                border-radius: 3px; font-size: 9px;">AZALS_TEST_MODE = false</code>
+            </p>
+        </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
     <script src="/static/app.js"></script>
 </body>
 </html>

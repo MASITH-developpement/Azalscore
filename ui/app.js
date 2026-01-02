@@ -12,6 +12,71 @@
 const API_BASE = '';
 
 // =============================================
+// MODE TEST AZALS (TEMPORAIRE)
+// =============================================
+
+/**
+ * MODE TEST INTERNE - TEMPORAIRE
+ * Permet de forcer les états des modules pour tester la priorisation
+ * 
+ * DÉSACTIVATION : mettre à false
+ * SUPPRESSION : supprimer ce bloc + panneau HTML + logique dans collectStates()
+ */
+const AZALS_TEST_MODE = true;
+
+/**
+ * États forcés par le mode test
+ * Valeurs possibles : 'green' | 'orange' | 'red' | null
+ */
+const AZALS_FORCED_STATES = {
+    treasury: null,
+    legal: null,
+    tax: null,
+    hr: null,
+    accounting: null
+};
+
+/**
+ * Applique un état forcé à un module (mode test uniquement)
+ */
+function azalsForceState(moduleId, state) {
+    if (!AZALS_TEST_MODE) return;
+    
+    AZALS_FORCED_STATES[moduleId] = state;
+    console.log(`[AZALS TEST] État forcé : ${moduleId} → ${state}`);
+    
+    // Rafraîchir le cockpit
+    buildCockpit();
+}
+
+/**
+ * Initialise le panneau de test AZALS
+ */
+function initAzalsTestPanel() {
+    if (!AZALS_TEST_MODE) return;
+    
+    const panel = document.getElementById('azalsTestPanel');
+    if (!panel) return;
+    
+    // Afficher le panneau
+    panel.style.display = 'block';
+    
+    // Gestionnaires d'événements pour les selects
+    const modules = ['treasury', 'legal', 'tax', 'hr', 'accounting'];
+    modules.forEach(moduleId => {
+        const select = document.getElementById(`azalsTest_${moduleId}`);
+        if (select) {
+            select.addEventListener('change', (e) => {
+                const value = e.target.value === 'default' ? null : e.target.value;
+                azalsForceState(moduleId, value);
+            });
+        }
+    });
+    
+    console.log('[AZALS TEST] Panneau de test activé');
+}
+
+// =============================================
 // JOURNALISATION COCKPIT
 // =============================================
 
@@ -172,6 +237,9 @@ async function initDashboard() {
     // Initialiser les bulles d'aide
     initHelpBubbles();
     
+    // Initialiser le panneau de test AZALS (si mode test actif)
+    initAzalsTestPanel();
+    
     // Construire le cockpit
     await buildCockpit();
 }
@@ -272,10 +340,16 @@ async function buildCockpit() {
  * Charge toutes les données des modules avec gestion d'erreurs robuste
  * Si un module échoue → état 🟠 par défaut + journalisation
  * 
+ * MODE TEST AZALS : Si AZALS_TEST_MODE est actif, les états forcés
+ * depuis le panneau de test écrasent les données réelles de l'API.
+ * 
  * @returns {Object} États de tous les modules avec leurs données
  */
 async function collectStates() {
-    logPriorityDecision('system', 'info', 'COLLECTE_ETATS_START', { timestamp: new Date().toISOString() });
+    logPriorityDecision('system', 'info', 'COLLECTE_ETATS_START', { 
+        timestamp: new Date().toISOString(),
+        testMode: AZALS_TEST_MODE 
+    });
     
     const states = {
         treasury: { loaded: false, error: null, data: null, module: null },
@@ -436,9 +510,54 @@ async function collectStates() {
     // Attendre toutes les promesses
     await Promise.all(loadingPromises);
     
+    // ═══════════════════════════════════════════════════════════
+    // MODE TEST AZALS : Surcharger les états si forcés
+    // ═══════════════════════════════════════════════════════════
+    if (AZALS_TEST_MODE) {
+        Object.keys(AZALS_FORCED_STATES).forEach(moduleId => {
+            const forcedState = AZALS_FORCED_STATES[moduleId];
+            if (forcedState && states[moduleId]?.module) {
+                const module = states[moduleId].module;
+                
+                // Mapper état test vers priorité/status
+                let priority, status;
+                switch (forcedState) {
+                    case 'red':
+                        priority = 0;
+                        status = '🔴';
+                        module.criticalMessage = `[TEST] Alerte critique forcée`;
+                        break;
+                    case 'orange':
+                        priority = 1;
+                        status = '🟠';
+                        module.criticalMessage = `[TEST] Attention forcée`;
+                        break;
+                    case 'green':
+                        priority = 2;
+                        status = '🟢';
+                        module.criticalMessage = null;
+                        break;
+                }
+                
+                // Appliquer l'état forcé
+                module.priority = priority;
+                module.status = status;
+                
+                logPriorityDecision(moduleId, status, 'AZALS_TEST_FORCE', { 
+                    forcedState,
+                    originalPriority: states[moduleId].module.priority,
+                    newPriority: priority
+                });
+            }
+        });
+    }
+    // ═══════════════════════════════════════════════════════════
+    
     logPriorityDecision('system', 'info', 'COLLECTE_ETATS_COMPLETE', {
         loaded: Object.values(states).filter(s => s.loaded).length,
-        errors: Object.values(states).filter(s => s.error).length
+        errors: Object.values(states).filter(s => s.error).length,
+        testModeActive: AZALS_TEST_MODE,
+        forcedStates: AZALS_TEST_MODE ? Object.entries(AZALS_FORCED_STATES).filter(([k,v]) => v).length : 0
     });
     
     return states;
