@@ -227,13 +227,16 @@ class TreasuryForecast(Base, TenantMixin):
     
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
+    user_id = Column(Integer, nullable=True)  # Nullable pour compatibilité données existantes
     opening_balance = Column(Integer, nullable=False)
     inflows = Column(Integer, nullable=False)
     outflows = Column(Integer, nullable=False)
     forecast_balance = Column(Integer, nullable=False)
+    red_triggered = Column(Integer, default=0)  # 0 = False, 1 = True (compatibilité SQLite)
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
     
     __table_args__ = (
         Index('idx_treasury_tenant', 'tenant_id'),
         Index('idx_treasury_created', 'created_at'),
+        Index('idx_treasury_red', 'tenant_id', 'red_triggered'),
     )
