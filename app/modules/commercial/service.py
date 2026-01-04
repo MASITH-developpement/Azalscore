@@ -14,7 +14,7 @@ from uuid import UUID
 
 from .models import (
     Customer, Contact, Opportunity, CommercialDocument, DocumentLine,
-    Payment, CustomerActivity, PipelineStage, Product,
+    Payment, CustomerActivity, PipelineStage, CatalogProduct,
     CustomerType, OpportunityStatus, DocumentType, DocumentStatus
 )
 from .schemas import (
@@ -822,9 +822,9 @@ class CommercialService:
     # GESTION DES PRODUITS
     # ========================================================================
 
-    def create_product(self, data: ProductCreate) -> Product:
+    def create_product(self, data: ProductCreate) -> CatalogProduct:
         """Créer un produit."""
-        product = Product(
+        product = CatalogProduct(
             tenant_id=self.tenant_id,
             **data.model_dump()
         )
@@ -833,11 +833,11 @@ class CommercialService:
         self.db.refresh(product)
         return product
 
-    def get_product(self, product_id: UUID) -> Optional[Product]:
+    def get_product(self, product_id: UUID) -> Optional[CatalogProduct]:
         """Récupérer un produit."""
-        return self.db.query(Product).filter(
-            Product.tenant_id == self.tenant_id,
-            Product.id == product_id
+        return self.db.query(CatalogProduct).filter(
+            CatalogProduct.tenant_id == self.tenant_id,
+            CatalogProduct.id == product_id
         ).first()
 
     def list_products(
@@ -848,28 +848,28 @@ class CommercialService:
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[Product], int]:
+    ) -> Tuple[List[CatalogProduct], int]:
         """Lister les produits."""
-        query = self.db.query(Product).filter(Product.tenant_id == self.tenant_id)
+        query = self.db.query(CatalogProduct).filter(CatalogProduct.tenant_id == self.tenant_id)
 
         if category:
-            query = query.filter(Product.category == category)
+            query = query.filter(CatalogProduct.category == category)
         if is_service is not None:
-            query = query.filter(Product.is_service == is_service)
+            query = query.filter(CatalogProduct.is_service == is_service)
         if is_active is not None:
-            query = query.filter(Product.is_active == is_active)
+            query = query.filter(CatalogProduct.is_active == is_active)
         if search:
             search_filter = or_(
-                Product.name.ilike(f"%{search}%"),
-                Product.code.ilike(f"%{search}%")
+                CatalogProduct.name.ilike(f"%{search}%"),
+                CatalogProduct.code.ilike(f"%{search}%")
             )
             query = query.filter(search_filter)
 
         total = query.count()
-        items = query.order_by(Product.name).offset((page - 1) * page_size).limit(page_size).all()
+        items = query.order_by(CatalogProduct.name).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_product(self, product_id: UUID, data: ProductUpdate) -> Optional[Product]:
+    def update_product(self, product_id: UUID, data: ProductUpdate) -> Optional[CatalogProduct]:
         """Mettre à jour un produit."""
         product = self.get_product(product_id)
         if not product:
