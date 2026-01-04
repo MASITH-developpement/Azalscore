@@ -506,6 +506,57 @@ WEBSITE_PERMISSIONS = {
     "website.admin": "Administration complète site web",
 }
 
+TENANTS_PERMISSIONS = {
+    # Tenants
+    "tenants.create": "Créer des tenants",
+    "tenants.read": "Voir les tenants",
+    "tenants.update": "Modifier les tenants",
+    "tenants.delete": "Supprimer des tenants",
+    "tenants.activate": "Activer des tenants",
+    "tenants.suspend": "Suspendre des tenants",
+    "tenants.cancel": "Annuler des tenants",
+
+    # Abonnements
+    "tenants.subscriptions.create": "Créer des abonnements",
+    "tenants.subscriptions.read": "Voir les abonnements",
+    "tenants.subscriptions.update": "Modifier les abonnements",
+
+    # Modules tenant
+    "tenants.modules.read": "Voir les modules du tenant",
+    "tenants.modules.activate": "Activer des modules",
+    "tenants.modules.deactivate": "Désactiver des modules",
+    "tenants.modules.configure": "Configurer des modules",
+
+    # Invitations
+    "tenants.invitations.create": "Créer des invitations tenant",
+    "tenants.invitations.read": "Voir les invitations tenant",
+    "tenants.invitations.accept": "Accepter des invitations",
+    "tenants.invitations.revoke": "Révoquer des invitations",
+
+    # Usage
+    "tenants.usage.read": "Voir l'usage du tenant",
+    "tenants.usage.record": "Enregistrer l'usage",
+
+    # Événements
+    "tenants.events.read": "Voir les événements tenant",
+    "tenants.events.log": "Logger des événements",
+
+    # Settings
+    "tenants.settings.read": "Voir les paramètres tenant",
+    "tenants.settings.update": "Modifier les paramètres tenant",
+
+    # Onboarding
+    "tenants.onboarding.read": "Voir l'onboarding",
+    "tenants.onboarding.update": "Modifier l'onboarding",
+    "tenants.onboarding.complete": "Compléter l'onboarding",
+
+    # Provisioning
+    "tenants.provision": "Provisionner des tenants",
+
+    # Admin complet
+    "tenants.admin": "Administration complète tenants",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -530,6 +581,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **BROADCAST_PERMISSIONS,
     **WEB_PERMISSIONS,
     **WEBSITE_PERMISSIONS,
+    **TENANTS_PERMISSIONS,
 }
 
 
@@ -550,6 +602,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "broadcast.*",
         "web.*",
         "website.*",
+        "tenants.*",
     ],
 
     "DIRIGEANT": [
@@ -599,6 +652,13 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "website.newsletter.stats",
         "website.analytics.read",
         "website.config.read",
+        "tenants.read",
+        "tenants.subscriptions.read",
+        "tenants.modules.read",
+        "tenants.usage.read",
+        "tenants.events.read",
+        "tenants.settings.read",
+        "tenants.onboarding.read",
     ],
 
     "DAF": [
