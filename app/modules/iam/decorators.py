@@ -1,0 +1,240 @@
+"""
+AZALS MODULE T0 - Décorateurs IAM
+=================================
+
+Décorateurs pour la vérification des permissions et rôles.
+"""
+
+from functools import wraps
+from typing import List, Union
+from fastapi import HTTPException, status
+
+
+def require_permission(permission_code: str):
+    """
+    Décorateur pour vérifier qu'un utilisateur a une permission.
+
+    Usage:
+        @router.get("/protected")
+        @require_permission("module.resource.action")
+        async def protected_route(...):
+            ...
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Récupérer le service et l'utilisateur depuis les kwargs
+            service = kwargs.get('service')
+            current_user = kwargs.get('current_user')
+
+            if not service or not current_user:
+                # Les dépendances doivent être injectées
+                return await func(*args, **kwargs)
+
+            # Vérifier la permission
+            granted, source = service.check_permission(current_user.id, permission_code)
+
+            if not granted:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Permission '{permission_code}' requise"
+                )
+
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def require_role(role_codes: Union[str, List[str]]):
+    """
+    Décorateur pour vérifier qu'un utilisateur a un rôle.
+
+    Usage:
+        @router.get("/admin")
+        @require_role("ADMIN")
+        async def admin_route(...):
+            ...
+
+        @router.get("/manager")
+        @require_role(["ADMIN", "MANAGER"])
+        async def manager_route(...):
+            ...
+    """
+    if isinstance(role_codes, str):
+        role_codes = [role_codes]
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            service = kwargs.get('service')
+            current_user = kwargs.get('current_user')
+
+            if not service or not current_user:
+                return await func(*args, **kwargs)
+
+            # Récupérer l'utilisateur IAM
+            user = service.get_user(current_user.id)
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Utilisateur non trouvé"
+                )
+
+            # Vérifier les rôles
+            user_role_codes = [r.code for r in user.roles]
+            if not any(code in user_role_codes for code in role_codes):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Rôle requis: {', '.join(role_codes)}"
+                )
+
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def require_any_permission(permission_codes: List[str]):
+    """
+    Décorateur pour vérifier qu'un utilisateur a AU MOINS UNE des permissions.
+
+    Usage:
+        @router.get("/data")
+        @require_any_permission(["data.read", "data.admin"])
+        async def data_route(...):
+            ...
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            service = kwargs.get('service')
+            current_user = kwargs.get('current_user')
+
+            if not service or not current_user:
+                return await func(*args, **kwargs)
+
+            # Vérifier au moins une permission
+            for code in permission_codes:
+                granted, _ = service.check_permission(current_user.id, code)
+                if granted:
+                    return await func(*args, **kwargs)
+
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"L'une des permissions requises: {', '.join(permission_codes)}"
+            )
+        return wrapper
+    return decorator
+
+
+def require_all_permissions(permission_codes: List[str]):
+    """
+    Décorateur pour vérifier qu'un utilisateur a TOUTES les permissions.
+
+    Usage:
+        @router.post("/critical")
+        @require_all_permissions(["critical.read", "critical.write"])
+        async def critical_route(...):
+            ...
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            service = kwargs.get('service')
+            current_user = kwargs.get('current_user')
+
+            if not service or not current_user:
+                return await func(*args, **kwargs)
+
+            # Vérifier toutes les permissions
+            missing = []
+            for code in permission_codes:
+                granted, _ = service.check_permission(current_user.id, code)
+                if not granted:
+                    missing.append(code)
+
+            if missing:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Permissions manquantes: {', '.join(missing)}"
+                )
+
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def require_self_or_permission(permission_code: str, user_id_param: str = "user_id"):
+    """
+    Décorateur pour autoriser l'accès si l'utilisateur est lui-même OU a la permission.
+    Utile pour les profils utilisateurs.
+
+    Usage:
+        @router.get("/users/{user_id}")
+        @require_self_or_permission("iam.user.read")
+        async def get_user(user_id: int, ...):
+            ...
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            service = kwargs.get('service')
+            current_user = kwargs.get('current_user')
+            target_user_id = kwargs.get(user_id_param)
+
+            if not service or not current_user:
+                return await func(*args, **kwargs)
+
+            # Autoriser si c'est l'utilisateur lui-même
+            if target_user_id and current_user.id == target_user_id:
+                return await func(*args, **kwargs)
+
+            # Sinon vérifier la permission
+            granted, _ = service.check_permission(current_user.id, permission_code)
+            if not granted:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Accès refusé"
+                )
+
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+class PermissionChecker:
+    """
+    Classe utilitaire pour vérifier les permissions dans le code.
+
+    Usage:
+        checker = PermissionChecker(service, user_id)
+        if checker.has("module.action"):
+            # faire quelque chose
+    """
+
+    def __init__(self, service, user_id: int):
+        self.service = service
+        self.user_id = user_id
+        self._cache = {}
+
+    def has(self, permission_code: str) -> bool:
+        """Vérifie si l'utilisateur a une permission."""
+        if permission_code not in self._cache:
+            granted, _ = self.service.check_permission(self.user_id, permission_code)
+            self._cache[permission_code] = granted
+        return self._cache[permission_code]
+
+    def has_any(self, permission_codes: List[str]) -> bool:
+        """Vérifie si l'utilisateur a au moins une permission."""
+        return any(self.has(code) for code in permission_codes)
+
+    def has_all(self, permission_codes: List[str]) -> bool:
+        """Vérifie si l'utilisateur a toutes les permissions."""
+        return all(self.has(code) for code in permission_codes)
+
+    def require(self, permission_code: str) -> None:
+        """Lève une exception si l'utilisateur n'a pas la permission."""
+        if not self.has(permission_code):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission '{permission_code}' requise"
+            )
