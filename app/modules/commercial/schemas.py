@@ -459,8 +459,6 @@ class PaymentResponse(PaymentBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================

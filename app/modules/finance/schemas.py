@@ -334,8 +334,6 @@ class BankStatementLineResponse(BankStatementLineBase):
     matched_at: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class BankStatementBase(BaseModel):
@@ -369,8 +367,6 @@ class BankStatementResponse(BankStatementBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class BankTransactionBase(BaseModel):
@@ -401,8 +397,6 @@ class BankTransactionResponse(BankTransactionBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================

@@ -107,8 +107,6 @@ class WarehouseResponse(WarehouseCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -163,8 +161,6 @@ class LocationResponse(LocationCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -511,8 +507,6 @@ class MovementResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class MovementList(BaseModel):
@@ -679,8 +673,6 @@ class PickingResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================

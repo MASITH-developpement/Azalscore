@@ -107,8 +107,6 @@ class WorkCenterResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
     @field_validator('operator_ids', mode='before')
     @classmethod
@@ -143,8 +141,6 @@ class WorkCenterCapacityResponse(BaseModel):
     notes: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -251,8 +247,6 @@ class BOMResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class BOMList(BaseModel):
@@ -314,8 +308,6 @@ class RoutingOperationResponse(BaseModel):
     skill_required: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class RoutingCreate(BaseModel):

@@ -310,8 +310,6 @@ class LeaveRequestResponse(LeaveRequestBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class LeaveBalanceResponse(BaseModel):
@@ -388,8 +386,6 @@ class PayslipLineResponse(PayslipLineCreate):
     line_number: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class PayslipCreate(BaseModel):
@@ -477,8 +473,6 @@ class TimeEntryResponse(TimeEntryBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -700,9 +694,6 @@ class HRDocumentResponse(BaseModel):
     is_confidential: bool = False
     uploaded_by: Optional[UUID] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
