@@ -95,21 +95,26 @@ async def lifespan(app: FastAPI):
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            Base.metadata.create_all(bind=engine)
+            Base.metadata.create_all(bind=engine, checkfirst=True)
             print(f"✅ Base de données connectée (tentative {attempt + 1})")
             break
         except Exception as e:
+            error_str = str(e)
+            # Ignorer les erreurs "already exists" - les tables sont déjà créées
+            if "already exists" in error_str or "DuplicateTable" in error_str:
+                print(f"✅ Base de données connectée (tables existantes)")
+                break
             print(f"⏳ Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
             else:
                 print("⚠️ DB non disponible, l'app démarre quand même")
-    
+
     # Démarrer le scheduler
     scheduler_service.start()
-    
+
     yield
-    
+
     # Arrêter le scheduler à l'arrêt
     scheduler_service.shutdown()
 
