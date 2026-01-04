@@ -947,6 +947,73 @@ PRODUCTION_PERMISSIONS = {
     "production.admin": "Administration complète production",
 }
 
+QUALITY_PERMISSIONS = {
+    # Non-conformités
+    "quality.nc.create": "Créer des non-conformités",
+    "quality.nc.read": "Voir les non-conformités",
+    "quality.nc.update": "Modifier les non-conformités",
+    "quality.nc.close": "Clôturer les non-conformités",
+    "quality.nc.delete": "Supprimer des non-conformités",
+    "quality.nc.actions.manage": "Gérer les actions correctives NC",
+
+    # Templates de contrôle
+    "quality.templates.create": "Créer des templates de contrôle",
+    "quality.templates.read": "Voir les templates de contrôle",
+    "quality.templates.update": "Modifier les templates de contrôle",
+    "quality.templates.delete": "Supprimer des templates de contrôle",
+
+    # Contrôles qualité
+    "quality.controls.create": "Créer des contrôles qualité",
+    "quality.controls.read": "Voir les contrôles qualité",
+    "quality.controls.update": "Modifier les contrôles qualité",
+    "quality.controls.execute": "Exécuter les contrôles qualité",
+    "quality.controls.complete": "Terminer les contrôles qualité",
+    "quality.controls.decide": "Décider du résultat des contrôles",
+
+    # Audits
+    "quality.audits.create": "Créer des audits",
+    "quality.audits.read": "Voir les audits",
+    "quality.audits.update": "Modifier les audits",
+    "quality.audits.execute": "Exécuter les audits",
+    "quality.audits.close": "Clôturer les audits",
+    "quality.audits.findings.manage": "Gérer les constats d'audit",
+
+    # CAPA
+    "quality.capas.create": "Créer des CAPA",
+    "quality.capas.read": "Voir les CAPA",
+    "quality.capas.update": "Modifier les CAPA",
+    "quality.capas.close": "Clôturer les CAPA",
+    "quality.capas.actions.manage": "Gérer les actions CAPA",
+
+    # Réclamations clients
+    "quality.claims.create": "Créer des réclamations",
+    "quality.claims.read": "Voir les réclamations",
+    "quality.claims.update": "Modifier les réclamations",
+    "quality.claims.respond": "Répondre aux réclamations",
+    "quality.claims.resolve": "Résoudre les réclamations",
+    "quality.claims.close": "Clôturer les réclamations",
+
+    # Indicateurs qualité
+    "quality.indicators.create": "Créer des indicateurs qualité",
+    "quality.indicators.read": "Voir les indicateurs qualité",
+    "quality.indicators.update": "Modifier les indicateurs qualité",
+    "quality.indicators.measure": "Enregistrer des mesures",
+    "quality.indicators.delete": "Supprimer des indicateurs",
+
+    # Certifications
+    "quality.certifications.create": "Créer des certifications",
+    "quality.certifications.read": "Voir les certifications",
+    "quality.certifications.update": "Modifier les certifications",
+    "quality.certifications.audits.manage": "Gérer les audits de certification",
+    "quality.certifications.delete": "Supprimer des certifications",
+
+    # Dashboard
+    "quality.dashboard.read": "Voir le dashboard qualité",
+
+    # Admin complet
+    "quality.admin": "Administration complète qualité",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -965,6 +1032,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **STOCK_PERMISSIONS,
     **INVENTORY_PERMISSIONS,
     **PRODUCTION_PERMISSIONS,
+    **QUALITY_PERMISSIONS,
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
@@ -1004,6 +1072,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "procurement.*",
         "inventory.*",
         "production.*",
+        "quality.*",
     ],
 
     "DIRIGEANT": [
@@ -1079,6 +1148,24 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "production.workcenters.read",
         "production.bom.read",
         "production.dashboard.read",
+        "quality.nc.read",
+        "quality.controls.read",
+        "quality.audits.read",
+        "quality.capas.read",
+        "quality.claims.read",
+        "quality.indicators.read",
+        "quality.certifications.read",
+        "quality.dashboard.read",
+    ],
+
+    "RESPONSABLE_QUALITE": [
+        "quality.*",
+        "production.orders.read",
+        "production.workcenters.read",
+        "inventory.products.read",
+        "inventory.stock.read",
+        "commercial.customers.read",
+        "procurement.suppliers.read",
     ],
 
     "DAF": [
