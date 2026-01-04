@@ -66,7 +66,7 @@ class TenantService:
             primary_color=data.primary_color,
             secondary_color=data.secondary_color,
             features=data.features,
-            metadata=data.metadata,
+            extra_data=data.extra_data,
             created_by=self.actor_email,
         )
         self.db.add(tenant)

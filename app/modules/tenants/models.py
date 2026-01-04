@@ -112,7 +112,7 @@ class Tenant(Base):
     features = Column(JSON)  # {"feature1": true, "feature2": false}
 
     # Données supplémentaires
-    metadata = Column(JSON)
+    extra_data = Column(JSON)
 
     # Dates
     trial_ends_at = Column(DateTime)

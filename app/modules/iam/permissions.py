@@ -199,6 +199,75 @@ PURCHASE_PERMISSIONS = {
     "purchase.supplier.update": "Modifier les fournisseurs",
 }
 
+PROCUREMENT_PERMISSIONS = {
+    # Fournisseurs
+    "procurement.suppliers.create": "Créer des fournisseurs",
+    "procurement.suppliers.read": "Voir les fournisseurs",
+    "procurement.suppliers.update": "Modifier les fournisseurs",
+    "procurement.suppliers.delete": "Supprimer des fournisseurs",
+    "procurement.suppliers.approve": "Approuver des fournisseurs",
+    "procurement.suppliers.block": "Bloquer des fournisseurs",
+
+    # Contacts fournisseurs
+    "procurement.contacts.create": "Créer des contacts fournisseurs",
+    "procurement.contacts.read": "Voir les contacts fournisseurs",
+    "procurement.contacts.update": "Modifier les contacts fournisseurs",
+    "procurement.contacts.delete": "Supprimer des contacts fournisseurs",
+
+    # Demandes d'achat
+    "procurement.requisitions.create": "Créer des demandes d'achat",
+    "procurement.requisitions.read": "Voir les demandes d'achat",
+    "procurement.requisitions.update": "Modifier les demandes d'achat",
+    "procurement.requisitions.submit": "Soumettre des demandes d'achat",
+    "procurement.requisitions.approve": "Approuver des demandes d'achat",
+    "procurement.requisitions.reject": "Rejeter des demandes d'achat",
+    "procurement.requisitions.cancel": "Annuler des demandes d'achat",
+
+    # Devis fournisseurs
+    "procurement.quotations.create": "Créer des demandes de devis",
+    "procurement.quotations.read": "Voir les devis fournisseurs",
+    "procurement.quotations.update": "Modifier les devis",
+    "procurement.quotations.accept": "Accepter des devis",
+    "procurement.quotations.reject": "Rejeter des devis",
+    "procurement.quotations.compare": "Comparer les devis",
+
+    # Commandes d'achat
+    "procurement.orders.create": "Créer des commandes d'achat",
+    "procurement.orders.read": "Voir les commandes d'achat",
+    "procurement.orders.update": "Modifier les commandes d'achat",
+    "procurement.orders.send": "Envoyer des commandes aux fournisseurs",
+    "procurement.orders.confirm": "Confirmer des commandes",
+    "procurement.orders.cancel": "Annuler des commandes",
+
+    # Réceptions
+    "procurement.receipts.create": "Créer des réceptions",
+    "procurement.receipts.read": "Voir les réceptions",
+    "procurement.receipts.update": "Modifier les réceptions",
+    "procurement.receipts.validate": "Valider des réceptions",
+
+    # Factures d'achat
+    "procurement.invoices.create": "Créer des factures d'achat",
+    "procurement.invoices.read": "Voir les factures d'achat",
+    "procurement.invoices.update": "Modifier les factures d'achat",
+    "procurement.invoices.validate": "Valider les factures d'achat",
+    "procurement.invoices.post": "Comptabiliser les factures",
+
+    # Paiements fournisseurs
+    "procurement.payments.create": "Créer des paiements fournisseurs",
+    "procurement.payments.read": "Voir les paiements fournisseurs",
+
+    # Évaluations fournisseurs
+    "procurement.evaluations.create": "Créer des évaluations fournisseurs",
+    "procurement.evaluations.read": "Voir les évaluations fournisseurs",
+    "procurement.evaluations.update": "Modifier les évaluations",
+
+    # Dashboard
+    "procurement.dashboard.read": "Voir le dashboard achats",
+
+    # Admin complet
+    "procurement.admin": "Administration complète achats",
+}
+
 STOCK_PERMISSIONS = {
     "stock.item.create": "Créer des articles",
     "stock.item.read": "Voir les articles",
@@ -752,6 +821,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **DECISION_PERMISSIONS,
     **SALES_PERMISSIONS,
     **PURCHASE_PERMISSIONS,
+    **PROCUREMENT_PERMISSIONS,
     **STOCK_PERMISSIONS,
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
@@ -897,6 +967,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
 
     "RESPONSABLE_ACHATS": [
         "purchase.*",
+        "procurement.*",
         "stock.item.read",
         "stock.movement.read",
         "decision.read",
@@ -951,6 +1022,16 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "purchase.supplier.create",
         "purchase.supplier.read",
         "purchase.supplier.update",
+        "procurement.suppliers.read",
+        "procurement.contacts.read",
+        "procurement.requisitions.read",
+        "procurement.quotations.create",
+        "procurement.quotations.read",
+        "procurement.orders.create",
+        "procurement.orders.read",
+        "procurement.receipts.read",
+        "procurement.invoices.read",
+        "procurement.dashboard.read",
         "stock.item.read",
     ],
 
