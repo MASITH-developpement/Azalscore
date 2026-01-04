@@ -135,7 +135,7 @@ class AuditLog(Base):
     old_value = Column(Text, nullable=True)  # JSON avant modification
     new_value = Column(Text, nullable=True)  # JSON après modification
     diff = Column(Text, nullable=True)       # Diff des changements
-    metadata = Column(Text, nullable=True)   # JSON métadonnées additionnelles
+    extra_data = Column(Text, nullable=True)   # JSON métadonnées additionnelles
 
     # Résultat
     success = Column(Boolean, default=True, nullable=False)

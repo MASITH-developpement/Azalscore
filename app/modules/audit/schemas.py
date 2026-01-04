@@ -34,7 +34,7 @@ class AuditLogCreateSchema(BaseModel):
 
     old_value: Optional[Dict[str, Any]] = None
     new_value: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    extra_data: Optional[Dict[str, Any]] = None
 
     success: bool = Field(default=True)
     error_message: Optional[str] = None
@@ -69,7 +69,7 @@ class AuditLogResponseSchema(BaseModel):
     old_value: Optional[Dict[str, Any]]
     new_value: Optional[Dict[str, Any]]
     diff: Optional[Dict[str, Any]]
-    metadata: Optional[Dict[str, Any]]
+    extra_data: Optional[Dict[str, Any]]
 
     success: bool
     error_message: Optional[str]
@@ -106,7 +106,7 @@ class AuditLogResponseSchema(BaseModel):
             "old_value": json.loads(obj.old_value) if obj.old_value else None,
             "new_value": json.loads(obj.new_value) if obj.new_value else None,
             "diff": json.loads(obj.diff) if obj.diff else None,
-            "metadata": json.loads(obj.metadata) if obj.metadata else None,
+            "extra_data": json.loads(obj.extra_data) if obj.extra_data else None,
             "success": obj.success,
             "error_message": obj.error_message,
             "error_code": obj.error_code,
