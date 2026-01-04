@@ -358,6 +358,47 @@ COUNTRY_PACKS_PERMISSIONS = {
     "country.admin": "Administration complète packs pays",
 }
 
+BROADCAST_PERMISSIONS = {
+    # Templates
+    "broadcast.templates.create": "Créer des templates diffusion",
+    "broadcast.templates.read": "Voir les templates diffusion",
+    "broadcast.templates.update": "Modifier les templates diffusion",
+    "broadcast.templates.delete": "Supprimer des templates diffusion",
+
+    # Listes de destinataires
+    "broadcast.lists.create": "Créer des listes destinataires",
+    "broadcast.lists.read": "Voir les listes destinataires",
+    "broadcast.lists.update": "Modifier les listes destinataires",
+    "broadcast.lists.delete": "Supprimer des listes destinataires",
+
+    # Diffusions programmées
+    "broadcast.scheduled.create": "Créer des diffusions programmées",
+    "broadcast.scheduled.read": "Voir les diffusions programmées",
+    "broadcast.scheduled.update": "Modifier les diffusions programmées",
+    "broadcast.scheduled.delete": "Supprimer des diffusions programmées",
+    "broadcast.scheduled.activate": "Activer/Pause diffusions",
+    "broadcast.scheduled.execute": "Exécuter manuellement diffusions",
+
+    # Exécutions
+    "broadcast.executions.read": "Voir les exécutions",
+    "broadcast.executions.details": "Voir les détails de livraison",
+
+    # Préférences
+    "broadcast.preferences.read": "Voir ses préférences",
+    "broadcast.preferences.update": "Modifier ses préférences",
+    "broadcast.preferences.admin": "Gérer préférences utilisateurs",
+
+    # Métriques
+    "broadcast.metrics.read": "Voir les métriques diffusion",
+    "broadcast.metrics.record": "Enregistrer des métriques",
+
+    # Dashboard
+    "broadcast.dashboard.read": "Voir le dashboard diffusion",
+
+    # Admin complet
+    "broadcast.admin": "Administration complète diffusion",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -379,6 +420,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **AUDIT_PERMISSIONS,
     **QC_PERMISSIONS,
     **COUNTRY_PACKS_PERMISSIONS,
+    **BROADCAST_PERMISSIONS,
 }
 
 
@@ -396,6 +438,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "autoconfig.*",
         "qc.*",
         "country.*",
+        "broadcast.*",
     ],
 
     "DIRIGEANT": [
@@ -425,6 +468,10 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "country.taxes.read",
         "country.holidays.read",
         "country.tenant.read",
+        "broadcast.scheduled.read",
+        "broadcast.executions.read",
+        "broadcast.metrics.read",
+        "broadcast.dashboard.read",
     ],
 
     "DAF": [
