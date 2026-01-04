@@ -49,6 +49,9 @@ from app.modules.broadcast.router import router as broadcast_router
 # Module T7 - Module Web Transverse
 from app.modules.web.router import router as web_router
 
+# Module T8 - Site Web Officiel AZALS
+from app.modules.website.router import router as website_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -124,6 +127,9 @@ app.include_router(broadcast_router)
 
 # Module T7 - Module Web Transverse
 app.include_router(web_router)
+
+# Module T8 - Site Web Officiel AZALS
+app.include_router(website_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

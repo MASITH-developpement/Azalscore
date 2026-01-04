@@ -452,6 +452,60 @@ WEB_PERMISSIONS = {
     "web.admin": "Administration complète web UI",
 }
 
+WEBSITE_PERMISSIONS = {
+    # Pages du site
+    "website.pages.create": "Créer des pages du site",
+    "website.pages.read": "Voir les pages du site",
+    "website.pages.update": "Modifier les pages du site",
+    "website.pages.delete": "Supprimer des pages du site",
+    "website.pages.publish": "Publier des pages du site",
+
+    # Blog
+    "website.blog.create": "Créer des articles de blog",
+    "website.blog.read": "Voir les articles de blog",
+    "website.blog.update": "Modifier les articles de blog",
+    "website.blog.delete": "Supprimer des articles de blog",
+    "website.blog.publish": "Publier des articles de blog",
+
+    # Témoignages
+    "website.testimonials.create": "Créer des témoignages",
+    "website.testimonials.read": "Voir les témoignages",
+    "website.testimonials.update": "Modifier les témoignages",
+    "website.testimonials.delete": "Supprimer des témoignages",
+    "website.testimonials.publish": "Publier des témoignages",
+
+    # Contact
+    "website.contact.read": "Voir les soumissions de contact",
+    "website.contact.update": "Modifier les soumissions de contact",
+    "website.contact.respond": "Répondre aux soumissions",
+    "website.contact.stats": "Voir les statistiques contact",
+
+    # Newsletter
+    "website.newsletter.read": "Voir les abonnés newsletter",
+    "website.newsletter.manage": "Gérer les abonnements newsletter",
+    "website.newsletter.stats": "Voir les statistiques newsletter",
+
+    # Média
+    "website.media.create": "Uploader des médias",
+    "website.media.read": "Voir les médias",
+    "website.media.update": "Modifier les médias",
+    "website.media.delete": "Supprimer des médias",
+
+    # SEO
+    "website.seo.read": "Voir la configuration SEO",
+    "website.seo.update": "Modifier la configuration SEO",
+
+    # Analytics
+    "website.analytics.read": "Voir les analytics du site",
+    "website.analytics.record": "Enregistrer des données analytics",
+
+    # Config publique
+    "website.config.read": "Voir la configuration du site",
+
+    # Admin complet
+    "website.admin": "Administration complète site web",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -475,6 +529,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **COUNTRY_PACKS_PERMISSIONS,
     **BROADCAST_PERMISSIONS,
     **WEB_PERMISSIONS,
+    **WEBSITE_PERMISSIONS,
 }
 
 
@@ -494,6 +549,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "country.*",
         "broadcast.*",
         "web.*",
+        "website.*",
     ],
 
     "DIRIGEANT": [
@@ -536,6 +592,13 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "web.shortcuts.read",
         "web.pages.read",
         "web.config.read",
+        "website.pages.read",
+        "website.blog.read",
+        "website.testimonials.read",
+        "website.contact.stats",
+        "website.newsletter.stats",
+        "website.analytics.read",
+        "website.config.read",
     ],
 
     "DAF": [
