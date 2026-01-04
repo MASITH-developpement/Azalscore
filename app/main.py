@@ -28,6 +28,9 @@ from app.api.admin_migration import router as admin_migration_router
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
 from app.modules.iam.router import router as iam_router
 
+# Module T1 - Configuration Automatique par Fonction
+from app.modules.autoconfig.router import router as autoconfig_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -82,6 +85,9 @@ app.include_router(admin_migration_router)  # TEMPORAIRE pour migration
 
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
 app.include_router(iam_router)
+
+# Module T1 - Configuration Automatique par Fonction
+app.include_router(autoconfig_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
