@@ -557,6 +557,61 @@ TENANTS_PERMISSIONS = {
     "tenants.admin": "Administration complète tenants",
 }
 
+COMMERCIAL_PERMISSIONS = {
+    # Clients
+    "commercial.customers.create": "Créer des clients",
+    "commercial.customers.read": "Voir les clients",
+    "commercial.customers.update": "Modifier les clients",
+    "commercial.customers.delete": "Supprimer des clients",
+    "commercial.customers.convert": "Convertir des prospects",
+
+    # Contacts
+    "commercial.contacts.create": "Créer des contacts",
+    "commercial.contacts.read": "Voir les contacts",
+    "commercial.contacts.update": "Modifier les contacts",
+    "commercial.contacts.delete": "Supprimer des contacts",
+
+    # Opportunités
+    "commercial.opportunities.create": "Créer des opportunités",
+    "commercial.opportunities.read": "Voir les opportunités",
+    "commercial.opportunities.update": "Modifier les opportunités",
+    "commercial.opportunities.win": "Marquer comme gagnée",
+    "commercial.opportunities.lose": "Marquer comme perdue",
+
+    # Documents
+    "commercial.documents.create": "Créer des documents commerciaux",
+    "commercial.documents.read": "Voir les documents commerciaux",
+    "commercial.documents.update": "Modifier les documents",
+    "commercial.documents.validate": "Valider les documents",
+    "commercial.documents.send": "Envoyer les documents",
+    "commercial.documents.convert": "Convertir devis en commande",
+
+    # Paiements
+    "commercial.payments.create": "Enregistrer des paiements",
+    "commercial.payments.read": "Voir les paiements",
+
+    # Activités
+    "commercial.activities.create": "Créer des activités",
+    "commercial.activities.read": "Voir les activités",
+    "commercial.activities.complete": "Compléter des activités",
+
+    # Pipeline
+    "commercial.pipeline.create": "Créer des étapes pipeline",
+    "commercial.pipeline.read": "Voir le pipeline",
+    "commercial.pipeline.update": "Modifier le pipeline",
+
+    # Produits
+    "commercial.products.create": "Créer des produits",
+    "commercial.products.read": "Voir les produits",
+    "commercial.products.update": "Modifier les produits",
+
+    # Dashboard
+    "commercial.dashboard.read": "Voir le dashboard commercial",
+
+    # Admin complet
+    "commercial.admin": "Administration complète commercial",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -582,6 +637,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **WEB_PERMISSIONS,
     **WEBSITE_PERMISSIONS,
     **TENANTS_PERMISSIONS,
+    **COMMERCIAL_PERMISSIONS,
 }
 
 
@@ -603,6 +659,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "web.*",
         "website.*",
         "tenants.*",
+        "commercial.*",
     ],
 
     "DIRIGEANT": [
@@ -659,6 +716,15 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "tenants.events.read",
         "tenants.settings.read",
         "tenants.onboarding.read",
+        "commercial.customers.read",
+        "commercial.contacts.read",
+        "commercial.opportunities.read",
+        "commercial.documents.read",
+        "commercial.payments.read",
+        "commercial.activities.read",
+        "commercial.pipeline.read",
+        "commercial.products.read",
+        "commercial.dashboard.read",
     ],
 
     "DAF": [
