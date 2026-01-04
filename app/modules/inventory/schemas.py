@@ -8,7 +8,7 @@ Schémas Pydantic pour la gestion des stocks et logistique.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from uuid import UUID
 import json
 
@@ -60,6 +60,8 @@ class CategoryResponse(CategoryCreate):
 
 class WarehouseCreate(BaseModel):
     """Création d'un entrepôt."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     type: WarehouseType = WarehouseType.INTERNAL
@@ -78,6 +80,8 @@ class WarehouseCreate(BaseModel):
 
 class WarehouseUpdate(BaseModel):
     """Mise à jour d'un entrepôt."""
+    model_config = ConfigDict(protected_namespaces=())
+
     name: Optional[str] = None
     type: Optional[WarehouseType] = None
     address_line1: Optional[str] = None
@@ -111,6 +115,8 @@ class WarehouseResponse(WarehouseCreate):
 
 class LocationCreate(BaseModel):
     """Création d'un emplacement."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     type: LocationType = LocationType.STORAGE
@@ -129,6 +135,8 @@ class LocationCreate(BaseModel):
 
 class LocationUpdate(BaseModel):
     """Mise à jour d'un emplacement."""
+    model_config = ConfigDict(protected_namespaces=())
+
     name: Optional[str] = None
     type: Optional[LocationType] = None
     aisle: Optional[str] = None
@@ -163,6 +171,8 @@ class LocationResponse(LocationCreate):
 
 class ProductCreate(BaseModel):
     """Création d'un produit."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=500)
     description: Optional[str] = None
@@ -204,6 +214,8 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     """Mise à jour d'un produit."""
+    model_config = ConfigDict(protected_namespaces=())
+
     name: Optional[str] = None
     description: Optional[str] = None
     type: Optional[ProductType] = None
@@ -242,6 +254,8 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(BaseModel):
     """Réponse produit."""
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+
     id: UUID
     code: str
     name: str
@@ -453,6 +467,8 @@ class MovementLineResponse(MovementLineCreate):
 
 class MovementCreate(BaseModel):
     """Création d'un mouvement."""
+    model_config = ConfigDict(protected_namespaces=())
+
     type: MovementType
     movement_date: datetime
     from_warehouse_id: Optional[UUID] = None
@@ -469,6 +485,8 @@ class MovementCreate(BaseModel):
 
 class MovementResponse(BaseModel):
     """Réponse mouvement."""
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+
     id: UUID
     number: str
     type: MovementType
@@ -622,6 +640,8 @@ class PickingLineResponse(BaseModel):
 
 class PickingCreate(BaseModel):
     """Création d'une préparation."""
+    model_config = ConfigDict(protected_namespaces=())
+
     type: MovementType = MovementType.OUT
     warehouse_id: UUID
     reference_type: Optional[str] = None
@@ -635,6 +655,8 @@ class PickingCreate(BaseModel):
 
 class PickingResponse(BaseModel):
     """Réponse préparation."""
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+
     id: UUID
     number: str
     type: MovementType

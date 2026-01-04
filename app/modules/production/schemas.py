@@ -8,7 +8,7 @@ Schémas Pydantic pour la gestion de production.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from uuid import UUID
 import json
 
@@ -25,6 +25,8 @@ from .models import (
 
 class WorkCenterCreate(BaseModel):
     """Création d'un centre de travail."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
@@ -52,6 +54,8 @@ class WorkCenterCreate(BaseModel):
 
 class WorkCenterUpdate(BaseModel):
     """Mise à jour d'un centre de travail."""
+    model_config = ConfigDict(protected_namespaces=())
+
     name: Optional[str] = None
     description: Optional[str] = None
     type: Optional[WorkCenterType] = None
@@ -75,6 +79,8 @@ class WorkCenterUpdate(BaseModel):
 
 class WorkCenterResponse(BaseModel):
     """Réponse centre de travail."""
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+
     id: UUID
     code: str
     name: str
@@ -174,6 +180,8 @@ class BOMLineResponse(BaseModel):
 
 class BOMCreate(BaseModel):
     """Création d'une nomenclature."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
@@ -209,6 +217,8 @@ class BOMUpdate(BaseModel):
 
 class BOMResponse(BaseModel):
     """Réponse nomenclature."""
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+
     id: UUID
     code: str
     name: str
@@ -251,6 +261,8 @@ class BOMList(BaseModel):
 
 class RoutingOperationCreate(BaseModel):
     """Création d'une opération de gamme."""
+    model_config = ConfigDict(protected_namespaces=())
+
     sequence: int
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
@@ -273,6 +285,8 @@ class RoutingOperationCreate(BaseModel):
 
 class RoutingOperationResponse(BaseModel):
     """Réponse opération de gamme."""
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+
     id: UUID
     routing_id: UUID
     sequence: int

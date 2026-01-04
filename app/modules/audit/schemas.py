@@ -7,7 +7,7 @@ Schémas Pydantic pour validation et sérialisation.
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import json
 
 from .models import (
@@ -615,6 +615,8 @@ class ExportResponseSchema(BaseModel):
 
 class DashboardWidgetSchema(BaseModel):
     """Configuration d'un widget de dashboard."""
+    model_config = ConfigDict(protected_namespaces=())
+
     id: str
     type: str  # audit_stats, recent_activity, compliance_summary, metric_chart
     title: str

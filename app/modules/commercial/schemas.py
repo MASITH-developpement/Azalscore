@@ -8,7 +8,7 @@ Schémas Pydantic pour le CRM et la gestion commerciale.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from uuid import UUID
 import json
 
@@ -24,6 +24,8 @@ from .models import (
 
 class CustomerBase(BaseModel):
     """Base pour les clients."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
     legal_name: Optional[str] = None
@@ -86,6 +88,8 @@ class CustomerCreate(CustomerBase):
 
 class CustomerUpdate(BaseModel):
     """Mise à jour d'un client."""
+    model_config = ConfigDict(protected_namespaces=())
+
     name: Optional[str] = None
     legal_name: Optional[str] = None
     type: Optional[CustomerType] = None
@@ -337,6 +341,8 @@ class DocumentLineResponse(DocumentLineBase):
 
 class DocumentBase(BaseModel):
     """Base pour les documents commerciaux."""
+    model_config = ConfigDict(protected_namespaces=())
+
     type: DocumentType
     reference: Optional[str] = None
     date: date = Field(default_factory=date.today)
@@ -459,6 +465,8 @@ class PaymentResponse(PaymentBase):
 
 class ActivityBase(BaseModel):
     """Base pour les activités."""
+    model_config = ConfigDict(protected_namespaces=())
+
     type: ActivityType
     subject: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None

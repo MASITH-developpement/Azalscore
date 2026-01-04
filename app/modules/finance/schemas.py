@@ -8,7 +8,7 @@ Schémas Pydantic pour la comptabilité et la trésorerie.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from uuid import UUID
 import json
 
@@ -24,6 +24,8 @@ from .models import (
 
 class AccountBase(BaseModel):
     """Base pour les comptes."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
@@ -76,6 +78,8 @@ class AccountList(BaseModel):
 
 class JournalBase(BaseModel):
     """Base pour les journaux."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
     type: JournalType
@@ -363,6 +367,8 @@ class BankStatementResponse(BankStatementBase):
 
 class BankTransactionBase(BaseModel):
     """Base pour les transactions."""
+    model_config = ConfigDict(protected_namespaces=())
+
     bank_account_id: UUID
     type: BankTransactionType
     date: date
