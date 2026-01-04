@@ -80,16 +80,78 @@ TAX_PERMISSIONS = {
 }
 
 HR_PERMISSIONS = {
+    # Départements
+    "hr.departments.create": "Créer des départements",
+    "hr.departments.read": "Voir les départements",
+    "hr.departments.update": "Modifier les départements",
+    "hr.departments.delete": "Supprimer des départements",
+
+    # Postes
+    "hr.positions.create": "Créer des postes",
+    "hr.positions.read": "Voir les postes",
+    "hr.positions.update": "Modifier les postes",
+    "hr.positions.delete": "Supprimer des postes",
+
+    # Employés
     "hr.employee.create": "Créer des employés",
     "hr.employee.read": "Voir les employés",
     "hr.employee.update": "Modifier les employés",
     "hr.employee.delete": "Supprimer des employés",
-    "hr.payroll.create": "Créer la paie",
+    "hr.employee.terminate": "Terminer des contrats",
+
+    # Contrats
+    "hr.contracts.create": "Créer des contrats",
+    "hr.contracts.read": "Voir les contrats",
+    "hr.contracts.update": "Modifier les contrats",
+
+    # Congés
+    "hr.leave.create": "Créer des demandes de congé",
+    "hr.leave.read": "Voir les demandes de congé",
+    "hr.leave.approve": "Approuver les demandes de congé",
+    "hr.leave.reject": "Rejeter les demandes de congé",
+    "hr.leave.balance.read": "Voir les soldes de congés",
+
+    # Paie
+    "hr.payroll.create": "Créer des périodes de paie",
     "hr.payroll.read": "Voir la paie",
     "hr.payroll.validate": "Valider la paie",
-    "hr.leave.create": "Créer des congés",
-    "hr.leave.read": "Voir les congés",
-    "hr.leave.validate": "Valider les congés",
+    "hr.payslips.create": "Créer des bulletins de paie",
+    "hr.payslips.read": "Voir les bulletins de paie",
+    "hr.payslips.validate": "Valider les bulletins",
+
+    # Temps de travail
+    "hr.time.create": "Créer des entrées de temps",
+    "hr.time.read": "Voir les entrées de temps",
+    "hr.time.approve": "Approuver les entrées de temps",
+
+    # Compétences
+    "hr.skills.create": "Créer des compétences",
+    "hr.skills.read": "Voir les compétences",
+    "hr.skills.update": "Modifier les compétences",
+    "hr.skills.assign": "Attribuer des compétences",
+
+    # Formations
+    "hr.trainings.create": "Créer des formations",
+    "hr.trainings.read": "Voir les formations",
+    "hr.trainings.update": "Modifier les formations",
+    "hr.trainings.enroll": "Inscrire à des formations",
+
+    # Évaluations
+    "hr.evaluations.create": "Créer des évaluations",
+    "hr.evaluations.read": "Voir les évaluations",
+    "hr.evaluations.update": "Modifier les évaluations",
+    "hr.evaluations.complete": "Compléter les évaluations",
+
+    # Documents
+    "hr.documents.create": "Créer des documents RH",
+    "hr.documents.read": "Voir les documents RH",
+    "hr.documents.delete": "Supprimer des documents RH",
+
+    # Dashboard
+    "hr.dashboard.read": "Voir le dashboard RH",
+
+    # Admin complet
+    "hr.admin": "Administration complète RH",
 }
 
 ACCOUNTING_PERMISSIONS = {
@@ -819,8 +881,11 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
     "DRH": [
         "hr.*",
         "iam.user.read",
+        "iam.user.create",
         "iam.invitation.create",
         "decision.read",
+        "triggers.read",
+        "triggers.events.read",
     ],
 
     "RESPONSABLE_COMMERCIAL": [
@@ -897,10 +962,22 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
     ],
 
     "RH": [
+        "hr.departments.read",
+        "hr.positions.read",
         "hr.employee.read",
         "hr.employee.update",
+        "hr.contracts.read",
         "hr.leave.create",
         "hr.leave.read",
+        "hr.leave.balance.read",
+        "hr.payslips.read",
+        "hr.time.create",
+        "hr.time.read",
+        "hr.skills.read",
+        "hr.trainings.read",
+        "hr.evaluations.read",
+        "hr.documents.read",
+        "hr.dashboard.read",
     ],
 
     "CONSULTANT": [

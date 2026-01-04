@@ -273,6 +273,7 @@ class ScheduledBroadcastResponse(ScheduledBroadcastBase):
     send_time: Optional[str] = None
     day_of_week: Optional[int] = None
     day_of_month: Optional[int] = None
+    data_query: Optional[Dict[str, Any]] = None
     status: BroadcastStatusEnum
     is_active: bool
     total_sent: int
