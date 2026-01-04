@@ -105,9 +105,25 @@ async def lifespan(app: FastAPI):
                 conn.execute(text("SELECT 1"))
 
             # Create tables one by one to handle existing indexes gracefully
+            # Two passes: first creates parent tables, second creates dependent tables
             tables_created = 0
             tables_existed = 0
+            failed_tables = []
+
+            # First pass
             for table in Base.metadata.sorted_tables:
+                try:
+                    table.create(bind=engine, checkfirst=True)
+                    tables_created += 1
+                except Exception as table_error:
+                    error_str = str(table_error).lower()
+                    if "already exists" in error_str or "duplicate" in error_str:
+                        tables_existed += 1
+                    else:
+                        failed_tables.append((table, table_error))
+
+            # Second pass for tables with FK dependencies
+            for table, _ in failed_tables:
                 try:
                     table.create(bind=engine, checkfirst=True)
                     tables_created += 1
