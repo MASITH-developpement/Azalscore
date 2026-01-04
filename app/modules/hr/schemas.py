@@ -8,7 +8,7 @@ Schémas Pydantic pour la gestion des ressources humaines.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from uuid import UUID
 import json
 
@@ -230,6 +230,8 @@ class EmployeeList(BaseModel):
 
 class ContractBase(BaseModel):
     """Base pour les contrats."""
+    model_config = ConfigDict(protected_namespaces=())
+
     contract_number: str = Field(..., min_length=1, max_length=50)
     type: ContractType
     title: Optional[str] = None
@@ -277,6 +279,8 @@ class ContractResponse(ContractBase):
 
 class LeaveRequestBase(BaseModel):
     """Base pour les demandes de congé."""
+    model_config = ConfigDict(protected_namespaces=())
+
     type: LeaveType
     start_date: date
     end_date: date
@@ -362,6 +366,8 @@ class PayrollPeriodResponse(PayrollPeriodBase):
 
 class PayslipLineCreate(BaseModel):
     """Création d'une ligne de bulletin."""
+    model_config = ConfigDict(protected_namespaces=())
+
     type: PayElementType
     code: str
     label: str
@@ -527,6 +533,8 @@ class EmployeeSkillResponse(EmployeeSkillCreate):
 
 class TrainingBase(BaseModel):
     """Base pour les formations."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
@@ -589,6 +597,8 @@ class TrainingParticipantResponse(BaseModel):
 
 class EvaluationBase(BaseModel):
     """Base pour les évaluations."""
+    model_config = ConfigDict(protected_namespaces=())
+
     type: EvaluationType
     period_start: date
     period_end: date
@@ -655,6 +665,8 @@ class EvaluationResponse(EvaluationBase):
 
 class HRDocumentCreate(BaseModel):
     """Création d'un document RH."""
+    model_config = ConfigDict(protected_namespaces=())
+
     employee_id: UUID
     type: DocumentType
     name: str = Field(..., min_length=1, max_length=255)
@@ -669,6 +681,8 @@ class HRDocumentCreate(BaseModel):
 
 class HRDocumentResponse(BaseModel):
     """Réponse document RH."""
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+
     id: UUID
     employee_id: UUID
     type: DocumentType

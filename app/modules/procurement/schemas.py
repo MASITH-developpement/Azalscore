@@ -8,7 +8,7 @@ Schémas Pydantic pour la gestion des achats.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any, Dict
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from uuid import UUID
 import json
 
@@ -24,6 +24,8 @@ from .models import (
 
 class SupplierBase(BaseModel):
     """Base pour les fournisseurs."""
+    model_config = ConfigDict(protected_namespaces=())
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
     legal_name: Optional[str] = None
@@ -56,6 +58,8 @@ class SupplierCreate(SupplierBase):
 
 class SupplierUpdate(BaseModel):
     """Mise à jour d'un fournisseur."""
+    model_config = ConfigDict(protected_namespaces=())
+
     name: Optional[str] = None
     legal_name: Optional[str] = None
     type: Optional[SupplierType] = None
