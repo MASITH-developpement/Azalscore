@@ -92,24 +92,44 @@ from app.modules.compliance.router import router as compliance_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle: création des tables au démarrage avec retry"""
+    from sqlalchemy import text
     max_retries = 5
+
     for attempt in range(max_retries):
         try:
-            Base.metadata.create_all(bind=engine)
-            print(f"✅ Base de données connectée (tentative {attempt + 1})")
+            # Test connection first
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+
+            # Create tables one by one to handle existing indexes gracefully
+            tables_created = 0
+            tables_existed = 0
+            for table in Base.metadata.sorted_tables:
+                try:
+                    table.create(bind=engine, checkfirst=True)
+                    tables_created += 1
+                except Exception as table_error:
+                    error_str = str(table_error).lower()
+                    if "already exists" in error_str or "duplicate" in error_str:
+                        tables_existed += 1
+                    else:
+                        print(f"⚠️ Erreur table {table.name}: {table_error}")
+
+            print(f"✅ Base de données connectée (créées: {tables_created}, existantes: {tables_existed})")
             break
+
         except Exception as e:
             print(f"⏳ Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
             else:
                 print("⚠️ DB non disponible, l'app démarre quand même")
-    
+
     # Démarrer le scheduler
     scheduler_service.start()
-    
+
     yield
-    
+
     # Arrêter le scheduler à l'arrêt
     scheduler_service.shutdown()
 

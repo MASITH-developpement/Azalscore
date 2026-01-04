@@ -744,7 +744,7 @@ class ComplianceAudit(Base):
     created_by = Column(UUID(as_uuid=True))
 
     # Relations
-    findings = relationship("AuditFinding", back_populates="audit", lazy="dynamic")
+    findings = relationship("ComplianceAuditFinding", back_populates="audit", lazy="dynamic")
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'number', name='uq_audit_number'),
@@ -752,8 +752,8 @@ class ComplianceAudit(Base):
     )
 
 
-class AuditFinding(Base):
-    """Constatation d'audit."""
+class ComplianceAuditFinding(Base):
+    """Constatation d'audit (distinct de quality.AuditFinding)."""
     __tablename__ = "compliance_audit_findings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)

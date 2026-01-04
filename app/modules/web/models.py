@@ -197,8 +197,8 @@ class Widget(Base):
 # MODÈLE: DASHBOARD
 # ============================================================================
 
-class Dashboard(Base):
-    """Configuration de dashboard"""
+class WebDashboard(Base):
+    """Configuration de dashboard (distinct de bi.Dashboard)"""
     __tablename__ = "web_dashboards"
 
     id = Column(Integer, primary_key=True, index=True)

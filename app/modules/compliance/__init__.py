@@ -9,7 +9,7 @@ from .models import (
     Regulation, Requirement, ComplianceAssessment, ComplianceGap,
     ComplianceAction, Policy, PolicyAcknowledgment,
     ComplianceTraining, TrainingCompletion,
-    ComplianceDocument, ComplianceAudit, AuditFinding,
+    ComplianceDocument, ComplianceAudit, ComplianceAuditFinding,
     ComplianceRisk, ComplianceIncident, ComplianceReport,
     ComplianceStatus, RegulationType, RequirementPriority,
     AssessmentStatus, RiskLevel, ActionStatus, DocumentType,
@@ -43,7 +43,7 @@ __all__ = [
     "Regulation", "Requirement", "ComplianceAssessment", "ComplianceGap",
     "ComplianceAction", "Policy", "PolicyAcknowledgment",
     "ComplianceTraining", "TrainingCompletion",
-    "ComplianceDocument", "ComplianceAudit", "AuditFinding",
+    "ComplianceDocument", "ComplianceAudit", "ComplianceAuditFinding",
     "ComplianceRisk", "ComplianceIncident", "ComplianceReport",
     # Enums
     "ComplianceStatus", "RegulationType", "RequirementPriority",
