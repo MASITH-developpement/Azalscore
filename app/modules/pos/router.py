@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.multi_tenant import get_current_tenant
+from app.core.dependencies import get_tenant_id
 
 from .models import POSTerminalStatus, POSSessionStatus, POSTransactionStatus
 from .schemas import (
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/pos", tags=["POS - Point de Vente"])
 
 def get_service(
     db: Session = Depends(get_db),
-    tenant_id: str = Depends(get_current_tenant)
+    tenant_id: str = Depends(get_tenant_id)
 ) -> POSService:
     return POSService(db, tenant_id)
 
