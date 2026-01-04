@@ -58,6 +58,9 @@ from app.modules.tenants.router import router as tenants_router
 # Module M1 - Commercial (CRM & Ventes)
 from app.modules.commercial.router import router as commercial_router
 
+# Module M2 - Finance (Comptabilité & Trésorerie)
+from app.modules.finance.router import router as finance_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -142,6 +145,9 @@ app.include_router(tenants_router)
 
 # Module M1 - Commercial (CRM & Ventes)
 app.include_router(commercial_router)
+
+# Module M2 - Finance (Comptabilité & Trésorerie)
+app.include_router(finance_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

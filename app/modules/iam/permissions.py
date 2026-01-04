@@ -612,6 +612,70 @@ COMMERCIAL_PERMISSIONS = {
     "commercial.admin": "Administration complète commercial",
 }
 
+FINANCE_PERMISSIONS = {
+    # Comptes comptables
+    "finance.accounts.create": "Créer des comptes comptables",
+    "finance.accounts.read": "Voir les comptes comptables",
+    "finance.accounts.update": "Modifier les comptes comptables",
+    "finance.accounts.delete": "Supprimer des comptes comptables",
+
+    # Journaux
+    "finance.journals.create": "Créer des journaux comptables",
+    "finance.journals.read": "Voir les journaux comptables",
+    "finance.journals.update": "Modifier les journaux comptables",
+
+    # Exercices fiscaux
+    "finance.fiscalyears.create": "Créer des exercices fiscaux",
+    "finance.fiscalyears.read": "Voir les exercices fiscaux",
+    "finance.fiscalyears.close": "Clôturer des exercices fiscaux",
+
+    # Périodes
+    "finance.periods.read": "Voir les périodes comptables",
+    "finance.periods.close": "Clôturer des périodes",
+
+    # Écritures comptables
+    "finance.entries.create": "Créer des écritures comptables",
+    "finance.entries.read": "Voir les écritures comptables",
+    "finance.entries.update": "Modifier des écritures",
+    "finance.entries.validate": "Valider des écritures",
+    "finance.entries.post": "Comptabiliser des écritures",
+    "finance.entries.cancel": "Annuler des écritures",
+
+    # Comptes bancaires
+    "finance.bank.accounts.create": "Créer des comptes bancaires",
+    "finance.bank.accounts.read": "Voir les comptes bancaires",
+    "finance.bank.accounts.update": "Modifier des comptes bancaires",
+
+    # Relevés bancaires
+    "finance.bank.statements.create": "Créer des relevés bancaires",
+    "finance.bank.statements.read": "Voir les relevés bancaires",
+    "finance.bank.reconcile": "Rapprocher des lignes bancaires",
+
+    # Transactions bancaires
+    "finance.bank.transactions.create": "Créer des transactions bancaires",
+    "finance.bank.transactions.read": "Voir les transactions bancaires",
+
+    # Prévisions trésorerie
+    "finance.forecasts.create": "Créer des prévisions trésorerie",
+    "finance.forecasts.read": "Voir les prévisions trésorerie",
+    "finance.forecasts.update": "Modifier des prévisions trésorerie",
+
+    # Catégories de flux
+    "finance.cashflow.create": "Créer des catégories de flux",
+    "finance.cashflow.read": "Voir les catégories de flux",
+
+    # Reporting
+    "finance.reports.read": "Voir les rapports financiers",
+    "finance.reports.create": "Générer des rapports financiers",
+    "finance.reports.export": "Exporter des rapports financiers",
+
+    # Dashboard
+    "finance.dashboard.read": "Voir le dashboard finance",
+
+    # Admin complet
+    "finance.admin": "Administration complète finance",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -638,6 +702,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **WEBSITE_PERMISSIONS,
     **TENANTS_PERMISSIONS,
     **COMMERCIAL_PERMISSIONS,
+    **FINANCE_PERMISSIONS,
 }
 
 
@@ -660,6 +725,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "website.*",
         "tenants.*",
         "commercial.*",
+        "finance.*",
     ],
 
     "DIRIGEANT": [
@@ -731,6 +797,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "treasury.*",
         "accounting.*",
         "tax.*",
+        "finance.*",
         "sales.invoice.read",
         "sales.invoice.validate",
         "purchase.invoice.read",
@@ -785,6 +852,20 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "purchase.invoice.read",
         "treasury.forecast.read",
         "treasury.report.read",
+        "finance.accounts.read",
+        "finance.journals.read",
+        "finance.fiscalyears.read",
+        "finance.periods.read",
+        "finance.entries.create",
+        "finance.entries.read",
+        "finance.entries.update",
+        "finance.entries.validate",
+        "finance.bank.accounts.read",
+        "finance.bank.statements.read",
+        "finance.bank.transactions.read",
+        "finance.forecasts.read",
+        "finance.reports.read",
+        "finance.dashboard.read",
     ],
 
     "COMMERCIAL": [
