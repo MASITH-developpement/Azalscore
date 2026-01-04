@@ -82,6 +82,9 @@ from app.modules.maintenance.router import router as maintenance_router
 # Module M9 - Projets (Project Management)
 from app.modules.projects.router import router as projects_router
 
+# Module M10 - BI & Reporting (Business Intelligence)
+from app.modules.bi.router import router as bi_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -190,6 +193,9 @@ app.include_router(maintenance_router)
 
 # Module M9 - Projets (Project Management)
 app.include_router(projects_router)
+
+# Module M10 - BI & Reporting (Business Intelligence)
+app.include_router(bi_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

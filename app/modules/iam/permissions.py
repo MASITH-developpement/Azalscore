@@ -1186,6 +1186,86 @@ PROJECTS_PERMISSIONS = {
 }
 
 # ============================================================================
+# PERMISSIONS MODULE M10 - BI & REPORTING
+# ============================================================================
+
+BI_PERMISSIONS = {
+    # Dashboards
+    "bi.dashboards.create": "Créer des tableaux de bord",
+    "bi.dashboards.read": "Voir les tableaux de bord",
+    "bi.dashboards.update": "Modifier les tableaux de bord",
+    "bi.dashboards.delete": "Supprimer des tableaux de bord",
+    "bi.dashboards.share": "Partager les tableaux de bord",
+    "bi.dashboards.duplicate": "Dupliquer les tableaux de bord",
+
+    # Widgets
+    "bi.widgets.create": "Créer des widgets",
+    "bi.widgets.read": "Voir les widgets",
+    "bi.widgets.update": "Modifier les widgets",
+    "bi.widgets.delete": "Supprimer des widgets",
+
+    # Rapports
+    "bi.reports.create": "Créer des rapports",
+    "bi.reports.read": "Voir les rapports",
+    "bi.reports.update": "Modifier les rapports",
+    "bi.reports.delete": "Supprimer des rapports",
+    "bi.reports.execute": "Exécuter les rapports",
+    "bi.reports.export": "Exporter les rapports",
+    "bi.reports.schedule": "Planifier les rapports",
+
+    # KPIs
+    "bi.kpis.create": "Créer des KPIs",
+    "bi.kpis.read": "Voir les KPIs",
+    "bi.kpis.update": "Modifier les KPIs",
+    "bi.kpis.delete": "Supprimer des KPIs",
+    "bi.kpis.record": "Enregistrer les valeurs KPI",
+    "bi.kpis.target": "Définir les objectifs KPI",
+
+    # Alertes
+    "bi.alerts.read": "Voir les alertes",
+    "bi.alerts.acknowledge": "Acquitter les alertes",
+    "bi.alerts.resolve": "Résoudre les alertes",
+    "bi.alerts.snooze": "Mettre en pause les alertes",
+
+    # Règles d'alerte
+    "bi.alert_rules.create": "Créer des règles d'alerte",
+    "bi.alert_rules.read": "Voir les règles d'alerte",
+    "bi.alert_rules.update": "Modifier les règles d'alerte",
+    "bi.alert_rules.delete": "Supprimer des règles d'alerte",
+
+    # Sources de données
+    "bi.data_sources.create": "Créer des sources de données",
+    "bi.data_sources.read": "Voir les sources de données",
+    "bi.data_sources.update": "Modifier les sources de données",
+    "bi.data_sources.delete": "Supprimer des sources de données",
+    "bi.data_sources.sync": "Synchroniser les sources de données",
+
+    # Requêtes
+    "bi.queries.create": "Créer des requêtes",
+    "bi.queries.read": "Voir les requêtes",
+    "bi.queries.update": "Modifier les requêtes",
+    "bi.queries.delete": "Supprimer des requêtes",
+    "bi.queries.execute": "Exécuter les requêtes",
+
+    # Favoris
+    "bi.bookmarks.create": "Créer des favoris",
+    "bi.bookmarks.read": "Voir les favoris",
+    "bi.bookmarks.delete": "Supprimer des favoris",
+
+    # Exports
+    "bi.exports.create": "Créer des exports",
+    "bi.exports.read": "Voir les exports",
+    "bi.exports.download": "Télécharger les exports",
+
+    # Dashboard BI
+    "bi.overview.read": "Voir la vue d'ensemble BI",
+    "bi.dashboard.read": "Voir le dashboard BI",
+
+    # Admin complet
+    "bi.admin": "Administration complète BI",
+}
+
+# ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
 
@@ -1206,6 +1286,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **QUALITY_PERMISSIONS,
     **MAINTENANCE_PERMISSIONS,
     **PROJECTS_PERMISSIONS,
+    **BI_PERMISSIONS,
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
@@ -1248,6 +1329,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "quality.*",
         "maintenance.*",
         "projects.*",
+        "bi.*",
     ],
 
     "DIRIGEANT": [
@@ -1355,6 +1437,24 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "projects.comments.read",
         "projects.kpis.read",
         "projects.dashboard.read",
+        "bi.dashboards.read",
+        "bi.widgets.read",
+        "bi.reports.read",
+        "bi.reports.execute",
+        "bi.reports.export",
+        "bi.kpis.read",
+        "bi.alerts.read",
+        "bi.alert_rules.read",
+        "bi.data_sources.read",
+        "bi.queries.read",
+        "bi.bookmarks.read",
+        "bi.bookmarks.create",
+        "bi.bookmarks.delete",
+        "bi.exports.read",
+        "bi.exports.create",
+        "bi.exports.download",
+        "bi.overview.read",
+        "bi.dashboard.read",
     ],
 
     "RESPONSABLE_QUALITE": [
