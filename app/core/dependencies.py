@@ -104,6 +104,20 @@ def get_current_user(
     return user
 
 
+def get_current_user_id(
+    current_user: User = Depends(get_current_user)
+) -> int:
+    """
+    Dépendance FastAPI : retourne l'ID de l'utilisateur authentifié.
+
+    Usage :
+        @app.get("/my-data")
+        def get_my_data(user_id: int = Depends(get_current_user_id)):
+            # user_id garanti authentifié
+    """
+    return current_user.id
+
+
 def get_tenant_db(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id)
