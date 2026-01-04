@@ -17,7 +17,7 @@ from .models import (
     Regulation, Requirement, ComplianceAssessment, ComplianceGap,
     ComplianceAction, Policy, PolicyAcknowledgment,
     ComplianceTraining, TrainingCompletion,
-    ComplianceDocument, ComplianceAudit, AuditFinding,
+    ComplianceDocument, ComplianceAudit, ComplianceAuditFinding as AuditFinding,
     ComplianceRisk, ComplianceIncident, ComplianceReport,
     ComplianceStatus, RegulationType, RequirementPriority,
     AssessmentStatus, RiskLevel, ActionStatus, DocumentType,
