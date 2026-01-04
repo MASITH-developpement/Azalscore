@@ -1015,6 +1015,82 @@ QUALITY_PERMISSIONS = {
 }
 
 # ============================================================================
+# PERMISSIONS M8 - MAINTENANCE (GMAO)
+# ============================================================================
+
+MAINTENANCE_PERMISSIONS = {
+    # Actifs
+    "maintenance.assets.create": "Créer des actifs",
+    "maintenance.assets.read": "Voir les actifs",
+    "maintenance.assets.update": "Modifier les actifs",
+    "maintenance.assets.delete": "Supprimer des actifs",
+    "maintenance.assets.components.manage": "Gérer les composants des actifs",
+    "maintenance.assets.documents.manage": "Gérer les documents des actifs",
+
+    # Compteurs
+    "maintenance.meters.create": "Créer des compteurs",
+    "maintenance.meters.read": "Voir les compteurs",
+    "maintenance.meters.update": "Modifier les compteurs",
+    "maintenance.meters.record": "Enregistrer des relevés de compteur",
+
+    # Plans de maintenance
+    "maintenance.plans.create": "Créer des plans de maintenance",
+    "maintenance.plans.read": "Voir les plans de maintenance",
+    "maintenance.plans.update": "Modifier les plans de maintenance",
+    "maintenance.plans.delete": "Supprimer des plans de maintenance",
+    "maintenance.plans.tasks.manage": "Gérer les tâches des plans",
+
+    # Ordres de travail
+    "maintenance.workorders.create": "Créer des ordres de travail",
+    "maintenance.workorders.read": "Voir les ordres de travail",
+    "maintenance.workorders.update": "Modifier les ordres de travail",
+    "maintenance.workorders.assign": "Assigner des ordres de travail",
+    "maintenance.workorders.start": "Démarrer des ordres de travail",
+    "maintenance.workorders.complete": "Terminer des ordres de travail",
+    "maintenance.workorders.verify": "Vérifier des ordres de travail",
+    "maintenance.workorders.close": "Clôturer des ordres de travail",
+    "maintenance.workorders.cancel": "Annuler des ordres de travail",
+    "maintenance.workorders.labor.manage": "Gérer les temps de main d'œuvre",
+    "maintenance.workorders.parts.manage": "Gérer les pièces utilisées",
+
+    # Pannes
+    "maintenance.failures.create": "Signaler des pannes",
+    "maintenance.failures.read": "Voir les pannes",
+    "maintenance.failures.update": "Modifier les pannes",
+    "maintenance.failures.analyze": "Analyser les pannes (causes)",
+    "maintenance.failures.resolve": "Résoudre les pannes",
+    "maintenance.failures.close": "Clôturer les pannes",
+
+    # Pièces de rechange
+    "maintenance.spareparts.create": "Créer des pièces de rechange",
+    "maintenance.spareparts.read": "Voir les pièces de rechange",
+    "maintenance.spareparts.update": "Modifier les pièces de rechange",
+    "maintenance.spareparts.delete": "Supprimer des pièces de rechange",
+    "maintenance.spareparts.stock.manage": "Gérer le stock des pièces",
+
+    # Demandes de pièces
+    "maintenance.partrequests.create": "Créer des demandes de pièces",
+    "maintenance.partrequests.read": "Voir les demandes de pièces",
+    "maintenance.partrequests.approve": "Approuver les demandes de pièces",
+    "maintenance.partrequests.issue": "Émettre les pièces demandées",
+
+    # Contrats
+    "maintenance.contracts.create": "Créer des contrats de maintenance",
+    "maintenance.contracts.read": "Voir les contrats de maintenance",
+    "maintenance.contracts.update": "Modifier les contrats de maintenance",
+    "maintenance.contracts.delete": "Supprimer des contrats de maintenance",
+    "maintenance.contracts.activate": "Activer/Suspendre les contrats",
+
+    # KPIs et Dashboard
+    "maintenance.kpis.read": "Voir les KPIs de maintenance",
+    "maintenance.kpis.manage": "Gérer les KPIs de maintenance",
+    "maintenance.dashboard.read": "Voir le dashboard maintenance",
+
+    # Admin complet
+    "maintenance.admin": "Administration complète maintenance",
+}
+
+# ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
 
@@ -1033,6 +1109,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **INVENTORY_PERMISSIONS,
     **PRODUCTION_PERMISSIONS,
     **QUALITY_PERMISSIONS,
+    **MAINTENANCE_PERMISSIONS,
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
@@ -1073,6 +1150,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "inventory.*",
         "production.*",
         "quality.*",
+        "maintenance.*",
     ],
 
     "DIRIGEANT": [
@@ -1156,6 +1234,15 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "quality.indicators.read",
         "quality.certifications.read",
         "quality.dashboard.read",
+        "maintenance.assets.read",
+        "maintenance.meters.read",
+        "maintenance.plans.read",
+        "maintenance.workorders.read",
+        "maintenance.failures.read",
+        "maintenance.spareparts.read",
+        "maintenance.contracts.read",
+        "maintenance.kpis.read",
+        "maintenance.dashboard.read",
     ],
 
     "RESPONSABLE_QUALITE": [
@@ -1346,6 +1433,42 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "treasury.report.read",
         "treasury.report.export",
         "decision.journal.read",
+    ],
+
+    "RESPONSABLE_MAINTENANCE": [
+        "maintenance.*",
+        "inventory.products.read",
+        "inventory.stock.read",
+        "inventory.warehouses.read",
+        "inventory.locations.read",
+        "production.workcenters.read",
+        "production.orders.read",
+        "procurement.suppliers.read",
+        "procurement.orders.read",
+        "procurement.requisitions.create",
+        "procurement.requisitions.read",
+        "procurement.dashboard.read",
+        "decision.read",
+    ],
+
+    "TECHNICIEN_MAINTENANCE": [
+        "maintenance.assets.read",
+        "maintenance.meters.read",
+        "maintenance.meters.record",
+        "maintenance.plans.read",
+        "maintenance.workorders.read",
+        "maintenance.workorders.start",
+        "maintenance.workorders.complete",
+        "maintenance.workorders.labor.manage",
+        "maintenance.workorders.parts.manage",
+        "maintenance.failures.create",
+        "maintenance.failures.read",
+        "maintenance.failures.update",
+        "maintenance.spareparts.read",
+        "maintenance.partrequests.create",
+        "maintenance.partrequests.read",
+        "maintenance.contracts.read",
+        "maintenance.dashboard.read",
     ],
 }
 
