@@ -7,7 +7,7 @@ Schémas Pydantic pour la gestion des interventions terrain.
 from datetime import datetime, date, time
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from .models import (
     TechnicianStatus, InterventionStatus,
@@ -60,8 +60,7 @@ class ZoneResponse(ZoneBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -130,8 +129,7 @@ class TechnicianResponse(TechnicianBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TechnicianStatusUpdate(BaseModel):
@@ -210,8 +208,7 @@ class VehicleResponse(VehicleBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -261,8 +258,7 @@ class TemplateResponse(TemplateBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -392,8 +388,7 @@ class InterventionResponse(InterventionBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -439,8 +434,7 @@ class TimeEntryResponse(TimeEntryBase):
     duration_minutes: Optional[int] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -497,8 +491,7 @@ class RouteResponse(RouteBase):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -547,8 +540,7 @@ class ExpenseResponse(ExpenseBase):
     paid_at: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -604,8 +596,7 @@ class ContractResponse(ContractBase):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

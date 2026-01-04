@@ -52,8 +52,7 @@ class CategoryResponse(CategoryCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -319,8 +318,7 @@ class StockLevelResponse(BaseModel):
     last_count_at: Optional[datetime]
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StockByProduct(BaseModel):
@@ -378,8 +376,7 @@ class LotResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -428,8 +425,7 @@ class SerialResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -457,8 +453,7 @@ class MovementLineResponse(MovementLineCreate):
     total_cost: Optional[Decimal]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MovementCreate(BaseModel):
@@ -550,8 +545,7 @@ class CountLineResponse(BaseModel):
     notes: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InventoryCountCreate(BaseModel):
@@ -586,8 +580,7 @@ class InventoryCountResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -628,8 +621,7 @@ class PickingLineResponse(BaseModel):
     notes: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PickingCreate(BaseModel):
@@ -692,8 +684,7 @@ class ValuationResponse(BaseModel):
     details: List[Dict[str, Any]]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator('details', mode='before')
     @classmethod

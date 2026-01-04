@@ -8,7 +8,7 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_, case
 
 from .models import (
     POSStore, POSTerminal, POSUser, POSSession, CashMovement,
@@ -437,7 +437,7 @@ class POSService:
         # Ajouter mouvements de caisse
         cash_movements = self.db.query(func.coalesce(
             func.sum(
-                func.case(
+                case(
                     (CashMovement.movement_type == "IN", CashMovement.amount),
                     else_=-CashMovement.amount
                 )
@@ -784,27 +784,30 @@ class POSService:
             return
 
         # Ventes ou remboursements
-        if transaction.total >= 0:
-            session.total_sales += transaction.total
+        tx_total = transaction.total or Decimal("0")
+        if tx_total >= 0:
+            session.total_sales = (session.total_sales or Decimal("0")) + tx_total
         else:
-            session.total_refunds += abs(transaction.total)
+            session.total_refunds = (session.total_refunds or Decimal("0")) + abs(tx_total)
 
-        session.total_discounts += transaction.discount_total
-        session.transaction_count += 1
+        session.total_discounts = (session.total_discounts or Decimal("0")) + (transaction.discount_total or Decimal("0"))
+        session.transaction_count = (session.transaction_count or 0) + 1
 
         # Par mode de paiement
-        for payment in transaction.payments:
+        payments = getattr(transaction, 'payments', None) or []
+        for payment in payments:
             if payment.status == "completed":
+                amount = payment.amount or Decimal("0")
                 if payment.payment_method == PaymentMethodType.CASH:
-                    session.cash_total += payment.amount
+                    session.cash_total = (session.cash_total or Decimal("0")) + amount
                 elif payment.payment_method == PaymentMethodType.CARD:
-                    session.card_total += payment.amount
+                    session.card_total = (session.card_total or Decimal("0")) + amount
                 elif payment.payment_method == PaymentMethodType.CHECK:
-                    session.check_total += payment.amount
+                    session.check_total = (session.check_total or Decimal("0")) + amount
                 elif payment.payment_method == PaymentMethodType.VOUCHER:
-                    session.voucher_total += payment.amount
+                    session.voucher_total = (session.voucher_total or Decimal("0")) + amount
                 else:
-                    session.other_total += payment.amount
+                    session.other_total = (session.other_total or Decimal("0")) + amount
 
     def void_transaction(
         self, transaction_id: int, reason: str, voided_by_id: int

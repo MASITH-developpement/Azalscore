@@ -6,7 +6,7 @@ Validation des variables d'environnement avec Pydantic
 from functools import lru_cache
 from typing import Optional
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -59,9 +59,7 @@ class Settings(BaseSettings):
             raise ValueError('SECRET_KEY contient un placeholder non remplacé')
         return v
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 @lru_cache

@@ -6,7 +6,7 @@ Schémas Pydantic pour le backend mobile.
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ============================================================================
@@ -47,8 +47,7 @@ class DeviceResponse(BaseModel):
     last_active: Optional[datetime]
     registered_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -115,8 +114,7 @@ class NotificationResponse(BaseModel):
     read_at: Optional[datetime]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -208,8 +206,7 @@ class PreferencesResponse(BaseModel):
     auto_lock_minutes: int
     custom_settings: Optional[Dict[str, Any]]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

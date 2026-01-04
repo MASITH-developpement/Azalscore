@@ -7,7 +7,7 @@ Schémas Pydantic pour le système de support client.
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 
 from .models import TicketStatus, TicketPriority, TicketSource, AgentStatus
 
@@ -59,8 +59,7 @@ class CategoryResponse(CategoryBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -106,8 +105,7 @@ class TeamResponse(TeamBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -167,8 +165,7 @@ class AgentResponse(AgentBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AgentStatusUpdate(BaseModel):
@@ -239,8 +236,7 @@ class SLAResponse(SLABase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -316,8 +312,7 @@ class TicketResponse(TicketBase):
     updated_at: datetime
     closed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TicketDetail(TicketResponse):
@@ -358,8 +353,7 @@ class ReplyResponse(ReplyBase):
     is_first_response: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -390,8 +384,7 @@ class AttachmentResponse(BaseModel):
     uploaded_by_id: Optional[int] = None
     uploaded_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -412,8 +405,7 @@ class HistoryResponse(BaseModel):
     actor_name: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -460,8 +452,7 @@ class CannedResponseResponse(CannedResponseBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -503,8 +494,7 @@ class KBCategoryResponse(KBCategoryBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class KBArticleBase(BaseModel):
@@ -557,8 +547,7 @@ class KBArticleResponse(KBArticleBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -585,8 +574,7 @@ class SatisfactionResponse(BaseModel):
     agent_id: Optional[int] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -628,8 +616,7 @@ class AutomationResponse(AutomationBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
 
 
@@ -118,8 +118,7 @@ class QCRuleResponse(QCRuleBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("applies_to_modules", "applies_to_phases", "check_config", mode="before")
     @classmethod
@@ -170,8 +169,7 @@ class ModuleRegistryResponse(ModuleRegistryBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("dependencies", mode="before")
     @classmethod
@@ -219,8 +217,7 @@ class ValidationResponse(BaseModel):
     category_scores: Optional[Dict[str, Any]] = None
     report_summary: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("category_scores", mode="before")
     @classmethod
@@ -252,8 +249,7 @@ class CheckResultResponse(BaseModel):
     recommendation: Optional[str] = None
     evidence: Optional[Dict[str, Any]] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("evidence", mode="before")
     @classmethod
@@ -306,8 +302,7 @@ class TestRunResponse(BaseModel):
     triggered_by: Optional[str] = None
     triggered_user: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -340,8 +335,7 @@ class QCMetricResponse(BaseModel):
     score_delta: Optional[float] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -376,8 +370,7 @@ class QCAlertResponse(BaseModel):
     resolution_notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("details", mode="before")
     @classmethod
@@ -435,8 +428,7 @@ class QCDashboardResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("layout", "filters", mode="before")
     @classmethod
@@ -492,8 +484,7 @@ class QCTemplateResponse(BaseModel):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("rules", mode="before")
     @classmethod

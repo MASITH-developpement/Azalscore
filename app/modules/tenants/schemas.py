@@ -146,8 +146,7 @@ class TenantResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TenantListResponse(BaseModel):
@@ -162,8 +161,7 @@ class TenantListResponse(BaseModel):
     max_users: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -212,8 +210,7 @@ class SubscriptionResponse(BaseModel):
     last_payment_amount: Optional[float]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -253,8 +250,7 @@ class TenantModuleResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -285,8 +281,7 @@ class TenantInvitationResponse(BaseModel):
     accepted_at: Optional[datetime]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -363,8 +358,7 @@ class TenantSettingsResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -393,8 +387,7 @@ class TenantOnboardingResponse(BaseModel):
     started_at: datetime
     completed_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -420,8 +413,7 @@ class TenantEventResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

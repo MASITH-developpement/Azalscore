@@ -57,8 +57,7 @@ class DepartmentResponse(DepartmentBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -103,8 +102,7 @@ class PositionResponse(PositionBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -209,8 +207,7 @@ class EmployeeResponse(EmployeeBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator('tags', mode='before')
     @classmethod
@@ -271,8 +268,7 @@ class ContractResponse(ContractBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -324,8 +320,7 @@ class LeaveBalanceResponse(BaseModel):
     remaining_days: Decimal = Decimal("0")
     carried_over: Decimal = Decimal("0")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -360,8 +355,7 @@ class PayrollPeriodResponse(PayrollPeriodBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PayslipLineCreate(BaseModel):
@@ -436,8 +430,7 @@ class PayslipResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -498,8 +491,7 @@ class SkillResponse(SkillBase):
     is_active: bool = True
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EmployeeSkillCreate(BaseModel):
@@ -521,8 +513,7 @@ class EmployeeSkillResponse(EmployeeSkillCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -562,8 +553,7 @@ class TrainingResponse(TrainingBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TrainingParticipantCreate(BaseModel):
@@ -585,8 +575,7 @@ class TrainingParticipantResponse(BaseModel):
     enrolled_at: datetime
     completed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -653,8 +642,7 @@ class EvaluationResponse(EvaluationBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

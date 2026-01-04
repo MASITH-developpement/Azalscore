@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict
 import json
 
 from .models import (
@@ -40,8 +40,7 @@ class CompositeConditionSchema(BaseModel):
     operator: Optional[ConditionOperator] = None
     value: Optional[Any] = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 ConditionUnion = Union[ConditionSchema, CompositeConditionSchema]
@@ -158,8 +157,7 @@ class TriggerResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TriggerListResponseSchema(BaseModel):
@@ -219,8 +217,7 @@ class SubscriptionResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -253,8 +250,7 @@ class EventResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EventListResponseSchema(BaseModel):
@@ -302,8 +298,7 @@ class NotificationResponseSchema(BaseModel):
     retry_count: int
     next_retry_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NotificationListResponseSchema(BaseModel):
@@ -371,8 +366,7 @@ class TemplateResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -460,8 +454,7 @@ class ScheduledReportResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReportHistoryResponseSchema(BaseModel):
@@ -491,8 +484,7 @@ class ReportHistoryResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -568,8 +560,7 @@ class WebhookResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WebhookTestResponseSchema(BaseModel):
@@ -603,8 +594,7 @@ class TriggerLogResponseSchema(BaseModel):
             return json.loads(v)
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TriggerLogListResponseSchema(BaseModel):

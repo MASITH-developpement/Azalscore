@@ -12,7 +12,7 @@ from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 # ============================================================================
@@ -210,8 +210,7 @@ class AssetResponse(AssetBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -245,8 +244,7 @@ class MeterResponse(MeterBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MeterReadingCreate(BaseModel):
@@ -265,8 +263,7 @@ class MeterReadingResponse(BaseModel):
     notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -295,8 +292,7 @@ class PlanTaskResponse(PlanTaskBase):
     check_points: Optional[List[str]] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MaintenancePlanBase(BaseModel):
@@ -363,8 +359,7 @@ class MaintenancePlanResponse(MaintenancePlanBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -391,8 +386,7 @@ class WorkOrderTaskResponse(BaseModel):
     result: Optional[str] = None
     issues_found: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkOrderLaborCreate(BaseModel):
@@ -419,8 +413,7 @@ class WorkOrderLaborResponse(BaseModel):
     work_description: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkOrderPartCreate(BaseModel):
@@ -447,8 +440,7 @@ class WorkOrderPartResponse(BaseModel):
     source: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkOrderBase(BaseModel):
@@ -545,8 +537,7 @@ class WorkOrderResponse(WorkOrderBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -608,8 +599,7 @@ class FailureResponse(FailureBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -680,8 +670,7 @@ class SparePartResponse(SparePartBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PartRequestBase(BaseModel):
@@ -720,8 +709,7 @@ class PartRequestResponse(PartRequestBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -810,8 +798,7 @@ class ContractResponse(ContractBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -844,8 +831,7 @@ class MaintenanceKPIResponse(BaseModel):
     work_order_backlog: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

@@ -64,8 +64,7 @@ class AccountResponse(AccountBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AccountList(BaseModel):
@@ -112,8 +111,7 @@ class JournalResponse(JournalBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -145,8 +143,7 @@ class FiscalYearResponse(FiscalYearBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FiscalPeriodResponse(BaseModel):
@@ -163,8 +160,7 @@ class FiscalPeriodResponse(BaseModel):
     total_credit: Decimal = Decimal("0")
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -204,8 +200,7 @@ class EntryLineResponse(EntryLineBase):
     reconciled_at: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EntryBase(BaseModel):
@@ -248,8 +243,7 @@ class EntryResponse(EntryBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EntryList(BaseModel):
@@ -305,8 +299,7 @@ class BankAccountResponse(BankAccountBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BankStatementLineBase(BaseModel):
@@ -441,8 +434,7 @@ class CashForecastResponse(CashForecastBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CashFlowCategoryBase(BaseModel):
@@ -467,8 +459,7 @@ class CashFlowCategoryResponse(CashFlowCategoryBase):
     is_active: bool = True
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -539,8 +530,7 @@ class FinancialReportResponse(BaseModel):
     pdf_url: Optional[str] = None
     excel_url: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

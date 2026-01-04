@@ -142,8 +142,7 @@ class CustomerResponse(CustomerBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CustomerList(BaseModel):
@@ -216,8 +215,7 @@ class ContactResponse(ContactBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -292,8 +290,7 @@ class OpportunityResponse(OpportunityBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OpportunityList(BaseModel):
@@ -337,8 +334,7 @@ class DocumentLineResponse(DocumentLineBase):
     total: Decimal = Decimal("0")
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentBase(BaseModel):
@@ -416,8 +412,7 @@ class DocumentResponse(DocumentBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentList(BaseModel):
@@ -507,8 +502,7 @@ class ActivityResponse(ActivityBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -539,8 +533,7 @@ class PipelineStageResponse(PipelineStageBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -602,8 +595,7 @@ class ProductResponse(ProductBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductList(BaseModel):

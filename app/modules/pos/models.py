@@ -28,6 +28,8 @@ class POSTerminalStatus(str, enum.Enum):
     INACTIVE = "INACTIVE"
     MAINTENANCE = "MAINTENANCE"
     OFFLINE = "OFFLINE"
+    ONLINE = "ONLINE"
+    IN_USE = "IN_USE"
 
 
 class POSSessionStatus(str, enum.Enum):
@@ -56,6 +58,7 @@ class PaymentMethodType(str, enum.Enum):
     GIFT_CARD = "GIFT_CARD"
     STORE_CREDIT = "STORE_CREDIT"
     MOBILE_PAYMENT = "MOBILE_PAYMENT"
+    VOUCHER = "VOUCHER"
     SPLIT = "SPLIT"
     OTHER = "OTHER"
 
@@ -238,6 +241,7 @@ class POSSession(Base):
     cash_total = Column(Numeric(15, 2), default=0)
     card_total = Column(Numeric(15, 2), default=0)
     check_total = Column(Numeric(15, 2), default=0)
+    voucher_total = Column(Numeric(15, 2), default=0)
     other_total = Column(Numeric(15, 2), default=0)
 
     # Dates
@@ -366,6 +370,9 @@ class POSTransactionLine(Base):
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
     transaction_id = Column(Integer, ForeignKey("pos_transactions.id"), nullable=False)
+
+    # Numéro de ligne
+    line_number = Column(Integer, default=1)
 
     # Produit
     product_id = Column(Integer)  # FK vers products
@@ -576,7 +583,7 @@ class POSHoldTransaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    terminal_id = Column(Integer, ForeignKey("pos_terminals.id"), nullable=False)
+    session_id = Column(Integer, ForeignKey("pos_sessions.id"), nullable=False)
 
     # Identification
     hold_number = Column(String(50), nullable=False)
@@ -592,6 +599,9 @@ class POSHoldTransaction(Base):
     # Utilisateur
     held_by_id = Column(Integer, ForeignKey("pos_users.id"), nullable=False)
 
+    # État
+    is_active = Column(Boolean, default=True)
+
     # Expiration
     expires_at = Column(DateTime)
 
@@ -599,7 +609,7 @@ class POSHoldTransaction(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
-        Index('idx_pos_hold_terminal', 'tenant_id', 'terminal_id'),
+        Index('idx_pos_hold_session', 'tenant_id', 'session_id'),
     )
 
 
@@ -616,14 +626,14 @@ class POSOfflineQueue(Base):
     terminal_id = Column(Integer, ForeignKey("pos_terminals.id"), nullable=False)
 
     # Type d'opération
-    operation_type = Column(String(50), nullable=False)  # TRANSACTION, PAYMENT, CASH_MOVEMENT
+    operation_type = Column(String(50))  # TRANSACTION, PAYMENT, CASH_MOVEMENT
 
     # Données
-    payload = Column(JSON, nullable=False)
-    offline_id = Column(String(100), nullable=False)
+    transaction_data = Column(JSON, nullable=False)
+    offline_id = Column(String(100))
 
     # Statut sync
-    sync_status = Column(String(20), default="PENDING")  # PENDING, SYNCED, FAILED
+    is_synced = Column(Boolean, default=False)
     sync_attempts = Column(Integer, default=0)
     sync_error = Column(Text)
     synced_at = Column(DateTime)
@@ -632,6 +642,5 @@ class POSOfflineQueue(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
-        Index('idx_pos_offline_status', 'tenant_id', 'sync_status'),
-        Index('idx_pos_offline_id', 'tenant_id', 'offline_id', unique=True),
+        Index('idx_pos_offline_synced', 'tenant_id', 'is_synced'),
     )
