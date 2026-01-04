@@ -5,6 +5,8 @@ AZALS MODULE T9 - Schémas Tenants
 Schémas Pydantic pour l'API des tenants.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator

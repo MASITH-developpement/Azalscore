@@ -5,6 +5,8 @@ AZALS MODULE T7 - Schémas Pydantic Web Transverse
 Schémas de validation pour les API du module Web.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum

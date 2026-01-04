@@ -5,6 +5,8 @@ AZALS MODULE M2 - Schémas Finance
 Schémas Pydantic pour la comptabilité et la trésorerie.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any

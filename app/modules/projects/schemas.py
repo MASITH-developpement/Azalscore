@@ -5,6 +5,8 @@ AZALS MODULE M9 - Schémas Projets
 Schémas Pydantic pour la gestion de projets.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any

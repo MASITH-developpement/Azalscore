@@ -5,6 +5,8 @@ AZALS MODULE M3 - Schémas RH
 Schémas Pydantic pour la gestion des ressources humaines.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any
