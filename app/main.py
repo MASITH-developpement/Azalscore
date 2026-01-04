@@ -85,6 +85,9 @@ from app.modules.projects.router import router as projects_router
 # Module M10 - BI & Reporting (Business Intelligence)
 from app.modules.bi.router import router as bi_router
 
+# Module M11 - Compliance (Conformité Réglementaire)
+from app.modules.compliance.router import router as compliance_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -196,6 +199,9 @@ app.include_router(projects_router)
 
 # Module M10 - BI & Reporting (Business Intelligence)
 app.include_router(bi_router)
+
+# Module M11 - Compliance (Conformité Réglementaire)
+app.include_router(compliance_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
