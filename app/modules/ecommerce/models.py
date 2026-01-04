@@ -303,7 +303,7 @@ class EcommerceCart(Base):
     notes = Column(Text)
 
     # Métadonnées
-    metadata = Column(JSON)  # Infos tracking, UTM, etc.
+    extra_data = Column(JSON)  # Infos tracking, UTM, etc.
 
     # Abandon
     abandoned_at = Column(DateTime)
@@ -435,7 +435,7 @@ class EcommerceOrder(Base):
     internal_notes = Column(Text)
 
     # Métadonnées
-    metadata = Column(JSON)
+    extra_data = Column(JSON)
 
     # Lien avec facturation AZALS
     invoice_id = Column(Integer)  # FK vers finance.invoices
