@@ -3,6 +3,7 @@ AZALS - Endpoints Authentification
 Login et Register pour utilisateurs DIRIGEANT
 """
 
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
@@ -14,6 +15,9 @@ from app.core.dependencies import get_tenant_id
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Clé secrète pour le bootstrap (définie en variable d'environnement)
+BOOTSTRAP_SECRET = os.getenv("BOOTSTRAP_SECRET", "azals-bootstrap-2024")
 
 
 # ===== SCHÉMAS PYDANTIC =====
@@ -135,4 +139,81 @@ def login(
         "token_type": "bearer",
         "tenant_id": user.tenant_id,
         "role": user.role.value
+    }
+
+
+# ===== BOOTSTRAP (Premier utilisateur) =====
+
+class BootstrapRequest(BaseModel):
+    """Schéma pour créer le premier tenant et admin."""
+    bootstrap_secret: str
+    tenant_id: str = "masith"
+    tenant_name: str = "SAS MASITH"
+    admin_email: EmailStr
+    admin_password: str
+
+
+class BootstrapResponse(BaseModel):
+    """Réponse du bootstrap."""
+    success: bool
+    tenant_id: str
+    admin_email: str
+    message: str
+
+
+@router.post("/bootstrap", response_model=BootstrapResponse, status_code=status.HTTP_201_CREATED)
+def bootstrap(
+    data: BootstrapRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Bootstrap initial : crée le premier tenant et l'utilisateur admin.
+    ATTENTION : Cet endpoint nécessite un secret et ne peut être utilisé
+    qu'une seule fois (si aucun utilisateur n'existe).
+
+    Pour l'utiliser :
+    POST /auth/bootstrap
+    {
+        "bootstrap_secret": "azals-bootstrap-2024",
+        "tenant_id": "masith",
+        "tenant_name": "SAS MASITH",
+        "admin_email": "admin@masith.fr",
+        "admin_password": "VotreMotDePasse123!"
+    }
+    """
+    # Vérifier le secret
+    if data.bootstrap_secret != BOOTSTRAP_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid bootstrap secret"
+        )
+
+    # Vérifier qu'aucun utilisateur n'existe (bootstrap unique)
+    existing_users = db.query(User).count()
+    if existing_users > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bootstrap already done. Users exist in database."
+        )
+
+    # Créer l'utilisateur admin
+    password_hash = get_password_hash(data.admin_password)
+
+    admin_user = User(
+        email=data.admin_email,
+        password_hash=password_hash,
+        tenant_id=data.tenant_id,
+        role=UserRole.DIRIGEANT,
+        is_active=1
+    )
+
+    db.add(admin_user)
+    db.commit()
+    db.refresh(admin_user)
+
+    return {
+        "success": True,
+        "tenant_id": data.tenant_id,
+        "admin_email": data.admin_email,
+        "message": f"Bootstrap réussi! Tenant '{data.tenant_id}' créé avec admin '{data.admin_email}'. Vous pouvez maintenant vous connecter via /auth/login"
     }
