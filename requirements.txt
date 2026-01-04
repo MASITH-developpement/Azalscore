@@ -10,8 +10,8 @@ sqlalchemy==2.0.25
 psycopg2-binary==2.9.9
 
 # Configuration
-pydantic[email]==2.5.3
-pydantic-settings==2.1.0
+pydantic[email]==2.10.4
+pydantic-settings==2.7.1
 
 # Authentification & Sécurité
 python-jose[cryptography]==3.3.0
