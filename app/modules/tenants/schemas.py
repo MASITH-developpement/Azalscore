@@ -5,9 +5,11 @@ AZALS MODULE T9 - Schémas Tenants
 Schémas Pydantic pour l'API des tenants.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
 
 
@@ -293,9 +295,11 @@ class TenantInvitationResponse(BaseModel):
 
 class TenantUsageResponse(BaseModel):
     """Réponse utilisation."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True, from_attributes=True)
+
     id: int
     tenant_id: str
-    date: datetime
+    usage_date: datetime = Field(..., alias="date")
     period: str
     active_users: int
     total_users: int
@@ -312,9 +316,6 @@ class TenantUsageResponse(BaseModel):
         if isinstance(v, str):
             return json.loads(v) if v else None
         return v
-
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================

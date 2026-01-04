@@ -1091,6 +1091,181 @@ MAINTENANCE_PERMISSIONS = {
 }
 
 # ============================================================================
+# PERMISSIONS M9 - PROJETS (Project Management)
+# ============================================================================
+
+PROJECTS_PERMISSIONS = {
+    # Projets
+    "projects.create": "Créer des projets",
+    "projects.read": "Voir les projets",
+    "projects.update": "Modifier les projets",
+    "projects.delete": "Supprimer des projets",
+    "projects.archive": "Archiver des projets",
+
+    # Phases
+    "projects.phases.create": "Créer des phases",
+    "projects.phases.read": "Voir les phases",
+    "projects.phases.update": "Modifier les phases",
+    "projects.phases.delete": "Supprimer des phases",
+
+    # Tâches
+    "projects.tasks.create": "Créer des tâches",
+    "projects.tasks.read": "Voir les tâches",
+    "projects.tasks.update": "Modifier les tâches",
+    "projects.tasks.delete": "Supprimer des tâches",
+    "projects.tasks.assign": "Assigner des tâches",
+    "projects.tasks.complete": "Terminer des tâches",
+
+    # Jalons
+    "projects.milestones.create": "Créer des jalons",
+    "projects.milestones.read": "Voir les jalons",
+    "projects.milestones.update": "Modifier les jalons",
+    "projects.milestones.validate": "Valider des jalons",
+
+    # Équipe
+    "projects.team.create": "Ajouter des membres",
+    "projects.team.read": "Voir l'équipe",
+    "projects.team.update": "Modifier les membres",
+    "projects.team.remove": "Retirer des membres",
+
+    # Risques
+    "projects.risks.create": "Créer des risques",
+    "projects.risks.read": "Voir les risques",
+    "projects.risks.update": "Modifier les risques",
+    "projects.risks.close": "Clôturer des risques",
+
+    # Issues
+    "projects.issues.create": "Créer des issues",
+    "projects.issues.read": "Voir les issues",
+    "projects.issues.update": "Modifier les issues",
+    "projects.issues.resolve": "Résoudre des issues",
+
+    # Saisie de temps
+    "projects.time.create": "Saisir du temps",
+    "projects.time.read": "Voir les saisies",
+    "projects.time.update": "Modifier les saisies",
+    "projects.time.submit": "Soumettre les saisies",
+    "projects.time.approve": "Approuver les saisies",
+    "projects.time.reject": "Rejeter les saisies",
+
+    # Dépenses
+    "projects.expenses.create": "Créer des dépenses",
+    "projects.expenses.read": "Voir les dépenses",
+    "projects.expenses.update": "Modifier les dépenses",
+    "projects.expenses.approve": "Approuver les dépenses",
+
+    # Documents
+    "projects.documents.create": "Ajouter des documents",
+    "projects.documents.read": "Voir les documents",
+    "projects.documents.update": "Modifier les documents",
+    "projects.documents.delete": "Supprimer des documents",
+
+    # Budget
+    "projects.budget.create": "Créer des budgets",
+    "projects.budget.read": "Voir les budgets",
+    "projects.budget.update": "Modifier les budgets",
+    "projects.budget.approve": "Approuver les budgets",
+
+    # Templates
+    "projects.templates.create": "Créer des templates",
+    "projects.templates.read": "Voir les templates",
+    "projects.templates.update": "Modifier les templates",
+    "projects.templates.delete": "Supprimer des templates",
+
+    # Commentaires
+    "projects.comments.create": "Créer des commentaires",
+    "projects.comments.read": "Voir les commentaires",
+
+    # KPIs et Dashboard
+    "projects.kpis.read": "Voir les KPIs",
+    "projects.kpis.calculate": "Calculer les KPIs",
+    "projects.dashboard.read": "Voir le dashboard projets",
+
+    # Admin complet
+    "projects.admin": "Administration complète projets",
+}
+
+# ============================================================================
+# PERMISSIONS MODULE M10 - BI & REPORTING
+# ============================================================================
+
+BI_PERMISSIONS = {
+    # Dashboards
+    "bi.dashboards.create": "Créer des tableaux de bord",
+    "bi.dashboards.read": "Voir les tableaux de bord",
+    "bi.dashboards.update": "Modifier les tableaux de bord",
+    "bi.dashboards.delete": "Supprimer des tableaux de bord",
+    "bi.dashboards.share": "Partager les tableaux de bord",
+    "bi.dashboards.duplicate": "Dupliquer les tableaux de bord",
+
+    # Widgets
+    "bi.widgets.create": "Créer des widgets",
+    "bi.widgets.read": "Voir les widgets",
+    "bi.widgets.update": "Modifier les widgets",
+    "bi.widgets.delete": "Supprimer des widgets",
+
+    # Rapports
+    "bi.reports.create": "Créer des rapports",
+    "bi.reports.read": "Voir les rapports",
+    "bi.reports.update": "Modifier les rapports",
+    "bi.reports.delete": "Supprimer des rapports",
+    "bi.reports.execute": "Exécuter les rapports",
+    "bi.reports.export": "Exporter les rapports",
+    "bi.reports.schedule": "Planifier les rapports",
+
+    # KPIs
+    "bi.kpis.create": "Créer des KPIs",
+    "bi.kpis.read": "Voir les KPIs",
+    "bi.kpis.update": "Modifier les KPIs",
+    "bi.kpis.delete": "Supprimer des KPIs",
+    "bi.kpis.record": "Enregistrer les valeurs KPI",
+    "bi.kpis.target": "Définir les objectifs KPI",
+
+    # Alertes
+    "bi.alerts.read": "Voir les alertes",
+    "bi.alerts.acknowledge": "Acquitter les alertes",
+    "bi.alerts.resolve": "Résoudre les alertes",
+    "bi.alerts.snooze": "Mettre en pause les alertes",
+
+    # Règles d'alerte
+    "bi.alert_rules.create": "Créer des règles d'alerte",
+    "bi.alert_rules.read": "Voir les règles d'alerte",
+    "bi.alert_rules.update": "Modifier les règles d'alerte",
+    "bi.alert_rules.delete": "Supprimer des règles d'alerte",
+
+    # Sources de données
+    "bi.data_sources.create": "Créer des sources de données",
+    "bi.data_sources.read": "Voir les sources de données",
+    "bi.data_sources.update": "Modifier les sources de données",
+    "bi.data_sources.delete": "Supprimer des sources de données",
+    "bi.data_sources.sync": "Synchroniser les sources de données",
+
+    # Requêtes
+    "bi.queries.create": "Créer des requêtes",
+    "bi.queries.read": "Voir les requêtes",
+    "bi.queries.update": "Modifier les requêtes",
+    "bi.queries.delete": "Supprimer des requêtes",
+    "bi.queries.execute": "Exécuter les requêtes",
+
+    # Favoris
+    "bi.bookmarks.create": "Créer des favoris",
+    "bi.bookmarks.read": "Voir les favoris",
+    "bi.bookmarks.delete": "Supprimer des favoris",
+
+    # Exports
+    "bi.exports.create": "Créer des exports",
+    "bi.exports.read": "Voir les exports",
+    "bi.exports.download": "Télécharger les exports",
+
+    # Dashboard BI
+    "bi.overview.read": "Voir la vue d'ensemble BI",
+    "bi.dashboard.read": "Voir le dashboard BI",
+
+    # Admin complet
+    "bi.admin": "Administration complète BI",
+}
+
+# ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
 
@@ -1110,6 +1285,8 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **PRODUCTION_PERMISSIONS,
     **QUALITY_PERMISSIONS,
     **MAINTENANCE_PERMISSIONS,
+    **PROJECTS_PERMISSIONS,
+    **BI_PERMISSIONS,
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
@@ -1151,6 +1328,8 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "production.*",
         "quality.*",
         "maintenance.*",
+        "projects.*",
+        "bi.*",
     ],
 
     "DIRIGEANT": [
@@ -1243,6 +1422,39 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "maintenance.contracts.read",
         "maintenance.kpis.read",
         "maintenance.dashboard.read",
+        "projects.read",
+        "projects.phases.read",
+        "projects.tasks.read",
+        "projects.milestones.read",
+        "projects.team.read",
+        "projects.risks.read",
+        "projects.issues.read",
+        "projects.time.read",
+        "projects.expenses.read",
+        "projects.documents.read",
+        "projects.budget.read",
+        "projects.templates.read",
+        "projects.comments.read",
+        "projects.kpis.read",
+        "projects.dashboard.read",
+        "bi.dashboards.read",
+        "bi.widgets.read",
+        "bi.reports.read",
+        "bi.reports.execute",
+        "bi.reports.export",
+        "bi.kpis.read",
+        "bi.alerts.read",
+        "bi.alert_rules.read",
+        "bi.data_sources.read",
+        "bi.queries.read",
+        "bi.bookmarks.read",
+        "bi.bookmarks.create",
+        "bi.bookmarks.delete",
+        "bi.exports.read",
+        "bi.exports.create",
+        "bi.exports.download",
+        "bi.overview.read",
+        "bi.dashboard.read",
     ],
 
     "RESPONSABLE_QUALITE": [
@@ -1469,6 +1681,46 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "maintenance.partrequests.read",
         "maintenance.contracts.read",
         "maintenance.dashboard.read",
+    ],
+
+    "CHEF_DE_PROJET": [
+        "projects.*",
+        "hr.employee.read",
+        "hr.departments.read",
+        "hr.skills.read",
+        "finance.budgets.read",
+        "finance.expenses.read",
+        "procurement.requisitions.create",
+        "procurement.requisitions.read",
+        "procurement.orders.read",
+        "commercial.customers.read",
+        "commercial.contacts.read",
+        "commercial.opportunities.read",
+        "decision.read",
+    ],
+
+    "MEMBRE_PROJET": [
+        "projects.read",
+        "projects.phases.read",
+        "projects.tasks.read",
+        "projects.tasks.update",
+        "projects.milestones.read",
+        "projects.team.read",
+        "projects.risks.read",
+        "projects.risks.create",
+        "projects.issues.read",
+        "projects.issues.create",
+        "projects.issues.update",
+        "projects.time.create",
+        "projects.time.read",
+        "projects.time.update",
+        "projects.expenses.create",
+        "projects.expenses.read",
+        "projects.documents.read",
+        "projects.documents.upload",
+        "projects.comments.create",
+        "projects.comments.read",
+        "projects.dashboard.read",
     ],
 }
 

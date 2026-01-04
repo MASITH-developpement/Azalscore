@@ -79,6 +79,15 @@ from app.modules.quality.router import router as quality_router
 # Module M8 - Maintenance (Asset Management / GMAO)
 from app.modules.maintenance.router import router as maintenance_router
 
+# Module M9 - Projets (Project Management)
+from app.modules.projects.router import router as projects_router
+
+# Module M10 - BI & Reporting (Business Intelligence)
+from app.modules.bi.router import router as bi_router
+
+# Module M11 - Compliance (Conformité Réglementaire)
+from app.modules.compliance.router import router as compliance_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -108,8 +117,8 @@ app = FastAPI(
     title="AZALS",
     description="ERP décisionnel critique - Multi-tenant + Authentification JWT",
     version="0.3.0",
-    docs_url=None,
-    redoc_url=None,
+    docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan
 )
 
@@ -184,6 +193,15 @@ app.include_router(quality_router)
 
 # Module M8 - Maintenance (Asset Management / GMAO)
 app.include_router(maintenance_router)
+
+# Module M9 - Projets (Project Management)
+app.include_router(projects_router)
+
+# Module M10 - BI & Reporting (Business Intelligence)
+app.include_router(bi_router)
+
+# Module M11 - Compliance (Conformité Réglementaire)
+app.include_router(compliance_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

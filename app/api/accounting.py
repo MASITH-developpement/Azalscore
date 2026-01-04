@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_and_tenant
-from app.core.models import JournalEntry
+from app.core.models import CoreAuditJournal
 
 
 router = APIRouter(prefix="/accounting", tags=["accounting"])
@@ -50,7 +50,7 @@ def get_accounting_status(
             SELECT 
                 COUNT(*) as total_entries,
                 COUNT(CASE WHEN created_at >= :three_days_ago THEN 1 END) as recent_entries
-            FROM journal_entries
+            FROM core_audit_journal
             WHERE tenant_id = :tenant_id
         """), {"tenant_id": tenant_id, "three_days_ago": three_days_ago})
         
@@ -62,7 +62,7 @@ def get_accounting_status(
         # Récupérer la dernière "clôture comptable" (marquée par action CLOSURE ou END_PERIOD)
         closure_result = db.execute(text("""
             SELECT MAX(created_at) as last_closure
-            FROM journal_entries
+            FROM core_audit_journal
             WHERE tenant_id = :tenant_id
             AND (action = 'ACCOUNTING_CLOSURE' OR action = 'END_PERIOD')
         """), {"tenant_id": tenant_id})
@@ -86,7 +86,7 @@ def get_accounting_status(
         # Compter les écritures "en attente" = dernière semaine
         pending_result = db.execute(text("""
             SELECT COUNT(*) 
-            FROM journal_entries
+            FROM core_audit_journal
             WHERE tenant_id = :tenant_id
             AND created_at >= :one_week_ago
         """), {"tenant_id": tenant_id, "one_week_ago": datetime.utcnow() - timedelta(days=7)})

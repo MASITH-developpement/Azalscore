@@ -5,6 +5,8 @@ AZALS MODULE T6 - Schémas Pydantic Diffusion Périodique
 Schémas de validation pour les API du module Broadcast.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum

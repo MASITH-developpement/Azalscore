@@ -5,9 +5,11 @@ AZALS MODULE T8 - Schémas Site Web
 Schémas Pydantic pour l'API du site web.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
 
 
@@ -689,9 +691,11 @@ class SiteSEOResponse(BaseModel):
 
 class SiteAnalyticsResponse(BaseModel):
     """Réponse analytics."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True, from_attributes=True)
+
     id: int
     tenant_id: str
-    date: datetime
+    analytics_date: datetime = Field(..., alias="date")
     period: str
     page_views: int
     unique_visitors: int
@@ -719,9 +723,6 @@ class SiteAnalyticsResponse(BaseModel):
         if isinstance(v, str):
             return json.loads(v) if v else None
         return v
-
-    class Config:
-        from_attributes = True
 
 
 class AnalyticsDashboardResponse(BaseModel):

@@ -5,6 +5,8 @@ AZALS MODULE T0 - Schémas Pydantic IAM
 Schémas de validation pour les endpoints IAM.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field, field_validator

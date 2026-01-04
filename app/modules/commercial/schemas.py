@@ -5,6 +5,8 @@ AZALS MODULE M1 - Schémas Commercial
 Schémas Pydantic pour le CRM et la gestion commerciale.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any
@@ -24,12 +26,12 @@ from .models import (
 
 class CustomerBase(BaseModel):
     """Base pour les clients."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
     legal_name: Optional[str] = None
-    type: CustomerType = CustomerType.PROSPECT
+    customer_type: CustomerType = Field(default=CustomerType.PROSPECT, alias="type")
 
     # Contact
     email: Optional[str] = None
@@ -88,11 +90,11 @@ class CustomerCreate(CustomerBase):
 
 class CustomerUpdate(BaseModel):
     """Mise à jour d'un client."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     name: Optional[str] = None
     legal_name: Optional[str] = None
-    type: Optional[CustomerType] = None
+    customer_type: Optional[CustomerType] = Field(default=None, alias="type")
     email: Optional[str] = None
     phone: Optional[str] = None
     mobile: Optional[str] = None
@@ -341,11 +343,11 @@ class DocumentLineResponse(DocumentLineBase):
 
 class DocumentBase(BaseModel):
     """Base pour les documents commerciaux."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    type: DocumentType
+    document_type: DocumentType = Field(..., alias="type")
     reference: Optional[str] = None
-    date: date = Field(default_factory=date.today)
+    doc_date: date = Field(default_factory=date.today, alias="date")
     due_date: Optional[date] = None
     validity_date: Optional[date] = None
     delivery_date: Optional[date] = None
@@ -432,10 +434,12 @@ class DocumentList(BaseModel):
 
 class PaymentBase(BaseModel):
     """Base pour les paiements."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     method: PaymentMethod
     amount: Decimal
     currency: str = "EUR"
-    date: date = Field(default_factory=date.today)
+    payment_date: date = Field(default_factory=date.today, alias="date")
     reference: Optional[str] = None
     bank_account: Optional[str] = None
     transaction_id: Optional[str] = None
@@ -455,8 +459,6 @@ class PaymentResponse(PaymentBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -465,12 +467,12 @@ class PaymentResponse(PaymentBase):
 
 class ActivityBase(BaseModel):
     """Base pour les activités."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    type: ActivityType
+    activity_type: ActivityType = Field(..., alias="type")
     subject: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
-    date: datetime = Field(default_factory=datetime.utcnow)
+    activity_date: datetime = Field(default_factory=datetime.utcnow, alias="date")
     due_date: Optional[datetime] = None
     duration_minutes: Optional[int] = None
     assigned_to: Optional[UUID] = None

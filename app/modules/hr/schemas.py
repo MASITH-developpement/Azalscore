@@ -5,6 +5,8 @@ AZALS MODULE M3 - Schémas RH
 Schémas Pydantic pour la gestion des ressources humaines.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any
@@ -230,10 +232,10 @@ class EmployeeList(BaseModel):
 
 class ContractBase(BaseModel):
     """Base pour les contrats."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     contract_number: str = Field(..., min_length=1, max_length=50)
-    type: ContractType
+    contract_type: ContractType = Field(..., alias="type")
     title: Optional[str] = None
     department_id: Optional[UUID] = None
     position_id: Optional[UUID] = None
@@ -279,9 +281,9 @@ class ContractResponse(ContractBase):
 
 class LeaveRequestBase(BaseModel):
     """Base pour les demandes de congé."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    type: LeaveType
+    leave_type: LeaveType = Field(..., alias="type")
     start_date: date
     end_date: date
     start_half_day: bool = False
@@ -308,8 +310,6 @@ class LeaveRequestResponse(LeaveRequestBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class LeaveBalanceResponse(BaseModel):
@@ -366,9 +366,9 @@ class PayrollPeriodResponse(PayrollPeriodBase):
 
 class PayslipLineCreate(BaseModel):
     """Création d'une ligne de bulletin."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    type: PayElementType
+    element_type: PayElementType = Field(..., alias="type")
     code: str
     label: str
     base: Optional[Decimal] = None
@@ -386,8 +386,6 @@ class PayslipLineResponse(PayslipLineCreate):
     line_number: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class PayslipCreate(BaseModel):
@@ -448,7 +446,9 @@ class PayslipResponse(BaseModel):
 
 class TimeEntryBase(BaseModel):
     """Base pour les entrées de temps."""
-    date: date
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    entry_date: date = Field(..., alias="date")
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     break_duration: int = 0
@@ -473,8 +473,6 @@ class TimeEntryResponse(TimeEntryBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -533,12 +531,12 @@ class EmployeeSkillResponse(EmployeeSkillCreate):
 
 class TrainingBase(BaseModel):
     """Base pour les formations."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
-    type: TrainingType
+    training_type: TrainingType = Field(..., alias="type")
     provider: Optional[str] = None
     trainer: Optional[str] = None
     location: Optional[str] = None
@@ -597,9 +595,9 @@ class TrainingParticipantResponse(BaseModel):
 
 class EvaluationBase(BaseModel):
     """Base pour les évaluations."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    type: EvaluationType
+    evaluation_type: EvaluationType = Field(..., alias="type")
     period_start: date
     period_end: date
     scheduled_date: Optional[date] = None
@@ -665,10 +663,10 @@ class EvaluationResponse(EvaluationBase):
 
 class HRDocumentCreate(BaseModel):
     """Création d'un document RH."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     employee_id: UUID
-    type: DocumentType
+    document_type: DocumentType = Field(..., alias="type")
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     file_url: str
@@ -681,11 +679,11 @@ class HRDocumentCreate(BaseModel):
 
 class HRDocumentResponse(BaseModel):
     """Réponse document RH."""
-    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True, populate_by_name=True)
 
     id: UUID
     employee_id: UUID
-    type: DocumentType
+    document_type: DocumentType = Field(..., alias="type")
     name: str
     description: Optional[str] = None
     file_url: str
@@ -696,9 +694,6 @@ class HRDocumentResponse(BaseModel):
     is_confidential: bool = False
     uploaded_by: Optional[UUID] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================

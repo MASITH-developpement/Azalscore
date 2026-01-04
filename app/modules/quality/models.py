@@ -223,13 +223,13 @@ class NonConformance(Base):
     lot_number = Column(String(100))
     serial_number = Column(String(100))
     quantity_affected = Column(Numeric(15, 3))
-    unit_id = Column(BigInteger, ForeignKey("settings_units.id"))
+    unit_id = Column(BigInteger)  # Référence unité (table settings non implémentée)
 
     # Fournisseur (si applicable)
-    supplier_id = Column(BigInteger, ForeignKey("purchase_suppliers.id"))
+    supplier_id = Column(BigInteger)  # Référence fournisseur (table purchase_suppliers non implémentée)
 
     # Client (si applicable)
-    customer_id = Column(BigInteger, ForeignKey("crm_clients.id"))
+    customer_id = Column(BigInteger)  # Référence client (table crm_clients non implémentée)
 
     # Analyse des causes
     immediate_cause = Column(Text)
@@ -471,13 +471,13 @@ class QualityControl(Base):
     quantity_controlled = Column(Numeric(15, 3))
     quantity_conforming = Column(Numeric(15, 3))
     quantity_non_conforming = Column(Numeric(15, 3))
-    unit_id = Column(BigInteger, ForeignKey("settings_units.id"))
+    unit_id = Column(BigInteger)  # Référence unité (table settings non implémentée)
 
     # Fournisseur (réception)
-    supplier_id = Column(BigInteger, ForeignKey("purchase_suppliers.id"))
+    supplier_id = Column(BigInteger)  # Référence fournisseur (table purchase_suppliers non implémentée)
 
     # Client (expédition)
-    customer_id = Column(BigInteger, ForeignKey("crm_clients.id"))
+    customer_id = Column(BigInteger)  # Référence client (table crm_clients non implémentée)
 
     # Exécution
     control_date = Column(Date, nullable=False)
@@ -610,7 +610,7 @@ class QualityAudit(Base):
     auditee_contact_id = Column(BigInteger, ForeignKey("users.id"))
 
     # Fournisseur (audit fournisseur)
-    supplier_id = Column(BigInteger, ForeignKey("purchase_suppliers.id"))
+    supplier_id = Column(BigInteger)  # Référence fournisseur (table purchase_suppliers non implémentée)
 
     # Résultats
     total_findings = Column(Integer, default=0)
@@ -866,7 +866,7 @@ class CustomerClaim(Base):
     description = Column(Text, nullable=False)
 
     # Client
-    customer_id = Column(BigInteger, ForeignKey("crm_clients.id"), nullable=False)
+    customer_id = Column(BigInteger, nullable=False)  # Référence client (table crm_clients non implémentée)
     customer_contact = Column(String(200))
     customer_reference = Column(String(100))  # Référence client
 

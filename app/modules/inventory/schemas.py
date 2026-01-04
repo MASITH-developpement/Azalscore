@@ -5,6 +5,8 @@ AZALS MODULE M5 - Schémas Inventaire
 Schémas Pydantic pour la gestion des stocks et logistique.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
@@ -60,11 +62,11 @@ class CategoryResponse(CategoryCreate):
 
 class WarehouseCreate(BaseModel):
     """Création d'un entrepôt."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
-    type: WarehouseType = WarehouseType.INTERNAL
+    warehouse_type: WarehouseType = Field(default=WarehouseType.INTERNAL, alias="type")
     address_line1: Optional[str] = None
     address_line2: Optional[str] = None
     postal_code: Optional[str] = None
@@ -80,10 +82,10 @@ class WarehouseCreate(BaseModel):
 
 class WarehouseUpdate(BaseModel):
     """Mise à jour d'un entrepôt."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     name: Optional[str] = None
-    type: Optional[WarehouseType] = None
+    warehouse_type: Optional[WarehouseType] = Field(default=None, alias="type")
     address_line1: Optional[str] = None
     address_line2: Optional[str] = None
     postal_code: Optional[str] = None
@@ -105,8 +107,6 @@ class WarehouseResponse(WarehouseCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -115,11 +115,11 @@ class WarehouseResponse(WarehouseCreate):
 
 class LocationCreate(BaseModel):
     """Création d'un emplacement."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
-    type: LocationType = LocationType.STORAGE
+    location_type: LocationType = Field(default=LocationType.STORAGE, alias="type")
     aisle: Optional[str] = None
     rack: Optional[str] = None
     level: Optional[str] = None
@@ -135,10 +135,10 @@ class LocationCreate(BaseModel):
 
 class LocationUpdate(BaseModel):
     """Mise à jour d'un emplacement."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     name: Optional[str] = None
-    type: Optional[LocationType] = None
+    location_type: Optional[LocationType] = Field(default=None, alias="type")
     aisle: Optional[str] = None
     rack: Optional[str] = None
     level: Optional[str] = None
@@ -161,8 +161,6 @@ class LocationResponse(LocationCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -171,12 +169,12 @@ class LocationResponse(LocationCreate):
 
 class ProductCreate(BaseModel):
     """Création d'un produit."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=500)
     description: Optional[str] = None
-    type: ProductType = ProductType.STOCKABLE
+    product_type: ProductType = Field(default=ProductType.STOCKABLE, alias="type")
     category_id: Optional[UUID] = None
     barcode: Optional[str] = None
     ean13: Optional[str] = None
@@ -214,11 +212,11 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     """Mise à jour d'un produit."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     name: Optional[str] = None
     description: Optional[str] = None
-    type: Optional[ProductType] = None
+    product_type: Optional[ProductType] = Field(default=None, alias="type")
     status: Optional[ProductStatus] = None
     category_id: Optional[UUID] = None
     barcode: Optional[str] = None
@@ -254,13 +252,13 @@ class ProductUpdate(BaseModel):
 
 class ProductResponse(BaseModel):
     """Réponse produit."""
-    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True, populate_by_name=True)
 
     id: UUID
     code: str
     name: str
     description: Optional[str]
-    type: ProductType
+    product_type: ProductType = Field(..., alias="type")
     status: ProductStatus
     category_id: Optional[UUID]
     barcode: Optional[str]
@@ -285,8 +283,6 @@ class ProductResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
     @field_validator('tags', mode='before')
     @classmethod
@@ -467,9 +463,9 @@ class MovementLineResponse(MovementLineCreate):
 
 class MovementCreate(BaseModel):
     """Création d'un mouvement."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    type: MovementType
+    movement_type: MovementType = Field(..., alias="type")
     movement_date: datetime
     from_warehouse_id: Optional[UUID] = None
     from_location_id: Optional[UUID] = None
@@ -485,11 +481,11 @@ class MovementCreate(BaseModel):
 
 class MovementResponse(BaseModel):
     """Réponse mouvement."""
-    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True, populate_by_name=True)
 
     id: UUID
     number: str
-    type: MovementType
+    movement_type: MovementType = Field(..., alias="type")
     status: MovementStatus
     movement_date: datetime
     from_warehouse_id: Optional[UUID]
@@ -509,8 +505,6 @@ class MovementResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class MovementList(BaseModel):
@@ -640,9 +634,9 @@ class PickingLineResponse(BaseModel):
 
 class PickingCreate(BaseModel):
     """Création d'une préparation."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    type: MovementType = MovementType.OUT
+    picking_type: MovementType = Field(default=MovementType.OUT, alias="type")
     warehouse_id: UUID
     reference_type: Optional[str] = None
     reference_id: Optional[UUID] = None
@@ -655,11 +649,11 @@ class PickingCreate(BaseModel):
 
 class PickingResponse(BaseModel):
     """Réponse préparation."""
-    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True, populate_by_name=True)
 
     id: UUID
     number: str
-    type: MovementType
+    picking_type: MovementType = Field(..., alias="type")
     status: PickingStatus
     warehouse_id: UUID
     reference_type: Optional[str]
@@ -677,8 +671,6 @@ class PickingResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================

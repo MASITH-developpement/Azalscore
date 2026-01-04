@@ -73,7 +73,7 @@ class User(Base, TenantMixin):
     )
 
 
-class JournalEntry(Base, TenantMixin):
+class CoreAuditJournal(Base, TenantMixin):
     """
     Journal APPEND-ONLY inaltérable.
     - Écriture uniquement (INSERT)
@@ -81,7 +81,7 @@ class JournalEntry(Base, TenantMixin):
     - Horodatage automatique côté DB
     - Trace toute action critique : tenant_id + user_id + action + détails
     """
-    __tablename__ = "journal_entries"
+    __tablename__ = "core_audit_journal"
     
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
@@ -91,10 +91,10 @@ class JournalEntry(Base, TenantMixin):
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
     
     __table_args__ = (
-        Index('idx_journal_tenant_id', 'tenant_id'),
-        Index('idx_journal_user_id', 'user_id'),
-        Index('idx_journal_tenant_user', 'tenant_id', 'user_id'),
-        Index('idx_journal_created_at', 'created_at'),
+        Index('idx_core_audit_tenant_id', 'tenant_id'),
+        Index('idx_core_audit_user_id', 'user_id'),
+        Index('idx_core_audit_tenant_user', 'tenant_id', 'user_id'),
+        Index('idx_core_audit_created_at', 'created_at'),
     )
 
 

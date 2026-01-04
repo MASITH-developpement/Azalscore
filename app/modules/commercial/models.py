@@ -569,9 +569,9 @@ class PipelineStage(Base):
 # MODÈLE PRODUITS/SERVICES (Catalogue)
 # ============================================================================
 
-class Product(Base):
-    """Produit ou service au catalogue."""
-    __tablename__ = "products"
+class CatalogProduct(Base):
+    """Produit ou service au catalogue commercial (distinct de inventory.Product)."""
+    __tablename__ = "catalog_products"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)

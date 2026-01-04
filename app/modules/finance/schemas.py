@@ -5,6 +5,8 @@ AZALS MODULE M2 - Schémas Finance
 Schémas Pydantic pour la comptabilité et la trésorerie.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Any
@@ -24,12 +26,12 @@ from .models import (
 
 class AccountBase(BaseModel):
     """Base pour les comptes."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
-    type: AccountType
+    account_type: AccountType = Field(..., alias="type")
     parent_id: Optional[UUID] = None
     is_auxiliary: bool = False
     auxiliary_type: Optional[str] = None
@@ -78,11 +80,11 @@ class AccountList(BaseModel):
 
 class JournalBase(BaseModel):
     """Base pour les journaux."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
-    type: JournalType
+    journal_type: JournalType = Field(..., alias="type")
     default_debit_account_id: Optional[UUID] = None
     default_credit_account_id: Optional[UUID] = None
     sequence_prefix: Optional[str] = None
@@ -208,8 +210,10 @@ class EntryLineResponse(EntryLineBase):
 
 class EntryBase(BaseModel):
     """Base pour les écritures."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     journal_id: UUID
-    date: date
+    entry_date: date = Field(..., alias="date")
     reference: Optional[str] = None
     description: Optional[str] = None
 
@@ -307,7 +311,9 @@ class BankAccountResponse(BankAccountBase):
 
 class BankStatementLineBase(BaseModel):
     """Base pour les lignes de relevé."""
-    date: date
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    line_date: date = Field(..., alias="date")
     value_date: Optional[date] = None
     label: str
     reference: Optional[str] = None
@@ -328,16 +334,16 @@ class BankStatementLineResponse(BankStatementLineBase):
     matched_at: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class BankStatementBase(BaseModel):
     """Base pour les relevés."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     bank_account_id: UUID
     name: str
     reference: Optional[str] = None
-    date: date
+    statement_date: date = Field(..., alias="date")
     start_date: date
     end_date: date
     opening_balance: Decimal
@@ -361,17 +367,15 @@ class BankStatementResponse(BankStatementBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 class BankTransactionBase(BaseModel):
     """Base pour les transactions."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     bank_account_id: UUID
-    type: BankTransactionType
-    date: date
+    transaction_type: BankTransactionType = Field(..., alias="type")
+    transaction_date: date = Field(..., alias="date")
     value_date: Optional[date] = None
     amount: Decimal
     label: str
@@ -393,8 +397,6 @@ class BankTransactionResponse(BankTransactionBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -403,8 +405,10 @@ class BankTransactionResponse(BankTransactionBase):
 
 class CashForecastBase(BaseModel):
     """Base pour les prévisions."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     period: ForecastPeriod
-    date: date
+    forecast_date: date = Field(..., alias="date")
     opening_balance: Decimal
     expected_receipts: Decimal = Decimal("0")
     expected_payments: Decimal = Decimal("0")

@@ -10,7 +10,7 @@ from typing import Optional
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
-from app.core.models import User, JournalEntry
+from app.core.models import User, CoreAuditJournal
 from app.services.journal import JournalService
 
 

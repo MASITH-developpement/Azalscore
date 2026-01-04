@@ -8,11 +8,11 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.core.models import (
-    RedDecisionWorkflow, 
-    RedWorkflowStep, 
-    Decision, 
+    RedDecisionWorkflow,
+    RedWorkflowStep,
+    Decision,
     DecisionLevel,
-    JournalEntry,
+    CoreAuditJournal,
     User,
     UserRole,
     RedDecisionReport,
@@ -134,11 +134,11 @@ class RedWorkflowService:
         Règle : Un rapport par décision RED, créé UNIQUEMENT à la validation finale.
         """
         # Récupérer les entrées journal liées à cette décision
-        journal_entries = self.db.query(JournalEntry).filter(
-            JournalEntry.tenant_id == tenant_id,
-            JournalEntry.details.like(f"%Decision ID: {decision.id}%")
+        journal_entries = self.db.query(CoreAuditJournal).filter(
+            CoreAuditJournal.tenant_id == tenant_id,
+            CoreAuditJournal.details.like(f"%Decision ID: {decision.id}%")
         ).all()
-        
+
         journal_refs = [str(entry.id) for entry in journal_entries]
         
         # Récupérer les données déclenchantes si disponibles

@@ -4,7 +4,7 @@ Gestion du journal d'audit inaltérable
 """
 
 from sqlalchemy.orm import Session
-from app.core.models import JournalEntry
+from app.core.models import CoreAuditJournal
 from typing import Optional
 
 
@@ -21,7 +21,7 @@ class JournalService:
         user_id: int,
         action: str,
         details: Optional[str] = None
-    ) -> JournalEntry:
+    ) -> CoreAuditJournal:
         """
         Écrit une entrée dans le journal.
         Seule opération autorisée : INSERT.
@@ -34,9 +34,9 @@ class JournalService:
             details: Détails optionnels (JSON stringifié recommandé)
         
         Returns:
-            JournalEntry créée
+            CoreAuditJournal créée
         """
-        entry = JournalEntry(
+        entry = CoreAuditJournal(
             tenant_id=tenant_id,
             user_id=user_id,
             action=action,
@@ -53,7 +53,7 @@ class JournalService:
         tenant_id: str,
         limit: int = 100,
         offset: int = 0
-    ) -> list[JournalEntry]:
+    ) -> list[CoreAuditJournal]:
         """
         Lit les entrées du journal pour un tenant.
         Filtrage strict par tenant_id.
@@ -67,9 +67,9 @@ class JournalService:
         Returns:
             Liste des entrées du journal
         """
-        return db.query(JournalEntry)\
-            .filter(JournalEntry.tenant_id == tenant_id)\
-            .order_by(JournalEntry.created_at.desc())\
+        return db.query(CoreAuditJournal)\
+            .filter(CoreAuditJournal.tenant_id == tenant_id)\
+            .order_by(CoreAuditJournal.created_at.desc())\
             .limit(limit)\
             .offset(offset)\
             .all()
