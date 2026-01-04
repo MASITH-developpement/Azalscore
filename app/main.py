@@ -109,6 +109,9 @@ from app.modules.field_service.router import router as field_service_router
 # Module M18 - Mobile App Backend
 from app.modules.mobile.router import router as mobile_router
 
+# Module IA - Assistant IA Transverse Opérationnelle
+from app.modules.ai_assistant.router import router as ai_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -277,7 +280,12 @@ app.include_router(helpdesk_router)
 
 # Module M17 - Field Service (Interventions Terrain)
 app.include_router(field_service_router)
+
+# Module M18 - Mobile App Backend
 app.include_router(mobile_router)
+
+# Module IA - Assistant IA Transverse Opérationnelle
+app.include_router(ai_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
