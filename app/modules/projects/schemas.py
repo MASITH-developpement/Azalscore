@@ -576,7 +576,9 @@ class IssueList(BaseModel):
 
 class TimeEntryBase(BaseModel):
     """Base pour les saisies de temps."""
-    date: date
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    entry_date: date = Field(..., alias="date")
     hours: float = Field(..., gt=0)
     description: Optional[str] = None
     activity_type: Optional[str] = None
@@ -955,7 +957,9 @@ class ProjectStats(BaseModel):
 
 class BurndownData(BaseModel):
     """Données de burndown chart."""
-    date: date
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    chart_date: date = Field(..., alias="date")
     planned_remaining: float
     actual_remaining: float
     completed: float

@@ -347,7 +347,7 @@ class DocumentBase(BaseModel):
 
     document_type: DocumentType = Field(..., alias="type")
     reference: Optional[str] = None
-    date: date = Field(default_factory=date.today)
+    doc_date: date = Field(default_factory=date.today, alias="date")
     due_date: Optional[date] = None
     validity_date: Optional[date] = None
     delivery_date: Optional[date] = None
@@ -434,10 +434,12 @@ class DocumentList(BaseModel):
 
 class PaymentBase(BaseModel):
     """Base pour les paiements."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     method: PaymentMethod
     amount: Decimal
     currency: str = "EUR"
-    date: date = Field(default_factory=date.today)
+    payment_date: date = Field(default_factory=date.today, alias="date")
     reference: Optional[str] = None
     bank_account: Optional[str] = None
     transaction_id: Optional[str] = None
@@ -472,7 +474,7 @@ class ActivityBase(BaseModel):
     activity_type: ActivityType = Field(..., alias="type")
     subject: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
-    date: datetime = Field(default_factory=datetime.utcnow)
+    activity_date: datetime = Field(default_factory=datetime.utcnow, alias="date")
     due_date: Optional[datetime] = None
     duration_minutes: Optional[int] = None
     assigned_to: Optional[UUID] = None

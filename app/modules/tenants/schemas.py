@@ -295,9 +295,11 @@ class TenantInvitationResponse(BaseModel):
 
 class TenantUsageResponse(BaseModel):
     """Réponse utilisation."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     id: int
     tenant_id: str
-    date: datetime
+    usage_date: datetime = Field(..., alias="date")
     period: str
     active_users: int
     total_users: int

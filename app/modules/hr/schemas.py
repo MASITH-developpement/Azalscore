@@ -450,7 +450,9 @@ class PayslipResponse(BaseModel):
 
 class TimeEntryBase(BaseModel):
     """Base pour les entrées de temps."""
-    date: date
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    entry_date: date = Field(..., alias="date")
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     break_duration: int = 0

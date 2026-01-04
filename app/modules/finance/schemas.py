@@ -210,8 +210,10 @@ class EntryLineResponse(EntryLineBase):
 
 class EntryBase(BaseModel):
     """Base pour les écritures."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     journal_id: UUID
-    date: date
+    entry_date: date = Field(..., alias="date")
     reference: Optional[str] = None
     description: Optional[str] = None
 
@@ -309,7 +311,9 @@ class BankAccountResponse(BankAccountBase):
 
 class BankStatementLineBase(BaseModel):
     """Base pour les lignes de relevé."""
-    date: date
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    line_date: date = Field(..., alias="date")
     value_date: Optional[date] = None
     label: str
     reference: Optional[str] = None
@@ -336,10 +340,12 @@ class BankStatementLineResponse(BankStatementLineBase):
 
 class BankStatementBase(BaseModel):
     """Base pour les relevés."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     bank_account_id: UUID
     name: str
     reference: Optional[str] = None
-    date: date
+    statement_date: date = Field(..., alias="date")
     start_date: date
     end_date: date
     opening_balance: Decimal
@@ -373,7 +379,7 @@ class BankTransactionBase(BaseModel):
 
     bank_account_id: UUID
     transaction_type: BankTransactionType = Field(..., alias="type")
-    date: date
+    transaction_date: date = Field(..., alias="date")
     value_date: Optional[date] = None
     amount: Decimal
     label: str
@@ -405,8 +411,10 @@ class BankTransactionResponse(BankTransactionBase):
 
 class CashForecastBase(BaseModel):
     """Base pour les prévisions."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     period: ForecastPeriod
-    date: date
+    forecast_date: date = Field(..., alias="date")
     opening_balance: Decimal
     expected_receipts: Decimal = Decimal("0")
     expected_payments: Decimal = Decimal("0")

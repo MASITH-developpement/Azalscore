@@ -439,7 +439,9 @@ class CurrencyFormatResponse(BaseModel):
 
 
 class DateFormatRequest(BaseModel):
-    date: date
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    format_date: date = Field(..., alias="date")
     country_code: str = Field(..., min_length=2, max_length=2)
 
 

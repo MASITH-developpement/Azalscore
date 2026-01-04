@@ -691,9 +691,11 @@ class SiteSEOResponse(BaseModel):
 
 class SiteAnalyticsResponse(BaseModel):
     """Réponse analytics."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     id: int
     tenant_id: str
-    date: datetime
+    analytics_date: datetime = Field(..., alias="date")
     period: str
     page_views: int
     unique_visitors: int

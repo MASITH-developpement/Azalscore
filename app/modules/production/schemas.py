@@ -120,8 +120,10 @@ class WorkCenterResponse(BaseModel):
 
 class WorkCenterCapacityCreate(BaseModel):
     """Création de capacité centre de travail."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     work_center_id: UUID
-    date: date
+    capacity_date: date = Field(..., alias="date")
     shift: str = "DAY"
     available_hours: Decimal
     notes: Optional[str] = None
@@ -129,9 +131,11 @@ class WorkCenterCapacityCreate(BaseModel):
 
 class WorkCenterCapacityResponse(BaseModel):
     """Réponse capacité."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
     id: UUID
     work_center_id: UUID
-    date: date
+    capacity_date: date = Field(..., alias="date")
     shift: str
     available_hours: Decimal
     planned_hours: Decimal
