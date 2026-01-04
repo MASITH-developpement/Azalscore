@@ -46,6 +46,9 @@ from app.modules.country_packs.router import router as country_packs_router
 # Module T6 - Diffusion d'Information Périodique
 from app.modules.broadcast.router import router as broadcast_router
 
+# Module T7 - Module Web Transverse
+from app.modules.web.router import router as web_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -118,6 +121,9 @@ app.include_router(country_packs_router)
 
 # Module T6 - Diffusion d'Information Périodique
 app.include_router(broadcast_router)
+
+# Module T7 - Module Web Transverse
+app.include_router(web_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

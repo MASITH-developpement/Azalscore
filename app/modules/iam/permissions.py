@@ -399,6 +399,59 @@ BROADCAST_PERMISSIONS = {
     "broadcast.admin": "Administration complète diffusion",
 }
 
+WEB_PERMISSIONS = {
+    # Thèmes
+    "web.themes.create": "Créer des thèmes",
+    "web.themes.read": "Voir les thèmes",
+    "web.themes.update": "Modifier les thèmes",
+    "web.themes.delete": "Supprimer des thèmes",
+    "web.themes.set_default": "Définir le thème par défaut",
+
+    # Widgets
+    "web.widgets.create": "Créer des widgets",
+    "web.widgets.read": "Voir les widgets",
+    "web.widgets.update": "Modifier les widgets",
+    "web.widgets.delete": "Supprimer des widgets",
+
+    # Dashboards
+    "web.dashboards.create": "Créer des dashboards",
+    "web.dashboards.read": "Voir les dashboards",
+    "web.dashboards.update": "Modifier les dashboards",
+    "web.dashboards.delete": "Supprimer des dashboards",
+    "web.dashboards.set_default": "Définir le dashboard par défaut",
+
+    # Menus
+    "web.menus.create": "Créer des éléments de menu",
+    "web.menus.read": "Voir les menus",
+    "web.menus.update": "Modifier les menus",
+    "web.menus.delete": "Supprimer des menus",
+
+    # Préférences UI
+    "web.preferences.read": "Voir ses préférences UI",
+    "web.preferences.update": "Modifier ses préférences UI",
+    "web.preferences.admin": "Gérer préférences UI utilisateurs",
+
+    # Raccourcis
+    "web.shortcuts.create": "Créer des raccourcis clavier",
+    "web.shortcuts.read": "Voir les raccourcis clavier",
+
+    # Pages personnalisées
+    "web.pages.create": "Créer des pages personnalisées",
+    "web.pages.read": "Voir les pages personnalisées",
+    "web.pages.update": "Modifier les pages personnalisées",
+    "web.pages.publish": "Publier des pages",
+
+    # Composants UI
+    "web.components.create": "Créer des composants UI",
+    "web.components.read": "Voir les composants UI",
+
+    # Configuration UI complète
+    "web.config.read": "Voir la configuration UI complète",
+
+    # Admin complet
+    "web.admin": "Administration complète web UI",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -421,6 +474,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **QC_PERMISSIONS,
     **COUNTRY_PACKS_PERMISSIONS,
     **BROADCAST_PERMISSIONS,
+    **WEB_PERMISSIONS,
 }
 
 
@@ -439,6 +493,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "qc.*",
         "country.*",
         "broadcast.*",
+        "web.*",
     ],
 
     "DIRIGEANT": [
@@ -472,6 +527,15 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "broadcast.executions.read",
         "broadcast.metrics.read",
         "broadcast.dashboard.read",
+        "web.themes.read",
+        "web.widgets.read",
+        "web.dashboards.read",
+        "web.menus.read",
+        "web.preferences.read",
+        "web.preferences.update",
+        "web.shortcuts.read",
+        "web.pages.read",
+        "web.config.read",
     ],
 
     "DAF": [
