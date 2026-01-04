@@ -37,6 +37,9 @@ from app.modules.triggers.router import router as triggers_router
 # Module T3 - Audit & Benchmark Évolutif
 from app.modules.audit.router import router as audit_router
 
+# Module T4 - Contrôle Qualité Central
+from app.modules.qc.router import router as qc_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -100,6 +103,9 @@ app.include_router(triggers_router)
 
 # Module T3 - Audit & Benchmark Évolutif
 app.include_router(audit_router)
+
+# Module T4 - Contrôle Qualité Central
+app.include_router(qc_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

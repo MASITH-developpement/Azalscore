@@ -263,6 +263,53 @@ AUDIT_PERMISSIONS = {
     "audit.dashboards.delete": "Supprimer des dashboards",
 }
 
+QC_PERMISSIONS = {
+    # Règles QC
+    "qc.rules.create": "Créer des règles QC",
+    "qc.rules.read": "Voir les règles QC",
+    "qc.rules.update": "Modifier les règles QC",
+    "qc.rules.delete": "Supprimer des règles QC",
+
+    # Modules
+    "qc.modules.create": "Enregistrer des modules",
+    "qc.modules.read": "Voir les modules",
+    "qc.modules.update": "Modifier les modules",
+
+    # Validations
+    "qc.validations.create": "Lancer des validations",
+    "qc.validations.read": "Voir les validations",
+
+    # Tests
+    "qc.tests.create": "Enregistrer des tests",
+    "qc.tests.read": "Voir les tests",
+
+    # Métriques
+    "qc.metrics.create": "Enregistrer des métriques QC",
+    "qc.metrics.read": "Voir les métriques QC",
+
+    # Alertes
+    "qc.alerts.create": "Créer des alertes QC",
+    "qc.alerts.read": "Voir les alertes QC",
+    "qc.alerts.resolve": "Résoudre les alertes QC",
+
+    # Dashboards
+    "qc.dashboards.create": "Créer des dashboards QC",
+    "qc.dashboards.read": "Voir les dashboards QC",
+    "qc.dashboards.update": "Modifier les dashboards QC",
+    "qc.dashboards.delete": "Supprimer des dashboards QC",
+
+    # Templates
+    "qc.templates.create": "Créer des templates QC",
+    "qc.templates.read": "Voir les templates QC",
+    "qc.templates.apply": "Appliquer des templates QC",
+
+    # Stats
+    "qc.stats.read": "Voir les statistiques QC",
+
+    # Admin complet
+    "qc.admin": "Administration complète QC",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -282,6 +329,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
     **AUDIT_PERMISSIONS,
+    **QC_PERMISSIONS,
 }
 
 
@@ -297,6 +345,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "admin.*",
         "triggers.*",
         "autoconfig.*",
+        "qc.*",
     ],
 
     "DIRIGEANT": [
@@ -318,6 +367,10 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "admin.settings.read",
         "triggers.*",
         "autoconfig.*",
+        "qc.validations.read",
+        "qc.modules.read",
+        "qc.stats.read",
+        "qc.dashboards.read",
     ],
 
     "DAF": [
