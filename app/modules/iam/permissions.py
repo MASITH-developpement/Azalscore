@@ -158,6 +158,70 @@ ADMIN_PERMISSIONS = {
     "admin.module.uninstall": "Désinstaller des modules",
 }
 
+TRIGGERS_PERMISSIONS = {
+    # Gestion des triggers
+    "triggers.create": "Créer des déclencheurs",
+    "triggers.read": "Voir les déclencheurs",
+    "triggers.update": "Modifier les déclencheurs",
+    "triggers.delete": "Supprimer des déclencheurs",
+    "triggers.admin": "Administration complète triggers",
+
+    # Abonnements
+    "triggers.subscribe": "S'abonner aux déclencheurs",
+    "triggers.unsubscribe": "Se désabonner des déclencheurs",
+
+    # Événements
+    "triggers.events.read": "Voir les événements",
+    "triggers.events.resolve": "Résoudre les événements",
+    "triggers.events.escalate": "Escalader les événements",
+
+    # Templates
+    "triggers.templates.create": "Créer des templates",
+    "triggers.templates.read": "Voir les templates",
+    "triggers.templates.update": "Modifier les templates",
+    "triggers.templates.delete": "Supprimer des templates",
+
+    # Rapports planifiés
+    "triggers.reports.create": "Créer des rapports planifiés",
+    "triggers.reports.read": "Voir les rapports planifiés",
+    "triggers.reports.update": "Modifier les rapports planifiés",
+    "triggers.reports.delete": "Supprimer des rapports planifiés",
+    "triggers.reports.generate": "Générer des rapports manuellement",
+
+    # Webhooks
+    "triggers.webhooks.create": "Créer des webhooks",
+    "triggers.webhooks.read": "Voir les webhooks",
+    "triggers.webhooks.update": "Modifier les webhooks",
+    "triggers.webhooks.delete": "Supprimer des webhooks",
+    "triggers.webhooks.test": "Tester les webhooks",
+
+    # Logs
+    "triggers.logs.read": "Voir les logs triggers",
+}
+
+AUTOCONFIG_PERMISSIONS = {
+    # Profils
+    "autoconfig.profiles.create": "Créer des profils",
+    "autoconfig.profiles.read": "Voir les profils",
+    "autoconfig.profiles.update": "Modifier les profils",
+    "autoconfig.profiles.delete": "Supprimer des profils",
+
+    # Assignations
+    "autoconfig.assignments.create": "Assigner des profils",
+    "autoconfig.assignments.read": "Voir les assignations",
+    "autoconfig.assignments.update": "Modifier les assignations",
+    "autoconfig.assignments.delete": "Supprimer des assignations",
+
+    # Overrides
+    "autoconfig.overrides.create": "Créer des dérogations",
+    "autoconfig.overrides.read": "Voir les dérogations",
+    "autoconfig.overrides.revoke": "Révoquer des dérogations",
+
+    # Onboarding/Offboarding
+    "autoconfig.onboarding.execute": "Exécuter onboarding",
+    "autoconfig.offboarding.execute": "Exécuter offboarding",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -174,6 +238,8 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **PURCHASE_PERMISSIONS,
     **STOCK_PERMISSIONS,
     **ADMIN_PERMISSIONS,
+    **TRIGGERS_PERMISSIONS,
+    **AUTOCONFIG_PERMISSIONS,
 }
 
 
@@ -187,6 +253,8 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
     "TENANT_ADMIN": [
         "iam.*",
         "admin.*",
+        "triggers.*",
+        "autoconfig.*",
     ],
 
     "DIRIGEANT": [
@@ -206,6 +274,8 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "stock.*",
         "admin.tenant.read",
         "admin.settings.read",
+        "triggers.*",
+        "autoconfig.*",
     ],
 
     "DAF": [
@@ -218,6 +288,11 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "purchase.invoice.validate",
         "decision.read",
         "decision.classify",
+        "triggers.read",
+        "triggers.events.read",
+        "triggers.events.resolve",
+        "triggers.reports.read",
+        "triggers.reports.generate",
     ],
 
     "DRH": [

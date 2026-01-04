@@ -31,6 +31,9 @@ from app.modules.iam.router import router as iam_router
 # Module T1 - Configuration Automatique par Fonction
 from app.modules.autoconfig.router import router as autoconfig_router
 
+# Module T2 - Système de Déclencheurs & Diffusion
+from app.modules.triggers.router import router as triggers_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -88,6 +91,9 @@ app.include_router(iam_router)
 
 # Module T1 - Configuration Automatique par Fonction
 app.include_router(autoconfig_router)
+
+# Module T2 - Système de Déclencheurs & Diffusion
+app.include_router(triggers_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
