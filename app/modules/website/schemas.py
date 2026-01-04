@@ -691,7 +691,7 @@ class SiteSEOResponse(BaseModel):
 
 class SiteAnalyticsResponse(BaseModel):
     """Réponse analytics."""
-    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True, from_attributes=True)
 
     id: int
     tenant_id: str
@@ -723,9 +723,6 @@ class SiteAnalyticsResponse(BaseModel):
         if isinstance(v, str):
             return json.loads(v) if v else None
         return v
-
-    class Config:
-        from_attributes = True
 
 
 class AnalyticsDashboardResponse(BaseModel):
