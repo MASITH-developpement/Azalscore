@@ -100,6 +100,9 @@ from app.modules.subscriptions.router import router as subscriptions_router
 # Module M15 - Stripe Integration
 from app.modules.stripe_integration.router import router as stripe_router
 
+# Module M16 - Helpdesk (Support Client)
+from app.modules.helpdesk.router import router as helpdesk_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -262,6 +265,9 @@ app.include_router(subscriptions_router)
 
 # Module M15 - Stripe Integration
 app.include_router(stripe_router)
+
+# Module M16 - Helpdesk (Support Client)
+app.include_router(helpdesk_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

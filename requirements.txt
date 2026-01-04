@@ -21,6 +21,9 @@ pyotp==2.9.0
 # Tâches planifiées
 apscheduler==3.10.4
 
+# Utilitaires
+python-dateutil==2.9.0
+
 # Tests
 pytest==7.4.4
 pytest-asyncio==0.23.3
