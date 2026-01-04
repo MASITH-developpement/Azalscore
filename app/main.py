@@ -94,6 +94,9 @@ from app.modules.ecommerce.router import router as ecommerce_router
 # Module M13 - POS (Point de Vente)
 from app.modules.pos.router import router as pos_router
 
+# Module M14 - Subscriptions (Abonnements)
+from app.modules.subscriptions.router import router as subscriptions_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -250,6 +253,9 @@ app.include_router(ecommerce_router)
 
 # Module M13 - POS (Point de Vente)
 app.include_router(pos_router)
+
+# Module M14 - Subscriptions (Abonnements)
+app.include_router(subscriptions_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
