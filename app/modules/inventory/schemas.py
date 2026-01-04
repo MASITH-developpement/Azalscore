@@ -283,8 +283,6 @@ class ProductResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
 
     @field_validator('tags', mode='before')
     @classmethod
