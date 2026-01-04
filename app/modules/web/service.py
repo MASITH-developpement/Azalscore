@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc
 
 from .models import (
-    Theme, Widget, Dashboard, MenuItem, UIComponent,
+    Theme, Widget, WebDashboard as Dashboard, MenuItem, UIComponent,
     UserUIPreference, Shortcut, CustomPage,
     ThemeMode, WidgetType, WidgetSize, ComponentCategory,
     MenuType, PageType
