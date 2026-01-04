@@ -42,6 +42,7 @@ from app.modules.qc.router import router as qc_router
 
 # Module T5 - Packs Pays (Localisation)
 from app.modules.country_packs.router import router as country_packs_router
+from app.modules.country_packs.france.router import router as france_pack_router
 
 # Module T6 - Diffusion d'Information Périodique
 from app.modules.broadcast.router import router as broadcast_router
@@ -217,6 +218,7 @@ app.include_router(qc_router)
 
 # Module T5 - Packs Pays (Localisation)
 app.include_router(country_packs_router)
+app.include_router(france_pack_router)
 
 # Module T6 - Diffusion d'Information Périodique
 app.include_router(broadcast_router)
