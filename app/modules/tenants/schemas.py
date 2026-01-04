@@ -71,7 +71,7 @@ class TenantCreate(BaseModel):
     primary_color: str = "#1976D2"
     secondary_color: str = "#424242"
     features: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    extra_data: Optional[Dict[str, Any]] = None
 
 
 class TenantUpdate(BaseModel):
@@ -97,7 +97,7 @@ class TenantUpdate(BaseModel):
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
     features: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    extra_data: Optional[Dict[str, Any]] = None
 
 
 class TenantResponse(BaseModel):
@@ -129,7 +129,7 @@ class TenantResponse(BaseModel):
     primary_color: str
     secondary_color: str
     features: Optional[Dict[str, Any]]
-    metadata: Optional[Dict[str, Any]]
+    extra_data: Optional[Dict[str, Any]]
     trial_ends_at: Optional[datetime]
     activated_at: Optional[datetime]
     suspended_at: Optional[datetime]
@@ -137,7 +137,7 @@ class TenantResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    @field_validator("features", "metadata", mode="before")
+    @field_validator("features", "extra_data", mode="before")
     @classmethod
     def parse_json(cls, v):
         if isinstance(v, str):
