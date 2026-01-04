@@ -87,7 +87,7 @@ user_roles = Table(
     Column('tenant_id', String(255), nullable=False, index=True),
     Column('user_id', Integer, ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False),
     Column('role_id', Integer, ForeignKey('iam_roles.id', ondelete='CASCADE'), nullable=False),
-    Column('granted_by', Integer, ForeignKey('iam_users.id'), nullable=True),
+    Column('granted_by', Integer, nullable=True),  # Audit only, no FK to avoid ambiguity
     Column('granted_at', DateTime, default=datetime.utcnow, nullable=False),
     Column('expires_at', DateTime, nullable=True),
     Column('is_active', Boolean, default=True, nullable=False),
@@ -119,7 +119,7 @@ user_groups = Table(
     Column('tenant_id', String(255), nullable=False, index=True),
     Column('user_id', Integer, ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False),
     Column('group_id', Integer, ForeignKey('iam_groups.id', ondelete='CASCADE'), nullable=False),
-    Column('added_by', Integer, ForeignKey('iam_users.id'), nullable=True),
+    Column('added_by', Integer, nullable=True),  # Audit only, no FK to avoid ambiguity
     Column('added_at', DateTime, default=datetime.utcnow, nullable=False),
     UniqueConstraint('tenant_id', 'user_id', 'group_id', name='uq_user_group_tenant'),
     Index('idx_user_groups_tenant', 'tenant_id'),
@@ -201,21 +201,9 @@ class IAMUser(Base):
     last_login_at = Column(DateTime, nullable=True)
     last_login_ip = Column(String(50), nullable=True)
 
-    # Relations
-    # Note: foreign_keys explicites car user_roles a 2 FK vers iam_users (user_id, granted_by)
-    roles = relationship(
-        "IAMRole",
-        secondary=user_roles,
-        back_populates="users",
-        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id]
-    )
-    # Note: foreign_keys explicites car user_groups a 2 FK vers iam_users (user_id, added_by)
-    groups = relationship(
-        "IAMGroup",
-        secondary=user_groups,
-        back_populates="users",
-        foreign_keys=[user_groups.c.user_id, user_groups.c.group_id]
-    )
+    # Relations (simples car plus d'ambiguïté FK après suppression des FK audit)
+    roles = relationship("IAMRole", secondary=user_roles, back_populates="users")
+    groups = relationship("IAMGroup", secondary=user_groups, back_populates="users")
     sessions = relationship("IAMSession", back_populates="user", cascade="all, delete-orphan")
 
     __table_args__ = (
@@ -260,14 +248,8 @@ class IAMRole(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     created_by = Column(Integer, nullable=True)
 
-    # Relations
-    # Note: foreign_keys explicites car user_roles a 2 FK vers iam_users
-    users = relationship(
-        "IAMUser",
-        secondary=user_roles,
-        back_populates="roles",
-        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id]
-    )
+    # Relations (simples car plus d'ambiguïté FK)
+    users = relationship("IAMUser", secondary=user_roles, back_populates="roles")
     permissions = relationship("IAMPermission", secondary=role_permissions, back_populates="roles")
     children = relationship("IAMRole", backref="parent", remote_side=[id])
     groups = relationship("IAMGroup", secondary=group_roles, back_populates="roles")
@@ -342,14 +324,8 @@ class IAMGroup(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     created_by = Column(Integer, nullable=True)
 
-    # Relations
-    # Note: foreign_keys explicites car user_groups a 2 FK vers iam_users
-    users = relationship(
-        "IAMUser",
-        secondary=user_groups,
-        back_populates="groups",
-        foreign_keys=[user_groups.c.user_id, user_groups.c.group_id]
-    )
+    # Relations (simples car plus d'ambiguïté FK)
+    users = relationship("IAMUser", secondary=user_groups, back_populates="groups")
     roles = relationship("IAMRole", secondary=group_roles, back_populates="groups")
 
     __table_args__ = (
