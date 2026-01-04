@@ -278,6 +278,77 @@ STOCK_PERMISSIONS = {
     "stock.inventory.validate": "Valider les inventaires",
 }
 
+INVENTORY_PERMISSIONS = {
+    # Catégories
+    "inventory.categories.create": "Créer des catégories produits",
+    "inventory.categories.read": "Voir les catégories produits",
+    "inventory.categories.update": "Modifier les catégories",
+    "inventory.categories.delete": "Supprimer les catégories",
+
+    # Entrepôts
+    "inventory.warehouses.create": "Créer des entrepôts",
+    "inventory.warehouses.read": "Voir les entrepôts",
+    "inventory.warehouses.update": "Modifier les entrepôts",
+    "inventory.warehouses.delete": "Supprimer les entrepôts",
+
+    # Emplacements
+    "inventory.locations.create": "Créer des emplacements",
+    "inventory.locations.read": "Voir les emplacements",
+    "inventory.locations.update": "Modifier les emplacements",
+
+    # Produits
+    "inventory.products.create": "Créer des produits",
+    "inventory.products.read": "Voir les produits",
+    "inventory.products.update": "Modifier les produits",
+    "inventory.products.activate": "Activer les produits",
+    "inventory.products.delete": "Supprimer les produits",
+
+    # Stock
+    "inventory.stock.read": "Voir les niveaux de stock",
+    "inventory.stock.adjust": "Ajuster les stocks",
+
+    # Lots
+    "inventory.lots.create": "Créer des lots",
+    "inventory.lots.read": "Voir les lots",
+    "inventory.lots.update": "Modifier les lots",
+    "inventory.lots.block": "Bloquer les lots",
+
+    # Numéros de série
+    "inventory.serials.create": "Créer des numéros de série",
+    "inventory.serials.read": "Voir les numéros de série",
+    "inventory.serials.update": "Modifier les numéros de série",
+
+    # Mouvements
+    "inventory.movements.create": "Créer des mouvements",
+    "inventory.movements.read": "Voir les mouvements",
+    "inventory.movements.confirm": "Confirmer les mouvements",
+    "inventory.movements.cancel": "Annuler les mouvements",
+
+    # Inventaires
+    "inventory.counts.create": "Créer des inventaires",
+    "inventory.counts.read": "Voir les inventaires",
+    "inventory.counts.start": "Démarrer les inventaires",
+    "inventory.counts.count": "Saisir les comptages",
+    "inventory.counts.validate": "Valider les inventaires",
+
+    # Préparations
+    "inventory.pickings.create": "Créer des préparations",
+    "inventory.pickings.read": "Voir les préparations",
+    "inventory.pickings.assign": "Assigner les préparations",
+    "inventory.pickings.pick": "Préparer les commandes",
+    "inventory.pickings.complete": "Terminer les préparations",
+
+    # Valorisation
+    "inventory.valuations.create": "Créer des valorisations",
+    "inventory.valuations.read": "Voir les valorisations",
+
+    # Dashboard
+    "inventory.dashboard.read": "Voir le dashboard inventaire",
+
+    # Admin complet
+    "inventory.admin": "Administration complète inventaire",
+}
+
 ADMIN_PERMISSIONS = {
     "admin.tenant.read": "Voir les informations tenant",
     "admin.tenant.update": "Modifier le tenant",
@@ -823,6 +894,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **PURCHASE_PERMISSIONS,
     **PROCUREMENT_PERMISSIONS,
     **STOCK_PERMISSIONS,
+    **INVENTORY_PERMISSIONS,
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
@@ -858,6 +930,9 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "tenants.*",
         "commercial.*",
         "finance.*",
+        "hr.*",
+        "procurement.*",
+        "inventory.*",
     ],
 
     "DIRIGEANT": [
@@ -875,6 +950,12 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "sales.*",
         "purchase.*",
         "stock.*",
+        "inventory.dashboard.read",
+        "inventory.products.read",
+        "inventory.stock.read",
+        "inventory.warehouses.read",
+        "inventory.valuations.read",
+        "procurement.dashboard.read",
         "admin.tenant.read",
         "admin.settings.read",
         "triggers.*",
@@ -975,7 +1056,9 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
 
     "RESPONSABLE_PRODUCTION": [
         "stock.*",
+        "inventory.*",
         "purchase.order.read",
+        "procurement.receipts.read",
         "decision.read",
     ],
 
@@ -1040,6 +1123,24 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "stock.movement.create",
         "stock.movement.read",
         "stock.inventory.create",
+        "inventory.categories.read",
+        "inventory.warehouses.read",
+        "inventory.locations.read",
+        "inventory.products.read",
+        "inventory.stock.read",
+        "inventory.lots.read",
+        "inventory.lots.create",
+        "inventory.serials.read",
+        "inventory.serials.create",
+        "inventory.movements.create",
+        "inventory.movements.read",
+        "inventory.movements.confirm",
+        "inventory.counts.read",
+        "inventory.counts.count",
+        "inventory.pickings.read",
+        "inventory.pickings.pick",
+        "inventory.pickings.complete",
+        "inventory.dashboard.read",
     ],
 
     "RH": [
