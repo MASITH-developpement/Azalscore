@@ -26,12 +26,12 @@ from .models import (
 
 class AccountBase(BaseModel):
     """Base pour les comptes."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
-    type: AccountType
+    account_type: AccountType = Field(..., alias="type")
     parent_id: Optional[UUID] = None
     is_auxiliary: bool = False
     auxiliary_type: Optional[str] = None
@@ -80,11 +80,11 @@ class AccountList(BaseModel):
 
 class JournalBase(BaseModel):
     """Base pour les journaux."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
-    type: JournalType
+    journal_type: JournalType = Field(..., alias="type")
     default_debit_account_id: Optional[UUID] = None
     default_credit_account_id: Optional[UUID] = None
     sequence_prefix: Optional[str] = None
@@ -369,10 +369,10 @@ class BankStatementResponse(BankStatementBase):
 
 class BankTransactionBase(BaseModel):
     """Base pour les transactions."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     bank_account_id: UUID
-    type: BankTransactionType
+    transaction_type: BankTransactionType = Field(..., alias="type")
     date: date
     value_date: Optional[date] = None
     amount: Decimal

@@ -27,12 +27,12 @@ from .models import (
 
 class WorkCenterCreate(BaseModel):
     """Création d'un centre de travail."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    type: WorkCenterType = WorkCenterType.MACHINE
+    work_center_type: WorkCenterType = Field(default=WorkCenterType.MACHINE, alias="type")
     warehouse_id: Optional[UUID] = None
     location: Optional[str] = None
     capacity: Decimal = Decimal("1")
@@ -56,11 +56,11 @@ class WorkCenterCreate(BaseModel):
 
 class WorkCenterUpdate(BaseModel):
     """Mise à jour d'un centre de travail."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     name: Optional[str] = None
     description: Optional[str] = None
-    type: Optional[WorkCenterType] = None
+    work_center_type: Optional[WorkCenterType] = Field(default=None, alias="type")
     status: Optional[WorkCenterStatus] = None
     warehouse_id: Optional[UUID] = None
     location: Optional[str] = None
@@ -81,13 +81,13 @@ class WorkCenterUpdate(BaseModel):
 
 class WorkCenterResponse(BaseModel):
     """Réponse centre de travail."""
-    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True, populate_by_name=True)
 
     id: UUID
     code: str
     name: str
     description: Optional[str]
-    type: WorkCenterType
+    work_center_type: WorkCenterType = Field(..., alias="type")
     status: WorkCenterStatus
     warehouse_id: Optional[UUID]
     location: Optional[str]
@@ -182,7 +182,7 @@ class BOMLineResponse(BaseModel):
 
 class BOMCreate(BaseModel):
     """Création d'une nomenclature."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
@@ -191,7 +191,7 @@ class BOMCreate(BaseModel):
     product_id: UUID
     quantity: Decimal = Decimal("1")
     unit: str = "UNIT"
-    type: BOMType = BOMType.MANUFACTURING
+    bom_type: BOMType = Field(default=BOMType.MANUFACTURING, alias="type")
     routing_id: Optional[UUID] = None
     valid_from: Optional[date] = None
     valid_to: Optional[date] = None
@@ -219,7 +219,7 @@ class BOMUpdate(BaseModel):
 
 class BOMResponse(BaseModel):
     """Réponse nomenclature."""
-    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True, populate_by_name=True)
 
     id: UUID
     code: str
@@ -229,7 +229,7 @@ class BOMResponse(BaseModel):
     product_id: UUID
     quantity: Decimal
     unit: str
-    type: BOMType
+    bom_type: BOMType = Field(..., alias="type")
     status: BOMStatus
     routing_id: Optional[UUID]
     valid_from: Optional[date]
@@ -263,13 +263,13 @@ class BOMList(BaseModel):
 
 class RoutingOperationCreate(BaseModel):
     """Création d'une opération de gamme."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     sequence: int
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    type: OperationType = OperationType.PRODUCTION
+    operation_type: OperationType = Field(default=OperationType.PRODUCTION, alias="type")
     work_center_id: Optional[UUID] = None
     setup_time: Decimal = Decimal("0")
     operation_time: Decimal = Decimal("0")
@@ -287,7 +287,7 @@ class RoutingOperationCreate(BaseModel):
 
 class RoutingOperationResponse(BaseModel):
     """Réponse opération de gamme."""
-    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True, populate_by_name=True)
 
     id: UUID
     routing_id: UUID
@@ -295,7 +295,7 @@ class RoutingOperationResponse(BaseModel):
     code: str
     name: str
     description: Optional[str]
-    type: OperationType
+    operation_type: OperationType = Field(..., alias="type")
     work_center_id: Optional[UUID]
     setup_time: Decimal
     operation_time: Decimal

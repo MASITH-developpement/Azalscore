@@ -26,12 +26,12 @@ from .models import (
 
 class SupplierBase(BaseModel):
     """Base pour les fournisseurs."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
     legal_name: Optional[str] = None
-    type: SupplierType = SupplierType.OTHER
+    supplier_type: SupplierType = Field(default=SupplierType.OTHER, alias="type")
     tax_id: Optional[str] = None
     vat_number: Optional[str] = None
     email: Optional[str] = None
@@ -60,11 +60,11 @@ class SupplierCreate(SupplierBase):
 
 class SupplierUpdate(BaseModel):
     """Mise à jour d'un fournisseur."""
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     name: Optional[str] = None
     legal_name: Optional[str] = None
-    type: Optional[SupplierType] = None
+    supplier_type: Optional[SupplierType] = Field(default=None, alias="type")
     status: Optional[SupplierStatus] = None
     tax_id: Optional[str] = None
     vat_number: Optional[str] = None
