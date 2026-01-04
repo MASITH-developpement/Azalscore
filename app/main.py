@@ -103,6 +103,9 @@ from app.modules.stripe_integration.router import router as stripe_router
 # Module M16 - Helpdesk (Support Client)
 from app.modules.helpdesk.router import router as helpdesk_router
 
+# Module M17 - Field Service (Interventions Terrain)
+from app.modules.field_service.router import router as field_service_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -268,6 +271,9 @@ app.include_router(stripe_router)
 
 # Module M16 - Helpdesk (Support Client)
 app.include_router(helpdesk_router)
+
+# Module M17 - Field Service (Interventions Terrain)
+app.include_router(field_service_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
