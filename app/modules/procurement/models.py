@@ -732,7 +732,7 @@ class SupplierEvaluation(Base):
     supplier = relationship("Supplier", foreign_keys=[supplier_id])
 
     __table_args__ = (
-        Index('idx_evaluations_tenant', 'tenant_id'),
-        Index('idx_evaluations_supplier', 'tenant_id', 'supplier_id'),
-        Index('idx_evaluations_date', 'tenant_id', 'evaluation_date'),
+        Index('idx_supplier_eval_tenant', 'tenant_id'),
+        Index('idx_supplier_eval_supplier', 'tenant_id', 'supplier_id'),
+        Index('idx_supplier_eval_date', 'tenant_id', 'evaluation_date'),
     )
