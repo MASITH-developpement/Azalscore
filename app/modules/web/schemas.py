@@ -312,6 +312,10 @@ class MenuTreeNode(BaseModel):
     children: List["MenuTreeNode"] = []
 
 
+# Résoudre les références circulaires pour MenuTreeNode
+MenuTreeNode.model_rebuild()
+
+
 # ============================================================================
 # PRÉFÉRENCES UTILISATEUR
 # ============================================================================
