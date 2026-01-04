@@ -93,7 +93,7 @@ class SchedulerService:
                 # Journaliser l'action
                 for red_id, reason in old_reds:
                     db.execute(text("""
-                        INSERT INTO journal_entries 
+                        INSERT INTO core_audit_journal
                         (tenant_id, user_id, action, details, created_at)
                         VALUES (:tenant_id, :user_id, :action, :details, CURRENT_TIMESTAMP)
                     """), {

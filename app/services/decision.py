@@ -5,7 +5,7 @@ Moteur de décision critique avec règle d'irréversibilité RED
 
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-from app.core.models import Decision, DecisionLevel, JournalEntry
+from app.core.models import Decision, DecisionLevel, CoreAuditJournal
 from fastapi import HTTPException
 
 
@@ -94,7 +94,7 @@ class DecisionService:
         
         # Si RED : journalisation obligatoire
         if level == DecisionLevel.RED:
-            journal_entry = JournalEntry(
+            journal_entry = CoreAuditJournal(
                 tenant_id=tenant_id,
                 user_id=user_id,
                 action="DECISION_RED",

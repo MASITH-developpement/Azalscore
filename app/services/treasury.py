@@ -4,7 +4,7 @@ Règle critique : trésorerie < 0 → RED automatique
 """
 
 from sqlalchemy.orm import Session
-from app.core.models import TreasuryForecast, Decision, DecisionLevel, JournalEntry
+from app.core.models import TreasuryForecast, Decision, DecisionLevel, CoreAuditJournal
 
 
 class TreasuryService:
@@ -78,7 +78,7 @@ class TreasuryService:
         self.db.add(decision)
         
         # Journaliser
-        journal = JournalEntry(
+        journal = CoreAuditJournal(
             tenant_id=tenant_id,
             user_id=user_id,
             action="TREASURY_RED_TRIGGERED",
