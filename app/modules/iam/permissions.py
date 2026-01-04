@@ -222,6 +222,47 @@ AUTOCONFIG_PERMISSIONS = {
     "autoconfig.offboarding.execute": "Exécuter offboarding",
 }
 
+AUDIT_PERMISSIONS = {
+    # Logs d'audit
+    "audit.logs.read": "Voir les logs d'audit",
+    "audit.logs.export": "Exporter les logs d'audit",
+
+    # Sessions
+    "audit.sessions.read": "Voir les sessions",
+    "audit.sessions.terminate": "Terminer des sessions",
+
+    # Métriques
+    "audit.metrics.create": "Créer des métriques",
+    "audit.metrics.read": "Voir les métriques",
+    "audit.metrics.record": "Enregistrer des métriques",
+
+    # Benchmarks
+    "audit.benchmarks.create": "Créer des benchmarks",
+    "audit.benchmarks.read": "Voir les benchmarks",
+    "audit.benchmarks.execute": "Exécuter des benchmarks",
+
+    # Conformité
+    "audit.compliance.create": "Créer des contrôles conformité",
+    "audit.compliance.read": "Voir la conformité",
+    "audit.compliance.update": "Mettre à jour la conformité",
+
+    # Rétention
+    "audit.retention.create": "Créer des règles rétention",
+    "audit.retention.read": "Voir les règles rétention",
+    "audit.retention.execute": "Exécuter les règles rétention",
+
+    # Exports
+    "audit.exports.create": "Créer des exports",
+    "audit.exports.read": "Voir les exports",
+    "audit.exports.process": "Traiter les exports",
+
+    # Dashboards
+    "audit.dashboards.create": "Créer des dashboards",
+    "audit.dashboards.read": "Voir les dashboards",
+    "audit.dashboards.update": "Modifier les dashboards",
+    "audit.dashboards.delete": "Supprimer des dashboards",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -240,6 +281,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
+    **AUDIT_PERMISSIONS,
 }
 
 

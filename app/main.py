@@ -34,6 +34,9 @@ from app.modules.autoconfig.router import router as autoconfig_router
 # Module T2 - Système de Déclencheurs & Diffusion
 from app.modules.triggers.router import router as triggers_router
 
+# Module T3 - Audit & Benchmark Évolutif
+from app.modules.audit.router import router as audit_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -94,6 +97,9 @@ app.include_router(autoconfig_router)
 
 # Module T2 - Système de Déclencheurs & Diffusion
 app.include_router(triggers_router)
+
+# Module T3 - Audit & Benchmark Évolutif
+app.include_router(audit_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
