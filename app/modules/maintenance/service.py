@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from .models import (
     Asset, AssetComponent, AssetDocument, AssetMeter, MeterReading,
-    MaintenancePlan, MaintenancePlanTask, WorkOrder, WorkOrderTask,
+    MaintenancePlan, MaintenancePlanTask, MaintenanceWorkOrder as WorkOrder, WorkOrderTask,
     WorkOrderLabor, WorkOrderPart, Failure, FailureCause, SparePart,
     SparePartStock, PartRequest, MaintenanceContract, MaintenanceKPI,
     AssetCategory, AssetStatus, AssetCriticality, MaintenanceType,

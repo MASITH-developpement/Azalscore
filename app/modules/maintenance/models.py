@@ -235,7 +235,7 @@ class Asset(Base):
     default_maintenance_plan_id = Column(BigInteger)
 
     # Fournisseur
-    supplier_id = Column(BigInteger, ForeignKey("purchase_suppliers.id"))
+    supplier_id = Column(BigInteger)  # Référence fournisseur (table purchase_suppliers non implémentée)
 
     # Responsable
     responsible_id = Column(BigInteger, ForeignKey("users.id"))
@@ -268,7 +268,7 @@ class Asset(Base):
     components = relationship("AssetComponent", back_populates="asset")
     documents_rel = relationship("AssetDocument", back_populates="asset")
     meters = relationship("AssetMeter", back_populates="asset")
-    work_orders = relationship("WorkOrder", back_populates="asset")
+    work_orders = relationship("MaintenanceWorkOrder", back_populates="asset")
     failures = relationship("Failure", back_populates="asset")
 
 
@@ -554,8 +554,8 @@ class MaintenancePlanTask(Base):
 # MODÈLES - ORDRES DE TRAVAIL
 # ============================================================================
 
-class WorkOrder(Base):
-    """Ordre de travail / Bon d'intervention"""
+class MaintenanceWorkOrder(Base):
+    """Ordre de travail / Bon d'intervention (GMAO - distinct de production.WorkOrder)"""
     __tablename__ = "maintenance_work_orders"
     __table_args__ = (
         Index("idx_wo_tenant", "tenant_id"),
@@ -608,7 +608,7 @@ class WorkOrder(Base):
     # Affectation
     assigned_to_id = Column(BigInteger, ForeignKey("users.id"))
     team_id = Column(BigInteger)
-    external_vendor_id = Column(BigInteger, ForeignKey("purchase_suppliers.id"))
+    external_vendor_id = Column(BigInteger)  # Référence fournisseur externe (table purchase_suppliers non implémentée)
 
     # Instructions
     work_instructions = Column(Text)
@@ -695,7 +695,7 @@ class WorkOrderTask(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relations
-    work_order = relationship("WorkOrder", back_populates="tasks")
+    work_order = relationship("MaintenanceWorkOrder", back_populates="tasks")
 
 
 class WorkOrderLabor(Base):
@@ -735,7 +735,7 @@ class WorkOrderLabor(Base):
     created_by = Column(BigInteger, ForeignKey("users.id"))
 
     # Relations
-    work_order = relationship("WorkOrder", back_populates="labor_entries")
+    work_order = relationship("MaintenanceWorkOrder", back_populates="labor_entries")
 
 
 class WorkOrderPart(Base):
@@ -775,7 +775,7 @@ class WorkOrderPart(Base):
     created_by = Column(BigInteger, ForeignKey("users.id"))
 
     # Relations
-    work_order = relationship("WorkOrder", back_populates="parts_used")
+    work_order = relationship("MaintenanceWorkOrder", back_populates="parts_used")
 
 
 # ============================================================================
@@ -908,7 +908,7 @@ class SparePart(Base):
     manufacturer_part_number = Column(String(100))
 
     # Fournisseur
-    preferred_supplier_id = Column(BigInteger, ForeignKey("purchase_suppliers.id"))
+    preferred_supplier_id = Column(BigInteger)  # Référence fournisseur préféré (table purchase_suppliers non implémentée)
 
     # Équivalences
     equivalent_parts = Column(JSON)  # Liste des pièces équivalentes
@@ -1070,7 +1070,7 @@ class MaintenanceContract(Base):
     status = Column(Enum(ContractStatus), default=ContractStatus.DRAFT)
 
     # Fournisseur
-    vendor_id = Column(BigInteger, ForeignKey("purchase_suppliers.id"), nullable=False)
+    vendor_id = Column(BigInteger, nullable=False)  # Référence fournisseur (table purchase_suppliers non implémentée)
     vendor_contact = Column(String(200))
     vendor_phone = Column(String(50))
     vendor_email = Column(String(200))
