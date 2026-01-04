@@ -84,8 +84,7 @@ class AuditLogResponseSchema(BaseModel):
 
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_custom(cls, obj):
@@ -174,8 +173,7 @@ class AuditSessionResponseSchema(BaseModel):
     is_active: bool
     terminated_reason: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -222,8 +220,7 @@ class MetricResponseSchema(BaseModel):
 
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MetricValueSchema(BaseModel):
@@ -246,8 +243,7 @@ class MetricValueResponseSchema(BaseModel):
     period_end: datetime
     dimensions: Optional[Dict[str, Any]]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_custom(cls, obj):
@@ -313,8 +309,7 @@ class BenchmarkResponseSchema(BaseModel):
     updated_at: datetime
     created_by: Optional[int]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_custom(cls, obj):
@@ -366,8 +361,7 @@ class BenchmarkResultResponseSchema(BaseModel):
 
     executed_by: Optional[int]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_custom(cls, obj):
@@ -444,8 +438,7 @@ class ComplianceCheckResponseSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_custom(cls, obj):
@@ -540,8 +533,7 @@ class RetentionRuleResponseSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -585,8 +577,7 @@ class ExportResponseSchema(BaseModel):
 
     expires_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_custom(cls, obj):
@@ -662,8 +653,7 @@ class DashboardResponseSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm_custom(cls, obj):

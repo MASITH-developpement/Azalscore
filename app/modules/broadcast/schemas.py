@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
 
 
@@ -121,8 +121,7 @@ class BroadcastTemplateResponse(BroadcastTemplateBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("available_channels", "variables", "styling", "data_sources", mode="before")
     @classmethod
@@ -167,8 +166,7 @@ class RecipientListResponse(RecipientListBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("query_config", mode="before")
     @classmethod
@@ -210,8 +208,7 @@ class RecipientMemberResponse(BaseModel):
     is_unsubscribed: bool
     added_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -289,8 +286,7 @@ class ScheduledBroadcastResponse(ScheduledBroadcastBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("data_query", mode="before")
     @classmethod
@@ -326,8 +322,7 @@ class BroadcastExecutionResponse(BaseModel):
     triggered_by: str
     triggered_user: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ExecuteRequest(BaseModel):
@@ -356,8 +351,7 @@ class DeliveryDetailResponse(BaseModel):
     retry_count: int
     tracking_id: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -396,8 +390,7 @@ class BroadcastPreferenceResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UnsubscribeRequest(BaseModel):
@@ -425,8 +418,7 @@ class BroadcastMetricResponse(BaseModel):
     click_rate: Optional[float] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DashboardStatsResponse(BaseModel):

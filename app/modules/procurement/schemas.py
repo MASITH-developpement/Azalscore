@@ -107,8 +107,7 @@ class SupplierResponse(SupplierBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator('tags', mode='before')
     @classmethod
@@ -149,8 +148,7 @@ class SupplierContactResponse(SupplierContactCreate):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -180,8 +178,7 @@ class RequisitionLineResponse(RequisitionLineCreate):
     purchase_order_id: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RequisitionCreate(BaseModel):
@@ -222,8 +219,7 @@ class RequisitionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -252,8 +248,7 @@ class QuotationLineResponse(QuotationLineCreate):
     total: Decimal
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class QuotationCreate(BaseModel):
@@ -293,8 +288,7 @@ class QuotationResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -326,8 +320,7 @@ class OrderLineResponse(OrderLineCreate):
     invoiced_quantity: Decimal = Decimal("0")
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PurchaseOrderCreate(BaseModel):
@@ -379,8 +372,7 @@ class PurchaseOrderResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PurchaseOrderList(BaseModel):
@@ -417,8 +409,7 @@ class ReceiptLineResponse(ReceiptLineCreate):
     serial_numbers: List[str] = Field(default_factory=list)
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GoodsReceiptCreate(BaseModel):
@@ -454,8 +445,7 @@ class GoodsReceiptResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -487,8 +477,7 @@ class InvoiceLineResponse(InvoiceLineCreate):
     total: Decimal
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PurchaseInvoiceCreate(BaseModel):
@@ -532,8 +521,7 @@ class PurchaseInvoiceResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PurchaseInvoiceList(BaseModel):
@@ -580,8 +568,7 @@ class SupplierPaymentResponse(BaseModel):
     notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -614,8 +601,7 @@ class SupplierEvaluationResponse(SupplierEvaluationCreate):
     evaluated_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

@@ -1,20 +1,45 @@
-# Render Blueprint - AZALS ERP
+# AZALS - Configuration Render.com
+# =================================
+# Déploiement automatique sur Render
+
 services:
+  # Service Web - API FastAPI
   - type: web
-    name: azalscore
+    name: azals-api
     runtime: python
-    buildCommand: chmod +x build.sh && ./build.sh
+    region: frankfurt  # EU pour conformité RGPD
+    plan: starter  # Changer selon besoins (starter, standard, pro)
+
+    # Build
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    # Health Check
+    healthCheckPath: /health
+
+    # Variables d'environnement
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.7"
+      - key: DEBUG
+        value: "false"
+      - key: ENVIRONMENT
+        value: "production"
+      - key: SECRET_KEY
+        sync: false  # À configurer manuellement dans Render Dashboard
       - key: DATABASE_URL
         fromDatabase:
-          name: azalscore-db
+          name: azals-db
           property: connectionString
-      - key: SECRET_KEY
-        value: "azals-production-secret-key-2026-render"
-      - key: PYTHON_VERSION
-        value: "3.11.0"
+
+    # Auto-deploy depuis la branche main
+    autoDeploy: true
 
 databases:
-  - name: azalscore-db
-    plan: free
+  # Base de données PostgreSQL
+  - name: azals-db
+    region: frankfurt
+    plan: starter  # starter = 1GB gratuit 90 jours
+    databaseName: azals
+    user: azals_user
+    ipAllowList: []  # Uniquement services Render

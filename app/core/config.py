@@ -6,7 +6,7 @@ Validation des variables d'environnement avec Pydantic
 from functools import lru_cache
 from typing import Optional
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -37,8 +37,13 @@ class Settings(BaseSettings):
     @field_validator('database_url')
     @classmethod
     def validate_database_url(cls, v: str) -> str:
-        """Valide que l'URL de la base de données est au format PostgreSQL."""
-        if not v.startswith(('postgresql://', 'postgresql+psycopg2://')):
+        """Valide que l'URL de la base de données est au format PostgreSQL ou SQLite (tests)."""
+        import os
+        valid_prefixes = ('postgresql://', 'postgresql+psycopg2://')
+        # Autoriser SQLite uniquement en mode test
+        if os.environ.get('ENVIRONMENT') == 'test':
+            valid_prefixes = valid_prefixes + ('sqlite://',)
+        if not v.startswith(valid_prefixes):
             raise ValueError('DATABASE_URL doit commencer par postgresql://')
         if 'CHANGEME' in v:
             raise ValueError('DATABASE_URL contient un placeholder non remplacé')
@@ -54,9 +59,7 @@ class Settings(BaseSettings):
             raise ValueError('SECRET_KEY contient un placeholder non remplacé')
         return v
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 @lru_cache

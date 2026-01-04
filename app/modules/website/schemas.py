@@ -170,8 +170,7 @@ class SitePageResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SitePageListResponse(BaseModel):
@@ -187,8 +186,7 @@ class SitePageListResponse(BaseModel):
     view_count: int
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -289,8 +287,7 @@ class BlogPostResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BlogPostListResponse(BaseModel):
@@ -318,8 +315,7 @@ class BlogPostListResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -403,8 +399,7 @@ class TestimonialResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -488,8 +483,7 @@ class ContactSubmissionResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -541,8 +535,7 @@ class NewsletterSubscriberResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -614,8 +607,7 @@ class SiteMediaResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -681,8 +673,7 @@ class SiteSEOResponse(BaseModel):
             return json.loads(v) if v else None
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -766,8 +757,7 @@ class SiteMenuItemResponse(BaseModel):
     parent_id: Optional[int]
     children: List["SiteMenuItemResponse"] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 SiteMenuItemResponse.model_rebuild()

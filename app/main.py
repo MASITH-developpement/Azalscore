@@ -42,6 +42,7 @@ from app.modules.qc.router import router as qc_router
 
 # Module T5 - Packs Pays (Localisation)
 from app.modules.country_packs.router import router as country_packs_router
+from app.modules.country_packs.france.router import router as france_pack_router
 
 # Module T6 - Diffusion d'Information Périodique
 from app.modules.broadcast.router import router as broadcast_router
@@ -88,6 +89,30 @@ from app.modules.bi.router import router as bi_router
 # Module M11 - Compliance (Conformité Réglementaire)
 from app.modules.compliance.router import router as compliance_router
 
+# Module M12 - E-Commerce
+from app.modules.ecommerce.router import router as ecommerce_router
+
+# Module M13 - POS (Point de Vente)
+from app.modules.pos.router import router as pos_router
+
+# Module M14 - Subscriptions (Abonnements)
+from app.modules.subscriptions.router import router as subscriptions_router
+
+# Module M15 - Stripe Integration
+from app.modules.stripe_integration.router import router as stripe_router
+
+# Module M16 - Helpdesk (Support Client)
+from app.modules.helpdesk.router import router as helpdesk_router
+
+# Module M17 - Field Service (Interventions Terrain)
+from app.modules.field_service.router import router as field_service_router
+
+# Module M18 - Mobile App Backend
+from app.modules.mobile.router import router as mobile_router
+
+# Module IA - Assistant IA Transverse Opérationnelle
+from app.modules.ai_assistant.router import router as ai_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -102,9 +127,25 @@ async def lifespan(app: FastAPI):
                 conn.execute(text("SELECT 1"))
 
             # Create tables one by one to handle existing indexes gracefully
+            # Two passes: first creates parent tables, second creates dependent tables
             tables_created = 0
             tables_existed = 0
+            failed_tables = []
+
+            # First pass
             for table in Base.metadata.sorted_tables:
+                try:
+                    table.create(bind=engine, checkfirst=True)
+                    tables_created += 1
+                except Exception as table_error:
+                    error_str = str(table_error).lower()
+                    if "already exists" in error_str or "duplicate" in error_str:
+                        tables_existed += 1
+                    else:
+                        failed_tables.append((table, table_error))
+
+            # Second pass for tables with FK dependencies
+            for table, _ in failed_tables:
                 try:
                     table.create(bind=engine, checkfirst=True)
                     tables_created += 1
@@ -177,6 +218,7 @@ app.include_router(qc_router)
 
 # Module T5 - Packs Pays (Localisation)
 app.include_router(country_packs_router)
+app.include_router(france_pack_router)
 
 # Module T6 - Diffusion d'Information Périodique
 app.include_router(broadcast_router)
@@ -222,6 +264,30 @@ app.include_router(bi_router)
 
 # Module M11 - Compliance (Conformité Réglementaire)
 app.include_router(compliance_router)
+
+# Module M12 - E-Commerce
+app.include_router(ecommerce_router)
+
+# Module M13 - POS (Point de Vente)
+app.include_router(pos_router)
+
+# Module M14 - Subscriptions (Abonnements)
+app.include_router(subscriptions_router)
+
+# Module M15 - Stripe Integration
+app.include_router(stripe_router)
+
+# Module M16 - Helpdesk (Support Client)
+app.include_router(helpdesk_router)
+
+# Module M17 - Field Service (Interventions Terrain)
+app.include_router(field_service_router)
+
+# Module M18 - Mobile App Backend
+app.include_router(mobile_router)
+
+# Module IA - Assistant IA Transverse Opérationnelle
+app.include_router(ai_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

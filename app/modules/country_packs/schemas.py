@@ -131,8 +131,7 @@ class CountryPackResponse(CountryPackBase):
     updated_at: Optional[datetime] = None
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -182,8 +181,7 @@ class TaxRateResponse(TaxRateBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -232,8 +230,7 @@ class DocumentTemplateResponse(DocumentTemplateBase):
     updated_at: Optional[datetime] = None
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -279,8 +276,7 @@ class BankConfigResponse(BankConfigBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -324,8 +320,7 @@ class PublicHolidayResponse(PublicHolidayBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class HolidayWithDate(BaseModel):
@@ -379,8 +374,7 @@ class LegalRequirementResponse(LegalRequirementBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -408,8 +402,7 @@ class TenantCountrySettingsResponse(BaseModel):
     activated_at: datetime
     activated_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

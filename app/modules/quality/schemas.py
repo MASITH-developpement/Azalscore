@@ -12,7 +12,7 @@ from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 # ============================================================================
@@ -252,8 +252,7 @@ class NonConformanceActionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NonConformanceResponse(NonConformanceBase):
@@ -298,8 +297,7 @@ class NonConformanceResponse(NonConformanceBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -334,8 +332,7 @@ class ControlTemplateItemResponse(ControlTemplateItemBase):
     lower_limit: Optional[Decimal] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ControlTemplateBase(BaseModel):
@@ -385,8 +382,7 @@ class ControlTemplateResponse(ControlTemplateBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -435,8 +431,7 @@ class ControlLineResponse(ControlLineBase):
     comments: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ControlBase(BaseModel):
@@ -509,8 +504,7 @@ class ControlResponse(ControlBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -566,8 +560,7 @@ class AuditFindingResponse(AuditFindingBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AuditBase(BaseModel):
@@ -652,8 +645,7 @@ class AuditResponse(AuditBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -704,8 +696,7 @@ class CAPAActionResponse(CAPAActionBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CAPABase(BaseModel):
@@ -786,8 +777,7 @@ class CAPAResponse(CAPABase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -815,8 +805,7 @@ class ClaimActionResponse(ClaimActionBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ClaimBase(BaseModel):
@@ -917,8 +906,7 @@ class ClaimResponse(ClaimBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -955,8 +943,7 @@ class IndicatorMeasurementResponse(IndicatorMeasurementBase):
     source: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class IndicatorBase(BaseModel):
@@ -1016,8 +1003,7 @@ class IndicatorResponse(IndicatorBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -1074,8 +1060,7 @@ class CertificationAuditResponse(CertificationAuditBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CertificationBase(BaseModel):
@@ -1136,8 +1121,7 @@ class CertificationResponse(CertificationBase):
     updated_at: datetime
     created_by: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================

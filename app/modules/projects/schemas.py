@@ -115,8 +115,7 @@ class ProjectResponse(ProjectBase):
     updated_at: datetime
     completed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectList(BaseModel):
@@ -192,8 +191,7 @@ class PhaseResponse(PhaseBase):
     actual_cost: Decimal = Decimal("0")
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -293,8 +291,7 @@ class TaskResponse(TaskBase):
     updated_at: datetime
     completed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaskList(BaseModel):
@@ -354,8 +351,7 @@ class MilestoneResponse(MilestoneBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -419,8 +415,7 @@ class TeamMemberResponse(TeamMemberBase):
     is_active: bool = True
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -489,8 +484,7 @@ class RiskResponse(RiskBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RiskList(BaseModel):
@@ -560,8 +554,7 @@ class IssueResponse(IssueBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class IssueList(BaseModel):
@@ -624,8 +617,7 @@ class TimeEntryResponse(TimeEntryBase):
     rejection_reason: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TimeEntryList(BaseModel):
@@ -696,8 +688,7 @@ class ExpenseResponse(ExpenseBase):
     attachments: List[str] = Field(default_factory=list)
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -739,8 +730,7 @@ class DocumentResponse(DocumentBase):
     created_at: datetime
     tags: List[str] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -810,8 +800,7 @@ class BudgetLineResponse(BaseModel):
     account_code: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BudgetResponse(BudgetBase):
@@ -835,8 +824,7 @@ class BudgetResponse(BudgetBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -885,8 +873,7 @@ class TemplateResponse(TemplateBase):
     created_by: Optional[UUID] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -922,8 +909,7 @@ class CommentResponse(CommentBase):
     updated_at: datetime
     is_edited: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
