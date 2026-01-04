@@ -40,6 +40,9 @@ from app.modules.audit.router import router as audit_router
 # Module T4 - Contrôle Qualité Central
 from app.modules.qc.router import router as qc_router
 
+# Module T5 - Packs Pays (Localisation)
+from app.modules.country_packs.router import router as country_packs_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -106,6 +109,9 @@ app.include_router(audit_router)
 
 # Module T4 - Contrôle Qualité Central
 app.include_router(qc_router)
+
+# Module T5 - Packs Pays (Localisation)
+app.include_router(country_packs_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

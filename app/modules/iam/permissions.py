@@ -310,6 +310,54 @@ QC_PERMISSIONS = {
     "qc.admin": "Administration complète QC",
 }
 
+COUNTRY_PACKS_PERMISSIONS = {
+    # Packs pays
+    "country.packs.create": "Créer des packs pays",
+    "country.packs.read": "Voir les packs pays",
+    "country.packs.update": "Modifier les packs pays",
+    "country.packs.delete": "Supprimer des packs pays",
+    "country.packs.set_default": "Définir le pack par défaut",
+
+    # Taxes
+    "country.taxes.create": "Créer des taux de taxe",
+    "country.taxes.read": "Voir les taux de taxe",
+    "country.taxes.update": "Modifier les taux de taxe",
+    "country.taxes.delete": "Supprimer des taux de taxe",
+
+    # Templates documents
+    "country.templates.create": "Créer des templates documents",
+    "country.templates.read": "Voir les templates documents",
+    "country.templates.update": "Modifier les templates documents",
+
+    # Config bancaire
+    "country.bank.create": "Créer des configs bancaires",
+    "country.bank.read": "Voir les configs bancaires",
+    "country.bank.update": "Modifier les configs bancaires",
+
+    # Jours fériés
+    "country.holidays.create": "Créer des jours fériés",
+    "country.holidays.read": "Voir les jours fériés",
+    "country.holidays.update": "Modifier les jours fériés",
+    "country.holidays.delete": "Supprimer des jours fériés",
+
+    # Exigences légales
+    "country.legal.create": "Créer des exigences légales",
+    "country.legal.read": "Voir les exigences légales",
+    "country.legal.update": "Modifier les exigences légales",
+
+    # Paramètres tenant
+    "country.tenant.activate": "Activer un pays pour le tenant",
+    "country.tenant.read": "Voir les paramètres pays tenant",
+    "country.tenant.update": "Modifier les paramètres pays tenant",
+
+    # Utilitaires
+    "country.utils.format": "Utiliser les utilitaires de formatage",
+    "country.utils.validate": "Utiliser les validations pays",
+
+    # Admin complet
+    "country.admin": "Administration complète packs pays",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -330,6 +378,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **AUTOCONFIG_PERMISSIONS,
     **AUDIT_PERMISSIONS,
     **QC_PERMISSIONS,
+    **COUNTRY_PACKS_PERMISSIONS,
 }
 
 
@@ -346,6 +395,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "triggers.*",
         "autoconfig.*",
         "qc.*",
+        "country.*",
     ],
 
     "DIRIGEANT": [
@@ -371,6 +421,10 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "qc.modules.read",
         "qc.stats.read",
         "qc.dashboards.read",
+        "country.packs.read",
+        "country.taxes.read",
+        "country.holidays.read",
+        "country.tenant.read",
     ],
 
     "DAF": [
@@ -388,6 +442,11 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "triggers.events.resolve",
         "triggers.reports.read",
         "triggers.reports.generate",
+        "country.packs.read",
+        "country.taxes.read",
+        "country.bank.read",
+        "country.legal.read",
+        "country.utils.format",
     ],
 
     "DRH": [
