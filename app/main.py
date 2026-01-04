@@ -70,6 +70,9 @@ from app.modules.procurement.router import router as procurement_router
 # Module M5 - Stock (Inventaire + Logistique)
 from app.modules.inventory.router import router as inventory_router
 
+# Module M6 - Production (Manufacturing)
+from app.modules.production.router import router as production_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -166,6 +169,9 @@ app.include_router(procurement_router)
 
 # Module M5 - Stock (Inventaire + Logistique)
 app.include_router(inventory_router)
+
+# Module M6 - Production (Manufacturing)
+app.include_router(production_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)

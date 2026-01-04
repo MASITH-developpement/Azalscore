@@ -878,6 +878,75 @@ FINANCE_PERMISSIONS = {
     "finance.admin": "Administration complète finance",
 }
 
+PRODUCTION_PERMISSIONS = {
+    # Centres de travail
+    "production.workcenters.create": "Créer des centres de travail",
+    "production.workcenters.read": "Voir les centres de travail",
+    "production.workcenters.update": "Modifier les centres de travail",
+    "production.workcenters.delete": "Supprimer des centres de travail",
+    "production.workcenters.status": "Changer le statut des centres",
+
+    # Nomenclatures (BOM)
+    "production.bom.create": "Créer des nomenclatures",
+    "production.bom.read": "Voir les nomenclatures",
+    "production.bom.update": "Modifier les nomenclatures",
+    "production.bom.activate": "Activer les nomenclatures",
+    "production.bom.delete": "Supprimer des nomenclatures",
+
+    # Gammes de fabrication
+    "production.routings.create": "Créer des gammes",
+    "production.routings.read": "Voir les gammes",
+    "production.routings.update": "Modifier les gammes",
+    "production.routings.delete": "Supprimer des gammes",
+
+    # Ordres de fabrication
+    "production.orders.create": "Créer des ordres de fabrication",
+    "production.orders.read": "Voir les ordres de fabrication",
+    "production.orders.update": "Modifier les ordres de fabrication",
+    "production.orders.confirm": "Confirmer les ordres",
+    "production.orders.start": "Démarrer les ordres",
+    "production.orders.complete": "Terminer les ordres",
+    "production.orders.cancel": "Annuler les ordres",
+
+    # Ordres de travail
+    "production.workorders.read": "Voir les ordres de travail",
+    "production.workorders.start": "Démarrer les ordres de travail",
+    "production.workorders.complete": "Terminer les ordres de travail",
+    "production.workorders.pause": "Mettre en pause les ordres",
+    "production.workorders.resume": "Reprendre les ordres",
+
+    # Consommation
+    "production.consumption.create": "Consommer des matières",
+    "production.consumption.read": "Voir les consommations",
+    "production.consumption.return": "Retourner des matières",
+
+    # Production
+    "production.output.create": "Déclarer des productions",
+    "production.output.read": "Voir les productions",
+
+    # Rebuts
+    "production.scraps.create": "Déclarer des rebuts",
+    "production.scraps.read": "Voir les rebuts",
+
+    # Planification
+    "production.plans.create": "Créer des plans de production",
+    "production.plans.read": "Voir les plans de production",
+    "production.plans.update": "Modifier les plans",
+    "production.plans.approve": "Approuver les plans",
+
+    # Maintenance
+    "production.maintenance.create": "Créer des calendriers maintenance",
+    "production.maintenance.read": "Voir les calendriers maintenance",
+    "production.maintenance.update": "Modifier les calendriers",
+    "production.maintenance.execute": "Exécuter les maintenances",
+
+    # Dashboard
+    "production.dashboard.read": "Voir le dashboard production",
+
+    # Admin complet
+    "production.admin": "Administration complète production",
+}
+
 # ============================================================================
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
@@ -895,6 +964,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
     **PROCUREMENT_PERMISSIONS,
     **STOCK_PERMISSIONS,
     **INVENTORY_PERMISSIONS,
+    **PRODUCTION_PERMISSIONS,
     **ADMIN_PERMISSIONS,
     **TRIGGERS_PERMISSIONS,
     **AUTOCONFIG_PERMISSIONS,
@@ -933,6 +1003,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "hr.*",
         "procurement.*",
         "inventory.*",
+        "production.*",
     ],
 
     "DIRIGEANT": [
@@ -1004,6 +1075,10 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
         "commercial.pipeline.read",
         "commercial.products.read",
         "commercial.dashboard.read",
+        "production.orders.read",
+        "production.workcenters.read",
+        "production.bom.read",
+        "production.dashboard.read",
     ],
 
     "DAF": [
@@ -1057,6 +1132,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
     "RESPONSABLE_PRODUCTION": [
         "stock.*",
         "inventory.*",
+        "production.*",
         "purchase.order.read",
         "procurement.receipts.read",
         "decision.read",
