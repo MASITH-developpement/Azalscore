@@ -202,21 +202,19 @@ class IAMUser(Base):
     last_login_ip = Column(String(50), nullable=True)
 
     # Relations
-    # Note: primaryjoin/secondaryjoin requis car user_roles a 2 FK vers iam_users (user_id, granted_by)
+    # Note: foreign_keys explicites car user_roles a 2 FK vers iam_users (user_id, granted_by)
     roles = relationship(
         "IAMRole",
         secondary=user_roles,
         back_populates="users",
-        primaryjoin="IAMUser.id == user_roles.c.user_id",
-        secondaryjoin="IAMRole.id == user_roles.c.role_id"
+        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id]
     )
-    # Note: primaryjoin/secondaryjoin requis car user_groups a 2 FK vers iam_users (user_id, added_by)
+    # Note: foreign_keys explicites car user_groups a 2 FK vers iam_users (user_id, added_by)
     groups = relationship(
         "IAMGroup",
         secondary=user_groups,
         back_populates="users",
-        primaryjoin="IAMUser.id == user_groups.c.user_id",
-        secondaryjoin="IAMGroup.id == user_groups.c.group_id"
+        foreign_keys=[user_groups.c.user_id, user_groups.c.group_id]
     )
     sessions = relationship("IAMSession", back_populates="user", cascade="all, delete-orphan")
 
@@ -263,13 +261,12 @@ class IAMRole(Base):
     created_by = Column(Integer, nullable=True)
 
     # Relations
-    # Note: primaryjoin/secondaryjoin requis car user_roles a 2 FK vers iam_users
+    # Note: foreign_keys explicites car user_roles a 2 FK vers iam_users
     users = relationship(
         "IAMUser",
         secondary=user_roles,
         back_populates="roles",
-        primaryjoin="IAMRole.id == user_roles.c.role_id",
-        secondaryjoin="IAMUser.id == user_roles.c.user_id"
+        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id]
     )
     permissions = relationship("IAMPermission", secondary=role_permissions, back_populates="roles")
     children = relationship("IAMRole", backref="parent", remote_side=[id])
@@ -346,13 +343,12 @@ class IAMGroup(Base):
     created_by = Column(Integer, nullable=True)
 
     # Relations
-    # Note: primaryjoin/secondaryjoin requis car user_groups a 2 FK vers iam_users
+    # Note: foreign_keys explicites car user_groups a 2 FK vers iam_users
     users = relationship(
         "IAMUser",
         secondary=user_groups,
         back_populates="groups",
-        primaryjoin="IAMGroup.id == user_groups.c.group_id",
-        secondaryjoin="IAMUser.id == user_groups.c.user_id"
+        foreign_keys=[user_groups.c.user_id, user_groups.c.group_id]
     )
     roles = relationship("IAMRole", secondary=group_roles, back_populates="groups")
 
