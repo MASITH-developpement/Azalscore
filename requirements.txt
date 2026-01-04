@@ -16,6 +16,7 @@ pydantic-settings==2.1.0
 # Authentification & Sécurité
 python-jose[cryptography]==3.3.0
 bcrypt==4.1.2
+pyotp==2.9.0
 
 # Tâches planifiées
 apscheduler==3.10.4

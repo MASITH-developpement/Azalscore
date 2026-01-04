@@ -25,6 +25,39 @@ from app.api.hr import router as hr_router
 from app.api.legal import router as legal_router
 from app.api.admin_migration import router as admin_migration_router
 
+# Module T0 - IAM (Gestion Utilisateurs & Rôles)
+from app.modules.iam.router import router as iam_router
+
+# Module T1 - Configuration Automatique par Fonction
+from app.modules.autoconfig.router import router as autoconfig_router
+
+# Module T2 - Système de Déclencheurs & Diffusion
+from app.modules.triggers.router import router as triggers_router
+
+# Module T3 - Audit & Benchmark Évolutif
+from app.modules.audit.router import router as audit_router
+
+# Module T4 - Contrôle Qualité Central
+from app.modules.qc.router import router as qc_router
+
+# Module T5 - Packs Pays (Localisation)
+from app.modules.country_packs.router import router as country_packs_router
+
+# Module T6 - Diffusion d'Information Périodique
+from app.modules.broadcast.router import router as broadcast_router
+
+# Module T7 - Module Web Transverse
+from app.modules.web.router import router as web_router
+
+# Module T8 - Site Web Officiel AZALS
+from app.modules.website.router import router as website_router
+
+# Module T9 - Gestion des Tenants (Multi-Tenancy)
+from app.modules.tenants.router import router as tenants_router
+
+# Module M1 - Commercial (CRM & Ventes)
+from app.modules.commercial.router import router as commercial_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -76,6 +109,39 @@ app.include_router(tax_router)
 app.include_router(hr_router)
 app.include_router(legal_router)
 app.include_router(admin_migration_router)  # TEMPORAIRE pour migration
+
+# Module T0 - IAM (Gestion Utilisateurs & Rôles)
+app.include_router(iam_router)
+
+# Module T1 - Configuration Automatique par Fonction
+app.include_router(autoconfig_router)
+
+# Module T2 - Système de Déclencheurs & Diffusion
+app.include_router(triggers_router)
+
+# Module T3 - Audit & Benchmark Évolutif
+app.include_router(audit_router)
+
+# Module T4 - Contrôle Qualité Central
+app.include_router(qc_router)
+
+# Module T5 - Packs Pays (Localisation)
+app.include_router(country_packs_router)
+
+# Module T6 - Diffusion d'Information Périodique
+app.include_router(broadcast_router)
+
+# Module T7 - Module Web Transverse
+app.include_router(web_router)
+
+# Module T8 - Site Web Officiel AZALS
+app.include_router(website_router)
+
+# Module T9 - Gestion des Tenants (Multi-Tenancy)
+app.include_router(tenants_router)
+
+# Module M1 - Commercial (CRM & Ventes)
+app.include_router(commercial_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
