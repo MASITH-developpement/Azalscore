@@ -76,6 +76,9 @@ from app.modules.production.router import router as production_router
 # Module M7 - Qualité (Quality Management)
 from app.modules.quality.router import router as quality_router
 
+# Module M8 - Maintenance (Asset Management / GMAO)
+from app.modules.maintenance.router import router as maintenance_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -178,6 +181,9 @@ app.include_router(production_router)
 
 # Module M7 - Qualité (Quality Management)
 app.include_router(quality_router)
+
+# Module M8 - Maintenance (Asset Management / GMAO)
+app.include_router(maintenance_router)
 
 # Routes protégées par tenant uniquement (pas JWT pour compatibilité)
 app.include_router(items_router)
