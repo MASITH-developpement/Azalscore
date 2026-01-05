@@ -14,6 +14,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
 from app.core.middleware import TenantMiddleware
+from app.core.compression import CompressionMiddleware
 from app.services.scheduler import scheduler_service
 from app.core.config import get_settings
 from app.api.items import router as items_router
@@ -198,6 +199,9 @@ app = FastAPI(
     openapi_url=_openapi_url,
     lifespan=lifespan
 )
+
+# Middleware compression HTTP (gzip) - DOIT être ajouté en premier (s'exécute en dernier)
+app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 
 # Middleware multi-tenant : validation X-Tenant-ID pour TOUTES les requêtes
 app.add_middleware(TenantMiddleware)
