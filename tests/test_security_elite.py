@@ -22,7 +22,8 @@ from sqlalchemy.pool import StaticPool
 import os
 
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["SECRET_KEY"] = "test-secret-key-for-security-tests-minimum-32-chars-elite"
+os.environ["SESSION_KEY"] = "ultra-safe-test-key-for-elite-security-tests-min32chars"
+os.environ["SECRET_KEY"] = "ultra-safe-test-key-for-elite-security-tests-min32chars"
 os.environ["ENVIRONMENT"] = "test"
 
 from app.main import app

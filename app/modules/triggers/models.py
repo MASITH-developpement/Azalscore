@@ -213,7 +213,7 @@ class TriggerSubscription(Base):
     trigger = relationship("Trigger", back_populates="subscriptions")
 
     __table_args__ = (
-        Index('idx_subscriptions_tenant', 'tenant_id'),
+        Index('idx_triggers_subscriptions_tenant', 'tenant_id'),
         Index('idx_subscriptions_trigger', 'trigger_id'),
         Index('idx_subscriptions_user', 'user_id'),
     )

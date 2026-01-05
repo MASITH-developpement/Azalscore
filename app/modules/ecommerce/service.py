@@ -6,7 +6,7 @@ Intégration avec: Inventory, Finance, Commercial, Country Packs
 """
 
 import uuid
-import hashlib
+import bcrypt
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, List, Tuple
@@ -1182,8 +1182,8 @@ class EcommerceService:
         if existing:
             return None, "Email déjà utilisé"
 
-        # Hasher le mot de passe
-        password_hash = hashlib.sha256(data.password.encode()).hexdigest()
+        # SECURITY FIX: Utiliser bcrypt au lieu de SHA256
+        password_hash = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
 
         customer = EcommerceCustomer(
             tenant_id=self.tenant_id,
@@ -1225,8 +1225,8 @@ class EcommerceService:
         if not customer or not customer.password_hash:
             return None
 
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
-        if customer.password_hash != password_hash:
+        # SECURITY FIX: Vérification bcrypt
+        if not bcrypt.checkpw(password.encode(), customer.password_hash.encode()):
             return None
 
         return customer

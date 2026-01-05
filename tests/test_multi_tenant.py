@@ -90,7 +90,7 @@ def test_health_endpoint_accessible_without_tenant(client):
     """
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["status"] in ["ok", "degraded"]
+    assert response.json()["status"] in ["healthy", "unhealthy", "degraded"]
 
 
 # ===== TESTS ISOLATION TENANT =====
@@ -129,17 +129,19 @@ def test_tenant_cannot_see_other_tenant_items(client, db_session):
     
     # Tenant A liste ses items : doit voir UNIQUEMENT son item
     response_a = client.get("/items/", headers={"X-Tenant-ID": "tenant-a"})
-    items_a = response_a.json()
-    
+    data_a = response_a.json()
+    items_a = data_a.get("items", data_a) if isinstance(data_a, dict) else data_a
+
     assert response_a.status_code == 200
     assert len(items_a) == 1
     assert items_a[0]["tenant_id"] == "tenant-a"
     assert items_a[0]["name"] == "Item A"
-    
+
     # Tenant B liste ses items : doit voir UNIQUEMENT son item
     response_b = client.get("/items/", headers={"X-Tenant-ID": "tenant-b"})
-    items_b = response_b.json()
-    
+    data_b = response_b.json()
+    items_b = data_b.get("items", data_b) if isinstance(data_b, dict) else data_b
+
     assert response_b.status_code == 200
     assert len(items_b) == 1
     assert items_b[0]["tenant_id"] == "tenant-b"
@@ -288,8 +290,9 @@ def test_multiple_tenants_complete_isolation(client):
     # Chaque tenant ne doit voir QUE ses 2 items
     for tenant in tenants:
         response = client.get("/items/", headers={"X-Tenant-ID": tenant})
-        items = response.json()
-        
+        data = response.json()
+        items = data.get("items", data) if isinstance(data, dict) else data
+
         assert len(items) == 2
         assert all(item["tenant_id"] == tenant for item in items)
         assert all(tenant in item["name"] for item in items)

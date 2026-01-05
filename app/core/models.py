@@ -247,3 +247,13 @@ class TreasuryForecast(Base, TenantMixin):
         Index('idx_treasury_created', 'created_at'),
         Index('idx_treasury_red', 'tenant_id', 'red_triggered'),
     )
+
+
+# Re-export JournalEntry pour compatibilité avec les tests existants
+from app.modules.finance.models import JournalEntry, JournalEntryLine
+
+__all__ = [
+    'Base', 'TenantMixin', 'User', 'UserRole', 'DecisionLevel', 'RedWorkflowStep',
+    'CoreAuditJournal', 'Item', 'Decision', 'RedDecisionWorkflow', 'RedDecisionReport',
+    'TreasuryForecast', 'JournalEntry', 'JournalEntryLine'
+]

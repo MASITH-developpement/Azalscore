@@ -28,8 +28,11 @@ def require_permission(permission_code: str):
             current_user = kwargs.get('current_user')
 
             if not service or not current_user:
-                # Les dépendances doivent être injectées
-                return await func(*args, **kwargs)
+                # SECURITY FIX: Ne PAS bypasser - lever une exception
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Erreur configuration: service et current_user requis pour vérification permissions"
+                )
 
             # Vérifier la permission
             granted, source = service.check_permission(current_user.id, permission_code)
@@ -70,7 +73,11 @@ def require_role(role_codes: Union[str, List[str]]):
             current_user = kwargs.get('current_user')
 
             if not service or not current_user:
-                return await func(*args, **kwargs)
+                # SECURITY FIX: Ne PAS bypasser
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Erreur configuration: service et current_user requis pour vérification rôles"
+                )
 
             # Récupérer l'utilisateur IAM
             user = service.get_user(current_user.id)
@@ -110,7 +117,11 @@ def require_any_permission(permission_codes: List[str]):
             current_user = kwargs.get('current_user')
 
             if not service or not current_user:
-                return await func(*args, **kwargs)
+                # SECURITY FIX: Ne PAS bypasser
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Erreur configuration: service et current_user requis"
+                )
 
             # Vérifier au moins une permission
             for code in permission_codes:
@@ -143,7 +154,11 @@ def require_all_permissions(permission_codes: List[str]):
             current_user = kwargs.get('current_user')
 
             if not service or not current_user:
-                return await func(*args, **kwargs)
+                # SECURITY FIX: Ne PAS bypasser
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Erreur configuration: service et current_user requis"
+                )
 
             # Vérifier toutes les permissions
             missing = []
@@ -182,7 +197,11 @@ def require_self_or_permission(permission_code: str, user_id_param: str = "user_
             target_user_id = kwargs.get(user_id_param)
 
             if not service or not current_user:
-                return await func(*args, **kwargs)
+                # SECURITY FIX: Ne PAS bypasser
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Erreur configuration: service et current_user requis"
+                )
 
             # Autoriser si c'est l'utilisateur lui-même
             if target_user_id and current_user.id == target_user_id:

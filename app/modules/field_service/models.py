@@ -460,8 +460,8 @@ class FSTimeEntry(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
-    technician = relationship("Technician", back_populates="fs_time_entries")
-    intervention = relationship("Intervention", back_populates="fs_time_entries")
+    technician = relationship("Technician", back_populates="time_entries")
+    intervention = relationship("Intervention", back_populates="time_entries")
 
     __table_args__ = (
         Index('idx_fs_time_tech', 'technician_id'),
