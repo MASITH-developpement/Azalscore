@@ -100,7 +100,10 @@ class Settings(BaseSettings):
         v_lower = v.lower()
         for dangerous in dangerous_defaults:
             if dangerous in v_lower:
-                raise ValueError(f'SECRET_KEY contient une valeur dangereuse: {dangerous}')
+                raise ValueError(
+                    f'SECRET_KEY contient "{dangerous}" - utilisez une clé générée aléatoirement. '
+                    f'Générez avec: python -c "import secrets; print(secrets.token_urlsafe(64))"'
+                )
 
         return v
 
@@ -110,7 +113,10 @@ class Settings(BaseSettings):
         if self.environment == 'production':
             # BOOTSTRAP_SECRET obligatoire en production
             if not self.bootstrap_secret:
-                raise ValueError('BOOTSTRAP_SECRET est OBLIGATOIRE en production')
+                raise ValueError(
+                    'BOOTSTRAP_SECRET est OBLIGATOIRE en production. '
+                    'Générez avec: python -c "import secrets; print(secrets.token_urlsafe(64))"'
+                )
             if len(self.bootstrap_secret) < 32:
                 raise ValueError('BOOTSTRAP_SECRET doit contenir au moins 32 caractères en production')
 
@@ -120,7 +126,10 @@ class Settings(BaseSettings):
 
             # CORS doit être configuré en production
             if not self.cors_origins:
-                raise ValueError('CORS_ORIGINS doit être configuré en production')
+                raise ValueError(
+                    'CORS_ORIGINS doit être configuré en production. '
+                    'Ex: CORS_ORIGINS=https://votre-frontend.onrender.com'
+                )
             if 'localhost' in (self.cors_origins or '').lower():
                 raise ValueError('localhost interdit dans CORS_ORIGINS en production')
 
