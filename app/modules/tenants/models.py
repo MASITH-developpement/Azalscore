@@ -7,12 +7,10 @@ Modèles SQLAlchemy pour la gestion des tenants.
 
 import enum
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, JSON, Float
+    Enum, JSON, Float
 )
-from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 

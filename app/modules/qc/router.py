@@ -25,8 +25,8 @@ from app.modules.qc.schemas import (
     ModuleRegisterCreate, ModuleRegistryResponse, ModuleStatusUpdate,
     PaginatedModulesResponse,
     # Validations
-    ValidationStartRequest, ValidationRunRequest, ValidationResponse,
-    PaginatedValidationsResponse, CheckResultResponse, PaginatedCheckResultsResponse,
+    ValidationRunRequest, ValidationResponse,
+    PaginatedValidationsResponse, PaginatedCheckResultsResponse,
     # Tests
     TestRunCreate, TestRunResponse, PaginatedTestRunsResponse,
     # Metrics
@@ -34,7 +34,7 @@ from app.modules.qc.schemas import (
     # Alerts
     QCAlertCreate, QCAlertResponse, AlertResolveRequest, PaginatedAlertsResponse,
     # Dashboards
-    QCDashboardCreate, QCDashboardUpdate, QCDashboardResponse, DashboardDataResponse,
+    QCDashboardCreate, QCDashboardResponse, DashboardDataResponse,
     # Templates
     QCTemplateCreate, QCTemplateResponse,
     # Stats

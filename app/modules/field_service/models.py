@@ -5,7 +5,6 @@ Modèles SQLAlchemy pour la gestion des interventions terrain.
 """
 
 from datetime import datetime
-from decimal import Decimal
 from enum import Enum as PyEnum
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime,
@@ -162,7 +161,7 @@ class Technician(Base):
     zone = relationship("ServiceZone", back_populates="technicians")
     vehicle = relationship("Vehicle", back_populates="assigned_technician")
     interventions = relationship("Intervention", back_populates="technician")
-    time_entries = relationship("TimeEntry", back_populates="technician")
+    time_entries = relationship("FSTimeEntry", back_populates="technician")
 
     __table_args__ = (
         Index('idx_fs_tech_tenant', 'tenant_id'),
@@ -378,7 +377,7 @@ class Intervention(Base):
 
     # Relations
     technician = relationship("Technician", back_populates="interventions")
-    time_entries = relationship("TimeEntry", back_populates="intervention")
+    time_entries = relationship("FSTimeEntry", back_populates="intervention")
     history = relationship("InterventionHistory", back_populates="intervention")
 
     __table_args__ = (
@@ -428,7 +427,7 @@ class InterventionHistory(Base):
 # TIME TRACKING
 # ============================================================================
 
-class TimeEntry(Base):
+class FSTimeEntry(Base):
     """Pointage temps."""
     __tablename__ = "fs_time_entries"
 

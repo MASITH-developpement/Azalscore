@@ -5,7 +5,7 @@ AZALS MODULE T8 - Router Site Web
 API REST pour le site web officiel.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session

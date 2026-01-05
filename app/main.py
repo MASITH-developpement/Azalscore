@@ -1,6 +1,8 @@
 """
-AZALS - Point d'entrée principal
+AZALS - Point d'entrée principal SÉCURISÉ ÉLITE
+=================================================
 ERP décisionnel critique - Sécurité by design - Multi-tenant strict
+ÉLITE: Docs API désactivées en production, Observabilité complète
 """
 
 import asyncio
@@ -11,7 +13,12 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
 from app.core.middleware import TenantMiddleware
+from app.core.compression import CompressionMiddleware
+from app.core.metrics import MetricsMiddleware, router as metrics_router, init_metrics
+from app.core.health import router as health_router
+from app.core.logging_config import setup_logging, get_logger
 from app.services.scheduler import scheduler_service
+from app.core.config import get_settings
 from app.api.items import router as items_router
 from app.api.auth import router as auth_router
 from app.api.protected import router as protected_router
@@ -116,8 +123,21 @@ from app.modules.ai_assistant.router import router as ai_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifecycle: création des tables au démarrage avec retry"""
+    """Lifecycle: création des tables au démarrage avec retry + observabilité"""
     from sqlalchemy import text
+
+    # Initialiser le logging structuré
+    _settings = get_settings()
+    setup_logging(
+        level="DEBUG" if _settings.debug else "INFO",
+        json_format=_settings.is_production
+    )
+    logger = get_logger(__name__)
+    logger.info("AZALS démarrage", extra={"environment": _settings.environment})
+
+    # Initialiser les métriques Prometheus
+    init_metrics()
+
     max_retries = 5
 
     for attempt in range(max_retries):
@@ -174,17 +194,39 @@ async def lifespan(app: FastAPI):
     # Arrêter le scheduler à l'arrêt
     scheduler_service.shutdown()
 
+# SÉCURITÉ: Configuration dynamique selon environnement
+_settings = get_settings()
+
+# Désactiver docs API en production (CRITIQUE)
+_docs_url = "/docs" if _settings.is_development else None
+_redoc_url = "/redoc" if _settings.is_development else None
+_openapi_url = "/openapi.json" if _settings.is_development else None
+
+if _settings.is_production:
+    print("🔒 PRODUCTION MODE: API docs désactivées")
+
 app = FastAPI(
     title="AZALS",
     description="ERP décisionnel critique - Multi-tenant + Authentification JWT",
     version="0.3.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
     lifespan=lifespan
 )
 
+# Middleware compression HTTP (gzip) - DOIT être ajouté en premier (s'exécute en dernier)
+app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
+
+# Middleware métriques Prometheus (collecte automatique)
+app.add_middleware(MetricsMiddleware)
+
 # Middleware multi-tenant : validation X-Tenant-ID pour TOUTES les requêtes
 app.add_middleware(TenantMiddleware)
+
+# Routes observabilité (PUBLIQUES - pas de tenant required)
+app.include_router(health_router)
+app.include_router(metrics_router)
 
 # Routes authentification (nécessitent X-Tenant-ID mais pas JWT)
 app.include_router(auth_router)

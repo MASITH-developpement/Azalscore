@@ -12,14 +12,12 @@ Inclut:
 """
 
 from datetime import datetime, date
-from decimal import Decimal
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Float, Enum, JSON, Date, Index, Numeric
+    ForeignKey, Enum, JSON, Date, Index, Numeric
 )
-from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 

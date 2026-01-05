@@ -16,13 +16,12 @@ from app.core.auth import get_current_user, get_tenant_id
 
 from .models import (
     SupplierStatus, SupplierType, RequisitionStatus,
-    PurchaseOrderStatus, ReceivingStatus, PurchaseInvoiceStatus
+    PurchaseOrderStatus, PurchaseInvoiceStatus
 )
 from .schemas import (
     SupplierCreate, SupplierUpdate, SupplierResponse, SupplierList,
     SupplierContactCreate, SupplierContactResponse,
     RequisitionCreate, RequisitionResponse,
-    QuotationCreate, QuotationResponse,
     PurchaseOrderCreate, PurchaseOrderResponse, PurchaseOrderList,
     GoodsReceiptCreate, GoodsReceiptResponse,
     PurchaseInvoiceCreate, PurchaseInvoiceResponse, PurchaseInvoiceList,

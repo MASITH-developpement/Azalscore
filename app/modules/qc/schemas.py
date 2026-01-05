@@ -126,7 +126,7 @@ class QCRuleResponse(QCRuleBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return v
         return v
 
@@ -177,7 +177,7 @@ class ModuleRegistryResponse(ModuleRegistryBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return []
         return v
 
@@ -225,7 +225,7 @@ class ValidationResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return {}
         return v
 
@@ -257,7 +257,7 @@ class CheckResultResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return {}
         return v
 
@@ -378,7 +378,7 @@ class QCAlertResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return {}
         return v
 
@@ -436,7 +436,7 @@ class QCDashboardResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return {}
         return v
 
@@ -446,7 +446,7 @@ class QCDashboardResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return []
         return v
 
@@ -492,7 +492,7 @@ class QCTemplateResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return []
         return v
 

@@ -7,11 +7,11 @@ Service métier pour la gestion de la conformité réglementaire.
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from uuid import UUID, uuid4
+from typing import Optional, List
+from uuid import UUID
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func
 
 from .models import (
     Regulation, Requirement, ComplianceAssessment, ComplianceGap,
@@ -20,27 +20,17 @@ from .models import (
     ComplianceDocument, ComplianceAudit, ComplianceAuditFinding as AuditFinding,
     ComplianceRisk, ComplianceIncident, ComplianceReport,
     ComplianceStatus, RegulationType, RequirementPriority,
-    AssessmentStatus, RiskLevel, ActionStatus, DocumentType,
-    AuditStatus, FindingSeverity, IncidentSeverity, IncidentStatus, ReportType
+    AssessmentStatus, RiskLevel, ActionStatus, AuditStatus, FindingSeverity, IncidentStatus
 )
 
 from .schemas import (
     RegulationCreate, RegulationUpdate,
     RequirementCreate, RequirementUpdate,
-    AssessmentCreate, AssessmentUpdate,
-    GapCreate,
-    ActionCreate, ActionUpdate,
-    PolicyCreate, PolicyUpdate,
-    AcknowledgmentCreate,
-    TrainingCreate, TrainingUpdate,
-    CompletionCreate, CompletionUpdate,
-    DocumentCreate, DocumentUpdate,
-    AuditCreate, AuditUpdate,
-    FindingCreate, FindingUpdate,
-    RiskCreate, RiskUpdate,
-    IncidentCreate, IncidentUpdate,
-    ReportCreate,
-    ComplianceMetrics, ComplianceDashboard
+    AssessmentCreate, GapCreate,
+    ActionCreate, PolicyCreate, AcknowledgmentCreate,
+    TrainingCreate, CompletionCreate, DocumentCreate, AuditCreate, FindingCreate, RiskCreate, RiskUpdate,
+    IncidentCreate, ReportCreate,
+    ComplianceMetrics
 )
 
 

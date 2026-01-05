@@ -7,12 +7,11 @@ Modèles SQLAlchemy pour le CRM et la gestion commerciale.
 
 import enum
 from datetime import datetime, date
-from decimal import Decimal
 from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime, Date,
     Text, ForeignKey, Enum, Numeric, Index
 )
-from sqlalchemy.dialects.postgresql import UUID, JSON
+from app.core.types import UniversalUUID, JSON
 from sqlalchemy.orm import relationship
 import uuid
 
@@ -108,7 +107,7 @@ class Customer(Base):
     """Client/Prospect."""
     __tablename__ = "customers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -137,7 +136,7 @@ class Customer(Base):
     legal_form = Column(String(50))  # Forme juridique
 
     # Commercial
-    assigned_to = Column(UUID(as_uuid=True))  # Commercial assigné
+    assigned_to = Column(UniversalUUID())  # Commercial assigné
     industry = Column(String(100))  # Secteur d'activité
     size = Column(String(50))  # Taille (TPE, PME, ETI, GE)
     annual_revenue = Column(Numeric(15, 2))
@@ -171,7 +170,7 @@ class Customer(Base):
 
     # Métadonnées
     is_active = Column(Boolean, default=True)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -193,9 +192,9 @@ class Contact(Base):
     """Contact d'un client."""
     __tablename__ = "customer_contacts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    customer_id = Column(UniversalUUID(), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
 
     # Identité
     first_name = Column(String(100), nullable=False)
@@ -243,9 +242,9 @@ class Opportunity(Base):
     """Opportunité commerciale (Pipeline)."""
     __tablename__ = "opportunities"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    customer_id = Column(UniversalUUID(), ForeignKey("customers.id"), nullable=False)
 
     # Identification
     code = Column(String(50), nullable=False)  # Numéro opportunité
@@ -267,7 +266,7 @@ class Opportunity(Base):
     actual_close_date = Column(Date)  # Date de conclusion réelle
 
     # Attribution
-    assigned_to = Column(UUID(as_uuid=True))  # Commercial responsable
+    assigned_to = Column(UniversalUUID())  # Commercial responsable
     team = Column(String(100))  # Équipe commerciale
 
     # Source
@@ -287,7 +286,7 @@ class Opportunity(Base):
     next_steps = Column(Text)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -313,10 +312,10 @@ class CommercialDocument(Base):
     """Document commercial (Devis, Commande, Facture, etc.)."""
     __tablename__ = "commercial_documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
-    opportunity_id = Column(UUID(as_uuid=True), ForeignKey("opportunities.id"))
+    customer_id = Column(UniversalUUID(), ForeignKey("customers.id"), nullable=False)
+    opportunity_id = Column(UniversalUUID(), ForeignKey("opportunities.id"))
 
     # Identification
     type = Column(Enum(DocumentType), nullable=False)
@@ -359,19 +358,19 @@ class CommercialDocument(Base):
     terms = Column(Text)  # Conditions générales
 
     # Lien avec autres documents
-    parent_id = Column(UUID(as_uuid=True))  # Document parent (devis → commande)
-    invoice_id = Column(UUID(as_uuid=True))  # Facture liée
+    parent_id = Column(UniversalUUID())  # Document parent (devis → commande)
+    invoice_id = Column(UniversalUUID())  # Facture liée
 
     # PDF
     pdf_url = Column(String(500))
 
     # Attribution
-    assigned_to = Column(UUID(as_uuid=True))
-    validated_by = Column(UUID(as_uuid=True))
+    assigned_to = Column(UniversalUUID())
+    validated_by = Column(UniversalUUID())
     validated_at = Column(DateTime)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -394,15 +393,15 @@ class DocumentLine(Base):
     """Ligne de document commercial."""
     __tablename__ = "document_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("commercial_documents.id", ondelete="CASCADE"), nullable=False)
+    document_id = Column(UniversalUUID(), ForeignKey("commercial_documents.id", ondelete="CASCADE"), nullable=False)
 
     # Position
     line_number = Column(Integer, nullable=False)
 
     # Produit/Service
-    product_id = Column(UUID(as_uuid=True))  # Référence produit
+    product_id = Column(UniversalUUID())  # Référence produit
     product_code = Column(String(50))
     description = Column(Text, nullable=False)
 
@@ -443,9 +442,9 @@ class Payment(Base):
     """Paiement reçu."""
     __tablename__ = "payments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("commercial_documents.id"), nullable=False)
+    document_id = Column(UniversalUUID(), ForeignKey("commercial_documents.id"), nullable=False)
 
     # Identification
     reference = Column(String(100))  # Référence paiement
@@ -467,7 +466,7 @@ class Payment(Base):
     notes = Column(Text)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
@@ -487,11 +486,11 @@ class CustomerActivity(Base):
     """Activité CRM (appels, emails, réunions, etc.)."""
     __tablename__ = "customer_activities"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
-    opportunity_id = Column(UUID(as_uuid=True), ForeignKey("opportunities.id"))
-    contact_id = Column(UUID(as_uuid=True), ForeignKey("customer_contacts.id"))
+    customer_id = Column(UniversalUUID(), ForeignKey("customers.id"), nullable=False)
+    opportunity_id = Column(UniversalUUID(), ForeignKey("opportunities.id"))
+    contact_id = Column(UniversalUUID(), ForeignKey("customer_contacts.id"))
 
     # Type et sujet
     type = Column(Enum(ActivityType), nullable=False)
@@ -510,10 +509,10 @@ class CustomerActivity(Base):
     is_completed = Column(Boolean, default=False)
 
     # Attribution
-    assigned_to = Column(UUID(as_uuid=True))
+    assigned_to = Column(UniversalUUID())
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
@@ -536,7 +535,7 @@ class PipelineStage(Base):
     """Étape du pipeline de vente."""
     __tablename__ = "pipeline_stages"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -573,7 +572,7 @@ class CatalogProduct(Base):
     """Produit ou service au catalogue commercial (distinct de inventory.Product)."""
     __tablename__ = "catalog_products"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification

@@ -6,9 +6,6 @@ Modèles SQLAlchemy pour le module de gestion de la qualité.
 """
 
 import enum
-from datetime import datetime, date
-from typing import Optional, List
-from decimal import Decimal
 
 from sqlalchemy import (
     Column,
@@ -23,7 +20,6 @@ from sqlalchemy import (
     ForeignKey,
     Enum,
     Index,
-    CheckConstraint,
     UniqueConstraint,
     JSON,
 )

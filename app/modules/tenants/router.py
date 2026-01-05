@@ -17,7 +17,7 @@ from .service import get_tenant_service
 from .schemas import (
     TenantCreate, TenantUpdate, TenantResponse, TenantListResponse,
     SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse,
-    ModuleActivation, ModuleDeactivation, TenantModuleResponse,
+    ModuleActivation, TenantModuleResponse,
     TenantInvitationCreate, TenantInvitationResponse,
     TenantUsageResponse,
     TenantSettingsUpdate, TenantSettingsResponse,

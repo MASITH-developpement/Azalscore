@@ -1,21 +1,27 @@
 """
 AZALS - Endpoint temporaire pour migration manuelle
 À supprimer après migration réussie
+SÉCURISÉ: Authentification ADMIN requise
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy import text
 from app.core.database import engine
+from app.core.dependencies import get_current_user
+from app.core.models import User, UserRole
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 @router.post("/migrate-treasury")
-def apply_treasury_migration():
+def apply_treasury_migration(current_user: User = Depends(get_current_user)):
     """
     TEMPORAIRE: Applique la migration 005 directement.
-    À utiliser une seule fois puis supprimer cet endpoint.
+    SÉCURISÉ: Requiert authentification DIRIGEANT.
     """
+    # SECURITY FIX: Vérification du rôle DIRIGEANT
+    if current_user.role != UserRole.DIRIGEANT:
+        raise HTTPException(status_code=403, detail="Accès réservé aux DIRIGEANTS")
     try:
         with engine.connect() as conn:
             # Vérifier si colonnes existent déjà

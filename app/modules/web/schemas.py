@@ -182,7 +182,7 @@ class WidgetResponse(WidgetBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return v
         return v
 
@@ -247,7 +247,7 @@ class DashboardResponse(DashboardBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return v
         return v
 
@@ -373,7 +373,7 @@ class UserPreferenceResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return v
         return v
 
@@ -505,7 +505,7 @@ class ComponentResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return v
         return v
 

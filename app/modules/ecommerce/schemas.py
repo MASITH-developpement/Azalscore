@@ -6,8 +6,8 @@ Schémas Pydantic pour validation et sérialisation.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field
 
 from .models import (
     ProductStatus, ProductType, OrderStatus, PaymentStatus,

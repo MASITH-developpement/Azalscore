@@ -9,25 +9,23 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, or_
 from uuid import UUID
 
 from .models import (
     Department, Position, Employee, Contract, LeaveRequest, LeaveBalance,
-    PayrollPeriod, Payslip, PayslipLine, TimeEntry,
+    PayrollPeriod, Payslip, PayslipLine, HRTimeEntry,
     Skill, EmployeeSkill, Training, TrainingParticipant,
     Evaluation, HRDocument,
     ContractType, EmployeeStatus, LeaveType, LeaveStatus,
-    PayrollStatus, PayElementType, DocumentType,
-    EvaluationType, EvaluationStatus, TrainingType, TrainingStatus
+    PayrollStatus, DocumentType,
+    EvaluationStatus, TrainingType, TrainingStatus
 )
 from .schemas import (
     DepartmentCreate, DepartmentUpdate, PositionCreate, PositionUpdate,
     EmployeeCreate, EmployeeUpdate, ContractCreate,
-    LeaveRequestCreate, PayrollPeriodCreate, PayslipCreate, PayslipLineCreate,
-    TimeEntryCreate, SkillCreate, EmployeeSkillCreate,
-    TrainingCreate, TrainingParticipantCreate,
-    EvaluationCreate, EvaluationUpdate, HRDocumentCreate,
+    LeaveRequestCreate, PayrollPeriodCreate, PayslipCreate, TimeEntryCreate, SkillCreate, EmployeeSkillCreate,
+    TrainingCreate, EvaluationCreate, EvaluationUpdate, HRDocumentCreate,
     HRDashboard
 )
 
@@ -686,9 +684,9 @@ class HRService:
         self,
         employee_id: UUID,
         data: TimeEntryCreate
-    ) -> TimeEntry:
+    ) -> HRTimeEntry:
         """Créer une entrée de temps."""
-        entry = TimeEntry(
+        entry = HRTimeEntry(
             tenant_id=self.tenant_id,
             employee_id=employee_id,
             date=data.date,
@@ -710,18 +708,18 @@ class HRService:
         employee_id: Optional[UUID] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None
-    ) -> List[TimeEntry]:
+    ) -> List[HRTimeEntry]:
         """Lister les entrées de temps."""
-        query = self.db.query(TimeEntry).filter(
-            TimeEntry.tenant_id == self.tenant_id
+        query = self.db.query(HRTimeEntry).filter(
+            HRTimeEntry.tenant_id == self.tenant_id
         )
         if employee_id:
-            query = query.filter(TimeEntry.employee_id == employee_id)
+            query = query.filter(HRTimeEntry.employee_id == employee_id)
         if start_date:
-            query = query.filter(TimeEntry.date >= start_date)
+            query = query.filter(HRTimeEntry.date >= start_date)
         if end_date:
-            query = query.filter(TimeEntry.date <= end_date)
-        return query.order_by(TimeEntry.date.desc()).all()
+            query = query.filter(HRTimeEntry.date <= end_date)
+        return query.order_by(HRTimeEntry.date.desc()).all()
 
     # =========================================================================
     # COMPÉTENCES

@@ -12,21 +12,18 @@ Principes fondamentaux:
 
 import uuid
 import hashlib
-from datetime import datetime, timedelta
-from decimal import Decimal
+from datetime import datetime
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc
+from sqlalchemy import func
 
 from .models import (
     AIConversation, AIMessage, AIAnalysis, AIDecisionSupport,
     AIRiskAlert, AIPrediction, AIFeedback, AILearningData,
-    AIConfiguration, AIAuditLog,
-    AIRequestType, AIResponseStatus, RiskLevel, RiskCategory, DecisionStatus
+    AIConfiguration, AIAuditLog
 )
 from .schemas import (
-    ConversationCreate, MessageCreate, AIQuestionRequest,
-    AnalysisRequest, DecisionSupportCreate, DecisionConfirmation,
+    ConversationCreate, MessageCreate, AnalysisRequest, DecisionSupportCreate, DecisionConfirmation,
     RiskAlertCreate, RiskAcknowledge, RiskResolve,
     PredictionRequest, FeedbackCreate, AIConfigUpdate,
     SynthesisRequest
@@ -1011,7 +1008,7 @@ doivent être validées par les responsables humains.*"""
 
         features_status = {}
         try:
-            config = self.get_config()
+            self.get_config()
             features_status["configuration"] = "healthy"
         except Exception:
             features_status["configuration"] = "unhealthy"

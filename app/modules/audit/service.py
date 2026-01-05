@@ -8,9 +8,8 @@ Logique métier pour l'audit et les benchmarks.
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 import json
-import hashlib
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, text
+from sqlalchemy import or_, func
 
 from .models import (
     AuditLog, AuditSession, MetricDefinition, MetricValue,
@@ -1097,7 +1096,7 @@ class AuditService:
         """Récupère les statistiques d'audit."""
         now = datetime.utcnow()
         yesterday = now - timedelta(hours=24)
-        last_week = now - timedelta(days=7)
+        now - timedelta(days=7)
 
         total_logs_24h = self.db.query(AuditLog).filter(
             AuditLog.tenant_id == self.tenant_id,

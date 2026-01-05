@@ -13,10 +13,10 @@ import uuid
 import pyotp
 import bcrypt
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_, or_
 
 from app.core.config import get_settings
-from app.core.security import create_access_token, decode_access_token
+from app.core.security import create_access_token
 from .models import (
     IAMUser, IAMRole, IAMPermission, IAMGroup, IAMSession,
     IAMTokenBlacklist, IAMInvitation, IAMPasswordPolicy,
@@ -26,8 +26,7 @@ from .models import (
 )
 from .schemas import (
     UserCreate, UserUpdate, RoleCreate, RoleUpdate,
-    PermissionCreate, GroupCreate, GroupUpdate,
-    LoginRequest, LoginResponse, PasswordChange
+    PermissionCreate, GroupCreate
 )
 
 settings = get_settings()

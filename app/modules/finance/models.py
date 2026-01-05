@@ -6,13 +6,12 @@ Modèles SQLAlchemy pour la comptabilité et la trésorerie.
 """
 
 import enum
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, Date,
+    Column, String, Integer, Boolean, DateTime, Date,
     Text, ForeignKey, Enum, Numeric, Index, CheckConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID, JSON
+from app.core.types import UniversalUUID, JSON
 from sqlalchemy.orm import relationship
 import uuid
 
@@ -93,7 +92,7 @@ class Account(Base):
     """Compte du plan comptable."""
     __tablename__ = "accounts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -103,7 +102,7 @@ class Account(Base):
 
     # Classification
     type = Column(Enum(AccountType), nullable=False)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"))
+    parent_id = Column(UniversalUUID(), ForeignKey("accounts.id"))
 
     # Compte auxiliaire
     is_auxiliary = Column(Boolean, default=False)  # Compte auxiliaire
@@ -138,7 +137,7 @@ class Journal(Base):
     """Journal comptable."""
     __tablename__ = "journals"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -147,8 +146,8 @@ class Journal(Base):
     type = Column(Enum(JournalType), nullable=False)
 
     # Compte par défaut
-    default_debit_account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"))
-    default_credit_account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"))
+    default_debit_account_id = Column(UniversalUUID(), ForeignKey("accounts.id"))
+    default_credit_account_id = Column(UniversalUUID(), ForeignKey("accounts.id"))
 
     # Paramètres
     is_active = Column(Boolean, default=True)
@@ -176,7 +175,7 @@ class FiscalYear(Base):
     """Exercice fiscal."""
     __tablename__ = "fiscal_years"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -190,7 +189,7 @@ class FiscalYear(Base):
     # Statut
     status = Column(Enum(FiscalYearStatus), default=FiscalYearStatus.OPEN)
     closed_at = Column(DateTime)
-    closed_by = Column(UUID(as_uuid=True))
+    closed_by = Column(UniversalUUID())
 
     # Totaux (calculés)
     total_debit = Column(Numeric(15, 2), default=0)
@@ -216,9 +215,9 @@ class FiscalPeriod(Base):
     """Période comptable (mois)."""
     __tablename__ = "fiscal_periods"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    fiscal_year_id = Column(UUID(as_uuid=True), ForeignKey("fiscal_years.id"), nullable=False)
+    fiscal_year_id = Column(UniversalUUID(), ForeignKey("fiscal_years.id"), nullable=False)
 
     # Identification
     name = Column(String(100), nullable=False)  # Ex: "Janvier 2026"
@@ -256,10 +255,10 @@ class JournalEntry(Base):
     """Écriture comptable (pièce)."""
     __tablename__ = "journal_entries"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    journal_id = Column(UUID(as_uuid=True), ForeignKey("journals.id"), nullable=False)
-    fiscal_year_id = Column(UUID(as_uuid=True), ForeignKey("fiscal_years.id"), nullable=False)
+    journal_id = Column(UniversalUUID(), ForeignKey("journals.id"), nullable=False)
+    fiscal_year_id = Column(UniversalUUID(), ForeignKey("fiscal_years.id"), nullable=False)
 
     # Identification
     number = Column(String(50), nullable=False)  # Numéro de pièce
@@ -276,16 +275,16 @@ class JournalEntry(Base):
 
     # Lien avec documents source
     source_type = Column(String(50))  # invoice, payment, etc.
-    source_id = Column(UUID(as_uuid=True))
+    source_id = Column(UniversalUUID())
 
     # Validation
-    validated_by = Column(UUID(as_uuid=True))
+    validated_by = Column(UniversalUUID())
     validated_at = Column(DateTime)
-    posted_by = Column(UUID(as_uuid=True))
+    posted_by = Column(UniversalUUID())
     posted_at = Column(DateTime)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -306,10 +305,10 @@ class JournalEntryLine(Base):
     """Ligne d'écriture comptable."""
     __tablename__ = "journal_entry_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    entry_id = Column(UUID(as_uuid=True), ForeignKey("journal_entries.id", ondelete="CASCADE"), nullable=False)
-    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    entry_id = Column(UniversalUUID(), ForeignKey("journal_entries.id", ondelete="CASCADE"), nullable=False)
+    account_id = Column(UniversalUUID(), ForeignKey("accounts.id"), nullable=False)
 
     # Position
     line_number = Column(Integer, nullable=False)
@@ -322,7 +321,7 @@ class JournalEntryLine(Base):
     label = Column(String(255))
 
     # Auxiliaire
-    partner_id = Column(UUID(as_uuid=True))  # Client ou fournisseur
+    partner_id = Column(UniversalUUID())  # Client ou fournisseur
     partner_type = Column(String(20))  # customer, supplier
 
     # Lettrage
@@ -357,7 +356,7 @@ class BankAccount(Base):
     """Compte bancaire."""
     __tablename__ = "bank_accounts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -368,8 +367,8 @@ class BankAccount(Base):
     bic = Column(String(20))
 
     # Compte comptable lié
-    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"))
-    journal_id = Column(UUID(as_uuid=True), ForeignKey("journals.id"))
+    account_id = Column(UniversalUUID(), ForeignKey("accounts.id"))
+    journal_id = Column(UniversalUUID(), ForeignKey("journals.id"))
 
     # Soldes
     initial_balance = Column(Numeric(15, 2), default=0)
@@ -401,9 +400,9 @@ class BankStatement(Base):
     """Relevé bancaire."""
     __tablename__ = "bank_statements"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    bank_account_id = Column(UUID(as_uuid=True), ForeignKey("bank_accounts.id"), nullable=False)
+    bank_account_id = Column(UniversalUUID(), ForeignKey("bank_accounts.id"), nullable=False)
 
     # Identification
     name = Column(String(255), nullable=False)  # Ex: "Relevé Janvier 2026"
@@ -423,10 +422,10 @@ class BankStatement(Base):
     # Statut
     is_reconciled = Column(Boolean, default=False)
     reconciled_at = Column(DateTime)
-    reconciled_by = Column(UUID(as_uuid=True))
+    reconciled_by = Column(UniversalUUID())
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
@@ -443,9 +442,9 @@ class BankStatementLine(Base):
     """Ligne de relevé bancaire."""
     __tablename__ = "bank_statement_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    statement_id = Column(UUID(as_uuid=True), ForeignKey("bank_statements.id", ondelete="CASCADE"), nullable=False)
+    statement_id = Column(UniversalUUID(), ForeignKey("bank_statements.id", ondelete="CASCADE"), nullable=False)
 
     # Date et libellé
     date = Column(Date, nullable=False)
@@ -458,7 +457,7 @@ class BankStatementLine(Base):
 
     # Rapprochement
     status = Column(Enum(ReconciliationStatus), default=ReconciliationStatus.PENDING)
-    matched_entry_line_id = Column(UUID(as_uuid=True), ForeignKey("journal_entry_lines.id"))
+    matched_entry_line_id = Column(UniversalUUID(), ForeignKey("journal_entry_lines.id"))
     matched_at = Column(DateTime)
 
     # Métadonnées
@@ -477,9 +476,9 @@ class BankTransaction(Base):
     """Transaction bancaire (mouvement réel)."""
     __tablename__ = "bank_transactions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    bank_account_id = Column(UUID(as_uuid=True), ForeignKey("bank_accounts.id"), nullable=False)
+    bank_account_id = Column(UniversalUUID(), ForeignKey("bank_accounts.id"), nullable=False)
 
     # Type et date
     type = Column(Enum(BankTransactionType), nullable=False)
@@ -499,10 +498,10 @@ class BankTransaction(Base):
     category = Column(String(100))
 
     # Lien comptable
-    entry_line_id = Column(UUID(as_uuid=True), ForeignKey("journal_entry_lines.id"))
+    entry_line_id = Column(UniversalUUID(), ForeignKey("journal_entry_lines.id"))
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
@@ -523,7 +522,7 @@ class CashForecast(Base):
     """Prévision de trésorerie."""
     __tablename__ = "cash_forecasts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Période
@@ -549,7 +548,7 @@ class CashForecast(Base):
     details = Column(JSON, default=dict)  # Détail par catégorie
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -562,7 +561,7 @@ class CashFlowCategory(Base):
     """Catégorie de flux de trésorerie."""
     __tablename__ = "cash_flow_categories"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -574,11 +573,11 @@ class CashFlowCategory(Base):
     is_receipt = Column(Boolean, nullable=False)  # True = encaissement, False = décaissement
 
     # Hiérarchie
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("cash_flow_categories.id"))
+    parent_id = Column(UniversalUUID(), ForeignKey("cash_flow_categories.id"))
     order = Column(Integer, default=0)
 
     # Compte comptable par défaut
-    default_account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"))
+    default_account_id = Column(UniversalUUID(), ForeignKey("accounts.id"))
 
     # Métadonnées
     is_active = Column(Boolean, default=True)
@@ -597,7 +596,7 @@ class FinancialReport(Base):
     """Rapport financier généré."""
     __tablename__ = "financial_reports"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Type de rapport
@@ -605,8 +604,8 @@ class FinancialReport(Base):
     name = Column(String(255), nullable=False)
 
     # Période
-    fiscal_year_id = Column(UUID(as_uuid=True), ForeignKey("fiscal_years.id"))
-    period_id = Column(UUID(as_uuid=True), ForeignKey("fiscal_periods.id"))
+    fiscal_year_id = Column(UniversalUUID(), ForeignKey("fiscal_years.id"))
+    period_id = Column(UniversalUUID(), ForeignKey("fiscal_periods.id"))
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
 
@@ -617,7 +616,7 @@ class FinancialReport(Base):
     parameters = Column(JSON, default=dict)
 
     # Génération
-    generated_by = Column(UUID(as_uuid=True))
+    generated_by = Column(UniversalUUID())
     generated_at = Column(DateTime, default=datetime.utcnow)
 
     # Export

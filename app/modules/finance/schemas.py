@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from uuid import UUID
 import json

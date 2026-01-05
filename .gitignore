@@ -38,6 +38,8 @@ env/
 .coverage
 htmlcov/
 .tox/
+*.db
+test.db
 
 # IDE
 .vscode/

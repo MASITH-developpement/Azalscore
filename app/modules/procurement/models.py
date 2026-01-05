@@ -5,13 +5,12 @@ AZALS MODULE M4 - Modèles Achats
 Modèles SQLAlchemy pour la gestion des achats.
 """
 
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, ForeignKey,
     Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UniversalUUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 import enum
@@ -95,7 +94,7 @@ class Supplier(Base):
     """Fournisseur."""
     __tablename__ = "procurement_suppliers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -143,13 +142,13 @@ class Supplier(Base):
     last_evaluation_date = Column(Date, nullable=True)
 
     # Comptabilité
-    account_id = Column(UUID(as_uuid=True), nullable=True)  # Lien compte fournisseur
+    account_id = Column(UniversalUUID(), nullable=True)  # Lien compte fournisseur
 
     # Métadonnées
     notes = Column(Text, nullable=True)
     custom_fields = Column(JSONB, default=dict)
     is_active = Column(Boolean, default=True)
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UniversalUUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -166,9 +165,9 @@ class SupplierContact(Base):
     """Contact fournisseur."""
     __tablename__ = "procurement_supplier_contacts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=False)
+    supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=False)
 
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
@@ -199,7 +198,7 @@ class PurchaseRequisition(Base):
     """Demande d'achat."""
     __tablename__ = "procurement_requisitions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
@@ -210,8 +209,8 @@ class PurchaseRequisition(Base):
     description = Column(Text, nullable=True)
     justification = Column(Text, nullable=True)
 
-    requester_id = Column(UUID(as_uuid=True), nullable=False)
-    department_id = Column(UUID(as_uuid=True), nullable=True)
+    requester_id = Column(UniversalUUID(), nullable=False)
+    department_id = Column(UniversalUUID(), nullable=True)
 
     requested_date = Column(Date, nullable=False)
     required_date = Column(Date, nullable=True)
@@ -221,7 +220,7 @@ class PurchaseRequisition(Base):
     budget_code = Column(String(50), nullable=True)
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UniversalUUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     rejection_reason = Column(Text, nullable=True)
 
@@ -242,12 +241,12 @@ class PurchaseRequisitionLine(Base):
     """Ligne de demande d'achat."""
     __tablename__ = "procurement_requisition_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    requisition_id = Column(UUID(as_uuid=True), ForeignKey("procurement_requisitions.id"), nullable=False)
+    requisition_id = Column(UniversalUUID(), ForeignKey("procurement_requisitions.id"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
-    product_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=True)
     product_code = Column(String(50), nullable=True)
     description = Column(String(500), nullable=False)
     quantity = Column(Numeric(15, 4), nullable=False)
@@ -255,13 +254,13 @@ class PurchaseRequisitionLine(Base):
     estimated_price = Column(Numeric(15, 2), nullable=True)
     total = Column(Numeric(15, 2), nullable=True)
 
-    preferred_supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=True)
+    preferred_supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=True)
     required_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True)
 
     # Lien vers commande
     ordered_quantity = Column(Numeric(15, 4), default=0)
-    purchase_order_id = Column(UUID(as_uuid=True), nullable=True)
+    purchase_order_id = Column(UniversalUUID(), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -281,12 +280,12 @@ class SupplierQuotation(Base):
     """Devis fournisseur."""
     __tablename__ = "procurement_quotations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=False)
-    requisition_id = Column(UUID(as_uuid=True), ForeignKey("procurement_requisitions.id"), nullable=True)
+    supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=False)
+    requisition_id = Column(UniversalUUID(), ForeignKey("procurement_requisitions.id"), nullable=True)
 
     status = Column(SQLEnum(QuotationStatus), default=QuotationStatus.REQUESTED)
 
@@ -307,7 +306,7 @@ class SupplierQuotation(Base):
     notes = Column(Text, nullable=True)
     attachments = Column(JSONB, default=list)
 
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -325,12 +324,12 @@ class SupplierQuotationLine(Base):
     """Ligne de devis fournisseur."""
     __tablename__ = "procurement_quotation_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    quotation_id = Column(UUID(as_uuid=True), ForeignKey("procurement_quotations.id"), nullable=False)
+    quotation_id = Column(UniversalUUID(), ForeignKey("procurement_quotations.id"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
-    product_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=True)
     product_code = Column(String(50), nullable=True)
     description = Column(String(500), nullable=False)
     quantity = Column(Numeric(15, 4), nullable=False)
@@ -360,13 +359,13 @@ class PurchaseOrder(Base):
     """Commande d'achat."""
     __tablename__ = "procurement_orders"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=False)
-    requisition_id = Column(UUID(as_uuid=True), ForeignKey("procurement_requisitions.id"), nullable=True)
-    quotation_id = Column(UUID(as_uuid=True), ForeignKey("procurement_quotations.id"), nullable=True)
+    supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=False)
+    requisition_id = Column(UniversalUUID(), ForeignKey("procurement_requisitions.id"), nullable=True)
+    quotation_id = Column(UniversalUUID(), ForeignKey("procurement_quotations.id"), nullable=True)
 
     status = Column(SQLEnum(PurchaseOrderStatus), default=PurchaseOrderStatus.DRAFT)
 
@@ -401,7 +400,7 @@ class PurchaseOrder(Base):
     internal_notes = Column(Text, nullable=True)
     attachments = Column(JSONB, default=list)
 
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     sent_at = Column(DateTime, nullable=True)
     confirmed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -422,12 +421,12 @@ class PurchaseOrderLine(Base):
     """Ligne de commande d'achat."""
     __tablename__ = "procurement_order_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    order_id = Column(UUID(as_uuid=True), ForeignKey("procurement_orders.id"), nullable=False)
+    order_id = Column(UniversalUUID(), ForeignKey("procurement_orders.id"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
-    product_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=True)
     product_code = Column(String(50), nullable=True)
     description = Column(String(500), nullable=False)
 
@@ -443,7 +442,7 @@ class PurchaseOrderLine(Base):
     invoiced_quantity = Column(Numeric(15, 4), default=0)
 
     # Lien requisition
-    requisition_line_id = Column(UUID(as_uuid=True), nullable=True)
+    requisition_line_id = Column(UniversalUUID(), nullable=True)
 
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -465,12 +464,12 @@ class GoodsReceipt(Base):
     """Réception de marchandises."""
     __tablename__ = "procurement_receipts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
-    order_id = Column(UUID(as_uuid=True), ForeignKey("procurement_orders.id"), nullable=False)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=False)
+    order_id = Column(UniversalUUID(), ForeignKey("procurement_orders.id"), nullable=False)
+    supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=False)
 
     status = Column(SQLEnum(ReceivingStatus), default=ReceivingStatus.DRAFT)
 
@@ -479,14 +478,14 @@ class GoodsReceipt(Base):
     carrier = Column(String(255), nullable=True)
     tracking_number = Column(String(100), nullable=True)
 
-    warehouse_id = Column(UUID(as_uuid=True), nullable=True)
+    warehouse_id = Column(UniversalUUID(), nullable=True)
     location = Column(String(100), nullable=True)
 
     notes = Column(Text, nullable=True)
     attachments = Column(JSONB, default=list)
 
-    received_by = Column(UUID(as_uuid=True), nullable=True)
-    validated_by = Column(UUID(as_uuid=True), nullable=True)
+    received_by = Column(UniversalUUID(), nullable=True)
+    validated_by = Column(UniversalUUID(), nullable=True)
     validated_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -506,13 +505,13 @@ class GoodsReceiptLine(Base):
     """Ligne de réception."""
     __tablename__ = "procurement_receipt_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    receipt_id = Column(UUID(as_uuid=True), ForeignKey("procurement_receipts.id"), nullable=False)
-    order_line_id = Column(UUID(as_uuid=True), ForeignKey("procurement_order_lines.id"), nullable=False)
+    receipt_id = Column(UniversalUUID(), ForeignKey("procurement_receipts.id"), nullable=False)
+    order_line_id = Column(UniversalUUID(), ForeignKey("procurement_order_lines.id"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
-    product_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=True)
     product_code = Column(String(50), nullable=True)
     description = Column(String(500), nullable=False)
 
@@ -545,12 +544,12 @@ class PurchaseInvoice(Base):
     """Facture d'achat."""
     __tablename__ = "procurement_invoices"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=False)
-    order_id = Column(UUID(as_uuid=True), ForeignKey("procurement_orders.id"), nullable=True)
+    supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=False)
+    order_id = Column(UniversalUUID(), ForeignKey("procurement_orders.id"), nullable=True)
 
     status = Column(SQLEnum(PurchaseInvoiceStatus), default=PurchaseInvoiceStatus.DRAFT)
 
@@ -572,15 +571,15 @@ class PurchaseInvoice(Base):
     payment_method = Column(String(50), nullable=True)
 
     # Comptabilité
-    journal_entry_id = Column(UUID(as_uuid=True), nullable=True)
+    journal_entry_id = Column(UniversalUUID(), nullable=True)
     posted_at = Column(DateTime, nullable=True)
 
     notes = Column(Text, nullable=True)
     attachments = Column(JSONB, default=list)
 
-    validated_by = Column(UUID(as_uuid=True), nullable=True)
+    validated_by = Column(UniversalUUID(), nullable=True)
     validated_at = Column(DateTime, nullable=True)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -599,13 +598,13 @@ class PurchaseInvoiceLine(Base):
     """Ligne de facture d'achat."""
     __tablename__ = "procurement_invoice_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    invoice_id = Column(UUID(as_uuid=True), ForeignKey("procurement_invoices.id"), nullable=False)
-    order_line_id = Column(UUID(as_uuid=True), ForeignKey("procurement_order_lines.id"), nullable=True)
+    invoice_id = Column(UniversalUUID(), ForeignKey("procurement_invoices.id"), nullable=False)
+    order_line_id = Column(UniversalUUID(), ForeignKey("procurement_order_lines.id"), nullable=True)
 
     line_number = Column(Integer, nullable=False)
-    product_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=True)
     product_code = Column(String(50), nullable=True)
     description = Column(String(500), nullable=False)
 
@@ -617,7 +616,7 @@ class PurchaseInvoiceLine(Base):
     tax_amount = Column(Numeric(15, 2), default=0)
     total = Column(Numeric(15, 2), nullable=False)
 
-    account_id = Column(UUID(as_uuid=True), nullable=True)  # Compte de charge
+    account_id = Column(UniversalUUID(), nullable=True)  # Compte de charge
     analytic_code = Column(String(50), nullable=True)
 
     notes = Column(Text, nullable=True)
@@ -639,11 +638,11 @@ class SupplierPayment(Base):
     """Paiement fournisseur."""
     __tablename__ = "procurement_payments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=False)
+    supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=False)
 
     payment_date = Column(Date, nullable=False)
     amount = Column(Numeric(15, 2), nullable=False)
@@ -651,13 +650,13 @@ class SupplierPayment(Base):
     payment_method = Column(String(50), nullable=False)
     reference = Column(String(100), nullable=True)
 
-    bank_account_id = Column(UUID(as_uuid=True), nullable=True)
+    bank_account_id = Column(UniversalUUID(), nullable=True)
 
     # Comptabilité
-    journal_entry_id = Column(UUID(as_uuid=True), nullable=True)
+    journal_entry_id = Column(UniversalUUID(), nullable=True)
 
     notes = Column(Text, nullable=True)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     supplier = relationship("Supplier", foreign_keys=[supplier_id])
@@ -674,10 +673,10 @@ class PaymentAllocation(Base):
     """Affectation de paiement sur facture."""
     __tablename__ = "procurement_payment_allocations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    payment_id = Column(UUID(as_uuid=True), ForeignKey("procurement_payments.id"), nullable=False)
-    invoice_id = Column(UUID(as_uuid=True), ForeignKey("procurement_invoices.id"), nullable=False)
+    payment_id = Column(UniversalUUID(), ForeignKey("procurement_payments.id"), nullable=False)
+    invoice_id = Column(UniversalUUID(), ForeignKey("procurement_invoices.id"), nullable=False)
 
     amount = Column(Numeric(15, 2), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -700,9 +699,9 @@ class SupplierEvaluation(Base):
     """Évaluation fournisseur."""
     __tablename__ = "procurement_evaluations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("procurement_suppliers.id"), nullable=False)
+    supplier_id = Column(UniversalUUID(), ForeignKey("procurement_suppliers.id"), nullable=False)
 
     evaluation_date = Column(Date, nullable=False)
     period_start = Column(Date, nullable=False)
@@ -726,7 +725,7 @@ class SupplierEvaluation(Base):
     comments = Column(Text, nullable=True)
     recommendations = Column(Text, nullable=True)
 
-    evaluated_by = Column(UUID(as_uuid=True), nullable=True)
+    evaluated_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     supplier = relationship("Supplier", foreign_keys=[supplier_id])

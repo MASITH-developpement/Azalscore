@@ -29,37 +29,49 @@ def test_health_endpoint_exists(client):
 def test_health_endpoint_returns_status(client):
     """
     Vérifie que /health retourne un JSON avec la clé 'status'.
-    Valeur attendue : 'ok' ou 'degraded'.
+    Valeur attendue : 'healthy', 'unhealthy' ou 'degraded'.
     """
     response = client.get("/health")
     data = response.json()
-    
+
     assert "status" in data
-    assert data["status"] in ["ok", "degraded"]
+    assert data["status"] in ["healthy", "unhealthy", "degraded"]
 
 
-def test_health_endpoint_returns_api_status(client):
+def test_health_endpoint_returns_components(client):
     """
-    Vérifie que /health retourne l'état de l'API.
-    La clé 'api' doit être présente et à True.
+    Vérifie que /health retourne les composants système.
+    La clé 'components' doit être présente et contenir une liste.
     """
     response = client.get("/health")
     data = response.json()
-    
-    assert "api" in data
-    assert data["api"] is True
+
+    assert "components" in data
+    assert isinstance(data["components"], list)
+    assert len(data["components"]) > 0
+
+    # Vérifier la structure d'un composant
+    component = data["components"][0]
+    assert "name" in component
+    assert "status" in component
+    assert "message" in component
 
 
-def test_health_endpoint_returns_database_status(client):
+def test_health_endpoint_returns_database_component(client):
     """
     Vérifie que /health retourne l'état de la base de données.
-    La clé 'database' doit être présente et être un booléen.
+    Un composant 'database' doit être présent.
     """
     response = client.get("/health")
     data = response.json()
-    
-    assert "database" in data
-    assert isinstance(data["database"], bool)
+
+    # Trouver le composant database
+    db_component = next(
+        (c for c in data["components"] if c["name"] == "database"),
+        None
+    )
+    assert db_component is not None
+    assert db_component["status"] in ["healthy", "unhealthy"]
 
 
 def test_health_endpoint_json_structure(client):
@@ -69,12 +81,15 @@ def test_health_endpoint_json_structure(client):
     """
     response = client.get("/health")
     data = response.json()
-    
-    # Structure attendue
-    expected_keys = {"status", "api", "database"}
-    assert set(data.keys()) == expected_keys
-    
+
+    # Structure attendue (nouveau format ÉLITE)
+    expected_keys = {"status", "components", "environment", "timestamp", "version", "uptime_seconds"}
+    assert expected_keys.issubset(set(data.keys()))
+
     # Types des valeurs
     assert isinstance(data["status"], str)
-    assert isinstance(data["api"], bool)
-    assert isinstance(data["database"], bool)
+    assert isinstance(data["components"], list)
+    assert isinstance(data["environment"], str)
+    assert isinstance(data["timestamp"], str)
+    assert isinstance(data["version"], str)
+    assert isinstance(data["uptime_seconds"], (int, float))

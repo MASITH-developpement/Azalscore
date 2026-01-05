@@ -9,20 +9,20 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, or_
 from uuid import UUID
 
 from .models import (
     Supplier, SupplierContact, PurchaseRequisition, PurchaseRequisitionLine,
-    SupplierQuotation, SupplierQuotationLine, PurchaseOrder, PurchaseOrderLine,
+    PurchaseOrder, PurchaseOrderLine,
     GoodsReceipt, GoodsReceiptLine, PurchaseInvoice, PurchaseInvoiceLine,
     SupplierPayment, PaymentAllocation, SupplierEvaluation,
     SupplierStatus, SupplierType, RequisitionStatus,
-    PurchaseOrderStatus, ReceivingStatus, PurchaseInvoiceStatus, QuotationStatus
+    PurchaseOrderStatus, ReceivingStatus, PurchaseInvoiceStatus
 )
 from .schemas import (
     SupplierCreate, SupplierUpdate, SupplierContactCreate,
-    RequisitionCreate, QuotationCreate, PurchaseOrderCreate,
+    RequisitionCreate, PurchaseOrderCreate,
     GoodsReceiptCreate, PurchaseInvoiceCreate, SupplierPaymentCreate,
     SupplierEvaluationCreate, ProcurementDashboard
 )

@@ -9,18 +9,17 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func
 
 from .models import (
     MobileDevice, MobileSession, PushNotification, SyncQueue,
     SyncCheckpoint, MobilePreferences, MobileActivityLog,
-    MobileAppConfig, MobileCrashReport,
-    DevicePlatform, NotificationStatus, SyncStatus
+    MobileAppConfig, MobileCrashReport
 )
 from .schemas import (
     DeviceRegister, DeviceUpdate,
     NotificationCreate, NotificationBulk,
-    SyncRequest, SyncItem, SyncBatch, SyncConflict,
+    SyncBatch, SyncConflict,
     PreferencesUpdate, ActivityLog, ActivityBatch, CrashReport
 )
 
@@ -384,7 +383,7 @@ class MobileService:
     ) -> Tuple[List[Dict], int, bool]:
         """Récupérer données à synchroniser."""
         # Récupérer checkpoint
-        checkpoint = self.db.query(SyncCheckpoint).filter(
+        self.db.query(SyncCheckpoint).filter(
             SyncCheckpoint.tenant_id == self.tenant_id,
             SyncCheckpoint.user_id == user_id,
             SyncCheckpoint.entity_type == entity_type

@@ -1,0 +1,47 @@
+# AZALS - Dépendances Développement ÉLITE
+# ==========================================
+# Installer avec: pip install -r requirements-dev.txt
+
+# Dépendances de production
+-r requirements.txt
+
+# ============================================
+# Qualité de Code
+# ============================================
+ruff>=0.1.9               # Linter ultra-rapide (remplace flake8)
+black>=23.12.1            # Formatage automatique
+isort>=5.13.2             # Tri des imports
+mypy>=1.8.0               # Typage statique
+
+# ============================================
+# Tests
+# ============================================
+pytest>=7.4.4             # Framework de test
+pytest-cov>=4.1.0         # Coverage
+pytest-asyncio>=0.23.3    # Tests async
+pytest-xdist>=3.5.0       # Tests parallèles
+coverage>=7.4.0           # Rapport de couverture
+
+# ============================================
+# Sécurité
+# ============================================
+bandit>=1.7.6             # Analyse sécurité code
+pip-audit>=2.6.1          # Audit dépendances
+safety>=2.3.5             # Check vulnérabilités
+
+# ============================================
+# Pre-commit
+# ============================================
+pre-commit>=3.6.0         # Hooks git
+
+# ============================================
+# Documentation
+# ============================================
+mkdocs>=1.5.3             # Documentation
+mkdocs-material>=9.5.3    # Thème Material
+
+# ============================================
+# Debug & Profiling
+# ============================================
+ipython>=8.19.0           # Shell interactif
+rich>=13.7.0              # Output coloré

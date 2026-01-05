@@ -10,7 +10,6 @@ from sqlalchemy import (
     Column, Integer, String, DateTime, Text, Boolean, ForeignKey,
     Index, Enum, UniqueConstraint, Float, BigInteger, func
 )
-from sqlalchemy.orm import relationship
 import enum
 from app.core.database import Base
 

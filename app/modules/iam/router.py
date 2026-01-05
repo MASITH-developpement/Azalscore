@@ -18,15 +18,11 @@ from .service import IAMService, get_iam_service
 from .schemas import (
     # User
     UserCreate, UserUpdate, UserResponse, UserListResponse,
-    PasswordChange, PasswordReset, PasswordResetConfirm,
-    # Role
-    RoleCreate, RoleUpdate, RoleResponse, RoleListResponse,
-    RoleAssignment, RoleBulkAssignment,
-    # Permission
-    PermissionCreate, PermissionResponse, PermissionListResponse,
+    PasswordChange, RoleCreate, RoleUpdate, RoleResponse, RoleListResponse,
+    RoleAssignment, PermissionResponse, PermissionListResponse,
     PermissionCheck, PermissionCheckResult,
     # Group
-    GroupCreate, GroupUpdate, GroupResponse, GroupListResponse,
+    GroupCreate, GroupResponse, GroupListResponse,
     GroupMembership,
     # Session
     SessionResponse, SessionListResponse, SessionRevoke,
@@ -37,11 +33,9 @@ from .schemas import (
     # Auth
     LoginRequest, LoginResponse, RefreshTokenRequest, RefreshTokenResponse, LogoutRequest,
     # Policy
-    PasswordPolicyUpdate, PasswordPolicyResponse,
-    # Audit
-    AuditLogResponse, AuditLogListResponse, AuditLogFilter
+    PasswordPolicyUpdate, PasswordPolicyResponse
 )
-from .decorators import require_permission, require_role
+from .decorators import require_permission
 
 
 router = APIRouter(prefix="/iam", tags=["iam"])

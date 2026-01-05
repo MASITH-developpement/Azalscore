@@ -8,8 +8,8 @@ Service pour le CRM et la gestion commerciale.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import func, or_
 from uuid import UUID
 
 from .models import (
@@ -23,8 +23,7 @@ from .schemas import (
     OpportunityCreate, OpportunityUpdate,
     DocumentCreate, DocumentUpdate, DocumentLineCreate,
     PaymentCreate,
-    ActivityCreate, ActivityUpdate,
-    PipelineStageCreate,
+    ActivityCreate, PipelineStageCreate,
     ProductCreate, ProductUpdate,
     SalesDashboard, PipelineStats
 )
@@ -76,8 +75,12 @@ class CommercialService:
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[Customer], int]:
-        """Lister les clients avec filtres."""
-        query = self.db.query(Customer).filter(Customer.tenant_id == self.tenant_id)
+        """Lister les clients avec filtres et eager loading."""
+        # Utiliser eager loading pour éviter N+1 queries
+        query = self.db.query(Customer).options(
+            selectinload(Customer.contacts),
+            selectinload(Customer.opportunities)
+        ).filter(Customer.tenant_id == self.tenant_id)
 
         if type:
             query = query.filter(Customer.type == type)

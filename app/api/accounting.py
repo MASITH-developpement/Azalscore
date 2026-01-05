@@ -5,13 +5,12 @@ Endpoints pour tableau de bord comptable du cockpit dirigeant
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func, text
+from sqlalchemy import text
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_and_tenant
-from app.core.models import CoreAuditJournal
 
 
 router = APIRouter(prefix="/accounting", tags=["accounting"])
@@ -101,7 +100,7 @@ def get_accounting_status(
             status=status
         )
     
-    except Exception as e:
+    except Exception:
         # En cas d'erreur, retourner un état neutral
         return AccountingStatusResponse(
             entries_up_to_date=True,

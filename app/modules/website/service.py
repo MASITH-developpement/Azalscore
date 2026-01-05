@@ -8,7 +8,7 @@ Logique métier pour le site web officiel.
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func
 import uuid
 
 from .models import (

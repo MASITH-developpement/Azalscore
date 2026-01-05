@@ -1,0 +1,110 @@
+# AZALS - Pre-commit Hooks ÉLITE
+# ================================
+# Exécuter: pre-commit install
+# Tester: pre-commit run --all-files
+
+repos:
+  # ============================================
+  # Hooks généraux
+  # ============================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^migrations/
+      - id: end-of-file-fixer
+        exclude: ^migrations/
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-case-conflict
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'master']
+
+  # ============================================
+  # Python: Ruff (lint + format)
+  # ============================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        exclude: ^migrations/
+      - id: ruff-format
+        exclude: ^migrations/
+
+  # ============================================
+  # Python: Black (formatage)
+  # ============================================
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.11
+        exclude: ^migrations/
+
+  # ============================================
+  # Python: isort (tri imports)
+  # ============================================
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+        exclude: ^migrations/
+
+  # ============================================
+  # Python: Sécurité
+  # ============================================
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml", "-r", "app/"]
+        additional_dependencies: ["bandit[toml]"]
+        exclude: ^(tests/|migrations/)
+
+  # ============================================
+  # Secrets: Détection de secrets
+  # ============================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: ^(\.secrets\.baseline|tests/|migrations/)
+
+  # ============================================
+  # SQL: Lint des migrations
+  # ============================================
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 2.3.5
+    hooks:
+      - id: sqlfluff-lint
+        args: ['--dialect', 'postgres']
+        files: ^migrations/.*\.sql$
+
+  # ============================================
+  # YAML/JSON: Validation
+  # ============================================
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.33.0
+    hooks:
+      - id: yamllint
+        args: ['-d', '{extends: relaxed, rules: {line-length: {max: 150}}}']
+        exclude: ^(\.github/|docker-compose)
+
+# Configuration CI
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: [detect-secrets]
+  submodules: false

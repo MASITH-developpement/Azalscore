@@ -20,10 +20,8 @@ from .models import (
 from .schemas import (
     CategoryCreate, CategoryUpdate,
     TeamCreate, TeamUpdate,
-    AgentCreate, AgentUpdate, AgentStatusUpdate,
-    SLACreate, SLAUpdate,
-    TicketCreate, TicketUpdate, TicketAssign, TicketStatusChange,
-    ReplyCreate, AttachmentCreate,
+    AgentCreate, AgentUpdate, SLACreate, SLAUpdate,
+    TicketCreate, TicketUpdate, ReplyCreate, AttachmentCreate,
     CannedResponseCreate, CannedResponseUpdate,
     KBCategoryCreate, KBCategoryUpdate,
     KBArticleCreate, KBArticleUpdate,

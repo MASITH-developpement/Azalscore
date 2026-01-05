@@ -5,7 +5,6 @@ AZALS MODULE M11 - Router Conformité
 Routes API pour la gestion de la conformité réglementaire.
 """
 
-from datetime import date
 from decimal import Decimal
 from typing import Optional, List
 from uuid import UUID
@@ -19,25 +18,23 @@ from app.core.dependencies import get_current_user, get_tenant_id
 from .schemas import (
     RegulationCreate, RegulationUpdate, RegulationResponse,
     RequirementCreate, RequirementUpdate, RequirementResponse,
-    AssessmentCreate, AssessmentUpdate, AssessmentResponse,
+    AssessmentCreate, AssessmentResponse,
     GapCreate, GapResponse,
-    ActionCreate, ActionUpdate, ActionResponse,
-    PolicyCreate, PolicyUpdate, PolicyResponse,
+    ActionCreate, ActionResponse,
+    PolicyCreate, PolicyResponse,
     AcknowledgmentCreate, AcknowledgmentResponse,
-    TrainingCreate, TrainingUpdate, TrainingResponse,
+    TrainingCreate, TrainingResponse,
     CompletionCreate, CompletionResponse,
-    DocumentCreate, DocumentUpdate, DocumentResponse,
-    AuditCreate, AuditUpdate, AuditResponse,
+    AuditCreate, AuditResponse,
     FindingCreate, FindingResponse,
     RiskCreate, RiskUpdate, RiskResponse,
-    IncidentCreate, IncidentUpdate, IncidentResponse,
+    IncidentCreate, IncidentResponse,
     ReportCreate, ReportResponse,
     ComplianceMetrics
 )
 
 from .models import (
-    ComplianceStatus, RegulationType, RequirementPriority,
-    AssessmentStatus, RiskLevel, ActionStatus, AuditStatus
+    ComplianceStatus, RegulationType, RequirementPriority
 )
 
 from .service import get_compliance_service

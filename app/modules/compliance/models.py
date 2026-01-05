@@ -7,15 +7,13 @@ Modèles SQLAlchemy pour la gestion de la conformité réglementaire.
 
 import enum
 from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, List
 from uuid import uuid4
 
 from sqlalchemy import (
     Column, String, Text, Boolean, Integer, Date, DateTime,
     ForeignKey, Enum, Numeric, JSON, UniqueConstraint, Index
 )
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UniversalUUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -152,7 +150,7 @@ class Regulation(Base):
     """Réglementation applicable."""
     __tablename__ = "compliance_regulations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -183,8 +181,8 @@ class Regulation(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
-    updated_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
+    updated_by = Column(UniversalUUID())
 
     # Relations
     requirements = relationship("Requirement", back_populates="regulation", lazy="dynamic")
@@ -200,12 +198,12 @@ class Requirement(Base):
     """Exigence de conformité."""
     __tablename__ = "compliance_requirements"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Lien réglementation
-    regulation_id = Column(UUID(as_uuid=True), ForeignKey("compliance_regulations.id"), nullable=False)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("compliance_requirements.id"))
+    regulation_id = Column(UniversalUUID(), ForeignKey("compliance_regulations.id"), nullable=False)
+    parent_id = Column(UniversalUUID(), ForeignKey("compliance_requirements.id"))
 
     # Identification
     code = Column(String(50), nullable=False)
@@ -223,7 +221,7 @@ class Requirement(Base):
     target_score = Column(Numeric(5, 2), default=100)
 
     # Responsabilité
-    responsible_id = Column(UUID(as_uuid=True))  # Responsable conformité
+    responsible_id = Column(UniversalUUID())  # Responsable conformité
     department = Column(String(100))
 
     # Contrôle
@@ -241,7 +239,7 @@ class Requirement(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     regulation = relationship("Regulation", back_populates="requirements")
@@ -263,7 +261,7 @@ class ComplianceAssessment(Base):
     """Évaluation de conformité."""
     __tablename__ = "compliance_assessments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -272,7 +270,7 @@ class ComplianceAssessment(Base):
     description = Column(Text)
 
     # Scope
-    regulation_id = Column(UUID(as_uuid=True), ForeignKey("compliance_regulations.id"))
+    regulation_id = Column(UniversalUUID(), ForeignKey("compliance_regulations.id"))
     assessment_type = Column(String(50))  # Full, Partial, Gap Analysis
     scope_description = Column(Text)
 
@@ -297,17 +295,17 @@ class ComplianceAssessment(Base):
     recommendations = Column(Text)
 
     # Équipe
-    lead_assessor_id = Column(UUID(as_uuid=True))
+    lead_assessor_id = Column(UniversalUUID())
     assessor_ids = Column(JSON)  # Liste des évaluateurs
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     regulation = relationship("Regulation", back_populates="assessments")
@@ -323,12 +321,12 @@ class ComplianceGap(Base):
     """Écart de conformité identifié."""
     __tablename__ = "compliance_gaps"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Liens
-    assessment_id = Column(UUID(as_uuid=True), ForeignKey("compliance_assessments.id"), nullable=False)
-    requirement_id = Column(UUID(as_uuid=True), ForeignKey("compliance_requirements.id"), nullable=False)
+    assessment_id = Column(UniversalUUID(), ForeignKey("compliance_assessments.id"), nullable=False)
+    requirement_id = Column(UniversalUUID(), ForeignKey("compliance_requirements.id"), nullable=False)
 
     # Description
     gap_description = Column(Text, nullable=False)
@@ -355,7 +353,7 @@ class ComplianceGap(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     assessment = relationship("ComplianceAssessment", back_populates="gaps")
@@ -371,12 +369,12 @@ class ComplianceAction(Base):
     """Action corrective de conformité."""
     __tablename__ = "compliance_actions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Liens
-    gap_id = Column(UUID(as_uuid=True), ForeignKey("compliance_gaps.id"))
-    requirement_id = Column(UUID(as_uuid=True), ForeignKey("compliance_requirements.id"))
+    gap_id = Column(UniversalUUID(), ForeignKey("compliance_gaps.id"))
+    requirement_id = Column(UniversalUUID(), ForeignKey("compliance_requirements.id"))
 
     # Identification
     number = Column(String(50), nullable=False)
@@ -385,7 +383,7 @@ class ComplianceAction(Base):
     action_type = Column(String(50))  # Corrective, Preventive, Improvement
 
     # Responsabilité
-    responsible_id = Column(UUID(as_uuid=True), nullable=False)
+    responsible_id = Column(UniversalUUID(), nullable=False)
     department = Column(String(100))
 
     # Dates
@@ -403,7 +401,7 @@ class ComplianceAction(Base):
     evidence_provided = Column(JSON)
 
     # Vérification
-    verified_by = Column(UUID(as_uuid=True))
+    verified_by = Column(UniversalUUID())
     verified_at = Column(DateTime)
     verification_notes = Column(Text)
 
@@ -414,7 +412,7 @@ class ComplianceAction(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     gap = relationship("ComplianceGap", back_populates="actions")
@@ -434,7 +432,7 @@ class Policy(Base):
     """Politique interne."""
     __tablename__ = "compliance_policies"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -450,7 +448,7 @@ class Policy(Base):
     # Version
     version = Column(String(20), default="1.0")
     version_date = Column(Date)
-    previous_version_id = Column(UUID(as_uuid=True))
+    previous_version_id = Column(UniversalUUID())
 
     # Contenu
     content = Column(Text)
@@ -463,8 +461,8 @@ class Policy(Base):
     last_reviewed_date = Column(Date)
 
     # Approbation
-    owner_id = Column(UUID(as_uuid=True))
-    approved_by = Column(UUID(as_uuid=True))
+    owner_id = Column(UniversalUUID())
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
 
     # Distribution
@@ -482,7 +480,7 @@ class Policy(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     acknowledgments = relationship("PolicyAcknowledgment", back_populates="policy", lazy="dynamic")
@@ -497,12 +495,12 @@ class PolicyAcknowledgment(Base):
     """Accusé de réception de politique."""
     __tablename__ = "compliance_policy_acknowledgments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Liens
-    policy_id = Column(UUID(as_uuid=True), ForeignKey("compliance_policies.id"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    policy_id = Column(UniversalUUID(), ForeignKey("compliance_policies.id"), nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
 
     # Acknowledgment
     acknowledged_at = Column(DateTime, default=datetime.utcnow)
@@ -531,7 +529,7 @@ class ComplianceTraining(Base):
     """Formation de conformité."""
     __tablename__ = "compliance_trainings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -546,7 +544,7 @@ class ComplianceTraining(Base):
 
     # Catégorie
     category = Column(String(100))
-    regulation_id = Column(UUID(as_uuid=True), ForeignKey("compliance_regulations.id"))
+    regulation_id = Column(UniversalUUID(), ForeignKey("compliance_regulations.id"))
 
     # Audience
     is_mandatory = Column(Boolean, default=True)
@@ -570,7 +568,7 @@ class ComplianceTraining(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     completions = relationship("TrainingCompletion", back_populates="training", lazy="dynamic")
@@ -584,12 +582,12 @@ class TrainingCompletion(Base):
     """Complétion de formation."""
     __tablename__ = "compliance_training_completions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Liens
-    training_id = Column(UUID(as_uuid=True), ForeignKey("compliance_trainings.id"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    training_id = Column(UniversalUUID(), ForeignKey("compliance_trainings.id"), nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
 
     # Dates
     assigned_date = Column(Date)
@@ -628,7 +626,7 @@ class ComplianceDocument(Base):
     """Document de conformité."""
     __tablename__ = "compliance_documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -639,7 +637,7 @@ class ComplianceDocument(Base):
 
     # Classification
     category = Column(String(100))
-    regulation_id = Column(UUID(as_uuid=True), ForeignKey("compliance_regulations.id"))
+    regulation_id = Column(UniversalUUID(), ForeignKey("compliance_regulations.id"))
 
     # Version
     version = Column(String(20), default="1.0")
@@ -657,11 +655,11 @@ class ComplianceDocument(Base):
     mime_type = Column(String(100))
 
     # Propriétaire
-    owner_id = Column(UUID(as_uuid=True))
+    owner_id = Column(UniversalUUID())
     department = Column(String(100))
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
 
     # Statut
@@ -675,7 +673,7 @@ class ComplianceDocument(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', 'version', name='uq_document_version'),
@@ -691,7 +689,7 @@ class ComplianceAudit(Base):
     """Audit de conformité."""
     __tablename__ = "compliance_audits"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -701,7 +699,7 @@ class ComplianceAudit(Base):
 
     # Type
     audit_type = Column(String(50), nullable=False)  # Internal, External, Regulatory
-    regulation_id = Column(UUID(as_uuid=True), ForeignKey("compliance_regulations.id"))
+    regulation_id = Column(UniversalUUID(), ForeignKey("compliance_regulations.id"))
 
     # Scope
     scope = Column(Text)
@@ -714,7 +712,7 @@ class ComplianceAudit(Base):
     actual_end = Column(Date)
 
     # Équipe
-    lead_auditor_id = Column(UUID(as_uuid=True))
+    lead_auditor_id = Column(UniversalUUID())
     auditor_ids = Column(JSON)
     auditee_ids = Column(JSON)
 
@@ -735,13 +733,13 @@ class ComplianceAudit(Base):
     report_file_path = Column(Text)
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     findings = relationship("ComplianceAuditFinding", back_populates="audit", lazy="dynamic")
@@ -756,12 +754,12 @@ class ComplianceAuditFinding(Base):
     """Constatation d'audit (distinct de quality.AuditFinding)."""
     __tablename__ = "compliance_audit_findings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Liens
-    audit_id = Column(UUID(as_uuid=True), ForeignKey("compliance_audits.id"), nullable=False)
-    requirement_id = Column(UUID(as_uuid=True), ForeignKey("compliance_requirements.id"))
+    audit_id = Column(UniversalUUID(), ForeignKey("compliance_audits.id"), nullable=False)
+    requirement_id = Column(UniversalUUID(), ForeignKey("compliance_requirements.id"))
 
     # Identification
     number = Column(String(50), nullable=False)
@@ -783,7 +781,7 @@ class ComplianceAuditFinding(Base):
     closure_date = Column(Date)
 
     # Responsable
-    responsible_id = Column(UUID(as_uuid=True))
+    responsible_id = Column(UniversalUUID())
 
     # Statut
     is_closed = Column(Boolean, default=False)
@@ -795,7 +793,7 @@ class ComplianceAuditFinding(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     # Relations
     audit = relationship("ComplianceAudit", back_populates="findings")
@@ -813,7 +811,7 @@ class ComplianceRisk(Base):
     """Risque de conformité."""
     __tablename__ = "compliance_risks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -823,7 +821,7 @@ class ComplianceRisk(Base):
 
     # Classification
     category = Column(String(100))
-    regulation_id = Column(UUID(as_uuid=True), ForeignKey("compliance_regulations.id"))
+    regulation_id = Column(UniversalUUID(), ForeignKey("compliance_regulations.id"))
 
     # Évaluation
     likelihood = Column(Integer)  # 1-5
@@ -846,7 +844,7 @@ class ComplianceRisk(Base):
     planned_controls = Column(Text)
 
     # Responsabilité
-    owner_id = Column(UUID(as_uuid=True))
+    owner_id = Column(UniversalUUID())
     department = Column(String(100))
 
     # Dates
@@ -861,7 +859,7 @@ class ComplianceRisk(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_risk_code'),
@@ -877,7 +875,7 @@ class ComplianceIncident(Base):
     """Incident de conformité."""
     __tablename__ = "compliance_incidents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -888,7 +886,7 @@ class ComplianceIncident(Base):
     # Classification
     incident_type = Column(String(100))
     severity = Column(Enum(IncidentSeverity), default=IncidentSeverity.MEDIUM)
-    regulation_id = Column(UUID(as_uuid=True), ForeignKey("compliance_regulations.id"))
+    regulation_id = Column(UniversalUUID(), ForeignKey("compliance_regulations.id"))
 
     # Dates
     incident_date = Column(DateTime, nullable=False)
@@ -897,8 +895,8 @@ class ComplianceIncident(Base):
     closed_date = Column(DateTime)
 
     # Personnes
-    reporter_id = Column(UUID(as_uuid=True), nullable=False)
-    assigned_to = Column(UUID(as_uuid=True))
+    reporter_id = Column(UniversalUUID(), nullable=False)
+    assigned_to = Column(UniversalUUID())
     department = Column(String(100))
 
     # Statut
@@ -936,7 +934,7 @@ class ComplianceReport(Base):
     """Rapport de conformité."""
     __tablename__ = "compliance_reports"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -972,13 +970,13 @@ class ComplianceReport(Base):
     recipients = Column(JSON)
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'number', name='uq_report_number'),

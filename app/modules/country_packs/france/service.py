@@ -7,9 +7,8 @@ Logique métier pour la localisation française.
 import uuid
 from datetime import datetime, date, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
 
 from .models import (
     PCGAccount, PCGClass,
@@ -21,8 +20,7 @@ from .models import (
     RGPDConsentStatus, RGPDRequestType,
 )
 from .schemas import (
-    PCGAccountCreate, PCGAccountUpdate,
-    FRVATRateCreate, VATDeclarationCreate,
+    PCGAccountCreate, VATDeclarationCreate,
     FECGenerateRequest, FECValidationResult,
     DSNGenerateRequest, DSNEmployeeData,
     FRContractCreate,

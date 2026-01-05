@@ -1,16 +1,23 @@
 """
-AZALS - Endpoints Items Multi-Tenant
-CRUD sécurisé avec isolation stricte par tenant_id
+AZALS - Endpoints Items Multi-Tenant ÉLITE
+============================================
+CRUD sécurisé avec isolation stricte par tenant_id.
+Pagination standardisée pour performance.
 """
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.core.models import Item
 from app.core.dependencies import get_tenant_id
 from app.core.database import get_db
+from app.core.pagination import (
+    PaginationParams,
+    get_pagination_params,
+    paginate_query
+)
 
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -30,8 +37,19 @@ class ItemResponse(BaseModel):
     tenant_id: str
     name: str
     description: Optional[str]
-    
-    model_config = {"from_attributes": True}
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedItemsResponse(BaseModel):
+    """Réponse paginée pour liste d'items."""
+    items: List[ItemResponse]
+    total: Optional[int] = None
+    page: int
+    page_size: int
+    pages: Optional[int] = None
+    has_next: bool
+    has_prev: bool
 
 
 # ===== ENDPOINTS CRUD =====
@@ -61,17 +79,37 @@ def create_item(
     return db_item
 
 
-@router.get("/", response_model=List[ItemResponse])
+@router.get("/", response_model=PaginatedItemsResponse)
 def list_items(
     tenant_id: str = Depends(get_tenant_id),
+    pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db)
 ):
     """
     Liste UNIQUEMENT les items du tenant courant.
     Filtrage strict par tenant_id : isolation totale.
+    PAGINÉ: Utiliser skip/limit pour performances optimales.
+
+    Paramètres:
+    - skip: Nombre d'éléments à sauter (défaut: 0)
+    - limit: Nombre d'éléments par page (défaut: 50, max: 500)
+    - include_total: Inclure le comptage total (défaut: true)
     """
-    items = db.query(Item).filter(Item.tenant_id == tenant_id).all()
-    return items
+    # Query de base avec filtre tenant
+    query = db.query(Item).filter(Item.tenant_id == tenant_id).order_by(Item.id)
+
+    # Appliquer la pagination
+    result = paginate_query(query, pagination)
+
+    return PaginatedItemsResponse(
+        items=[ItemResponse.model_validate(item) for item in result.items],
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+        pages=result.pages,
+        has_next=result.has_next,
+        has_prev=result.has_prev
+    )
 
 
 @router.get("/{item_id}", response_model=ItemResponse)

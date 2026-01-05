@@ -12,13 +12,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
-from app.modules.iam.decorators import require_permission
 
 from .models import (
-    Trigger, TriggerEvent, Notification, NotificationTemplate,
-    ScheduledReport, WebhookEndpoint, TriggerLog,
-    TriggerType, TriggerStatus, AlertSeverity, NotificationStatus,
-    ReportFrequency
+    TriggerType, TriggerStatus, AlertSeverity, NotificationStatus
 )
 from .schemas import (
     TriggerCreateSchema, TriggerUpdateSchema, TriggerResponseSchema, TriggerListResponseSchema,
@@ -29,7 +25,7 @@ from .schemas import (
     ScheduledReportCreateSchema, ScheduledReportUpdateSchema, ScheduledReportResponseSchema,
     ReportHistoryResponseSchema,
     WebhookCreateSchema, WebhookUpdateSchema, WebhookResponseSchema, WebhookTestResponseSchema,
-    TriggerLogResponseSchema, TriggerLogListResponseSchema,
+    TriggerLogListResponseSchema,
     TriggerStatsSchema, TriggerDashboardSchema
 )
 from .service import get_trigger_service
@@ -282,7 +278,7 @@ async def create_subscription(
         )
     else:
         # Email externe ou groupe
-        from .models import TriggerSubscription, NotificationChannel
+        from .models import TriggerSubscription
         subscription = TriggerSubscription(
             tenant_id=request.state.tenant_id,
             trigger_id=data.trigger_id,
@@ -988,8 +984,6 @@ async def test_webhook(
     Nécessite: triggers.webhooks.test
     """
     from .models import WebhookEndpoint
-    import json
-    import time
     tenant_id = request.state.tenant_id
 
     webhook = db.query(WebhookEndpoint).filter(

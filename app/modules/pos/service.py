@@ -4,11 +4,11 @@ AZALS MODULE 13 - POS Service
 Logique métier pour le Point de Vente.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, case
+from sqlalchemy import func, or_, case
 
 from .models import (
     POSStore, POSTerminal, POSUser, POSSession, CashMovement,

@@ -9,24 +9,19 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, or_
 from uuid import UUID
-import uuid
 
 from .models import (
-    WorkCenter, WorkCenterCapacity, BillOfMaterials, BOMLine,
+    WorkCenter, BillOfMaterials, BOMLine,
     Routing, RoutingOperation, ManufacturingOrder, WorkOrder,
-    WorkOrderTimeEntry, MaterialConsumption, ProductionOutput,
+    MaterialConsumption, ProductionOutput,
     ProductionScrap, ProductionPlan, ProductionPlanLine, MaintenanceSchedule,
     WorkCenterStatus, BOMStatus, MOStatus, WorkOrderStatus, MOPriority
 )
 from .schemas import (
-    WorkCenterCreate, WorkCenterUpdate, WorkCenterCapacityCreate,
-    BOMCreate, BOMUpdate, BOMLineCreate,
-    RoutingCreate, RoutingUpdate, RoutingOperationCreate,
-    MOCreate, MOUpdate, WorkOrderUpdate,
-    StartWorkOrderRequest, CompleteWorkOrderRequest, TimeEntryCreate,
-    ConsumeRequest, ReturnRequest, ProduceRequest, ScrapCreate,
+    WorkCenterCreate, WorkCenterUpdate, BOMCreate, BOMUpdate, BOMLineCreate,
+    RoutingCreate, MOCreate, MOUpdate, StartWorkOrderRequest, CompleteWorkOrderRequest, ConsumeRequest, ReturnRequest, ProduceRequest, ScrapCreate,
     PlanCreate, MaintenanceScheduleCreate,
     ProductionDashboard
 )
@@ -957,8 +952,8 @@ class ProductionService:
     def get_dashboard(self) -> ProductionDashboard:
         """Récupérer les données du dashboard."""
         today = date.today()
-        week_start = today - timedelta(days=today.weekday())
-        month_start = today.replace(day=1)
+        today - timedelta(days=today.weekday())
+        today.replace(day=1)
 
         # Ordres de fabrication
         total_orders = self.db.query(ManufacturingOrder).filter(

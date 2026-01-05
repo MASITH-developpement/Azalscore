@@ -4,9 +4,9 @@ Gestion conformité statutaire, contrats, risques juridiques
 Responsabilité dirigeant - Indicateurs gouvernance
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime
 from app.core.dependencies import get_db, get_tenant_id
 
 router = APIRouter(prefix="/legal", tags=["legal"])

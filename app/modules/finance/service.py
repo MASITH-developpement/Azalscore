@@ -21,8 +21,7 @@ from .models import (
 )
 from .schemas import (
     AccountCreate, AccountUpdate, JournalCreate, JournalUpdate,
-    FiscalYearCreate, EntryCreate, EntryUpdate, EntryLineCreate,
-    BankAccountCreate, BankAccountUpdate, BankStatementCreate,
+    FiscalYearCreate, EntryCreate, EntryUpdate, BankAccountCreate, BankAccountUpdate, BankStatementCreate,
     BankTransactionCreate, CashForecastCreate, CashForecastUpdate,
     CashFlowCategoryCreate, FinancialReportCreate,
     TrialBalance, BalanceSheetItem, IncomeStatement, IncomeStatementItem,

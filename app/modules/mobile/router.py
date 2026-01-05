@@ -9,15 +9,15 @@ from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id
+from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.models import User
 
 from .service import MobileService
 from .schemas import (
     DeviceRegister, DeviceUpdate, DeviceResponse,
     SessionCreate, SessionResponse, SessionRefresh,
     NotificationCreate, NotificationBulk, NotificationResponse,
-    SyncRequest, SyncBatch, SyncResponse, SyncConflict,
-    PreferencesUpdate, PreferencesResponse,
+    SyncRequest, SyncBatch, SyncResponse, PreferencesUpdate, PreferencesResponse,
     ActivityLog, ActivityBatch,
     AppConfigResponse, CrashReport, MobileStats
 )
@@ -33,14 +33,28 @@ def get_mobile_service(
     return MobileService(db, tenant_id)
 
 
-def get_user_id_from_header(x_user_id: Optional[str] = Header(None)) -> int:
-    """Récupérer user_id depuis header."""
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="User ID requis")
-    try:
-        return int(x_user_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="User ID invalide")
+def get_validated_user_id(
+    current_user: User = Depends(get_current_user),
+    x_user_id: Optional[str] = Header(None)
+) -> int:
+    """
+    SECURITY FIX: Valider user_id depuis header contre l'utilisateur authentifié.
+    Empêche le spoofing d'identité via header X-User-ID.
+    """
+    # Si X-User-ID fourni, vérifier qu'il correspond à current_user
+    if x_user_id:
+        try:
+            requested_user_id = int(x_user_id)
+            if requested_user_id != current_user.id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="User ID header ne correspond pas à l'utilisateur authentifié"
+                )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="User ID invalide")
+
+    # Toujours retourner l'ID de l'utilisateur authentifié (source de vérité)
+    return current_user.id
 
 
 # ============================================================================
@@ -50,7 +64,7 @@ def get_user_id_from_header(x_user_id: Optional[str] = Header(None)) -> int:
 @router.post("/devices/register", response_model=DeviceResponse)
 def register_device(
     data: DeviceRegister,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Enregistrer un appareil mobile."""
@@ -60,7 +74,7 @@ def register_device(
 
 @router.get("/devices", response_model=List[DeviceResponse])
 def list_devices(
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Lister les appareils de l'utilisateur."""
@@ -111,7 +125,7 @@ def deactivate_device(
 @router.post("/sessions", response_model=SessionResponse)
 def create_session(
     data: SessionCreate,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Créer une session mobile."""
@@ -159,7 +173,7 @@ def revoke_session(
 
 @router.delete("/sessions")
 def revoke_all_sessions(
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Révoquer toutes les sessions de l'utilisateur."""
@@ -196,7 +210,7 @@ def get_notifications(
     unread_only: bool = False,
     skip: int = 0,
     limit: int = 50,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Récupérer les notifications de l'utilisateur."""
@@ -205,7 +219,7 @@ def get_notifications(
 
 @router.get("/notifications/unread-count")
 def get_unread_count(
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Compter les notifications non lues."""
@@ -216,7 +230,7 @@ def get_unread_count(
 @router.put("/notifications/{notification_id}/read")
 def mark_notification_read(
     notification_id: int,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Marquer une notification comme lue."""
@@ -228,7 +242,7 @@ def mark_notification_read(
 
 @router.put("/notifications/read-all")
 def mark_all_read(
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Marquer toutes les notifications comme lues."""
@@ -243,7 +257,7 @@ def mark_all_read(
 @router.post("/sync/pull", response_model=SyncResponse)
 def sync_pull(
     data: SyncRequest,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Récupérer données à synchroniser (serveur -> client)."""
@@ -265,7 +279,7 @@ def sync_pull(
 @router.post("/sync/push")
 def sync_push(
     data: SyncBatch,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Envoyer données à synchroniser (client -> serveur)."""
@@ -283,7 +297,7 @@ def sync_push(
 
 @router.get("/preferences", response_model=PreferencesResponse)
 def get_preferences(
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Récupérer préférences utilisateur."""
@@ -293,7 +307,7 @@ def get_preferences(
 @router.put("/preferences", response_model=PreferencesResponse)
 def update_preferences(
     data: PreferencesUpdate,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Mettre à jour préférences."""
@@ -308,7 +322,7 @@ def update_preferences(
 def log_activity(
     data: ActivityLog,
     request: Request,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Enregistrer une activité."""
@@ -320,7 +334,7 @@ def log_activity(
 @router.post("/activity/batch")
 def log_activity_batch(
     data: ActivityBatch,
-    user_id: int = Depends(get_user_id_from_header),
+    user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Enregistrer batch d'activités."""

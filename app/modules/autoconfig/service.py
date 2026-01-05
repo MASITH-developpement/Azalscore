@@ -5,15 +5,15 @@ AZALS MODULE T1 - Service Configuration Automatique
 Logique métier pour la configuration automatique par fonction.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from datetime import datetime
+from typing import Optional, List, Dict, Any
 import json
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import or_
 
 from .models import (
     JobProfile, ProfileAssignment, PermissionOverride,
-    OnboardingProcess, OffboardingProcess, AutoConfigRule, AutoConfigLog,
+    OnboardingProcess, OffboardingProcess, AutoConfigLog,
     ProfileLevel, OverrideType, OverrideStatus, OnboardingStatus, OffboardingStatus
 )
 from .profiles import PREDEFINED_PROFILES, get_best_profile_match

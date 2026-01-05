@@ -6,11 +6,11 @@ Logique métier pour le module de gestion de la qualité.
 """
 
 from datetime import datetime, date, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Tuple
 from decimal import Decimal
 
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import or_, func, desc
 
 from app.modules.quality.models import (
     NonConformance,
@@ -54,7 +54,6 @@ from app.modules.quality.schemas import (
     ControlTemplateItemCreate,
     ControlCreate,
     ControlUpdate,
-    ControlLineCreate,
     ControlLineUpdate,
     AuditCreate,
     AuditUpdate,

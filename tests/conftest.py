@@ -8,7 +8,8 @@ import sys
 
 # Configurer les variables d'environnement AVANT tout import
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
-os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
+os.environ.setdefault("SECRET_KEY", "test-key-minimum-32-characters-long-for-tests")
+os.environ.setdefault("BOOTSTRAP_SECRET", "test-bootstrap-minimum-32-characters-here")
 os.environ.setdefault("ENVIRONMENT", "test")
 
 # Ajouter le répertoire racine au path

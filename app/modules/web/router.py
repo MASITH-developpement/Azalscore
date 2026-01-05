@@ -23,9 +23,7 @@ from .schemas import (
     ThemeModeEnum,
     # Widgets
     WidgetCreate, WidgetUpdate, WidgetResponse, PaginatedWidgetsResponse,
-    WidgetTypeEnum, WidgetSizeEnum,
-    # Dashboards
-    DashboardCreate, DashboardUpdate, DashboardResponse, PaginatedDashboardsResponse,
+    WidgetTypeEnum, DashboardCreate, DashboardUpdate, DashboardResponse, PaginatedDashboardsResponse,
     # Menus
     MenuItemCreate, MenuItemUpdate, MenuItemResponse, MenuTreeNode,
     MenuTypeEnum,
@@ -34,7 +32,7 @@ from .schemas import (
     # Raccourcis
     ShortcutCreate, ShortcutResponse,
     # Pages
-    CustomPageCreate, CustomPageUpdate, CustomPageResponse, PaginatedPagesResponse,
+    CustomPageCreate, CustomPageResponse, PaginatedPagesResponse,
     PageTypeEnum,
     # Composants
     ComponentCreate, ComponentResponse, PaginatedComponentsResponse,

@@ -4,7 +4,7 @@ Gestion des déclarations fiscales et échéances (TVA, IS, taxes diverses)
 Pays-agnostique : principes généraux applicables multi-juridictions
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.core.dependencies import get_db, get_tenant_id

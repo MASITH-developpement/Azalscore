@@ -26,7 +26,7 @@ from .schemas import (
     # Orders
     CheckoutRequest, OrderResponse, OrderListResponse, OrderStatusUpdate,
     # Payments
-    PaymentIntentRequest, PaymentIntentResponse, PaymentConfirmRequest, PaymentResponse,
+    PaymentIntentRequest, PaymentResponse,
     # Shipping
     ShippingMethodCreate, ShippingMethodResponse, ShippingRateRequest, ShippingRateResponse,
     ShipmentCreate, ShipmentResponse,
@@ -877,7 +877,7 @@ def get_wishlist(
     wishlist = service.get_or_create_wishlist(customer_id)
 
     # Récupérer les items
-    items = service.db.query(service.db.query.__self__.query(
+    service.db.query(service.db.query.__self__.query(
         # Simplified - would need proper query
     )).all() if False else []
 

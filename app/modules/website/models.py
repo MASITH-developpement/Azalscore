@@ -7,7 +7,6 @@ Modèles SQLAlchemy pour le site web officiel.
 
 import enum
 from datetime import datetime
-from typing import Optional, List
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime,
     ForeignKey, Enum, JSON, Float

@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-import uuid
 import secrets
 
 from .models import (

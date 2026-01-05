@@ -7,26 +7,21 @@ Service métier pour la gestion de la maintenance.
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, Tuple
-from uuid import uuid4
+from typing import Optional, List, Tuple
 
-from sqlalchemy import func, and_, or_, desc, asc
+from sqlalchemy import func, or_, desc
 from sqlalchemy.orm import Session, joinedload
 
 from .models import (
-    Asset, AssetComponent, AssetDocument, AssetMeter, MeterReading,
+    Asset, AssetMeter, MeterReading,
     MaintenancePlan, MaintenancePlanTask, MaintenanceWorkOrder as WorkOrder, WorkOrderTask,
-    WorkOrderLabor, WorkOrderPart, Failure, FailureCause, SparePart,
-    SparePartStock, PartRequest, MaintenanceContract, MaintenanceKPI,
-    AssetCategory, AssetStatus, AssetCriticality, MaintenanceType,
-    WorkOrderStatus, WorkOrderPriority, FailureType, PartRequestStatus,
-    ContractType, ContractStatus
+    WorkOrderLabor, WorkOrderPart, Failure, SparePart,
+    PartRequest, MaintenanceContract, AssetCategory, AssetStatus, AssetCriticality, WorkOrderStatus, WorkOrderPriority, PartRequestStatus,
+    ContractStatus
 )
 from .schemas import (
     AssetCreate, AssetUpdate, MeterCreate, MeterReadingCreate,
-    MaintenancePlanCreate, MaintenancePlanUpdate, PlanTaskCreate,
-    WorkOrderCreate, WorkOrderUpdate, WorkOrderComplete, WorkOrderTaskCreate,
-    WorkOrderLaborCreate, WorkOrderPartCreate,
+    MaintenancePlanCreate, MaintenancePlanUpdate, WorkOrderCreate, WorkOrderUpdate, WorkOrderComplete, WorkOrderLaborCreate, WorkOrderPartCreate,
     FailureCreate, FailureUpdate,
     SparePartCreate, SparePartUpdate, PartRequestCreate,
     ContractCreate, ContractUpdate,

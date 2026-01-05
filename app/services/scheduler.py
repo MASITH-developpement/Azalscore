@@ -3,10 +3,8 @@ AZALS - Service de tâches planifiées
 Réinitialise les alertes RED tous les jours à 23h59
 """
 
-from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from sqlalchemy.orm import Session
 from sqlalchemy import text
 import logging
 

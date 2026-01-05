@@ -7,12 +7,11 @@ Modèles SQLAlchemy pour la gestion de projets.
 
 import enum
 from datetime import datetime, date
-from decimal import Decimal
 from sqlalchemy import (
     Column, String, Integer, Boolean, DateTime, Date,
     ForeignKey, Numeric, Text, Enum, Float, JSON, Index
 )
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.types import UniversalUUID
 from sqlalchemy.orm import relationship
 import uuid
 
@@ -158,7 +157,7 @@ class Project(Base):
     """Projet."""
     __tablename__ = "projects"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
 
     # Identification
@@ -179,9 +178,9 @@ class Project(Base):
     actual_end_date = Column(Date)
 
     # Responsables
-    project_manager_id = Column(UUID(as_uuid=True))
-    sponsor_id = Column(UUID(as_uuid=True))
-    customer_id = Column(UUID(as_uuid=True))  # Lien vers client commercial
+    project_manager_id = Column(UniversalUUID())
+    sponsor_id = Column(UniversalUUID())
+    customer_id = Column(UniversalUUID())  # Lien vers client commercial
 
     # Budget
     budget_type = Column(Enum(BudgetType))
@@ -198,8 +197,8 @@ class Project(Base):
     health_status = Column(String(20))  # green, yellow, red
 
     # Hiérarchie
-    parent_project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"))
-    template_id = Column(UUID(as_uuid=True), ForeignKey("project_templates.id"))
+    parent_project_id = Column(UniversalUUID(), ForeignKey("projects.id"))
+    template_id = Column(UniversalUUID(), ForeignKey("project_templates.id"))
 
     # Paramètres
     is_billable = Column(Boolean, default=False)
@@ -209,7 +208,7 @@ class Project(Base):
     settings = Column(JSON, default=dict)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime)
@@ -242,9 +241,9 @@ class ProjectPhase(Base):
     """Phase de projet."""
     __tablename__ = "project_phases"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
     name = Column(String(255), nullable=False)
@@ -287,11 +286,11 @@ class ProjectTask(Base):
     """Tâche de projet."""
     __tablename__ = "project_tasks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    phase_id = Column(UUID(as_uuid=True), ForeignKey("project_phases.id"))
-    parent_task_id = Column(UUID(as_uuid=True), ForeignKey("project_tasks.id"))
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
+    phase_id = Column(UniversalUUID(), ForeignKey("project_phases.id"))
+    parent_task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
 
     # Identification
     code = Column(String(50))
@@ -312,8 +311,8 @@ class ProjectTask(Base):
     due_date = Column(Date)
 
     # Assignation
-    assignee_id = Column(UUID(as_uuid=True))  # Utilisateur assigné
-    reporter_id = Column(UUID(as_uuid=True))  # Qui a créé la tâche
+    assignee_id = Column(UniversalUUID())  # Utilisateur assigné
+    reporter_id = Column(UniversalUUID())  # Qui a créé la tâche
 
     # Effort
     estimated_hours = Column(Float, default=0)
@@ -333,7 +332,7 @@ class ProjectTask(Base):
     is_billable = Column(Boolean, default=True)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime)
@@ -369,11 +368,11 @@ class TaskDependency(Base):
     """Dépendance entre tâches."""
     __tablename__ = "task_dependencies"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
 
-    predecessor_id = Column(UUID(as_uuid=True), ForeignKey("project_tasks.id"), nullable=False)
-    successor_id = Column(UUID(as_uuid=True), ForeignKey("project_tasks.id"), nullable=False)
+    predecessor_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"), nullable=False)
+    successor_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"), nullable=False)
 
     dependency_type = Column(String(10), default="FS")  # FS, FF, SS, SF
     lag_days = Column(Integer, default=0)  # Délai entre tâches
@@ -394,10 +393,10 @@ class ProjectMilestone(Base):
     """Jalon de projet."""
     __tablename__ = "project_milestones"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    phase_id = Column(UUID(as_uuid=True), ForeignKey("project_phases.id"))
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
+    phase_id = Column(UniversalUUID(), ForeignKey("project_phases.id"))
 
     # Identification
     name = Column(String(255), nullable=False)
@@ -419,12 +418,12 @@ class ProjectMilestone(Base):
     acceptance_criteria = Column(Text)
 
     # Validation
-    validated_by = Column(UUID(as_uuid=True))
+    validated_by = Column(UniversalUUID())
     validated_at = Column(DateTime)
     validation_notes = Column(Text)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -441,13 +440,13 @@ class ProjectTeamMember(Base):
     """Membre de l'équipe projet."""
     __tablename__ = "project_team_members"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Membre
-    user_id = Column(UUID(as_uuid=True), nullable=False)  # Lien vers utilisateur
-    employee_id = Column(UUID(as_uuid=True))  # Lien vers employé RH
+    user_id = Column(UniversalUUID(), nullable=False)  # Lien vers utilisateur
+    employee_id = Column(UniversalUUID())  # Lien vers employé RH
 
     # Rôle
     role = Column(Enum(TeamMemberRole), default=TeamMemberRole.MEMBER, nullable=False)
@@ -493,9 +492,9 @@ class ProjectRisk(Base):
     """Risque projet."""
     __tablename__ = "project_risks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
     code = Column(String(50))
@@ -520,7 +519,7 @@ class ProjectRisk(Base):
     closed_date = Column(Date)
 
     # Responsable
-    owner_id = Column(UUID(as_uuid=True))  # Responsable du risque
+    owner_id = Column(UniversalUUID())  # Responsable du risque
 
     # Réponse au risque
     response_strategy = Column(String(50))  # avoid, mitigate, transfer, accept
@@ -533,10 +532,10 @@ class ProjectRisk(Base):
     # Suivi
     monitoring_notes = Column(Text)
     last_review_date = Column(Date)
-    last_reviewed_by = Column(UUID(as_uuid=True))
+    last_reviewed_by = Column(UniversalUUID())
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -553,10 +552,10 @@ class ProjectIssue(Base):
     """Problème/Issue projet."""
     __tablename__ = "project_issues"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    task_id = Column(UUID(as_uuid=True), ForeignKey("project_tasks.id"))
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
+    task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
 
     # Identification
     code = Column(String(50))
@@ -569,8 +568,8 @@ class ProjectIssue(Base):
     priority = Column(Enum(IssuePriority), default=IssuePriority.MEDIUM, nullable=False)
 
     # Personnes impliquées
-    reporter_id = Column(UUID(as_uuid=True))
-    assignee_id = Column(UUID(as_uuid=True))
+    reporter_id = Column(UniversalUUID())
+    assignee_id = Column(UniversalUUID())
 
     # Dates
     reported_date = Column(Date, default=date.today)
@@ -588,15 +587,15 @@ class ProjectIssue(Base):
 
     # Escalade
     is_escalated = Column(Boolean, default=False)
-    escalated_to_id = Column(UUID(as_uuid=True))
+    escalated_to_id = Column(UniversalUUID())
     escalation_date = Column(DateTime)
     escalation_reason = Column(Text)
 
     # Lien avec risque
-    related_risk_id = Column(UUID(as_uuid=True), ForeignKey("project_risks.id"))
+    related_risk_id = Column(UniversalUUID(), ForeignKey("project_risks.id"))
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -614,14 +613,14 @@ class ProjectTimeEntry(Base):
     """Saisie de temps projet."""
     __tablename__ = "project_time_entries"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    task_id = Column(UUID(as_uuid=True), ForeignKey("project_tasks.id"))
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
+    task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
 
     # Utilisateur
-    user_id = Column(UUID(as_uuid=True), nullable=False)
-    employee_id = Column(UUID(as_uuid=True))
+    user_id = Column(UniversalUUID(), nullable=False)
+    employee_id = Column(UniversalUUID())
 
     # Date et durée
     date = Column(Date, nullable=False)
@@ -641,10 +640,10 @@ class ProjectTimeEntry(Base):
     billing_rate = Column(Numeric(10, 2))
     billing_amount = Column(Numeric(15, 2))  # hours * rate
     is_invoiced = Column(Boolean, default=False)
-    invoice_id = Column(UUID(as_uuid=True))
+    invoice_id = Column(UniversalUUID())
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
     rejection_reason = Column(Text)
 
@@ -672,11 +671,11 @@ class ProjectExpense(Base):
     """Dépense projet."""
     __tablename__ = "project_expenses"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    task_id = Column(UUID(as_uuid=True), ForeignKey("project_tasks.id"))
-    budget_line_id = Column(UUID(as_uuid=True), ForeignKey("project_budget_lines.id"))
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
+    task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
+    budget_line_id = Column(UniversalUUID(), ForeignKey("project_budget_lines.id"))
 
     # Identification
     reference = Column(String(100))
@@ -698,18 +697,18 @@ class ProjectExpense(Base):
     status = Column(Enum(ExpenseStatus), default=ExpenseStatus.DRAFT, nullable=False)
 
     # Personne
-    submitted_by = Column(UUID(as_uuid=True))
+    submitted_by = Column(UniversalUUID())
     vendor = Column(String(255))  # Fournisseur
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
     rejection_reason = Column(Text)
 
     # Facturation
     is_billable = Column(Boolean, default=True)
     is_invoiced = Column(Boolean, default=False)
-    invoice_id = Column(UUID(as_uuid=True))
+    invoice_id = Column(UniversalUUID())
 
     # Pièces jointes
     receipt_url = Column(String(500))
@@ -732,9 +731,9 @@ class ProjectDocument(Base):
     """Document projet."""
     __tablename__ = "project_documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
     name = Column(String(255), nullable=False)
@@ -750,14 +749,14 @@ class ProjectDocument(Base):
     # Versioning
     version = Column(String(20), default="1.0")
     is_latest = Column(Boolean, default=True)
-    previous_version_id = Column(UUID(as_uuid=True))
+    previous_version_id = Column(UniversalUUID())
 
     # Accès
     is_public = Column(Boolean, default=False)  # Visible par le client
     access_level = Column(String(50), default="team")  # team, managers, all
 
     # Métadonnées
-    uploaded_by = Column(UUID(as_uuid=True))
+    uploaded_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     tags = Column(JSON, default=list)
@@ -775,9 +774,9 @@ class ProjectBudget(Base):
     """Budget projet."""
     __tablename__ = "project_budgets"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
     name = Column(String(255), nullable=False)
@@ -797,7 +796,7 @@ class ProjectBudget(Base):
 
     # Statut
     is_approved = Column(Boolean, default=False)
-    approved_by = Column(UUID(as_uuid=True))
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
     is_active = Column(Boolean, default=True)
     is_locked = Column(Boolean, default=False)
@@ -807,7 +806,7 @@ class ProjectBudget(Base):
     end_date = Column(Date)
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -824,10 +823,10 @@ class BudgetLine(Base):
     """Ligne de budget."""
     __tablename__ = "project_budget_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    budget_id = Column(UUID(as_uuid=True), ForeignKey("project_budgets.id"), nullable=False)
-    phase_id = Column(UUID(as_uuid=True), ForeignKey("project_phases.id"))
+    budget_id = Column(UniversalUUID(), ForeignKey("project_budgets.id"), nullable=False)
+    phase_id = Column(UniversalUUID(), ForeignKey("project_phases.id"))
 
     # Identification
     code = Column(String(50))
@@ -848,7 +847,7 @@ class BudgetLine(Base):
 
     # Hiérarchie
     order = Column(Integer, default=0)
-    parent_line_id = Column(UUID(as_uuid=True), ForeignKey("project_budget_lines.id"))
+    parent_line_id = Column(UniversalUUID(), ForeignKey("project_budget_lines.id"))
 
     # Compte comptable
     account_code = Column(String(20))  # Lien vers plan comptable
@@ -871,7 +870,7 @@ class ProjectTemplate(Base):
     """Template de projet."""
     __tablename__ = "project_templates"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
 
     # Identification
@@ -907,7 +906,7 @@ class ProjectTemplate(Base):
     is_public = Column(Boolean, default=False)  # Visible par tous les tenants
 
     # Métadonnées
-    created_by = Column(UUID(as_uuid=True))
+    created_by = Column(UniversalUUID())
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -920,10 +919,10 @@ class ProjectComment(Base):
     """Commentaire sur projet/tâche."""
     __tablename__ = "project_comments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    task_id = Column(UUID(as_uuid=True), ForeignKey("project_tasks.id"))
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
+    task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
 
     # Contenu
     content = Column(Text, nullable=False)
@@ -932,7 +931,7 @@ class ProjectComment(Base):
     comment_type = Column(String(50), default="comment")  # comment, update, note
 
     # Réponse
-    parent_comment_id = Column(UUID(as_uuid=True), ForeignKey("project_comments.id"))
+    parent_comment_id = Column(UniversalUUID(), ForeignKey("project_comments.id"))
 
     # Mentions
     mentions = Column(JSON, default=list)  # Liste des user_ids mentionnés
@@ -944,7 +943,7 @@ class ProjectComment(Base):
     is_internal = Column(Boolean, default=True)  # False = visible par client
 
     # Métadonnées
-    author_id = Column(UUID(as_uuid=True), nullable=False)
+    author_id = Column(UniversalUUID(), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_edited = Column(Boolean, default=False)
@@ -964,9 +963,9 @@ class ProjectKPI(Base):
     """KPI projet."""
     __tablename__ = "project_kpis"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(Integer, nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
     kpi_date = Column(Date, nullable=False)
@@ -1014,7 +1013,7 @@ class ProjectKPI(Base):
 
     # Métadonnées
     calculated_at = Column(DateTime, default=datetime.utcnow)
-    calculated_by = Column(UUID(as_uuid=True))
+    calculated_by = Column(UniversalUUID())
 
     # Relations
     project = relationship("Project", back_populates="kpis")
