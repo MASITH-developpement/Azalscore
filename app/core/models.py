@@ -50,12 +50,13 @@ class TenantMixin:
 
 class User(Base, TenantMixin):
     """
-    Modèle utilisateur avec authentification.
+    Modèle utilisateur avec authentification + 2FA.
     Un utilisateur est TOUJOURS lié à un tenant.
     L'accès à un endpoint nécessite JWT + X-Tenant-ID cohérent.
+    ÉLITE: Support 2FA TOTP obligatoire en production.
     """
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
@@ -64,7 +65,13 @@ class User(Base, TenantMixin):
     is_active = Column(Integer, default=1, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+
+    # 2FA TOTP (ÉLITE)
+    totp_secret = Column(String(32), nullable=True)  # Secret TOTP encodé base32
+    totp_enabled = Column(Integer, default=0, nullable=False)  # 0=disabled, 1=enabled
+    totp_verified_at = Column(DateTime, nullable=True)  # Date première vérification
+    backup_codes = Column(Text, nullable=True)  # Codes de secours JSON
+
     # Index pour optimisation
     __table_args__ = (
         Index('idx_users_tenant_id', 'tenant_id'),

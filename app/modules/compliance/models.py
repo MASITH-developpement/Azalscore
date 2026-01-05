@@ -7,8 +7,6 @@ Modèles SQLAlchemy pour la gestion de la conformité réglementaire.
 
 import enum
 from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, List
 from uuid import uuid4
 
 from sqlalchemy import (

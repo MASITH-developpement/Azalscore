@@ -6,12 +6,11 @@ Modèles SQLAlchemy pour le système de contrôle qualité.
 """
 
 from datetime import datetime
-from typing import Optional, List
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
     Column, Integer, BigInteger, String, Text, Boolean, DateTime,
-    ForeignKey, Float, Enum, JSON, Index
+    ForeignKey, Float, Enum, Index
 )
 from sqlalchemy.orm import relationship
 

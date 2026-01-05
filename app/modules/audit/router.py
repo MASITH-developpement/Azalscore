@@ -14,12 +14,11 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 
 from .models import (
-    AuditAction, AuditLevel, AuditCategory, MetricType,
-    BenchmarkStatus, RetentionPolicy, ComplianceFramework
+    AuditAction, AuditLevel, AuditCategory, ComplianceFramework
 )
 from .schemas import (
-    AuditLogCreateSchema, AuditLogResponseSchema, AuditLogListResponseSchema,
-    AuditSearchSchema, AuditSessionResponseSchema,
+    AuditLogResponseSchema, AuditLogListResponseSchema,
+    AuditSessionResponseSchema,
     MetricCreateSchema, MetricResponseSchema, MetricValueSchema, MetricValueResponseSchema,
     BenchmarkCreateSchema, BenchmarkResponseSchema, BenchmarkResultResponseSchema,
     ComplianceCheckCreateSchema, ComplianceCheckResponseSchema, ComplianceUpdateSchema,

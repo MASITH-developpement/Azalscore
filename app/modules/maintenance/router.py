@@ -5,7 +5,7 @@ AZALS MODULE M8 - Router Maintenance (GMAO)
 Endpoints API REST pour la gestion de la maintenance.
 """
 
-from typing import Optional, List
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from sqlalchemy.orm import Session

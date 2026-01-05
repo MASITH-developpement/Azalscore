@@ -11,7 +11,6 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc
-import uuid
 
 from .models import (
     Project, ProjectPhase, ProjectTask, TaskDependency,
@@ -21,16 +20,15 @@ from .models import (
     ProjectTemplate, ProjectComment, ProjectKPI,
     ProjectStatus, ProjectPriority, TaskStatus, TaskPriority,
     MilestoneStatus, RiskStatus, RiskImpact, RiskProbability,
-    IssueStatus, IssuePriority, TeamMemberRole, TimeEntryStatus,
-    ExpenseStatus, BudgetType
+    IssueStatus, IssuePriority, TimeEntryStatus,
+    ExpenseStatus
 )
 from .schemas import (
     ProjectCreate, ProjectUpdate, TaskCreate, TaskUpdate,
     PhaseCreate, PhaseUpdate, MilestoneCreate, MilestoneUpdate,
     TeamMemberCreate, TeamMemberUpdate, RiskCreate, RiskUpdate,
-    IssueCreate, IssueUpdate, TimeEntryCreate, TimeEntryUpdate,
-    ExpenseCreate, ExpenseUpdate, DocumentCreate, BudgetCreate,
-    BudgetUpdate, BudgetLineCreate, TemplateCreate, CommentCreate,
+    IssueCreate, IssueUpdate, TimeEntryCreate, ExpenseCreate, DocumentCreate, BudgetCreate,
+    TemplateCreate, CommentCreate,
     TaskDependencyCreate, ProjectStats
 )
 

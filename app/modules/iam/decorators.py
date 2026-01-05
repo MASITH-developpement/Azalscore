@@ -193,7 +193,7 @@ def require_self_or_permission(permission_code: str, user_id_param: str = "user_
             if not granted:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Accès refusé"
+                    detail="Accès refusé"
                 )
 
             return await func(*args, **kwargs)

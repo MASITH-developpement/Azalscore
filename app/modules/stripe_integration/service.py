@@ -8,24 +8,21 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func
 
 from .models import (
     StripeCustomer, StripePaymentMethod, StripePaymentIntent,
     StripeCheckoutSession, StripeRefund, StripeDispute,
     StripeWebhook, StripeProduct, StripePrice,
-    StripeConnectAccount, StripePayout, StripeConfig,
+    StripeConnectAccount, StripeConfig,
     PaymentIntentStatus, RefundStatus, DisputeStatus, WebhookStatus
 )
 from .schemas import (
     StripeCustomerCreate, StripeCustomerUpdate,
     PaymentMethodCreate, SetupIntentCreate,
-    PaymentIntentCreate, PaymentIntentUpdate, PaymentIntentConfirm,
-    CheckoutSessionCreate, CheckoutLineItem,
-    RefundCreate, DisputeEvidenceSubmit,
-    StripeProductCreate, StripePriceCreate,
-    ConnectAccountCreate, TransferCreate,
-    StripeConfigCreate, StripeConfigUpdate
+    PaymentIntentCreate, PaymentIntentConfirm,
+    CheckoutSessionCreate, RefundCreate, StripeProductCreate, StripePriceCreate,
+    ConnectAccountCreate, StripeConfigCreate, StripeConfigUpdate
 )
 
 
@@ -454,7 +451,7 @@ class StripeService:
         pi.updated_at = datetime.utcnow()
 
         # Calculer frais (simulés)
-        config = self._get_config()
+        self._get_config()
         stripe_fee = pi.amount * Decimal("0.015") + Decimal("0.25")  # 1.5% + 0.25€
         pi.stripe_fee = stripe_fee
         pi.net_amount = pi.amount - stripe_fee

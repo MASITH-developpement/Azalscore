@@ -6,7 +6,6 @@ Modèles SQLAlchemy pour les configurations par pays.
 """
 
 from datetime import datetime, date
-from typing import Optional, List
 from enum import Enum as PyEnum
 
 from sqlalchemy import (

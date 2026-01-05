@@ -11,7 +11,7 @@ import uuid
 import json
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import and_, or_, desc
 
 from .models import (
     BroadcastTemplate, RecipientList, RecipientMember,
@@ -857,7 +857,7 @@ class BroadcastService:
             try:
                 hour, minute = map(int, broadcast.send_time.split(":"))
                 next_run = next_run.replace(hour=hour, minute=minute, second=0)
-            except:
+            except Exception:
                 pass
 
         # S'assurer que c'est dans le futur

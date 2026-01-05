@@ -100,14 +100,14 @@ class RedWorkflowService:
                 )
     
     def _create_journal_entry(
-        self, 
-        tenant_id: str, 
-        user_id: int, 
+        self,
+        tenant_id: str,
+        user_id: int,
         decision_id: int,
         step: RedWorkflowStep
     ) -> None:
         """Enregistre la validation dans le journal append-only."""
-        entry = JournalEntry(
+        entry = CoreAuditJournal(
             tenant_id=tenant_id,
             user_id=user_id,
             action=f"RED_WORKFLOW_{step.value}",
@@ -178,7 +178,7 @@ class RedWorkflowService:
         self.db.add(report)
         
         # Journaliser la création du rapport
-        report_journal = JournalEntry(
+        report_journal = CoreAuditJournal(
             tenant_id=tenant_id,
             user_id=user_id,
             action="RED_REPORT_GENERATED",

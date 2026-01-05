@@ -7,7 +7,7 @@ import enum
 from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Text, DateTime, Boolean, ForeignKey,
-    Numeric, Enum, JSON, Date, Time, UniqueConstraint, Index
+    Numeric, Enum, JSON, Date, UniqueConstraint, Index
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base

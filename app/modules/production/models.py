@@ -5,8 +5,7 @@ AZALS MODULE M6 - Modèles Production
 Modèles SQLAlchemy pour la gestion de production.
 """
 
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, ForeignKey,
     Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint

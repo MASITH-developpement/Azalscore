@@ -11,7 +11,7 @@ import json
 import time
 import uuid
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional
 from contextvars import ContextVar
 from functools import wraps
 

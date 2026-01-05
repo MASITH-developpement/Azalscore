@@ -5,8 +5,7 @@ AZALS MODULE M4 - Modèles Achats
 Modèles SQLAlchemy pour la gestion des achats.
 """
 
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, ForeignKey,
     Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint

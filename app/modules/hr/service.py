@@ -9,7 +9,7 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, or_
 from uuid import UUID
 
 from .models import (
@@ -18,16 +18,14 @@ from .models import (
     Skill, EmployeeSkill, Training, TrainingParticipant,
     Evaluation, HRDocument,
     ContractType, EmployeeStatus, LeaveType, LeaveStatus,
-    PayrollStatus, PayElementType, DocumentType,
-    EvaluationType, EvaluationStatus, TrainingType, TrainingStatus
+    PayrollStatus, DocumentType,
+    EvaluationStatus, TrainingType, TrainingStatus
 )
 from .schemas import (
     DepartmentCreate, DepartmentUpdate, PositionCreate, PositionUpdate,
     EmployeeCreate, EmployeeUpdate, ContractCreate,
-    LeaveRequestCreate, PayrollPeriodCreate, PayslipCreate, PayslipLineCreate,
-    TimeEntryCreate, SkillCreate, EmployeeSkillCreate,
-    TrainingCreate, TrainingParticipantCreate,
-    EvaluationCreate, EvaluationUpdate, HRDocumentCreate,
+    LeaveRequestCreate, PayrollPeriodCreate, PayslipCreate, TimeEntryCreate, SkillCreate, EmployeeSkillCreate,
+    TrainingCreate, EvaluationCreate, EvaluationUpdate, HRDocumentCreate,
     HRDashboard
 )
 

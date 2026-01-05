@@ -23,7 +23,7 @@ from .schemas import (
     InterventionAssign, InterventionStart, InterventionComplete,
     TimeEntryCreate, TimeEntryUpdate, TimeEntryResponse,
     RouteCreate, RouteUpdate, RouteResponse,
-    ExpenseCreate, ExpenseUpdate, ExpenseResponse,
+    ExpenseCreate, ExpenseResponse,
     ContractCreate, ContractUpdate, ContractResponse,
     InterventionStats, FieldServiceDashboard
 )

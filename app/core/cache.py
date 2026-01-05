@@ -8,9 +8,8 @@ Support Redis, fallback mémoire en développement.
 import json
 import logging
 import hashlib
-from typing import Optional, Any, Callable, TypeVar
+from typing import Optional, Callable, TypeVar
 from functools import wraps
-from datetime import timedelta
 import redis
 from redis.exceptions import RedisError
 from app.core.config import get_settings

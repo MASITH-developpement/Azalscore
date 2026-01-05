@@ -5,9 +5,9 @@ AZALS MODULE T1 - Router API Configuration Automatique
 Endpoints REST pour la configuration automatique par fonction.
 """
 
-from typing import Optional, List
+from typing import Optional
 import json
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -18,22 +18,20 @@ from .service import AutoConfigService, get_autoconfig_service
 from .models import OverrideType, OverrideStatus
 from .schemas import (
     # Profils
-    ProfileCreate, ProfileUpdate, ProfileResponse, ProfileListResponse,
+    ProfileResponse, ProfileListResponse,
     ProfileDetectionRequest, ProfileDetectionResponse,
     # Attributions
     ProfileAssignmentResponse, ManualAssignmentRequest, AutoAssignmentRequest,
     EffectiveConfigResponse,
     # Overrides
     OverrideRequest, OverrideResponse, OverrideListResponse,
-    OverrideApprovalRequest, OverrideRejectionRequest,
+    OverrideRejectionRequest,
     # Onboarding
     OnboardingCreate, OnboardingResponse, OnboardingListResponse,
     OnboardingExecutionResult,
     # Offboarding
     OffboardingCreate, OffboardingResponse, OffboardingListResponse,
-    OffboardingExecutionResult,
-    # Logs
-    AutoConfigLogResponse, AutoConfigLogListResponse
+    OffboardingExecutionResult
 )
 
 

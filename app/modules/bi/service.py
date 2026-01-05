@@ -4,10 +4,9 @@ Service métier pour Business Intelligence
 """
 
 from datetime import datetime, date, timedelta
-from decimal import Decimal
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc, asc
+from sqlalchemy import or_, desc
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 
@@ -15,17 +14,15 @@ from .models import (
     Dashboard, DashboardWidget, WidgetFilter, Report, ReportSchedule, ReportExecution,
     KPIDefinition, KPIValue, KPITarget, Alert, AlertRule, DataSource, DataQuery,
     Bookmark, ExportHistory,
-    DashboardType, WidgetType, ChartType, ReportType, ReportFormat, ReportStatus,
+    DashboardType, ReportType, ReportStatus,
     KPICategory, KPITrend, AlertSeverity, AlertStatus, DataSourceType, RefreshFrequency
 )
 from .schemas import (
     DashboardCreate, DashboardUpdate, WidgetCreate, WidgetUpdate,
     ReportCreate, ReportUpdate, ReportScheduleCreate, ReportExecuteRequest,
     KPICreate, KPIUpdate, KPIValueCreate, KPITargetCreate,
-    AlertCreate, AlertUpdate, AlertRuleCreate, AlertRuleUpdate,
-    DataSourceCreate, DataSourceUpdate, DataQueryCreate, DataQueryUpdate,
-    BookmarkCreate, ExportRequest,
-    KPITrend, AlertSummary, BIOverview
+    AlertCreate, AlertRuleCreate, AlertRuleUpdate,
+    DataSourceCreate, DataSourceUpdate, DataQueryCreate, BookmarkCreate, ExportRequest
 )
 
 

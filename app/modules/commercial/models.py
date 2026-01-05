@@ -7,7 +7,6 @@ Modèles SQLAlchemy pour le CRM et la gestion commerciale.
 
 import enum
 from datetime import datetime, date
-from decimal import Decimal
 from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime, Date,
     Text, ForeignKey, Enum, Numeric, Index

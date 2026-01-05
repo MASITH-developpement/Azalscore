@@ -22,7 +22,7 @@ from .schemas import (
     BroadcastTemplateCreate, BroadcastTemplateUpdate, BroadcastTemplateResponse,
     PaginatedTemplatesResponse,
     # Listes
-    RecipientListCreate, RecipientListUpdate, RecipientListResponse,
+    RecipientListCreate, RecipientListResponse,
     PaginatedRecipientListsResponse,
     RecipientMemberCreate, RecipientMemberResponse, PaginatedMembersResponse,
     # Broadcasts
@@ -30,14 +30,13 @@ from .schemas import (
     PaginatedBroadcastsResponse,
     # Exécutions
     BroadcastExecutionResponse, PaginatedExecutionsResponse, ExecuteRequest,
-    DeliveryDetailResponse, PaginatedDeliveryDetailsResponse,
+    PaginatedDeliveryDetailsResponse,
     # Préférences
     BroadcastPreferenceCreate, BroadcastPreferenceResponse, UnsubscribeRequest,
     # Métriques
     BroadcastMetricResponse, DashboardStatsResponse,
     # Enums
-    ContentTypeEnum, DeliveryChannelEnum, BroadcastFrequencyEnum,
-    BroadcastStatusEnum, DeliveryStatusEnum
+    ContentTypeEnum, BroadcastStatusEnum, DeliveryStatusEnum
 )
 
 router = APIRouter(prefix="/api/v1/broadcast", tags=["Broadcast"])

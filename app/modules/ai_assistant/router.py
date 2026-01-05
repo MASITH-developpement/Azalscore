@@ -9,7 +9,6 @@ Principes de gouvernance:
 - Traçabilité complète de toutes les actions
 """
 
-from datetime import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session

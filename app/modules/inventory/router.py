@@ -22,15 +22,13 @@ from .schemas import (
     # Entrepôts
     WarehouseCreate, WarehouseUpdate, WarehouseResponse,
     # Emplacements
-    LocationCreate, LocationUpdate, LocationResponse,
+    LocationCreate, LocationResponse,
     # Produits
     ProductCreate, ProductUpdate, ProductResponse, ProductList,
     # Stock
-    StockLevelResponse, StockByProduct,
-    # Lots
-    LotCreate, LotUpdate, LotResponse,
+    StockLevelResponse, LotCreate, LotResponse,
     # Numéros de série
-    SerialCreate, SerialUpdate, SerialResponse,
+    SerialCreate, SerialResponse,
     # Mouvements
     MovementCreate, MovementResponse, MovementList,
     # Inventaires
@@ -38,8 +36,6 @@ from .schemas import (
     # Préparations
     PickingCreate, PickingResponse, PickingLineUpdate,
     # Valorisation
-    ValuationResponse,
-    # Dashboard
     InventoryDashboard,
 )
 

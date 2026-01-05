@@ -5,8 +5,7 @@ AZALS MODULE M5 - Modèles Inventaire
 Modèles SQLAlchemy pour la gestion des stocks et logistique.
 """
 
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, ForeignKey,
     Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint

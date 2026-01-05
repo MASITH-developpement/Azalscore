@@ -21,7 +21,7 @@ from .schemas import (
     OpportunityCreate, OpportunityUpdate, OpportunityResponse, OpportunityList,
     DocumentCreate, DocumentUpdate, DocumentResponse, DocumentList, DocumentLineCreate, DocumentLineResponse,
     PaymentCreate, PaymentResponse,
-    ActivityCreate, ActivityUpdate, ActivityResponse,
+    ActivityCreate, ActivityResponse,
     PipelineStageCreate, PipelineStageResponse,
     ProductCreate, ProductUpdate, ProductResponse, ProductList,
     SalesDashboard, PipelineStats

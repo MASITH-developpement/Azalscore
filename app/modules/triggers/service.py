@@ -8,9 +8,7 @@ Logique métier pour le système de déclencheurs.
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 import json
-import re
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
 
 from .models import (
     Trigger, TriggerSubscription, TriggerEvent, Notification,

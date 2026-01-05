@@ -16,8 +16,7 @@ from .schemas import (
     DeviceRegister, DeviceUpdate, DeviceResponse,
     SessionCreate, SessionResponse, SessionRefresh,
     NotificationCreate, NotificationBulk, NotificationResponse,
-    SyncRequest, SyncBatch, SyncResponse, SyncConflict,
-    PreferencesUpdate, PreferencesResponse,
+    SyncRequest, SyncBatch, SyncResponse, PreferencesUpdate, PreferencesResponse,
     ActivityLog, ActivityBatch,
     AppConfigResponse, CrashReport, MobileStats
 )

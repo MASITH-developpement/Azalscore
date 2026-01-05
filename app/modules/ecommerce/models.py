@@ -9,13 +9,10 @@ Target: ERP-native e-commerce avec intégration complète
 
 import enum
 from datetime import datetime
-from decimal import Decimal
-from typing import Optional
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime,
     ForeignKey, Enum, JSON, Float, Numeric, Index
 )
-from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 

@@ -7,11 +7,9 @@ Détection d'anomalies et recommendations intelligentes.
 
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
-from decimal import Decimal
 from enum import Enum
 from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 
 
 class AnomalyType(str, Enum):
@@ -179,7 +177,7 @@ class Analytics360Service:
 
         try:
             # Vérifier les écritures non lettrées anciennes
-            cutoff = datetime.utcnow() - timedelta(days=period_days)
+            datetime.utcnow() - timedelta(days=period_days)
             # Simuler métriques (à connecter aux vraies tables)
             metrics = {
                 "unreconciled_entries": 0,

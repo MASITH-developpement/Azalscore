@@ -6,7 +6,7 @@ Endpoint /metrics pour scraping Prometheus.
 """
 
 import time
-from typing import Callable, Optional
+from typing import Callable
 from functools import wraps
 from prometheus_client import (
     Counter,
@@ -15,7 +15,6 @@ from prometheus_client import (
     Info,
     generate_latest,
     CONTENT_TYPE_LATEST,
-    CollectorRegistry,
     REGISTRY
 )
 from fastapi import APIRouter, Request, Response
@@ -149,7 +148,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             status_code = response.status_code
             return response
-        except Exception as e:
+        except Exception:
             status_code = 500
             raise
         finally:

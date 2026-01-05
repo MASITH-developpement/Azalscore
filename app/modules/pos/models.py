@@ -9,12 +9,10 @@ Target: POS enterprise intégré ERP avec mode offline
 
 import enum
 from datetime import datetime
-from decimal import Decimal
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, JSON, Float, Numeric, Index, BigInteger
+    ForeignKey, Enum, JSON, Numeric, Index
 )
-from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 

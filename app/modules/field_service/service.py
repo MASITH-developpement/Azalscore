@@ -6,28 +6,25 @@ Logique métier pour la gestion des interventions terrain.
 
 from datetime import datetime, date, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, or_
 import uuid
 
 from .models import (
     ServiceZone, Technician, Vehicle, InterventionTemplate,
-    Intervention, InterventionHistory, TimeEntry, PartUsage,
-    Route, Expense, ServiceContract,
+    Intervention, InterventionHistory, TimeEntry, Route, Expense, ServiceContract,
     TechnicianStatus, InterventionStatus, InterventionPriority, InterventionType
 )
 from .schemas import (
     ZoneCreate, ZoneUpdate,
-    TechnicianCreate, TechnicianUpdate, TechnicianStatusUpdate, TechnicianLocation,
-    VehicleCreate, VehicleUpdate,
+    TechnicianCreate, TechnicianUpdate, VehicleCreate, VehicleUpdate,
     TemplateCreate, TemplateUpdate,
     InterventionCreate, InterventionUpdate, InterventionAssign,
-    InterventionStart, InterventionComplete,
+    InterventionComplete,
     TimeEntryCreate, TimeEntryUpdate,
     RouteCreate, RouteUpdate,
-    ExpenseCreate, ExpenseUpdate,
-    ContractCreate, ContractUpdate,
+    ExpenseCreate, ContractCreate, ContractUpdate,
     TechnicianStats, InterventionStats, FieldServiceDashboard
 )
 

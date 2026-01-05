@@ -12,9 +12,9 @@ from app.core.database import get_db
 from .service import FrancePackService
 from .schemas import (
     # PCG
-    PCGAccountCreate, PCGAccountUpdate, PCGAccountResponse,
+    PCGAccountCreate, PCGAccountResponse,
     # TVA
-    FRVATRateCreate, FRVATRateResponse,
+    FRVATRateResponse,
     VATDeclarationCreate, VATDeclarationResponse,
     # FEC
     FECGenerateRequest, FECValidationResult, FECExportResponse,

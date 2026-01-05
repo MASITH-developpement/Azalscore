@@ -7,7 +7,7 @@ Schémas Pydantic pour le système de support client.
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 
 from .models import TicketStatus, TicketPriority, TicketSource, AgentStatus
 

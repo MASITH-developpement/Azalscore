@@ -6,7 +6,6 @@ ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 """
 
 import asyncio
-import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse

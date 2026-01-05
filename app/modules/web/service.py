@@ -10,7 +10,7 @@ from typing import Optional, List, Dict, Any, Tuple
 import json
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import and_, or_
 
 from .models import (
     Theme, Widget, WebDashboard as Dashboard, MenuItem, UIComponent,

@@ -11,7 +11,6 @@ from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime, Float,
     ForeignKey, Enum, Index, JSON
 )
-from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 

@@ -9,7 +9,7 @@ from decimal import Decimal
 from typing import Optional, List, Tuple, Dict, Any
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, or_
 
 from .models import (
     SubscriptionPlan, PlanAddOn, Subscription, SubscriptionItem,
@@ -21,10 +21,8 @@ from .models import (
 )
 from .schemas import (
     PlanCreate, PlanUpdate, AddOnCreate, AddOnUpdate,
-    SubscriptionCreate, SubscriptionUpdate, SubscriptionItemCreate,
-    SubscriptionChangePlanRequest, SubscriptionCancelRequest,
-    SubscriptionPauseRequest, InvoiceCreate, InvoiceLineCreate,
-    PaymentCreate, UsageRecordCreate, CouponCreate, CouponUpdate,
+    SubscriptionCreate, SubscriptionUpdate, SubscriptionChangePlanRequest, SubscriptionCancelRequest,
+    SubscriptionPauseRequest, InvoiceCreate, PaymentCreate, UsageRecordCreate, CouponCreate, CouponUpdate,
     CouponValidateRequest
 )
 
@@ -1241,7 +1239,7 @@ class SubscriptionService:
         today = date.today()
         month_start = today.replace(day=1)
         last_month = month_start - timedelta(days=1)
-        last_month_start = last_month.replace(day=1)
+        last_month.replace(day=1)
 
         # Abonnements actifs
         active = self.db.query(Subscription).filter(

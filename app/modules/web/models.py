@@ -8,10 +8,8 @@ Modèles SQLAlchemy pour la configuration web.
 from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, Float,
-    ForeignKey, Enum, Index, JSON
+    Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Enum, Index, JSON
 )
-from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 

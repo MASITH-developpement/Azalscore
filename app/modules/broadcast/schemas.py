@@ -129,7 +129,7 @@ class BroadcastTemplateResponse(BroadcastTemplateBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return v
         return v
 
@@ -174,7 +174,7 @@ class RecipientListResponse(RecipientListBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return {}
         return v
 
@@ -294,7 +294,7 @@ class ScheduledBroadcastResponse(ScheduledBroadcastBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except:
+            except Exception:
                 return {}
         return v
 

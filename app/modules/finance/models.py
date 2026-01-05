@@ -6,10 +6,9 @@ Modèles SQLAlchemy pour la comptabilité et la trésorerie.
 """
 
 import enum
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, Date,
+    Column, String, Integer, Boolean, DateTime, Date,
     Text, ForeignKey, Enum, Numeric, Index, CheckConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID, JSON

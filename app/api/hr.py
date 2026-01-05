@@ -4,7 +4,7 @@ Gestion effectif, paie, absences (indicateurs dirigeant uniquement)
 Respect strict de la confidentialité - Aucune donnée nominative
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.core.dependencies import get_db, get_tenant_id
@@ -51,7 +51,7 @@ async def get_hr_status(
     
     current_month_end = (today.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
     next_month_start = current_month_end + timedelta(days=1)
-    payroll_deadline = next_month_start + timedelta(days=5)  # 5 du mois suivant
+    next_month_start + timedelta(days=5)  # 5 du mois suivant
     
     days_until_payroll = (current_month_end - today).days
     

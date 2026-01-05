@@ -8,10 +8,9 @@ Service principal pour le contrôle qualité.
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 import json
-import re
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc, asc
+from sqlalchemy import or_, desc
 
 from app.modules.qc.models import (
     QCRule, ModuleRegistry, QCValidation, QCCheckResult,
@@ -147,7 +146,7 @@ class QCService:
                     module_list = json.loads(modules)
                     if module_code not in module_list and "*" not in module_list:
                         continue
-                except:
+                except Exception:
                     pass
 
             # Vérifier la phase
@@ -156,7 +155,7 @@ class QCService:
                     phases = json.loads(rule.applies_to_phases)
                     if phase.value not in phases:
                         continue
-                except:
+                except Exception:
                     pass
 
             applicable.append(rule)

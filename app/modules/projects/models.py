@@ -7,7 +7,6 @@ Modèles SQLAlchemy pour la gestion de projets.
 
 import enum
 from datetime import datetime, date
-from decimal import Decimal
 from sqlalchemy import (
     Column, String, Integer, Boolean, DateTime, Date,
     ForeignKey, Numeric, Text, Enum, Float, JSON, Index

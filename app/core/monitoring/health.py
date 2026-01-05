@@ -9,11 +9,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db, engine
+from app.core.database import engine
 
 
 # ============================================================================

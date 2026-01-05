@@ -15,9 +15,9 @@ from app.core.database import get_db
 from app.core.auth import get_current_user, get_tenant_id
 
 from .models import (
-    EmployeeStatus, ContractType, LeaveType, LeaveStatus,
-    PayrollStatus, TrainingType, TrainingStatus,
-    EvaluationType, EvaluationStatus, DocumentType
+    EmployeeStatus, LeaveStatus,
+    TrainingType, TrainingStatus,
+    EvaluationStatus, DocumentType
 )
 from .schemas import (
     DepartmentCreate, DepartmentUpdate, DepartmentResponse,

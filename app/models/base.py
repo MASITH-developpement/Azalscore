@@ -4,9 +4,8 @@ Tous les modèles doivent hériter de TenantMixin
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.orm import declared_attr
-from app.core.database import Base
 
 
 class TenantMixin:

@@ -12,7 +12,7 @@ from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ============================================================================

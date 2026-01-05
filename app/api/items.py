@@ -5,7 +5,7 @@ CRUD sécurisé avec isolation stricte par tenant_id.
 Pagination standardisée pour performance.
 """
 
-from typing import List, Optional, Any
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
@@ -16,8 +16,7 @@ from app.core.database import get_db
 from app.core.pagination import (
     PaginationParams,
     get_pagination_params,
-    paginate_query,
-    create_pagination_response
+    paginate_query
 )
 
 
