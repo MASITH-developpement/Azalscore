@@ -55,12 +55,13 @@ class User(Base, TenantMixin):
     L'accès à un endpoint nécessite JWT + X-Tenant-ID cohérent.
     """
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.DIRIGEANT)
+    # Utiliser String(50) pour compatibilité avec migration SQL (VARCHAR)
+    role = Column(String(50), nullable=False, default="DIRIGEANT")
     is_active = Column(Integer, default=1, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
