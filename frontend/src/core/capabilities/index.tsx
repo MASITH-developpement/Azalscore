@@ -68,7 +68,14 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
         isLoading: false,
       });
     } catch {
-      set({ capabilities: [], isLoading: false });
+      // En mode démo, récupérer les capabilities depuis le module auth
+      const { getDemoCapabilities } = await import('@core/auth');
+      const demoCapabilities = getDemoCapabilities();
+      if (demoCapabilities.length > 0) {
+        set({ capabilities: demoCapabilities, isLoading: false });
+      } else {
+        set({ capabilities: [], isLoading: false });
+      }
     }
   },
 
@@ -80,6 +87,16 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
     await get().loadCapabilities();
   },
 }));
+
+// Écouter l'événement de login démo pour charger les capabilities
+if (typeof window !== 'undefined') {
+  window.addEventListener('azals:demo:login', ((event: CustomEvent<{ capabilities: string[] }>) => {
+    useCapabilitiesStore.setState({
+      capabilities: event.detail.capabilities,
+      isLoading: false
+    });
+  }) as EventListener);
+}
 
 // ============================================================
 // HOOKS UTILITAIRES

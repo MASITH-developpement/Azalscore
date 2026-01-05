@@ -9,6 +9,83 @@ import { api, tokenManager, setTenantId, clearTenantId } from '@core/api-client'
 import type { User, AuthTokens, AuthState } from '@/types';
 
 // ============================================================
+// MODE DÉMO (développement sans backend)
+// ============================================================
+
+// Mode démo activé UNIQUEMENT si variable explicite (pas par défaut en dev)
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
+
+const DEMO_CAPABILITIES = {
+  user: [
+    'cockpit.view',
+    'partners.view', 'partners.create', 'partners.edit',
+    'invoicing.view', 'invoicing.create', 'invoicing.edit',
+    'treasury.view', 'treasury.create',
+    'accounting.view', 'accounting.journal.view',
+    'purchases.view', 'purchases.create',
+    'projects.view', 'projects.create',
+    'interventions.view', 'interventions.create',
+    'admin.view', 'admin.users.view',
+  ],
+  admin: [
+    'cockpit.view',
+    'partners.view', 'partners.create', 'partners.edit', 'partners.delete',
+    'invoicing.view', 'invoicing.create', 'invoicing.edit', 'invoicing.delete',
+    'treasury.view', 'treasury.create', 'treasury.transfer.execute',
+    'accounting.view', 'accounting.journal.view', 'accounting.journal.delete',
+    'purchases.view', 'purchases.create', 'purchases.edit',
+    'projects.view', 'projects.create', 'projects.edit',
+    'interventions.view', 'interventions.create', 'interventions.edit',
+    'admin.view', 'admin.users.view', 'admin.users.create', 'admin.users.edit', 'admin.users.delete',
+    'admin.tenants.view', 'admin.tenants.create', 'admin.tenants.delete',
+    'admin.root.break_glass',
+  ],
+};
+
+const DEMO_USERS: Record<string, { password: string; user: User; capabilities: string[] }> = {
+  'demo@azalscore.local': {
+    password: 'Demo123!',
+    user: {
+      id: 'demo-user-001',
+      email: 'demo@azalscore.local',
+      name: 'Utilisateur Démo',
+      roles: ['admin'],
+      capabilities: DEMO_CAPABILITIES.user,
+      tenant_id: 'demo-tenant',
+      is_active: true,
+      requires_2fa: false,
+    },
+    capabilities: DEMO_CAPABILITIES.user,
+  },
+  'admin@azalscore.local': {
+    password: 'Admin123!',
+    user: {
+      id: 'admin-user-001',
+      email: 'admin@azalscore.local',
+      name: 'Administrateur Root',
+      roles: ['superadmin'],
+      capabilities: DEMO_CAPABILITIES.admin,
+      tenant_id: 'demo-tenant',
+      is_active: true,
+      requires_2fa: false,
+    },
+    capabilities: DEMO_CAPABILITIES.admin,
+  },
+};
+
+const generateDemoTokens = (): AuthTokens => ({
+  access_token: 'demo-access-token-' + Date.now(),
+  refresh_token: 'demo-refresh-token-' + Date.now(),
+  token_type: 'Bearer',
+  expires_in: 3600,
+});
+
+// Variable pour stocker les capabilities de l'utilisateur démo courant
+let currentDemoCapabilities: string[] = [];
+
+export const getDemoCapabilities = (): string[] => currentDemoCapabilities;
+
+// ============================================================
 // TYPES LOCAUX
 // ============================================================
 
@@ -48,6 +125,38 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     set({ isLoading: true, error: null });
 
+    // Mode démo - vérifier d'abord les credentials démo
+    if (DEMO_MODE) {
+      const demoUser = DEMO_USERS[credentials.email.toLowerCase()];
+      if (demoUser && demoUser.password === credentials.password) {
+        const tokens = generateDemoTokens();
+        const tenant_id = demoUser.user.tenant_id;
+
+        tokenManager.setTokens(tokens.access_token, tokens.refresh_token);
+        setTenantId(tenant_id);
+        currentDemoCapabilities = demoUser.capabilities;
+
+        // Émettre événement pour charger les capabilities
+        window.dispatchEvent(new CustomEvent('azals:demo:login', {
+          detail: { capabilities: demoUser.capabilities }
+        }));
+
+        set({
+          user: demoUser.user,
+          tokens,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+
+        return {
+          user: demoUser.user,
+          tokens,
+          tenant_id,
+        };
+      }
+    }
+
     try {
       const response = await api.post<LoginResponse>('/v1/auth/login', credentials, {
         skipAuth: true,
@@ -69,6 +178,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       return response.data;
     } catch (error) {
+      // En mode démo, afficher un message plus clair
+      if (DEMO_MODE) {
+        set({ isLoading: false, error: 'Identifiants invalides. Utilisez demo@azalscore.local / Demo123! ou admin@azalscore.local / Admin123!' });
+        throw new Error('Identifiants démo invalides');
+      }
       const message = error instanceof Error ? error.message : 'Échec de connexion';
       set({ isLoading: false, error: message });
       throw error;
