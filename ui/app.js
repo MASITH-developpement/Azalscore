@@ -200,36 +200,50 @@ async function authenticatedFetch(url, options = {}) {
  */
 async function handleLogin(event) {
     event.preventDefault();
-    
+
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const tenantId = document.getElementById('tenant_id')?.value || 'default';
     const errorDiv = document.getElementById('error');
-    
+
     if (errorDiv) errorDiv.style.display = 'none';
-    
+
     try {
         const response = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'X-Tenant-ID': tenantId
             },
             body: JSON.stringify({ email, password })
         });
-        
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Identifiants invalides');
+            // Gérer les erreurs non-JSON (ex: 500 Internal Server Error)
+            let errorMessage = 'Identifiants invalides';
+            try {
+                const error = await response.json();
+                errorMessage = error.detail || errorMessage;
+            } catch (jsonError) {
+                // Si la réponse n'est pas du JSON valide
+                if (response.status >= 500) {
+                    errorMessage = 'Erreur serveur. Veuillez réessayer dans quelques instants.';
+                } else if (response.status === 401) {
+                    errorMessage = 'Email ou mot de passe incorrect';
+                } else if (response.status === 403) {
+                    errorMessage = 'Compte désactivé ou accès refusé';
+                }
+            }
+            throw new Error(errorMessage);
         }
-        
+
         const data = await response.json();
         sessionStorage.setItem('token', data.access_token);
         sessionStorage.setItem('tenant_id', tenantId);
         sessionStorage.setItem('user_email', email);
-        
+
         window.location.href = '/dashboard';
-        
+
     } catch (error) {
         if (errorDiv) {
             errorDiv.textContent = error.message;

@@ -14,7 +14,6 @@ from app.core.models import (
     DecisionLevel,
     CoreAuditJournal,
     User,
-    UserRole,
     RedDecisionReport,
     TreasuryForecast
 )
@@ -42,7 +41,7 @@ class RedWorkflowService:
             User.tenant_id == tenant_id
         ).first()
         
-        if not user or user.role != UserRole.DIRIGEANT:
+        if not user or user.role != "DIRIGEANT":
             raise HTTPException(
                 status_code=403,
                 detail="FORBIDDEN: Only DIRIGEANT role can validate RED decisions"

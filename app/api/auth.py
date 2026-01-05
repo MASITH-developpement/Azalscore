@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.models import User, UserRole
+from app.core.models import User
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.dependencies import get_tenant_id
 
@@ -81,7 +81,7 @@ def register(
         email=user_data.email,
         password_hash=password_hash,
         tenant_id=tenant_id,  # Lié au tenant via X-Tenant-ID
-        role=UserRole.DIRIGEANT,
+        role="DIRIGEANT",
         is_active=1
     )
     
@@ -130,15 +130,15 @@ def login(
         data={
             "sub": str(user.id),
             "tenant_id": user.tenant_id,
-            "role": user.role.value
+            "role": user.role
         }
     )
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "tenant_id": user.tenant_id,
-        "role": user.role.value
+        "role": user.role
     }
 
 
@@ -203,7 +203,7 @@ def bootstrap(
         email=data.admin_email,
         password_hash=password_hash,
         tenant_id=data.tenant_id,
-        role=UserRole.DIRIGEANT,
+        role="DIRIGEANT",
         is_active=1
     )
 

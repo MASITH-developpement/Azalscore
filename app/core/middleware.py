@@ -20,7 +20,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
     # Note: /auth/login et /auth/bootstrap n'ont pas besoin de validation tenant
     # - login: recherche l'utilisateur par email et retourne son tenant_id
     # - bootstrap: crée le premier tenant et admin
-    PUBLIC_PATHS = {"/health", "/docs", "/openapi.json", "/", "/dashboard", "/treasury", "/static", "/favicon.ico", "/admin", "/auth/login", "/auth/bootstrap"}
+    PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json", "/", "/dashboard", "/treasury", "/static", "/favicon.ico", "/admin", "/auth/login", "/auth/bootstrap"}
     
     async def dispatch(self, request: Request, call_next):
         """
