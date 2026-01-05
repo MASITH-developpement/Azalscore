@@ -10,7 +10,7 @@ from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, ForeignKey,
     Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UniversalUUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 import enum
@@ -114,17 +114,17 @@ class ProductCategory(Base):
     """Catégorie de produits."""
     __tablename__ = "inventory_categories"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("inventory_categories.id"), nullable=True)
+    parent_id = Column(UniversalUUID(), ForeignKey("inventory_categories.id"), nullable=True)
 
     # Configuration par défaut
     default_valuation = Column(SQLEnum(ValuationMethod), default=ValuationMethod.AVG)
-    default_account_id = Column(UUID(as_uuid=True), nullable=True)
+    default_account_id = Column(UniversalUUID(), nullable=True)
 
     is_active = Column(Boolean, default=True)
     sort_order = Column(Integer, default=0)
@@ -146,7 +146,7 @@ class Warehouse(Base):
     """Entrepôt."""
     __tablename__ = "inventory_warehouses"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -184,9 +184,9 @@ class Location(Base):
     """Emplacement de stockage."""
     __tablename__ = "inventory_locations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=False)
+    warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=False)
 
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
@@ -231,7 +231,7 @@ class Product(Base):
     """Produit/Article."""
     __tablename__ = "inventory_products"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -242,7 +242,7 @@ class Product(Base):
     status = Column(SQLEnum(ProductStatus), default=ProductStatus.DRAFT)
 
     # Classification
-    category_id = Column(UUID(as_uuid=True), ForeignKey("inventory_categories.id"), nullable=True)
+    category_id = Column(UniversalUUID(), ForeignKey("inventory_categories.id"), nullable=True)
 
     # Codes
     barcode = Column(String(100), nullable=True)
@@ -288,16 +288,16 @@ class Product(Base):
     expiry_warning_days = Column(Integer, default=30)
 
     # Entrepôt par défaut
-    default_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=True)
-    default_location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
+    default_warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=True)
+    default_location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
 
     # Fournisseur principal
-    default_supplier_id = Column(UUID(as_uuid=True), nullable=True)
+    default_supplier_id = Column(UniversalUUID(), nullable=True)
 
     # Comptabilité
-    stock_account_id = Column(UUID(as_uuid=True), nullable=True)
-    expense_account_id = Column(UUID(as_uuid=True), nullable=True)
-    income_account_id = Column(UUID(as_uuid=True), nullable=True)
+    stock_account_id = Column(UniversalUUID(), nullable=True)
+    expense_account_id = Column(UniversalUUID(), nullable=True)
+    income_account_id = Column(UniversalUUID(), nullable=True)
 
     # Métadonnées
     tags = Column(JSONB, default=list)
@@ -306,7 +306,7 @@ class Product(Base):
     notes = Column(Text, nullable=True)
 
     is_active = Column(Boolean, default=True)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -330,12 +330,12 @@ class StockLevel(Base):
     """Niveau de stock par produit/emplacement."""
     __tablename__ = "inventory_stock_levels"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory_products.id"), nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=False)
-    location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"), nullable=False)
+    warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=False)
+    location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
 
     # Quantités
     quantity_on_hand = Column(Numeric(15, 4), default=0)
@@ -374,10 +374,10 @@ class Lot(Base):
     """Lot de produit."""
     __tablename__ = "inventory_lots"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory_products.id"), nullable=False)
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"), nullable=False)
     number = Column(String(100), nullable=False)
     status = Column(SQLEnum(LotStatus), default=LotStatus.AVAILABLE)
 
@@ -387,9 +387,9 @@ class Lot(Base):
     reception_date = Column(Date, nullable=True)
 
     # Origine
-    supplier_id = Column(UUID(as_uuid=True), nullable=True)
+    supplier_id = Column(UniversalUUID(), nullable=True)
     supplier_lot = Column(String(100), nullable=True)
-    purchase_order_id = Column(UUID(as_uuid=True), nullable=True)
+    purchase_order_id = Column(UniversalUUID(), nullable=True)
 
     # Quantités
     initial_quantity = Column(Numeric(15, 4), default=0)
@@ -417,26 +417,26 @@ class SerialNumber(Base):
     """Numéro de série."""
     __tablename__ = "inventory_serial_numbers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory_products.id"), nullable=False)
-    lot_id = Column(UUID(as_uuid=True), ForeignKey("inventory_lots.id"), nullable=True)
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"), nullable=False)
+    lot_id = Column(UniversalUUID(), ForeignKey("inventory_lots.id"), nullable=True)
     number = Column(String(100), nullable=False)
     status = Column(SQLEnum(LotStatus), default=LotStatus.AVAILABLE)
 
     # Localisation actuelle
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=True)
-    location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
+    warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=True)
+    location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
 
     # Origine
-    supplier_id = Column(UUID(as_uuid=True), nullable=True)
-    purchase_order_id = Column(UUID(as_uuid=True), nullable=True)
+    supplier_id = Column(UniversalUUID(), nullable=True)
+    purchase_order_id = Column(UniversalUUID(), nullable=True)
     reception_date = Column(Date, nullable=True)
 
     # Client (si vendu)
-    customer_id = Column(UUID(as_uuid=True), nullable=True)
-    sale_order_id = Column(UUID(as_uuid=True), nullable=True)
+    customer_id = Column(UniversalUUID(), nullable=True)
+    sale_order_id = Column(UniversalUUID(), nullable=True)
     sale_date = Column(Date, nullable=True)
 
     # Garantie
@@ -466,7 +466,7 @@ class StockMovement(Base):
     """Mouvement de stock."""
     __tablename__ = "inventory_movements"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
@@ -477,14 +477,14 @@ class StockMovement(Base):
     movement_date = Column(DateTime, nullable=False)
 
     # Origine/Destination
-    from_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=True)
-    from_location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
-    to_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=True)
-    to_location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
+    from_warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=True)
+    from_location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
+    to_warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=True)
+    to_location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
 
     # Référence
     reference_type = Column(String(50), nullable=True)  # purchase_order, sale_order, production_order
-    reference_id = Column(UUID(as_uuid=True), nullable=True)
+    reference_id = Column(UniversalUUID(), nullable=True)
     reference_number = Column(String(100), nullable=True)
 
     reason = Column(String(255), nullable=True)
@@ -495,8 +495,8 @@ class StockMovement(Base):
     total_quantity = Column(Numeric(15, 4), default=0)
     total_value = Column(Numeric(15, 2), default=0)
 
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    confirmed_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
+    confirmed_by = Column(UniversalUUID(), nullable=True)
     confirmed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -515,24 +515,24 @@ class StockMovementLine(Base):
     """Ligne de mouvement de stock."""
     __tablename__ = "inventory_movement_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    movement_id = Column(UUID(as_uuid=True), ForeignKey("inventory_movements.id"), nullable=False)
+    movement_id = Column(UniversalUUID(), ForeignKey("inventory_movements.id"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory_products.id"), nullable=False)
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"), nullable=False)
 
     # Quantités
     quantity = Column(Numeric(15, 4), nullable=False)
     unit = Column(String(20), default="UNIT")
 
     # Lot/Série
-    lot_id = Column(UUID(as_uuid=True), ForeignKey("inventory_lots.id"), nullable=True)
-    serial_id = Column(UUID(as_uuid=True), ForeignKey("inventory_serial_numbers.id"), nullable=True)
+    lot_id = Column(UniversalUUID(), ForeignKey("inventory_lots.id"), nullable=True)
+    serial_id = Column(UniversalUUID(), ForeignKey("inventory_serial_numbers.id"), nullable=True)
 
     # Emplacements spécifiques (si différent du mouvement parent)
-    from_location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
-    to_location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
+    from_location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
+    to_location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
 
     # Valorisation
     unit_cost = Column(Numeric(15, 4), nullable=True)
@@ -560,7 +560,7 @@ class InventoryCount(Base):
     """Inventaire physique."""
     __tablename__ = "inventory_counts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
@@ -568,9 +568,9 @@ class InventoryCount(Base):
     status = Column(SQLEnum(InventoryStatus), default=InventoryStatus.DRAFT)
 
     # Périmètre
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=True)
-    location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("inventory_categories.id"), nullable=True)
+    warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=True)
+    location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
+    category_id = Column(UniversalUUID(), ForeignKey("inventory_categories.id"), nullable=True)
 
     # Dates
     planned_date = Column(Date, nullable=False)
@@ -585,8 +585,8 @@ class InventoryCount(Base):
 
     notes = Column(Text, nullable=True)
 
-    created_by = Column(UUID(as_uuid=True), nullable=True)
-    validated_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
+    validated_by = Column(UniversalUUID(), nullable=True)
     validated_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -603,13 +603,13 @@ class InventoryCountLine(Base):
     """Ligne d'inventaire physique."""
     __tablename__ = "inventory_count_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    count_id = Column(UUID(as_uuid=True), ForeignKey("inventory_counts.id"), nullable=False)
+    count_id = Column(UniversalUUID(), ForeignKey("inventory_counts.id"), nullable=False)
 
-    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory_products.id"), nullable=False)
-    location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
-    lot_id = Column(UUID(as_uuid=True), ForeignKey("inventory_lots.id"), nullable=True)
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"), nullable=False)
+    location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
+    lot_id = Column(UniversalUUID(), ForeignKey("inventory_lots.id"), nullable=True)
 
     # Quantités
     theoretical_quantity = Column(Numeric(15, 4), default=0)
@@ -621,7 +621,7 @@ class InventoryCountLine(Base):
     discrepancy_value = Column(Numeric(15, 2), nullable=True)
 
     counted_at = Column(DateTime, nullable=True)
-    counted_by = Column(UUID(as_uuid=True), nullable=True)
+    counted_by = Column(UniversalUUID(), nullable=True)
     notes = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -644,7 +644,7 @@ class Picking(Base):
     """Préparation de commande."""
     __tablename__ = "inventory_pickings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
@@ -652,11 +652,11 @@ class Picking(Base):
     status = Column(SQLEnum(PickingStatus), default=PickingStatus.PENDING)
 
     # Entrepôt
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=False)
+    warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=False)
 
     # Référence
     reference_type = Column(String(50), nullable=True)  # sale_order, purchase_order, transfer
-    reference_id = Column(UUID(as_uuid=True), nullable=True)
+    reference_id = Column(UniversalUUID(), nullable=True)
     reference_number = Column(String(100), nullable=True)
 
     # Dates
@@ -665,7 +665,7 @@ class Picking(Base):
     completed_at = Column(DateTime, nullable=True)
 
     # Assignation
-    assigned_to = Column(UUID(as_uuid=True), nullable=True)
+    assigned_to = Column(UniversalUUID(), nullable=True)
 
     # Totaux
     total_lines = Column(Integer, default=0)
@@ -674,7 +674,7 @@ class Picking(Base):
     priority = Column(String(20), default="NORMAL")
     notes = Column(Text, nullable=True)
 
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -691,12 +691,12 @@ class PickingLine(Base):
     """Ligne de préparation."""
     __tablename__ = "inventory_picking_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    picking_id = Column(UUID(as_uuid=True), ForeignKey("inventory_pickings.id"), nullable=False)
+    picking_id = Column(UniversalUUID(), ForeignKey("inventory_pickings.id"), nullable=False)
 
-    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory_products.id"), nullable=False)
-    location_id = Column(UUID(as_uuid=True), ForeignKey("inventory_locations.id"), nullable=True)
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"), nullable=False)
+    location_id = Column(UniversalUUID(), ForeignKey("inventory_locations.id"), nullable=True)
 
     # Quantités
     quantity_demanded = Column(Numeric(15, 4), nullable=False)
@@ -704,12 +704,12 @@ class PickingLine(Base):
     unit = Column(String(20), default="UNIT")
 
     # Lot/Série
-    lot_id = Column(UUID(as_uuid=True), ForeignKey("inventory_lots.id"), nullable=True)
-    serial_id = Column(UUID(as_uuid=True), ForeignKey("inventory_serial_numbers.id"), nullable=True)
+    lot_id = Column(UniversalUUID(), ForeignKey("inventory_lots.id"), nullable=True)
+    serial_id = Column(UniversalUUID(), ForeignKey("inventory_serial_numbers.id"), nullable=True)
 
     is_picked = Column(Boolean, default=False)
     picked_at = Column(DateTime, nullable=True)
-    picked_by = Column(UUID(as_uuid=True), nullable=True)
+    picked_by = Column(UniversalUUID(), nullable=True)
 
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -732,11 +732,11 @@ class ReplenishmentRule(Base):
     """Règle de réapprovisionnement."""
     __tablename__ = "inventory_replenishment_rules"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    product_id = Column(UUID(as_uuid=True), ForeignKey("inventory_products.id"), nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=True)
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"), nullable=False)
+    warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=True)
 
     # Seuils
     min_stock = Column(Numeric(15, 4), nullable=False)
@@ -745,7 +745,7 @@ class ReplenishmentRule(Base):
     reorder_quantity = Column(Numeric(15, 4), nullable=False)
 
     # Fournisseur préféré
-    supplier_id = Column(UUID(as_uuid=True), nullable=True)
+    supplier_id = Column(UniversalUUID(), nullable=True)
     lead_time_days = Column(Integer, default=0)
 
     is_active = Column(Boolean, default=True)
@@ -770,11 +770,11 @@ class StockValuation(Base):
     """Valorisation des stocks."""
     __tablename__ = "inventory_valuations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     valuation_date = Column(Date, nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("inventory_warehouses.id"), nullable=True)
+    warehouse_id = Column(UniversalUUID(), ForeignKey("inventory_warehouses.id"), nullable=True)
 
     # Totaux
     total_products = Column(Integer, default=0)
@@ -790,7 +790,7 @@ class StockValuation(Base):
     # Détails
     details = Column(JSONB, default=list)
 
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (

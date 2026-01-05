@@ -10,7 +10,7 @@ from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, ForeignKey,
     Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UniversalUUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 import enum
@@ -117,7 +117,7 @@ class WorkCenter(Base):
     """Centre de travail (machine, poste d'assemblage, etc.)."""
     __tablename__ = "production_work_centers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -127,7 +127,7 @@ class WorkCenter(Base):
     status = Column(SQLEnum(WorkCenterStatus), default=WorkCenterStatus.AVAILABLE)
 
     # Localisation
-    warehouse_id = Column(UUID(as_uuid=True), nullable=True)
+    warehouse_id = Column(UniversalUUID(), nullable=True)
     location = Column(String(100), nullable=True)
 
     # Capacité
@@ -151,7 +151,7 @@ class WorkCenter(Base):
     working_days_per_week = Column(Integer, default=5)
 
     # Responsable
-    manager_id = Column(UUID(as_uuid=True), nullable=True)
+    manager_id = Column(UniversalUUID(), nullable=True)
     operator_ids = Column(JSONB, nullable=True)  # Liste des opérateurs autorisés
 
     # Configuration
@@ -163,7 +163,7 @@ class WorkCenter(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='unique_workcenter_code'),
@@ -176,9 +176,9 @@ class WorkCenterCapacity(Base):
     """Capacité planifiée d'un centre de travail."""
     __tablename__ = "production_wc_capacity"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    work_center_id = Column(UUID(as_uuid=True), ForeignKey("production_work_centers.id"), nullable=False)
+    work_center_id = Column(UniversalUUID(), ForeignKey("production_work_centers.id"), nullable=False)
 
     date = Column(Date, nullable=False)
     shift = Column(String(20), default="DAY")  # DAY, NIGHT, MORNING, etc.
@@ -204,7 +204,7 @@ class BillOfMaterials(Base):
     """Nomenclature (Bill of Materials)."""
     __tablename__ = "production_bom"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -213,7 +213,7 @@ class BillOfMaterials(Base):
     version = Column(String(20), default="1.0")
 
     # Produit fabriqué
-    product_id = Column(UUID(as_uuid=True), nullable=False)  # Produit fini
+    product_id = Column(UniversalUUID(), nullable=False)  # Produit fini
     quantity = Column(Numeric(12, 4), default=1)  # Quantité produite
     unit = Column(String(20), default="UNIT")
 
@@ -221,7 +221,7 @@ class BillOfMaterials(Base):
     status = Column(SQLEnum(BOMStatus), default=BOMStatus.DRAFT)
 
     # Gamme associée
-    routing_id = Column(UUID(as_uuid=True), ForeignKey("production_routings.id"), nullable=True)
+    routing_id = Column(UniversalUUID(), ForeignKey("production_routings.id"), nullable=True)
 
     # Dates de validité
     valid_from = Column(Date, nullable=True)
@@ -245,7 +245,7 @@ class BillOfMaterials(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     lines = relationship("BOMLine", back_populates="bom", cascade="all, delete-orphan")
@@ -261,17 +261,17 @@ class BOMLine(Base):
     """Ligne de nomenclature (composant)."""
     __tablename__ = "production_bom_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    bom_id = Column(UUID(as_uuid=True), ForeignKey("production_bom.id"), nullable=False)
+    bom_id = Column(UniversalUUID(), ForeignKey("production_bom.id"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
-    product_id = Column(UUID(as_uuid=True), nullable=False)  # Composant
+    product_id = Column(UniversalUUID(), nullable=False)  # Composant
     quantity = Column(Numeric(12, 4), nullable=False)
     unit = Column(String(20), default="UNIT")
 
     # Opération associée (si consommé à une étape spécifique)
-    operation_id = Column(UUID(as_uuid=True), nullable=True)
+    operation_id = Column(UniversalUUID(), nullable=True)
 
     # Gestion des pertes
     scrap_rate = Column(Numeric(5, 2), default=0)  # Taux de rebut (%)
@@ -303,7 +303,7 @@ class Routing(Base):
     """Gamme de fabrication (séquence d'opérations)."""
     __tablename__ = "production_routings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -312,7 +312,7 @@ class Routing(Base):
     version = Column(String(20), default="1.0")
 
     # Produit concerné
-    product_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=True)
 
     status = Column(SQLEnum(BOMStatus), default=BOMStatus.DRAFT)
 
@@ -332,7 +332,7 @@ class Routing(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     operations = relationship("RoutingOperation", back_populates="routing", cascade="all, delete-orphan")
@@ -348,9 +348,9 @@ class RoutingOperation(Base):
     """Opération dans une gamme de fabrication."""
     __tablename__ = "production_routing_operations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    routing_id = Column(UUID(as_uuid=True), ForeignKey("production_routings.id"), nullable=False)
+    routing_id = Column(UniversalUUID(), ForeignKey("production_routings.id"), nullable=False)
 
     sequence = Column(Integer, nullable=False)  # Ordre d'exécution
     code = Column(String(50), nullable=False)
@@ -358,7 +358,7 @@ class RoutingOperation(Base):
     description = Column(Text, nullable=True)
 
     type = Column(SQLEnum(OperationType), default=OperationType.PRODUCTION)
-    work_center_id = Column(UUID(as_uuid=True), ForeignKey("production_work_centers.id"), nullable=True)
+    work_center_id = Column(UniversalUUID(), ForeignKey("production_work_centers.id"), nullable=True)
 
     # Temps standards
     setup_time = Column(Numeric(10, 2), default=0)  # Minutes
@@ -375,7 +375,7 @@ class RoutingOperation(Base):
 
     # Configuration
     is_subcontracted = Column(Boolean, default=False)
-    subcontractor_id = Column(UUID(as_uuid=True), nullable=True)
+    subcontractor_id = Column(UniversalUUID(), nullable=True)
     requires_quality_check = Column(Boolean, default=False)
     skill_required = Column(String(100), nullable=True)
 
@@ -399,16 +399,16 @@ class ManufacturingOrder(Base):
     """Ordre de fabrication (Manufacturing Order)."""
     __tablename__ = "production_manufacturing_orders"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     number = Column(String(50), nullable=False)
     name = Column(String(200), nullable=True)
 
     # Produit à fabriquer
-    product_id = Column(UUID(as_uuid=True), nullable=False)
-    bom_id = Column(UUID(as_uuid=True), ForeignKey("production_bom.id"), nullable=True)
-    routing_id = Column(UUID(as_uuid=True), ForeignKey("production_routings.id"), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=False)
+    bom_id = Column(UniversalUUID(), ForeignKey("production_bom.id"), nullable=True)
+    routing_id = Column(UniversalUUID(), ForeignKey("production_routings.id"), nullable=True)
 
     # Quantités
     quantity_planned = Column(Numeric(12, 4), nullable=False)
@@ -427,12 +427,12 @@ class ManufacturingOrder(Base):
     deadline = Column(DateTime, nullable=True)
 
     # Localisation
-    warehouse_id = Column(UUID(as_uuid=True), nullable=True)
-    location_id = Column(UUID(as_uuid=True), nullable=True)
+    warehouse_id = Column(UniversalUUID(), nullable=True)
+    location_id = Column(UniversalUUID(), nullable=True)
 
     # Origine
     origin_type = Column(String(50), nullable=True)  # SALES_ORDER, REORDER, MANUAL
-    origin_id = Column(UUID(as_uuid=True), nullable=True)
+    origin_id = Column(UniversalUUID(), nullable=True)
     origin_number = Column(String(50), nullable=True)
 
     # Coûts
@@ -444,7 +444,7 @@ class ManufacturingOrder(Base):
     currency = Column(String(3), default="EUR")
 
     # Responsable
-    responsible_id = Column(UUID(as_uuid=True), nullable=True)
+    responsible_id = Column(UniversalUUID(), nullable=True)
 
     # Progression
     progress_percent = Column(Numeric(5, 2), default=0)
@@ -453,10 +453,10 @@ class ManufacturingOrder(Base):
     extra_data = Column(JSONB, nullable=True)
 
     confirmed_at = Column(DateTime, nullable=True)
-    confirmed_by = Column(UUID(as_uuid=True), nullable=True)
+    confirmed_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     work_orders = relationship("WorkOrder", back_populates="manufacturing_order", cascade="all, delete-orphan")
@@ -475,17 +475,17 @@ class WorkOrder(Base):
     """Ordre de travail (opération d'un MO)."""
     __tablename__ = "production_work_orders"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    mo_id = Column(UUID(as_uuid=True), ForeignKey("production_manufacturing_orders.id"), nullable=False)
+    mo_id = Column(UniversalUUID(), ForeignKey("production_manufacturing_orders.id"), nullable=False)
 
     sequence = Column(Integer, nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
 
     # Opération de référence
-    operation_id = Column(UUID(as_uuid=True), ForeignKey("production_routing_operations.id"), nullable=True)
-    work_center_id = Column(UUID(as_uuid=True), ForeignKey("production_work_centers.id"), nullable=True)
+    operation_id = Column(UniversalUUID(), ForeignKey("production_routing_operations.id"), nullable=True)
+    work_center_id = Column(UniversalUUID(), ForeignKey("production_work_centers.id"), nullable=True)
 
     status = Column(SQLEnum(WorkOrderStatus), default=WorkOrderStatus.PENDING)
 
@@ -509,7 +509,7 @@ class WorkOrder(Base):
     actual_end = Column(DateTime, nullable=True)
 
     # Opérateur
-    operator_id = Column(UUID(as_uuid=True), nullable=True)
+    operator_id = Column(UniversalUUID(), nullable=True)
 
     # Coûts
     labor_cost = Column(Numeric(12, 4), default=0)
@@ -534,12 +534,12 @@ class WorkOrderTimeEntry(Base):
     """Saisie de temps sur un ordre de travail."""
     __tablename__ = "production_wo_time_entries"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    work_order_id = Column(UUID(as_uuid=True), ForeignKey("production_work_orders.id"), nullable=False)
+    work_order_id = Column(UniversalUUID(), ForeignKey("production_work_orders.id"), nullable=False)
 
     entry_type = Column(String(20), nullable=False)  # SETUP, PRODUCTION, PAUSE, QUALITY
-    operator_id = Column(UUID(as_uuid=True), nullable=False)
+    operator_id = Column(UniversalUUID(), nullable=False)
 
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=True)
@@ -568,14 +568,14 @@ class MaterialConsumption(Base):
     """Consommation de matières premières."""
     __tablename__ = "production_material_consumptions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    mo_id = Column(UUID(as_uuid=True), ForeignKey("production_manufacturing_orders.id"), nullable=False)
+    mo_id = Column(UniversalUUID(), ForeignKey("production_manufacturing_orders.id"), nullable=False)
 
     # Composant consommé
-    product_id = Column(UUID(as_uuid=True), nullable=False)
-    bom_line_id = Column(UUID(as_uuid=True), ForeignKey("production_bom_lines.id"), nullable=True)
-    work_order_id = Column(UUID(as_uuid=True), ForeignKey("production_work_orders.id"), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=False)
+    bom_line_id = Column(UniversalUUID(), ForeignKey("production_bom_lines.id"), nullable=True)
+    work_order_id = Column(UniversalUUID(), ForeignKey("production_work_orders.id"), nullable=True)
 
     # Quantités
     quantity_planned = Column(Numeric(12, 4), nullable=False)
@@ -584,17 +584,17 @@ class MaterialConsumption(Base):
     unit = Column(String(20), default="UNIT")
 
     # Traçabilité
-    lot_id = Column(UUID(as_uuid=True), nullable=True)
-    serial_id = Column(UUID(as_uuid=True), nullable=True)
-    warehouse_id = Column(UUID(as_uuid=True), nullable=True)
-    location_id = Column(UUID(as_uuid=True), nullable=True)
+    lot_id = Column(UniversalUUID(), nullable=True)
+    serial_id = Column(UniversalUUID(), nullable=True)
+    warehouse_id = Column(UniversalUUID(), nullable=True)
+    location_id = Column(UniversalUUID(), nullable=True)
 
     # Coût
     unit_cost = Column(Numeric(12, 4), default=0)
     total_cost = Column(Numeric(12, 4), default=0)
 
     consumed_at = Column(DateTime, nullable=True)
-    consumed_by = Column(UUID(as_uuid=True), nullable=True)
+    consumed_by = Column(UniversalUUID(), nullable=True)
 
     notes = Column(Text, nullable=True)
     extra_data = Column(JSONB, nullable=True)
@@ -617,21 +617,21 @@ class ProductionOutput(Base):
     """Sortie de production (produits finis)."""
     __tablename__ = "production_outputs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    mo_id = Column(UUID(as_uuid=True), ForeignKey("production_manufacturing_orders.id"), nullable=False)
-    work_order_id = Column(UUID(as_uuid=True), ForeignKey("production_work_orders.id"), nullable=True)
+    mo_id = Column(UniversalUUID(), ForeignKey("production_manufacturing_orders.id"), nullable=False)
+    work_order_id = Column(UniversalUUID(), ForeignKey("production_work_orders.id"), nullable=True)
 
     # Produit fabriqué
-    product_id = Column(UUID(as_uuid=True), nullable=False)
+    product_id = Column(UniversalUUID(), nullable=False)
     quantity = Column(Numeric(12, 4), nullable=False)
     unit = Column(String(20), default="UNIT")
 
     # Traçabilité
-    lot_id = Column(UUID(as_uuid=True), nullable=True)
+    lot_id = Column(UniversalUUID(), nullable=True)
     serial_ids = Column(JSONB, nullable=True)  # Liste de numéros de série
-    warehouse_id = Column(UUID(as_uuid=True), nullable=True)
-    location_id = Column(UUID(as_uuid=True), nullable=True)
+    warehouse_id = Column(UniversalUUID(), nullable=True)
+    location_id = Column(UniversalUUID(), nullable=True)
 
     # Qualité
     is_quality_passed = Column(Boolean, default=True)
@@ -642,7 +642,7 @@ class ProductionOutput(Base):
     total_cost = Column(Numeric(12, 4), default=0)
 
     produced_at = Column(DateTime, default=datetime.utcnow)
-    produced_by = Column(UUID(as_uuid=True), nullable=True)
+    produced_by = Column(UniversalUUID(), nullable=True)
 
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -661,31 +661,31 @@ class ProductionScrap(Base):
     """Enregistrement de rebuts."""
     __tablename__ = "production_scraps"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    mo_id = Column(UUID(as_uuid=True), ForeignKey("production_manufacturing_orders.id"), nullable=True)
-    work_order_id = Column(UUID(as_uuid=True), ForeignKey("production_work_orders.id"), nullable=True)
+    mo_id = Column(UniversalUUID(), ForeignKey("production_manufacturing_orders.id"), nullable=True)
+    work_order_id = Column(UniversalUUID(), ForeignKey("production_work_orders.id"), nullable=True)
 
     # Produit rebuté
-    product_id = Column(UUID(as_uuid=True), nullable=False)
+    product_id = Column(UniversalUUID(), nullable=False)
     quantity = Column(Numeric(12, 4), nullable=False)
     unit = Column(String(20), default="UNIT")
 
     # Traçabilité
-    lot_id = Column(UUID(as_uuid=True), nullable=True)
-    serial_id = Column(UUID(as_uuid=True), nullable=True)
+    lot_id = Column(UniversalUUID(), nullable=True)
+    serial_id = Column(UniversalUUID(), nullable=True)
 
     # Raison
     reason = Column(SQLEnum(ScrapReason), default=ScrapReason.DEFECT)
     reason_detail = Column(Text, nullable=True)
-    work_center_id = Column(UUID(as_uuid=True), nullable=True)
+    work_center_id = Column(UniversalUUID(), nullable=True)
 
     # Coût
     unit_cost = Column(Numeric(12, 4), default=0)
     total_cost = Column(Numeric(12, 4), default=0)
 
     scrapped_at = Column(DateTime, default=datetime.utcnow)
-    scrapped_by = Column(UUID(as_uuid=True), nullable=True)
+    scrapped_by = Column(UniversalUUID(), nullable=True)
 
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -705,7 +705,7 @@ class ProductionPlan(Base):
     """Plan de production."""
     __tablename__ = "production_plans"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -733,11 +733,11 @@ class ProductionPlan(Base):
 
     generated_at = Column(DateTime, nullable=True)
     approved_at = Column(DateTime, nullable=True)
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UniversalUUID(), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='unique_plan_code'),
@@ -750,12 +750,12 @@ class ProductionPlanLine(Base):
     """Ligne de plan de production."""
     __tablename__ = "production_plan_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    plan_id = Column(UUID(as_uuid=True), ForeignKey("production_plans.id"), nullable=False)
+    plan_id = Column(UniversalUUID(), ForeignKey("production_plans.id"), nullable=False)
 
-    product_id = Column(UUID(as_uuid=True), nullable=False)
-    bom_id = Column(UUID(as_uuid=True), nullable=True)
+    product_id = Column(UniversalUUID(), nullable=False)
+    bom_id = Column(UniversalUUID(), nullable=True)
 
     # Quantités
     quantity_demanded = Column(Numeric(12, 4), default=0)  # Demande
@@ -768,7 +768,7 @@ class ProductionPlanLine(Base):
     planned_end = Column(Date, nullable=True)
 
     # Ordre de fabrication généré
-    mo_id = Column(UUID(as_uuid=True), ForeignKey("production_manufacturing_orders.id"), nullable=True)
+    mo_id = Column(UniversalUUID(), ForeignKey("production_manufacturing_orders.id"), nullable=True)
 
     priority = Column(SQLEnum(MOPriority), default=MOPriority.NORMAL)
     notes = Column(Text, nullable=True)
@@ -788,9 +788,9 @@ class MaintenanceSchedule(Base):
     """Calendrier de maintenance préventive."""
     __tablename__ = "production_maintenance_schedules"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    work_center_id = Column(UUID(as_uuid=True), ForeignKey("production_work_centers.id"), nullable=False)
+    work_center_id = Column(UniversalUUID(), ForeignKey("production_work_centers.id"), nullable=False)
 
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)

@@ -10,7 +10,7 @@ from sqlalchemy import (
     Column, String, DateTime, Text, Boolean, ForeignKey,
     Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from app.core.types import UniversalUUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
 import enum
@@ -142,13 +142,13 @@ class Department(Base):
     """Département/Service."""
     __tablename__ = "hr_departments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
     code = Column(String(20), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("hr_departments.id"), nullable=True)
-    manager_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=True)
+    parent_id = Column(UniversalUUID(), ForeignKey("hr_departments.id"), nullable=True)
+    manager_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=True)
     cost_center = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -164,12 +164,12 @@ class Position(Base):
     """Poste/Fonction."""
     __tablename__ = "hr_positions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
     code = Column(String(20), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    department_id = Column(UUID(as_uuid=True), ForeignKey("hr_departments.id"), nullable=True)
+    department_id = Column(UniversalUUID(), ForeignKey("hr_departments.id"), nullable=True)
     category = Column(String(50), nullable=True)  # CADRE, NON_CADRE, etc.
     level = Column(Integer, default=1)
     min_salary = Column(Numeric(12, 2), nullable=True)
@@ -194,7 +194,7 @@ class Employee(Base):
     """Employé."""
     __tablename__ = "hr_employees"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identifiants
@@ -225,9 +225,9 @@ class Employee(Base):
     country = Column(String(100), default="France")
 
     # Organisation
-    department_id = Column(UUID(as_uuid=True), ForeignKey("hr_departments.id"), nullable=True)
-    position_id = Column(UUID(as_uuid=True), ForeignKey("hr_positions.id"), nullable=True)
-    manager_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=True)
+    department_id = Column(UniversalUUID(), ForeignKey("hr_departments.id"), nullable=True)
+    position_id = Column(UniversalUUID(), ForeignKey("hr_positions.id"), nullable=True)
+    manager_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=True)
     work_location = Column(String(255), nullable=True)
 
     # Contrat actuel
@@ -285,15 +285,15 @@ class Contract(Base):
     """Contrat de travail."""
     __tablename__ = "hr_contracts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
 
     contract_number = Column(String(50), nullable=False)
     type = Column(SQLEnum(ContractType), nullable=False)
     title = Column(String(255), nullable=True)  # Intitulé du poste
-    department_id = Column(UUID(as_uuid=True), ForeignKey("hr_departments.id"), nullable=True)
-    position_id = Column(UUID(as_uuid=True), ForeignKey("hr_positions.id"), nullable=True)
+    department_id = Column(UniversalUUID(), ForeignKey("hr_departments.id"), nullable=True)
+    position_id = Column(UniversalUUID(), ForeignKey("hr_positions.id"), nullable=True)
 
     # Dates
     start_date = Column(Date, nullable=False)
@@ -327,7 +327,7 @@ class Contract(Base):
     document_url = Column(String(500), nullable=True)
 
     notes = Column(Text, nullable=True)
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -349,9 +349,9 @@ class LeaveRequest(Base):
     """Demande de congé."""
     __tablename__ = "hr_leave_requests"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
 
     type = Column(SQLEnum(LeaveType), nullable=False)
     status = Column(SQLEnum(LeaveStatus), default=LeaveStatus.PENDING)
@@ -366,12 +366,12 @@ class LeaveRequest(Base):
     attachment_url = Column(String(500), nullable=True)
 
     # Approbation
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UniversalUUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     rejection_reason = Column(Text, nullable=True)
 
     # Remplacement
-    replacement_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=True)
+    replacement_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -391,9 +391,9 @@ class LeaveBalance(Base):
     """Solde de congés par type."""
     __tablename__ = "hr_leave_balances"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
     year = Column(Integer, nullable=False)
     leave_type = Column(SQLEnum(LeaveType), nullable=False)
 
@@ -420,7 +420,7 @@ class PayrollPeriod(Base):
     """Période de paie."""
     __tablename__ = "hr_payroll_periods"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     name = Column(String(100), nullable=False)
@@ -433,7 +433,7 @@ class PayrollPeriod(Base):
     status = Column(SQLEnum(PayrollStatus), default=PayrollStatus.DRAFT)
     is_closed = Column(Boolean, default=False)
     closed_at = Column(DateTime, nullable=True)
-    closed_by = Column(UUID(as_uuid=True), nullable=True)
+    closed_by = Column(UniversalUUID(), nullable=True)
 
     total_gross = Column(Numeric(15, 2), default=0)
     total_net = Column(Numeric(15, 2), default=0)
@@ -453,10 +453,10 @@ class Payslip(Base):
     """Bulletin de paie."""
     __tablename__ = "hr_payslips"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
-    period_id = Column(UUID(as_uuid=True), ForeignKey("hr_payroll_periods.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
+    period_id = Column(UniversalUUID(), ForeignKey("hr_payroll_periods.id"), nullable=False)
 
     payslip_number = Column(String(50), nullable=False)
     status = Column(SQLEnum(PayrollStatus), default=PayrollStatus.DRAFT)
@@ -491,7 +491,7 @@ class Payslip(Base):
     document_url = Column(String(500), nullable=True)
     sent_at = Column(DateTime, nullable=True)
 
-    validated_by = Column(UUID(as_uuid=True), nullable=True)
+    validated_by = Column(UniversalUUID(), nullable=True)
     validated_at = Column(DateTime, nullable=True)
     paid_at = Column(DateTime, nullable=True)
 
@@ -514,9 +514,9 @@ class PayslipLine(Base):
     """Ligne de bulletin de paie."""
     __tablename__ = "hr_payslip_lines"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    payslip_id = Column(UUID(as_uuid=True), ForeignKey("hr_payslips.id"), nullable=False)
+    payslip_id = Column(UniversalUUID(), ForeignKey("hr_payslips.id"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
     type = Column(SQLEnum(PayElementType), nullable=False)
@@ -543,13 +543,13 @@ class PayslipLine(Base):
 # MODÈLES TEMPS DE TRAVAIL
 # ============================================================================
 
-class TimeEntry(Base):
+class HRTimeEntry(Base):
     """Entrée de temps de travail."""
     __tablename__ = "hr_time_entries"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
 
     date = Column(Date, nullable=False)
     start_time = Column(DateTime, nullable=True)
@@ -558,11 +558,11 @@ class TimeEntry(Base):
     worked_hours = Column(Numeric(5, 2), nullable=False)
     overtime_hours = Column(Numeric(5, 2), default=0)
 
-    project_id = Column(UUID(as_uuid=True), nullable=True)
+    project_id = Column(UniversalUUID(), nullable=True)
     task_description = Column(String(500), nullable=True)
 
     is_approved = Column(Boolean, default=False)
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
+    approved_by = Column(UniversalUUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -583,7 +583,7 @@ class Skill(Base):
     """Compétence."""
     __tablename__ = "hr_skills"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
@@ -602,10 +602,10 @@ class EmployeeSkill(Base):
     """Compétence d'un employé."""
     __tablename__ = "hr_employee_skills"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
-    skill_id = Column(UUID(as_uuid=True), ForeignKey("hr_skills.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
+    skill_id = Column(UniversalUUID(), ForeignKey("hr_skills.id"), nullable=False)
 
     level = Column(Integer, default=1)  # 1-5
     acquired_date = Column(Date, nullable=True)
@@ -613,7 +613,7 @@ class EmployeeSkill(Base):
     certification_url = Column(String(500), nullable=True)
     notes = Column(Text, nullable=True)
 
-    validated_by = Column(UUID(as_uuid=True), nullable=True)
+    validated_by = Column(UniversalUUID(), nullable=True)
     validated_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -630,7 +630,7 @@ class Training(Base):
     """Session de formation."""
     __tablename__ = "hr_trainings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -653,7 +653,7 @@ class Training(Base):
 
     skills_acquired = Column(JSONB, default=list)  # Liste des skill_id
 
-    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -668,10 +668,10 @@ class TrainingParticipant(Base):
     """Participant à une formation."""
     __tablename__ = "hr_training_participants"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    training_id = Column(UUID(as_uuid=True), ForeignKey("hr_trainings.id"), nullable=False)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
+    training_id = Column(UniversalUUID(), ForeignKey("hr_trainings.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
 
     status = Column(String(50), default="ENROLLED")  # ENROLLED, ATTENDED, CANCELLED, NO_SHOW
     attendance_rate = Column(Numeric(5, 2), nullable=True)
@@ -698,9 +698,9 @@ class Evaluation(Base):
     """Évaluation de performance."""
     __tablename__ = "hr_evaluations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
 
     type = Column(SQLEnum(EvaluationType), nullable=False)
     status = Column(SQLEnum(EvaluationStatus), default=EvaluationStatus.SCHEDULED)
@@ -710,7 +710,7 @@ class Evaluation(Base):
     scheduled_date = Column(Date, nullable=True)
     completed_date = Column(Date, nullable=True)
 
-    evaluator_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=True)
+    evaluator_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=True)
 
     # Scores (1-5 ou pourcentage)
     overall_score = Column(Numeric(5, 2), nullable=True)
@@ -757,9 +757,9 @@ class HRDocument(Base):
     """Document RH."""
     __tablename__ = "hr_documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(UUID(as_uuid=True), ForeignKey("hr_employees.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=False)
 
     type = Column(SQLEnum(DocumentType), nullable=False)
     name = Column(String(255), nullable=False)
@@ -772,7 +772,7 @@ class HRDocument(Base):
     expiry_date = Column(Date, nullable=True)
     is_confidential = Column(Boolean, default=False)
 
-    uploaded_by = Column(UUID(as_uuid=True), nullable=True)
+    uploaded_by = Column(UniversalUUID(), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (

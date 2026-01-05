@@ -73,12 +73,12 @@ class Settings(BaseSettings):
     def validate_database_url(cls, v: str) -> str:
         """Valide que l'URL de la base de données est au format PostgreSQL ou SQLite (tests)."""
         env = os.environ.get('ENVIRONMENT', 'development').lower()
-        valid_prefixes = ('postgresql://', 'postgresql+psycopg2://')
+        valid_prefixes = ['postgresql://', 'postgresql+psycopg2://']
         # Autoriser SQLite uniquement en mode test
-        if env == 'test':
-            valid_prefixes = valid_prefixes + ('sqlite://',)
-        if not v.startswith(valid_prefixes):
-            raise ValueError('DATABASE_URL doit commencer par postgresql://')
+        if env == 'test' or v.startswith('sqlite://'):
+            valid_prefixes.append('sqlite://')
+        if not any(v.startswith(prefix) for prefix in valid_prefixes):
+            raise ValueError(f'DATABASE_URL doit commencer par {valid_prefixes}')
         if 'CHANGEME' in v:
             raise ValueError('DATABASE_URL contient un placeholder non remplacé')
         return v

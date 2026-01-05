@@ -13,7 +13,7 @@ import uuid
 
 from .models import (
     ServiceZone, Technician, Vehicle, InterventionTemplate,
-    Intervention, InterventionHistory, TimeEntry, Route, Expense, ServiceContract,
+    Intervention, InterventionHistory, FSTimeEntry, Route, Expense, ServiceContract,
     TechnicianStatus, InterventionStatus, InterventionPriority, InterventionType
 )
 from .schemas import (
@@ -536,7 +536,7 @@ class FieldServiceService:
             tech.status = TechnicianStatus.TRAVELING
 
         # Créer une entrée de temps pour le trajet
-        time_entry = TimeEntry(
+        time_entry = FSTimeEntry(
             tenant_id=self.tenant_id,
             technician_id=tech_id,
             intervention_id=intervention_id,
@@ -581,10 +581,10 @@ class FieldServiceService:
         intervention.updated_at = datetime.utcnow()
 
         # Clôturer le trajet
-        travel_entry = self.db.query(TimeEntry).filter(
-            TimeEntry.intervention_id == intervention_id,
-            TimeEntry.entry_type == "travel",
-            TimeEntry.end_time == None
+        travel_entry = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.intervention_id == intervention_id,
+            FSTimeEntry.entry_type == "travel",
+            FSTimeEntry.end_time == None
         ).first()
         if travel_entry:
             travel_entry.end_time = datetime.utcnow()
@@ -633,7 +633,7 @@ class FieldServiceService:
             tech.status = TechnicianStatus.ON_MISSION
 
         # Créer une entrée de temps pour le travail
-        time_entry = TimeEntry(
+        time_entry = FSTimeEntry(
             tenant_id=self.tenant_id,
             technician_id=tech_id,
             intervention_id=intervention_id,
@@ -700,10 +700,10 @@ class FieldServiceService:
         self._calculate_costs(intervention)
 
         # Clôturer l'entrée de temps travail
-        work_entry = self.db.query(TimeEntry).filter(
-            TimeEntry.intervention_id == intervention_id,
-            TimeEntry.entry_type == "work",
-            TimeEntry.end_time == None
+        work_entry = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.intervention_id == intervention_id,
+            FSTimeEntry.entry_type == "work",
+            FSTimeEntry.end_time == None
         ).first()
         if work_entry:
             work_entry.end_time = now
@@ -778,9 +778,9 @@ class FieldServiceService:
             intervention.labor_cost = intervention.labor_hours * hourly_rate
         else:
             # Calculer depuis les time entries
-            work_entries = self.db.query(TimeEntry).filter(
-                TimeEntry.intervention_id == intervention.id,
-                TimeEntry.entry_type == "work"
+            work_entries = self.db.query(FSTimeEntry).filter(
+                FSTimeEntry.intervention_id == intervention.id,
+                FSTimeEntry.entry_type == "work"
             ).all()
             total_minutes = sum(e.duration_minutes or 0 for e in work_entries)
             intervention.labor_hours = Decimal(str(total_minutes / 60))
@@ -795,9 +795,9 @@ class FieldServiceService:
             intervention.parts_cost = Decimal("0")
 
         # Coût déplacement
-        travel_entries = self.db.query(TimeEntry).filter(
-            TimeEntry.intervention_id == intervention.id,
-            TimeEntry.entry_type == "travel"
+        travel_entries = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.intervention_id == intervention.id,
+            FSTimeEntry.entry_type == "travel"
         ).all()
         total_km = sum(float(e.distance_km or 0) for e in travel_entries)
         intervention.travel_cost = Decimal(str(total_km * 0.5))  # 0.50€/km
@@ -859,26 +859,26 @@ class FieldServiceService:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         entry_type: Optional[str] = None
-    ) -> List[TimeEntry]:
+    ) -> List[FSTimeEntry]:
         """Liste les entrées de temps."""
-        query = self.db.query(TimeEntry).filter(
-            TimeEntry.tenant_id == self.tenant_id
+        query = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.tenant_id == self.tenant_id
         )
         if technician_id:
-            query = query.filter(TimeEntry.technician_id == technician_id)
+            query = query.filter(FSTimeEntry.technician_id == technician_id)
         if intervention_id:
-            query = query.filter(TimeEntry.intervention_id == intervention_id)
+            query = query.filter(FSTimeEntry.intervention_id == intervention_id)
         if date_from:
-            query = query.filter(TimeEntry.start_time >= datetime.combine(date_from, datetime.min.time()))
+            query = query.filter(FSTimeEntry.start_time >= datetime.combine(date_from, datetime.min.time()))
         if date_to:
-            query = query.filter(TimeEntry.start_time <= datetime.combine(date_to, datetime.max.time()))
+            query = query.filter(FSTimeEntry.start_time <= datetime.combine(date_to, datetime.max.time()))
         if entry_type:
-            query = query.filter(TimeEntry.entry_type == entry_type)
-        return query.order_by(TimeEntry.start_time.desc()).all()
+            query = query.filter(FSTimeEntry.entry_type == entry_type)
+        return query.order_by(FSTimeEntry.start_time.desc()).all()
 
-    def create_time_entry(self, data: TimeEntryCreate) -> TimeEntry:
+    def create_time_entry(self, data: TimeEntryCreate) -> FSTimeEntry:
         """Crée une entrée de temps."""
-        entry = TimeEntry(
+        entry = FSTimeEntry(
             tenant_id=self.tenant_id,
             **data.model_dump()
         )
@@ -887,11 +887,11 @@ class FieldServiceService:
         self.db.refresh(entry)
         return entry
 
-    def update_time_entry(self, entry_id: int, data: TimeEntryUpdate) -> Optional[TimeEntry]:
+    def update_time_entry(self, entry_id: int, data: TimeEntryUpdate) -> Optional[FSTimeEntry]:
         """Met à jour une entrée de temps."""
-        entry = self.db.query(TimeEntry).filter(
-            TimeEntry.id == entry_id,
-            TimeEntry.tenant_id == self.tenant_id
+        entry = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.id == entry_id,
+            FSTimeEntry.tenant_id == self.tenant_id
         ).first()
         if not entry:
             return None
