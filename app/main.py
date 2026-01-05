@@ -1,9 +1,12 @@
 """
-AZALS - Point d'entrée principal
+AZALS - Point d'entrée principal SÉCURISÉ
+==========================================
 ERP décisionnel critique - Sécurité by design - Multi-tenant strict
+ÉLITE: Docs API désactivées en production
 """
 
 import asyncio
+import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -12,6 +15,7 @@ from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
 from app.core.middleware import TenantMiddleware
 from app.services.scheduler import scheduler_service
+from app.core.config import get_settings
 from app.api.items import router as items_router
 from app.api.auth import router as auth_router
 from app.api.protected import router as protected_router
@@ -174,12 +178,24 @@ async def lifespan(app: FastAPI):
     # Arrêter le scheduler à l'arrêt
     scheduler_service.shutdown()
 
+# SÉCURITÉ: Configuration dynamique selon environnement
+_settings = get_settings()
+
+# Désactiver docs API en production (CRITIQUE)
+_docs_url = "/docs" if _settings.is_development else None
+_redoc_url = "/redoc" if _settings.is_development else None
+_openapi_url = "/openapi.json" if _settings.is_development else None
+
+if _settings.is_production:
+    print("🔒 PRODUCTION MODE: API docs désactivées")
+
 app = FastAPI(
     title="AZALS",
     description="ERP décisionnel critique - Multi-tenant + Authentification JWT",
     version="0.3.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
     lifespan=lifespan
 )
 

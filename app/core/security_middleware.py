@@ -192,25 +192,44 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
-    Ajoute les headers de sécurité recommandés OWASP.
+    Ajoute les headers de sécurité ÉLITE recommandés OWASP.
     Protection contre XSS, clickjacking, MIME sniffing, etc.
+    HSTS activé automatiquement en production.
     """
 
     async def dispatch(self, request: Request, call_next: Callable):
+        settings = get_settings()
         response = await call_next(request)
 
-        # Content Security Policy
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "font-src 'self'; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
-            "form-action 'self'"
-        )
+        # Content Security Policy RENFORCÉ
+        # Note: unsafe-inline nécessaire pour Swagger UI en dev, retiré en prod
+        if settings.is_production:
+            # CSP strict en production (pas d'inline)
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self'; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'; "
+                "upgrade-insecure-requests"
+            )
+        else:
+            # CSP permissif en dev (pour Swagger UI)
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'"
+            )
 
         # Prevent XSS
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -226,16 +245,23 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = (
             "accelerometer=(), camera=(), geolocation=(), "
             "gyroscope=(), magnetometer=(), microphone=(), "
-            "payment=(), usb=()"
+            "payment=(), usb=(), interest-cohort=()"
         )
 
-        # HSTS (Strict Transport Security) - Activer en production HTTPS
-        # response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        # HSTS (Strict Transport Security) - ACTIVÉ en production
+        if settings.is_production:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
 
-        # Cache control pour API
-        if request.url.path.startswith("/api"):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        # Cache control pour TOUTES les API
+        if not request.url.path.startswith("/static"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
             response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
+        # Header pour identifier le serveur (masqué)
+        response.headers["Server"] = "AZALS"
 
         return response
 
