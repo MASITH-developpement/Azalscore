@@ -1,0 +1,95 @@
+# AZALS - Production Locale (Windows)
+# ====================================
+# Usage: docker-compose -f docker-compose.local-prod.yml up --build
+
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: azals_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: azals
+      POSTGRES_USER: azals_user
+      POSTGRES_PASSWORD: AzalsSecure2024!
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U azals_user -d azals"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - azals_network
+
+  # Redis - Cache
+  redis:
+    image: redis:7-alpine
+    container_name: azals_redis
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - azals_network
+
+  # AZALS API - Production
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: azals_api
+    restart: always
+    environment:
+      DATABASE_URL: postgresql+psycopg2://azals_user:AzalsSecure2024!@postgres:5432/azals
+      REDIS_URL: redis://redis:6379/0
+      DEBUG: "false"
+      SECRET_KEY: MaCleSecretePourAzalsProduction2024SecureKey!
+      DB_POOL_SIZE: 10
+      DB_MAX_OVERFLOW: 20
+      CORS_ORIGINS: http://localhost,http://localhost:8000
+      LOG_LEVEL: INFO
+      ENVIRONMENT: production
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - azals_network
+
+  # Grafana - Monitoring (optionnel)
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: azals_grafana
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: GrafanaAdmin2024!
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - azals_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
+
+networks:
+  azals_network:
+    driver: bridge
