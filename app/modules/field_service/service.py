@@ -13,7 +13,7 @@ import uuid
 
 from .models import (
     ServiceZone, Technician, Vehicle, InterventionTemplate,
-    Intervention, InterventionHistory, FSFSTimeEntry, PartUsage,
+    Intervention, InterventionHistory, FSTimeEntry, PartUsage,
     Route, Expense, ServiceContract,
     TechnicianStatus, InterventionStatus, InterventionPriority, InterventionType
 )
@@ -24,7 +24,7 @@ from .schemas import (
     TemplateCreate, TemplateUpdate,
     InterventionCreate, InterventionUpdate, InterventionAssign,
     InterventionStart, InterventionComplete,
-    FSTimeEntryCreate, FSTimeEntryUpdate,
+    TimeEntryCreate, TimeEntryUpdate,
     RouteCreate, RouteUpdate,
     ExpenseCreate, ExpenseUpdate,
     ContractCreate, ContractUpdate,
@@ -879,7 +879,7 @@ class FieldServiceService:
             query = query.filter(FSTimeEntry.entry_type == entry_type)
         return query.order_by(FSTimeEntry.start_time.desc()).all()
 
-    def create_time_entry(self, data: FSTimeEntryCreate) -> FSTimeEntry:
+    def create_time_entry(self, data: TimeEntryCreate) -> FSTimeEntry:
         """Crée une entrée de temps."""
         entry = FSTimeEntry(
             tenant_id=self.tenant_id,
@@ -890,7 +890,7 @@ class FieldServiceService:
         self.db.refresh(entry)
         return entry
 
-    def update_time_entry(self, entry_id: int, data: FSTimeEntryUpdate) -> Optional[FSTimeEntry]:
+    def update_time_entry(self, entry_id: int, data: TimeEntryUpdate) -> Optional[FSTimeEntry]:
         """Met à jour une entrée de temps."""
         entry = self.db.query(FSTimeEntry).filter(
             FSTimeEntry.id == entry_id,
