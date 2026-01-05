@@ -4,9 +4,11 @@ ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 """
 
 import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pathlib import Path
 from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
@@ -185,6 +187,39 @@ app = FastAPI(
 
 # Middleware multi-tenant : validation X-Tenant-ID pour TOUTES les requêtes
 app.add_middleware(TenantMiddleware)
+
+
+# ==================== GESTIONNAIRES D'EXCEPTIONS ====================
+# Force toutes les erreurs à retourner du JSON (pas du HTML)
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Gère les erreurs HTTP et retourne du JSON."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": str(exc.detail), "status_code": exc.status_code}
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Gère les erreurs de validation et retourne du JSON."""
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(exc.body)}
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Gère toutes les autres exceptions et retourne du JSON."""
+    import traceback
+    print(f"❌ Erreur non gérée: {exc}")
+    print(traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erreur interne du serveur", "error": str(exc)}
+    )
 
 # Routes authentification (nécessitent X-Tenant-ID mais pas JWT)
 app.include_router(auth_router)
