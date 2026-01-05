@@ -5,7 +5,7 @@
  */
 
 import React, { useId } from 'react';
-import { useForm, Controller, UseFormReturn, FieldValues, Path } from 'react-hook-form';
+import { useForm, Controller, UseFormReturn, FieldValues, Path, DefaultValues, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { clsx } from 'clsx';
@@ -313,7 +313,7 @@ export function DynamicForm<T extends FieldValues>({
 }: FormProps<T>) {
   const form = useForm<T>({
     resolver: schema ? zodResolver(schema) : undefined,
-    defaultValues: defaultValues as T,
+    defaultValues: defaultValues as DefaultValues<T>,
   });
 
   const {
@@ -399,7 +399,7 @@ export function DynamicForm<T extends FieldValues>({
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit as SubmitHandler<T>)}
       className={clsx('azals-form', `azals-form--${layout}`, className)}
     >
       <div className="azals-form__fields">{fields.map(renderField)}</div>
@@ -444,7 +444,7 @@ export const useFormState = <T extends FieldValues>(
 ): UseFormReturn<T> => {
   return useForm<T>({
     resolver: schema ? zodResolver(schema) : undefined,
-    defaultValues: defaultValues as T,
+    defaultValues: defaultValues as DefaultValues<T>,
   });
 };
 

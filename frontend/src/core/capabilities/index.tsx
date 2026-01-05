@@ -4,6 +4,7 @@
  * L'UI affiche/masque selon les capacités - AUCUNE décision métier
  */
 
+import React from 'react';
 import { create } from 'zustand';
 import { api } from '@core/api-client';
 import type { Capability, CapabilitiesState } from '@/types';

@@ -5,14 +5,14 @@
 
 import React from 'react';
 import { clsx } from 'clsx';
-import { X, AlertCircle, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { X, AlertCircle, AlertTriangle, Info, CheckCircle, type LucideIcon } from 'lucide-react';
 import { useErrorStore, type UIError, type ErrorSeverity } from '@core/error-handling';
 
 // ============================================================
 // ICON MAP
 // ============================================================
 
-const SEVERITY_ICONS: Record<ErrorSeverity, React.FC<{ size: number }>> = {
+const SEVERITY_ICONS: Record<ErrorSeverity, LucideIcon> = {
   info: Info,
   warning: AlertTriangle,
   error: AlertCircle,

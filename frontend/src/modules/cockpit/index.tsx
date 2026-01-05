@@ -275,7 +275,7 @@ export const CockpitPage: React.FC = () => {
           <div className="azals-error">
             <AlertTriangle size={48} />
             <p>Impossible de charger le tableau de bord</p>
-            <Button onClick={() => refetch()}>Réessayer</Button>
+            <Button onClick={() => { refetch(); }}>Réessayer</Button>
           </div>
         </Card>
       </PageWrapper>
@@ -287,7 +287,7 @@ export const CockpitPage: React.FC = () => {
       title="Cockpit Dirigeant"
       subtitle="Vue d'ensemble de votre activité"
       actions={
-        <Button variant="ghost" onClick={() => refetch()}>
+        <Button variant="ghost" onClick={() => { refetch(); }}>
           Actualiser
         </Button>
       }

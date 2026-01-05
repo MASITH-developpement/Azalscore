@@ -440,7 +440,7 @@ const InvoiceDetailPage: React.FC<InvoiceDetailPageProps> = ({ type }) => {
           <Button
             variant="ghost"
             leftIcon={<Download size={16} />}
-            onClick={() => window.open(`/api/v1/invoicing/${type}s/${id}/pdf`, '_blank')}
+            onClick={() => { window.open(`/api/v1/invoicing/${type}s/${id}/pdf`, '_blank'); }}
           >
             Télécharger PDF
           </Button>

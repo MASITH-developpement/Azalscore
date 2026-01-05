@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CreditCard, Smartphone, History, Settings, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CreditCard, Smartphone, History, Settings, CheckCircle, XCircle, Clock, type LucideIcon } from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
@@ -53,7 +53,7 @@ const usePayments = (page = 1, pageSize = 25) => {
   });
 };
 
-const STATUS_CONFIG: Record<string, { icon: React.FC<{ size: number }>; color: string; label: string }> = {
+const STATUS_CONFIG: Record<string, { icon: LucideIcon; color: string; label: string }> = {
   pending: { icon: Clock, color: 'orange', label: 'En attente' },
   completed: { icon: CheckCircle, color: 'green', label: 'Complété' },
   failed: { icon: XCircle, color: 'red', label: 'Échoué' },

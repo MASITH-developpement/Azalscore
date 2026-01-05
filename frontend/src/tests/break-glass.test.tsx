@@ -17,13 +17,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useCapabilitiesStore } from '@core/capabilities';
 import BreakGlassPage from '@modules/break-glass';
 
+// Mock capabilities state
+let mockCanBreakGlass = false;
+
 // Mock stores
 vi.mock('@core/capabilities', () => ({
   useCapabilitiesStore: vi.fn(),
-  useCanBreakGlass: vi.fn(),
+  useCanBreakGlass: () => mockCanBreakGlass,
   CapabilityGuard: ({ children, capability }: { children: React.ReactNode; capability?: string }) => {
-    const hasCapability = useCapabilitiesStore.getState()?.hasCapability;
-    if (capability && hasCapability && !hasCapability(capability)) {
+    if (capability === 'admin.root.break_glass' && !mockCanBreakGlass) {
       return null;
     }
     return <>{children}</>;
@@ -61,6 +63,7 @@ const renderWithProviders = (ui: React.ReactElement) => {
 describe('Break-Glass Module', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCanBreakGlass = false;
     // Clear sessionStorage
     sessionStorage.clear();
     localStorage.clear();
@@ -72,17 +75,7 @@ describe('Break-Glass Module', () => {
 
   describe('Visibility Tests', () => {
     it('should NOT render when user lacks admin.root.break_glass capability', () => {
-      // Mock capabilities store without break_glass
-      vi.mocked(useCapabilitiesStore).mockReturnValue({
-        capabilities: ['admin.view', 'admin.users.view'],
-        hasCapability: (cap: string) => ['admin.view', 'admin.users.view'].includes(cap),
-        hasAnyCapability: vi.fn(),
-        hasAllCapabilities: vi.fn(),
-        isLoading: false,
-        loadCapabilities: vi.fn(),
-        clearCapabilities: vi.fn(),
-        refreshCapabilities: vi.fn(),
-      });
+      mockCanBreakGlass = false;
 
       const { container } = renderWithProviders(<BreakGlassPage />);
 
@@ -91,17 +84,7 @@ describe('Break-Glass Module', () => {
     });
 
     it('should render when user HAS admin.root.break_glass capability', () => {
-      // Mock capabilities store WITH break_glass
-      vi.mocked(useCapabilitiesStore).mockReturnValue({
-        capabilities: ['admin.root.break_glass'],
-        hasCapability: (cap: string) => cap === 'admin.root.break_glass',
-        hasAnyCapability: vi.fn(),
-        hasAllCapabilities: vi.fn(),
-        isLoading: false,
-        loadCapabilities: vi.fn(),
-        clearCapabilities: vi.fn(),
-        refreshCapabilities: vi.fn(),
-      });
+      mockCanBreakGlass = true;
 
       renderWithProviders(<BreakGlassPage />);
 
@@ -113,16 +96,7 @@ describe('Break-Glass Module', () => {
 
   describe('Flow Tests', () => {
     beforeEach(() => {
-      vi.mocked(useCapabilitiesStore).mockReturnValue({
-        capabilities: ['admin.root.break_glass'],
-        hasCapability: (cap: string) => cap === 'admin.root.break_glass',
-        hasAnyCapability: vi.fn(),
-        hasAllCapabilities: vi.fn(),
-        isLoading: false,
-        loadCapabilities: vi.fn(),
-        clearCapabilities: vi.fn(),
-        refreshCapabilities: vi.fn(),
-      });
+      mockCanBreakGlass = true;
     });
 
     it('should show Level 1 intention screen with warning', () => {
@@ -149,18 +123,11 @@ describe('Break-Glass Module', () => {
   });
 
   describe('No Persistent Logs Tests', () => {
-    it('should NOT store anything in localStorage', () => {
-      vi.mocked(useCapabilitiesStore).mockReturnValue({
-        capabilities: ['admin.root.break_glass'],
-        hasCapability: () => true,
-        hasAnyCapability: vi.fn(),
-        hasAllCapabilities: vi.fn(),
-        isLoading: false,
-        loadCapabilities: vi.fn(),
-        clearCapabilities: vi.fn(),
-        refreshCapabilities: vi.fn(),
-      });
+    beforeEach(() => {
+      mockCanBreakGlass = true;
+    });
 
+    it('should NOT store anything in localStorage', () => {
       renderWithProviders(<BreakGlassPage />);
 
       // Verify no break-glass related data in localStorage
@@ -172,17 +139,6 @@ describe('Break-Glass Module', () => {
     });
 
     it('should NOT store anything in sessionStorage', () => {
-      vi.mocked(useCapabilitiesStore).mockReturnValue({
-        capabilities: ['admin.root.break_glass'],
-        hasCapability: () => true,
-        hasAnyCapability: vi.fn(),
-        hasAllCapabilities: vi.fn(),
-        isLoading: false,
-        loadCapabilities: vi.fn(),
-        clearCapabilities: vi.fn(),
-        refreshCapabilities: vi.fn(),
-      });
-
       renderWithProviders(<BreakGlassPage />);
 
       // Verify no break-glass related data in sessionStorage
@@ -199,16 +155,7 @@ describe('Break-Glass Module', () => {
       // Mock mobile viewport
       Object.defineProperty(window, 'innerWidth', { value: 375, writable: true });
 
-      vi.mocked(useCapabilitiesStore).mockReturnValue({
-        capabilities: ['admin.view'], // No break_glass capability
-        hasCapability: (cap: string) => cap === 'admin.view',
-        hasAnyCapability: vi.fn(),
-        hasAllCapabilities: vi.fn(),
-        isLoading: false,
-        loadCapabilities: vi.fn(),
-        clearCapabilities: vi.fn(),
-        refreshCapabilities: vi.fn(),
-      });
+      mockCanBreakGlass = false;
 
       const { container } = renderWithProviders(<BreakGlassPage />);
 
@@ -219,16 +166,7 @@ describe('Break-Glass Module', () => {
 
   describe('API Resilience Tests', () => {
     it('should handle API errors gracefully', async () => {
-      vi.mocked(useCapabilitiesStore).mockReturnValue({
-        capabilities: ['admin.root.break_glass'],
-        hasCapability: () => true,
-        hasAnyCapability: vi.fn(),
-        hasAllCapabilities: vi.fn(),
-        isLoading: false,
-        loadCapabilities: vi.fn(),
-        clearCapabilities: vi.fn(),
-        refreshCapabilities: vi.fn(),
-      });
+      mockCanBreakGlass = true;
 
       // Mock API to fail
       const { api } = await import('@core/api-client');
@@ -243,19 +181,11 @@ describe('Break-Glass Module', () => {
 });
 
 describe('Capability Guard for Break-Glass', () => {
-  it('should hide break-glass from regular admin users', () => {
-    vi.mocked(useCapabilitiesStore).mockReturnValue({
-      capabilities: ['admin.view', 'admin.users.view', 'admin.roles.view'],
-      hasCapability: (cap: string) =>
-        ['admin.view', 'admin.users.view', 'admin.roles.view'].includes(cap),
-      hasAnyCapability: vi.fn(),
-      hasAllCapabilities: vi.fn(),
-      isLoading: false,
-      loadCapabilities: vi.fn(),
-      clearCapabilities: vi.fn(),
-      refreshCapabilities: vi.fn(),
-    });
+  beforeEach(() => {
+    mockCanBreakGlass = false;
+  });
 
+  it('should hide break-glass from regular admin users', () => {
     const { container } = renderWithProviders(<BreakGlassPage />);
 
     // Break-glass should be completely hidden
