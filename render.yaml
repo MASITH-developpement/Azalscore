@@ -1,6 +1,14 @@
 # AZALS - Configuration Render.com
 # =================================
 # Déploiement automatique sur Render
+#
+# VARIABLES REQUISES (à configurer dans Render Dashboard > Environment):
+# -----------------------------------------------------------------------
+# SECRET_KEY         - Clé JWT (générer avec: python -c "import secrets; print(secrets.token_urlsafe(64))")
+# BOOTSTRAP_SECRET   - Secret bootstrap (générer avec: python -c "import secrets; print(secrets.token_urlsafe(64))")
+# CORS_ORIGINS       - URL frontend (ex: https://azals-frontend.onrender.com)
+#
+# Pour mode staging (sans ces contraintes), mettre ENVIRONMENT=staging
 
 services:
   # Service Web - API FastAPI
@@ -11,7 +19,7 @@ services:
     plan: starter  # Changer selon besoins (starter, standard, pro)
 
     # Build
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python run_migrations.py
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
     # Health Check
@@ -24,9 +32,13 @@ services:
       - key: DEBUG
         value: "false"
       - key: ENVIRONMENT
-        value: "production"
+        value: "staging"  # Utiliser "production" quand SECRET_KEY/BOOTSTRAP_SECRET/CORS_ORIGINS sont configurés
       - key: SECRET_KEY
-        sync: false  # À configurer manuellement dans Render Dashboard
+        sync: false  # OBLIGATOIRE: configurer dans Render Dashboard (min 32 chars, pas de "secret" ou "azals")
+      - key: BOOTSTRAP_SECRET
+        sync: false  # OBLIGATOIRE en production: configurer dans Render Dashboard
+      - key: CORS_ORIGINS
+        sync: false  # OBLIGATOIRE en production: ex https://azals-frontend.onrender.com
       - key: DATABASE_URL
         fromDatabase:
           name: azals-db
