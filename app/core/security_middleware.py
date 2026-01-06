@@ -30,11 +30,16 @@ def setup_cors(app: FastAPI) -> None:
     if settings.cors_origins:
         origins = [o.strip() for o in settings.cors_origins.split(",")]
     else:
-        # Défaut développement - À REMPLACER en production!
+        # Defaut developpement - A REMPLACER en production!
         origins = [
             "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:4173",
             "http://localhost:8080",
             "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:4173",
+            "http://127.0.0.1:8080",
         ]
 
     app.add_middleware(
