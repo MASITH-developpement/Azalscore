@@ -174,17 +174,17 @@ async def lifespan(app: FastAPI):
                     if "already exists" in error_str or "duplicate" in error_str:
                         tables_existed += 1
                     else:
-                        print(f"⚠️ Erreur table {table.name}: {table_error}")
+                        print(f"[WARN] Erreur table {table.name}: {table_error}")
 
-            print(f"✅ Base de données connectée (créées: {tables_created}, existantes: {tables_existed})")
+            print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
             break
 
         except Exception as e:
-            print(f"⏳ Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
+            print(f"[...] Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
             else:
-                print("⚠️ DB non disponible, l'app démarre quand même")
+                print("[WARN] DB non disponible, l'app demarre quand meme")
 
     # Démarrer le scheduler
     scheduler_service.start()
@@ -203,7 +203,7 @@ _redoc_url = "/redoc" if _settings.is_development else None
 _openapi_url = "/openapi.json" if _settings.is_development else None
 
 if _settings.is_production:
-    print("🔒 PRODUCTION MODE: API docs désactivées")
+    print("[SECURE] PRODUCTION MODE: API docs desactivees")
 
 app = FastAPI(
     title="AZALS",
