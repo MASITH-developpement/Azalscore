@@ -32,11 +32,15 @@ class TenantMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         """
-        Intercepte chaque requête HTTP.
-        Valide la présence et le format du tenant_id.
+        Intercepte chaque requete HTTP.
+        Valide la presence et le format du tenant_id.
         """
-        # Endpoints publics : bypass validation mais injecter tenant_id si présent
-        is_public_path = any(request.url.path == path or request.url.path.startswith(path + "/") 
+        # OPTIONS preflight requests: bypass validation (CORS handles these)
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
+        # Endpoints publics : bypass validation mais injecter tenant_id si present
+        is_public_path = any(request.url.path == path or request.url.path.startswith(path + "/")
                             for path in self.PUBLIC_PATHS)
         
         # Extraction du header X-Tenant-ID
