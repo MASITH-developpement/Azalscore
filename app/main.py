@@ -216,17 +216,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS - DOIT etre configure en premier pour gerer les preflight OPTIONS
-setup_cors(app)
-
-# Middleware compression HTTP (gzip) - DOIT etre ajoute en premier (s'execute en dernier)
+# Middleware - ORDRE IMPORTANT: dernier ajoute = premier execute (LIFO)
+# 1. Compression (s'execute en dernier)
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 
-# Middleware métriques Prometheus (collecte automatique)
+# 2. Metriques Prometheus
 app.add_middleware(MetricsMiddleware)
 
-# Middleware multi-tenant : validation X-Tenant-ID pour TOUTES les requêtes
+# 3. Multi-tenant (validation X-Tenant-ID)
 app.add_middleware(TenantMiddleware)
+
+# 4. CORS - DOIT etre ajoute EN DERNIER pour s'executer EN PREMIER (gerer OPTIONS preflight)
+setup_cors(app)
 
 # Routes observabilité (PUBLIQUES - pas de tenant required)
 app.include_router(health_router)
