@@ -18,6 +18,10 @@ pydantic-settings==2.7.1
 python-jose[cryptography]==3.3.0
 bcrypt==4.1.2
 pyotp==2.9.0
+qrcode==7.4.2
+
+# Configuration .env
+python-dotenv==1.0.0
 
 # Tâches planifiées
 apscheduler==3.10.4
