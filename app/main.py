@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
 from app.core.middleware import TenantMiddleware
 from app.core.compression import CompressionMiddleware
+from app.core.security_middleware import setup_cors
 from app.core.metrics import MetricsMiddleware, router as metrics_router, init_metrics
 from app.core.health import router as health_router
 from app.core.logging_config import setup_logging, get_logger
@@ -207,7 +208,7 @@ if _settings.is_production:
 
 app = FastAPI(
     title="AZALS",
-    description="ERP décisionnel critique - Multi-tenant + Authentification JWT",
+    description="ERP decisionnel critique - Multi-tenant + Authentification JWT",
     version="0.3.0",
     docs_url=_docs_url,
     redoc_url=_redoc_url,
@@ -215,7 +216,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Middleware compression HTTP (gzip) - DOIT être ajouté en premier (s'exécute en dernier)
+# CORS - DOIT etre configure en premier pour gerer les preflight OPTIONS
+setup_cors(app)
+
+# Middleware compression HTTP (gzip) - DOIT etre ajoute en premier (s'execute en dernier)
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 
 # Middleware métriques Prometheus (collecte automatique)
