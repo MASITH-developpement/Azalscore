@@ -22,46 +22,16 @@ from app.core.config import get_settings
 def setup_cors(app: FastAPI) -> None:
     """
     Configure CORS pour l'application.
-    En production, utilisez une liste d'origins autorisées.
+    En production, utilisez une liste d'origins autorisees.
     """
-    settings = get_settings()
-
-    # Parse origins depuis config (séparées par virgules)
-    if settings.cors_origins:
-        origins = [o.strip() for o in settings.cors_origins.split(",")]
-    else:
-        # Defaut developpement - A REMPLACER en production!
-        origins = [
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:4173",
-            "http://localhost:8080",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:4173",
-            "http://127.0.0.1:8080",
-        ]
-
+    # Pour le developpement, autoriser toutes les origines
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=[
-            "Authorization",
-            "Content-Type",
-            "X-Tenant-ID",
-            "X-Request-ID",
-            "X-Trace-ID",
-        ],
-        expose_headers=[
-            "X-Request-ID",
-            "X-Trace-ID",
-            "X-RateLimit-Limit",
-            "X-RateLimit-Remaining",
-            "X-RateLimit-Reset",
-        ],
-        max_age=3600,  # Cache preflight pendant 1 heure
+        allow_origins=["*"],
+        allow_credentials=False,  # Doit etre False avec allow_origins=["*"]
+        allow_methods=["*"],
+        allow_headers=["*"],
+        max_age=3600,
     )
 
 
