@@ -409,7 +409,7 @@ def get_cockpit_dashboard(
     db: Session = Depends(get_db)
 ):
     """Retourne les données du dashboard cockpit."""
-    return {
+    return {"data": {
         "kpis": [
             {"id": "revenue", "label": "CA du mois", "value": 0, "unit": "€", "trend": 0, "status": "green"},
             {"id": "invoices", "label": "Factures en attente", "value": 0, "trend": 0, "status": "green"},
@@ -433,7 +433,7 @@ def get_cockpit_dashboard(
             "pending_orders": 0,
             "scheduled_interventions": 0
         }
-    }
+    }}
 
 
 @api_v1.get("/cockpit/decisions")
@@ -441,12 +441,12 @@ def get_cockpit_decisions(
     current_user: User = Depends(get_current_user)
 ):
     """Retourne les décisions en attente."""
-    return {
+    return {"data": {
         "items": [],
         "total": 0,
         "page": 1,
         "page_size": 25
-    }
+    }}
 
 
 # Monter l'API v1 sur l'app principale
