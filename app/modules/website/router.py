@@ -600,7 +600,7 @@ def get_analytics_dashboard(
 def get_analytics(
     start_date: datetime,
     end_date: datetime,
-    period: str = Query("daily", regex="^(daily|weekly|monthly)$"),
+    period: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):

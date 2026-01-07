@@ -3,6 +3,7 @@ AZALS - API Trésorerie
 Calcul de trésorerie prévisionnelle avec déclenchement RED automatique
 """
 
+from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -68,7 +69,7 @@ def create_treasury_forecast(
     )
 
 
-@router.get("/latest", response_model=ForecastResponse | None)
+@router.get("/latest", response_model=Optional[ForecastResponse])
 def get_latest_treasury_forecast(
     context: dict = Depends(get_current_user_and_tenant),
     db: Session = Depends(get_db)

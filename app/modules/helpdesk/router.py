@@ -439,7 +439,7 @@ async def list_replies(
 async def add_reply(
     ticket_id: int,
     data: ReplyCreate,
-    author_type: str = Query("agent", regex="^(agent|customer|system)$"),
+    author_type: str = Query("agent", pattern="^(agent|customer|system)$"),
     author_id: Optional[int] = None,
     author_name: Optional[str] = None,
     author_email: Optional[str] = None,

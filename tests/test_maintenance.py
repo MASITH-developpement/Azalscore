@@ -9,28 +9,33 @@ import pytest
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
-from uuid import uuid4
 
 # Import des modèles
 from app.modules.maintenance.models import (
-    Equipment, EquipmentCategory, Location,
-    MaintenancePlan, MaintenanceTask,
-    WorkOrder, WorkOrderLabor, WorkOrderPart,
-    FailureReport, SparePart, SparePartStock,
-    MeterReading, MaintenanceLog,
-    EquipmentStatus, CriticalityLevel, MaintenanceType,
-    FrequencyUnit, WorkOrderStatus, WorkOrderPriority,
-    FailureSeverity, FailureType
+    Asset, AssetMeter, MeterReading,
+    MaintenancePlan, MaintenancePlanTask,
+    MaintenanceWorkOrder, WorkOrderTask, WorkOrderLabor, WorkOrderPart,
+    Failure, SparePart, SparePartStock, PartRequest, MaintenanceContract,
+    AssetCategory, AssetStatus, AssetCriticality,
+    MaintenanceType, WorkOrderStatus, WorkOrderPriority,
+    FailureType, PartRequestStatus, ContractType, ContractStatus
 )
 
 # Import des schémas
 from app.modules.maintenance.schemas import (
-    EquipmentCreate, EquipmentUpdate, EquipmentCategoryCreate,
-    MaintenancePlanCreate, MaintenanceTaskCreate,
-    WorkOrderCreate, WorkOrderUpdate, WorkOrderLaborCreate, WorkOrderPartCreate,
-    FailureReportCreate, SparePartCreate, SparePartStockUpdate,
-    MeterReadingCreate, MaintenanceLogCreate,
-    MaintenanceDashboard, EquipmentKPIs
+    AssetCreate, AssetUpdate,
+    MeterCreate, MeterReadingCreate,
+    MaintenancePlanCreate, MaintenancePlanUpdate, PlanTaskCreate,
+    WorkOrderCreate, WorkOrderUpdate, WorkOrderComplete,
+    WorkOrderLaborCreate, WorkOrderPartCreate,
+    FailureCreate, FailureUpdate,
+    SparePartCreate, SparePartUpdate,
+    PartRequestCreate,
+    ContractCreate, ContractUpdate,
+    MaintenanceDashboard,
+    AssetCategoryEnum, AssetStatusEnum, AssetCriticalityEnum,
+    MaintenanceTypeEnum, WorkOrderStatusEnum, WorkOrderPriorityEnum,
+    FailureTypeEnum
 )
 
 # Import du service
@@ -44,21 +49,22 @@ from app.modules.maintenance.service import MaintenanceService, get_maintenance_
 class TestEnums:
     """Tests des énumérations."""
 
-    def test_equipment_status_values(self):
-        """Tester les statuts d'équipement."""
-        assert EquipmentStatus.OPERATIONAL.value == "OPERATIONAL"
-        assert EquipmentStatus.MAINTENANCE.value == "MAINTENANCE"
-        assert EquipmentStatus.BREAKDOWN.value == "BREAKDOWN"
-        assert EquipmentStatus.DECOMMISSIONED.value == "DECOMMISSIONED"
-        assert len(EquipmentStatus) >= 4
+    def test_asset_status_values(self):
+        """Tester les statuts d'actif."""
+        assert AssetStatus.ACTIVE.value == "ACTIVE"
+        assert AssetStatus.INACTIVE.value == "INACTIVE"
+        assert AssetStatus.IN_MAINTENANCE.value == "IN_MAINTENANCE"
+        assert AssetStatus.UNDER_REPAIR.value == "UNDER_REPAIR"
+        assert AssetStatus.DISPOSED.value == "DISPOSED"
+        assert len(AssetStatus) >= 5
 
-    def test_criticality_level_values(self):
+    def test_asset_criticality_values(self):
         """Tester les niveaux de criticité."""
-        assert CriticalityLevel.LOW.value == "LOW"
-        assert CriticalityLevel.MEDIUM.value == "MEDIUM"
-        assert CriticalityLevel.HIGH.value == "HIGH"
-        assert CriticalityLevel.CRITICAL.value == "CRITICAL"
-        assert len(CriticalityLevel) == 4
+        assert AssetCriticality.LOW.value == "LOW"
+        assert AssetCriticality.MEDIUM.value == "MEDIUM"
+        assert AssetCriticality.HIGH.value == "HIGH"
+        assert AssetCriticality.CRITICAL.value == "CRITICAL"
+        assert len(AssetCriticality) == 4
 
     def test_maintenance_type_values(self):
         """Tester les types de maintenance."""
@@ -74,22 +80,30 @@ class TestEnums:
         assert WorkOrderStatus.PLANNED.value == "PLANNED"
         assert WorkOrderStatus.IN_PROGRESS.value == "IN_PROGRESS"
         assert WorkOrderStatus.COMPLETED.value == "COMPLETED"
-        assert len(WorkOrderStatus) >= 4
+        assert WorkOrderStatus.CLOSED.value == "CLOSED"
+        assert len(WorkOrderStatus) >= 5
 
     def test_work_order_priority_values(self):
         """Tester les priorités."""
         assert WorkOrderPriority.LOW.value == "LOW"
-        assert WorkOrderPriority.NORMAL.value == "NORMAL"
+        assert WorkOrderPriority.MEDIUM.value == "MEDIUM"
         assert WorkOrderPriority.HIGH.value == "HIGH"
         assert WorkOrderPriority.EMERGENCY.value == "EMERGENCY"
-        assert len(WorkOrderPriority) == 4
+        assert len(WorkOrderPriority) >= 4
 
-    def test_failure_severity_values(self):
-        """Tester les niveaux de sévérité de panne."""
-        assert FailureSeverity.MINOR.value == "MINOR"
-        assert FailureSeverity.MAJOR.value == "MAJOR"
-        assert FailureSeverity.CRITICAL.value == "CRITICAL"
-        assert len(FailureSeverity) >= 3
+    def test_failure_type_values(self):
+        """Tester les types de panne."""
+        assert FailureType.MECHANICAL.value == "MECHANICAL"
+        assert FailureType.ELECTRICAL.value == "ELECTRICAL"
+        assert FailureType.ELECTRONIC.value == "ELECTRONIC"
+        assert len(FailureType) >= 3
+
+    def test_asset_category_values(self):
+        """Tester les catégories d'actifs."""
+        assert AssetCategory.MACHINE.value == "MACHINE"
+        assert AssetCategory.EQUIPMENT.value == "EQUIPMENT"
+        assert AssetCategory.VEHICLE.value == "VEHICLE"
+        assert len(AssetCategory) >= 3
 
 
 # =============================================================================
@@ -99,68 +113,74 @@ class TestEnums:
 class TestModels:
     """Tests des modèles SQLAlchemy."""
 
-    def test_equipment_model(self):
-        """Tester le modèle Equipment."""
-        equipment = Equipment(
-            tenant_id="test-tenant",
-            code="EQ001",
+    def test_asset_model(self):
+        """Tester le modèle Asset."""
+        asset = Asset(
+            tenant_id=1,
+            asset_code="EQ001",
             name="Compresseur",
-            status=EquipmentStatus.OPERATIONAL,
-            criticality=CriticalityLevel.HIGH
+            category=AssetCategory.MACHINE,
+            status=AssetStatus.ACTIVE,
+            criticality=AssetCriticality.HIGH
         )
-        assert equipment.code == "EQ001"
-        assert equipment.status == EquipmentStatus.OPERATIONAL
-        assert equipment.criticality == CriticalityLevel.HIGH
+        assert asset.asset_code == "EQ001"
+        assert asset.status == AssetStatus.ACTIVE
+        assert asset.criticality == AssetCriticality.HIGH
 
     def test_maintenance_plan_model(self):
         """Tester le modèle MaintenancePlan."""
         plan = MaintenancePlan(
-            tenant_id="test-tenant",
-            code="MP001",
+            tenant_id=1,
+            plan_code="MP001",
             name="Plan préventif mensuel",
-            type=MaintenanceType.PREVENTIVE,
+            maintenance_type=MaintenanceType.PREVENTIVE,
+            trigger_type="TIME",
             frequency_value=1,
-            frequency_unit=FrequencyUnit.MONTH
+            frequency_unit="MONTH"
         )
-        assert plan.code == "MP001"
-        assert plan.type == MaintenanceType.PREVENTIVE
+        assert plan.plan_code == "MP001"
+        assert plan.maintenance_type == MaintenanceType.PREVENTIVE
 
     def test_work_order_model(self):
-        """Tester le modèle WorkOrder."""
-        wo = WorkOrder(
-            tenant_id="test-tenant",
-            number="WO-2026-001",
-            equipment_id=uuid4(),
-            type=MaintenanceType.CORRECTIVE,
-            priority=WorkOrderPriority.HIGH
+        """Tester le modèle MaintenanceWorkOrder."""
+        wo = MaintenanceWorkOrder(
+            tenant_id=1,
+            wo_number="WO-202601-001",
+            title="Maintenance préventive",
+            asset_id=1,
+            maintenance_type=MaintenanceType.CORRECTIVE,
+            priority=WorkOrderPriority.HIGH,
+            status=WorkOrderStatus.DRAFT
         )
-        assert wo.number == "WO-2026-001"
-        assert wo.type == MaintenanceType.CORRECTIVE
+        assert wo.wo_number == "WO-202601-001"
+        assert wo.maintenance_type == MaintenanceType.CORRECTIVE
         assert wo.status == WorkOrderStatus.DRAFT
 
-    def test_failure_report_model(self):
-        """Tester le modèle FailureReport."""
-        failure = FailureReport(
-            tenant_id="test-tenant",
-            number="FR-2026-001",
-            equipment_id=uuid4(),
-            severity=FailureSeverity.MAJOR,
-            description="Fuite d'huile"
+    def test_failure_model(self):
+        """Tester le modèle Failure."""
+        failure = Failure(
+            tenant_id=1,
+            failure_number="FL-202601-001",
+            asset_id=1,
+            failure_type=FailureType.MECHANICAL,
+            description="Fuite d'huile détectée",
+            failure_date=datetime.utcnow()
         )
-        assert failure.number == "FR-2026-001"
-        assert failure.severity == FailureSeverity.MAJOR
+        assert failure.failure_number == "FL-202601-001"
+        assert failure.failure_type == FailureType.MECHANICAL
 
     def test_spare_part_model(self):
         """Tester le modèle SparePart."""
         part = SparePart(
-            tenant_id="test-tenant",
-            code="SP001",
+            tenant_id=1,
+            part_code="SP001",
             name="Filtre à huile",
-            min_stock=Decimal("5"),
+            unit="PCE",
+            min_stock_level=Decimal("5"),
             unit_cost=Decimal("25")
         )
-        assert part.code == "SP001"
-        assert part.min_stock == Decimal("5")
+        assert part.part_code == "SP001"
+        assert part.min_stock_level == Decimal("5")
 
 
 # =============================================================================
@@ -170,46 +190,73 @@ class TestModels:
 class TestSchemas:
     """Tests des schémas Pydantic."""
 
-    def test_equipment_create_schema(self):
-        """Tester le schéma EquipmentCreate."""
-        data = EquipmentCreate(
-            code="EQ001",
+    def test_asset_create_schema(self):
+        """Tester le schéma AssetCreate."""
+        data = AssetCreate(
+            asset_code="EQ001",
             name="Machine CNC",
-            criticality=CriticalityLevel.HIGH,
+            category=AssetCategoryEnum.MACHINE,
+            criticality=AssetCriticalityEnum.HIGH,
             purchase_date=date(2020, 1, 1),
             purchase_cost=Decimal("50000")
         )
-        assert data.code == "EQ001"
-        assert data.criticality == CriticalityLevel.HIGH
+        assert data.asset_code == "EQ001"
+        assert data.criticality == AssetCriticalityEnum.HIGH
 
     def test_work_order_create_schema(self):
         """Tester le schéma WorkOrderCreate."""
         data = WorkOrderCreate(
-            equipment_id=uuid4(),
-            type=MaintenanceType.PREVENTIVE,
-            priority=WorkOrderPriority.NORMAL,
+            title="Maintenance mensuelle préventive",
+            asset_id=1,
+            maintenance_type=MaintenanceTypeEnum.PREVENTIVE,
+            priority=WorkOrderPriorityEnum.MEDIUM,
             description="Maintenance mensuelle",
-            planned_start=datetime.utcnow()
+            scheduled_start_date=datetime.utcnow()
         )
-        assert data.type == MaintenanceType.PREVENTIVE
+        assert data.maintenance_type == MaintenanceTypeEnum.PREVENTIVE
 
-    def test_failure_report_create_schema(self):
-        """Tester le schéma FailureReportCreate."""
-        data = FailureReportCreate(
-            equipment_id=uuid4(),
-            severity=FailureSeverity.CRITICAL,
-            description="Arrêt complet machine",
-            failure_type=FailureType.MECHANICAL
+    def test_failure_create_schema(self):
+        """Tester le schéma FailureCreate."""
+        data = FailureCreate(
+            asset_id=1,
+            failure_type=FailureTypeEnum.MECHANICAL,
+            description="Arrêt complet machine - moteur grillé",
+            failure_date=datetime.utcnow()
         )
-        assert data.severity == FailureSeverity.CRITICAL
+        assert data.failure_type == FailureTypeEnum.MECHANICAL
+
+    def test_maintenance_plan_create_schema(self):
+        """Tester le schéma MaintenancePlanCreate."""
+        data = MaintenancePlanCreate(
+            plan_code="MP001",
+            name="Plan préventif mensuel",
+            maintenance_type=MaintenanceTypeEnum.PREVENTIVE,
+            trigger_type="TIME",
+            frequency_value=1,
+            frequency_unit="MONTH"
+        )
+        assert data.plan_code == "MP001"
+        assert data.maintenance_type == MaintenanceTypeEnum.PREVENTIVE
+
+    def test_spare_part_create_schema(self):
+        """Tester le schéma SparePartCreate."""
+        data = SparePartCreate(
+            part_code="SP001",
+            name="Filtre à huile",
+            unit="PCE",
+            unit_cost=Decimal("25"),
+            min_stock_level=Decimal("5")
+        )
+        assert data.part_code == "SP001"
+        assert data.unit_cost == Decimal("25")
 
 
 # =============================================================================
-# TESTS DU SERVICE - ÉQUIPEMENTS
+# TESTS DU SERVICE - ACTIFS
 # =============================================================================
 
-class TestMaintenanceServiceEquipment:
-    """Tests du service Maintenance - Équipements."""
+class TestMaintenanceServiceAssets:
+    """Tests du service Maintenance - Actifs."""
 
     @pytest.fixture
     def mock_db(self):
@@ -217,36 +264,83 @@ class TestMaintenanceServiceEquipment:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, tenant_id=1, user_id=1)
 
-    def test_create_equipment(self, service, mock_db):
-        """Tester la création d'un équipement."""
-        data = EquipmentCreate(
-            code="EQ001",
+    def test_create_asset(self, service, mock_db):
+        """Tester la création d'un actif."""
+        data = AssetCreate(
+            asset_code="EQ001",
             name="Compresseur",
-            criticality=CriticalityLevel.HIGH
+            category=AssetCategoryEnum.MACHINE,
+            criticality=AssetCriticalityEnum.HIGH
         )
 
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
 
-        result = service.create_equipment(data, uuid4())
+        result = service.create_asset(data)
 
         mock_db.add.assert_called_once()
-        assert result.code == "EQ001"
+        mock_db.commit.assert_called_once()
+        assert result.asset_code == "EQ001"
 
-    def test_set_equipment_status(self, service, mock_db):
-        """Tester le changement de statut."""
-        eq_id = uuid4()
-        mock_eq = MagicMock()
-        mock_eq.status = EquipmentStatus.OPERATIONAL
+    def test_get_asset(self, service, mock_db):
+        """Tester la récupération d'un actif."""
+        mock_asset = MagicMock(spec=Asset)
+        mock_asset.id = 1
+        mock_asset.asset_code = "EQ001"
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_eq
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_asset
 
-        result = service.set_equipment_status(eq_id, EquipmentStatus.MAINTENANCE)
+        result = service.get_asset(1)
 
-        assert mock_eq.status == EquipmentStatus.MAINTENANCE
+        assert result.id == 1
+        assert result.asset_code == "EQ001"
+
+    def test_list_assets(self, service, mock_db):
+        """Tester la liste des actifs."""
+        mock_assets = [MagicMock(spec=Asset), MagicMock(spec=Asset)]
+
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.count.return_value = 2
+        mock_query.order_by.return_value = mock_query
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = mock_assets
+
+        assets, total = service.list_assets()
+
+        assert total == 2
+        assert len(assets) == 2
+
+    def test_update_asset(self, service, mock_db):
+        """Tester la mise à jour d'un actif."""
+        mock_asset = MagicMock(spec=Asset)
+        mock_asset.id = 1
+        mock_asset.name = "Old Name"
+
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_asset
+
+        data = AssetUpdate(name="New Name")
+        result = service.update_asset(1, data)
+
+        mock_db.commit.assert_called_once()
+        assert result is not None
+
+    def test_delete_asset(self, service, mock_db):
+        """Tester la suppression d'un actif (soft delete)."""
+        mock_asset = MagicMock(spec=Asset)
+        mock_asset.id = 1
+
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_asset
+
+        result = service.delete_asset(1)
+
+        assert result is True
+        assert mock_asset.status == AssetStatus.DISPOSED
 
 
 # =============================================================================
@@ -262,61 +356,95 @@ class TestMaintenanceServiceWorkOrders:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, tenant_id=1, user_id=1)
 
     def test_create_work_order(self, service, mock_db):
         """Tester la création d'un ordre de travail."""
         data = WorkOrderCreate(
-            equipment_id=uuid4(),
-            type=MaintenanceType.CORRECTIVE,
-            priority=WorkOrderPriority.HIGH,
+            title="Réparation urgente compresseur",
+            asset_id=1,
+            maintenance_type=MaintenanceTypeEnum.CORRECTIVE,
+            priority=WorkOrderPriorityEnum.HIGH,
             description="Réparation urgente"
         )
 
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
-        mock_db.query.return_value.filter.return_value.count.return_value = 0
+        # Mock pour le générateur de numéro
+        mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = None
 
-        result = service.create_work_order(data, uuid4())
+        result = service.create_work_order(data)
 
         mock_db.add.assert_called()
-
-    def test_plan_work_order(self, service, mock_db):
-        """Tester la planification."""
-        wo_id = uuid4()
-        mock_wo = MagicMock()
-        mock_wo.status = WorkOrderStatus.DRAFT
-
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_wo
-
-        result = service.plan_work_order(wo_id, datetime.utcnow())
-
-        assert mock_wo.status == WorkOrderStatus.PLANNED
+        assert result.title == "Réparation urgente compresseur"
 
     def test_start_work_order(self, service, mock_db):
-        """Tester le démarrage."""
-        wo_id = uuid4()
-        mock_wo = MagicMock()
-        mock_wo.status = WorkOrderStatus.PLANNED
+        """Tester le démarrage d'un OT."""
+        mock_wo = MagicMock(spec=MaintenanceWorkOrder)
+        mock_wo.status = WorkOrderStatus.APPROVED
+        mock_wo.asset = MagicMock()
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_wo
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_wo
 
-        result = service.start_work_order(wo_id, uuid4())
+        result = service.start_work_order(1)
 
         assert mock_wo.status == WorkOrderStatus.IN_PROGRESS
+        assert mock_wo.actual_start_date is not None
 
     def test_complete_work_order(self, service, mock_db):
-        """Tester la clôture."""
-        wo_id = uuid4()
-        mock_wo = MagicMock()
+        """Tester la clôture d'un OT."""
+        mock_wo = MagicMock(spec=MaintenanceWorkOrder)
         mock_wo.status = WorkOrderStatus.IN_PROGRESS
+        mock_wo.actual_start_date = datetime.utcnow() - timedelta(hours=2)
+        mock_wo.asset = MagicMock()
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_wo
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_wo
+        mock_db.query.return_value.filter.return_value.scalar.return_value = Decimal("0")
 
-        result = service.complete_work_order(wo_id, uuid4())
+        data = WorkOrderComplete(
+            completion_notes="Travail terminé avec succès"
+        )
+        result = service.complete_work_order(1, data)
 
         assert mock_wo.status == WorkOrderStatus.COMPLETED
+        assert mock_wo.completion_notes == "Travail terminé avec succès"
+
+    def test_add_labor_entry(self, service, mock_db):
+        """Tester l'ajout d'une entrée de main d'oeuvre."""
+        mock_wo = MagicMock(spec=MaintenanceWorkOrder)
+        mock_wo.actual_labor_hours = Decimal("0")
+
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_wo
+
+        data = WorkOrderLaborCreate(
+            technician_id=1,
+            work_date=date.today(),
+            hours_worked=Decimal("4"),
+            hourly_rate=Decimal("50"),
+            work_description="Remplacement filtre"
+        )
+        result = service.add_labor_entry(1, data)
+
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
+
+    def test_add_part_used(self, service, mock_db):
+        """Tester l'ajout d'une pièce utilisée."""
+        mock_wo = MagicMock(spec=MaintenanceWorkOrder)
+
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_wo
+
+        data = WorkOrderPartCreate(
+            part_description="Filtre à huile",
+            quantity_used=Decimal("2"),
+            unit="PCE",
+            unit_cost=Decimal("25")
+        )
+        result = service.add_part_used(1, data)
+
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
 
 
 # =============================================================================
@@ -332,27 +460,63 @@ class TestMaintenanceServiceFailures:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, tenant_id=1, user_id=1)
 
-    def test_report_failure(self, service, mock_db):
+    def test_create_failure(self, service, mock_db):
         """Tester le signalement d'une panne."""
-        data = FailureReportCreate(
-            equipment_id=uuid4(),
-            severity=FailureSeverity.MAJOR,
-            description="Moteur grillé"
+        data = FailureCreate(
+            asset_id=1,
+            failure_type=FailureTypeEnum.MECHANICAL,
+            description="Moteur grillé - arrêt complet",
+            failure_date=datetime.utcnow(),
+            production_stopped=True
         )
 
-        mock_eq = MagicMock()
-        mock_eq.status = EquipmentStatus.OPERATIONAL
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_eq
-        mock_db.query.return_value.filter.return_value.count.return_value = 0
+        mock_asset = MagicMock(spec=Asset)
+        mock_asset.status = AssetStatus.ACTIVE
+
+        # Mock pour le générateur de numéro
+        mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = None
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_asset
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
 
-        result = service.report_failure(data, uuid4())
+        result = service.create_failure(data)
 
         mock_db.add.assert_called()
+        assert result.asset_id == 1
+
+    def test_get_failure(self, service, mock_db):
+        """Tester la récupération d'une panne."""
+        mock_failure = MagicMock(spec=Failure)
+        mock_failure.id = 1
+        mock_failure.failure_number = "FL-202601-001"
+
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_failure
+
+        result = service.get_failure(1)
+
+        assert result.id == 1
+        assert result.failure_number == "FL-202601-001"
+
+    def test_list_failures(self, service, mock_db):
+        """Tester la liste des pannes."""
+        mock_failures = [MagicMock(spec=Failure), MagicMock(spec=Failure)]
+
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.count.return_value = 2
+        mock_query.order_by.return_value = mock_query
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = mock_failures
+
+        failures, total = service.list_failures()
+
+        assert total == 2
+        assert len(failures) == 2
 
 
 # =============================================================================
@@ -368,25 +532,199 @@ class TestMaintenanceServicePlans:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, tenant_id=1, user_id=1)
 
     def test_create_maintenance_plan(self, service, mock_db):
         """Tester la création d'un plan."""
         data = MaintenancePlanCreate(
-            code="MP001",
+            plan_code="MP001",
             name="Plan préventif mensuel",
-            type=MaintenanceType.PREVENTIVE,
+            maintenance_type=MaintenanceTypeEnum.PREVENTIVE,
+            trigger_type="TIME",
             frequency_value=1,
-            frequency_unit=FrequencyUnit.MONTH
+            frequency_unit="MONTH"
         )
 
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
 
-        result = service.create_maintenance_plan(data, uuid4())
+        result = service.create_maintenance_plan(data)
 
         mock_db.add.assert_called()
+        assert result.plan_code == "MP001"
+
+    def test_get_maintenance_plan(self, service, mock_db):
+        """Tester la récupération d'un plan."""
+        mock_plan = MagicMock(spec=MaintenancePlan)
+        mock_plan.id = 1
+        mock_plan.plan_code = "MP001"
+
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_plan
+
+        result = service.get_maintenance_plan(1)
+
+        assert result.id == 1
+        assert result.plan_code == "MP001"
+
+    def test_list_maintenance_plans(self, service, mock_db):
+        """Tester la liste des plans."""
+        mock_plans = [MagicMock(spec=MaintenancePlan)]
+
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.count.return_value = 1
+        mock_query.options.return_value = mock_query
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = mock_plans
+
+        plans, total = service.list_maintenance_plans()
+
+        assert total == 1
+        assert len(plans) == 1
+
+
+# =============================================================================
+# TESTS DU SERVICE - PIÈCES DE RECHANGE
+# =============================================================================
+
+class TestMaintenanceServiceSpareParts:
+    """Tests du service Maintenance - Pièces de rechange."""
+
+    @pytest.fixture
+    def mock_db(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def service(self, mock_db):
+        return MaintenanceService(mock_db, tenant_id=1, user_id=1)
+
+    def test_create_spare_part(self, service, mock_db):
+        """Tester la création d'une pièce."""
+        data = SparePartCreate(
+            part_code="SP001",
+            name="Filtre à huile",
+            unit="PCE",
+            unit_cost=Decimal("25"),
+            min_stock_level=Decimal("5")
+        )
+
+        mock_db.add = MagicMock()
+        mock_db.commit = MagicMock()
+        mock_db.refresh = MagicMock()
+
+        result = service.create_spare_part(data)
+
+        mock_db.add.assert_called_once()
+        assert result.part_code == "SP001"
+
+    def test_get_spare_part(self, service, mock_db):
+        """Tester la récupération d'une pièce."""
+        mock_part = MagicMock(spec=SparePart)
+        mock_part.id = 1
+        mock_part.part_code = "SP001"
+
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_part
+
+        result = service.get_spare_part(1)
+
+        assert result.id == 1
+        assert result.part_code == "SP001"
+
+    def test_list_spare_parts(self, service, mock_db):
+        """Tester la liste des pièces."""
+        mock_parts = [MagicMock(spec=SparePart), MagicMock(spec=SparePart)]
+
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.count.return_value = 2
+        mock_query.order_by.return_value = mock_query
+        mock_query.offset.return_value = mock_query
+        mock_query.limit.return_value = mock_query
+        mock_query.all.return_value = mock_parts
+
+        parts, total = service.list_spare_parts()
+
+        assert total == 2
+        assert len(parts) == 2
+
+
+# =============================================================================
+# TESTS DU SERVICE - CONTRATS
+# =============================================================================
+
+class TestMaintenanceServiceContracts:
+    """Tests du service Maintenance - Contrats."""
+
+    @pytest.fixture
+    def mock_db(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def service(self, mock_db):
+        return MaintenanceService(mock_db, tenant_id=1, user_id=1)
+
+    def test_create_contract(self, service, mock_db):
+        """Tester la création d'un contrat."""
+        data = ContractCreate(
+            contract_code="MC001",
+            name="Contrat maintenance annuel",
+            contract_type=ContractType.FULL_SERVICE,
+            vendor_id=1,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=365)
+        )
+
+        mock_db.add = MagicMock()
+        mock_db.commit = MagicMock()
+        mock_db.refresh = MagicMock()
+
+        result = service.create_contract(data)
+
+        mock_db.add.assert_called_once()
+        assert result.contract_code == "MC001"
+
+    def test_get_contract(self, service, mock_db):
+        """Tester la récupération d'un contrat."""
+        mock_contract = MagicMock(spec=MaintenanceContract)
+        mock_contract.id = 1
+        mock_contract.contract_code = "MC001"
+
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_contract
+
+        result = service.get_contract(1)
+
+        assert result.id == 1
+        assert result.contract_code == "MC001"
+
+
+# =============================================================================
+# TESTS DU SERVICE - DASHBOARD
+# =============================================================================
+
+class TestMaintenanceServiceDashboard:
+    """Tests du service Maintenance - Dashboard."""
+
+    @pytest.fixture
+    def mock_db(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def service(self, mock_db):
+        return MaintenanceService(mock_db, tenant_id=1, user_id=1)
+
+    def test_get_dashboard(self, service, mock_db):
+        """Tester le dashboard maintenance."""
+        # Mock toutes les requêtes de comptage
+        mock_db.query.return_value.filter.return_value.scalar.return_value = 5
+
+        result = service.get_dashboard()
+
+        assert isinstance(result, MaintenanceDashboard)
+        assert result.assets_total == 5
 
 
 # =============================================================================
@@ -399,10 +737,11 @@ class TestFactory:
     def test_get_maintenance_service(self):
         """Tester la factory."""
         mock_db = MagicMock()
-        service = get_maintenance_service(mock_db, "test-tenant")
+        service = get_maintenance_service(mock_db, tenant_id=1, user_id=1)
 
         assert isinstance(service, MaintenanceService)
-        assert service.tenant_id == "test-tenant"
+        assert service.tenant_id == 1
+        assert service.user_id == 1
 
 
 # =============================================================================
@@ -451,6 +790,16 @@ class TestMaintenanceCalculations:
 
         assert labor_cost == Decimal("250")
         assert total_cost == Decimal("450")
+
+    def test_downtime_calculation(self):
+        """Tester le calcul du temps d'arrêt."""
+        start_time = datetime(2026, 1, 1, 8, 0, 0)
+        end_time = datetime(2026, 1, 1, 12, 30, 0)
+
+        delta = end_time - start_time
+        downtime_hours = Decimal(str(delta.total_seconds() / 3600))
+
+        assert downtime_hours == Decimal("4.5")
 
 
 # =============================================================================

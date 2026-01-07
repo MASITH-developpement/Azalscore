@@ -14,7 +14,7 @@ from uuid import uuid4
 # Import des modèles
 from app.modules.commercial.models import (
     Customer, Contact, Opportunity, CommercialDocument, DocumentLine,
-    Payment, CustomerActivity, PipelineStage, Product,
+    Payment, CustomerActivity, PipelineStage, CatalogProduct as Product,
     CustomerType, OpportunityStatus, DocumentType, DocumentStatus,
     PaymentMethod, PaymentTerms, ActivityType
 )

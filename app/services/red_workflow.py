@@ -5,6 +5,7 @@ Gestion stricte du workflow de validation DIRIGEANT pour décisions RED
 
 import json
 from datetime import datetime
+from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.core.models import (
@@ -69,7 +70,7 @@ class RedWorkflowService:
         
         return decision
     
-    def _get_completed_steps(self, decision_id: int) -> list[RedWorkflowStep]:
+    def _get_completed_steps(self, decision_id: int) -> List[RedWorkflowStep]:
         """Récupère les étapes déjà validées pour une décision."""
         workflows = self.db.query(RedDecisionWorkflow).filter(
             RedDecisionWorkflow.decision_id == decision_id

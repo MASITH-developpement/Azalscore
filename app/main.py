@@ -10,7 +10,7 @@ from fastapi import FastAPI, APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
