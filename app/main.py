@@ -36,6 +36,7 @@ from app.api.tax import router as tax_router
 from app.api.hr import router as hr_router
 from app.api.legal import router as legal_router
 from app.api.admin_migration import router as admin_migration_router
+from app.api.partners import router as partners_router
 
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
 from app.modules.iam.router import router as iam_router
@@ -266,6 +267,7 @@ api_v1.include_router(tax_router)
 api_v1.include_router(hr_router)
 api_v1.include_router(legal_router)
 api_v1.include_router(admin_migration_router)  # TEMPORAIRE pour migration
+api_v1.include_router(partners_router)  # Alias vers module commercial (clients, fournisseurs, contacts)
 
 # Module T0 - IAM (Gestion Utilisateurs & Roles)
 api_v1.include_router(iam_router)
