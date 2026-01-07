@@ -176,7 +176,14 @@ PUBLIC_ROUTES: List[str] = [
     r"^/redoc/?$",
     r"^/api/auth/.*$",
     r"^/auth/.*$",
+    r"^/v1/auth/.*$",       # Routes auth sous /v1
+    r"^/v1/audit/.*$",      # Routes audit (UI events)
     r"^/$",
+    r"^/static/.*$",        # Fichiers statiques
+    r"^/favicon\.ico$",
+    r"^/dashboard/?$",
+    r"^/treasury/?$",
+    r"^/login/?$",
 ]
 
 
