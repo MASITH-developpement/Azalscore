@@ -381,7 +381,7 @@ def bootstrap(
     utilisé qu'une seule fois (si aucun utilisateur n'existe).
     """
     # SÉCURITÉ: Rate limiting très strict (1 par 20 minutes)
-    get_client_ip(request)
+    client_ip = get_client_ip(request)  # Conservé pour logging futur
 
     # Vérifier le secret depuis la configuration sécurisée
     expected_secret = get_bootstrap_secret()

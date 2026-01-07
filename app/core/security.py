@@ -21,6 +21,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Vérifie qu'un mot de passe en clair correspond au hash.
     Utilise bcrypt avec salt automatique.
     """
+    if not plain_password or not hashed_password:
+        return False
     password_bytes = plain_password.encode('utf-8')
     hashed_bytes = hashed_password.encode('utf-8')
     return bcrypt.checkpw(password_bytes, hashed_bytes)
@@ -42,6 +44,8 @@ def get_password_hash(password: str) -> str:
     Raises:
         PasswordTooLongError: Si le mot de passe dépasse 72 bytes en UTF-8
     """
+    if not password:
+        raise ValueError("Password cannot be empty")
     password_bytes = password.encode('utf-8')
 
     # Bcrypt limite stricte de 72 bytes - validation explicite

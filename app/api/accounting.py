@@ -3,11 +3,14 @@ AZALS - API Comptabilité
 Endpoints pour tableau de bord comptable du cockpit dirigeant
 """
 
+import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pydantic import BaseModel
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_and_tenant
@@ -100,8 +103,9 @@ def get_accounting_status(
             status=status
         )
     
-    except Exception:
-        # En cas d'erreur, retourner un état neutral
+    except Exception as e:
+        # En cas d'erreur, logger et retourner un état neutral
+        logger.error(f"Erreur lors de la récupération du statut comptable: {e}")
         return AccountingStatusResponse(
             entries_up_to_date=True,
             last_closure_date=None,
