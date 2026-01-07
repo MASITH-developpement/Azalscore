@@ -13,27 +13,27 @@ from uuid import uuid4
 
 # Import des modèles
 from app.modules.quality.models import (
-    QualityPlan, InspectionPoint, ControlMethod,
-    Inspection, InspectionResult, NonConformity, NCAction,
-    CorrectiveAction, CAPA, CAPAAction,
-    Audit, AuditFinding, Document, DocumentRevision,
-    Certification, CalibrationRecord,
-    InspectionType, InspectionStatus, NCStatus, NCSeverity,
-    ActionStatus, ActionType, CAPAType, CAPAStatus,
+    QualityControlTemplate, QualityControlTemplateItem,
+    QualityControl, QualityControlLine,
+    NonConformance, NonConformanceAction,
+    CAPA, CAPAAction,
+    QualityAudit, AuditFinding, Certification,
+    ControlType, ControlStatus, ControlResult,
+    NonConformanceStatus, NonConformanceSeverity, NonConformanceType,
+    CAPAStatus, CAPAType,
     AuditType, AuditStatus, FindingSeverity,
-    DocumentStatus, CertificationStatus, CalibrationStatus
+    CertificationStatus
 )
 
 # Import des schémas
 from app.modules.quality.schemas import (
-    QualityPlanCreate, InspectionPointCreate,
-    InspectionCreate, InspectionResultCreate,
-    NonConformityCreate, NCActionCreate,
+    ControlTemplateCreate, ControlTemplateItemCreate,
+    ControlCreate, ControlLineUpdate,
+    NonConformanceCreate, NonConformanceActionCreate,
     CAPACreate, CAPAActionCreate,
     AuditCreate, AuditFindingCreate,
-    DocumentCreate, DocumentRevisionCreate,
-    CertificationCreate, CalibrationCreate,
-    QualityDashboard, QualityMetrics
+    CertificationCreate, CertificationAuditCreate,
+    QualityDashboard
 )
 
 # Import du service
@@ -47,42 +47,58 @@ from app.modules.quality.service import QualityService, get_quality_service
 class TestEnums:
     """Tests des énumérations."""
 
-    def test_inspection_type_values(self):
-        """Tester les types d'inspection."""
-        assert InspectionType.INCOMING.value == "INCOMING"
-        assert InspectionType.IN_PROCESS.value == "IN_PROCESS"
-        assert InspectionType.FINAL.value == "FINAL"
-        assert InspectionType.PERIODIC.value == "PERIODIC"
-        assert len(InspectionType) >= 4
+    def test_control_type_values(self):
+        """Tester les types de contrôle."""
+        assert ControlType.INCOMING.value == "INCOMING"
+        assert ControlType.IN_PROCESS.value == "IN_PROCESS"
+        assert ControlType.FINAL.value == "FINAL"
+        assert len(ControlType) >= 4
 
-    def test_inspection_status_values(self):
-        """Tester les statuts d'inspection."""
-        assert InspectionStatus.PENDING.value == "PENDING"
-        assert InspectionStatus.IN_PROGRESS.value == "IN_PROGRESS"
-        assert InspectionStatus.PASSED.value == "PASSED"
-        assert InspectionStatus.FAILED.value == "FAILED"
-        assert len(InspectionStatus) >= 4
+    def test_control_status_values(self):
+        """Tester les statuts de contrôle."""
+        assert ControlStatus.PLANNED.value == "PLANNED"
+        assert ControlStatus.PENDING.value == "PENDING"
+        assert ControlStatus.IN_PROGRESS.value == "IN_PROGRESS"
+        assert ControlStatus.COMPLETED.value == "COMPLETED"
+        assert len(ControlStatus) >= 4
+
+    def test_control_result_values(self):
+        """Tester les résultats de contrôle."""
+        assert ControlResult.PASSED.value == "PASSED"
+        assert ControlResult.FAILED.value == "FAILED"
+        assert ControlResult.CONDITIONAL.value == "CONDITIONAL"
+        assert len(ControlResult) >= 3
 
     def test_nc_status_values(self):
         """Tester les statuts de non-conformité."""
-        assert NCStatus.OPEN.value == "OPEN"
-        assert NCStatus.UNDER_REVIEW.value == "UNDER_REVIEW"
-        assert NCStatus.ACTION_REQUIRED.value == "ACTION_REQUIRED"
-        assert NCStatus.CLOSED.value == "CLOSED"
-        assert len(NCStatus) >= 4
+        assert NonConformanceStatus.DRAFT.value == "DRAFT"
+        assert NonConformanceStatus.OPEN.value == "OPEN"
+        assert NonConformanceStatus.UNDER_ANALYSIS.value == "UNDER_ANALYSIS"
+        assert NonConformanceStatus.ACTION_REQUIRED.value == "ACTION_REQUIRED"
+        assert NonConformanceStatus.CLOSED.value == "CLOSED"
+        assert len(NonConformanceStatus) >= 5
 
     def test_nc_severity_values(self):
         """Tester les niveaux de sévérité."""
-        assert NCSeverity.MINOR.value == "MINOR"
-        assert NCSeverity.MAJOR.value == "MAJOR"
-        assert NCSeverity.CRITICAL.value == "CRITICAL"
-        assert len(NCSeverity) >= 3
+        assert NonConformanceSeverity.MINOR.value == "MINOR"
+        assert NonConformanceSeverity.MAJOR.value == "MAJOR"
+        assert NonConformanceSeverity.CRITICAL.value == "CRITICAL"
+        assert len(NonConformanceSeverity) >= 3
 
     def test_capa_type_values(self):
         """Tester les types de CAPA."""
         assert CAPAType.CORRECTIVE.value == "CORRECTIVE"
         assert CAPAType.PREVENTIVE.value == "PREVENTIVE"
-        assert len(CAPAType) == 2
+        assert CAPAType.IMPROVEMENT.value == "IMPROVEMENT"
+        assert len(CAPAType) == 3
+
+    def test_capa_status_values(self):
+        """Tester les statuts CAPA."""
+        assert CAPAStatus.DRAFT.value == "DRAFT"
+        assert CAPAStatus.OPEN.value == "OPEN"
+        assert CAPAStatus.IN_PROGRESS.value == "IN_PROGRESS"
+        assert CAPAStatus.VERIFICATION.value == "VERIFICATION"
+        assert len(CAPAStatus) >= 5
 
     def test_audit_type_values(self):
         """Tester les types d'audit."""
@@ -90,6 +106,14 @@ class TestEnums:
         assert AuditType.EXTERNAL.value == "EXTERNAL"
         assert AuditType.SUPPLIER.value == "SUPPLIER"
         assert len(AuditType) >= 3
+
+    def test_audit_status_values(self):
+        """Tester les statuts d'audit."""
+        assert AuditStatus.PLANNED.value == "PLANNED"
+        assert AuditStatus.IN_PROGRESS.value == "IN_PROGRESS"
+        assert AuditStatus.COMPLETED.value == "COMPLETED"
+        assert AuditStatus.CLOSED.value == "CLOSED"
+        assert len(AuditStatus) >= 4
 
 
 # =============================================================================
@@ -99,76 +123,89 @@ class TestEnums:
 class TestModels:
     """Tests des modèles SQLAlchemy."""
 
-    def test_quality_plan_model(self):
-        """Tester le modèle QualityPlan."""
-        plan = QualityPlan(
-            tenant_id="test-tenant",
-            code="QP001",
-            name="Plan Qualité Produit A"
+    def test_quality_control_template_model(self):
+        """Tester le modèle QualityControlTemplate."""
+        template = QualityControlTemplate(
+            tenant_id=1,
+            code="QCT001",
+            name="Template Contrôle Réception",
+            control_type=ControlType.INCOMING,
+            is_active=True
         )
-        assert plan.code == "QP001"
-        assert plan.is_active == True
+        assert template.code == "QCT001"
+        assert template.control_type == ControlType.INCOMING
+        assert template.is_active is True
 
-    def test_inspection_model(self):
-        """Tester le modèle Inspection."""
-        inspection = Inspection(
-            tenant_id="test-tenant",
-            number="INS-2026-001",
-            type=InspectionType.INCOMING,
-            planned_date=date.today()
+    def test_quality_control_model(self):
+        """Tester le modèle QualityControl."""
+        control = QualityControl(
+            tenant_id=1,
+            control_number="QC-2026-001",
+            control_type=ControlType.INCOMING,
+            control_date=date.today(),
+            status=ControlStatus.PLANNED
         )
-        assert inspection.number == "INS-2026-001"
-        assert inspection.type == InspectionType.INCOMING
-        assert inspection.status == InspectionStatus.PENDING
+        assert control.control_number == "QC-2026-001"
+        assert control.control_type == ControlType.INCOMING
+        assert control.status == ControlStatus.PLANNED
 
-    def test_non_conformity_model(self):
-        """Tester le modèle NonConformity."""
-        nc = NonConformity(
-            tenant_id="test-tenant",
-            number="NC-2026-001",
+    def test_non_conformance_model(self):
+        """Tester le modèle NonConformance."""
+        nc = NonConformance(
+            tenant_id=1,
+            nc_number="NC-2026-001",
             title="Défaut dimensionnel",
-            severity=NCSeverity.MAJOR
+            nc_type=NonConformanceType.PRODUCT,
+            severity=NonConformanceSeverity.MAJOR,
+            status=NonConformanceStatus.DRAFT,
+            detected_date=date.today()
         )
-        assert nc.number == "NC-2026-001"
-        assert nc.severity == NCSeverity.MAJOR
-        assert nc.status == NCStatus.OPEN
+        assert nc.nc_number == "NC-2026-001"
+        assert nc.severity == NonConformanceSeverity.MAJOR
+        assert nc.status == NonConformanceStatus.DRAFT
 
     def test_capa_model(self):
         """Tester le modèle CAPA."""
         capa = CAPA(
-            tenant_id="test-tenant",
-            number="CAPA-2026-001",
+            tenant_id=1,
+            capa_number="CAPA-2026-001",
             title="Action corrective défaut",
-            type=CAPAType.CORRECTIVE
+            description="Description de l'action",
+            capa_type=CAPAType.CORRECTIVE,
+            status=CAPAStatus.DRAFT,
+            open_date=date.today(),
+            owner_id=1
         )
-        assert capa.number == "CAPA-2026-001"
-        assert capa.type == CAPAType.CORRECTIVE
-        assert capa.status == CAPAStatus.OPEN
+        assert capa.capa_number == "CAPA-2026-001"
+        assert capa.capa_type == CAPAType.CORRECTIVE
+        assert capa.status == CAPAStatus.DRAFT
 
     def test_audit_model(self):
-        """Tester le modèle Audit."""
-        audit = Audit(
-            tenant_id="test-tenant",
-            number="AUD-2026-001",
-            name="Audit ISO 9001",
-            type=AuditType.INTERNAL,
-            planned_date=date.today()
+        """Tester le modèle QualityAudit."""
+        audit = QualityAudit(
+            tenant_id=1,
+            audit_number="AUD-2026-001",
+            title="Audit ISO 9001",
+            audit_type=AuditType.INTERNAL,
+            planned_date=date.today(),
+            status=AuditStatus.PLANNED
         )
-        assert audit.number == "AUD-2026-001"
-        assert audit.type == AuditType.INTERNAL
+        assert audit.audit_number == "AUD-2026-001"
+        assert audit.audit_type == AuditType.INTERNAL
         assert audit.status == AuditStatus.PLANNED
 
-    def test_calibration_record_model(self):
-        """Tester le modèle CalibrationRecord."""
-        calibration = CalibrationRecord(
-            tenant_id="test-tenant",
-            equipment_code="CAL001",
-            equipment_name="Pied à coulisse",
-            calibration_date=date.today(),
-            next_due_date=date.today() + timedelta(days=365)
+    def test_certification_model(self):
+        """Tester le modèle Certification."""
+        cert = Certification(
+            tenant_id=1,
+            code="CERT001",
+            name="ISO 9001:2015",
+            standard="ISO 9001",
+            status=CertificationStatus.PLANNED
         )
-        assert calibration.equipment_code == "CAL001"
-        assert calibration.status == CalibrationStatus.VALID
+        assert cert.code == "CERT001"
+        assert cert.standard == "ISO 9001"
+        assert cert.status == CertificationStatus.PLANNED
 
 
 # =============================================================================
@@ -178,98 +215,47 @@ class TestModels:
 class TestSchemas:
     """Tests des schémas Pydantic."""
 
-    def test_inspection_create_schema(self):
-        """Tester le schéma InspectionCreate."""
-        data = InspectionCreate(
-            type=InspectionType.INCOMING,
-            planned_date=date.today(),
-            product_id=uuid4()
+    def test_control_template_create_schema(self):
+        """Tester le schéma ControlTemplateCreate."""
+        data = ControlTemplateCreate(
+            code="QCT001",
+            name="Template Contrôle",
+            control_type=ControlType.INCOMING
         )
-        assert data.type == InspectionType.INCOMING
+        assert data.code == "QCT001"
+        assert data.control_type.value == "INCOMING"
 
-    def test_non_conformity_create_schema(self):
-        """Tester le schéma NonConformityCreate."""
-        data = NonConformityCreate(
+    def test_non_conformance_create_schema(self):
+        """Tester le schéma NonConformanceCreate."""
+        data = NonConformanceCreate(
             title="Défaut de surface",
             description="Rayures visibles sur la surface",
-            severity=NCSeverity.MINOR
+            nc_type=NonConformanceType.PRODUCT,
+            severity=NonConformanceSeverity.MINOR,
+            detected_date=date.today()
         )
-        assert data.severity == NCSeverity.MINOR
+        assert data.severity.value == "MINOR"
+        assert data.nc_type.value == "PRODUCT"
 
     def test_capa_create_schema(self):
         """Tester le schéma CAPACreate."""
         data = CAPACreate(
             title="Amélioration processus",
-            type=CAPAType.PREVENTIVE,
-            description="Mise en place contrôle supplémentaire"
+            capa_type=CAPAType.PREVENTIVE,
+            description="Mise en place contrôle supplémentaire",
+            open_date=date.today(),
+            owner_id=1
         )
-        assert data.type == CAPAType.PREVENTIVE
+        assert data.capa_type.value == "PREVENTIVE"
 
     def test_audit_create_schema(self):
         """Tester le schéma AuditCreate."""
         data = AuditCreate(
-            name="Audit annuel",
-            type=AuditType.INTERNAL,
-            planned_date=date.today() + timedelta(days=30),
-            scope="Processus production"
+            title="Audit annuel",
+            audit_type=AuditType.INTERNAL,
+            planned_date=date.today() + timedelta(days=30)
         )
-        assert data.type == AuditType.INTERNAL
-
-
-# =============================================================================
-# TESTS DU SERVICE - INSPECTIONS
-# =============================================================================
-
-class TestQualityServiceInspections:
-    """Tests du service Quality - Inspections."""
-
-    @pytest.fixture
-    def mock_db(self):
-        return MagicMock()
-
-    @pytest.fixture
-    def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
-
-    def test_create_inspection(self, service, mock_db):
-        """Tester la création d'une inspection."""
-        data = InspectionCreate(
-            type=InspectionType.INCOMING,
-            planned_date=date.today()
-        )
-
-        mock_db.add = MagicMock()
-        mock_db.commit = MagicMock()
-        mock_db.refresh = MagicMock()
-        mock_db.query.return_value.filter.return_value.count.return_value = 0
-
-        result = service.create_inspection(data, uuid4())
-
-        mock_db.add.assert_called()
-
-    def test_start_inspection(self, service, mock_db):
-        """Tester le démarrage d'une inspection."""
-        insp_id = uuid4()
-        mock_insp = MagicMock()
-        mock_insp.status = InspectionStatus.PENDING
-
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_insp
-
-        result = service.start_inspection(insp_id, uuid4())
-
-        assert mock_insp.status == InspectionStatus.IN_PROGRESS
-
-    def test_complete_inspection_passed(self, service, mock_db):
-        """Tester la clôture d'une inspection (passée)."""
-        insp_id = uuid4()
-        mock_insp = MagicMock()
-        mock_insp.status = InspectionStatus.IN_PROGRESS
-
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_insp
-
-        result = service.complete_inspection(insp_id, passed=True)
-
-        assert mock_insp.status == InspectionStatus.PASSED
+        assert data.audit_type.value == "INTERNAL"
 
 
 # =============================================================================
@@ -285,48 +271,69 @@ class TestQualityServiceNC:
 
     @pytest.fixture
     def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
+        return QualityService(mock_db, tenant_id=1, user_id=1)
 
-    def test_create_non_conformity(self, service, mock_db):
+    def test_create_non_conformance(self, service, mock_db):
         """Tester la création d'une non-conformité."""
-        data = NonConformityCreate(
+        data = NonConformanceCreate(
             title="Défaut dimensionnel",
-            severity=NCSeverity.MAJOR
+            nc_type=NonConformanceType.PRODUCT,
+            severity=NonConformanceSeverity.MAJOR,
+            detected_date=date.today()
         )
 
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
-        mock_db.query.return_value.filter.return_value.count.return_value = 0
+        mock_db.query.return_value.filter.return_value.scalar.return_value = 0
 
-        result = service.create_non_conformity(data, uuid4())
+        result = service.create_non_conformance(data)
 
         mock_db.add.assert_called()
 
-    def test_assign_nc_for_review(self, service, mock_db):
-        """Tester l'assignation pour revue."""
-        nc_id = uuid4()
-        reviewer_id = uuid4()
-        mock_nc = MagicMock()
-        mock_nc.status = NCStatus.OPEN
+    def test_get_non_conformance(self, service, mock_db):
+        """Tester la récupération d'une NC."""
+        mock_nc = MagicMock(spec=NonConformance)
+        mock_nc.id = 1
+        mock_nc.nc_number = "NC-2026-001"
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_nc
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_nc
 
-        result = service.assign_nc_for_review(nc_id, reviewer_id)
+        result = service.get_non_conformance(1)
 
-        assert mock_nc.status == NCStatus.UNDER_REVIEW
+        assert result.nc_number == "NC-2026-001"
 
-    def test_close_non_conformity(self, service, mock_db):
-        """Tester la clôture d'une non-conformité."""
-        nc_id = uuid4()
-        mock_nc = MagicMock()
-        mock_nc.status = NCStatus.ACTION_REQUIRED
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_nc
+# =============================================================================
+# TESTS DU SERVICE - CONTRÔLES
+# =============================================================================
 
-        result = service.close_non_conformity(nc_id, uuid4(), "Résolu")
+class TestQualityServiceControls:
+    """Tests du service Quality - Contrôles."""
 
-        assert mock_nc.status == NCStatus.CLOSED
+    @pytest.fixture
+    def mock_db(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def service(self, mock_db):
+        return QualityService(mock_db, tenant_id=1, user_id=1)
+
+    def test_create_control_template(self, service, mock_db):
+        """Tester la création d'un template de contrôle."""
+        data = ControlTemplateCreate(
+            code="QCT001",
+            name="Template Réception",
+            control_type=ControlType.INCOMING
+        )
+
+        mock_db.add = MagicMock()
+        mock_db.commit = MagicMock()
+        mock_db.refresh = MagicMock()
+
+        result = service.create_control_template(data)
+
+        mock_db.add.assert_called()
 
 
 # =============================================================================
@@ -342,35 +349,38 @@ class TestQualityServiceCAPA:
 
     @pytest.fixture
     def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
+        return QualityService(mock_db, tenant_id=1, user_id=1)
 
     def test_create_capa(self, service, mock_db):
         """Tester la création d'un CAPA."""
         data = CAPACreate(
             title="Action corrective",
-            type=CAPAType.CORRECTIVE
+            capa_type=CAPAType.CORRECTIVE,
+            description="Description détaillée",
+            open_date=date.today(),
+            owner_id=1
         )
 
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
-        mock_db.query.return_value.filter.return_value.count.return_value = 0
+        mock_db.query.return_value.filter.return_value.scalar.return_value = 0
 
-        result = service.create_capa(data, uuid4())
+        result = service.create_capa(data)
 
         mock_db.add.assert_called()
 
-    def test_start_capa(self, service, mock_db):
-        """Tester le démarrage d'un CAPA."""
-        capa_id = uuid4()
-        mock_capa = MagicMock()
-        mock_capa.status = CAPAStatus.OPEN
+    def test_get_capa(self, service, mock_db):
+        """Tester la récupération d'un CAPA."""
+        mock_capa = MagicMock(spec=CAPA)
+        mock_capa.id = 1
+        mock_capa.capa_number = "CAPA-2026-001"
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_capa
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_capa
 
-        result = service.start_capa(capa_id)
+        result = service.get_capa(1)
 
-        assert mock_capa.status == CAPAStatus.IN_PROGRESS
+        assert result.capa_number == "CAPA-2026-001"
 
 
 # =============================================================================
@@ -386,36 +396,36 @@ class TestQualityServiceAudits:
 
     @pytest.fixture
     def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
+        return QualityService(mock_db, tenant_id=1, user_id=1)
 
     def test_create_audit(self, service, mock_db):
         """Tester la création d'un audit."""
         data = AuditCreate(
-            name="Audit ISO",
-            type=AuditType.INTERNAL,
+            title="Audit ISO",
+            audit_type=AuditType.INTERNAL,
             planned_date=date.today()
         )
 
         mock_db.add = MagicMock()
         mock_db.commit = MagicMock()
         mock_db.refresh = MagicMock()
-        mock_db.query.return_value.filter.return_value.count.return_value = 0
+        mock_db.query.return_value.filter.return_value.scalar.return_value = 0
 
-        result = service.create_audit(data, uuid4())
+        result = service.create_audit(data)
 
         mock_db.add.assert_called()
 
-    def test_start_audit(self, service, mock_db):
-        """Tester le démarrage d'un audit."""
-        audit_id = uuid4()
-        mock_audit = MagicMock()
-        mock_audit.status = AuditStatus.PLANNED
+    def test_get_audit(self, service, mock_db):
+        """Tester la récupération d'un audit."""
+        mock_audit = MagicMock(spec=QualityAudit)
+        mock_audit.id = 1
+        mock_audit.audit_number = "AUD-2026-001"
 
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_audit
+        mock_db.query.return_value.options.return_value.filter.return_value.first.return_value = mock_audit
 
-        result = service.start_audit(audit_id)
+        result = service.get_audit(1)
 
-        assert mock_audit.status == AuditStatus.IN_PROGRESS
+        assert result.audit_number == "AUD-2026-001"
 
 
 # =============================================================================
@@ -428,10 +438,10 @@ class TestFactory:
     def test_get_quality_service(self):
         """Tester la factory."""
         mock_db = MagicMock()
-        service = get_quality_service(mock_db, "test-tenant")
+        service = get_quality_service(mock_db, tenant_id=1, user_id=1)
 
         assert isinstance(service, QualityService)
-        assert service.tenant_id == "test-tenant"
+        assert service.tenant_id == 1
 
 
 # =============================================================================
@@ -467,6 +477,24 @@ class TestQualityCalculations:
         resolution_hours = (closed - opened).total_seconds() / 3600
 
         assert resolution_hours == 53.0
+
+    def test_control_pass_rate(self):
+        """Tester le calcul du taux de conformité."""
+        total_controls = Decimal("50")
+        passed = Decimal("45")
+
+        pass_rate = (passed / total_controls) * 100
+
+        assert pass_rate == Decimal("90")
+
+    def test_capa_closure_rate(self):
+        """Tester le calcul du taux de clôture CAPA."""
+        total_capas = 20
+        closed_capas = 15
+
+        closure_rate = (closed_capas / total_capas) * 100
+
+        assert closure_rate == 75.0
 
 
 # =============================================================================

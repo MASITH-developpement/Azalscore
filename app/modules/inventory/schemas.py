@@ -321,6 +321,16 @@ class StockLevelResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class StockLevelUpdate(BaseModel):
+    """Mise à jour niveau de stock."""
+    quantity_on_hand: Optional[Decimal] = None
+    quantity_reserved: Optional[Decimal] = None
+    quantity_incoming: Optional[Decimal] = None
+    quantity_outgoing: Optional[Decimal] = None
+    last_movement_at: Optional[datetime] = None
+    last_count_at: Optional[datetime] = None
+
+
 class StockByProduct(BaseModel):
     """Stock agrégé par produit."""
     product_id: UUID

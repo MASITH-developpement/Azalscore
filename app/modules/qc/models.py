@@ -65,7 +65,7 @@ class ModuleStatus(str, PyEnum):
     DEPRECATED = "DEPRECATED"          # Déprécié
 
 
-class TestType(str, PyEnum):
+class QCTestType(str, PyEnum):
     """Types de tests."""
     UNIT = "UNIT"                  # Tests unitaires
     INTEGRATION = "INTEGRATION"    # Tests d'intégration
@@ -73,6 +73,10 @@ class TestType(str, PyEnum):
     PERFORMANCE = "PERFORMANCE"    # Tests de performance
     SECURITY = "SECURITY"          # Tests de sécurité
     REGRESSION = "REGRESSION"      # Tests de régression
+
+
+# Alias pour compatibilité
+TestType = QCTestType
 
 
 class ValidationPhase(str, PyEnum):
@@ -261,7 +265,7 @@ class QCCheckResult(Base):
     )
 
 
-class TestRun(Base):
+class QCTestRun(Base):
     """Exécution de tests pour un module."""
     __tablename__ = "qc_test_runs"
 
@@ -301,6 +305,10 @@ class TestRun(Base):
         Index("idx_test_runs_tenant_module", "tenant_id", "module_id"),
         Index("idx_test_runs_type", "tenant_id", "test_type"),
     )
+
+
+# Alias pour compatibilité
+TestRun = QCTestRun
 
 
 class QCMetric(Base):

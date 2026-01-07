@@ -460,11 +460,15 @@ class EcommerceService:
             )
             self.db.add(item)
 
+        # Flush pour que le nouvel item soit visible dans les queries
+        self.db.flush()
+
         # Recalculer les totaux
         self._recalculate_cart_totals(cart)
 
         self.db.commit()
         self.db.refresh(item)
+        self.db.refresh(cart)  # Rafraîchir aussi le cart
         return item, "Article ajouté"
 
     def update_cart_item(

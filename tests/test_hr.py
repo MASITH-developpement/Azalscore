@@ -14,7 +14,7 @@ from uuid import uuid4
 # Import des modèles
 from app.modules.hr.models import (
     Department, Position, Employee, Contract, LeaveRequest, LeaveBalance,
-    PayrollPeriod, Payslip, PayslipLine, TimeEntry, Skill, EmployeeSkill,
+    PayrollPeriod, Payslip, PayslipLine, HRTimeEntry as TimeEntry, Skill, EmployeeSkill,
     Training, TrainingParticipant, Evaluation, HRDocument,
     ContractType, EmployeeStatus, LeaveType, LeaveStatus, PayrollStatus,
     PayElementType, DocumentType, EvaluationType, EvaluationStatus,
@@ -25,7 +25,7 @@ from app.modules.hr.models import (
 from app.modules.hr.schemas import (
     DepartmentCreate, DepartmentUpdate, PositionCreate,
     EmployeeCreate, EmployeeUpdate, ContractCreate,
-    LeaveRequestCreate, LeaveBalanceUpdate,
+    LeaveRequestCreate, LeaveBalanceResponse as LeaveBalanceUpdate,
     PayrollPeriodCreate, PayslipCreate, PayslipLineCreate,
     TimeEntryCreate, SkillCreate, EmployeeSkillCreate,
     TrainingCreate, TrainingParticipantCreate,

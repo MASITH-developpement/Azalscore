@@ -148,7 +148,7 @@ class Department(Base):
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     parent_id = Column(UniversalUUID(), ForeignKey("hr_departments.id"), nullable=True)
-    manager_id = Column(UniversalUUID(), ForeignKey("hr_employees.id"), nullable=True)
+    manager_id = Column(UniversalUUID(), ForeignKey("hr_employees.id", use_alter=True, name="fk_dept_manager"), nullable=True)
     cost_center = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)

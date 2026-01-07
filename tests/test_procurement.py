@@ -26,9 +26,9 @@ from app.modules.procurement.schemas import (
     SupplierCreate, SupplierUpdate, SupplierContactCreate,
     RequisitionCreate, RequisitionLineCreate,
     QuotationCreate, QuotationLineCreate,
-    PurchaseOrderCreate, PurchaseOrderLineCreate,
-    GoodsReceiptCreate, GoodsReceiptLineCreate,
-    PurchaseInvoiceCreate, PurchaseInvoiceLineCreate,
+    PurchaseOrderCreate, OrderLineCreate as PurchaseOrderLineCreate,
+    GoodsReceiptCreate, ReceiptLineCreate as GoodsReceiptLineCreate,
+    PurchaseInvoiceCreate, InvoiceLineCreate as PurchaseInvoiceLineCreate,
     SupplierPaymentCreate, PaymentAllocationCreate,
     SupplierEvaluationCreate, ProcurementDashboard
 )
