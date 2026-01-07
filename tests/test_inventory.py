@@ -26,12 +26,12 @@ from app.modules.inventory.models import (
 from app.modules.inventory.schemas import (
     CategoryCreate, WarehouseCreate, LocationCreate,
     ProductCreate, ProductUpdate, StockLevelUpdate,
-    LotCreate, SerialNumberCreate,
+    LotCreate, SerialCreate as SerialNumberCreate,
     MovementCreate, MovementLineCreate,
-    InventoryCountCreate, InventoryCountLineCreate,
+    InventoryCountCreate, CountLineCreate as InventoryCountLineCreate,
     PickingCreate, PickingLineCreate,
-    ReplenishmentRuleCreate, StockValuationCreate,
-    StockDashboard, StockAlert
+    ValuationResponse as StockValuationCreate,
+    InventoryDashboard as StockDashboard, StockByProduct as StockAlert
 )
 
 # Import du service

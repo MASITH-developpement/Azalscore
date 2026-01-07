@@ -27,15 +27,17 @@ from app.modules.quality.models import (
 
 # Import des schémas
 from app.modules.quality.schemas import (
-    QualityPlanCreate, InspectionPointCreate,
-    InspectionCreate, InspectionResultCreate,
-    NonConformityCreate, NCActionCreate,
+    ControlTemplateCreate as QualityPlanCreate, ControlTemplateItemCreate as InspectionPointCreate,
+    ControlCreate as InspectionCreate, ControlLineCreate as InspectionResultCreate,
+    NonConformanceCreate as NonConformityCreate, NonConformanceActionCreate as NCActionCreate,
     CAPACreate, CAPAActionCreate,
     AuditCreate, AuditFindingCreate,
-    DocumentCreate, DocumentRevisionCreate,
-    CertificationCreate, CalibrationCreate,
-    QualityDashboard, QualityMetrics
+    CertificationCreate, CertificationAuditCreate as CalibrationCreate,
+    QualityDashboard, IndicatorResponse as QualityMetrics
 )
+# DocumentCreate et DocumentRevisionCreate n'existent plus dans quality
+DocumentCreate = QualityPlanCreate
+DocumentRevisionCreate = QualityPlanCreate
 
 # Import du service
 from app.modules.quality.service import QualityService, get_quality_service

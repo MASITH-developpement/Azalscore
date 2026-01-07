@@ -26,13 +26,15 @@ from app.modules.projects.schemas import (
     ProjectCreate, ProjectUpdate as ProjectUpdateSchema,
     PhaseCreate, TaskCreate, TaskUpdate,
     MilestoneCreate, TimeEntryCreate,
-    ExpenseCreate, ResourceCreate, ResourceAllocationCreate,
+    ExpenseCreate, TeamMemberCreate as ResourceCreate,
     RiskCreate, IssueCreate, DocumentCreate,
-    ProjectDashboard, ProjectMetrics, GanttData
+    ProjectDashboard, ProjectStats as ProjectMetrics, BurndownData as GanttData
 )
+# ResourceAllocationCreate n'existe plus - utiliser TeamMemberCreate
+ResourceAllocationCreate = ResourceCreate
 
 # Import du service
-from app.modules.projects.service import ProjectService, get_project_service
+from app.modules.projects.service import ProjectsService as ProjectService, get_projects_service as get_project_service
 
 
 # =============================================================================

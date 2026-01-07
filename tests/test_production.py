@@ -28,11 +28,13 @@ from app.modules.production.schemas import (
     BOMCreate, BOMLineCreate, BOMUpdate,
     RoutingCreate, RoutingOperationCreate,
     MOCreate as ManufacturingOrderCreate, MOUpdate as ManufacturingOrderUpdate,
-    WorkOrderCreate, WorkOrderUpdate,
-    TimeEntryCreate, ConsumptionCreate, OutputCreate,
-    ScrapCreate, ProductionPlanCreate,
-    ProductionDashboard, OEEMetrics
+    WorkOrderResponse as WorkOrderCreate, WorkOrderUpdate,
+    TimeEntryCreate, ConsumeRequest as ConsumptionCreate, ProduceRequest as OutputCreate,
+    ScrapCreate, PlanCreate as ProductionPlanCreate,
+    ProductionDashboard
 )
+# OEEMetrics n'existe plus - utiliser ProductionDashboard pour les métriques
+OEEMetrics = ProductionDashboard
 
 # Import du service
 from app.modules.production.service import ProductionService, get_production_service

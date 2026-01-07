@@ -31,8 +31,8 @@ from app.modules.bi.schemas import (
     KPICreate as KPIDefinitionCreate, KPIValueCreate, KPITargetCreate,
     AlertCreate, AlertRuleCreate,
     DataSourceCreate, DataQueryCreate,
-    BookmarkCreate, ExportHistoryCreate,
-    BIDashboard, KPIOverview
+    BookmarkCreate, ExportRequest as ExportHistoryCreate,
+    BIOverview as BIDashboard, KPISummary as KPIOverview
 )
 
 # Import du service

@@ -25,12 +25,12 @@ from app.modules.maintenance.models import (
 
 # Import des schémas
 from app.modules.maintenance.schemas import (
-    EquipmentCreate, EquipmentUpdate, EquipmentCategoryCreate,
-    MaintenancePlanCreate, MaintenanceTaskCreate,
+    AssetCreate as EquipmentCreate, AssetUpdate as EquipmentUpdate,
+    MaintenancePlanCreate, PlanTaskCreate as MaintenanceTaskCreate,
     WorkOrderCreate, WorkOrderUpdate, WorkOrderLaborCreate, WorkOrderPartCreate,
-    FailureReportCreate, SparePartCreate, SparePartStockUpdate,
-    MeterReadingCreate, MaintenanceLogCreate,
-    MaintenanceDashboard, EquipmentKPIs
+    FailureCreate as FailureReportCreate, SparePartCreate, SparePartUpdate as SparePartStockUpdate,
+    MeterReadingCreate,
+    MaintenanceDashboard, MaintenanceKPIResponse as EquipmentKPIs
 )
 
 # Import du service

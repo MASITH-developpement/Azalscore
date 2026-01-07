@@ -25,7 +25,7 @@ from app.modules.hr.models import (
 from app.modules.hr.schemas import (
     DepartmentCreate, DepartmentUpdate, PositionCreate,
     EmployeeCreate, EmployeeUpdate, ContractCreate,
-    LeaveRequestCreate, LeaveBalanceUpdate,
+    LeaveRequestCreate, LeaveBalanceResponse as LeaveBalanceUpdate,
     PayrollPeriodCreate, PayslipCreate, PayslipLineCreate,
     TimeEntryCreate, SkillCreate, EmployeeSkillCreate,
     TrainingCreate, TrainingParticipantCreate,
