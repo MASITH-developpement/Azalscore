@@ -163,7 +163,7 @@ class UserLogin(BaseModel):
 
 
 class TokenResponse(BaseModel):
-    """Schéma de réponse après login."""
+    """Schema de reponse apres login (ancien format)."""
     access_token: str
     token_type: str
     tenant_id: str
@@ -171,13 +171,28 @@ class TokenResponse(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """Schéma de réponse utilisateur."""
+    """Schema de reponse utilisateur."""
     id: int
     email: str
     tenant_id: str
     role: str
+    full_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class TokensSchema(BaseModel):
+    """Schema des tokens."""
+    access_token: str
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
+
+
+class LoginResponse(BaseModel):
+    """Schema de reponse login compatible frontend."""
+    user: UserResponse
+    tokens: TokensSchema
+    tenant_id: str
 
 
 # ===== SCHÉMAS 2FA =====
@@ -266,7 +281,7 @@ def register(
     return db_user
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 def login(
     request: Request,
     user_data: UserLogin,
@@ -275,7 +290,8 @@ def login(
     """
     Connexion par email/password.
     RATE LIMITED: Max 5 tentatives par minute par IP.
-    BLOCAGE: Après 5 échecs consécutifs, compte bloqué 15 min.
+    BLOCAGE: Apres 5 echecs consecutifs, compte bloque 15 min.
+    Retourne LoginResponse ou LoginResponseWith2FA si 2FA requis.
     """
     # SÉCURITÉ: Rate limiting strict
     client_ip = get_client_ip(request)
@@ -327,7 +343,7 @@ def login(
             "message": "2FA verification required. Use /auth/2fa/verify-login endpoint."
         }
 
-    # Création du JWT final (pas de 2FA)
+    # Creation du JWT final (pas de 2FA)
     access_token = create_access_token(
         data={
             "sub": str(user.id),
@@ -336,14 +352,35 @@ def login(
         }
     )
 
-    # Enregistrer le succès (reset du compteur d'échecs)
+    # Creer un refresh token (meme payload, duree plus longue)
+    refresh_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "tenant_id": user.tenant_id,
+            "role": user.role.value,
+            "type": "refresh"
+        },
+        expires_delta=timedelta(days=7)
+    )
+
+    # Enregistrer le succes (reset du compteur d'echecs)
     auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=True)
 
+    # Retourner le format attendu par le frontend
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "tenant_id": user.tenant_id,
-        "role": user.role.value
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "tenant_id": user.tenant_id,
+            "role": user.role.value,
+            "full_name": getattr(user, 'full_name', None)
+        },
+        "tokens": {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+        },
+        "tenant_id": user.tenant_id
     }
 
 
