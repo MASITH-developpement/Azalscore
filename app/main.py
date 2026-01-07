@@ -6,9 +6,9 @@ ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 """
 
 import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
@@ -214,6 +214,47 @@ app = FastAPI(
     openapi_url=_openapi_url,
     lifespan=lifespan
 )
+
+# =============================================================================
+# HANDLERS D'EXCEPTIONS GLOBAUX
+# =============================================================================
+# Ces handlers convertissent les exceptions non gérées en réponses HTTP propres
+# pour éviter les erreurs 500 Internal Server Error face aux utilisateurs.
+
+from app.core.security import PasswordTooLongError
+
+
+@app.exception_handler(PasswordTooLongError)
+async def password_too_long_handler(request: Request, exc: PasswordTooLongError):
+    """Gère les mots de passe trop longs (limite bcrypt 72 bytes)."""
+    return JSONResponse(
+        status_code=400,
+        content={
+            "detail": str(exc),
+            "error_code": "PASSWORD_TOO_LONG",
+            "max_length": 72
+        }
+    )
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    """
+    Handler générique pour les ValueError non capturées.
+    Évite les crash 500 sur les erreurs de validation.
+    """
+    return JSONResponse(
+        status_code=400,
+        content={
+            "detail": f"Erreur de validation: {str(exc)}",
+            "error_code": "VALIDATION_ERROR"
+        }
+    )
+
+
+# =============================================================================
+# MIDDLEWARES
+# =============================================================================
 
 # Middleware compression HTTP (gzip) - DOIT être ajouté en premier (s'exécute en dernier)
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)

@@ -26,12 +26,31 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
+class PasswordTooLongError(ValueError):
+    """Erreur levée quand le mot de passe dépasse la limite bcrypt."""
+    pass
+
+
 def get_password_hash(password: str) -> str:
     """
     Hash un mot de passe avec bcrypt.
     Le salt est généré automatiquement.
+
+    IMPORTANT: bcrypt a une limite de 72 bytes. Les mots de passe plus longs
+    sont rejetés pour éviter une troncature silencieuse qui affaiblirait la sécurité.
+
+    Raises:
+        PasswordTooLongError: Si le mot de passe dépasse 72 bytes en UTF-8
     """
     password_bytes = password.encode('utf-8')
+
+    # Bcrypt limite stricte de 72 bytes - validation explicite
+    if len(password_bytes) > 72:
+        raise PasswordTooLongError(
+            "Le mot de passe ne peut pas dépasser 72 caractères. "
+            "Veuillez utiliser un mot de passe plus court."
+        )
+
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password_bytes, salt)
     return hashed.decode('utf-8')
