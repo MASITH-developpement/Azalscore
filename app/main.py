@@ -397,6 +397,52 @@ def get_current_tenant_info(
     }
 
 
+@api_v1.get("/cockpit/dashboard")
+def get_cockpit_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne les données du dashboard cockpit."""
+    return {
+        "kpis": [
+            {"id": "revenue", "label": "CA du mois", "value": 0, "unit": "€", "trend": 0, "status": "green"},
+            {"id": "invoices", "label": "Factures en attente", "value": 0, "trend": 0, "status": "green"},
+            {"id": "treasury", "label": "Trésorerie", "value": 0, "unit": "€", "trend": 0, "status": "green"},
+            {"id": "overdue", "label": "Impayés", "value": 0, "unit": "€", "trend": 0, "status": "green"},
+        ],
+        "alerts": [],
+        "treasury_summary": {
+            "balance": 0,
+            "forecast_30d": 0,
+            "pending_payments": 0
+        },
+        "sales_summary": {
+            "month_revenue": 0,
+            "prev_month_revenue": 0,
+            "pending_invoices": 0,
+            "overdue_invoices": 0
+        },
+        "activity_summary": {
+            "open_quotes": 0,
+            "pending_orders": 0,
+            "scheduled_interventions": 0
+        }
+    }
+
+
+@api_v1.get("/cockpit/decisions")
+def get_cockpit_decisions(
+    current_user: User = Depends(get_current_user)
+):
+    """Retourne les décisions en attente."""
+    return {
+        "items": [],
+        "total": 0,
+        "page": 1,
+        "page_size": 25
+    }
+
+
 # Monter l'API v1 sur l'app principale
 app.include_router(api_v1)
 
