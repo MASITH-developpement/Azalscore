@@ -39,6 +39,7 @@ from app.api.admin_migration import router as admin_migration_router
 
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
 from app.modules.iam.router import router as iam_router
+from app.modules.iam.rbac_middleware import RBACMiddleware
 
 # Module T1 - Configuration Automatique par Fonction
 from app.modules.autoconfig.router import router as autoconfig_router
@@ -222,8 +223,8 @@ app = FastAPI(
 
 # Middleware stack (ordre important: dernier ajouté = premier exécuté)
 # En Starlette, les middlewares s'exécutent dans l'ordre INVERSE d'ajout
-# Donc on ajoute dans l'ordre: compression -> metrics -> tenant -> CORS
-# Pour que l'exécution soit: CORS -> tenant -> metrics -> compression
+# Donc on ajoute dans l'ordre: compression -> metrics -> rbac -> tenant -> CORS
+# Pour que l'exécution soit: CORS -> tenant -> rbac -> metrics -> compression
 
 # 1. Compression (s'exécute en dernier)
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
@@ -231,10 +232,16 @@ app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 # 2. Metrics
 app.add_middleware(MetricsMiddleware)
 
-# 3. TenantMiddleware - Validation X-Tenant-ID
+# 3. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
+# Note: Le middleware RBAC vérifie les permissions après authentification
+# Pour la bêta, les routes non configurées génèrent un warning mais passent
+# En production, activer deny-by-default dans rbac_middleware.py
+app.add_middleware(RBACMiddleware)
+
+# 4. TenantMiddleware - Validation X-Tenant-ID
 app.add_middleware(TenantMiddleware)
 
-# 4. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
+# 5. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
 setup_cors(app)
 
 # Routes observabilite (PUBLIQUES - pas de tenant required)
