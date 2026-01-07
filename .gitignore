@@ -39,6 +39,7 @@ env/
 htmlcov/
 .tox/
 *.db
+*.db-journal
 test.db
 
 # IDE
