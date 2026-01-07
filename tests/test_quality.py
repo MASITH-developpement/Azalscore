@@ -13,15 +13,16 @@ from uuid import uuid4
 
 # Import des modèles
 from app.modules.quality.models import (
-    QualityPlan, InspectionPoint, ControlMethod,
-    Inspection, InspectionResult, NonConformity, NCAction,
-    CorrectiveAction, CAPA, CAPAAction,
-    Audit, AuditFinding, Document, DocumentRevision,
-    Certification, CalibrationRecord,
-    InspectionType, InspectionStatus, NCStatus, NCSeverity,
-    ActionStatus, ActionType, CAPAType, CAPAStatus,
+    QualityControlTemplate as QualityPlan, QualityControlTemplateItem as InspectionPoint,
+    QualityControl as Inspection, QualityControlLine as InspectionResult,
+    NonConformance as NonConformity, NonConformanceAction as NCAction,
+    CAPA, CAPAAction,
+    QualityAudit as Audit, AuditFinding, Certification,
+    ControlType as InspectionType, ControlStatus as InspectionStatus,
+    NonConformanceStatus as NCStatus, NonConformanceSeverity as NCSeverity,
+    CAPAStatus as ActionStatus, CAPAType as ActionType, CAPAType, CAPAStatus,
     AuditType, AuditStatus, FindingSeverity,
-    DocumentStatus, CertificationStatus, CalibrationStatus
+    CertificationStatus
 )
 
 # Import des schémas

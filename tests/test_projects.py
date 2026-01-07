@@ -13,12 +13,12 @@ from uuid import uuid4
 
 # Import des modèles
 from app.modules.projects.models import (
-    Project, ProjectPhase, Task, Milestone,
-    TimeEntry, Expense, Resource, ResourceAllocation,
-    Risk, Issue, Document, ProjectUpdate,
-    ProjectStatus, ProjectType, TaskStatus, TaskPriority,
-    MilestoneStatus, ExpenseStatus, ResourceType,
-    RiskLevel, RiskStatus, IssueStatus, IssuePriority
+    Project, ProjectPhase, ProjectTask as Task, ProjectMilestone as Milestone,
+    ProjectTimeEntry as TimeEntry, ProjectExpense as Expense, ProjectTeamMember as Resource,
+    ProjectRisk as Risk, ProjectIssue as Issue, ProjectDocument as Document,
+    ProjectStatus, ProjectPriority as ProjectType, TaskStatus, TaskPriority,
+    MilestoneStatus, ExpenseStatus, TeamMemberRole as ResourceType,
+    RiskImpact as RiskLevel, RiskStatus, IssueStatus, IssuePriority
 )
 
 # Import des schémas

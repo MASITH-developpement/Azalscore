@@ -27,7 +27,7 @@ from app.modules.production.schemas import (
     WorkCenterCreate, WorkCenterUpdate,
     BOMCreate, BOMLineCreate, BOMUpdate,
     RoutingCreate, RoutingOperationCreate,
-    ManufacturingOrderCreate, ManufacturingOrderUpdate,
+    MOCreate as ManufacturingOrderCreate, MOUpdate as ManufacturingOrderUpdate,
     WorkOrderCreate, WorkOrderUpdate,
     TimeEntryCreate, ConsumptionCreate, OutputCreate,
     ScrapCreate, ProductionPlanCreate,

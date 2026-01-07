@@ -12,7 +12,7 @@ import json
 
 # Import des modèles
 from app.modules.web.models import (
-    Theme, Widget, Dashboard, MenuItem, UIComponent,
+    Theme, Widget, WebDashboard as Dashboard, MenuItem, UIComponent,
     UserUIPreference, Shortcut, CustomPage,
     ThemeMode, WidgetType, WidgetSize, ComponentCategory,
     MenuType, PageType

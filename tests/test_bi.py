@@ -28,7 +28,7 @@ from app.modules.bi.models import (
 from app.modules.bi.schemas import (
     DashboardCreate, DashboardUpdate, WidgetCreate, WidgetUpdate,
     ReportCreate, ReportScheduleCreate,
-    KPIDefinitionCreate, KPIValueCreate, KPITargetCreate,
+    KPICreate as KPIDefinitionCreate, KPIValueCreate, KPITargetCreate,
     AlertCreate, AlertRuleCreate,
     DataSourceCreate, DataQueryCreate,
     BookmarkCreate, ExportHistoryCreate,

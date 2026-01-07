@@ -13,14 +13,14 @@ from uuid import uuid4
 
 # Import des modèles
 from app.modules.maintenance.models import (
-    Equipment, EquipmentCategory, Location,
-    MaintenancePlan, MaintenanceTask,
-    WorkOrder, WorkOrderLabor, WorkOrderPart,
-    FailureReport, SparePart, SparePartStock,
-    MeterReading, MaintenanceLog,
-    EquipmentStatus, CriticalityLevel, MaintenanceType,
-    FrequencyUnit, WorkOrderStatus, WorkOrderPriority,
-    FailureSeverity, FailureType
+    Asset as Equipment, AssetCategory as EquipmentCategory,
+    MaintenancePlan, MaintenancePlanTask as MaintenanceTask,
+    MaintenanceWorkOrder as WorkOrder, WorkOrderLabor, WorkOrderPart,
+    Failure as FailureReport, SparePart, SparePartStock,
+    MeterReading,
+    AssetStatus as EquipmentStatus, AssetCriticality as CriticalityLevel, MaintenanceType,
+    WorkOrderStatus, WorkOrderPriority,
+    FailureType
 )
 
 # Import des schémas

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.modules.field_service.models import (
     ServiceZone, Technician, Vehicle, InterventionTemplate,
-    Intervention, InterventionHistory, TimeEntry, Route, Expense, ServiceContract,
+    Intervention, InterventionHistory, FSTimeEntry as TimeEntry, Route, Expense, ServiceContract,
     TechnicianStatus, InterventionStatus, InterventionPriority, InterventionType
 )
 from app.modules.field_service.schemas import (

@@ -59,13 +59,17 @@ class ModuleStatusEnum(str, Enum):
     DEPRECATED = "DEPRECATED"
 
 
-class TestTypeEnum(str, Enum):
+class QCTestTypeEnum(str, Enum):
     UNIT = "UNIT"
     INTEGRATION = "INTEGRATION"
     E2E = "E2E"
     PERFORMANCE = "PERFORMANCE"
     SECURITY = "SECURITY"
     REGRESSION = "REGRESSION"
+
+
+# Alias pour compatibilité
+TestTypeEnum = QCTestTypeEnum
 
 
 class ValidationPhaseEnum(str, Enum):
@@ -266,9 +270,9 @@ class CheckResultResponse(BaseModel):
 # TESTS
 # ============================================================================
 
-class TestRunCreate(BaseModel):
+class QCTestRunCreate(BaseModel):
     module_id: int
-    test_type: TestTypeEnum
+    test_type: QCTestTypeEnum
     total_tests: int
     passed_tests: int
     failed_tests: int
@@ -283,7 +287,11 @@ class TestRunCreate(BaseModel):
     validation_id: Optional[int] = None
 
 
-class TestRunResponse(BaseModel):
+# Alias pour compatibilité
+TestRunCreate = QCTestRunCreate
+
+
+class QCTestRunResponse(BaseModel):
     id: int
     module_id: int
     validation_id: Optional[int] = None
@@ -303,6 +311,10 @@ class TestRunResponse(BaseModel):
     triggered_user: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# Alias pour compatibilité
+TestRunResponse = QCTestRunResponse
 
 
 # ============================================================================
