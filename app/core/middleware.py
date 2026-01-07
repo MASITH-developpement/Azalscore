@@ -23,13 +23,20 @@ class TenantMiddleware(BaseHTTPMiddleware):
     # - health/*: monitoring et Kubernetes probes
     # - metrics: Prometheus scraping
     PUBLIC_PATHS = {
+        # Health & Monitoring
         "/health", "/health/live", "/health/ready", "/health/startup", "/health/db", "/health/redis",
         "/metrics", "/metrics/json",
+        # Documentation
         "/docs", "/redoc", "/openapi.json",
-        "/", "/dashboard", "/treasury", "/static", "/favicon.ico", "/admin",
-        "/auth/login", "/auth/bootstrap", "/auth/2fa/verify-login",
-        "/v1/auth/login", "/v1/auth/bootstrap", "/v1/auth/2fa/verify-login",
-        "/v1/audit"
+        # Frontend pages
+        "/", "/dashboard", "/treasury", "/static", "/favicon.ico", "/admin", "/login",
+        # Auth routes (legacy)
+        "/auth/login", "/auth/bootstrap", "/auth/register", "/auth/2fa/verify-login",
+        # Auth routes (v1)
+        "/v1/auth/login", "/v1/auth/bootstrap", "/v1/auth/register", "/v1/auth/2fa/verify-login",
+        "/v1/auth/refresh", "/v1/auth/logout", "/v1/auth",
+        # Audit routes (public for UI events without auth)
+        "/v1/audit", "/v1/audit/ui-events",
     }
     
     async def dispatch(self, request: Request, call_next):
