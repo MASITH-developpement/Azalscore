@@ -221,15 +221,21 @@ app = FastAPI(
 )
 
 # Middleware stack (ordre important: dernier ajouté = premier exécuté)
-# 1. CORS doit être configuré en premier pour gérer les preflight OPTIONS
-setup_cors(app)
+# En Starlette, les middlewares s'exécutent dans l'ordre INVERSE d'ajout
+# Donc on ajoute dans l'ordre: compression -> metrics -> tenant -> CORS
+# Pour que l'exécution soit: CORS -> tenant -> metrics -> compression
 
-# 2. TenantMiddleware - Validation X-Tenant-ID (après CORS)
+# 1. Compression (s'exécute en dernier)
+app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
+
+# 2. Metrics
+app.add_middleware(MetricsMiddleware)
+
+# 3. TenantMiddleware - Validation X-Tenant-ID
 app.add_middleware(TenantMiddleware)
 
-# 3. Autres middlewares
-app.add_middleware(MetricsMiddleware)
-app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
+# 4. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
+setup_cors(app)
 
 # Routes observabilite (PUBLIQUES - pas de tenant required)
 app.include_router(health_router)
