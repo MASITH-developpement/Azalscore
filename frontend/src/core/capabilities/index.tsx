@@ -63,17 +63,42 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
 
     try {
       const response = await api.get<CapabilitiesResponse>('/v1/auth/capabilities');
+
+      // Debug: log response structure
+      console.log('[Capabilities] API response:', JSON.stringify(response));
+
+      // Handle both wrapped and unwrapped response formats
+      // Backend may return: { data: { capabilities: [...] } } or { capabilities: [...] }
+      let capabilities: string[] = [];
+
+      if (response && typeof response === 'object') {
+        // Check if response has data.capabilities (wrapped format)
+        if (response.data && Array.isArray(response.data.capabilities)) {
+          capabilities = response.data.capabilities;
+        }
+        // Check if response has capabilities directly (unwrapped format)
+        else if (Array.isArray((response as unknown as CapabilitiesResponse).capabilities)) {
+          capabilities = (response as unknown as CapabilitiesResponse).capabilities;
+        }
+      }
+
+      console.log('[Capabilities] Parsed capabilities:', capabilities.length, 'items');
+
       set({
-        capabilities: response.data.capabilities,
+        capabilities,
         isLoading: false,
       });
-    } catch {
+    } catch (error) {
+      console.error('[Capabilities] Error loading capabilities:', error);
+
       // En mode démo, récupérer les capabilities depuis le module auth
       const { getDemoCapabilities } = await import('@core/auth');
       const demoCapabilities = getDemoCapabilities();
       if (demoCapabilities.length > 0) {
+        console.log('[Capabilities] Using demo capabilities:', demoCapabilities.length, 'items');
         set({ capabilities: demoCapabilities, isLoading: false });
       } else {
+        console.warn('[Capabilities] No capabilities available, setting empty array');
         set({ capabilities: [], isLoading: false });
       }
     }

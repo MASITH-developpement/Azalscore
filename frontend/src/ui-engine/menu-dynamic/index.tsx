@@ -423,6 +423,29 @@ interface DynamicMenuProps {
 }
 
 export const DynamicMenu: React.FC<DynamicMenuProps> = ({ onItemClick }) => {
+  const { capabilities, isLoading } = useCapabilities();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[DynamicMenu] Capabilities state:', {
+      isLoading,
+      count: capabilities.length,
+      capabilities: capabilities.slice(0, 10),
+    });
+  }, [capabilities, isLoading]);
+
+  if (isLoading) {
+    return (
+      <nav className="azals-menu">
+        <div className="azals-menu__loading">Chargement du menu...</div>
+      </nav>
+    );
+  }
+
+  if (capabilities.length === 0) {
+    console.warn('[DynamicMenu] No capabilities available, menu will be empty');
+  }
+
   return (
     <nav className="azals-menu">
       {MENU_SECTIONS.map((section) => (

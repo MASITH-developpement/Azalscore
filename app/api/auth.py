@@ -767,7 +767,7 @@ def get_user_capabilities(
     """
     # Toutes les capacites disponibles
     ALL_CAPABILITIES = [
-        "cockpit.view",
+        "cockpit.view", "cockpit.decisions.view",
         "partners.view", "partners.create", "partners.edit", "partners.delete",
         "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete",
         "treasury.view", "treasury.create", "treasury.transfer.execute",
@@ -781,7 +781,10 @@ def get_user_capabilities(
         "payments.view", "payments.create",
         "mobile.view",
         "admin.view", "admin.users.view", "admin.users.create", "admin.users.edit", "admin.users.delete",
+        "admin.roles.view", "admin.roles.edit",
         "admin.tenants.view", "admin.tenants.create", "admin.tenants.delete",
+        "admin.modules.view", "admin.modules.edit",
+        "admin.logs.view",
         "admin.root.break_glass",
     ]
 
