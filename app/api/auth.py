@@ -790,6 +790,13 @@ def get_user_capabilities(
         "admin.modules.view", "admin.modules.edit",
         "admin.logs.view",
         "admin.root.break_glass",
+        # IAM permissions (required by IAM module)
+        "iam.user.create", "iam.user.read", "iam.user.update", "iam.user.delete", "iam.user.admin",
+        "iam.role.create", "iam.role.read", "iam.role.update", "iam.role.delete", "iam.role.assign",
+        "iam.group.create", "iam.group.read", "iam.group.update", "iam.group.delete",
+        "iam.permission.read",
+        "iam.invitation.create",
+        "iam.policy.read", "iam.policy.update",
     ]
 
     # Capacites basees sur le role

@@ -449,6 +449,130 @@ def get_cockpit_decisions(
     }}
 
 
+# ==================== ADMIN ENDPOINTS ====================
+# Endpoints pour le module Administration
+
+from app.core.models import UserRole
+
+@api_v1.get("/admin/roles")
+def get_admin_roles(
+    current_user: User = Depends(get_current_user)
+):
+    """Retourne la liste des rôles disponibles pour les utilisateurs."""
+    roles = [
+        {
+            "id": role.value,
+            "name": role.value,
+            "description": {
+                "DIRIGEANT": "Accès complet à toutes les fonctionnalités",
+                "ADMIN": "Administration du système",
+                "DAF": "Directeur Administratif et Financier",
+                "COMPTABLE": "Accès comptabilité et facturation",
+                "COMMERCIAL": "Accès ventes et clients",
+                "EMPLOYE": "Accès limité aux fonctionnalités de base",
+            }.get(role.value, ""),
+            "capabilities": [],
+            "user_count": 0,
+            "is_system": True,
+        }
+        for role in UserRole
+    ]
+    return {"items": roles, "total": len(roles)}
+
+
+@api_v1.get("/admin/stats")
+def get_admin_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne les statistiques pour le dashboard admin."""
+    total_users = db.query(User).filter(User.tenant_id == current_user.tenant_id).count()
+    active_users = db.query(User).filter(
+        User.tenant_id == current_user.tenant_id,
+        User.is_active == 1
+    ).count()
+
+    return {
+        "total_users": total_users,
+        "active_users": active_users,
+        "total_roles": len(UserRole),
+        "total_tenants": 1,
+        "active_modules": 9,
+    }
+
+
+@api_v1.get("/admin/users")
+def get_admin_users(
+    page: int = 1,
+    page_size: int = 25,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne la liste des utilisateurs du tenant."""
+    query = db.query(User).filter(User.tenant_id == current_user.tenant_id)
+    total = query.count()
+    users = query.offset((page - 1) * page_size).limit(page_size).all()
+
+    return {
+        "items": [
+            {
+                "id": str(u.id),
+                "email": u.email,
+                "name": getattr(u, 'full_name', u.email),
+                "roles": [u.role.value if hasattr(u.role, 'value') else str(u.role)],
+                "is_active": u.is_active == 1,
+                "created_at": str(u.created_at) if u.created_at else None,
+                "last_login": None,
+                "login_count": 0,
+            }
+            for u in users
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@api_v1.post("/admin/users")
+def create_admin_user(
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Crée un nouvel utilisateur."""
+    from app.core.security import get_password_hash
+
+    # Vérifier si l'email existe déjà
+    existing = db.query(User).filter(User.email == data.get("email")).first()
+    if existing:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Email déjà utilisé")
+
+    # Créer l'utilisateur
+    role_value = data.get("roles", ["EMPLOYE"])[0] if isinstance(data.get("roles"), list) else data.get("roles", "EMPLOYE")
+
+    new_user = User(
+        email=data.get("email"),
+        password_hash=get_password_hash("TempPassword123!"),  # Mot de passe temporaire
+        tenant_id=current_user.tenant_id,
+        role=UserRole(role_value) if role_value in [r.value for r in UserRole] else UserRole.EMPLOYE,
+        is_active=1,
+        full_name=data.get("name", ""),
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "id": str(new_user.id),
+        "email": new_user.email,
+        "name": getattr(new_user, 'full_name', new_user.email),
+        "roles": [new_user.role.value],
+        "is_active": True,
+    }
+
+
 # Monter l'API v1 sur l'app principale
 app.include_router(api_v1)
 
