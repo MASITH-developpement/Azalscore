@@ -125,6 +125,10 @@ def sample_ticket():
     ticket.sla_breached = False
     ticket.reply_count = 0
     ticket.internal_note_count = 0
+    # SLA dates - None par défaut pour éviter les erreurs de comparaison
+    ticket.resolution_due = None
+    ticket.first_response_due = None
+    ticket.created_at = datetime.utcnow()
     return ticket
 
 
@@ -611,7 +615,8 @@ class TestAutomations:
         auto1.name = "Rule 1"
         auto1.is_active = True
 
-        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [auto1]
+        # Le service fait .filter().filter().order_by().all() quand active_only=True
+        mock_db.query.return_value.filter.return_value.filter.return_value.order_by.return_value.all.return_value = [auto1]
 
         result = service.list_automations(active_only=True)
 
@@ -627,8 +632,12 @@ class TestDashboard:
 
     def test_get_ticket_stats(self, service, mock_db):
         """Test statistiques tickets."""
-        mock_db.query.return_value.filter.return_value.count.return_value = 0
-        mock_db.query.return_value.filter.return_value.all.return_value = []
+        # Configurer correctement le mock pour retourner des valeurs cohérentes
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.count.return_value = 0
+        mock_query.all.return_value = []  # Liste vide, pas MagicMock
 
         result = service.get_ticket_stats(days=30)
 

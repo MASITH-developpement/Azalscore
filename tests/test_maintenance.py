@@ -217,7 +217,7 @@ class TestMaintenanceServiceEquipment:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, "test-tenant", user_id=1)
 
     def test_create_equipment(self, service, mock_db):
         """Tester la création d'un équipement."""
@@ -262,7 +262,7 @@ class TestMaintenanceServiceWorkOrders:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, "test-tenant", user_id=1)
 
     def test_create_work_order(self, service, mock_db):
         """Tester la création d'un ordre de travail."""
@@ -332,7 +332,7 @@ class TestMaintenanceServiceFailures:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, "test-tenant", user_id=1)
 
     def test_report_failure(self, service, mock_db):
         """Tester le signalement d'une panne."""
@@ -368,7 +368,7 @@ class TestMaintenanceServicePlans:
 
     @pytest.fixture
     def service(self, mock_db):
-        return MaintenanceService(mock_db, "test-tenant")
+        return MaintenanceService(mock_db, "test-tenant", user_id=1)
 
     def test_create_maintenance_plan(self, service, mock_db):
         """Tester la création d'un plan."""

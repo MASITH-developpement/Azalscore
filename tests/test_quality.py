@@ -232,7 +232,7 @@ class TestQualityServiceInspections:
 
     @pytest.fixture
     def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
+        return QualityService(mock_db, "test-tenant", user_id=1)
 
     def test_create_inspection(self, service, mock_db):
         """Tester la création d'une inspection."""
@@ -288,7 +288,7 @@ class TestQualityServiceNC:
 
     @pytest.fixture
     def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
+        return QualityService(mock_db, "test-tenant", user_id=1)
 
     def test_create_non_conformity(self, service, mock_db):
         """Tester la création d'une non-conformité."""
@@ -345,7 +345,7 @@ class TestQualityServiceCAPA:
 
     @pytest.fixture
     def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
+        return QualityService(mock_db, "test-tenant", user_id=1)
 
     def test_create_capa(self, service, mock_db):
         """Tester la création d'un CAPA."""
@@ -389,7 +389,7 @@ class TestQualityServiceAudits:
 
     @pytest.fixture
     def service(self, mock_db):
-        return QualityService(mock_db, "test-tenant")
+        return QualityService(mock_db, "test-tenant", user_id=1)
 
     def test_create_audit(self, service, mock_db):
         """Tester la création d'un audit."""

@@ -260,7 +260,7 @@ class TestProjectServiceProjects:
 
     @pytest.fixture
     def service(self, mock_db):
-        return ProjectService(mock_db, "test-tenant")
+        return ProjectService(mock_db, "test-tenant", user_id=1)
 
     def test_create_project(self, service, mock_db):
         """Tester la création d'un projet."""
@@ -318,7 +318,7 @@ class TestProjectServiceTasks:
 
     @pytest.fixture
     def service(self, mock_db):
-        return ProjectService(mock_db, "test-tenant")
+        return ProjectService(mock_db, "test-tenant", user_id=1)
 
     def test_create_task(self, service, mock_db):
         """Tester la création d'une tâche."""
@@ -375,7 +375,7 @@ class TestProjectServiceTime:
 
     @pytest.fixture
     def service(self, mock_db):
-        return ProjectService(mock_db, "test-tenant")
+        return ProjectService(mock_db, "test-tenant", user_id=1)
 
     def test_log_time(self, service, mock_db):
         """Tester la saisie de temps."""
@@ -411,7 +411,7 @@ class TestProjectServiceRisks:
 
     @pytest.fixture
     def service(self, mock_db):
-        return ProjectService(mock_db, "test-tenant")
+        return ProjectService(mock_db, "test-tenant", user_id=1)
 
     def test_create_risk(self, service, mock_db):
         """Tester la création d'un risque."""
