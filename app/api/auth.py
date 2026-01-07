@@ -765,28 +765,50 @@ def get_user_capabilities(
     Retourne les capacites/permissions de l'utilisateur connecte.
     Utilise pour le controle d'acces cote frontend.
     """
+    # Toutes les capacites disponibles
+    ALL_CAPABILITIES = [
+        "cockpit.view",
+        "partners.view", "partners.create", "partners.edit", "partners.delete",
+        "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete",
+        "treasury.view", "treasury.create", "treasury.transfer.execute",
+        "accounting.view", "accounting.journal.view", "accounting.journal.delete",
+        "purchases.view", "purchases.create", "purchases.edit",
+        "projects.view", "projects.create", "projects.edit",
+        "interventions.view", "interventions.create", "interventions.edit",
+        "web.view", "web.edit",
+        "ecommerce.view", "ecommerce.edit",
+        "marketplace.view", "marketplace.edit",
+        "payments.view", "payments.create",
+        "mobile.view",
+        "admin.view", "admin.users.view", "admin.users.create", "admin.users.edit", "admin.users.delete",
+        "admin.tenants.view", "admin.tenants.create", "admin.tenants.delete",
+        "admin.root.break_glass",
+    ]
+
     # Capacites basees sur le role
     role_capabilities = {
-        "DIRIGEANT": ["*"],  # Acces complet
-        "DAF": ["treasury", "accounting", "invoicing", "payments", "reports"],
-        "COMPTABLE": ["accounting", "invoicing", "treasury_view"],
-        "COMMERCIAL": ["partners", "invoicing", "crm"],
-        "EMPLOYE": ["view_own", "helpdesk"],
-        "ADMIN": ["*", "admin"],
+        "DIRIGEANT": ALL_CAPABILITIES,  # Acces complet
+        "DAF": [
+            "cockpit.view", "treasury.view", "treasury.create", "treasury.transfer.execute",
+            "accounting.view", "accounting.journal.view", "invoicing.view", "invoicing.create",
+            "payments.view", "payments.create",
+        ],
+        "COMPTABLE": [
+            "cockpit.view", "accounting.view", "accounting.journal.view",
+            "invoicing.view", "invoicing.create", "treasury.view",
+        ],
+        "COMMERCIAL": [
+            "cockpit.view", "partners.view", "partners.create", "partners.edit",
+            "invoicing.view", "invoicing.create",
+        ],
+        "EMPLOYE": ["cockpit.view"],
+        "ADMIN": ALL_CAPABILITIES,
     }
 
     role_name = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
-    capabilities = role_capabilities.get(role_name, ["view_own"])
+    capabilities = role_capabilities.get(role_name, ["cockpit.view"])
 
-    return {
-        "role": role_name,
+    return {"data": {
         "capabilities": capabilities,
-        "modules": {
-            "cockpit": True,
-            "treasury": role_name in ["DIRIGEANT", "DAF", "ADMIN"],
-            "accounting": role_name in ["DIRIGEANT", "DAF", "COMPTABLE", "ADMIN"],
-            "invoicing": role_name in ["DIRIGEANT", "DAF", "COMPTABLE", "COMMERCIAL", "ADMIN"],
-            "partners": role_name in ["DIRIGEANT", "DAF", "COMMERCIAL", "ADMIN"],
-            "admin": role_name in ["DIRIGEANT", "ADMIN"],
-        }
-    }
+        "role": role_name,
+    }}
