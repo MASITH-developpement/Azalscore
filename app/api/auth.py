@@ -666,3 +666,59 @@ def regenerate_backup_codes(
         "backup_codes": new_codes,
         "message": "New backup codes generated. Store them securely. Old codes are now invalid."
     }
+
+
+# ===== ENDPOINTS UTILISATEUR COURANT =====
+
+@router.get("/me")
+def get_current_user_info(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retourne les informations de l'utilisateur connecte.
+    Utilise pour recuperer le profil apres login.
+    """
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "tenant_id": current_user.tenant_id,
+        "role": current_user.role.value,
+        "full_name": getattr(current_user, 'full_name', None),
+        "is_active": current_user.is_active == 1,
+        "totp_enabled": current_user.totp_enabled == 1
+    }
+
+
+@router.get("/capabilities")
+def get_user_capabilities(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retourne les capacites/permissions de l'utilisateur connecte.
+    Utilise pour le controle d'acces cote frontend.
+    """
+    # Capacites basees sur le role
+    role_capabilities = {
+        "DIRIGEANT": ["*"],  # Acces complet
+        "DAF": ["treasury", "accounting", "invoicing", "payments", "reports"],
+        "COMPTABLE": ["accounting", "invoicing", "treasury_view"],
+        "COMMERCIAL": ["partners", "invoicing", "crm"],
+        "EMPLOYE": ["view_own", "helpdesk"],
+        "ADMIN": ["*", "admin"],
+    }
+
+    role_name = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    capabilities = role_capabilities.get(role_name, ["view_own"])
+
+    return {
+        "role": role_name,
+        "capabilities": capabilities,
+        "modules": {
+            "cockpit": True,
+            "treasury": role_name in ["DIRIGEANT", "DAF", "ADMIN"],
+            "accounting": role_name in ["DIRIGEANT", "DAF", "COMPTABLE", "ADMIN"],
+            "invoicing": role_name in ["DIRIGEANT", "DAF", "COMPTABLE", "COMMERCIAL", "ADMIN"],
+            "partners": role_name in ["DIRIGEANT", "DAF", "COMMERCIAL", "ADMIN"],
+            "admin": role_name in ["DIRIGEANT", "ADMIN"],
+        }
+    }
