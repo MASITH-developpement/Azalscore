@@ -11,9 +11,25 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id
+from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.models import User
 
 from .models import ProductStatus, OrderStatus
+
+
+# ============================================================================
+# SÉCURITÉ: Fonctions de vérification des rôles
+# ============================================================================
+
+def require_ecommerce_admin(current_user: User) -> None:
+    """Vérifie que l'utilisateur a un rôle admin pour e-commerce."""
+    role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    if role_value not in ["DIRIGEANT", "ADMIN", "COMMERCIAL"]:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=403,
+            detail="Accès refusé. Rôle ADMIN, DIRIGEANT ou COMMERCIAL requis pour cette opération."
+        )
 from .schemas import (
     # Categories
     CategoryCreate, CategoryUpdate, CategoryResponse,
@@ -63,9 +79,12 @@ def get_service(
 @router.post("/categories", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 def create_category(
     data: CategoryCreate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Créer une catégorie produit."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     return service.create_category(data)
 
 
@@ -95,9 +114,12 @@ def get_category(
 def update_category(
     category_id: int,
     data: CategoryUpdate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Mettre à jour une catégorie."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     category = service.update_category(category_id, data)
     if not category:
         raise HTTPException(status_code=404, detail="Catégorie non trouvée")
@@ -107,9 +129,12 @@ def update_category(
 @router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_category(
     category_id: int,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Supprimer une catégorie."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     if not service.delete_category(category_id):
         raise HTTPException(status_code=404, detail="Catégorie non trouvée")
 
@@ -121,9 +146,12 @@ def delete_category(
 @router.post("/products", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_product(
     data: ProductCreate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Créer un produit."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     return service.create_product(data)
 
 
@@ -194,9 +222,12 @@ def get_product_by_slug(
 def update_product(
     product_id: int,
     data: ProductUpdate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Mettre à jour un produit."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     product = service.update_product(product_id, data)
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
@@ -206,9 +237,12 @@ def update_product(
 @router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_product(
     product_id: int,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Archiver un produit."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     if not service.delete_product(product_id):
         raise HTTPException(status_code=404, detail="Produit non trouvé")
 
@@ -216,9 +250,12 @@ def delete_product(
 @router.post("/products/{product_id}/publish", response_model=ProductResponse)
 def publish_product(
     product_id: int,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Publier un produit."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     product = service.publish_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
@@ -230,9 +267,12 @@ def update_stock(
     product_id: int,
     quantity_change: int,
     variant_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Ajuster le stock d'un produit."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     if not service.update_stock(product_id, quantity_change, variant_id):
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     return {"success": True, "message": "Stock mis à jour"}
@@ -245,9 +285,12 @@ def update_stock(
 @router.post("/variants", response_model=VariantResponse, status_code=status.HTTP_201_CREATED)
 def create_variant(
     data: VariantCreate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Créer une variante produit."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     return service.create_variant(data)
 
 
@@ -264,9 +307,12 @@ def list_variants(
 def update_variant(
     variant_id: int,
     data: VariantUpdate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Mettre à jour une variante."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     variant = service.update_variant(variant_id, data)
     if not variant:
         raise HTTPException(status_code=404, detail="Variante non trouvée")
@@ -276,9 +322,12 @@ def update_variant(
 @router.delete("/variants/{variant_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_variant(
     variant_id: int,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Supprimer une variante."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     if not service.delete_variant(variant_id):
         raise HTTPException(status_code=404, detail="Variante non trouvée")
 
@@ -430,6 +479,7 @@ def list_orders(
     customer_email: Optional[str] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Lister les commandes."""
@@ -489,9 +539,12 @@ def get_order_by_number(
 def update_order_status(
     order_id: int,
     data: OrderStatusUpdate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Mettre à jour le statut d'une commande."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     order = service.update_order_status(order_id, data)
     if not order:
         raise HTTPException(status_code=404, detail="Commande non trouvée")
@@ -503,9 +556,12 @@ def update_order_status(
 @router.post("/orders/{order_id}/cancel")
 def cancel_order(
     order_id: int,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Annuler une commande."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     success, message = service.cancel_order(order_id)
     if not success:
         raise HTTPException(status_code=400, detail=message)
@@ -579,9 +635,12 @@ def fail_payment(
 @router.post("/shipping-methods", response_model=ShippingMethodResponse, status_code=status.HTTP_201_CREATED)
 def create_shipping_method(
     data: ShippingMethodCreate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Créer une méthode de livraison."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     return service.create_shipping_method(data)
 
 
@@ -635,9 +694,12 @@ def get_shipping_rates(
 @router.post("/shipments", response_model=ShipmentResponse, status_code=status.HTTP_201_CREATED)
 def create_shipment(
     data: ShipmentCreate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Créer une expédition."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     return service.create_shipment(data)
 
 
@@ -645,9 +707,12 @@ def create_shipment(
 def mark_shipped(
     shipment_id: int,
     tracking_number: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Marquer une expédition comme expédiée."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     shipment = service.mark_shipment_shipped(shipment_id, tracking_number)
     if not shipment:
         raise HTTPException(status_code=404, detail="Expédition non trouvée")
@@ -661,18 +726,24 @@ def mark_shipped(
 @router.post("/coupons", response_model=CouponResponse, status_code=status.HTTP_201_CREATED)
 def create_coupon(
     data: CouponCreate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Créer un coupon."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     return service.create_coupon(data)
 
 
 @router.get("/coupons", response_model=List[CouponResponse])
 def list_coupons(
     active_only: bool = True,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Lister les coupons."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     return service.list_coupons(active_only=active_only)
 
 
@@ -731,9 +802,12 @@ def validate_coupon(
 def update_coupon(
     coupon_id: int,
     data: CouponUpdate,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Mettre à jour un coupon."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     coupon = service.update_coupon(coupon_id, data)
     if not coupon:
         raise HTTPException(status_code=404, detail="Coupon non trouvé")
@@ -743,9 +817,12 @@ def update_coupon(
 @router.delete("/coupons/{coupon_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_coupon(
     coupon_id: int,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Désactiver un coupon."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     if not service.delete_coupon(coupon_id):
         raise HTTPException(status_code=404, detail="Coupon non trouvé")
 
@@ -856,9 +933,12 @@ def list_product_reviews(
 @router.post("/reviews/{review_id}/approve")
 def approve_review(
     review_id: int,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Approuver un avis."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     if not service.approve_review(review_id):
         raise HTTPException(status_code=404, detail="Avis non trouvé")
     return {"success": True, "message": "Avis approuvé"}
@@ -919,9 +999,12 @@ def remove_from_wishlist(
 
 @router.get("/dashboard", response_model=EcommerceDashboard)
 def get_dashboard(
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Récupérer les statistiques du dashboard e-commerce."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     stats = service.get_dashboard_stats()
     top_products = service.get_top_selling_products()
     recent_orders = service.get_recent_orders()
@@ -938,9 +1021,12 @@ def get_sales_analytics(
     period: str = "month",  # day, week, month, year
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
+    current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
     """Obtenir les analytics de ventes."""
+    # SÉCURITÉ: Vérification du rôle admin
+    require_ecommerce_admin(current_user)
     # Simplified analytics
     stats = service.get_dashboard_stats()
 

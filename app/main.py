@@ -454,11 +454,25 @@ def get_cockpit_decisions(
 
 from app.core.models import UserRole
 
+def require_admin_role(current_user: User) -> None:
+    """Vérifie que l'utilisateur a un rôle admin (DIRIGEANT ou ADMIN)."""
+    role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    if role_value not in ["DIRIGEANT", "ADMIN"]:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=403,
+            detail="Accès refusé. Rôle ADMIN ou DIRIGEANT requis."
+        )
+
+
 @api_v1.get("/admin/roles")
 def get_admin_roles(
     current_user: User = Depends(get_current_user)
 ):
     """Retourne la liste des rôles disponibles pour les utilisateurs."""
+    # SÉCURITÉ: Vérification du rôle admin obligatoire
+    require_admin_role(current_user)
+
     roles = [
         {
             "id": role.value,
@@ -486,6 +500,9 @@ def get_admin_stats(
     db: Session = Depends(get_db)
 ):
     """Retourne les statistiques pour le dashboard admin."""
+    # SÉCURITÉ: Vérification du rôle admin obligatoire
+    require_admin_role(current_user)
+
     total_users = db.query(User).filter(User.tenant_id == current_user.tenant_id).count()
     active_users = db.query(User).filter(
         User.tenant_id == current_user.tenant_id,
@@ -509,6 +526,9 @@ def get_admin_users(
     db: Session = Depends(get_db)
 ):
     """Retourne la liste des utilisateurs du tenant."""
+    # SÉCURITÉ: Vérification du rôle admin obligatoire
+    require_admin_role(current_user)
+
     query = db.query(User).filter(User.tenant_id == current_user.tenant_id)
     total = query.count()
     users = query.offset((page - 1) * page_size).limit(page_size).all()
@@ -541,21 +561,37 @@ def create_admin_user(
 ):
     """Crée un nouvel utilisateur."""
     from app.core.security import get_password_hash
+    from fastapi import HTTPException
+
+    # SÉCURITÉ: Vérification du rôle admin obligatoire
+    require_admin_role(current_user)
 
     # Vérifier si l'email existe déjà
     existing = db.query(User).filter(User.email == data.get("email")).first()
     if existing:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Email déjà utilisé")
 
-    # Créer l'utilisateur
+    # SÉCURITÉ: Validation et restriction des rôles assignables
     role_value = data.get("roles", ["EMPLOYE"])[0] if isinstance(data.get("roles"), list) else data.get("roles", "EMPLOYE")
+
+    # Seul un DIRIGEANT peut créer un autre DIRIGEANT
+    current_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    if role_value == "DIRIGEANT" and current_role != "DIRIGEANT":
+        raise HTTPException(
+            status_code=403,
+            detail="Seul un DIRIGEANT peut créer un autre DIRIGEANT"
+        )
+
+    # Validation du rôle
+    valid_roles = [r.value for r in UserRole]
+    if role_value not in valid_roles:
+        role_value = "EMPLOYE"
 
     new_user = User(
         email=data.get("email"),
         password_hash=get_password_hash("TempPassword123!"),  # Mot de passe temporaire
         tenant_id=current_user.tenant_id,
-        role=UserRole(role_value) if role_value in [r.value for r in UserRole] else UserRole.EMPLOYE,
+        role=UserRole(role_value),
         is_active=1,
         full_name=data.get("name", ""),
     )

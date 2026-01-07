@@ -14,6 +14,56 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 
 from .service import get_tenant_service
+
+
+# ============================================================================
+# SÉCURITÉ: Fonctions de vérification des accès
+# ============================================================================
+
+def verify_tenant_ownership(current_user: dict, tenant_id: str) -> None:
+    """
+    Vérifie que l'utilisateur a accès au tenant spécifié.
+    Seuls les utilisateurs du même tenant ou les super_admin peuvent accéder.
+    """
+    from fastapi import HTTPException
+
+    user_tenant_id = current_user.get("tenant_id")
+    user_role = current_user.get("role", "")
+
+    # Super admin peut tout faire
+    if user_role == "SUPER_ADMIN":
+        return
+
+    # Vérifier que l'utilisateur appartient au tenant
+    if user_tenant_id != tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Accès refusé. Vous ne pouvez accéder qu'aux données de votre propre tenant."
+        )
+
+
+def require_super_admin(current_user: dict) -> None:
+    """Vérifie que l'utilisateur est super_admin (opérations plateforme)."""
+    from fastapi import HTTPException
+
+    user_role = current_user.get("role", "")
+    if user_role != "SUPER_ADMIN":
+        raise HTTPException(
+            status_code=403,
+            detail="Accès refusé. Droits super_admin requis pour cette opération."
+        )
+
+
+def require_tenant_admin(current_user: dict) -> None:
+    """Vérifie que l'utilisateur a un rôle admin dans son tenant."""
+    from fastapi import HTTPException
+
+    user_role = current_user.get("role", "")
+    if user_role not in ["SUPER_ADMIN", "DIRIGEANT", "ADMIN"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Accès refusé. Rôle ADMIN ou DIRIGEANT requis."
+        )
 from .schemas import (
     TenantCreate, TenantUpdate, TenantResponse, TenantListResponse,
     SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse,
@@ -42,6 +92,9 @@ def create_tenant(
     current_user: dict = Depends(get_current_user)
 ):
     """Créer un nouveau tenant."""
+    # SÉCURITÉ: Seul super_admin peut créer de nouveaux tenants
+    require_super_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
 
     # Vérifier si tenant_id existe déjà
@@ -62,6 +115,8 @@ def list_tenants(
     current_user: dict = Depends(get_current_user)
 ):
     """Lister les tenants."""
+    # SÉCURITÉ: Seul super_admin peut voir tous les tenants
+    require_super_admin(current_user)
     service = get_tenant_service(db)
     return service.list_tenants(status, plan, country, skip, limit)
 
@@ -86,6 +141,9 @@ def get_tenant(
     current_user: dict = Depends(get_current_user)
 ):
     """Récupérer un tenant."""
+    # SÉCURITÉ: Vérifier l'accès au tenant
+    verify_tenant_ownership(current_user, tenant_id)
+
     service = get_tenant_service(db)
     tenant = service.get_tenant(tenant_id)
     if not tenant:
@@ -101,6 +159,10 @@ def update_tenant(
     current_user: dict = Depends(get_current_user)
 ):
     """Mettre à jour un tenant."""
+    # SÉCURITÉ: Vérifier l'accès au tenant + rôle admin
+    verify_tenant_ownership(current_user, tenant_id)
+    require_tenant_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
     tenant = service.update_tenant(tenant_id, data)
     if not tenant:
@@ -115,6 +177,9 @@ def activate_tenant(
     current_user: dict = Depends(get_current_user)
 ):
     """Activer un tenant."""
+    # SÉCURITÉ: Seul super_admin peut activer un tenant
+    require_super_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
     tenant = service.activate_tenant(tenant_id)
     if not tenant:
@@ -130,6 +195,9 @@ def suspend_tenant(
     current_user: dict = Depends(get_current_user)
 ):
     """Suspendre un tenant."""
+    # SÉCURITÉ: Seul super_admin peut suspendre un tenant
+    require_super_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
     tenant = service.suspend_tenant(tenant_id, reason)
     if not tenant:
@@ -145,6 +213,9 @@ def cancel_tenant(
     current_user: dict = Depends(get_current_user)
 ):
     """Annuler un tenant."""
+    # SÉCURITÉ: Seul super_admin peut annuler un tenant
+    require_super_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
     tenant = service.cancel_tenant(tenant_id, reason)
     if not tenant:
@@ -179,6 +250,9 @@ def create_subscription(
     current_user: dict = Depends(get_current_user)
 ):
     """Créer un abonnement."""
+    # SÉCURITÉ: Seul super_admin peut créer des abonnements
+    require_super_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
 
     if not service.get_tenant(tenant_id):
@@ -473,6 +547,9 @@ def provision_tenant(
     current_user: dict = Depends(get_current_user)
 ):
     """Provisionner un tenant complet."""
+    # SÉCURITÉ: Seul super_admin peut provisionner des tenants
+    require_super_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
 
     # Vérifier si tenant_id existe déjà
@@ -489,6 +566,9 @@ def provision_masith(
     current_user: dict = Depends(get_current_user)
 ):
     """Provisionner le tenant SAS MASITH (premier client)."""
+    # SÉCURITÉ: Seul super_admin peut provisionner des tenants
+    require_super_admin(current_user)
+
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
     return service.provision_masith()
 
@@ -503,5 +583,8 @@ def get_platform_stats(
     current_user: dict = Depends(get_current_user)
 ):
     """Statistiques globales de la plateforme."""
+    # SÉCURITÉ: Seul super_admin peut voir les stats de la plateforme
+    require_super_admin(current_user)
+
     service = get_tenant_service(db)
     return service.get_platform_stats()

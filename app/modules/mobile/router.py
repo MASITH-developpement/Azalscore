@@ -57,6 +57,16 @@ def get_validated_user_id(
     return current_user.id
 
 
+def require_mobile_admin(current_user: User) -> None:
+    """Vérifie que l'utilisateur a des droits admin pour les opérations mobile."""
+    role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    if role_value not in ["DIRIGEANT", "ADMIN"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Accès refusé. Droits admin requis pour cette opération."
+        )
+
+
 # ============================================================================
 # DEVICES
 # ============================================================================
@@ -397,11 +407,12 @@ def check_version(
 @router.post("/crashes")
 def report_crash(
     data: CrashReport,
-    user_id: Optional[int] = None,
+    user_id: int = Depends(get_validated_user_id),
     device_id: Optional[int] = None,
     service: MobileService = Depends(get_mobile_service)
 ):
     """Rapporter un crash."""
+    # SÉCURITÉ: user_id vient de l'utilisateur authentifié
     crash = service.report_crash(user_id, device_id, data)
     return {"crash_id": crash.crash_id}
 
@@ -413,9 +424,12 @@ def list_crashes(
     resolved: Optional[bool] = None,
     skip: int = 0,
     limit: int = 50,
+    current_user: User = Depends(get_current_user),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Lister les crashes."""
+    # SÉCURITÉ: Seuls les admins peuvent voir les crash reports
+    require_mobile_admin(current_user)
     return service.list_crashes(app_version, error_type, resolved, skip, limit)
 
 
@@ -425,8 +439,11 @@ def list_crashes(
 
 @router.get("/stats", response_model=MobileStats)
 def get_mobile_stats(
+    current_user: User = Depends(get_current_user),
     service: MobileService = Depends(get_mobile_service)
 ):
     """Statistiques mobile."""
+    # SÉCURITÉ: Seuls les admins peuvent voir les statistiques
+    require_mobile_admin(current_user)
     stats = service.get_mobile_stats()
     return MobileStats(**stats)
