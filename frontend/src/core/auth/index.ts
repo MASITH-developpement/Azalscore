@@ -162,7 +162,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         skipAuth: true,
       });
 
-      const { user, tokens, tenant_id } = response.data;
+      // api.post retourne deja response.data, donc response contient directement les donnees
+      const loginData = response as unknown as LoginResponse;
+      const { user, tokens, tenant_id } = loginData;
 
       // Stockage des tokens
       tokenManager.setTokens(tokens.access_token, tokens.refresh_token);
@@ -176,7 +178,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         error: null,
       });
 
-      return response.data;
+      return loginData;
     } catch (error) {
       // En mode démo, afficher un message plus clair
       if (DEMO_MODE) {

@@ -12,9 +12,14 @@ from app.core.database import Base
 class UserRole(str, enum.Enum):
     """
     Rôles utilisateurs.
-    Un seul rôle pour l'instant : DIRIGEANT.
+    Chaque rôle a des capacités différentes.
     """
-    DIRIGEANT = "DIRIGEANT"
+    DIRIGEANT = "DIRIGEANT"  # Accès complet
+    ADMIN = "ADMIN"          # Administration système
+    DAF = "DAF"              # Directeur Administratif et Financier
+    COMPTABLE = "COMPTABLE"  # Comptabilité
+    COMMERCIAL = "COMMERCIAL"  # Ventes et clients
+    EMPLOYE = "EMPLOYE"      # Accès limité
 
 
 class DecisionLevel(str, enum.Enum):

@@ -163,7 +163,7 @@ class UserLogin(BaseModel):
 
 
 class TokenResponse(BaseModel):
-    """Schéma de réponse après login."""
+    """Schema de reponse apres login (ancien format)."""
     access_token: str
     token_type: str
     tenant_id: str
@@ -171,13 +171,28 @@ class TokenResponse(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """Schéma de réponse utilisateur."""
+    """Schema de reponse utilisateur."""
     id: int
     email: str
     tenant_id: str
     role: str
+    full_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class TokensSchema(BaseModel):
+    """Schema des tokens."""
+    access_token: str
+    refresh_token: Optional[str] = None
+    token_type: str = "bearer"
+
+
+class LoginResponse(BaseModel):
+    """Schema de reponse login compatible frontend."""
+    user: UserResponse
+    tokens: TokensSchema
+    tenant_id: str
 
 
 # ===== SCHÉMAS 2FA =====
@@ -266,7 +281,7 @@ def register(
     return db_user
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 def login(
     request: Request,
     user_data: UserLogin,
@@ -275,7 +290,8 @@ def login(
     """
     Connexion par email/password.
     RATE LIMITED: Max 5 tentatives par minute par IP.
-    BLOCAGE: Après 5 échecs consécutifs, compte bloqué 15 min.
+    BLOCAGE: Apres 5 echecs consecutifs, compte bloque 15 min.
+    Retourne LoginResponse ou LoginResponseWith2FA si 2FA requis.
     """
     # SÉCURITÉ: Rate limiting strict
     client_ip = get_client_ip(request)
@@ -327,7 +343,7 @@ def login(
             "message": "2FA verification required. Use /auth/2fa/verify-login endpoint."
         }
 
-    # Création du JWT final (pas de 2FA)
+    # Creation du JWT final (pas de 2FA)
     access_token = create_access_token(
         data={
             "sub": str(user.id),
@@ -336,14 +352,35 @@ def login(
         }
     )
 
-    # Enregistrer le succès (reset du compteur d'échecs)
+    # Creer un refresh token (meme payload, duree plus longue)
+    refresh_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "tenant_id": user.tenant_id,
+            "role": user.role.value,
+            "type": "refresh"
+        },
+        expires_delta=timedelta(days=7)
+    )
+
+    # Enregistrer le succes (reset du compteur d'echecs)
     auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=True)
 
+    # Retourner le format attendu par le frontend
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "tenant_id": user.tenant_id,
-        "role": user.role.value
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "tenant_id": user.tenant_id,
+            "role": user.role.value,
+            "full_name": getattr(user, 'full_name', None)
+        },
+        "tokens": {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+        },
+        "tenant_id": user.tenant_id
     }
 
 
@@ -629,3 +666,163 @@ def regenerate_backup_codes(
         "backup_codes": new_codes,
         "message": "New backup codes generated. Store them securely. Old codes are now invalid."
     }
+
+
+# ===== REFRESH TOKEN =====
+
+class RefreshTokenRequest(BaseModel):
+    """Schema pour refresh token."""
+    refresh_token: str
+
+
+@router.post("/refresh")
+def refresh_access_token(
+    data: RefreshTokenRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Rafraichit le token d'acces avec un refresh token valide.
+    """
+    from app.core.security import decode_access_token
+
+    # Decoder le refresh token
+    payload = decode_access_token(data.refresh_token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token"
+        )
+
+    # Verifier que c'est bien un refresh token
+    if payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token type"
+        )
+
+    user_id = payload.get("sub")
+    user = db.query(User).filter(User.id == int(user_id)).first()
+
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive"
+        )
+
+    # Creer un nouveau access token
+    access_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "tenant_id": user.tenant_id,
+            "role": user.role.value
+        }
+    )
+
+    # Creer un nouveau refresh token
+    refresh_token = create_access_token(
+        data={
+            "sub": str(user.id),
+            "tenant_id": user.tenant_id,
+            "role": user.role.value,
+            "type": "refresh"
+        },
+        expires_delta=timedelta(days=7)
+    )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+
+# ===== ENDPOINTS UTILISATEUR COURANT =====
+
+@router.get("/me")
+def get_current_user_info(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retourne les informations de l'utilisateur connecte.
+    Utilise pour recuperer le profil apres login.
+    """
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "tenant_id": current_user.tenant_id,
+        "role": current_user.role.value,
+        "full_name": getattr(current_user, 'full_name', None),
+        "is_active": current_user.is_active == 1,
+        "totp_enabled": current_user.totp_enabled == 1
+    }
+
+
+@router.get("/capabilities")
+def get_user_capabilities(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retourne les capacites/permissions de l'utilisateur connecte.
+    Utilise pour le controle d'acces cote frontend.
+    """
+    print("=" * 50)
+    print("[DEBUG] get_user_capabilities CALLED!")
+    print(f"[DEBUG] User role: {current_user.role}")
+    print("=" * 50)
+    # Toutes les capacites disponibles
+    ALL_CAPABILITIES = [
+        "cockpit.view", "cockpit.decisions.view",
+        "partners.view", "partners.create", "partners.edit", "partners.delete",
+        "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete",
+        "treasury.view", "treasury.create", "treasury.transfer.execute",
+        "accounting.view", "accounting.journal.view", "accounting.journal.delete",
+        "purchases.view", "purchases.create", "purchases.edit",
+        "projects.view", "projects.create", "projects.edit",
+        "interventions.view", "interventions.create", "interventions.edit",
+        "web.view", "web.edit",
+        "ecommerce.view", "ecommerce.edit",
+        "marketplace.view", "marketplace.edit",
+        "payments.view", "payments.create",
+        "mobile.view",
+        "admin.view", "admin.users.view", "admin.users.create", "admin.users.edit", "admin.users.delete",
+        "admin.roles.view", "admin.roles.edit",
+        "admin.tenants.view", "admin.tenants.create", "admin.tenants.delete",
+        "admin.modules.view", "admin.modules.edit",
+        "admin.logs.view",
+        "admin.root.break_glass",
+        # IAM permissions (required by IAM module)
+        "iam.user.create", "iam.user.read", "iam.user.update", "iam.user.delete", "iam.user.admin",
+        "iam.role.create", "iam.role.read", "iam.role.update", "iam.role.delete", "iam.role.assign",
+        "iam.group.create", "iam.group.read", "iam.group.update", "iam.group.delete",
+        "iam.permission.read",
+        "iam.invitation.create",
+        "iam.policy.read", "iam.policy.update",
+    ]
+
+    # Capacites basees sur le role
+    role_capabilities = {
+        "DIRIGEANT": ALL_CAPABILITIES,  # Acces complet
+        "DAF": [
+            "cockpit.view", "treasury.view", "treasury.create", "treasury.transfer.execute",
+            "accounting.view", "accounting.journal.view", "invoicing.view", "invoicing.create",
+            "payments.view", "payments.create",
+        ],
+        "COMPTABLE": [
+            "cockpit.view", "accounting.view", "accounting.journal.view",
+            "invoicing.view", "invoicing.create", "treasury.view",
+        ],
+        "COMMERCIAL": [
+            "cockpit.view", "partners.view", "partners.create", "partners.edit",
+            "invoicing.view", "invoicing.create",
+        ],
+        "EMPLOYE": ["cockpit.view"],
+        "ADMIN": ALL_CAPABILITIES,
+    }
+
+    role_name = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    capabilities = role_capabilities.get(role_name, ["cockpit.view"])
+
+    return {"data": {
+        "capabilities": capabilities,
+        "role": role_name,
+    }}

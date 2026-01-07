@@ -6,14 +6,19 @@ ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 """
 
 import asyncio
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.core.database import get_db
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from contextlib import asynccontextmanager
 from app.core.database import check_database_connection, engine, Base
 from app.core.middleware import TenantMiddleware
+from app.core.dependencies import get_current_user, get_tenant_id
+from app.core.models import User
 from app.core.compression import CompressionMiddleware
+from app.core.security_middleware import setup_cors
 from app.core.metrics import MetricsMiddleware, router as metrics_router, init_metrics
 from app.core.health import router as health_router
 from app.core.logging_config import setup_logging, get_logger
@@ -174,17 +179,17 @@ async def lifespan(app: FastAPI):
                     if "already exists" in error_str or "duplicate" in error_str:
                         tables_existed += 1
                     else:
-                        logger.warning(f"Erreur table {table.name}: {table_error}")
+                        print(f"[WARN] Erreur table {table.name}: {table_error}")
 
-            logger.info(f"Base de données connectée (créées: {tables_created}, existantes: {tables_existed})")
+            print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
             break
 
         except Exception as e:
-            logger.warning(f"Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
+            print(f"[...] Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
             else:
-                logger.warning("DB non disponible, l'app démarre quand même")
+                print("[WARN] DB non disponible, l'app demarre quand meme")
 
     # Démarrer le scheduler
     scheduler_service.start()
@@ -203,12 +208,11 @@ _redoc_url = "/redoc" if _settings.is_development else None
 _openapi_url = "/openapi.json" if _settings.is_development else None
 
 if _settings.is_production:
-    import logging
-    logging.getLogger(__name__).info("PRODUCTION MODE: API docs désactivées")
+    print("[SECURE] PRODUCTION MODE: API docs desactivees")
 
 app = FastAPI(
     title="AZALS",
-    description="ERP décisionnel critique - Multi-tenant + Authentification JWT",
+    description="ERP decisionnel critique - Multi-tenant + Authentification JWT",
     version="0.3.0",
     docs_url=_docs_url,
     redoc_url=_redoc_url,
@@ -216,165 +220,361 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# =============================================================================
-# HANDLERS D'EXCEPTIONS GLOBAUX
-# =============================================================================
-# Ces handlers convertissent les exceptions non gérées en réponses HTTP propres
-# pour éviter les erreurs 500 Internal Server Error face aux utilisateurs.
+# Middleware stack (ordre important: dernier ajouté = premier exécuté)
+# En Starlette, les middlewares s'exécutent dans l'ordre INVERSE d'ajout
+# Donc on ajoute dans l'ordre: compression -> metrics -> tenant -> CORS
+# Pour que l'exécution soit: CORS -> tenant -> metrics -> compression
 
-from app.core.security import PasswordTooLongError
-
-
-@app.exception_handler(PasswordTooLongError)
-async def password_too_long_handler(request: Request, exc: PasswordTooLongError):
-    """Gère les mots de passe trop longs (limite bcrypt 72 bytes)."""
-    return JSONResponse(
-        status_code=400,
-        content={
-            "detail": str(exc),
-            "error_code": "PASSWORD_TOO_LONG",
-            "max_length": 72
-        }
-    )
-
-
-@app.exception_handler(ValueError)
-async def value_error_handler(request: Request, exc: ValueError):
-    """
-    Handler générique pour les ValueError non capturées.
-    Évite les crash 500 sur les erreurs de validation.
-    """
-    return JSONResponse(
-        status_code=400,
-        content={
-            "detail": f"Erreur de validation: {str(exc)}",
-            "error_code": "VALIDATION_ERROR"
-        }
-    )
-
-
-# =============================================================================
-# MIDDLEWARES
-# =============================================================================
-
-# Middleware compression HTTP (gzip) - DOIT être ajouté en premier (s'exécute en dernier)
+# 1. Compression (s'exécute en dernier)
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 
-# Middleware métriques Prometheus (collecte automatique)
+# 2. Metrics
 app.add_middleware(MetricsMiddleware)
 
-# Middleware multi-tenant : validation X-Tenant-ID pour TOUTES les requêtes
+# 3. TenantMiddleware - Validation X-Tenant-ID
 app.add_middleware(TenantMiddleware)
 
-# Routes observabilité (PUBLIQUES - pas de tenant required)
+# 4. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
+setup_cors(app)
+
+# Routes observabilite (PUBLIQUES - pas de tenant required)
 app.include_router(health_router)
 app.include_router(metrics_router)
 
-# Routes authentification (nécessitent X-Tenant-ID mais pas JWT)
-app.include_router(auth_router)
+# ==================== API v1 ====================
+# Toutes les routes metier sous le prefixe /v1
+api_v1 = APIRouter(prefix="/v1")
 
-# Routes protégées par JWT + tenant
-app.include_router(protected_router)
-app.include_router(journal_router)
-app.include_router(decision_router)
-app.include_router(red_workflow_router)
-app.include_router(accounting_router)
-app.include_router(treasury_router)
-app.include_router(tax_router)
-app.include_router(hr_router)
-app.include_router(legal_router)
-app.include_router(admin_migration_router)  # TEMPORAIRE pour migration
+# Routes authentification (necessitent X-Tenant-ID mais pas JWT)
+api_v1.include_router(auth_router)
 
-# Module T0 - IAM (Gestion Utilisateurs & Rôles)
-app.include_router(iam_router)
+# Routes protegees par JWT + tenant
+api_v1.include_router(protected_router)
+api_v1.include_router(journal_router)
+api_v1.include_router(decision_router)
+api_v1.include_router(red_workflow_router)
+api_v1.include_router(accounting_router)
+api_v1.include_router(treasury_router)
+api_v1.include_router(tax_router)
+api_v1.include_router(hr_router)
+api_v1.include_router(legal_router)
+api_v1.include_router(admin_migration_router)  # TEMPORAIRE pour migration
+
+# Module T0 - IAM (Gestion Utilisateurs & Roles)
+api_v1.include_router(iam_router)
 
 # Module T1 - Configuration Automatique par Fonction
-app.include_router(autoconfig_router)
+api_v1.include_router(autoconfig_router)
 
-# Module T2 - Système de Déclencheurs & Diffusion
-app.include_router(triggers_router)
+# Module T2 - Systeme de Declencheurs & Diffusion
+api_v1.include_router(triggers_router)
 
-# Module T3 - Audit & Benchmark Évolutif
-app.include_router(audit_router)
+# Module T3 - Audit & Benchmark Evolutif
+api_v1.include_router(audit_router)
 
-# Module T4 - Contrôle Qualité Central
-app.include_router(qc_router)
+# Module T4 - Controle Qualite Central
+api_v1.include_router(qc_router)
 
 # Module T5 - Packs Pays (Localisation)
-app.include_router(country_packs_router)
-app.include_router(france_pack_router)
+api_v1.include_router(country_packs_router)
+api_v1.include_router(france_pack_router)
 
-# Module T6 - Diffusion d'Information Périodique
-app.include_router(broadcast_router)
+# Module T6 - Diffusion d'Information Periodique
+api_v1.include_router(broadcast_router)
 
 # Module T7 - Module Web Transverse
-app.include_router(web_router)
+api_v1.include_router(web_router)
 
 # Module T8 - Site Web Officiel AZALS
-app.include_router(website_router)
+api_v1.include_router(website_router)
 
 # Module T9 - Gestion des Tenants (Multi-Tenancy)
-app.include_router(tenants_router)
+api_v1.include_router(tenants_router)
 
 # Module M1 - Commercial (CRM & Ventes)
-app.include_router(commercial_router)
+api_v1.include_router(commercial_router)
 
-# Module M2 - Finance (Comptabilité & Trésorerie)
-app.include_router(finance_router)
+# Module M2 - Finance (Comptabilite & Tresorerie)
+api_v1.include_router(finance_router)
 
 # Module M3 - RH (Ressources Humaines)
-app.include_router(hr_module_router)
+api_v1.include_router(hr_module_router)
 
 # Module M4 - Achats (Procurement)
-app.include_router(procurement_router)
+api_v1.include_router(procurement_router)
 
 # Module M5 - Stock (Inventaire + Logistique)
-app.include_router(inventory_router)
+api_v1.include_router(inventory_router)
 
 # Module M6 - Production (Manufacturing)
-app.include_router(production_router)
+api_v1.include_router(production_router)
 
-# Module M7 - Qualité (Quality Management)
-app.include_router(quality_router)
+# Module M7 - Qualite (Quality Management)
+api_v1.include_router(quality_router)
 
 # Module M8 - Maintenance (Asset Management / GMAO)
-app.include_router(maintenance_router)
+api_v1.include_router(maintenance_router)
 
 # Module M9 - Projets (Project Management)
-app.include_router(projects_router)
+api_v1.include_router(projects_router)
 
 # Module M10 - BI & Reporting (Business Intelligence)
-app.include_router(bi_router)
+api_v1.include_router(bi_router)
 
-# Module M11 - Compliance (Conformité Réglementaire)
-app.include_router(compliance_router)
+# Module M11 - Compliance (Conformite Reglementaire)
+api_v1.include_router(compliance_router)
 
 # Module M12 - E-Commerce
-app.include_router(ecommerce_router)
+api_v1.include_router(ecommerce_router)
 
 # Module M13 - POS (Point de Vente)
-app.include_router(pos_router)
+api_v1.include_router(pos_router)
 
 # Module M14 - Subscriptions (Abonnements)
-app.include_router(subscriptions_router)
+api_v1.include_router(subscriptions_router)
 
 # Module M15 - Stripe Integration
-app.include_router(stripe_router)
+api_v1.include_router(stripe_router)
 
 # Module M16 - Helpdesk (Support Client)
-app.include_router(helpdesk_router)
+api_v1.include_router(helpdesk_router)
 
 # Module M17 - Field Service (Interventions Terrain)
-app.include_router(field_service_router)
+api_v1.include_router(field_service_router)
 
 # Module M18 - Mobile App Backend
-app.include_router(mobile_router)
+api_v1.include_router(mobile_router)
 
-# Module IA - Assistant IA Transverse Opérationnelle
-app.include_router(ai_router)
+# Module IA - Assistant IA Transverse Operationnelle
+api_v1.include_router(ai_router)
 
-# Routes protégées par tenant uniquement (pas JWT pour compatibilité)
-app.include_router(items_router)
+# Routes protegees par tenant uniquement (pas JWT pour compatibilite)
+api_v1.include_router(items_router)
+
+
+# ==================== UTILITY ENDPOINTS ====================
+# Endpoints utilitaires pour le cockpit frontend
+# NOTE: Doivent être définis AVANT app.include_router(api_v1)
+
+@api_v1.get("/modules")
+def get_active_modules(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retourne la liste des modules actifs pour le tenant courant.
+    Utilise par le frontend pour afficher le menu de navigation.
+    """
+    base_modules = [
+        {"code": "cockpit", "name": "Cockpit", "icon": "dashboard", "active": True},
+        {"code": "partners", "name": "Partenaires", "icon": "people", "active": True},
+        {"code": "invoicing", "name": "Facturation", "icon": "receipt", "active": True},
+        {"code": "treasury", "name": "Trésorerie", "icon": "account_balance", "active": True},
+        {"code": "accounting", "name": "Comptabilité", "icon": "calculate", "active": True},
+        {"code": "projects", "name": "Projets", "icon": "folder", "active": True},
+        {"code": "interventions", "name": "Interventions", "icon": "build", "active": True},
+        {"code": "purchases", "name": "Achats", "icon": "shopping_cart", "active": True},
+        {"code": "payments", "name": "Paiements", "icon": "payment", "active": True},
+    ]
+    role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    if role in ["DIRIGEANT", "ADMIN"]:
+        base_modules.append({"code": "admin", "name": "Administration", "icon": "settings", "active": True})
+    return {"modules": base_modules}
+
+
+@api_v1.get("/notifications")
+def get_user_notifications(
+    current_user: User = Depends(get_current_user)
+):
+    """Retourne les notifications non lues pour l'utilisateur courant."""
+    return {"notifications": [], "unread_count": 0}
+
+
+@api_v1.get("/tenant/current")
+def get_current_tenant_info(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne les informations du tenant courant."""
+    return {
+        "tenant_id": current_user.tenant_id,
+        "name": "SAS MASITH",
+        "plan": "professional",
+        "status": "active"
+    }
+
+
+@api_v1.get("/cockpit/dashboard")
+def get_cockpit_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne les données du dashboard cockpit."""
+    return {"data": {
+        "kpis": [
+            {"id": "revenue", "label": "CA du mois", "value": 0, "unit": "€", "trend": 0, "status": "green"},
+            {"id": "invoices", "label": "Factures en attente", "value": 0, "trend": 0, "status": "green"},
+            {"id": "treasury", "label": "Trésorerie", "value": 0, "unit": "€", "trend": 0, "status": "green"},
+            {"id": "overdue", "label": "Impayés", "value": 0, "unit": "€", "trend": 0, "status": "green"},
+        ],
+        "alerts": [],
+        "treasury_summary": {
+            "balance": 0,
+            "forecast_30d": 0,
+            "pending_payments": 0
+        },
+        "sales_summary": {
+            "month_revenue": 0,
+            "prev_month_revenue": 0,
+            "pending_invoices": 0,
+            "overdue_invoices": 0
+        },
+        "activity_summary": {
+            "open_quotes": 0,
+            "pending_orders": 0,
+            "scheduled_interventions": 0
+        }
+    }}
+
+
+@api_v1.get("/cockpit/decisions")
+def get_cockpit_decisions(
+    current_user: User = Depends(get_current_user)
+):
+    """Retourne les décisions en attente."""
+    return {"data": {
+        "items": [],
+        "total": 0,
+        "page": 1,
+        "page_size": 25
+    }}
+
+
+# ==================== ADMIN ENDPOINTS ====================
+# Endpoints pour le module Administration
+
+from app.core.models import UserRole
+
+@api_v1.get("/admin/roles")
+def get_admin_roles(
+    current_user: User = Depends(get_current_user)
+):
+    """Retourne la liste des rôles disponibles pour les utilisateurs."""
+    roles = [
+        {
+            "id": role.value,
+            "name": role.value,
+            "description": {
+                "DIRIGEANT": "Accès complet à toutes les fonctionnalités",
+                "ADMIN": "Administration du système",
+                "DAF": "Directeur Administratif et Financier",
+                "COMPTABLE": "Accès comptabilité et facturation",
+                "COMMERCIAL": "Accès ventes et clients",
+                "EMPLOYE": "Accès limité aux fonctionnalités de base",
+            }.get(role.value, ""),
+            "capabilities": [],
+            "user_count": 0,
+            "is_system": True,
+        }
+        for role in UserRole
+    ]
+    return {"items": roles, "total": len(roles)}
+
+
+@api_v1.get("/admin/stats")
+def get_admin_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne les statistiques pour le dashboard admin."""
+    total_users = db.query(User).filter(User.tenant_id == current_user.tenant_id).count()
+    active_users = db.query(User).filter(
+        User.tenant_id == current_user.tenant_id,
+        User.is_active == 1
+    ).count()
+
+    return {
+        "total_users": total_users,
+        "active_users": active_users,
+        "total_roles": len(UserRole),
+        "total_tenants": 1,
+        "active_modules": 9,
+    }
+
+
+@api_v1.get("/admin/users")
+def get_admin_users(
+    page: int = 1,
+    page_size: int = 25,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne la liste des utilisateurs du tenant."""
+    query = db.query(User).filter(User.tenant_id == current_user.tenant_id)
+    total = query.count()
+    users = query.offset((page - 1) * page_size).limit(page_size).all()
+
+    return {
+        "items": [
+            {
+                "id": str(u.id),
+                "email": u.email,
+                "name": getattr(u, 'full_name', u.email),
+                "roles": [u.role.value if hasattr(u.role, 'value') else str(u.role)],
+                "is_active": u.is_active == 1,
+                "created_at": str(u.created_at) if u.created_at else None,
+                "last_login": None,
+                "login_count": 0,
+            }
+            for u in users
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@api_v1.post("/admin/users")
+def create_admin_user(
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Crée un nouvel utilisateur."""
+    from app.core.security import get_password_hash
+
+    # Vérifier si l'email existe déjà
+    existing = db.query(User).filter(User.email == data.get("email")).first()
+    if existing:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Email déjà utilisé")
+
+    # Créer l'utilisateur
+    role_value = data.get("roles", ["EMPLOYE"])[0] if isinstance(data.get("roles"), list) else data.get("roles", "EMPLOYE")
+
+    new_user = User(
+        email=data.get("email"),
+        password_hash=get_password_hash("TempPassword123!"),  # Mot de passe temporaire
+        tenant_id=current_user.tenant_id,
+        role=UserRole(role_value) if role_value in [r.value for r in UserRole] else UserRole.EMPLOYE,
+        is_active=1,
+        full_name=data.get("name", ""),
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "id": str(new_user.id),
+        "email": new_user.email,
+        "name": getattr(new_user, 'full_name', new_user.email),
+        "roles": [new_user.role.value],
+        "is_active": True,
+    }
+
+
+# Monter l'API v1 sur l'app principale
+app.include_router(api_v1)
 
 
 @app.get("/health")

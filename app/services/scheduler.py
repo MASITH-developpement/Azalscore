@@ -36,13 +36,13 @@ class SchedulerService:
             )
             
             self.scheduler.start()
-            logger.info("✅ Scheduler démarré - Réinitialisation RED à 23h59")
+            logger.info("[OK] Scheduler demarre - Reinitialisation RED a 23h59")
     
     def shutdown(self):
-        """Arrête le scheduler."""
+        """Arrete le scheduler."""
         if self.scheduler and self.scheduler.running:
             self.scheduler.shutdown()
-            logger.info("⏹️  Scheduler arrêté")
+            logger.info("[STOP] Scheduler arrete")
     
     @staticmethod
     def reset_red_alerts():
@@ -52,11 +52,11 @@ class SchedulerService:
         Règle: 
         - Marquer toutes les décisions RED de la veille comme "réinitialisées"
         - Réactiver le workflow (remet completed_steps à vide)
-        - Les trésoreries en déficit redeviennent 🔴
+        - Les tresoreries en deficit redeviennent RED
         """
         db = SessionLocal()
         try:
-            logger.info("🔄 Réinitialisation des alertes RED...")
+            logger.info("[...] Reinitialisation des alertes RED...")
             
             # Vérifier les décisions RED complétées
             result = db.execute(text("""
@@ -86,7 +86,7 @@ class SchedulerService:
                     """), {"decision_id": red_id})
                 
                 db.commit()
-                logger.info(f"✅ {len(old_reds)} alerte(s) RED réinitialisée(s)")
+                logger.info(f"[OK] {len(old_reds)} alerte(s) RED reinitialisee(s)")
                 
                 # Journaliser l'action
                 for red_id, reason in old_reds:
@@ -103,10 +103,10 @@ class SchedulerService:
                 
                 db.commit()
             else:
-                logger.info("ℹ️  Aucune alerte RED à réinitialiser")
+                logger.info("[INFO] Aucune alerte RED a reinitialiser")
         
         except Exception as e:
-            logger.error(f"❌ Erreur réinitialisation RED: {e}")
+            logger.error(f"[ERROR] Erreur reinitialisation RED: {e}")
             db.rollback()
         finally:
             db.close()
