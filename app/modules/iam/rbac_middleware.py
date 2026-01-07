@@ -76,21 +76,66 @@ ROUTE_PERMISSIONS: Dict[Tuple[str, str], RoutePermission] = {
     ("PUT", r"/api/tenants/current/?$"): RoutePermission(Module.ORGANIZATION, Action.UPDATE),
 
     # =========================================================================
-    # CLIENTS / CONTACTS
+    # CLIENTS / CONTACTS (routes /api/v1/commercial avec UUIDs)
     # =========================================================================
-    ("GET", r"/api/commercial/customers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
-    ("GET", r"/api/commercial/customers/\d+$"): RoutePermission(Module.CLIENTS, Action.READ),
-    ("POST", r"/api/commercial/customers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
-    ("PUT", r"/api/commercial/customers/\d+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
-    ("PATCH", r"/api/commercial/customers/\d+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
-    ("DELETE", r"/api/commercial/customers/\d+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/api/v1/commercial/customers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/api/v1/commercial/customers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/api/v1/commercial/customers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/api/v1/commercial/customers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("PATCH", r"/api/v1/commercial/customers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/api/v1/commercial/customers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("POST", r"/api/v1/commercial/customers/[0-9a-fA-F-]+/convert$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
 
     # Contacts
-    ("GET", r"/api/commercial/contacts/?$"): RoutePermission(Module.CLIENTS, Action.READ),
-    ("GET", r"/api/commercial/contacts/\d+$"): RoutePermission(Module.CLIENTS, Action.READ),
-    ("POST", r"/api/commercial/contacts/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
-    ("PUT", r"/api/commercial/contacts/\d+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
-    ("DELETE", r"/api/commercial/contacts/\d+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/api/v1/commercial/contacts/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/api/v1/commercial/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/api/v1/commercial/customers/[0-9a-fA-F-]+/contacts/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/api/v1/commercial/contacts/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/api/v1/commercial/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/api/v1/commercial/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+
+    # Opportunités
+    ("GET", r"/api/v1/commercial/opportunities/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/api/v1/commercial/opportunities/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/api/v1/commercial/opportunities/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/api/v1/commercial/opportunities/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("POST", r"/api/v1/commercial/opportunities/[0-9a-fA-F-]+/win$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("POST", r"/api/v1/commercial/opportunities/[0-9a-fA-F-]+/lose$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+
+    # Documents commerciaux (devis, commandes, factures)
+    ("GET", r"/api/v1/commercial/documents/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/api/v1/commercial/documents/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/api/v1/commercial/documents/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/api/v1/commercial/documents/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("POST", r"/api/v1/commercial/documents/[0-9a-fA-F-]+/validate$"): RoutePermission(Module.BILLING, Action.VALIDATE),
+    ("POST", r"/api/v1/commercial/documents/[0-9a-fA-F-]+/send$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("POST", r"/api/v1/commercial/documents/[0-9a-fA-F-]+/lines$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/api/v1/commercial/lines/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("POST", r"/api/v1/commercial/quotes/[0-9a-fA-F-]+/convert$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("POST", r"/api/v1/commercial/orders/[0-9a-fA-F-]+/invoice$"): RoutePermission(Module.BILLING, Action.CREATE),
+
+    # Paiements
+    ("GET", r"/api/v1/commercial/documents/[0-9a-fA-F-]+/payments/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/api/v1/commercial/payments/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+
+    # Activités
+    ("GET", r"/api/v1/commercial/activities/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/api/v1/commercial/activities/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("POST", r"/api/v1/commercial/activities/[0-9a-fA-F-]+/complete$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+
+    # Pipeline
+    ("GET", r"/api/v1/commercial/pipeline/stages/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/api/v1/commercial/pipeline/stages/?$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("GET", r"/api/v1/commercial/pipeline/stats/?$"): RoutePermission(Module.REPORTING, Action.READ),
+
+    # Produits
+    ("GET", r"/api/v1/commercial/products/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/api/v1/commercial/products/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/api/v1/commercial/products/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/api/v1/commercial/products/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+
+    # Dashboard commercial
+    ("GET", r"/api/v1/commercial/dashboard/?$"): RoutePermission(Module.REPORTING, Action.READ),
 
     # =========================================================================
     # FACTURATION / DEVIS / PAIEMENTS
