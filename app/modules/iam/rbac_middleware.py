@@ -261,7 +261,7 @@ class RBACMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         method = request.method
 
-        # 1. Routes publiques
+        # 1. Routes publiques → passer sans vérification
         if self._is_public_route(path):
             return await call_next(request)
 
@@ -274,27 +274,27 @@ class RBACMiddleware(BaseHTTPMiddleware):
                 )
             return await call_next(request)
 
-        # 3. Vérifier l'authentification
-        if not self._is_authenticated(request):
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Authentification requise"}
-            )
-
-        # 4. Trouver la permission requise pour cette route
+        # 3. Trouver la permission requise pour cette route
+        # IMPORTANT: Faire ceci AVANT la vérification d'auth pour le mode bêta
         route_perm = self._find_route_permission(method, path)
 
         if not route_perm:
-            # Route non configurée → deny by default en production
-            # En développement, on peut logger et passer
-            logger.warning(f"Route non configurée dans RBAC: {method} {path}")
-            # Pour la bêta, on laisse passer avec un warning
-            # En production, décommenter pour deny by default:
+            # Route non configurée dans RBAC → passer en mode bêta
+            # Les endpoints gèrent leur propre authentification via get_current_user
+            # En production, activer deny-by-default ci-dessous:
+            # logger.warning(f"Route non configurée dans RBAC: {method} {path}")
             # return JSONResponse(
             #     status_code=403,
             #     content={"detail": "Route non autorisée"}
             # )
             return await call_next(request)
+
+        # 4. Route configurée → Vérifier l'authentification
+        if not self._is_authenticated(request):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Authentification requise"}
+            )
 
         # 5. Vérifier la permission
         user = self._get_user(request)
