@@ -796,7 +796,7 @@ class ProjectsService:
             project_id=project_id,
             task_id=data.task_id,
             user_id=self.user_id,
-            date=data.date,
+            date=data.entry_date,
             hours=data.hours,
             start_time=data.start_time,
             end_time=data.end_time,
