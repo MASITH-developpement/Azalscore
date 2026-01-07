@@ -345,12 +345,10 @@ api_v1.include_router(ai_router)
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)
 
-# Monter l'API v1 sur l'app principale
-app.include_router(api_v1)
-
 
 # ==================== UTILITY ENDPOINTS ====================
 # Endpoints utilitaires pour le cockpit frontend
+# NOTE: Doivent être définis AVANT app.include_router(api_v1)
 
 @api_v1.get("/modules")
 def get_active_modules(
@@ -360,7 +358,6 @@ def get_active_modules(
     Retourne la liste des modules actifs pour le tenant courant.
     Utilise par le frontend pour afficher le menu de navigation.
     """
-    # Modules de base disponibles pour tous les utilisateurs
     base_modules = [
         {"code": "cockpit", "name": "Cockpit", "icon": "dashboard", "active": True},
         {"code": "partners", "name": "Partenaires", "icon": "people", "active": True},
@@ -372,12 +369,9 @@ def get_active_modules(
         {"code": "purchases", "name": "Achats", "icon": "shopping_cart", "active": True},
         {"code": "payments", "name": "Paiements", "icon": "payment", "active": True},
     ]
-
-    # Admin module only for DIRIGEANT and ADMIN roles
     role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     if role in ["DIRIGEANT", "ADMIN"]:
         base_modules.append({"code": "admin", "name": "Administration", "icon": "settings", "active": True})
-
     return {"modules": base_modules}
 
 
@@ -385,14 +379,8 @@ def get_active_modules(
 def get_user_notifications(
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Retourne les notifications non lues pour l'utilisateur courant.
-    """
-    # Pour l'instant, retourne une liste vide - sera implementé avec un systeme de notifications
-    return {
-        "notifications": [],
-        "unread_count": 0
-    }
+    """Retourne les notifications non lues pour l'utilisateur courant."""
+    return {"notifications": [], "unread_count": 0}
 
 
 @api_v1.get("/tenant/current")
@@ -400,15 +388,17 @@ def get_current_tenant_info(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Retourne les informations du tenant courant.
-    """
+    """Retourne les informations du tenant courant."""
     return {
         "tenant_id": current_user.tenant_id,
-        "name": "SAS MASITH",  # TODO: recuperer depuis la DB
+        "name": "SAS MASITH",
         "plan": "professional",
         "status": "active"
     }
+
+
+# Monter l'API v1 sur l'app principale
+app.include_router(api_v1)
 
 
 @app.get("/health")
