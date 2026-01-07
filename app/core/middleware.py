@@ -27,7 +27,9 @@ class TenantMiddleware(BaseHTTPMiddleware):
         "/metrics", "/metrics/json",
         "/docs", "/redoc", "/openapi.json",
         "/", "/dashboard", "/treasury", "/static", "/favicon.ico", "/admin",
-        "/auth/login", "/auth/bootstrap", "/auth/2fa/verify-login"
+        "/auth/login", "/auth/bootstrap", "/auth/2fa/verify-login",
+        "/v1/auth/login", "/v1/auth/bootstrap", "/v1/auth/2fa/verify-login",
+        "/v1/audit"
     }
     
     async def dispatch(self, request: Request, call_next):

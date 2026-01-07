@@ -6,7 +6,7 @@ ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 """
 
 import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
@@ -224,115 +224,122 @@ app = FastAPI(
 # CORS seulement pour tester
 setup_cors(app)
 
-# Routes observabilité (PUBLIQUES - pas de tenant required)
+# Routes observabilite (PUBLIQUES - pas de tenant required)
 app.include_router(health_router)
 app.include_router(metrics_router)
 
-# Routes authentification (nécessitent X-Tenant-ID mais pas JWT)
-app.include_router(auth_router)
+# ==================== API v1 ====================
+# Toutes les routes metier sous le prefixe /v1
+api_v1 = APIRouter(prefix="/v1")
 
-# Routes protégées par JWT + tenant
-app.include_router(protected_router)
-app.include_router(journal_router)
-app.include_router(decision_router)
-app.include_router(red_workflow_router)
-app.include_router(accounting_router)
-app.include_router(treasury_router)
-app.include_router(tax_router)
-app.include_router(hr_router)
-app.include_router(legal_router)
-app.include_router(admin_migration_router)  # TEMPORAIRE pour migration
+# Routes authentification (necessitent X-Tenant-ID mais pas JWT)
+api_v1.include_router(auth_router)
 
-# Module T0 - IAM (Gestion Utilisateurs & Rôles)
-app.include_router(iam_router)
+# Routes protegees par JWT + tenant
+api_v1.include_router(protected_router)
+api_v1.include_router(journal_router)
+api_v1.include_router(decision_router)
+api_v1.include_router(red_workflow_router)
+api_v1.include_router(accounting_router)
+api_v1.include_router(treasury_router)
+api_v1.include_router(tax_router)
+api_v1.include_router(hr_router)
+api_v1.include_router(legal_router)
+api_v1.include_router(admin_migration_router)  # TEMPORAIRE pour migration
+
+# Module T0 - IAM (Gestion Utilisateurs & Roles)
+api_v1.include_router(iam_router)
 
 # Module T1 - Configuration Automatique par Fonction
-app.include_router(autoconfig_router)
+api_v1.include_router(autoconfig_router)
 
-# Module T2 - Système de Déclencheurs & Diffusion
-app.include_router(triggers_router)
+# Module T2 - Systeme de Declencheurs & Diffusion
+api_v1.include_router(triggers_router)
 
-# Module T3 - Audit & Benchmark Évolutif
-app.include_router(audit_router)
+# Module T3 - Audit & Benchmark Evolutif
+api_v1.include_router(audit_router)
 
-# Module T4 - Contrôle Qualité Central
-app.include_router(qc_router)
+# Module T4 - Controle Qualite Central
+api_v1.include_router(qc_router)
 
 # Module T5 - Packs Pays (Localisation)
-app.include_router(country_packs_router)
-app.include_router(france_pack_router)
+api_v1.include_router(country_packs_router)
+api_v1.include_router(france_pack_router)
 
-# Module T6 - Diffusion d'Information Périodique
-app.include_router(broadcast_router)
+# Module T6 - Diffusion d'Information Periodique
+api_v1.include_router(broadcast_router)
 
 # Module T7 - Module Web Transverse
-app.include_router(web_router)
+api_v1.include_router(web_router)
 
 # Module T8 - Site Web Officiel AZALS
-app.include_router(website_router)
+api_v1.include_router(website_router)
 
 # Module T9 - Gestion des Tenants (Multi-Tenancy)
-app.include_router(tenants_router)
+api_v1.include_router(tenants_router)
 
 # Module M1 - Commercial (CRM & Ventes)
-app.include_router(commercial_router)
+api_v1.include_router(commercial_router)
 
-# Module M2 - Finance (Comptabilité & Trésorerie)
-app.include_router(finance_router)
+# Module M2 - Finance (Comptabilite & Tresorerie)
+api_v1.include_router(finance_router)
 
 # Module M3 - RH (Ressources Humaines)
-app.include_router(hr_module_router)
+api_v1.include_router(hr_module_router)
 
 # Module M4 - Achats (Procurement)
-app.include_router(procurement_router)
+api_v1.include_router(procurement_router)
 
 # Module M5 - Stock (Inventaire + Logistique)
-app.include_router(inventory_router)
+api_v1.include_router(inventory_router)
 
 # Module M6 - Production (Manufacturing)
-app.include_router(production_router)
+api_v1.include_router(production_router)
 
-# Module M7 - Qualité (Quality Management)
-app.include_router(quality_router)
+# Module M7 - Qualite (Quality Management)
+api_v1.include_router(quality_router)
 
 # Module M8 - Maintenance (Asset Management / GMAO)
-app.include_router(maintenance_router)
+api_v1.include_router(maintenance_router)
 
 # Module M9 - Projets (Project Management)
-app.include_router(projects_router)
+api_v1.include_router(projects_router)
 
 # Module M10 - BI & Reporting (Business Intelligence)
-app.include_router(bi_router)
+api_v1.include_router(bi_router)
 
-# Module M11 - Compliance (Conformité Réglementaire)
-app.include_router(compliance_router)
+# Module M11 - Compliance (Conformite Reglementaire)
+api_v1.include_router(compliance_router)
 
 # Module M12 - E-Commerce
-app.include_router(ecommerce_router)
+api_v1.include_router(ecommerce_router)
 
 # Module M13 - POS (Point de Vente)
-app.include_router(pos_router)
+api_v1.include_router(pos_router)
 
 # Module M14 - Subscriptions (Abonnements)
-app.include_router(subscriptions_router)
+api_v1.include_router(subscriptions_router)
 
 # Module M15 - Stripe Integration
-app.include_router(stripe_router)
+api_v1.include_router(stripe_router)
 
 # Module M16 - Helpdesk (Support Client)
-app.include_router(helpdesk_router)
+api_v1.include_router(helpdesk_router)
 
 # Module M17 - Field Service (Interventions Terrain)
-app.include_router(field_service_router)
+api_v1.include_router(field_service_router)
 
 # Module M18 - Mobile App Backend
-app.include_router(mobile_router)
+api_v1.include_router(mobile_router)
 
-# Module IA - Assistant IA Transverse Opérationnelle
-app.include_router(ai_router)
+# Module IA - Assistant IA Transverse Operationnelle
+api_v1.include_router(ai_router)
 
-# Routes protégées par tenant uniquement (pas JWT pour compatibilité)
-app.include_router(items_router)
+# Routes protegees par tenant uniquement (pas JWT pour compatibilite)
+api_v1.include_router(items_router)
+
+# Monter l'API v1 sur l'app principale
+app.include_router(api_v1)
 
 
 @app.get("/health")
