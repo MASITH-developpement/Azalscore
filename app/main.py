@@ -216,13 +216,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Middleware - DESACTIVE TEMPORAIREMENT POUR DEBUG CORS
-# app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
-# app.add_middleware(MetricsMiddleware)
-# app.add_middleware(TenantMiddleware)
-
-# CORS seulement pour tester
+# Middleware stack (ordre important: dernier ajouté = premier exécuté)
+# 1. CORS doit être configuré en premier pour gérer les preflight OPTIONS
 setup_cors(app)
+
+# 2. TenantMiddleware - Validation X-Tenant-ID (après CORS)
+app.add_middleware(TenantMiddleware)
+
+# 3. Autres middlewares
+app.add_middleware(MetricsMiddleware)
+app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 
 # Routes observabilite (PUBLIQUES - pas de tenant required)
 app.include_router(health_router)
