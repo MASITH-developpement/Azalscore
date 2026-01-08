@@ -55,12 +55,21 @@ Vous avez reçu :
 
 ### 3.1 Socle Technique (Actif)
 
-| Fonctionnalité | Actions à Tester |
+| Fonctionnalite | Actions a Tester |
 |----------------|------------------|
 | **Connexion** | Login, logout, changement mot de passe |
-| **2FA** | Activation, désactivation, codes de secours |
+| **2FA** | Activation, desactivation, codes de secours |
 | **Dashboard** | Affichage KPIs, navigation |
 | **Profil** | Modification informations |
+
+### 3.2 Module CRM T0 (ACTIVE - 8 janvier 2026)
+
+| Fonctionnalite | Actions a Tester |
+|----------------|------------------|
+| **Clients** | Creer, modifier, lister, supprimer |
+| **Contacts** | Creer, modifier, lister |
+| **Export CSV** | Exporter clients et contacts |
+| **RBAC** | Verifier les droits selon votre role |
 
 ### 3.2 Scénarios de Test Prioritaires
 
@@ -140,14 +149,16 @@ Chaque rapport de bug doit inclure :
 
 ## 5. LIMITATIONS CONNUES
 
-### 5.1 Fonctionnalités Non Disponibles
+### 5.1 Fonctionnalites Non Disponibles
 
-| Fonctionnalité | Statut |
+| Fonctionnalite | Statut |
 |----------------|--------|
-| Modules métier (CRM, Finance...) | Non activés |
+| Module CRM T0 | **ACTIVE** (8 janvier 2026) |
+| Opportunites avancees | Non disponible (T1) |
+| Module Finance | Non active |
 | Export PDF/Excel | Non disponible |
 | Application mobile | PWA uniquement |
-| Multi-langue | Français uniquement |
+| Multi-langue | Francais uniquement |
 | Webhooks | Non disponible |
 
 ### 5.2 Limitations Techniques

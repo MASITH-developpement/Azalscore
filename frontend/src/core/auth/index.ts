@@ -134,6 +134,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         tokenManager.setTokens(tokens.access_token, tokens.refresh_token);
         setTenantId(tenant_id);
+        // Stocker l'email pour pouvoir récupérer l'utilisateur au refresh
+        sessionStorage.setItem('azals_demo_email', credentials.email.toLowerCase());
         currentDemoCapabilities = demoUser.capabilities;
 
         // Émettre événement pour charger les capabilities
@@ -218,6 +220,28 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     set({ isLoading: true });
 
+    // En mode démo, si on a un token démo valide, utiliser les données cachées
+    if (DEMO_MODE && token.startsWith('demo-access-token-')) {
+      // Chercher l'utilisateur démo correspondant au token stocké
+      const storedEmail = sessionStorage.getItem('azals_demo_email');
+      const demoUserData = storedEmail ? DEMO_USERS[storedEmail.toLowerCase()] : null;
+
+      if (demoUserData) {
+        currentDemoCapabilities = demoUserData.capabilities;
+        // Émettre événement pour les capabilities
+        window.dispatchEvent(new CustomEvent('azals:demo:login', {
+          detail: { capabilities: demoUserData.capabilities }
+        }));
+        set({
+          user: demoUserData.user,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+    }
+
     try {
       const response = await api.get<User>('/v1/auth/me');
       set({
@@ -227,6 +251,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         error: null,
       });
     } catch {
+      // En mode démo, ne pas effacer si on a un token démo
+      if (DEMO_MODE && token.startsWith('demo-access-token-')) {
+        set({ isLoading: false, isAuthenticated: false });
+        return;
+      }
       tokenManager.clearTokens();
       clearTenantId();
       set({
@@ -270,6 +299,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   clearAuth: (): void => {
     tokenManager.clearTokens();
     clearTenantId();
+    sessionStorage.removeItem('azals_demo_email');
+    currentDemoCapabilities = [];
     set({
       user: null,
       tokens: null,
