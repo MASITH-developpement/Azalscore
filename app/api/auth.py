@@ -792,10 +792,10 @@ def get_user_capabilities(
         "partners.suppliers.view", "partners.suppliers.create", "partners.suppliers.edit", "partners.suppliers.delete",
         "partners.contacts.view", "partners.contacts.create", "partners.contacts.edit", "partners.contacts.delete",
         # Invoicing - generiques ET specifiques par type (quotes, invoices, credits)
-        "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete",
-        "invoicing.quotes.view", "invoicing.quotes.create", "invoicing.quotes.edit", "invoicing.quotes.delete",
-        "invoicing.invoices.view", "invoicing.invoices.create", "invoicing.invoices.edit", "invoicing.invoices.delete",
-        "invoicing.credits.view", "invoicing.credits.create", "invoicing.credits.edit", "invoicing.credits.delete",
+        "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete", "invoicing.send",
+        "invoicing.quotes.view", "invoicing.quotes.create", "invoicing.quotes.edit", "invoicing.quotes.delete", "invoicing.quotes.send",
+        "invoicing.invoices.view", "invoicing.invoices.create", "invoicing.invoices.edit", "invoicing.invoices.delete", "invoicing.invoices.send",
+        "invoicing.credits.view", "invoicing.credits.create", "invoicing.credits.edit", "invoicing.credits.delete", "invoicing.credits.send",
         # Treasury - generiques ET specifiques (accounts)
         "treasury.view", "treasury.create", "treasury.transfer.execute",
         "treasury.accounts.view", "treasury.accounts.create", "treasury.accounts.edit", "treasury.accounts.delete",
