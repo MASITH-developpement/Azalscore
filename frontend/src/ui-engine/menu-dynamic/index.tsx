@@ -268,7 +268,6 @@ const MENU_SECTIONS: MenuSection[] = [
         label: 'Personnalisation',
         icon: 'branding',
         path: '/admin/branding',
-        capability: 'admin.branding.view',
       },
     ],
   },
