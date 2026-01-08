@@ -45,10 +45,14 @@ async def list_clients(
     current_user: User = Depends(get_current_user)
 ):
     """Lister les clients avec filtres (exclut les fournisseurs)."""
+    print(f"[DEBUG] GET /clients - tenant_id={current_user.tenant_id}, type={type}")
     service = get_commercial_service(db, current_user.tenant_id)
     items, total = service.list_customers_excluding_suppliers(
         type, assigned_to, is_active, search, page, page_size
     )
+    print(f"[DEBUG] GET /clients - found {total} clients, returning {len(items)} items")
+    for item in items:
+        print(f"[DEBUG]   - {item.id}: {item.name} (type={item.type})")
     return CustomerList(items=items, total=total, page=page, page_size=page_size)
 
 
