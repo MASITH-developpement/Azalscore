@@ -18,48 +18,15 @@ Intégrations AZALS:
 - M5 Stock (pièces)
 - M8 Maintenance (équipements)
 - M16 Helpdesk (tickets)
-"""
 
-from .models import (
-    ServiceZone,
-    Technician,
-    Vehicle,
-    InterventionTemplate,
-    Intervention,
-    InterventionHistory,
-    FSTimeEntry,
-    PartUsage,
-    Route,
-    Expense,
-    ServiceContract,
-    TechnicianStatus,
-    InterventionStatus,
-    InterventionPriority,
-    InterventionType
-)
+Note: Les modèles SQLAlchemy doivent être importés directement depuis
+app.modules.field_service.models pour éviter les conflits de registry.
+"""
 
 from .service import FieldServiceService
 from .router import router
 
 __all__ = [
-    # Models
-    "ServiceZone",
-    "Technician",
-    "Vehicle",
-    "InterventionTemplate",
-    "Intervention",
-    "InterventionHistory",
-    "FSTimeEntry",
-    "PartUsage",
-    "Route",
-    "Expense",
-    "ServiceContract",
-    # Enums
-    "TechnicianStatus",
-    "InterventionStatus",
-    "InterventionPriority",
-    "InterventionType",
-    # Service & Router
     "FieldServiceService",
     "router"
 ]
