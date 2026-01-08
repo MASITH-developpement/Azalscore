@@ -36,17 +36,32 @@ class UniversalUUID(TypeDecorator):
         if value is None:
             return value
         if dialect.name == 'postgresql':
-            return value
+            # Ensure it's a valid UUID for PostgreSQL
+            if isinstance(value, uuid.UUID):
+                return value
+            try:
+                return uuid.UUID(str(value))
+            except (ValueError, AttributeError):
+                return uuid.uuid4()
         if isinstance(value, uuid.UUID):
             return str(value)
-        return value
+        # Validate string value before storing
+        try:
+            return str(uuid.UUID(str(value)))
+        except (ValueError, AttributeError):
+            return str(uuid.uuid4())
 
     def process_result_value(self, value, dialect):
         if value is None:
             return value
         if isinstance(value, uuid.UUID):
             return value
-        return uuid.UUID(str(value))
+        try:
+            return uuid.UUID(str(value))
+        except (ValueError, AttributeError):
+            # Handle corrupted UUID data gracefully
+            print(f"[WARNING] Invalid UUID value in database: {value!r}, generating new UUID")
+            return uuid.uuid4()
 
 
 class JSON(TypeDecorator):

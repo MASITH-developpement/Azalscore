@@ -21,7 +21,7 @@ from app.core.models import User
 # Réutiliser les schémas et services du module commercial
 from app.modules.commercial.models import CustomerType
 from app.modules.commercial.schemas import (
-    CustomerCreate, CustomerUpdate, CustomerResponse, CustomerList,
+    CustomerCreate, CustomerCreateAuto, CustomerUpdate, CustomerResponse, CustomerList,
     ContactCreate, ContactUpdate, ContactResponse, ContactList,
 )
 from app.modules.commercial.service import get_commercial_service
@@ -45,14 +45,10 @@ async def list_clients(
     current_user: User = Depends(get_current_user)
 ):
     """Lister les clients avec filtres (exclut les fournisseurs)."""
-    print(f"[DEBUG] GET /clients - tenant_id={current_user.tenant_id}, type={type}")
     service = get_commercial_service(db, current_user.tenant_id)
     items, total = service.list_customers_excluding_suppliers(
         type, assigned_to, is_active, search, page, page_size
     )
-    print(f"[DEBUG] GET /clients - found {total} clients, returning {len(items)} items")
-    for item in items:
-        print(f"[DEBUG]   - {item.id}: {item.name} (type={item.type})")
     return CustomerList(items=items, total=total, page=page, page_size=page_size)
 
 
@@ -72,19 +68,29 @@ async def get_client(
 
 @router.post("/clients", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 async def create_client(
-    data: CustomerCreate,
+    data: CustomerCreateAuto,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Créer un nouveau client."""
+    """Créer un nouveau client avec code auto-généré."""
     service = get_commercial_service(db, current_user.tenant_id)
 
-    # Vérifier unicité du code
-    existing = service.get_customer_by_code(data.code)
-    if existing:
-        raise HTTPException(status_code=400, detail="Code client déjà utilisé")
+    # Auto-générer le code si non fourni
+    if not data.code:
+        auto_code = service.get_next_customer_code()
+    else:
+        auto_code = data.code
+        # Vérifier unicité du code fourni
+        existing = service.get_customer_by_code(auto_code)
+        if existing:
+            raise HTTPException(status_code=400, detail="Code client déjà utilisé")
 
-    return service.create_customer(data, current_user.id)
+    # Créer les données avec le code
+    data_dict = data.model_dump(exclude_unset=False)
+    data_dict["code"] = auto_code
+    customer_data = CustomerCreate(**data_dict)
+
+    return service.create_customer(customer_data, current_user.id)
 
 
 @router.put("/clients/{client_id}", response_model=CustomerResponse)

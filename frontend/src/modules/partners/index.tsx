@@ -236,8 +236,8 @@ export const ClientsPage: React.FC = () => {
     },
   ];
 
+  // Le code client est auto-généré par le backend (CLI001, CLI002, etc.)
   const clientSchema = z.object({
-    code: z.string().min(1, 'Code requis').max(50),
     name: z.string().min(2, 'Nom requis').max(255),
     type: z.enum(['PROSPECT', 'LEAD', 'CUSTOMER', 'VIP', 'PARTNER', 'CHURNED']).default('CUSTOMER'),
     email: z.string().email('Email invalide').optional().or(z.literal('')),
@@ -250,7 +250,6 @@ export const ClientsPage: React.FC = () => {
   });
 
   const fields = [
-    { name: 'code', label: 'Code client', type: 'text' as const, required: true, placeholder: 'CLI001' },
     { name: 'name', label: 'Nom / Raison sociale', type: 'text' as const, required: true },
     {
       name: 'type',

@@ -88,6 +88,66 @@ class CustomerCreate(CustomerBase):
     pass
 
 
+class CustomerCreateAuto(BaseModel):
+    """Création d'un client avec code auto-généré."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    # Code est optionnel - sera auto-généré si non fourni
+    code: Optional[str] = Field(default=None, max_length=50)
+    name: str = Field(..., min_length=1, max_length=255)
+    legal_name: Optional[str] = None
+    customer_type: CustomerType = Field(default=CustomerType.CUSTOMER, alias="type")
+
+    # Contact
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    mobile: Optional[str] = None
+    website: Optional[str] = None
+
+    # Adresse
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    postal_code: Optional[str] = None
+    state: Optional[str] = None
+    country_code: str = "FR"
+
+    # Légal
+    tax_id: Optional[str] = None
+    registration_number: Optional[str] = None
+    legal_form: Optional[str] = None
+
+    # Commercial
+    assigned_to: Optional[UUID] = None
+    industry: Optional[str] = None
+    size: Optional[str] = None
+    annual_revenue: Optional[Decimal] = None
+    employee_count: Optional[int] = None
+
+    # Conditions
+    payment_terms: PaymentTerms = PaymentTerms.NET_30
+    payment_method: Optional[PaymentMethod] = None
+    credit_limit: Optional[Decimal] = None
+    currency: str = "EUR"
+    discount_rate: float = 0.0
+
+    # Classification
+    tags: List[str] = Field(default_factory=list)
+    segment: Optional[str] = None
+    source: Optional[str] = None
+
+    # Notes
+    notes: Optional[str] = None
+    internal_notes: Optional[str] = None
+
+    @field_validator('tags', mode='before')
+    @classmethod
+    def parse_tags(cls, v):
+        if isinstance(v, str):
+            return json.loads(v) if v else []
+        return v or []
+
+
 class CustomerUpdate(BaseModel):
     """Mise à jour d'un client."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
