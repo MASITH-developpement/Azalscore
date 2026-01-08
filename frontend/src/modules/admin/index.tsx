@@ -404,6 +404,7 @@ export const UsersPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { data, isLoading, refetch } = useUsers(page, pageSize);
+  const { data: rolesData } = useRoles(); // Pre-fetch roles for modal
   const toggleActive = useToggleUserActive();
 
   const columns: TableColumn<AdminUser>[] = [
@@ -512,7 +513,7 @@ export const UsersPage: React.FC = () => {
 const userSchema = z.object({
   email: z.string().email('Email invalide'),
   name: z.string().min(2, 'Nom requis'),
-  roles: z.array(z.string()).min(1, 'Au moins un rôle requis'),
+  role: z.string().min(1, 'Un rôle est requis'),
 });
 
 interface UserFormModalProps {
@@ -521,9 +522,11 @@ interface UserFormModalProps {
 }
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
-  const { data: roles } = useRoles();
+  const { data: roles, isLoading: rolesLoading } = useRoles();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+
+  const roleOptions = roles?.items.map((r) => ({ value: r.id, label: r.name })) || [];
 
   const fields = [
     {
@@ -540,22 +543,39 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
       required: true,
     },
     {
-      name: 'roles',
-      label: 'Rôles',
+      name: 'role',
+      label: 'Rôle',
       type: 'select' as const,
       required: true,
-      options: roles?.items.map((r) => ({ value: r.id, label: r.name })) || [],
+      placeholder: rolesLoading ? 'Chargement...' : 'Sélectionner un rôle',
+      options: roleOptions,
     },
   ];
 
   const handleSubmit = async (data: z.infer<typeof userSchema>) => {
+    // Transform role to roles array for backend compatibility
+    const payload = {
+      email: data.email,
+      name: data.name,
+      roles: [data.role],
+    };
+
     if (user) {
-      await updateUser.mutateAsync({ id: user.id, data });
+      await updateUser.mutateAsync({ id: user.id, data: payload });
     } else {
-      await createUser.mutateAsync(data);
+      await createUser.mutateAsync(payload);
     }
     onClose();
   };
+
+  // Transform user data for form (roles array -> single role)
+  const defaultValues = user
+    ? {
+        email: user.email,
+        name: user.name,
+        role: user.roles?.[0] || '',
+      }
+    : undefined;
 
   return (
     <Modal
@@ -567,10 +587,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
       <DynamicForm
         fields={fields}
         schema={userSchema}
-        defaultValues={user}
+        defaultValues={defaultValues}
         onSubmit={handleSubmit}
         onCancel={onClose}
-        isLoading={createUser.isPending || updateUser.isPending}
+        isLoading={createUser.isPending || updateUser.isPending || rolesLoading}
         submitLabel={user ? 'Enregistrer' : 'Créer'}
       />
     </Modal>
