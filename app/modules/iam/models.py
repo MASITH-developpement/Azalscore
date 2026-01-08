@@ -194,6 +194,11 @@ class IAMUser(Base):
     mfa_secret = Column(String(255), nullable=True)  # Chiffré
     mfa_backup_codes = Column(Text, nullable=True)  # JSON chiffré
 
+    # Protection système (compte créateur)
+    is_system_account = Column(Boolean, default=False, nullable=False)  # Compte système
+    is_protected = Column(Boolean, default=False, nullable=False)  # Empêche rétrogradation/suppression
+    created_via = Column(String(50), default='api', nullable=True)  # api, cli, migration, bootstrap
+
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -238,6 +243,11 @@ class IAMRole(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     is_assignable = Column(Boolean, default=True, nullable=False)  # Peut être attribué
     max_users = Column(Integer, nullable=True)  # Limite utilisateurs par rôle
+
+    # Protection système (super_admin)
+    is_protected = Column(Boolean, default=False, nullable=False)  # Empêche modification
+    is_deletable = Column(Boolean, default=True, nullable=False)  # Empêche suppression
+    max_assignments = Column(Integer, nullable=True)  # Limite d'utilisateurs avec ce rôle
 
     # Séparation des pouvoirs
     incompatible_roles = Column(Text, nullable=True)  # JSON: ["ROLE1", "ROLE2"]
