@@ -50,12 +50,16 @@ def cleanup_corrupted_uuids():
         cursor.execute(f"PRAGMA table_info({table})")
         columns = cursor.fetchall()
 
-        # Identifier les colonnes qui pourraient contenir des UUID (id, *_id, tenant_id, etc.)
+        # Identifier les colonnes qui pourraient contenir des UUID (id, *_id, etc.)
+        # EXCLURE tenant_id qui est une chaîne de caractères, pas un UUID
         uuid_columns = []
         for col in columns:
             col_name = col[1]
             col_type = col[2].upper() if col[2] else ""
             # Les colonnes UUID sont généralement nommées 'id', '*_id', ou de type VARCHAR(36)
+            # MAIS pas tenant_id qui est un identifiant string
+            if col_name == 'tenant_id':
+                continue  # Skip tenant_id - c'est une chaîne, pas un UUID
             if col_name == 'id' or col_name.endswith('_id') or 'uuid' in col_name.lower():
                 uuid_columns.append(col_name)
 
