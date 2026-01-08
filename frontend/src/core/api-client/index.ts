@@ -238,6 +238,17 @@ const DEMO_DATA: Record<string, unknown> = {
     page: 1,
     page_size: 25,
   },
+  '/v1/admin/roles': {
+    items: [
+      { id: 'DIRIGEANT', name: 'DIRIGEANT', description: 'Accès complet à toutes les fonctionnalités', capabilities: [], user_count: 0, is_system: true },
+      { id: 'ADMIN', name: 'ADMIN', description: 'Administration du système', capabilities: [], user_count: 0, is_system: true },
+      { id: 'DAF', name: 'DAF', description: 'Directeur Administratif et Financier', capabilities: [], user_count: 0, is_system: true },
+      { id: 'COMPTABLE', name: 'COMPTABLE', description: 'Accès comptabilité et facturation', capabilities: [], user_count: 0, is_system: true },
+      { id: 'COMMERCIAL', name: 'COMMERCIAL', description: 'Accès ventes et clients', capabilities: [], user_count: 0, is_system: true },
+      { id: 'EMPLOYE', name: 'EMPLOYE', description: 'Accès limité aux fonctionnalités de base', capabilities: [], user_count: 0, is_system: true },
+    ],
+    total: 6,
+  },
   '/v1/admin/tenants': {
     items: [
       { id: 'demo-tenant', name: 'Entreprise Démo', plan: 'professional', users_count: 3, is_active: true, created_at: '2024-01-01T00:00:00Z' },
