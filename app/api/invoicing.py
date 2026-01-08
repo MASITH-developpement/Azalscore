@@ -1,118 +1,265 @@
 """
-AZALS API - Invoicing (Alias vers Module Commercial)
-====================================================
-
-Routes pour la facturation (devis, factures, commandes).
-Ces routes sont des alias vers le module commercial M1.
-
-Frontend: /v1/invoicing/*
-Backend: Module Commercial (M1) - Documents
-"""
-
-from datetime import date
+AZALS API - Invoicing (Devis, Factures, Avoirs)
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from uuid import UUID
+from pydantic import BaseModel, Field
+from datetime import date, datetime
+from decimal import Decimal
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.core.models import User
 
-# Réutiliser les schémas et services du module commercial
 from app.modules.commercial.models import DocumentType, DocumentStatus
 from app.modules.commercial.schemas import (
     DocumentCreate, DocumentUpdate, DocumentResponse, DocumentList,
-    DocumentLineCreate, DocumentLineResponse,
+    DocumentLineCreate, DocumentLineResponse, PaymentCreate, PaymentResponse
 )
 from app.modules.commercial.service import get_commercial_service
 
-router = APIRouter(prefix="/invoicing", tags=["Invoicing - Facturation"])
+router = APIRouter(prefix="/invoicing", tags=["Invoicing - Devis, Factures, Avoirs"])
 
 
 # ============================================================================
-# ENDPOINTS DEVIS (Quotes)
+# SCHEMAS SPECIFIQUES INVOICING
 # ============================================================================
 
-@router.get("/quotes", response_model=DocumentList)
+class InvoiceLineInput(BaseModel):
+    """Ligne de document pour creation."""
+    description: str
+    quantity: Decimal = Field(default=Decimal("1"))
+    unit_price: Decimal
+    vat_rate: Decimal = Field(default=Decimal("20"))
+    discount_percent: Optional[Decimal] = None
+
+
+class InvoiceCreate(BaseModel):
+    """Schema de creation de document facturation."""
+    client_id: UUID
+    date: Optional[date] = None
+    due_date: Optional[date] = None
+    notes: Optional[str] = None
+    payment_terms: Optional[str] = None
+    lines: List[InvoiceLineInput] = []
+
+
+class InvoiceResponse(BaseModel):
+    """Response schema pour un document."""
+    id: UUID
+    number: str
+    type: str
+    status: str
+    client_id: UUID
+    client_name: str
+    date: date
+    due_date: Optional[date] = None
+    total_ht: Decimal
+    total_ttc: Decimal
+    currency: str = "EUR"
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InvoiceDetailResponse(InvoiceResponse):
+    """Response avec lignes."""
+    lines: List[DocumentLineResponse] = []
+    notes: Optional[str] = None
+    payment_terms: Optional[str] = None
+
+
+class InvoiceListResponse(BaseModel):
+    """Liste paginee."""
+    items: List[InvoiceResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+# ============================================================================
+# MAPPING TYPE
+# ============================================================================
+
+TYPE_MAPPING = {
+    "quotes": DocumentType.QUOTE,
+    "invoices": DocumentType.INVOICE,
+    "credits": DocumentType.CREDIT,
+}
+
+
+def get_document_type(type_name: str) -> DocumentType:
+    """Convertit le nom d'URL en DocumentType."""
+    if type_name not in TYPE_MAPPING:
+        raise HTTPException(status_code=400, detail=f"Type invalide: {type_name}")
+    return TYPE_MAPPING[type_name]
+
+
+# ============================================================================
+# ENDPOINTS DEVIS (QUOTES)
+# ============================================================================
+
+@router.get("/quotes", response_model=InvoiceListResponse)
 async def list_quotes(
-    status: Optional[DocumentStatus] = None,
-    customer_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    status: Optional[str] = None,
+    client_id: Optional[UUID] = None,
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Lister les devis avec filtres."""
+    """Lister les devis."""
     service = get_commercial_service(db, current_user.tenant_id)
+    doc_status = DocumentStatus(status) if status else None
     items, total = service.list_documents(
-        type=DocumentType.QUOTE,
-        status=status,
-        customer_id=customer_id,
-        date_from=date_from,
-        date_to=date_to,
+        doc_type=DocumentType.QUOTE,
+        status=doc_status,
+        customer_id=client_id,
+        search=search,
         page=page,
         page_size=page_size
     )
-    return DocumentList(items=items, total=total, page=page, page_size=page_size)
+
+    response_items = []
+    for item in items:
+        response_items.append(InvoiceResponse(
+            id=item.id,
+            number=item.number,
+            type="quote",
+            status=item.status.value if hasattr(item.status, 'value') else str(item.status),
+            client_id=item.customer_id,
+            client_name=item.customer.name if item.customer else "N/A",
+            date=item.date,
+            due_date=item.due_date,
+            total_ht=item.total_ht,
+            total_ttc=item.total_ttc,
+            currency=item.currency,
+            created_at=item.created_at
+        ))
+
+    return InvoiceListResponse(items=response_items, total=total, page=page, page_size=page_size)
 
 
-@router.get("/quotes/{quote_id}", response_model=DocumentResponse)
+@router.get("/quotes/{quote_id}", response_model=InvoiceDetailResponse)
 async def get_quote(
     quote_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Récupérer un devis."""
+    """Recuperer un devis."""
     service = get_commercial_service(db, current_user.tenant_id)
-    document = service.get_document(quote_id)
-    if not document or document.type != DocumentType.QUOTE:
-        raise HTTPException(status_code=404, detail="Devis non trouvé")
-    return document
+    doc = service.get_document(quote_id)
+    if not doc or doc.type != DocumentType.QUOTE:
+        raise HTTPException(status_code=404, detail="Devis non trouve")
+
+    return InvoiceDetailResponse(
+        id=doc.id,
+        number=doc.number,
+        type="quote",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at,
+        lines=doc.lines,
+        notes=doc.notes,
+        payment_terms=doc.payment_terms
+    )
 
 
-@router.post("/quotes", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/quotes", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
 async def create_quote(
-    data: DocumentCreate,
+    data: InvoiceCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Créer un nouveau devis."""
+    """Creer un nouveau devis."""
     service = get_commercial_service(db, current_user.tenant_id)
 
-    # Forcer le type QUOTE
-    data_dict = data.model_dump()
-    data_dict["type"] = DocumentType.QUOTE
-    data = DocumentCreate(**data_dict)
+    # Convertir en DocumentCreate
+    doc_data = DocumentCreate(
+        type=DocumentType.QUOTE,
+        customer_id=data.client_id,
+        date=data.date or date.today(),
+        due_date=data.due_date,
+        notes=data.notes,
+        payment_terms=data.payment_terms
+    )
 
-    # Vérifier que le client existe
-    customer = service.get_customer(data.customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Client non trouvé")
+    doc = service.create_document(doc_data, current_user.id)
 
-    return service.create_document(data, current_user.id)
+    # Ajouter les lignes
+    for line in data.lines:
+        line_data = DocumentLineCreate(
+            description=line.description,
+            quantity=line.quantity,
+            unit_price=line.unit_price,
+            vat_rate=line.vat_rate,
+            discount_percent=line.discount_percent
+        )
+        service.add_document_line(doc.id, line_data)
+
+    # Recharger pour avoir les totaux
+    doc = service.get_document(doc.id)
+
+    return InvoiceResponse(
+        id=doc.id,
+        number=doc.number,
+        type="quote",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at
+    )
 
 
-@router.put("/quotes/{quote_id}", response_model=DocumentResponse)
+@router.put("/quotes/{quote_id}", response_model=InvoiceResponse)
 async def update_quote(
     quote_id: UUID,
-    data: DocumentUpdate,
+    data: InvoiceCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Mettre à jour un devis."""
+    """Modifier un devis."""
     service = get_commercial_service(db, current_user.tenant_id)
-    document = service.get_document(quote_id)
-    if not document or document.type != DocumentType.QUOTE:
-        raise HTTPException(status_code=404, detail="Devis non trouvé")
+    doc = service.get_document(quote_id)
+    if not doc or doc.type != DocumentType.QUOTE:
+        raise HTTPException(status_code=404, detail="Devis non trouve")
 
-    updated = service.update_document(quote_id, data)
-    if not updated:
-        raise HTTPException(status_code=400, detail="Devis non modifiable")
-    return updated
+    update_data = DocumentUpdate(
+        customer_id=data.client_id,
+        date=data.date,
+        due_date=data.due_date,
+        notes=data.notes,
+        payment_terms=data.payment_terms
+    )
+    doc = service.update_document(quote_id, update_data)
+
+    return InvoiceResponse(
+        id=doc.id,
+        number=doc.number,
+        type="quote",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at
+    )
 
 
 @router.delete("/quotes/{quote_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -123,147 +270,313 @@ async def delete_quote(
 ):
     """Supprimer un devis (brouillon uniquement)."""
     service = get_commercial_service(db, current_user.tenant_id)
-    document = service.get_document(quote_id)
-    if not document or document.type != DocumentType.QUOTE:
-        raise HTTPException(status_code=404, detail="Devis non trouvé")
-    if document.status != DocumentStatus.DRAFT:
-        raise HTTPException(status_code=400, detail="Seuls les brouillons peuvent être supprimés")
+    doc = service.get_document(quote_id)
+    if not doc or doc.type != DocumentType.QUOTE:
+        raise HTTPException(status_code=404, detail="Devis non trouve")
+    if doc.status != DocumentStatus.DRAFT:
+        raise HTTPException(status_code=400, detail="Seuls les brouillons peuvent etre supprimes")
 
-    # TODO: Implémenter delete_document dans le service
-    raise HTTPException(status_code=501, detail="Suppression non implémentée")
+    service.delete_document(quote_id)
 
 
-@router.post("/quotes/{quote_id}/convert", response_model=DocumentResponse)
-async def convert_quote_to_order(
+@router.post("/quotes/{quote_id}/send", response_model=InvoiceResponse)
+async def send_quote(
     quote_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Convertir un devis en commande."""
+    """Envoyer un devis au client."""
     service = get_commercial_service(db, current_user.tenant_id)
-    order = service.convert_quote_to_order(quote_id, current_user.id)
-    if not order:
-        raise HTTPException(status_code=400, detail="Devis non trouvé ou non convertible")
-    return order
+    doc = service.send_document(quote_id, current_user.id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Devis non trouve")
+
+    return InvoiceResponse(
+        id=doc.id,
+        number=doc.number,
+        type="quote",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at
+    )
 
 
 # ============================================================================
-# ENDPOINTS FACTURES (Invoices)
+# ENDPOINTS FACTURES (INVOICES)
 # ============================================================================
 
-@router.get("/invoices", response_model=DocumentList)
+@router.get("/invoices", response_model=InvoiceListResponse)
 async def list_invoices(
-    status: Optional[DocumentStatus] = None,
-    customer_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    status: Optional[str] = None,
+    client_id: Optional[UUID] = None,
+    search: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Lister les factures avec filtres."""
+    """Lister les factures."""
     service = get_commercial_service(db, current_user.tenant_id)
+    doc_status = DocumentStatus(status) if status else None
     items, total = service.list_documents(
-        type=DocumentType.INVOICE,
-        status=status,
-        customer_id=customer_id,
-        date_from=date_from,
-        date_to=date_to,
+        doc_type=DocumentType.INVOICE,
+        status=doc_status,
+        customer_id=client_id,
+        search=search,
         page=page,
         page_size=page_size
     )
-    return DocumentList(items=items, total=total, page=page, page_size=page_size)
+
+    response_items = []
+    for item in items:
+        response_items.append(InvoiceResponse(
+            id=item.id,
+            number=item.number,
+            type="invoice",
+            status=item.status.value if hasattr(item.status, 'value') else str(item.status),
+            client_id=item.customer_id,
+            client_name=item.customer.name if item.customer else "N/A",
+            date=item.date,
+            due_date=item.due_date,
+            total_ht=item.total_ht,
+            total_ttc=item.total_ttc,
+            currency=item.currency,
+            created_at=item.created_at
+        ))
+
+    return InvoiceListResponse(items=response_items, total=total, page=page, page_size=page_size)
 
 
-@router.get("/invoices/{invoice_id}", response_model=DocumentResponse)
+@router.get("/invoices/{invoice_id}", response_model=InvoiceDetailResponse)
 async def get_invoice(
     invoice_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Récupérer une facture."""
+    """Recuperer une facture."""
     service = get_commercial_service(db, current_user.tenant_id)
-    document = service.get_document(invoice_id)
-    if not document or document.type != DocumentType.INVOICE:
-        raise HTTPException(status_code=404, detail="Facture non trouvée")
-    return document
+    doc = service.get_document(invoice_id)
+    if not doc or doc.type != DocumentType.INVOICE:
+        raise HTTPException(status_code=404, detail="Facture non trouvee")
+
+    return InvoiceDetailResponse(
+        id=doc.id,
+        number=doc.number,
+        type="invoice",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at,
+        lines=doc.lines,
+        notes=doc.notes,
+        payment_terms=doc.payment_terms
+    )
 
 
-@router.post("/invoices", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/invoices", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
 async def create_invoice(
-    data: DocumentCreate,
+    data: InvoiceCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Créer une nouvelle facture."""
+    """Creer une nouvelle facture."""
     service = get_commercial_service(db, current_user.tenant_id)
 
-    # Forcer le type INVOICE
-    data_dict = data.model_dump()
-    data_dict["type"] = DocumentType.INVOICE
-    data = DocumentCreate(**data_dict)
+    doc_data = DocumentCreate(
+        type=DocumentType.INVOICE,
+        customer_id=data.client_id,
+        date=data.date or date.today(),
+        due_date=data.due_date,
+        notes=data.notes,
+        payment_terms=data.payment_terms
+    )
 
-    # Vérifier que le client existe
-    customer = service.get_customer(data.customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Client non trouvé")
+    doc = service.create_document(doc_data, current_user.id)
 
-    return service.create_document(data, current_user.id)
+    for line in data.lines:
+        line_data = DocumentLineCreate(
+            description=line.description,
+            quantity=line.quantity,
+            unit_price=line.unit_price,
+            vat_rate=line.vat_rate,
+            discount_percent=line.discount_percent
+        )
+        service.add_document_line(doc.id, line_data)
+
+    doc = service.get_document(doc.id)
+
+    return InvoiceResponse(
+        id=doc.id,
+        number=doc.number,
+        type="invoice",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at
+    )
+
+
+@router.post("/invoices/{invoice_id}/send", response_model=InvoiceResponse)
+async def send_invoice(
+    invoice_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Envoyer une facture au client."""
+    service = get_commercial_service(db, current_user.tenant_id)
+    doc = service.send_document(invoice_id, current_user.id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Facture non trouvee")
+
+    return InvoiceResponse(
+        id=doc.id,
+        number=doc.number,
+        type="invoice",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at
+    )
 
 
 # ============================================================================
-# ENDPOINTS COMMANDES (Orders)
+# ENDPOINTS AVOIRS (CREDITS)
 # ============================================================================
 
-@router.get("/orders", response_model=DocumentList)
-async def list_orders(
-    status: Optional[DocumentStatus] = None,
-    customer_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+@router.get("/credits", response_model=InvoiceListResponse)
+async def list_credits(
+    status: Optional[str] = None,
+    client_id: Optional[UUID] = None,
+    search: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Lister les commandes avec filtres."""
+    """Lister les avoirs."""
     service = get_commercial_service(db, current_user.tenant_id)
+    doc_status = DocumentStatus(status) if status else None
     items, total = service.list_documents(
-        type=DocumentType.ORDER,
-        status=status,
-        customer_id=customer_id,
-        date_from=date_from,
-        date_to=date_to,
+        doc_type=DocumentType.CREDIT,
+        status=doc_status,
+        customer_id=client_id,
+        search=search,
         page=page,
         page_size=page_size
     )
-    return DocumentList(items=items, total=total, page=page, page_size=page_size)
+
+    response_items = []
+    for item in items:
+        response_items.append(InvoiceResponse(
+            id=item.id,
+            number=item.number,
+            type="credit",
+            status=item.status.value if hasattr(item.status, 'value') else str(item.status),
+            client_id=item.customer_id,
+            client_name=item.customer.name if item.customer else "N/A",
+            date=item.date,
+            due_date=item.due_date,
+            total_ht=item.total_ht,
+            total_ttc=item.total_ttc,
+            currency=item.currency,
+            created_at=item.created_at
+        ))
+
+    return InvoiceListResponse(items=response_items, total=total, page=page, page_size=page_size)
 
 
-@router.get("/orders/{order_id}", response_model=DocumentResponse)
-async def get_order(
-    order_id: UUID,
+@router.post("/credits", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
+async def create_credit(
+    data: InvoiceCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Récupérer une commande."""
+    """Creer un nouvel avoir."""
     service = get_commercial_service(db, current_user.tenant_id)
-    document = service.get_document(order_id)
-    if not document or document.type != DocumentType.ORDER:
-        raise HTTPException(status_code=404, detail="Commande non trouvée")
-    return document
+
+    doc_data = DocumentCreate(
+        type=DocumentType.CREDIT,
+        customer_id=data.client_id,
+        date=data.date or date.today(),
+        due_date=data.due_date,
+        notes=data.notes,
+        payment_terms=data.payment_terms
+    )
+
+    doc = service.create_document(doc_data, current_user.id)
+
+    for line in data.lines:
+        line_data = DocumentLineCreate(
+            description=line.description,
+            quantity=line.quantity,
+            unit_price=line.unit_price,
+            vat_rate=line.vat_rate,
+            discount_percent=line.discount_percent
+        )
+        service.add_document_line(doc.id, line_data)
+
+    doc = service.get_document(doc.id)
+
+    return InvoiceResponse(
+        id=doc.id,
+        number=doc.number,
+        type="credit",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at
+    )
 
 
-@router.post("/orders/{order_id}/invoice", response_model=DocumentResponse)
-async def create_invoice_from_order(
-    order_id: UUID,
+@router.post("/credits/{credit_id}/send", response_model=InvoiceResponse)
+async def send_credit(
+    credit_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Créer une facture à partir d'une commande."""
+    """Envoyer un avoir au client."""
     service = get_commercial_service(db, current_user.tenant_id)
-    invoice = service.create_invoice_from_order(order_id, current_user.id)
-    if not invoice:
-        raise HTTPException(status_code=400, detail="Commande non trouvée ou non facturable")
-    return invoice
+    doc = service.send_document(credit_id, current_user.id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Avoir non trouve")
+
+    return InvoiceResponse(
+        id=doc.id,
+        number=doc.number,
+        type="credit",
+        status=doc.status.value if hasattr(doc.status, 'value') else str(doc.status),
+        client_id=doc.customer_id,
+        client_name=doc.customer.name if doc.customer else "N/A",
+        date=doc.date,
+        due_date=doc.due_date,
+        total_ht=doc.total_ht,
+        total_ttc=doc.total_ttc,
+        currency=doc.currency,
+        created_at=doc.created_at
+    )
