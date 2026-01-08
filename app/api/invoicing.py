@@ -90,7 +90,7 @@ TYPE_MAPPING = {
 
 
 def get_document_type(type_name: str) -> DocumentType:
-    """Convertit le nom d'URL en DocumentType."""
+    """Convertit le nom URL en DocumentType."""
     if type_name not in TYPE_MAPPING:
         raise HTTPException(status_code=400, detail=f"Type invalide: {type_name}")
     return TYPE_MAPPING[type_name]

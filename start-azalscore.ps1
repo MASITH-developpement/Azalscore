@@ -27,11 +27,36 @@ Write-Host "[2/5] Arret des anciens processus..." -ForegroundColor Yellow
 Get-Process python* -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
-# Mettre à jour depuis main
-Write-Host "[3/5] Mise a jour depuis la branche main..." -ForegroundColor Yellow
-git fetch origin main
-git checkout main
+# Synchronisation Git
+Write-Host "[3/5] Synchronisation avec GitHub..." -ForegroundColor Yellow
+
+# S'assurer d'etre sur main
+git checkout main 2>$null
+
+# Etape 1: Commit des modifications locales s'il y en a
+$hasChanges = git status --porcelain
+if ($hasChanges) {
+    Write-Host "   Modifications locales detectees, commit en cours..." -ForegroundColor Gray
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm"
+    git add -A
+    git commit -m "auto-save: modifications locales $timestamp"
+    Write-Host "   [OK] Modifications locales commitees" -ForegroundColor Green
+}
+
+# Etape 2: Push des commits locaux vers GitHub
+Write-Host "   Push vers GitHub..." -ForegroundColor Gray
+git push origin main 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "   Conflit detecte, rebase en cours..." -ForegroundColor Yellow
+    git pull --rebase origin main
+    git push origin main
+}
+Write-Host "   [OK] Push termine" -ForegroundColor Green
+
+# Etape 3: Pull pour recuperer les dernières modifications
+Write-Host "   Pull depuis GitHub..." -ForegroundColor Gray
 git pull origin main
+Write-Host "   [OK] Code synchronise avec GitHub" -ForegroundColor Green
 
 # Supprimer le cache Python
 Write-Host "[4/5] Nettoyage du cache Python..." -ForegroundColor Yellow
