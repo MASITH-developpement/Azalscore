@@ -13,7 +13,7 @@ from sqlalchemy import (
     Column, Integer, BigInteger, String, DateTime, Text, Boolean,
     ForeignKey, Index, Enum, Float, func, CheckConstraint
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from app.core.types import JSONB
 from sqlalchemy.orm import relationship
 import enum
 import uuid
