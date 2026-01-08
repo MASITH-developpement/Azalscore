@@ -514,18 +514,20 @@ class CreatorInitializer:
 
         # Creer l'utilisateur
         if is_sqlite:
-            # SQLite: colonnes de base seulement (sans is_system_account, is_protected, created_via)
+            # SQLite: colonnes de base avec toutes les colonnes NOT NULL
             session.execute(text("""
                 INSERT INTO iam_users (
                     tenant_id, email, password_hash,
                     first_name, last_name, display_name,
                     is_active, is_verified, is_locked,
+                    failed_login_attempts, must_change_password, mfa_enabled,
                     locale, timezone,
                     password_changed_at, created_at, updated_at
                 ) VALUES (
                     :tenant_id, :email, :password_hash,
                     'Createur', 'Systeme', 'Createur Systeme',
                     1, 1, 0,
+                    0, 0, 0,
                     'fr', 'Europe/Paris',
                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
