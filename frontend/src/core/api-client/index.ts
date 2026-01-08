@@ -54,7 +54,7 @@ const DEMO_DATA: Record<string, unknown> = {
     page_size: 25,
   },
 
-  // Invoices
+  // Invoices (legacy)
   '/v1/invoicing/invoices': {
     items: [
       { id: '1', number: 'FA-2024-001', partner_name: 'ACME Corp', date: '2024-01-15', due_date: '2024-02-15', amount_ht: 5000, amount_ttc: 6000, status: 'sent', type: 'invoice' },
@@ -63,6 +63,79 @@ const DEMO_DATA: Record<string, unknown> = {
       { id: '4', number: 'AV-2024-001', partner_name: 'ACME Corp', date: '2024-01-10', due_date: '2024-01-10', amount_ht: -500, amount_ttc: -600, status: 'paid', type: 'credit_note' },
     ],
     total: 4,
+    page: 1,
+    page_size: 25,
+  },
+
+  // Commercial Documents (VENTES T0)
+  '/v1/commercial/documents': {
+    items: [
+      {
+        id: 'doc-quote-1', number: 'DEV-2026-0001', type: 'QUOTE', status: 'DRAFT',
+        customer_id: 'cust-1', customer_name: 'ACME Corp',
+        date: '2026-01-05', validity_date: '2026-02-05',
+        subtotal: 5000, discount_percent: 0, discount_amount: 0, tax_amount: 1000, total: 6000,
+        currency: 'EUR', notes: 'Devis pour refonte site web',
+        created_by: 'user-1', created_at: '2026-01-05T10:00:00Z', updated_at: '2026-01-05T10:00:00Z',
+        lines: [
+          { id: 'line-1', document_id: 'doc-quote-1', line_number: 1, description: 'Développement frontend', quantity: 10, unit: 'jours', unit_price: 500, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 5000, tax_amount: 1000, total: 6000, created_at: '2026-01-05T10:00:00Z' }
+        ]
+      },
+      {
+        id: 'doc-quote-2', number: 'DEV-2026-0002', type: 'QUOTE', status: 'VALIDATED',
+        customer_id: 'cust-2', customer_name: 'Tech Solutions',
+        date: '2026-01-03', validity_date: '2026-02-03',
+        subtotal: 8500, discount_percent: 0, discount_amount: 0, tax_amount: 1700, total: 10200,
+        currency: 'EUR', notes: 'Développement application mobile',
+        validated_by: 'user-1', validated_at: '2026-01-04T14:00:00Z',
+        created_by: 'user-1', created_at: '2026-01-03T09:00:00Z', updated_at: '2026-01-04T14:00:00Z',
+        lines: [
+          { id: 'line-2', document_id: 'doc-quote-2', line_number: 1, description: 'Design UX/UI', quantity: 5, unit: 'jours', unit_price: 600, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 3000, tax_amount: 600, total: 3600, created_at: '2026-01-03T09:00:00Z' },
+          { id: 'line-3', document_id: 'doc-quote-2', line_number: 2, description: 'Développement React Native', quantity: 10, unit: 'jours', unit_price: 550, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 5500, tax_amount: 1100, total: 6600, created_at: '2026-01-03T09:00:00Z' }
+        ]
+      },
+      {
+        id: 'doc-invoice-1', number: 'FAC-2026-0001', type: 'INVOICE', status: 'DRAFT',
+        customer_id: 'cust-1', customer_name: 'ACME Corp',
+        date: '2026-01-06', due_date: '2026-02-06',
+        subtotal: 3500, discount_percent: 0, discount_amount: 0, tax_amount: 700, total: 4200,
+        currency: 'EUR', notes: 'Facture maintenance janvier',
+        created_by: 'user-1', created_at: '2026-01-06T11:00:00Z', updated_at: '2026-01-06T11:00:00Z',
+        lines: [
+          { id: 'line-4', document_id: 'doc-invoice-1', line_number: 1, description: 'Maintenance mensuelle', quantity: 1, unit: 'forfait', unit_price: 2000, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 2000, tax_amount: 400, total: 2400, created_at: '2026-01-06T11:00:00Z' },
+          { id: 'line-5', document_id: 'doc-invoice-1', line_number: 2, description: 'Support technique', quantity: 5, unit: 'heures', unit_price: 300, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 1500, tax_amount: 300, total: 1800, created_at: '2026-01-06T11:00:00Z' }
+        ]
+      },
+      {
+        id: 'doc-invoice-2', number: 'FAC-2026-0002', type: 'INVOICE', status: 'VALIDATED',
+        customer_id: 'cust-3', customer_name: 'Digital Agency',
+        date: '2026-01-02', due_date: '2026-02-02',
+        subtotal: 12000, discount_percent: 5, discount_amount: 600, tax_amount: 2280, total: 13680,
+        currency: 'EUR', notes: 'Facture projet migration cloud',
+        validated_by: 'user-1', validated_at: '2026-01-02T16:00:00Z',
+        created_by: 'user-1', created_at: '2026-01-02T10:00:00Z', updated_at: '2026-01-02T16:00:00Z',
+        lines: [
+          { id: 'line-6', document_id: 'doc-invoice-2', line_number: 1, description: 'Audit infrastructure', quantity: 3, unit: 'jours', unit_price: 800, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 2400, tax_amount: 480, total: 2880, created_at: '2026-01-02T10:00:00Z' },
+          { id: 'line-7', document_id: 'doc-invoice-2', line_number: 2, description: 'Migration serveurs', quantity: 8, unit: 'jours', unit_price: 700, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 5600, tax_amount: 1120, total: 6720, created_at: '2026-01-02T10:00:00Z' },
+          { id: 'line-8', document_id: 'doc-invoice-2', line_number: 3, description: 'Formation équipe', quantity: 2, unit: 'jours', unit_price: 600, discount_percent: 0, tax_rate: 20, discount_amount: 0, subtotal: 1200, tax_amount: 240, total: 1440, created_at: '2026-01-02T10:00:00Z' }
+        ]
+      }
+    ],
+    total: 4,
+    page: 1,
+    page_size: 25,
+  },
+
+  // Commercial Customers
+  '/v1/commercial/customers': {
+    items: [
+      { id: 'cust-1', code: 'CLI-001', name: 'ACME Corp', email: 'contact@acme.com', phone: '+33 1 23 45 67 89', city: 'Paris', is_active: true },
+      { id: 'cust-2', code: 'CLI-002', name: 'Tech Solutions', email: 'info@techsol.fr', phone: '+33 1 98 76 54 32', city: 'Lyon', is_active: true },
+      { id: 'cust-3', code: 'CLI-003', name: 'Digital Agency', email: 'hello@digital.agency', phone: '+33 1 55 66 77 88', city: 'Bordeaux', is_active: true },
+      { id: 'cust-4', code: 'CLI-004', name: 'Import Export SA', email: 'trade@importexport.com', phone: '+33 1 44 55 66 77', city: 'Toulouse', is_active: true },
+      { id: 'cust-5', code: 'CLI-005', name: 'Startup Innovation', email: 'contact@startup.io', phone: '+33 1 11 22 33 44', city: 'Nantes', is_active: true },
+    ],
+    total: 5,
     page: 1,
     page_size: 25,
   },
@@ -331,6 +404,8 @@ const sleep = (ms: number): Promise<void> =>
 
 const shouldRetry = (error: AxiosError, attempt: number): boolean => {
   if (attempt >= MAX_RETRIES) return false;
+  // En mode démo, ne pas retenter les erreurs réseau (pas de backend)
+  if (DEMO_MODE && !error.response) return false;
   if (!error.response) return true; // Erreur réseau
   const status = error.response.status;
   return status >= 500 || status === 429;
@@ -397,16 +472,24 @@ export const api = {
     // Mode démo - retourner les données mockées
     if (DEMO_MODE) {
       const mockData = findDemoData(url);
-      if (mockData !== undefined && mockData !== null) {
+      // Si mockData est null, c'est intentionnel: simuler une erreur
+      if (mockData === null) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        throw new Error(`Demo mode: ${url} returns error by design`);
+      }
+      // Si mockData existe et n'est pas undefined, retourner les données
+      if (mockData !== undefined) {
         // Simuler un petit délai réseau
         await new Promise(resolve => setTimeout(resolve, 50));
         return createDemoResponse(mockData as T);
       }
+      // Si mockData est undefined (endpoint non mocké), on continue vers le backend
+      // mais avec un timeout court pour ne pas bloquer
     }
 
     const response = await executeWithRetry(
       () => apiClient.get<ApiResponse<T>>(url, {
-        timeout: config?.timeout,
+        timeout: DEMO_MODE ? 2000 : config?.timeout, // Timeout court en mode démo
         headers: config?.skipAuth ? { 'Skip-Auth': 'true' } : undefined,
       }),
       config

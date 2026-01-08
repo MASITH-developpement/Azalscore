@@ -1248,3 +1248,519 @@ body {
 
 .azals-mt-4 { margin-top: var(--azals-spacing-md); }
 .azals-section { margin-bottom: var(--azals-spacing-xl); }
+
+/* ============================================================
+   VENTES T0 - LINE EDITOR
+   ============================================================ */
+
+.azals-line-editor {
+  margin-top: var(--azals-spacing-md);
+}
+
+.azals-line-editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-line-editor__header h3 {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+}
+
+.azals-line-editor__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--azals-spacing-2xl);
+  color: var(--azals-text-secondary);
+  background: var(--azals-gray-50);
+  border-radius: var(--azals-radius-md);
+  gap: var(--azals-spacing-sm);
+}
+
+.azals-line-editor__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--azals-spacing-lg);
+}
+
+.azals-line-editor__table th {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  text-align: left;
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--azals-gray-50);
+  border-bottom: 1px solid var(--azals-border);
+}
+
+.azals-line-editor__table td {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  font-size: var(--azals-font-size-sm);
+  border-bottom: 1px solid var(--azals-border);
+  vertical-align: middle;
+}
+
+.azals-line-editor__table tr:hover {
+  background: var(--azals-gray-50);
+}
+
+.azals-line-editor__table tr.editing {
+  background: var(--azals-primary-50);
+}
+
+.azals-line-editor__table .clickable {
+  cursor: pointer;
+  padding: var(--azals-spacing-xs) var(--azals-spacing-sm);
+  border-radius: var(--azals-radius-sm);
+}
+
+.azals-line-editor__table .clickable:hover {
+  background: var(--azals-gray-100);
+}
+
+.azals-line-editor__table .text-right {
+  text-align: right;
+}
+
+.azals-line-editor__table .font-medium {
+  font-weight: 500;
+}
+
+.azals-line-editor__totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--azals-spacing-xs);
+  padding-top: var(--azals-spacing-md);
+  border-top: 2px solid var(--azals-border);
+}
+
+.azals-line-editor__total-row {
+  display: flex;
+  justify-content: space-between;
+  width: 250px;
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+}
+
+.azals-line-editor__total-row--main {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-text);
+  padding-top: var(--azals-spacing-sm);
+  margin-top: var(--azals-spacing-xs);
+  border-top: 1px solid var(--azals-border);
+}
+
+/* ============================================================
+   VENTES T0 - FILTER BAR
+   ============================================================ */
+
+.azals-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--azals-spacing-md);
+  padding: var(--azals-spacing-md);
+  border-bottom: 1px solid var(--azals-border);
+}
+
+.azals-filter-bar__search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.azals-filter-bar__search svg {
+  position: absolute;
+  left: var(--azals-spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--azals-text-secondary);
+}
+
+.azals-filter-bar__search .azals-input {
+  padding-left: var(--azals-spacing-2xl);
+}
+
+.azals-filter-bar__clear {
+  position: absolute;
+  right: var(--azals-spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--azals-text-secondary);
+  padding: var(--azals-spacing-xs);
+}
+
+.azals-filter-bar__clear:hover {
+  color: var(--azals-text);
+}
+
+.azals-filter-bar__actions {
+  display: flex;
+  gap: var(--azals-spacing-sm);
+}
+
+.azals-filter-bar__badge {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--azals-primary-500);
+  border-radius: 50%;
+  margin-left: var(--azals-spacing-xs);
+}
+
+.azals-filter-bar__panel {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--azals-spacing-md);
+  padding-top: var(--azals-spacing-md);
+  border-top: 1px solid var(--azals-border);
+  margin-top: var(--azals-spacing-sm);
+  align-items: flex-end;
+}
+
+.azals-filter-bar__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+  min-width: 150px;
+}
+
+.azals-filter-bar__field label {
+  font-size: var(--azals-font-size-xs);
+  font-weight: 500;
+  color: var(--azals-text-secondary);
+}
+
+/* ============================================================
+   VENTES T0 - DOCUMENT VIEWS
+   ============================================================ */
+
+.azals-document-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.azals-document-header h2 {
+  font-size: var(--azals-font-size-xl);
+  font-weight: 600;
+  margin-bottom: var(--azals-spacing-xs);
+}
+
+.azals-document-header .text-right {
+  text-align: right;
+}
+
+.azals-document-header .text-right p {
+  margin-bottom: var(--azals-spacing-xs);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-document-validation {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  background: var(--azals-green-light);
+  border-radius: var(--azals-radius-md);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-document-link {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+}
+
+.azals-document-link a {
+  color: var(--azals-primary-600);
+  text-decoration: none;
+}
+
+.azals-document-link a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   VENTES T0 - STATS
+   ============================================================ */
+
+.azals-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-stat__label {
+  font-size: var(--azals-font-size-xs);
+  font-weight: 500;
+  color: var(--azals-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.azals-stat__value {
+  font-size: var(--azals-font-size-xl);
+  font-weight: 600;
+}
+
+.azals-stat__value--primary {
+  color: var(--azals-primary-600);
+}
+
+/* ============================================================
+   VENTES T0 - DASHBOARD CARDS
+   ============================================================ */
+
+.azals-dashboard-card {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-lg);
+  padding: var(--azals-spacing-lg);
+  cursor: pointer;
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-dashboard-card:hover {
+  border-color: var(--azals-primary-300);
+  box-shadow: var(--azals-shadow-md);
+}
+
+.azals-dashboard-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--azals-radius-lg);
+}
+
+.azals-dashboard-card__icon--blue {
+  background: var(--azals-primary-100);
+  color: var(--azals-primary-600);
+}
+
+.azals-dashboard-card__icon--green {
+  background: var(--azals-green-light);
+  color: var(--azals-green);
+}
+
+.azals-dashboard-card__content {
+  flex: 1;
+}
+
+.azals-dashboard-card__content h3 {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  margin-bottom: var(--azals-spacing-xs);
+}
+
+.azals-dashboard-card__arrow {
+  color: var(--azals-text-secondary);
+}
+
+/* ============================================================
+   VENTES T0 - SIMPLE LIST
+   ============================================================ */
+
+.azals-simple-list {
+  list-style: none;
+}
+
+.azals-simple-list li {
+  border-bottom: 1px solid var(--azals-border);
+}
+
+.azals-simple-list li:last-child {
+  border-bottom: none;
+}
+
+.azals-simple-list a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--azals-spacing-sm) 0;
+  color: var(--azals-text);
+  text-decoration: none;
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-simple-list a:hover {
+  color: var(--azals-primary-600);
+}
+
+/* ============================================================
+   VENTES T0 - FORM FIELDS
+   ============================================================ */
+
+.azals-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-form-field label {
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+  color: var(--azals-text);
+}
+
+.azals-form-error {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-danger);
+}
+
+.azals-select--error,
+.azals-input--error {
+  border-color: var(--azals-danger);
+}
+
+.azals-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--azals-spacing-sm);
+  padding-top: var(--azals-spacing-lg);
+}
+
+/* ============================================================
+   VENTES T0 - ALERTS
+   ============================================================ */
+
+.azals-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  border-radius: var(--azals-radius-md);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-alert--error {
+  background: var(--azals-red-light);
+  color: var(--azals-red);
+}
+
+.azals-alert--warning {
+  background: var(--azals-orange-light);
+  color: var(--azals-orange);
+}
+
+.azals-alert--success {
+  background: var(--azals-green-light);
+  color: var(--azals-green);
+}
+
+/* ============================================================
+   VENTES T0 - EMPTY STATE
+   ============================================================ */
+
+.azals-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--azals-spacing-2xl);
+  text-align: center;
+  color: var(--azals-text-secondary);
+}
+
+.azals-empty h3 {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-text);
+  margin-top: var(--azals-spacing-md);
+  margin-bottom: var(--azals-spacing-sm);
+}
+
+.azals-empty p {
+  margin-bottom: var(--azals-spacing-lg);
+}
+
+/* ============================================================
+   VENTES T0 - ICON BUTTON
+   ============================================================ */
+
+.azals-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: var(--azals-radius-md);
+  cursor: pointer;
+  color: var(--azals-text-secondary);
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-btn-icon:hover {
+  background: var(--azals-gray-100);
+  color: var(--azals-text);
+}
+
+.azals-btn-icon--danger:hover {
+  background: var(--azals-red-light);
+  color: var(--azals-danger);
+}
+
+/* ============================================================
+   VENTES T0 - INPUT SIZES
+   ============================================================ */
+
+.azals-input--sm,
+.azals-select--sm {
+  padding: var(--azals-spacing-xs) var(--azals-spacing-sm);
+  font-size: var(--azals-font-size-xs);
+}
+
+/* ============================================================
+   VENTES T0 - LINKS
+   ============================================================ */
+
+.azals-link {
+  color: var(--azals-primary-600);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.azals-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   UTILITIES - EXTENDED
+   ============================================================ */
+
+.text-muted { color: var(--azals-text-secondary); }
+.text-success { color: var(--azals-success); }
+.text-warning { color: var(--azals-warning); }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.font-medium { font-weight: 500; }
+.font-bold { font-weight: 700; }
+.inline { display: inline; }
+.ml-1 { margin-left: var(--azals-spacing-xs); }
+.mr-1 { margin-right: var(--azals-spacing-xs); }
+.mt-2 { margin-top: var(--azals-spacing-sm); }
+.mt-4 { margin-top: var(--azals-spacing-md); }
+.mt-6 { margin-top: var(--azals-spacing-lg); }
+.mb-4 { margin-bottom: var(--azals-spacing-md); }
+.py-4 { padding-top: var(--azals-spacing-md); padding-bottom: var(--azals-spacing-md); }
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.animate-spin { animation: spin 1s linear infinite; }
