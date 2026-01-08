@@ -144,11 +144,13 @@ class CommercialService:
         """Créer un contact."""
         contact = Contact(
             tenant_id=self.tenant_id,
+            is_active=True,  # Forcer explicitement is_active
             **data.model_dump()
         )
         self.db.add(contact)
         self.db.commit()
         self.db.refresh(contact)
+        print(f"[DEBUG] Contact créé: id={contact.id}, tenant_id={contact.tenant_id}, is_active={contact.is_active}")
         return contact
 
     def get_contact(self, contact_id: UUID) -> Optional[Contact]:
@@ -173,6 +175,14 @@ class CommercialService:
         page_size: int = 20
     ) -> Tuple[List[Contact], int]:
         """Lister tous les contacts avec pagination."""
+        print(f"[DEBUG] list_all_contacts appelé: tenant_id={self.tenant_id}, search={search}")
+
+        # Debug: compter tous les contacts sans filtre
+        all_contacts = self.db.query(Contact).filter(Contact.tenant_id == self.tenant_id).all()
+        print(f"[DEBUG] Tous les contacts (sans filtre is_active): {len(all_contacts)}")
+        for c in all_contacts:
+            print(f"[DEBUG]   - {c.id}: {c.first_name} {c.last_name}, is_active={c.is_active}")
+
         query = self.db.query(Contact).filter(
             Contact.tenant_id == self.tenant_id,
             Contact.is_active == True
@@ -188,6 +198,7 @@ class CommercialService:
 
         total = query.count()
         items = query.order_by(Contact.last_name, Contact.first_name).offset((page - 1) * page_size).limit(page_size).all()
+        print(f"[DEBUG] Contacts retournés: total={total}, items={len(items)}")
         return items, total
 
     def update_contact(self, contact_id: UUID, data: ContactUpdate) -> Optional[Contact]:
