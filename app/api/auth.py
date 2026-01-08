@@ -777,31 +777,39 @@ def get_user_capabilities(
         "partners.clients.view", "partners.clients.create", "partners.clients.edit", "partners.clients.delete",
         "partners.suppliers.view", "partners.suppliers.create", "partners.suppliers.edit", "partners.suppliers.delete",
         "partners.contacts.view", "partners.contacts.create", "partners.contacts.edit", "partners.contacts.delete",
-        # Invoicing
+        # Invoicing - generiques ET specifiques par type (quotes, invoices, credits)
         "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete",
-        # Treasury
+        "invoicing.quotes.view", "invoicing.quotes.create", "invoicing.quotes.edit", "invoicing.quotes.delete",
+        "invoicing.invoices.view", "invoicing.invoices.create", "invoicing.invoices.edit", "invoicing.invoices.delete",
+        "invoicing.credits.view", "invoicing.credits.create", "invoicing.credits.edit", "invoicing.credits.delete",
+        # Treasury - generiques ET specifiques (accounts)
         "treasury.view", "treasury.create", "treasury.transfer.execute",
+        "treasury.accounts.view", "treasury.accounts.create", "treasury.accounts.edit", "treasury.accounts.delete",
         # Accounting
         "accounting.view", "accounting.journal.view", "accounting.journal.delete",
-        # Purchases
+        # Purchases - generiques ET specifiques (orders)
         "purchases.view", "purchases.create", "purchases.edit",
+        "purchases.orders.view", "purchases.orders.create", "purchases.orders.edit", "purchases.orders.delete",
         # Projects
-        "projects.view", "projects.create", "projects.edit",
-        # Interventions
+        "projects.view", "projects.create", "projects.edit", "projects.delete",
+        # Interventions - generiques ET specifiques (tickets)
         "interventions.view", "interventions.create", "interventions.edit",
+        "interventions.tickets.view", "interventions.tickets.create", "interventions.tickets.edit", "interventions.tickets.delete",
         # Web
         "web.view", "web.edit",
-        # Ecommerce
+        # Ecommerce - generiques ET specifiques (products, orders)
         "ecommerce.view", "ecommerce.edit", "ecommerce.create", "ecommerce.delete",
+        "ecommerce.products.view", "ecommerce.products.create", "ecommerce.products.edit", "ecommerce.products.delete",
+        "ecommerce.orders.view", "ecommerce.orders.create", "ecommerce.orders.edit", "ecommerce.orders.delete",
         # Marketplace
         "marketplace.view", "marketplace.edit",
         # Payments
         "payments.view", "payments.create",
         # Mobile
         "mobile.view",
-        # Admin
+        # Admin - avec create pour roles
         "admin.view", "admin.users.view", "admin.users.create", "admin.users.edit", "admin.users.delete",
-        "admin.roles.view", "admin.roles.edit",
+        "admin.roles.view", "admin.roles.create", "admin.roles.edit", "admin.roles.delete",
         "admin.tenants.view", "admin.tenants.create", "admin.tenants.delete",
         "admin.modules.view", "admin.modules.edit",
         "admin.logs.view",
