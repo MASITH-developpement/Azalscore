@@ -127,6 +127,10 @@ from app.modules.mobile.router import router as mobile_router
 # Module IA - Assistant IA Transverse Opérationnelle
 from app.modules.ai_assistant.router import router as ai_router
 
+# Module GUARDIAN - Correction Automatique Gouvernée & Auditable
+from app.modules.guardian.router import router as guardian_router
+from app.modules.guardian.middleware import setup_guardian_middleware
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -242,7 +246,11 @@ app.add_middleware(RBACMiddleware)
 # 4. TenantMiddleware - Validation X-Tenant-ID
 app.add_middleware(TenantMiddleware)
 
-# 5. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
+# 5. GUARDIAN Middleware - Interception automatique des erreurs
+# S'exécute après Tenant pour avoir accès au tenant_id
+setup_guardian_middleware(app, environment=_settings.environment)
+
+# 6. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
 setup_cors(app)
 
 # Routes observabilite (PUBLIQUES - pas de tenant required)
@@ -356,6 +364,9 @@ api_v1.include_router(mobile_router)
 
 # Module IA - Assistant IA Transverse Operationnelle
 api_v1.include_router(ai_router)
+
+# Module GUARDIAN - Correction Automatique Gouvernee & Auditable
+api_v1.include_router(guardian_router)
 
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)
