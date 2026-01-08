@@ -124,6 +124,9 @@ from app.modules.helpdesk.router import router as helpdesk_router
 # Module M17 - Field Service (Interventions Terrain)
 from app.modules.field_service.router import router as field_service_router
 
+# Module INTERVENTIONS v1 - Interventions conformes spec
+from app.modules.interventions.router import router as interventions_router
+
 # Module M18 - Mobile App Backend
 from app.modules.mobile.router import router as mobile_router
 
@@ -376,6 +379,9 @@ api_v1.include_router(helpdesk_router)
 
 # Module M17 - Field Service (Interventions Terrain)
 api_v1.include_router(field_service_router)
+
+# Module INTERVENTIONS v1 - Interventions conformes spec
+api_v1.include_router(interventions_router)
 
 # Module M18 - Mobile App Backend
 api_v1.include_router(mobile_router)
