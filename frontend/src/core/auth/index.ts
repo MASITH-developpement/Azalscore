@@ -102,13 +102,18 @@ interface LoginResponse {
   tenant_id: string;
 }
 
+// Status d'initialisation explicite
+export type AuthStatus = 'idle' | 'loading' | 'ready' | 'error';
+
 interface AuthStore extends AuthState {
+  status: AuthStatus;
   login: (credentials: LoginCredentials) => Promise<LoginResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   verify2FA: (code: string) => Promise<void>;
   setUser: (user: User) => void;
   clearAuth: () => void;
+  setStatus: (status: AuthStatus) => void;
 }
 
 // ============================================================
@@ -121,6 +126,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
   error: null,
+  status: 'idle' as AuthStatus,
+
+  setStatus: (status: AuthStatus): void => {
+    set({ status });
+  },
 
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     set({ isLoading: true, error: null });
@@ -138,10 +148,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         sessionStorage.setItem('azals_demo_email', credentials.email.toLowerCase());
         currentDemoCapabilities = demoUser.capabilities;
 
-        // Émettre événement pour charger les capabilities
-        window.dispatchEvent(new CustomEvent('azals:demo:login', {
-          detail: { capabilities: demoUser.capabilities }
-        }));
+        // Charger les capabilities directement dans le store (évite les problèmes d'événements)
+        const { useCapabilitiesStore } = await import('@core/capabilities');
+        useCapabilitiesStore.setState({
+          capabilities: demoUser.capabilities,
+          isLoading: false,
+          status: 'ready',
+        });
 
         set({
           user: demoUser.user,
@@ -149,6 +162,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isAuthenticated: true,
           isLoading: false,
           error: null,
+          status: 'ready', // CRITICAL: Marquer auth comme READY après login démo
         });
 
         return {
@@ -178,6 +192,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
         error: null,
+        status: 'ready', // Marquer auth comme READY après login réussi
       });
 
       return loginData;
@@ -212,13 +227,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   refreshUser: async (): Promise<void> => {
+    set({ status: 'loading', isLoading: true });
+
     const token = tokenManager.getAccessToken();
     if (!token) {
-      set({ isLoading: false, isAuthenticated: false });
+      set({ isLoading: false, isAuthenticated: false, status: 'ready' });
       return;
     }
-
-    set({ isLoading: true });
 
     // En mode démo, si on a un token démo valide, utiliser les données cachées
     if (DEMO_MODE && token.startsWith('demo-access-token-')) {
@@ -228,18 +243,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       if (demoUserData) {
         currentDemoCapabilities = demoUserData.capabilities;
-        // Émettre événement pour les capabilities
-        window.dispatchEvent(new CustomEvent('azals:demo:login', {
-          detail: { capabilities: demoUserData.capabilities }
-        }));
+        // Charger les capabilities directement dans le store
+        const { useCapabilitiesStore } = await import('@core/capabilities');
+        useCapabilitiesStore.setState({
+          capabilities: demoUserData.capabilities,
+          isLoading: false,
+          status: 'ready',
+        });
         set({
           user: demoUserData.user,
           isAuthenticated: true,
           isLoading: false,
           error: null,
+          status: 'ready',
         });
         return;
       }
+      // Token démo mais pas d'email stocké - session invalide
+      tokenManager.clearTokens();
+      sessionStorage.removeItem('azals_demo_email');
+      set({ isLoading: false, isAuthenticated: false, status: 'ready' });
+      return;
     }
 
     try {
@@ -249,13 +273,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
         error: null,
+        status: 'ready',
       });
     } catch {
-      // En mode démo, ne pas effacer si on a un token démo
-      if (DEMO_MODE && token.startsWith('demo-access-token-')) {
-        set({ isLoading: false, isAuthenticated: false });
-        return;
-      }
       tokenManager.clearTokens();
       clearTenantId();
       set({
@@ -264,6 +284,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isAuthenticated: false,
         isLoading: false,
         error: null,
+        status: 'ready',
       });
     }
   },
@@ -322,11 +343,20 @@ export const useAuth = () => {
     isAuthenticated: store.isAuthenticated,
     isLoading: store.isLoading,
     error: store.error,
+    status: store.status,
     login: store.login,
     logout: store.logout,
     refreshUser: store.refreshUser,
     verify2FA: store.verify2FA,
   };
+};
+
+export const useAuthStatus = (): AuthStatus => {
+  return useAuthStore((state) => state.status);
+};
+
+export const useIsAuthReady = (): boolean => {
+  return useAuthStore((state) => state.status === 'ready');
 };
 
 export const useUser = (): User | null => {

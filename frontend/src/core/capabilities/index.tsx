@@ -13,10 +13,15 @@ import type { Capability, CapabilitiesState } from '@/types';
 // TYPES LOCAUX
 // ============================================================
 
+// Status d'initialisation explicite
+export type CapabilitiesStatus = 'idle' | 'loading' | 'ready' | 'error';
+
 interface CapabilitiesStore extends CapabilitiesState {
+  status: CapabilitiesStatus;
   loadCapabilities: () => Promise<void>;
   clearCapabilities: () => void;
   refreshCapabilities: () => Promise<void>;
+  setStatus: (status: CapabilitiesStatus) => void;
 }
 
 interface CapabilitiesResponse {
@@ -43,6 +48,11 @@ const SENSITIVE_CAPABILITIES = [
 export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
   capabilities: [],
   isLoading: false,
+  status: 'idle' as CapabilitiesStatus,
+
+  setStatus: (status: CapabilitiesStatus): void => {
+    set({ status });
+  },
 
   hasCapability: (cap: string): boolean => {
     return get().capabilities.includes(cap);
@@ -59,34 +69,26 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
   },
 
   loadCapabilities: async (): Promise<void> => {
-    set({ isLoading: true });
+    set({ isLoading: true, status: 'loading' });
 
     try {
       const response = await api.get<CapabilitiesResponse>('/v1/auth/capabilities');
 
-      // Debug: log response structure
-      console.log('[Capabilities] API response:', JSON.stringify(response));
-
       // Handle both wrapped and unwrapped response formats
-      // Backend may return: { data: { capabilities: [...] } } or { capabilities: [...] }
       let capabilities: string[] = [];
 
       if (response && typeof response === 'object') {
-        // Check if response has data.capabilities (wrapped format)
         if (response.data && Array.isArray(response.data.capabilities)) {
           capabilities = response.data.capabilities;
-        }
-        // Check if response has capabilities directly (unwrapped format)
-        else if (Array.isArray((response as unknown as CapabilitiesResponse).capabilities)) {
+        } else if (Array.isArray((response as unknown as CapabilitiesResponse).capabilities)) {
           capabilities = (response as unknown as CapabilitiesResponse).capabilities;
         }
       }
 
-      console.log('[Capabilities] Parsed capabilities:', capabilities.length, 'items');
-
       set({
         capabilities,
         isLoading: false,
+        status: 'ready',
       });
     } catch (error) {
       console.error('[Capabilities] Error loading capabilities:', error);
@@ -95,17 +97,15 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
       const { getDemoCapabilities } = await import('@core/auth');
       const demoCapabilities = getDemoCapabilities();
       if (demoCapabilities.length > 0) {
-        console.log('[Capabilities] Using demo capabilities:', demoCapabilities.length, 'items');
-        set({ capabilities: demoCapabilities, isLoading: false });
+        set({ capabilities: demoCapabilities, isLoading: false, status: 'ready' });
       } else {
-        console.warn('[Capabilities] No capabilities available, setting empty array');
-        set({ capabilities: [], isLoading: false });
+        set({ capabilities: [], isLoading: false, status: 'ready' });
       }
     }
   },
 
   clearCapabilities: (): void => {
-    set({ capabilities: [], isLoading: false });
+    set({ capabilities: [], isLoading: false, status: 'idle' });
   },
 
   refreshCapabilities: async (): Promise<void> => {
@@ -118,7 +118,8 @@ if (typeof window !== 'undefined') {
   window.addEventListener('azals:demo:login', ((event: CustomEvent<{ capabilities: string[] }>) => {
     useCapabilitiesStore.setState({
       capabilities: event.detail.capabilities,
-      isLoading: false
+      isLoading: false,
+      status: 'ready',
     });
   }) as EventListener);
 }
@@ -135,11 +136,20 @@ export const useCapabilities = () => {
   return {
     capabilities: store.capabilities,
     isLoading: store.isLoading,
+    status: store.status,
     hasCapability: store.hasCapability,
     hasAnyCapability: store.hasAnyCapability,
     hasAllCapabilities: store.hasAllCapabilities,
     refresh: store.refreshCapabilities,
   };
+};
+
+export const useCapabilitiesStatus = (): CapabilitiesStatus => {
+  return useCapabilitiesStore((state) => state.status);
+};
+
+export const useIsCapabilitiesReady = (): boolean => {
+  return useCapabilitiesStore((state) => state.status === 'ready');
 };
 
 /**
@@ -203,6 +213,13 @@ export const CapabilityGuard: React.FC<CapabilityGuardProps> = ({
   fallback = null,
 }) => {
   const store = useCapabilitiesStore();
+  const status = store.status;
+
+  // CRITICAL: Ne pas décider tant que les capabilities ne sont pas READY
+  // Cela évite les redirections prématurées avant le chargement
+  if (status !== 'ready') {
+    return null; // Attendre que les capabilities soient chargées
+  }
 
   let hasAccess = false;
 

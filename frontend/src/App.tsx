@@ -1,13 +1,18 @@
 /**
  * AZALSCORE UI Engine - Application Root
  * Point d'entrée principal de l'application React
+ *
+ * INITIALISATION DÉTERMINISTE:
+ * - L'application ne se rend pas tant que auth ET capabilities ne sont pas READY
+ * - Un indicateur DOM data-app-ready="true" signale que l'app est prête
+ * - Aucun composant métier n'est monté avant l'état READY
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRouter } from '@routing/index';
-import { initAuth } from '@core/auth';
-import { useCapabilitiesStore } from '@core/capabilities';
+import { useAuthStore, type AuthStatus } from '@core/auth';
+import { useCapabilitiesStore, type CapabilitiesStatus } from '@core/capabilities';
 import { initAuditUI } from '@core/audit-ui';
 import { initializeStores, useUIStore } from '@ui/states';
 import './styles/main.css';
@@ -31,74 +36,159 @@ const queryClient = new QueryClient({
 });
 
 // ============================================================
-// APP INITIALIZER
+// APP READY STATUS
+// ============================================================
+
+type AppReadyStatus = 'loading' | 'ready' | 'error';
+
+interface AppReadyState {
+  status: AppReadyStatus;
+  authStatus: AuthStatus;
+  capabilitiesStatus: CapabilitiesStatus;
+  error: string | null;
+}
+
+// ============================================================
+// APP INITIALIZER - DETERMINISTIC INITIALIZATION
 // ============================================================
 
 const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [appState, setAppState] = useState<AppReadyState>({
+    status: 'loading',
+    authStatus: 'idle',
+    capabilitiesStatus: 'idle',
+    error: null,
+  });
+
+  // Zustand stores
+  const authStatus = useAuthStore((state) => state.status);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const refreshUser = useAuthStore((state) => state.refreshUser);
+
+  const capabilitiesStatus = useCapabilitiesStore((state) => state.status);
   const loadCapabilities = useCapabilitiesStore((state) => state.loadCapabilities);
+  const setCapabilitiesStatus = useCapabilitiesStore((state) => state.setStatus);
+
   const setIsMobile = useUIStore((state) => state.setIsMobile);
 
+  // Determine if app is ready
+  const computeReadyStatus = useCallback((): AppReadyStatus => {
+    // Auth must be ready
+    if (authStatus !== 'ready') return 'loading';
+
+    // If authenticated, capabilities must also be ready
+    if (isAuthenticated && capabilitiesStatus !== 'ready') return 'loading';
+
+    // If not authenticated, we're ready (capabilities not needed)
+    if (!isAuthenticated) {
+      // Set capabilities to ready since we don't need them
+      if (capabilitiesStatus !== 'ready') {
+        setCapabilitiesStatus('ready');
+      }
+      return 'ready';
+    }
+
+    return 'ready';
+  }, [authStatus, isAuthenticated, capabilitiesStatus, setCapabilitiesStatus]);
+
+  // Initialize on mount - STRICT SEQUENCE
   useEffect(() => {
+    let mounted = true;
+
     const initialize = async () => {
       try {
-        // Initialiser le système d'audit UI
+        // 1. Initialize audit system (fire and forget)
         initAuditUI();
 
-        // Vérifier l'authentification existante
-        await initAuth();
-
-        // Charger les capacités si authentifié
-        const token = sessionStorage.getItem('azals_access_token');
-        if (token) {
-          await loadCapabilities();
-          await initializeStores();
-        }
-
-        // Détecter le mode mobile
-        const checkMobile = () => {
-          setIsMobile(window.innerWidth < 768);
-        };
+        // 2. Setup mobile detection
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();
         window.addEventListener('resize', checkMobile);
 
-        setIsInitialized(true);
+        // 3. SEQUENCE CRITIQUE: Auth d'abord
+        await refreshUser();
+
+        // 4. Si authentifié après refresh, charger les capabilities
+        // Note: refreshUser() met à jour le store, on vérifie directement
+        const currentAuthState = useAuthStore.getState();
+        if (currentAuthState.isAuthenticated) {
+          // NE PAS recharger les capabilities si elles sont déjà READY (mode démo)
+          const currentCapStatus = useCapabilitiesStore.getState().status;
+          if (currentCapStatus !== 'ready') {
+            await loadCapabilities();
+          }
+          await initializeStores();
+        }
+
+        // Cleanup
+        return () => {
+          window.removeEventListener('resize', checkMobile);
+        };
       } catch (err) {
-        console.error('Initialization error:', err);
-        setError('Erreur lors de l\'initialisation de l\'application');
-        setIsInitialized(true); // Continue anyway to show login
+        console.error('[AppInitializer] Initialization error:', err);
+        if (mounted) {
+          setAppState(prev => ({
+            ...prev,
+            status: 'error',
+            error: 'Erreur lors de l\'initialisation de l\'application',
+          }));
+        }
       }
     };
 
     initialize();
-  }, [loadCapabilities, setIsMobile]);
 
-  if (!isInitialized) {
+    return () => {
+      mounted = false;
+    };
+  }, []); // Only run once on mount
+
+  // Update app state when auth/capabilities status changes
+  useEffect(() => {
+    const newStatus = computeReadyStatus();
+    setAppState(prev => ({
+      ...prev,
+      status: newStatus,
+      authStatus,
+      capabilitiesStatus,
+    }));
+  }, [authStatus, capabilitiesStatus, computeReadyStatus]);
+
+  // LOADING STATE - App not ready
+  if (appState.status === 'loading') {
     return (
-      <div className="azals-app-loading">
+      <div className="azals-app-loading" data-app-ready="false">
         <div className="azals-app-loading__content">
           <div className="azals-app-loading__logo">AZALSCORE</div>
           <div className="azals-spinner azals-spinner--lg" />
           <p>Chargement de l'application...</p>
+          <small className="azals-app-loading__status">
+            Auth: {authStatus} | Capabilities: {capabilitiesStatus}
+          </small>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  // ERROR STATE
+  if (appState.status === 'error') {
     return (
-      <div className="azals-app-error">
+      <div className="azals-app-error" data-app-ready="false" data-app-error="true">
         <div className="azals-app-error__content">
           <h1>Erreur</h1>
-          <p>{error}</p>
+          <p>{appState.error}</p>
           <button onClick={() => window.location.reload()}>Recharger</button>
         </div>
       </div>
     );
   }
 
-  return <>{children}</>;
+  // READY STATE - App can render
+  return (
+    <div data-app-ready="true" data-auth-status={authStatus} data-capabilities-status={capabilitiesStatus}>
+      {children}
+    </div>
+  );
 };
 
 // ============================================================
