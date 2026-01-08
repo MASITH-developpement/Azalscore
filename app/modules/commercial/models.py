@@ -23,13 +23,14 @@ from app.core.database import Base
 # ============================================================================
 
 class CustomerType(str, enum.Enum):
-    """Type de client."""
+    """Type de client/fournisseur."""
     PROSPECT = "PROSPECT"
     LEAD = "LEAD"
     CUSTOMER = "CUSTOMER"
     VIP = "VIP"
     PARTNER = "PARTNER"
     CHURNED = "CHURNED"
+    SUPPLIER = "SUPPLIER"  # Fournisseur
 
 
 class OpportunityStatus(str, enum.Enum):
