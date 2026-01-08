@@ -20,6 +20,7 @@ import {
   Lock,
   Unlock,
   AlertTriangle,
+  Palette,
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { CapabilityGuard, useCanBreakGlass } from '@core/capabilities';
@@ -342,6 +343,25 @@ export const AdminDashboard: React.FC = () => {
                   <FileText size={32} />
                 </div>
                 <p>Consulter l'historique des actions système.</p>
+              </Card>
+
+              <Card
+                title="Personnalisation"
+                className="azals-admin-card"
+                actions={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/admin/branding')}
+                  >
+                    Configurer
+                  </Button>
+                }
+              >
+                <div className="azals-admin-card__icon">
+                  <Palette size={32} />
+                </div>
+                <p>Modifier le favicon, logo et identité visuelle.</p>
               </Card>
 
               {/* Break-Glass - Visible UNIQUEMENT si capacité présente */}
@@ -703,6 +723,336 @@ export const AuditLogsPage: React.FC = () => {
 };
 
 // ============================================================
+// BRANDING SETTINGS
+// ============================================================
+
+interface BrandingConfig {
+  title: string;
+  favicon_url: string;
+  logo_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  enable_tenant_branding: boolean;
+}
+
+const useBrandingConfig = () => {
+  return useQuery({
+    queryKey: ['admin', 'branding'],
+    queryFn: async () => {
+      const response = await api.get<BrandingConfig>('/v1/branding');
+      return response.data;
+    },
+  });
+};
+
+export const BrandingPage: React.FC = () => {
+  const queryClient = useQueryClient();
+  const { data: config, isLoading } = useBrandingConfig();
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFaviconFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setFaviconPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setLogoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadFavicon = async () => {
+    if (!faviconFile) return;
+    setUploading(true);
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', faviconFile);
+      await api.post('/v1/branding/favicon', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setMessage({ type: 'success', text: 'Favicon mis à jour. Rechargez la page pour voir les changements.' });
+      setFaviconFile(null);
+      setFaviconPreview(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de l\'upload du favicon' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadLogo = async () => {
+    if (!logoFile) return;
+    setUploading(true);
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', logoFile);
+      await api.post('/v1/branding/logo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setMessage({ type: 'success', text: 'Logo mis à jour avec succès.' });
+      setLogoFile(null);
+      setLogoPreview(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de l\'upload du logo' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const resetFavicon = async () => {
+    setUploading(true);
+    setMessage(null);
+    try {
+      await api.delete('/v1/branding/favicon');
+      setMessage({ type: 'success', text: 'Favicon réinitialisé par défaut.' });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la réinitialisation' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const resetLogo = async () => {
+    setUploading(true);
+    setMessage(null);
+    try {
+      await api.delete('/v1/branding/logo');
+      setMessage({ type: 'success', text: 'Logo supprimé.' });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erreur lors de la suppression' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Personnalisation">
+        <Card><p>Chargement...</p></Card>
+      </PageWrapper>
+    );
+  }
+
+  return (
+    <PageWrapper title="Personnalisation" subtitle="Favicon, logo et identité visuelle">
+      {message && (
+        <div style={{
+          padding: '12px 16px',
+          marginBottom: '16px',
+          borderRadius: '8px',
+          backgroundColor: message.type === 'success' ? '#dcfce7' : '#fee2e2',
+          color: message.type === 'success' ? '#166534' : '#991b1b',
+          border: `1px solid ${message.type === 'success' ? '#86efac' : '#fecaca'}`,
+        }}>
+          {message.text}
+        </div>
+      )}
+
+      <Grid cols={2} gap="lg">
+        {/* Favicon */}
+        <Card>
+          <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>
+            Favicon (icône onglet)
+          </h3>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '8px',
+              backgroundColor: '#f3f4f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed #d1d5db',
+            }}>
+              <img
+                src={faviconPreview || config?.favicon_url || '/static/favicon.png'}
+                alt="Favicon"
+                style={{ maxWidth: '48px', maxHeight: '48px' }}
+              />
+            </div>
+            <div>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>
+                Favicon actuel
+              </p>
+              <p style={{ fontSize: '12px', color: '#9ca3af' }}>
+                Format: PNG, ICO, JPG • Max: 2 MB
+              </p>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              type="file"
+              accept=".png,.ico,.jpg,.jpeg,.svg"
+              onChange={handleFaviconChange}
+              style={{ display: 'none' }}
+              id="favicon-upload"
+            />
+            <label
+              htmlFor="favicon-upload"
+              style={{
+                display: 'inline-block',
+                padding: '8px 16px',
+                backgroundColor: '#1e40af',
+                color: 'white',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                marginRight: '8px',
+              }}
+            >
+              Choisir un fichier
+            </label>
+            {faviconFile && (
+              <span style={{ fontSize: '14px', color: '#374151' }}>
+                {faviconFile.name}
+              </span>
+            )}
+          </div>
+
+          <ButtonGroup>
+            <Button
+              onClick={uploadFavicon}
+              disabled={!faviconFile || uploading}
+              variant="primary"
+            >
+              {uploading ? 'Upload...' : 'Enregistrer le favicon'}
+            </Button>
+            <Button
+              onClick={resetFavicon}
+              disabled={uploading}
+              variant="secondary"
+            >
+              Réinitialiser
+            </Button>
+          </ButtonGroup>
+        </Card>
+
+        {/* Logo */}
+        <Card>
+          <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>
+            Logo entreprise
+          </h3>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <div style={{
+              width: '120px',
+              height: '60px',
+              borderRadius: '8px',
+              backgroundColor: '#f3f4f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed #d1d5db',
+            }}>
+              {(logoPreview || config?.logo_url) ? (
+                <img
+                  src={logoPreview || config?.logo_url || ''}
+                  alt="Logo"
+                  style={{ maxWidth: '100px', maxHeight: '50px' }}
+                />
+              ) : (
+                <span style={{ color: '#9ca3af', fontSize: '12px' }}>Aucun logo</span>
+              )}
+            </div>
+            <div>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>
+                Logo actuel
+              </p>
+              <p style={{ fontSize: '12px', color: '#9ca3af' }}>
+                Format: PNG, JPG, SVG • Max: 2 MB
+              </p>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              type="file"
+              accept=".png,.jpg,.jpeg,.svg"
+              onChange={handleLogoChange}
+              style={{ display: 'none' }}
+              id="logo-upload"
+            />
+            <label
+              htmlFor="logo-upload"
+              style={{
+                display: 'inline-block',
+                padding: '8px 16px',
+                backgroundColor: '#1e40af',
+                color: 'white',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                marginRight: '8px',
+              }}
+            >
+              Choisir un fichier
+            </label>
+            {logoFile && (
+              <span style={{ fontSize: '14px', color: '#374151' }}>
+                {logoFile.name}
+              </span>
+            )}
+          </div>
+
+          <ButtonGroup>
+            <Button
+              onClick={uploadLogo}
+              disabled={!logoFile || uploading}
+              variant="primary"
+            >
+              {uploading ? 'Upload...' : 'Enregistrer le logo'}
+            </Button>
+            <Button
+              onClick={resetLogo}
+              disabled={uploading || !config?.logo_url}
+              variant="secondary"
+            >
+              Supprimer
+            </Button>
+          </ButtonGroup>
+        </Card>
+      </Grid>
+
+      {/* Info */}
+      <Card style={{ marginTop: '24px' }}>
+        <h3 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 600 }}>
+          Informations
+        </h3>
+        <ul style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.8', paddingLeft: '20px' }}>
+          <li>Le <strong>favicon</strong> apparaît dans l'onglet du navigateur (recommandé: 32x32 ou 64x64 pixels)</li>
+          <li>Le <strong>logo</strong> peut être utilisé dans l'interface et les documents (recommandé: format horizontal)</li>
+          <li>Les changements de favicon nécessitent un rechargement complet de la page (Ctrl+Shift+R)</li>
+          <li>Formats supportés: PNG, JPG, ICO, SVG</li>
+        </ul>
+      </Card>
+    </PageWrapper>
+  );
+};
+
+// ============================================================
 // MODULE ROUTER
 // ============================================================
 
@@ -712,6 +1062,7 @@ export const AdminRoutes: React.FC = () => (
     <Route path="users" element={<UsersPage />} />
     <Route path="roles" element={<RolesPage />} />
     <Route path="logs" element={<AuditLogsPage />} />
+    <Route path="branding" element={<BrandingPage />} />
   </Routes>
 );
 

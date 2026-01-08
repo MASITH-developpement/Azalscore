@@ -39,6 +39,7 @@ from app.api.legal import router as legal_router
 from app.api.admin_migration import router as admin_migration_router
 from app.api.partners import router as partners_router
 from app.api.invoicing import router as invoicing_router
+from app.api.branding import router as branding_router
 
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
 from app.modules.iam.router import router as iam_router
@@ -292,6 +293,7 @@ api_v1.include_router(legal_router)
 api_v1.include_router(admin_migration_router)  # TEMPORAIRE pour migration
 api_v1.include_router(partners_router)  # Alias vers module commercial (clients, fournisseurs, contacts)
 api_v1.include_router(invoicing_router)  # Alias vers module commercial (devis, factures, avoirs)
+api_v1.include_router(branding_router)  # Gestion favicon, logo, branding
 
 # Module T0 - IAM (Gestion Utilisateurs & Roles)
 api_v1.include_router(iam_router)
@@ -701,6 +703,10 @@ if UI_DIR.exists():
     @app.get("/favicon.ico")
     async def serve_favicon_ico():
         """Servir le favicon (format .ico redirige vers PNG)"""
+        # Priorité au favicon custom
+        custom_path = UI_DIR / "favicon-custom.png"
+        if custom_path.exists():
+            return FileResponse(custom_path, media_type="image/png")
         favicon_path = UI_DIR / "favicon.png"
         if favicon_path.exists():
             return FileResponse(favicon_path, media_type="image/png")
@@ -708,7 +714,20 @@ if UI_DIR.exists():
 
     @app.get("/favicon.png")
     async def serve_favicon_png():
-        """Servir le favicon PNG - Asset système non modifiable"""
+        """Servir le favicon PNG - Priorité au custom si existant"""
+        # Priorité au favicon custom
+        custom_path = UI_DIR / "favicon-custom.png"
+        if custom_path.exists():
+            return FileResponse(
+                custom_path,
+                media_type="image/png",
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "X-Asset-Type": "custom",
+                    "X-Content-Type-Options": "nosniff"
+                }
+            )
+        # Fallback au favicon par défaut
         favicon_path = UI_DIR / "favicon.png"
         if favicon_path.exists():
             return FileResponse(
