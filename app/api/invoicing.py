@@ -1,12 +1,5 @@
 """
 AZALS API - Invoicing (Devis, Factures, Avoirs)
-===============================================
-
-Routes pour la facturation.
-Frontend: /v1/invoicing/*
-Backend: Module Commercial (Documents)
-"""
-
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
