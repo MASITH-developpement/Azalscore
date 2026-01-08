@@ -64,7 +64,7 @@ install_git() {
     fi
 }
 
-# Installer Docker Desktop
+# Installer Docker Desktop (téléchargement direct depuis Docker.com)
 install_docker() {
     if check_command docker; then
         local version=$(docker --version | awk '{print $3}' | tr -d ',')
@@ -72,17 +72,76 @@ install_docker() {
     else
         echo -e "${BLUE}Installation de Docker Desktop...${NC}"
 
-        # Télécharger Docker Desktop pour le bon type d'architecture
+        local DOCKER_DMG="/tmp/Docker.dmg"
+        local DOCKER_URL=""
+
+        # Déterminer l'architecture
         if [[ $(uname -m) == "arm64" ]]; then
-            echo "Téléchargement de Docker Desktop pour Apple Silicon..."
-            brew install --cask docker
+            echo "Détection: Mac avec puce Apple Silicon (M1/M2/M3)"
+            DOCKER_URL="https://desktop.docker.com/mac/main/arm64/Docker.dmg"
         else
-            echo "Téléchargement de Docker Desktop pour Intel..."
-            brew install --cask docker
+            echo "Détection: Mac avec puce Intel"
+            DOCKER_URL="https://desktop.docker.com/mac/main/amd64/Docker.dmg"
         fi
 
+        echo -e "${BLUE}Téléchargement de Docker Desktop...${NC}"
+        echo "URL: $DOCKER_URL"
+
+        # Télécharger Docker Desktop
+        if curl -L -o "$DOCKER_DMG" "$DOCKER_URL" --progress-bar; then
+            echo -e "${GREEN}✓ Téléchargement terminé${NC}"
+        else
+            echo -e "${RED}✗ Erreur lors du téléchargement de Docker${NC}"
+            echo -e "${YELLOW}Veuillez télécharger manuellement depuis: https://www.docker.com/products/docker-desktop/${NC}"
+            return 1
+        fi
+
+        # Monter le DMG
+        echo -e "${BLUE}Installation de Docker Desktop...${NC}"
+        local MOUNT_POINT=$(hdiutil attach "$DOCKER_DMG" -nobrowse | grep -o '/Volumes/Docker.*')
+
+        if [ -z "$MOUNT_POINT" ]; then
+            echo -e "${RED}✗ Erreur lors du montage du DMG${NC}"
+            rm -f "$DOCKER_DMG"
+            return 1
+        fi
+
+        # Copier l'application dans /Applications
+        echo "Copie de Docker.app vers /Applications..."
+        if [ -d "/Applications/Docker.app" ]; then
+            echo "Suppression de l'ancienne version..."
+            rm -rf "/Applications/Docker.app"
+        fi
+
+        cp -R "$MOUNT_POINT/Docker.app" /Applications/
+
+        # Démonter le DMG
+        hdiutil detach "$MOUNT_POINT" -quiet
+        rm -f "$DOCKER_DMG"
+
         echo -e "${GREEN}✓ Docker Desktop installé${NC}"
-        echo -e "${YELLOW}⚠ Veuillez démarrer Docker Desktop manuellement après l'installation${NC}"
+
+        # Lancer Docker Desktop
+        echo -e "${BLUE}Lancement de Docker Desktop...${NC}"
+        open -a Docker
+
+        echo -e "${YELLOW}⚠ Docker Desktop démarre. Veuillez accepter les conditions d'utilisation si demandé.${NC}"
+        echo -e "${YELLOW}Attente du démarrage de Docker (90 secondes max)...${NC}"
+
+        local counter=0
+        while ! docker info &> /dev/null && [ $counter -lt 90 ]; do
+            sleep 3
+            counter=$((counter + 3))
+            echo -n "."
+        done
+        echo ""
+
+        if docker info &> /dev/null; then
+            echo -e "${GREEN}✓ Docker est prêt!${NC}"
+        else
+            echo -e "${YELLOW}⚠ Docker n'est pas encore prêt. Veuillez le configurer manuellement.${NC}"
+            echo -e "${YELLOW}  Ouvrez Docker Desktop depuis vos Applications et suivez les instructions.${NC}"
+        fi
     fi
 }
 
