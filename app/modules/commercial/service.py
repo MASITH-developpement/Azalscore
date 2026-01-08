@@ -66,6 +66,27 @@ class CommercialService:
             Customer.code == code
         ).first()
 
+    def get_next_customer_code(self) -> str:
+        """Générer le prochain code client auto-incrémenté (CLI001, CLI002, etc.)."""
+        # Chercher le dernier code client avec le format CLI###
+        from sqlalchemy import desc
+        last_customer = self.db.query(Customer).filter(
+            Customer.tenant_id == self.tenant_id,
+            Customer.code.like("CLI%")
+        ).order_by(desc(Customer.code)).first()
+
+        if last_customer and last_customer.code.startswith("CLI"):
+            try:
+                # Extraire le numéro et incrémenter
+                last_number = int(last_customer.code[3:])
+                next_number = last_number + 1
+            except ValueError:
+                next_number = 1
+        else:
+            next_number = 1
+
+        return f"CLI{next_number:03d}"
+
     def list_customers(
         self,
         type: Optional[CustomerType] = None,
