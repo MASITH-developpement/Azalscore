@@ -510,9 +510,14 @@ export const UsersPage: React.FC = () => {
 // USER FORM MODAL
 // ============================================================
 
-const userSchema = z.object({
+const userCreateSchema = z.object({
   email: z.string().email('Email invalide'),
-  name: z.string().min(2, 'Nom requis'),
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
+  role: z.string().min(1, 'Un rôle est requis'),
+});
+
+const userEditSchema = z.object({
+  email: z.string().email('Email invalide'),
   role: z.string().min(1, 'Un rôle est requis'),
 });
 
@@ -528,41 +533,61 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
 
   const roleOptions = roles?.items.map((r) => ({ value: r.id, label: r.name })) || [];
 
-  const fields = [
-    {
-      name: 'email',
-      label: 'Email',
-      type: 'email' as const,
-      required: true,
-      disabled: !!user,
-    },
-    {
-      name: 'name',
-      label: 'Nom complet',
-      type: 'text' as const,
-      required: true,
-    },
-    {
-      name: 'role',
-      label: 'Rôle',
-      type: 'select' as const,
-      required: true,
-      placeholder: rolesLoading ? 'Chargement...' : 'Sélectionner un rôle',
-      options: roleOptions,
-    },
-  ];
+  const fields = user
+    ? [
+        {
+          name: 'email',
+          label: 'Email',
+          type: 'email' as const,
+          required: true,
+          disabled: true,
+        },
+        {
+          name: 'role',
+          label: 'Rôle',
+          type: 'select' as const,
+          required: true,
+          placeholder: rolesLoading ? 'Chargement...' : 'Sélectionner un rôle',
+          options: roleOptions,
+        },
+      ]
+    : [
+        {
+          name: 'email',
+          label: 'Email',
+          type: 'email' as const,
+          required: true,
+        },
+        {
+          name: 'password',
+          label: 'Mot de passe',
+          type: 'password' as const,
+          required: true,
+          placeholder: 'Minimum 8 caractères',
+        },
+        {
+          name: 'role',
+          label: 'Rôle',
+          type: 'select' as const,
+          required: true,
+          placeholder: rolesLoading ? 'Chargement...' : 'Sélectionner un rôle',
+          options: roleOptions,
+        },
+      ];
 
-  const handleSubmit = async (data: z.infer<typeof userSchema>) => {
-    // Transform role to roles array for backend compatibility
-    const payload = {
-      email: data.email,
-      name: data.name,
-      roles: [data.role],
-    };
-
+  const handleSubmit = async (data: z.infer<typeof userCreateSchema> | z.infer<typeof userEditSchema>) => {
     if (user) {
+      const payload = {
+        roles: [(data as z.infer<typeof userEditSchema>).role],
+      };
       await updateUser.mutateAsync({ id: user.id, data: payload });
     } else {
+      const createData = data as z.infer<typeof userCreateSchema>;
+      const payload = {
+        email: createData.email,
+        password: createData.password,
+        roles: [createData.role],
+      };
       await createUser.mutateAsync(payload);
     }
     onClose();
@@ -572,7 +597,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
   const defaultValues = user
     ? {
         email: user.email,
-        name: user.name,
         role: user.roles?.[0] || '',
       }
     : undefined;
@@ -586,7 +610,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
     >
       <DynamicForm
         fields={fields}
-        schema={userSchema}
+        schema={user ? userEditSchema : userCreateSchema}
         defaultValues={defaultValues}
         onSubmit={handleSubmit}
         onCancel={onClose}
