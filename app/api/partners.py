@@ -16,6 +16,7 @@ from uuid import UUID
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.models import User
 
 # Réutiliser les schémas et services du module commercial
 from app.modules.commercial.models import CustomerType
@@ -41,10 +42,10 @@ async def list_clients(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les clients avec filtres."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     items, total = service.list_customers(type, assigned_to, is_active, search, page, page_size)
     return CustomerList(items=items, total=total, page=page, page_size=page_size)
 
@@ -53,10 +54,10 @@ async def list_clients(
 async def get_client(
     client_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un client."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     customer = service.get_customer(client_id)
     if not customer:
         raise HTTPException(status_code=404, detail="Client non trouvé")
@@ -67,17 +68,17 @@ async def get_client(
 async def create_client(
     data: CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un nouveau client."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
 
     # Vérifier unicité du code
     existing = service.get_customer_by_code(data.code)
     if existing:
         raise HTTPException(status_code=400, detail="Code client déjà utilisé")
 
-    return service.create_customer(data, current_user["user_id"])
+    return service.create_customer(data, current_user.id)
 
 
 @router.put("/clients/{client_id}", response_model=CustomerResponse)
@@ -85,10 +86,10 @@ async def update_client(
     client_id: UUID,
     data: CustomerUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un client."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     customer = service.update_customer(client_id, data)
     if not customer:
         raise HTTPException(status_code=404, detail="Client non trouvé")
@@ -99,10 +100,10 @@ async def update_client(
 async def delete_client(
     client_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un client."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     if not service.delete_customer(client_id):
         raise HTTPException(status_code=404, detail="Client non trouvé")
 
@@ -119,10 +120,10 @@ async def list_suppliers(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les fournisseurs avec filtres."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     # Filtrer par type SUPPLIER
     items, total = service.list_customers(
         CustomerType.SUPPLIER, assigned_to, is_active, search, page, page_size
@@ -134,10 +135,10 @@ async def list_suppliers(
 async def get_supplier(
     supplier_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un fournisseur."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     supplier = service.get_customer(supplier_id)
     if not supplier:
         raise HTTPException(status_code=404, detail="Fournisseur non trouvé")
@@ -148,10 +149,10 @@ async def get_supplier(
 async def create_supplier(
     data: CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un nouveau fournisseur."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
 
     # Forcer le type SUPPLIER
     data_dict = data.model_dump()
@@ -163,7 +164,7 @@ async def create_supplier(
     if existing:
         raise HTTPException(status_code=400, detail="Code fournisseur déjà utilisé")
 
-    return service.create_customer(data, current_user["user_id"])
+    return service.create_customer(data, current_user.id)
 
 
 @router.put("/suppliers/{supplier_id}", response_model=CustomerResponse)
@@ -171,10 +172,10 @@ async def update_supplier(
     supplier_id: UUID,
     data: CustomerUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un fournisseur."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     supplier = service.update_customer(supplier_id, data)
     if not supplier:
         raise HTTPException(status_code=404, detail="Fournisseur non trouvé")
@@ -185,10 +186,10 @@ async def update_supplier(
 async def delete_supplier(
     supplier_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un fournisseur."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     if not service.delete_customer(supplier_id):
         raise HTTPException(status_code=404, detail="Fournisseur non trouvé")
 
@@ -204,10 +205,10 @@ async def list_all_contacts(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister tous les contacts."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     if customer_id:
         return service.list_contacts(customer_id)
     # TODO: Implémenter une méthode list_all_contacts dans le service
@@ -218,10 +219,10 @@ async def list_all_contacts(
 async def get_contact(
     contact_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un contact."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     contact = service.get_contact(contact_id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
@@ -232,10 +233,10 @@ async def get_contact(
 async def create_contact(
     data: ContactCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un contact pour un client/fournisseur."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
 
     # Vérifier que le client/fournisseur existe
     customer = service.get_customer(data.customer_id)
@@ -250,10 +251,10 @@ async def update_contact(
     contact_id: UUID,
     data: ContactUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un contact."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     contact = service.update_contact(contact_id, data)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
@@ -264,9 +265,9 @@ async def update_contact(
 async def delete_contact(
     contact_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un contact."""
-    service = get_commercial_service(db, current_user["tenant_id"])
+    service = get_commercial_service(db, current_user.tenant_id)
     if not service.delete_contact(contact_id):
         raise HTTPException(status_code=404, detail="Contact non trouvé")
