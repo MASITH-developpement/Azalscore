@@ -94,7 +94,7 @@ class ServiceZone(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
-    technicians = relationship("Technician", back_populates="zone")
+    technicians = relationship("app.modules.field_service.models.Technician", back_populates="zone")
 
     __table_args__ = (
         Index('idx_fs_zone_tenant', 'tenant_id'),
@@ -158,10 +158,10 @@ class Technician(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
-    zone = relationship("ServiceZone", back_populates="technicians")
-    vehicle = relationship("Vehicle", back_populates="assigned_technician")
-    interventions = relationship("Intervention", back_populates="technician")
-    time_entries = relationship("FSTimeEntry", back_populates="technician")
+    zone = relationship("app.modules.field_service.models.ServiceZone", back_populates="technicians")
+    vehicle = relationship("app.modules.field_service.models.Vehicle", back_populates="assigned_technician")
+    interventions = relationship("app.modules.field_service.models.Intervention", back_populates="technician")
+    time_entries = relationship("app.modules.field_service.models.FSTimeEntry", back_populates="technician")
 
     __table_args__ = (
         Index('idx_fs_tech_tenant', 'tenant_id'),
@@ -222,7 +222,7 @@ class Vehicle(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
-    assigned_technician = relationship("Technician", back_populates="vehicle", uselist=False)
+    assigned_technician = relationship("app.modules.field_service.models.Technician", back_populates="vehicle", uselist=False)
 
     __table_args__ = (
         Index('idx_fs_vehicle_tenant', 'tenant_id'),
@@ -376,9 +376,9 @@ class Intervention(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
-    technician = relationship("Technician", back_populates="interventions")
-    time_entries = relationship("FSTimeEntry", back_populates="intervention")
-    history = relationship("InterventionHistory", back_populates="intervention")
+    technician = relationship("app.modules.field_service.models.Technician", back_populates="interventions")
+    time_entries = relationship("app.modules.field_service.models.FSTimeEntry", back_populates="intervention")
+    history = relationship("app.modules.field_service.models.InterventionHistory", back_populates="intervention")
 
     __table_args__ = (
         Index('idx_fs_intervention_tenant', 'tenant_id'),
@@ -416,7 +416,7 @@ class InterventionHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
-    intervention = relationship("Intervention", back_populates="history")
+    intervention = relationship("app.modules.field_service.models.Intervention", back_populates="history")
 
     __table_args__ = (
         Index('idx_fs_history_intervention', 'intervention_id'),
@@ -460,8 +460,8 @@ class FSTimeEntry(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
-    technician = relationship("Technician", back_populates="time_entries")
-    intervention = relationship("Intervention", back_populates="time_entries")
+    technician = relationship("app.modules.field_service.models.Technician", back_populates="time_entries")
+    intervention = relationship("app.modules.field_service.models.Intervention", back_populates="time_entries")
 
     __table_args__ = (
         Index('idx_fs_time_tech', 'technician_id'),
