@@ -623,3 +623,87 @@ async def get_dashboard(
     """Obtenir le dashboard commercial."""
     service = get_commercial_service(db, current_user["tenant_id"])
     return service.get_dashboard()
+
+
+# ============================================================================
+# ENDPOINTS EXPORT CSV (CRM T0)
+# ============================================================================
+
+from fastapi.responses import StreamingResponse
+from datetime import datetime as dt
+
+@router.get("/export/customers")
+async def export_customers_csv(
+    type: Optional[CustomerType] = None,
+    is_active: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Exporter les clients au format CSV.
+    SÉCURITÉ: Les données sont strictement filtrées par tenant_id.
+    """
+    service = get_commercial_service(db, current_user["tenant_id"])
+    csv_content = service.export_customers_csv(type, is_active)
+
+    filename = f"clients_export_{dt.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "X-Tenant-ID": current_user["tenant_id"]
+        }
+    )
+
+
+@router.get("/export/contacts")
+async def export_contacts_csv(
+    customer_id: Optional[UUID] = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Exporter les contacts au format CSV.
+    SÉCURITÉ: Les données sont strictement filtrées par tenant_id.
+    """
+    service = get_commercial_service(db, current_user["tenant_id"])
+    csv_content = service.export_contacts_csv(customer_id)
+
+    filename = f"contacts_export_{dt.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "X-Tenant-ID": current_user["tenant_id"]
+        }
+    )
+
+
+@router.get("/export/opportunities")
+async def export_opportunities_csv(
+    status: Optional[OpportunityStatus] = None,
+    customer_id: Optional[UUID] = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Exporter les opportunités au format CSV.
+    SÉCURITÉ: Les données sont strictement filtrées par tenant_id.
+    """
+    service = get_commercial_service(db, current_user["tenant_id"])
+    csv_content = service.export_opportunities_csv(status, customer_id)
+
+    filename = f"opportunites_export_{dt.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "X-Tenant-ID": current_user["tenant_id"]
+        }
+    )
