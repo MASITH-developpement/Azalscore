@@ -110,7 +110,7 @@ const useRoles = () => {
     queryKey: ['admin', 'roles'],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Role>>('/v1/admin/roles');
-      return response.data;
+      return response;
     },
   });
 };
