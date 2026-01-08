@@ -15,6 +15,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from app.core.database import SessionLocal
 from app.core.logging_config import get_logger, get_correlation_id
@@ -31,6 +32,35 @@ from .service import GuardianService
 from .schemas import ErrorDetectionCreate
 
 logger = get_logger(__name__)
+
+# Flag global pour savoir si les tables existent
+_tables_verified = False
+_tables_exist = False
+
+
+def _check_tables_exist() -> bool:
+    """Vérifie si les tables du système de correction existent."""
+    global _tables_verified, _tables_exist
+
+    if _tables_verified:
+        return _tables_exist
+
+    try:
+        db = SessionLocal()
+        try:
+            # Tenter une requête simple
+            db.query(GuardianConfig).limit(1).all()
+            _tables_exist = True
+        except (OperationalError, ProgrammingError):
+            # Tables non créées
+            _tables_exist = False
+        finally:
+            db.close()
+    except Exception:
+        _tables_exist = False
+
+    _tables_verified = True
+    return _tables_exist
 
 
 class GuardianMiddleware(BaseHTTPMiddleware):
@@ -138,14 +168,17 @@ class GuardianMiddleware(BaseHTTPMiddleware):
     ):
         """Enregistre une erreur HTTP."""
         if not tenant_id:
-            # Pas de tenant, on ne peut pas enregistrer dans GUARDIAN
-            logger.debug("GUARDIAN: No tenant_id, skipping error recording")
+            # Pas de tenant, on ne peut pas enregistrer
+            return
+
+        # Vérifier si les tables existent (évite les erreurs au démarrage)
+        if not _check_tables_exist():
             return
 
         try:
             db = SessionLocal()
             try:
-                # Vérifier si GUARDIAN est activé pour ce tenant
+                # Vérifier si le système est activé pour ce tenant
                 config = db.query(GuardianConfig).filter(
                     GuardianConfig.tenant_id == tenant_id
                 ).first()
@@ -184,9 +217,14 @@ class GuardianMiddleware(BaseHTTPMiddleware):
             finally:
                 db.close()
 
+        except (OperationalError, ProgrammingError):
+            # Tables non créées - ignorer silencieusement
+            global _tables_verified, _tables_exist
+            _tables_verified = True
+            _tables_exist = False
         except Exception as e:
-            # Ne jamais faire échouer la requête à cause de GUARDIAN
-            logger.error(f"GUARDIAN middleware error: {e}", exc_info=True)
+            # Ne jamais faire échouer la requête
+            logger.debug(f"Error recording middleware: {e}")
 
     async def _record_exception(
         self,
@@ -198,13 +236,16 @@ class GuardianMiddleware(BaseHTTPMiddleware):
     ):
         """Enregistre une exception."""
         if not tenant_id:
-            logger.debug("GUARDIAN: No tenant_id, skipping exception recording")
+            return
+
+        # Vérifier si les tables existent (évite les erreurs au démarrage)
+        if not _check_tables_exist():
             return
 
         try:
             db = SessionLocal()
             try:
-                # Vérifier si GUARDIAN est activé
+                # Vérifier si le système est activé
                 config = db.query(GuardianConfig).filter(
                     GuardianConfig.tenant_id == tenant_id
                 ).first()
@@ -246,9 +287,14 @@ class GuardianMiddleware(BaseHTTPMiddleware):
             finally:
                 db.close()
 
+        except (OperationalError, ProgrammingError):
+            # Tables non créées - ignorer silencieusement
+            global _tables_verified, _tables_exist
+            _tables_verified = True
+            _tables_exist = False
         except Exception as e:
-            # Ne jamais faire échouer la requête à cause de GUARDIAN
-            logger.error(f"GUARDIAN middleware error recording exception: {e}", exc_info=True)
+            # Ne jamais faire échouer la requête
+            logger.debug(f"Exception recording error: {e}")
 
     def _determine_severity(self, status_code: int) -> ErrorSeverity:
         """Détermine la sévérité selon le code HTTP."""
