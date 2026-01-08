@@ -86,7 +86,7 @@ class InvoiceListResponse(BaseModel):
 TYPE_MAPPING = {
     "quotes": DocumentType.QUOTE,
     "invoices": DocumentType.INVOICE,
-    "credits": DocumentType.CREDIT,
+    "credits": DocumentType.CREDIT_NOTE,
 }
 
 
@@ -479,7 +479,7 @@ async def list_credits(
     service = get_commercial_service(db, current_user.tenant_id)
     doc_status = DocumentStatus(status) if status else None
     items, total = service.list_documents(
-        doc_type=DocumentType.CREDIT,
+        doc_type=DocumentType.CREDIT_NOTE,
         status=doc_status,
         customer_id=client_id,
         search=search,
@@ -517,7 +517,7 @@ async def create_credit(
     service = get_commercial_service(db, current_user.tenant_id)
 
     doc_data = DocumentCreate(
-        type=DocumentType.CREDIT,
+        type=DocumentType.CREDIT_NOTE,
         customer_id=data.client_id,
         date=data.date or date.today(),
         due_date=data.due_date,
