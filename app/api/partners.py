@@ -44,9 +44,11 @@ async def list_clients(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Lister les clients avec filtres."""
+    """Lister les clients avec filtres (exclut les fournisseurs)."""
     service = get_commercial_service(db, current_user.tenant_id)
-    items, total = service.list_customers(type, assigned_to, is_active, search, page, page_size)
+    items, total = service.list_customers_excluding_suppliers(
+        type, assigned_to, is_active, search, page, page_size
+    )
     return CustomerList(items=items, total=total, page=page, page_size=page_size)
 
 
