@@ -174,7 +174,159 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
 // Pages
 export const ClientsPage: React.FC = () => <PartnerList type="client" title="Clients" />;
 export const SuppliersPage: React.FC = () => <PartnerList type="supplier" title="Fournisseurs" />;
-export const ContactsPage: React.FC = () => <PartnerList type="contact" title="Contacts" />;
+
+// Contacts Page - Schéma différent des clients/fournisseurs
+export const ContactsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [showCreate, setShowCreate] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Récupérer la liste des clients pour le select
+  const { data: clientsData } = useQuery({
+    queryKey: ['partners', 'clients-for-select'],
+    queryFn: async () => {
+      const response = await api.get<PaginatedResponse<Partner>>('/v1/partners/clients?page=1&page_size=100');
+      return response.data;
+    },
+  });
+
+  // Récupérer les contacts
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['partners', 'contacts', page, pageSize],
+    queryFn: async () => {
+      const response = await api.get<PaginatedResponse<any>>(`/v1/partners/contacts?page=${page}&page_size=${pageSize}`);
+      return response.data;
+    },
+  });
+
+  // Mutation pour créer un contact
+  const createContact = useMutation({
+    mutationFn: async (contactData: any) => {
+      const response = await api.post('/v1/partners/contacts', contactData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partners', 'contacts'] });
+      setShowCreate(false);
+    },
+    onError: (error: any) => {
+      console.error('Erreur création contact:', error);
+      alert('Erreur lors de la création du contact: ' + (error.response?.data?.detail || error.message));
+    },
+  });
+
+  const columns: TableColumn<any>[] = [
+    {
+      id: 'name',
+      header: 'Nom',
+      accessor: (row: any) => `${row.first_name || ''} ${row.last_name || ''}`.trim() || row.name || '-',
+      sortable: true
+    },
+    { id: 'email', header: 'Email', accessor: 'email' },
+    { id: 'phone', header: 'Téléphone', accessor: 'phone' },
+    { id: 'job_title', header: 'Fonction', accessor: 'job_title' },
+    {
+      id: 'is_active',
+      header: 'Statut',
+      accessor: 'is_active',
+      render: (value) =>
+        value ? (
+          <span className="azals-badge azals-badge--green">Actif</span>
+        ) : (
+          <span className="azals-badge azals-badge--gray">Inactif</span>
+        ),
+    },
+  ];
+
+  const actions = [
+    {
+      id: 'view',
+      label: 'Voir',
+      onClick: (row: any) => navigate(`/partners/contacts/${row.id}`),
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      capability: 'partners.contacts.edit',
+      onClick: (row: any) => navigate(`/partners/contacts/${row.id}/edit`),
+    },
+  ];
+
+  const contactSchema = z.object({
+    first_name: z.string().min(1, 'Prénom requis'),
+    last_name: z.string().min(1, 'Nom requis'),
+    customer_id: z.string().uuid('Client requis'),
+    email: z.string().email('Email invalide').optional().or(z.literal('')),
+    phone: z.string().optional(),
+    mobile: z.string().optional(),
+    job_title: z.string().optional(),
+    department: z.string().optional(),
+  });
+
+  const contactFields = [
+    {
+      name: 'customer_id',
+      label: 'Client',
+      type: 'select' as const,
+      required: true,
+      options: (clientsData?.items || []).map((c: Partner) => ({ value: c.id, label: c.name }))
+    },
+    { name: 'first_name', label: 'Prénom', type: 'text' as const, required: true },
+    { name: 'last_name', label: 'Nom', type: 'text' as const, required: true },
+    { name: 'email', label: 'Email', type: 'email' as const },
+    { name: 'phone', label: 'Téléphone', type: 'text' as const },
+    { name: 'mobile', label: 'Mobile', type: 'text' as const },
+    { name: 'job_title', label: 'Fonction', type: 'text' as const },
+    { name: 'department', label: 'Service', type: 'text' as const },
+  ];
+
+  return (
+    <PageWrapper
+      title="Contacts"
+      actions={
+        <CapabilityGuard capability="partners.contacts.create">
+          <Button leftIcon={<Plus size={16} />} onClick={() => setShowCreate(true)}>
+            Ajouter
+          </Button>
+        </CapabilityGuard>
+      }
+    >
+      <Card noPadding>
+        <DataTable
+          columns={columns}
+          data={data?.items || []}
+          keyField="id"
+          actions={actions}
+          isLoading={isLoading}
+          pagination={{
+            page,
+            pageSize,
+            total: data?.total || 0,
+            onPageChange: setPage,
+            onPageSizeChange: setPageSize,
+          }}
+          onRefresh={refetch}
+        />
+      </Card>
+
+      {showCreate && (
+        <Modal isOpen onClose={() => setShowCreate(false)} title="Nouveau contact" size="md">
+          <DynamicForm
+            fields={contactFields}
+            schema={contactSchema}
+            onSubmit={async (formData) => {
+              await createContact.mutateAsync(formData);
+            }}
+            onCancel={() => setShowCreate(false)}
+            isLoading={createContact.isPending}
+          />
+        </Modal>
+      )}
+    </PageWrapper>
+  );
+};
 
 export const PartnersDashboard: React.FC = () => {
   const navigate = useNavigate();
