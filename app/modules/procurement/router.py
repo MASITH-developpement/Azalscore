@@ -8,6 +8,7 @@ Endpoints API pour la gestion des achats.
 from datetime import date
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -341,6 +342,99 @@ def confirm_purchase_order(
 
 
 # =============================================================================
+# ACHATS V1 - COMMANDES SIMPLIFIÉES
+# =============================================================================
+
+@router.put("/orders/{order_id}", response_model=PurchaseOrderResponse)
+def update_purchase_order(
+    order_id: UUID,
+    data: PurchaseOrderCreate,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Mettre à jour une commande d'achat (DRAFT uniquement)."""
+    service = get_procurement_service(db, tenant_id)
+    order = service.update_purchase_order(order_id, data, current_user.id)
+    if not order:
+        raise HTTPException(status_code=400, detail="Order not found or not in DRAFT status")
+    return order
+
+
+@router.delete("/orders/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_purchase_order(
+    order_id: UUID,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Supprimer une commande d'achat (DRAFT uniquement)."""
+    service = get_procurement_service(db, tenant_id)
+    if not service.delete_purchase_order(order_id):
+        raise HTTPException(status_code=400, detail="Order not found or not in DRAFT status")
+    return None
+
+
+@router.post("/orders/{order_id}/validate", response_model=PurchaseOrderResponse)
+def validate_purchase_order(
+    order_id: UUID,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Valider une commande d'achat (DRAFT → VALIDATED)."""
+    service = get_procurement_service(db, tenant_id)
+    order = service.validate_purchase_order(order_id, current_user.id)
+    if not order:
+        raise HTTPException(status_code=400, detail="Order not found or not in DRAFT status")
+    return order
+
+
+@router.post("/orders/{order_id}/create-invoice", response_model=PurchaseInvoiceResponse, status_code=status.HTTP_201_CREATED)
+def create_invoice_from_order(
+    order_id: UUID,
+    invoice_date: Optional[date] = None,
+    supplier_invoice_number: Optional[str] = None,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Créer une facture à partir d'une commande validée."""
+    service = get_procurement_service(db, tenant_id)
+    invoice = service.create_invoice_from_order(
+        order_id, current_user.id, invoice_date, supplier_invoice_number
+    )
+    if not invoice:
+        raise HTTPException(status_code=400, detail="Order not found, still in DRAFT, or has no lines")
+    return invoice
+
+
+@router.get("/orders/export/csv")
+def export_orders_csv(
+    supplier_id: Optional[UUID] = None,
+    order_status: Optional[PurchaseOrderStatus] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Exporter les commandes en CSV."""
+    service = get_procurement_service(db, tenant_id)
+    csv_content = service.export_orders_csv(
+        supplier_id=supplier_id,
+        status=order_status,
+        start_date=start_date,
+        end_date=end_date
+    )
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=commandes.csv"}
+    )
+
+
+# =============================================================================
 # RÉCEPTIONS
 # =============================================================================
 
@@ -443,6 +537,65 @@ def validate_purchase_invoice(
     if not invoice:
         raise HTTPException(status_code=400, detail="Invoice not found or already validated")
     return invoice
+
+
+# =============================================================================
+# ACHATS V1 - FACTURES SIMPLIFIÉES
+# =============================================================================
+
+@router.put("/invoices/{invoice_id}", response_model=PurchaseInvoiceResponse)
+def update_purchase_invoice(
+    invoice_id: UUID,
+    data: PurchaseInvoiceCreate,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Mettre à jour une facture d'achat (DRAFT uniquement)."""
+    service = get_procurement_service(db, tenant_id)
+    invoice = service.update_purchase_invoice(invoice_id, data, current_user.id)
+    if not invoice:
+        raise HTTPException(status_code=400, detail="Invoice not found or not in DRAFT status")
+    return invoice
+
+
+@router.delete("/invoices/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_purchase_invoice(
+    invoice_id: UUID,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Supprimer une facture d'achat (DRAFT uniquement)."""
+    service = get_procurement_service(db, tenant_id)
+    if not service.delete_purchase_invoice(invoice_id):
+        raise HTTPException(status_code=400, detail="Invoice not found or not in DRAFT status")
+    return None
+
+
+@router.get("/invoices/export/csv")
+def export_invoices_csv(
+    supplier_id: Optional[UUID] = None,
+    invoice_status: Optional[PurchaseInvoiceStatus] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Exporter les factures en CSV."""
+    service = get_procurement_service(db, tenant_id)
+    csv_content = service.export_invoices_csv(
+        supplier_id=supplier_id,
+        status=invoice_status,
+        start_date=start_date,
+        end_date=end_date
+    )
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=factures-fournisseurs.csv"}
+    )
 
 
 # =============================================================================
