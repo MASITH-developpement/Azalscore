@@ -3,8 +3,10 @@
 # ============================================================
 # Ce script:
 # 1. Met à jour le code depuis la branche main
-# 2. Démarre le backend (port 8001)
-# 3. Démarre le frontend (port 3000)
+# 2. Nettoie le cache Python
+# 3. Nettoie la base de données (UUID corrompus, orphelins)
+# 4. Démarre le backend (port 8001)
+# 5. Démarre le frontend (port 3000)
 # ============================================================
 
 $ErrorActionPreference = "Continue"
@@ -59,11 +61,15 @@ git pull origin main
 Write-Host "   [OK] Code synchronise avec GitHub" -ForegroundColor Green
 
 # Supprimer le cache Python
-Write-Host "[4/5] Nettoyage du cache Python..." -ForegroundColor Yellow
+Write-Host "[4/6] Nettoyage du cache Python..." -ForegroundColor Yellow
 Get-ChildItem -Path . -Include "__pycache__" -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
+# Nettoyage de la base de données
+Write-Host "[5/6] Nettoyage de la base de donnees..." -ForegroundColor Yellow
+python scripts/cleanup_database.py
+
 # Démarrer le backend dans une nouvelle fenêtre
-Write-Host "[5/5] Demarrage des serveurs..." -ForegroundColor Yellow
+Write-Host "[6/6] Demarrage des serveurs..." -ForegroundColor Yellow
 Write-Host ""
 
 # Backend (nouvelle fenêtre PowerShell)
