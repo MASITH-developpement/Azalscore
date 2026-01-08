@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AZALSCORE - Initialisation Sécurisée du Compte Créateur
+AZALSCORE - Initialisation Securisee du Compte Createur
 ========================================================
 
 Ce script crée le premier utilisateur créateur (super-admin) du système.
@@ -77,7 +77,7 @@ REQUIRED_PASSWORD_PATTERNS = [
     (r'[A-Z]', "au moins une majuscule"),
     (r'[a-z]', "au moins une minuscule"),
     (r'[0-9]', "au moins un chiffre"),
-    (r'[!@#$%^&*(),.?":{}|<>]', "au moins un caractère spécial")
+    (r'[!@#$%^&*(),.?":{}|<>]', "au moins un caractère special")
 ]
 
 SUPER_ADMIN_ROLE_CONFIG = {
@@ -99,23 +99,28 @@ SUPER_ADMIN_ROLE_CONFIG = {
 # ============================================================================
 
 def print_banner():
-    """Affiche la bannière du script."""
+    """Affiche la banniere du script."""
     print("\n" + "=" * 60)
-    print("  AZALSCORE - Initialisation du Compte Créateur")
-    print("  Version: 1.0.0 | Sécurité: HAUTE")
+    print("  AZALSCORE - Initialisation du Compte Createur")
+    print("  Version: 1.0.0 | Securite: HAUTE")
     print("=" * 60 + "\n")
 
 
 def print_status(message: str, status: str = "INFO"):
     """Affiche un message avec statut."""
+    # Utiliser des caracteres ASCII pour compatibilité Windows
     icons = {
-        "INFO": "ℹ️ ",
-        "OK": "✅",
-        "WARN": "⚠️ ",
-        "ERROR": "❌",
-        "SECURE": "🔐"
+        "INFO": "[INFO]",
+        "OK": "[OK]",
+        "WARN": "[WARN]",
+        "ERROR": "[ERROR]",
+        "SECURE": "[SECURE]"
     }
-    print(f"{icons.get(status, '')} {message}")
+    try:
+        print(f"{icons.get(status, '')} {message}")
+    except UnicodeEncodeError:
+        # Fallback pour Windows avec encodage limité
+        print(f"{icons.get(status, '')} {message.encode('ascii', 'replace').decode()}")
 
 
 def validate_password(password: str) -> Tuple[bool, str]:
@@ -126,13 +131,13 @@ def validate_password(password: str) -> Tuple[bool, str]:
         (is_valid, error_message)
     """
     if not password:
-        return False, "Le mot de passe ne peut pas être vide"
+        return False, "Le mot de passe ne peut pas etre vide"
 
     if len(password) < MIN_PASSWORD_LENGTH:
-        return False, f"Le mot de passe doit contenir au moins {MIN_PASSWORD_LENGTH} caractères"
+        return False, f"Le mot de passe doit contenir au moins {MIN_PASSWORD_LENGTH} caracteres"
 
     if len(password) > MAX_PASSWORD_LENGTH:
-        return False, f"Le mot de passe ne peut pas dépasser {MAX_PASSWORD_LENGTH} caractères (limite bcrypt)"
+        return False, f"Le mot de passe ne peut pas depasser {MAX_PASSWORD_LENGTH} caracteres (limite bcrypt)"
 
     for pattern, description in REQUIRED_PASSWORD_PATTERNS:
         if not re.search(pattern, password):
@@ -151,17 +156,17 @@ def validate_password(password: str) -> Tuple[bool, str]:
 def validate_email(email: str) -> Tuple[bool, str]:
     """Valide le format de l'email."""
     if not email:
-        return False, "L'email ne peut pas être vide"
+        return False, "L email ne peut pas etre vide"
 
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_pattern, email):
-        return False, "Format d'email invalide"
+        return False, "Format d email invalide"
 
     return True, ""
 
 
 def compute_checksum(data: dict) -> str:
-    """Calcule un checksum SHA-256 pour l'intégrité."""
+    """Calcule un checksum SHA-256 pour l'integrite."""
     json_str = json.dumps(data, sort_keys=True, default=str)
     return hashlib.sha256(json_str.encode()).hexdigest()
 
@@ -171,7 +176,7 @@ def compute_checksum(data: dict) -> str:
 # ============================================================================
 
 class CreatorInitializer:
-    """Gère l'initialisation sécurisée du compte créateur."""
+    """Gère l'initialisation securisee du compte créateur."""
 
     def __init__(self, interactive: bool = False):
         self.interactive = interactive
@@ -194,11 +199,11 @@ class CreatorInitializer:
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
 
-            print_status("Connexion à la base de données établie", "OK")
+            print_status("Connexion a la base de donnees etablie", "OK")
             return True
 
         except Exception as e:
-            print_status(f"Impossible de se connecter à la base de données: {e}", "ERROR")
+            print_status(f"Impossible de se connecter a la base de donnees: {e}", "ERROR")
             return False
 
     def check_migrations(self) -> bool:
@@ -210,7 +215,7 @@ class CreatorInitializer:
                     "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'iam_users')"
                 ))
                 if not result.scalar():
-                    print_status("Table iam_users non trouvée. Exécutez les migrations.", "ERROR")
+                    print_status("Table iam_users non trouvee. Executez les migrations.", "ERROR")
                     return False
 
                 # Vérifier la colonne is_protected
@@ -219,30 +224,30 @@ class CreatorInitializer:
                     "WHERE table_name = 'iam_users' AND column_name = 'is_protected')"
                 ))
                 if not result.scalar():
-                    print_status("Migration 028 non appliquée. Exécutez: python run_migrations.py", "ERROR")
+                    print_status("Migration 028 non appliquee. Executez: python run_migrations.py", "ERROR")
                     return False
 
-            print_status("Migrations vérifiées", "OK")
+            print_status("Migrations verifiees", "OK")
             return True
 
         except Exception as e:
-            print_status(f"Erreur lors de la vérification des migrations: {e}", "ERROR")
+            print_status(f"Erreur lors de la verification des migrations: {e}", "ERROR")
             return False
 
     def get_credentials(self) -> Tuple[str, str, str]:
         """
-        Récupère les credentials de manière sécurisée.
+        Récupère les credentials de manière securisee.
 
         Returns:
             (email, password, tenant_id)
         """
         if self.interactive:
-            print_status("Mode interactif - Saisie sécurisée des credentials", "SECURE")
+            print_status("Mode interactif - Saisie securisee des credentials", "SECURE")
             print()
 
             # Email
             while True:
-                email = input("📧 Email du créateur: ").strip()
+                email = input("📧 Email du createur: ").strip()
                 is_valid, error = validate_email(email)
                 if is_valid:
                     break
@@ -252,11 +257,11 @@ class CreatorInitializer:
             tenant_id = input("🏢 Tenant ID: ").strip()
             if not tenant_id:
                 tenant_id = "default-tenant"
-                print_status(f"Tenant ID par défaut: {tenant_id}", "WARN")
+                print_status(f"Tenant ID par defaut: {tenant_id}", "WARN")
 
             # Mot de passe (saisie masquée)
             while True:
-                password = getpass.getpass("🔑 Mot de passe (min 12 chars, masqué): ")
+                password = getpass.getpass("🔑 Mot de passe (min 12 chars, masque): ")
                 is_valid, error = validate_password(password)
                 if not is_valid:
                     print_status(error, "ERROR")
@@ -279,11 +284,11 @@ class CreatorInitializer:
             tenant_id = os.environ.get("CREATOR_TENANT_ID", "default-tenant").strip()
 
             if not email:
-                print_status("Variable CREATOR_EMAIL non définie", "ERROR")
+                print_status("Variable CREATOR_EMAIL non definie", "ERROR")
                 sys.exit(1)
 
             if not password:
-                print_status("Variable CREATOR_PASSWORD non définie", "ERROR")
+                print_status("Variable CREATOR_PASSWORD non definie", "ERROR")
                 sys.exit(1)
 
             # Validation
@@ -297,7 +302,7 @@ class CreatorInitializer:
                 print_status(f"Mot de passe invalide: {error}", "ERROR")
                 sys.exit(1)
 
-            print_status("Credentials lus depuis les variables d'environnement", "OK")
+            print_status("Credentials lus depuis les variables d environnement", "OK")
             return email, password, tenant_id
 
     def check_existing_creator(self, tenant_id: str) -> bool:
@@ -317,7 +322,7 @@ class CreatorInitializer:
 
             existing = result.fetchone()
             if existing:
-                print_status(f"Un compte créateur existe déjà: {existing[0]}", "WARN")
+                print_status(f"Un compte createur existe deja: {existing[0]}", "WARN")
                 return True
 
             return False
@@ -334,7 +339,7 @@ class CreatorInitializer:
         existing = result.fetchone()
 
         if existing:
-            print_status("Rôle super_admin existant", "INFO")
+            print_status("Role super_admin existant", "INFO")
             return existing[0]
 
         # Créer le rôle
@@ -354,7 +359,7 @@ class CreatorInitializer:
         })
 
         role_id = result.fetchone()[0]
-        print_status(f"Rôle super_admin créé (ID: {role_id})", "OK")
+        print_status(f"Role super_admin cree (ID: {role_id})", "OK")
 
         # Créer les permissions universelles pour super_admin
         self._create_super_admin_permissions(session, tenant_id, role_id)
@@ -416,7 +421,7 @@ class CreatorInitializer:
                 })
                 permission_count += 1
 
-        print_status(f"{permission_count} permissions associées au rôle super_admin", "OK")
+        print_status(f"{permission_count} permissions associees au role super_admin", "OK")
 
     def create_creator_user(
         self,
@@ -438,7 +443,7 @@ class CreatorInitializer:
                 password_changed_at, created_at, updated_at
             ) VALUES (
                 :tenant_id, :email, :password_hash,
-                'Créateur', 'Système', 'Créateur Système',
+                'Createur', 'Systeme', 'Createur Systeme',
                 TRUE, TRUE, FALSE,
                 TRUE, TRUE, 'cli',
                 'fr', 'Europe/Paris',
@@ -451,7 +456,7 @@ class CreatorInitializer:
         })
 
         user_id = result.fetchone()[0]
-        print_status(f"Utilisateur créateur créé (ID: {user_id})", "OK")
+        print_status(f"Utilisateur createur cree (ID: {user_id})", "OK")
 
         # Associer le rôle
         session.execute(text("""
@@ -463,7 +468,7 @@ class CreatorInitializer:
             "role_id": role_id
         })
 
-        print_status("Rôle super_admin attribué au créateur", "OK")
+        print_status("Role super_admin attribue au createur", "OK")
         return user_id
 
     def log_initialization(
@@ -521,7 +526,7 @@ class CreatorInitializer:
             })
         })
 
-        print_status("Opération journalisée dans le registre de sécurité", "SECURE")
+        print_status("Operation journalisee dans le registre de securite", "SECURE")
 
     def run(self, check_only: bool = False) -> bool:
         """Exécute l'initialisation."""
@@ -546,26 +551,26 @@ class CreatorInitializer:
         # 4. Vérifier si un créateur existe déjà
         if self.check_existing_creator(tenant_id):
             if not check_only:
-                print_status("Initialisation annulée - un créateur existe déjà", "WARN")
+                print_status("Initialisation annulee - un createur existe deja", "WARN")
             return False
 
         if check_only:
-            print_status("Vérification terminée - aucun créateur existant", "OK")
+            print_status("Verification terminee - aucun createur existant", "OK")
             print_status("Vous pouvez exécuter le script sans --check-only pour créer le compte", "INFO")
             return True
 
         # 5. Confirmation finale
         if self.interactive:
-            confirm = input("\n⚠️  Confirmer la création du compte créateur? (oui/non): ").strip().lower()
+            confirm = input("\n⚠️  Confirmer la creation du compte createur? (oui/non): ").strip().lower()
             if confirm != "oui":
-                print_status("Opération annulée par l'utilisateur", "WARN")
+                print_status("Operation annulee par l utilisateur", "WARN")
                 return False
 
         # 6. Création
         session = self.Session()
         try:
             print()
-            print_status("Début de l'initialisation...", "INFO")
+            print_status("Debut de l initialisation...", "INFO")
 
             # Hash du mot de passe
             print_status("Hashage du mot de passe (bcrypt)...", "SECURE")
@@ -587,16 +592,16 @@ class CreatorInitializer:
 
             print()
             print("=" * 60)
-            print_status("INITIALISATION RÉUSSIE", "OK")
+            print_status("INITIALISATION REUSSIE", "OK")
             print("=" * 60)
             print()
             print(f"   📧 Email: {email}")
             print(f"   🏢 Tenant: {tenant_id}")
             print(f"   👤 User ID: {user_id}")
-            print(f"   🛡️  Rôle: super_admin")
+            print(f"   🛡️  Role: super_admin")
             print(f"   🔐 MFA: Activable par la suite")
             print()
-            print_status("Vous pouvez maintenant vous connecter via l'API", "INFO")
+            print_status("Vous pouvez maintenant vous connecter via l API", "INFO")
             print_status("POST /v1/iam/auth/login", "INFO")
             print()
 
@@ -608,7 +613,7 @@ class CreatorInitializer:
 
         except Exception as e:
             session.rollback()
-            print_status(f"Erreur lors de l'initialisation: {e}", "ERROR")
+            print_status(f"Erreur lors de l initialisation: {e}", "ERROR")
             import traceback
             traceback.print_exc()
             return False
@@ -623,7 +628,7 @@ class CreatorInitializer:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Initialisation sécurisée du compte créateur AZALSCORE",
+        description="Initialisation securisee du compte créateur AZALSCORE",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
@@ -631,7 +636,7 @@ def main():
     parser.add_argument(
         "--interactive", "-i",
         action="store_true",
-        help="Mode interactif avec saisie sécurisée des credentials"
+        help="Mode interactif avec saisie securisee des credentials"
     )
 
     parser.add_argument(
