@@ -166,6 +166,30 @@ class CommercialService:
             Contact.is_active == True
         ).order_by(Contact.is_primary.desc(), Contact.last_name).all()
 
+    def list_all_contacts(
+        self,
+        search: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[Contact], int]:
+        """Lister tous les contacts avec pagination."""
+        query = self.db.query(Contact).filter(
+            Contact.tenant_id == self.tenant_id,
+            Contact.is_active == True
+        )
+
+        if search:
+            search_filter = or_(
+                Contact.first_name.ilike(f"%{search}%"),
+                Contact.last_name.ilike(f"%{search}%"),
+                Contact.email.ilike(f"%{search}%")
+            )
+            query = query.filter(search_filter)
+
+        total = query.count()
+        items = query.order_by(Contact.last_name, Contact.first_name).offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
+
     def update_contact(self, contact_id: UUID, data: ContactUpdate) -> Optional[Contact]:
         """Mettre à jour un contact."""
         contact = self.get_contact(contact_id)

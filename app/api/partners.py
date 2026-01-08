@@ -22,7 +22,7 @@ from app.core.models import User
 from app.modules.commercial.models import CustomerType
 from app.modules.commercial.schemas import (
     CustomerCreate, CustomerUpdate, CustomerResponse, CustomerList,
-    ContactCreate, ContactUpdate, ContactResponse,
+    ContactCreate, ContactUpdate, ContactResponse, ContactList,
 )
 from app.modules.commercial.service import get_commercial_service
 
@@ -198,7 +198,7 @@ async def delete_supplier(
 # ENDPOINTS CONTACTS
 # ============================================================================
 
-@router.get("/contacts", response_model=List[ContactResponse])
+@router.get("/contacts", response_model=ContactList)
 async def list_all_contacts(
     customer_id: Optional[UUID] = None,
     search: Optional[str] = None,
@@ -210,9 +210,10 @@ async def list_all_contacts(
     """Lister tous les contacts."""
     service = get_commercial_service(db, current_user.tenant_id)
     if customer_id:
-        return service.list_contacts(customer_id)
-    # TODO: Implémenter une méthode list_all_contacts dans le service
-    return []
+        contacts = service.list_contacts(customer_id)
+        return ContactList(items=contacts, total=len(contacts), page=page, page_size=page_size)
+    items, total = service.list_all_contacts(search=search, page=page, page_size=page_size)
+    return ContactList(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/contacts/{contact_id}", response_model=ContactResponse)
