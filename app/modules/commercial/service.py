@@ -100,6 +100,42 @@ class CommercialService:
         items = query.order_by(Customer.name).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
+    def list_customers_excluding_suppliers(
+        self,
+        customer_type: Optional[CustomerType] = None,
+        assigned_to: Optional[UUID] = None,
+        is_active: Optional[bool] = None,
+        search: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[Customer], int]:
+        """Lister les clients en excluant les fournisseurs."""
+        query = self.db.query(Customer).options(
+            selectinload(Customer.contacts),
+            selectinload(Customer.opportunities)
+        ).filter(
+            Customer.tenant_id == self.tenant_id,
+            Customer.type != CustomerType.SUPPLIER
+        )
+
+        if customer_type:
+            query = query.filter(Customer.type == customer_type)
+        if assigned_to:
+            query = query.filter(Customer.assigned_to == assigned_to)
+        if is_active is not None:
+            query = query.filter(Customer.is_active == is_active)
+        if search:
+            search_filter = or_(
+                Customer.name.ilike(f"%{search}%"),
+                Customer.code.ilike(f"%{search}%"),
+                Customer.email.ilike(f"%{search}%")
+            )
+            query = query.filter(search_filter)
+
+        total = query.count()
+        items = query.order_by(Customer.name).offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
+
     def update_customer(self, customer_id: UUID, data: CustomerUpdate) -> Optional[Customer]:
         """Mettre à jour un client."""
         customer = self.get_customer(customer_id)
