@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     # Redis (pour rate limiting distribué)
     redis_url: Optional[str] = Field(default=None, description="URL Redis pour cache et rate limiting")
 
+    # ENCRYPTION_KEY - OBLIGATOIRE EN PRODUCTION pour chiffrement AES-256 au repos
+    encryption_key: Optional[str] = Field(
+        default=None,
+        description="Clé Fernet pour chiffrement AES-256 - OBLIGATOIRE en production"
+    )
+
     @field_validator('environment')
     @classmethod
     def validate_environment(cls, v: str) -> str:
@@ -132,6 +138,13 @@ class Settings(BaseSettings):
                 )
             if 'localhost' in (self.cors_origins or '').lower():
                 raise ValueError('localhost interdit dans CORS_ORIGINS en production')
+
+            # ENCRYPTION_KEY obligatoire en production
+            if not self.encryption_key:
+                raise ValueError(
+                    'ENCRYPTION_KEY est OBLIGATOIRE en production pour le chiffrement AES-256. '
+                    'Générez avec: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+                )
 
         return self
 
