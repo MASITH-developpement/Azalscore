@@ -772,18 +772,34 @@ def get_user_capabilities(
     # Toutes les capacites disponibles
     ALL_CAPABILITIES = [
         "cockpit.view", "cockpit.decisions.view",
+        # Partners - permissions generiques ET specifiques (frontend utilise les deux)
         "partners.view", "partners.create", "partners.edit", "partners.delete",
+        "partners.clients.view", "partners.clients.create", "partners.clients.edit", "partners.clients.delete",
+        "partners.suppliers.view", "partners.suppliers.create", "partners.suppliers.edit", "partners.suppliers.delete",
+        "partners.contacts.view", "partners.contacts.create", "partners.contacts.edit", "partners.contacts.delete",
+        # Invoicing
         "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete",
+        # Treasury
         "treasury.view", "treasury.create", "treasury.transfer.execute",
+        # Accounting
         "accounting.view", "accounting.journal.view", "accounting.journal.delete",
+        # Purchases
         "purchases.view", "purchases.create", "purchases.edit",
+        # Projects
         "projects.view", "projects.create", "projects.edit",
+        # Interventions
         "interventions.view", "interventions.create", "interventions.edit",
+        # Web
         "web.view", "web.edit",
-        "ecommerce.view", "ecommerce.edit",
+        # Ecommerce
+        "ecommerce.view", "ecommerce.edit", "ecommerce.create", "ecommerce.delete",
+        # Marketplace
         "marketplace.view", "marketplace.edit",
+        # Payments
         "payments.view", "payments.create",
+        # Mobile
         "mobile.view",
+        # Admin
         "admin.view", "admin.users.view", "admin.users.create", "admin.users.edit", "admin.users.delete",
         "admin.roles.view", "admin.roles.edit",
         "admin.tenants.view", "admin.tenants.create", "admin.tenants.delete",
