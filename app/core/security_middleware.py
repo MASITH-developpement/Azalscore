@@ -22,17 +22,50 @@ from app.core.config import get_settings
 def setup_cors(app: FastAPI) -> None:
     """
     Configure CORS pour l'application.
-    En production, utilisez une liste d'origins autorisees.
+    PRODUCTION: Utilise CORS_ORIGINS depuis la configuration (OBLIGATOIRE).
+    DÉVELOPPEMENT: Autorise toutes les origines.
     """
-    # Pour le developpement, autoriser toutes les origines
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,  # Doit etre False avec allow_origins=["*"]
-        allow_methods=["*"],
-        allow_headers=["*"],
-        max_age=3600,
-    )
+    settings = get_settings()
+
+    if settings.is_production:
+        # PRODUCTION: CORS restrictif OBLIGATOIRE
+        if not settings.cors_origins:
+            raise ValueError(
+                "CORS_ORIGINS est OBLIGATOIRE en production. "
+                "Ex: CORS_ORIGINS=https://app.votre-domaine.com"
+            )
+
+        # Parser les origines depuis la config
+        origins = [origin.strip() for origin in settings.cors_origins.split(",")]
+
+        # Validation: pas de wildcard en production
+        if "*" in origins:
+            raise ValueError("CORS_ORIGINS=* est INTERDIT en production")
+
+        # Validation: pas de localhost en production
+        for origin in origins:
+            if "localhost" in origin.lower() or "127.0.0.1" in origin:
+                raise ValueError(f"localhost interdit dans CORS_ORIGINS en production: {origin}")
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,  # Autorisé avec origines spécifiques
+            allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+            allow_headers=["Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID"],
+            expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+            max_age=3600,
+        )
+    else:
+        # DÉVELOPPEMENT: CORS permissif
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=False,  # Doit etre False avec allow_origins=["*"]
+            allow_methods=["*"],
+            allow_headers=["*"],
+            max_age=3600,
+        )
 
 
 # ============================================================================
