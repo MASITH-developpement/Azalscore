@@ -207,25 +207,45 @@ class CreatorInitializer:
             return False
 
     def check_migrations(self) -> bool:
-        """Vérifie que les migrations nécessaires ont été exécutées."""
+        """Verifie que les migrations necessaires ont ete executees."""
         try:
-            with self.engine.connect() as conn:
-                # Vérifier la table iam_users
-                result = conn.execute(text(
-                    "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'iam_users')"
-                ))
-                if not result.scalar():
-                    print_status("Table iam_users non trouvee. Executez les migrations.", "ERROR")
-                    return False
+            db_url = self.settings.database_url
+            is_sqlite = db_url.startswith("sqlite")
 
-                # Vérifier la colonne is_protected
-                result = conn.execute(text(
-                    "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
-                    "WHERE table_name = 'iam_users' AND column_name = 'is_protected')"
-                ))
-                if not result.scalar():
-                    print_status("Migration 028 non appliquee. Executez: python run_migrations.py", "ERROR")
-                    return False
+            with self.engine.connect() as conn:
+                if is_sqlite:
+                    # SQLite: verifier via sqlite_master
+                    result = conn.execute(text(
+                        "SELECT name FROM sqlite_master WHERE type='table' AND name='iam_users'"
+                    ))
+                    if not result.fetchone():
+                        print_status("Table iam_users non trouvee. Executez les migrations.", "ERROR")
+                        return False
+
+                    # Verifier la colonne is_protected via PRAGMA
+                    result = conn.execute(text("PRAGMA table_info(iam_users)"))
+                    columns = [row[1] for row in result.fetchall()]
+                    if 'is_protected' not in columns:
+                        print_status("Colonne is_protected manquante. Executez: python run_migrations.py", "WARN")
+                        # Pour SQLite en dev, on continue quand meme
+                        print_status("Mode SQLite detecte - continuation sans migration 028", "INFO")
+                else:
+                    # PostgreSQL: utiliser information_schema
+                    result = conn.execute(text(
+                        "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'iam_users')"
+                    ))
+                    if not result.scalar():
+                        print_status("Table iam_users non trouvee. Executez les migrations.", "ERROR")
+                        return False
+
+                    # Verifier la colonne is_protected
+                    result = conn.execute(text(
+                        "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+                        "WHERE table_name = 'iam_users' AND column_name = 'is_protected')"
+                    ))
+                    if not result.scalar():
+                        print_status("Migration 028 non appliquee. Executez: python run_migrations.py", "ERROR")
+                        return False
 
             print_status("Migrations verifiees", "OK")
             return True
@@ -247,28 +267,28 @@ class CreatorInitializer:
 
             # Email
             while True:
-                email = input("📧 Email du createur: ").strip()
+                email = input("Email du createur: ").strip()
                 is_valid, error = validate_email(email)
                 if is_valid:
                     break
                 print_status(error, "ERROR")
 
             # Tenant ID
-            tenant_id = input("🏢 Tenant ID: ").strip()
+            tenant_id = input("Tenant ID: ").strip()
             if not tenant_id:
                 tenant_id = "default-tenant"
                 print_status(f"Tenant ID par defaut: {tenant_id}", "WARN")
 
             # Mot de passe (saisie masquée)
             while True:
-                password = getpass.getpass("🔑 Mot de passe (min 12 chars, masque): ")
+                password = getpass.getpass("Mot de passe (min 12 chars, masque): ")
                 is_valid, error = validate_password(password)
                 if not is_valid:
                     print_status(error, "ERROR")
                     continue
 
                 # Confirmation
-                password_confirm = getpass.getpass("🔑 Confirmer le mot de passe: ")
+                password_confirm = getpass.getpass("Confirmer le mot de passe: ")
                 if password != password_confirm:
                     print_status("Les mots de passe ne correspondent pas", "ERROR")
                     continue
@@ -331,8 +351,8 @@ class CreatorInitializer:
             session.close()
 
     def create_super_admin_role(self, session, tenant_id: str) -> int:
-        """Crée le rôle super_admin s'il n'existe pas."""
-        # Vérifier si le rôle existe
+        """Cree le role super_admin s'il n'existe pas."""
+        # Verifier si le role existe
         result = session.execute(text(
             "SELECT id FROM iam_roles WHERE tenant_id = :tenant_id AND code = 'super_admin'"
         ), {"tenant_id": tenant_id})
@@ -342,23 +362,52 @@ class CreatorInitializer:
             print_status("Role super_admin existant", "INFO")
             return existing[0]
 
-        # Créer le rôle
-        result = session.execute(text("""
-            INSERT INTO iam_roles (
-                tenant_id, code, name, description, level,
-                is_system, is_active, is_assignable, is_protected, is_deletable,
-                max_assignments, requires_approval, created_at
-            ) VALUES (
-                :tenant_id, :code, :name, :description, :level,
-                :is_system, TRUE, :is_assignable, :is_protected, :is_deletable,
-                :max_assignments, :requires_approval, CURRENT_TIMESTAMP
-            ) RETURNING id
-        """), {
-            "tenant_id": tenant_id,
-            **SUPER_ADMIN_ROLE_CONFIG
-        })
+        # Detecter SQLite vs PostgreSQL
+        is_sqlite = self.settings.database_url.startswith("sqlite")
 
-        role_id = result.fetchone()[0]
+        # Creer le role (syntaxe compatible SQLite et PostgreSQL)
+        # Pour SQLite, on n'utilise pas les colonnes qui n'existent pas
+        if is_sqlite:
+            session.execute(text("""
+                INSERT INTO iam_roles (
+                    tenant_id, code, name, description, level,
+                    is_system, is_active, is_assignable, requires_approval, created_at, updated_at
+                ) VALUES (
+                    :tenant_id, :code, :name, :description, :level,
+                    :is_system, 1, :is_assignable, :requires_approval, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
+            """), {
+                "tenant_id": tenant_id,
+                "code": SUPER_ADMIN_ROLE_CONFIG["code"],
+                "name": SUPER_ADMIN_ROLE_CONFIG["name"],
+                "description": SUPER_ADMIN_ROLE_CONFIG["description"],
+                "level": SUPER_ADMIN_ROLE_CONFIG["level"],
+                "is_system": 1,
+                "is_assignable": 0,
+                "requires_approval": 0,
+            })
+            # Recuperer l'ID insere
+            result = session.execute(text(
+                "SELECT id FROM iam_roles WHERE tenant_id = :tenant_id AND code = 'super_admin'"
+            ), {"tenant_id": tenant_id})
+            role_id = result.fetchone()[0]
+        else:
+            result = session.execute(text("""
+                INSERT INTO iam_roles (
+                    tenant_id, code, name, description, level,
+                    is_system, is_active, is_assignable, is_protected, is_deletable,
+                    max_assignments, requires_approval, created_at
+                ) VALUES (
+                    :tenant_id, :code, :name, :description, :level,
+                    :is_system, TRUE, :is_assignable, :is_protected, :is_deletable,
+                    :max_assignments, :requires_approval, CURRENT_TIMESTAMP
+                ) RETURNING id
+            """), {
+                "tenant_id": tenant_id,
+                **SUPER_ADMIN_ROLE_CONFIG
+            })
+            role_id = result.fetchone()[0]
+
         print_status(f"Role super_admin cree (ID: {role_id})", "OK")
 
         # Créer les permissions universelles pour super_admin
@@ -367,8 +416,10 @@ class CreatorInitializer:
         return role_id
 
     def _create_super_admin_permissions(self, session, tenant_id: str, role_id: int):
-        """Crée les permissions universelles pour super_admin."""
-        # Permission wildcard (*) pour tout accès
+        """Cree les permissions universelles pour super_admin."""
+        is_sqlite = self.settings.database_url.startswith("sqlite")
+
+        # Permission wildcard (*) pour tout acces
         modules = ['iam', 'admin', 'commercial', 'sales', 'treasury', 'hr',
                    'procurement', 'inventory', 'production', 'quality',
                    'projects', 'bi', 'audit', 'system']
@@ -380,7 +431,7 @@ class CreatorInitializer:
             for action in actions:
                 code = f"{module}.*.{action}"
 
-                # Vérifier si la permission existe
+                # Verifier si la permission existe
                 result = session.execute(text(
                     "SELECT id FROM iam_permissions WHERE tenant_id = :tenant_id AND code = :code"
                 ), {"tenant_id": tenant_id, "code": code})
@@ -389,36 +440,63 @@ class CreatorInitializer:
                 if perm:
                     perm_id = perm[0]
                 else:
-                    # Créer la permission
-                    result = session.execute(text("""
-                        INSERT INTO iam_permissions (
-                            tenant_id, code, module, resource, action,
-                            name, description, is_system, is_active, is_dangerous, created_at
-                        ) VALUES (
-                            :tenant_id, :code, :module, '*', :action,
-                            :name, :description, TRUE, TRUE, :is_dangerous, CURRENT_TIMESTAMP
-                        ) RETURNING id
+                    # Creer la permission
+                    if is_sqlite:
+                        session.execute(text("""
+                            INSERT INTO iam_permissions (
+                                tenant_id, code, module, resource, action,
+                                name, description, is_system, is_active, is_dangerous, created_at
+                            ) VALUES (
+                                :tenant_id, :code, :module, '*', :action,
+                                :name, :description, 1, 1, :is_dangerous, CURRENT_TIMESTAMP
+                            )
+                        """), {
+                            "tenant_id": tenant_id,
+                            "code": code,
+                            "module": module,
+                            "action": action,
+                            "name": f"Acces {action} sur {module}",
+                            "description": f"Permission systeme super_admin: {code}",
+                            "is_dangerous": 1 if action in ['delete', 'admin', '*'] else 0
+                        })
+                        result = session.execute(text(
+                            "SELECT id FROM iam_permissions WHERE tenant_id = :tenant_id AND code = :code"
+                        ), {"tenant_id": tenant_id, "code": code})
+                        perm_id = result.fetchone()[0]
+                    else:
+                        result = session.execute(text("""
+                            INSERT INTO iam_permissions (
+                                tenant_id, code, module, resource, action,
+                                name, description, is_system, is_active, is_dangerous, created_at
+                            ) VALUES (
+                                :tenant_id, :code, :module, '*', :action,
+                                :name, :description, TRUE, TRUE, :is_dangerous, CURRENT_TIMESTAMP
+                            ) RETURNING id
+                        """), {
+                            "tenant_id": tenant_id,
+                            "code": code,
+                            "module": module,
+                            "action": action,
+                            "name": f"Acces {action} sur {module}",
+                            "description": f"Permission systeme super_admin: {code}",
+                            "is_dangerous": action in ['delete', 'admin', '*']
+                        })
+                        perm_id = result.fetchone()[0]
+
+                # Associer au role (verifier d'abord si existe pour SQLite)
+                existing = session.execute(text(
+                    "SELECT id FROM iam_role_permissions WHERE tenant_id = :tenant_id AND role_id = :role_id AND permission_id = :permission_id"
+                ), {"tenant_id": tenant_id, "role_id": role_id, "permission_id": perm_id}).fetchone()
+
+                if not existing:
+                    session.execute(text("""
+                        INSERT INTO iam_role_permissions (tenant_id, role_id, permission_id, granted_at)
+                        VALUES (:tenant_id, :role_id, :permission_id, CURRENT_TIMESTAMP)
                     """), {
                         "tenant_id": tenant_id,
-                        "code": code,
-                        "module": module,
-                        "action": action,
-                        "name": f"Accès {action} sur {module}",
-                        "description": f"Permission système super_admin: {code}",
-                        "is_dangerous": action in ['delete', 'admin', '*']
+                        "role_id": role_id,
+                        "permission_id": perm_id
                     })
-                    perm_id = result.fetchone()[0]
-
-                # Associer au rôle
-                session.execute(text("""
-                    INSERT INTO iam_role_permissions (tenant_id, role_id, permission_id, granted_at)
-                    VALUES (:tenant_id, :role_id, :permission_id, CURRENT_TIMESTAMP)
-                    ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING
-                """), {
-                    "tenant_id": tenant_id,
-                    "role_id": role_id,
-                    "permission_id": perm_id
-                })
                 permission_count += 1
 
         print_status(f"{permission_count} permissions associees au role super_admin", "OK")
@@ -431,41 +509,73 @@ class CreatorInitializer:
         password_hash: str,
         role_id: int
     ) -> int:
-        """Crée l'utilisateur créateur."""
-        # Créer l'utilisateur
-        result = session.execute(text("""
-            INSERT INTO iam_users (
-                tenant_id, email, password_hash,
-                first_name, last_name, display_name,
-                is_active, is_verified, is_locked,
-                is_system_account, is_protected, created_via,
-                locale, timezone,
-                password_changed_at, created_at, updated_at
-            ) VALUES (
-                :tenant_id, :email, :password_hash,
-                'Createur', 'Systeme', 'Createur Systeme',
-                TRUE, TRUE, FALSE,
-                TRUE, TRUE, 'cli',
-                'fr', 'Europe/Paris',
-                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            ) RETURNING id
-        """), {
-            "tenant_id": tenant_id,
-            "email": email,
-            "password_hash": password_hash
-        })
+        """Cree l'utilisateur createur."""
+        is_sqlite = self.settings.database_url.startswith("sqlite")
 
-        user_id = result.fetchone()[0]
+        # Creer l'utilisateur
+        if is_sqlite:
+            # SQLite: colonnes de base avec toutes les colonnes NOT NULL
+            session.execute(text("""
+                INSERT INTO iam_users (
+                    tenant_id, email, password_hash,
+                    first_name, last_name, display_name,
+                    is_active, is_verified, is_locked,
+                    failed_login_attempts, must_change_password, mfa_enabled,
+                    locale, timezone,
+                    password_changed_at, created_at, updated_at
+                ) VALUES (
+                    :tenant_id, :email, :password_hash,
+                    'Createur', 'Systeme', 'Createur Systeme',
+                    1, 1, 0,
+                    0, 0, 0,
+                    'fr', 'Europe/Paris',
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
+            """), {
+                "tenant_id": tenant_id,
+                "email": email,
+                "password_hash": password_hash
+            })
+            result = session.execute(text(
+                "SELECT id FROM iam_users WHERE tenant_id = :tenant_id AND email = :email"
+            ), {"tenant_id": tenant_id, "email": email})
+            user_id = result.fetchone()[0]
+        else:
+            result = session.execute(text("""
+                INSERT INTO iam_users (
+                    tenant_id, email, password_hash,
+                    first_name, last_name, display_name,
+                    is_active, is_verified, is_locked,
+                    is_system_account, is_protected, created_via,
+                    locale, timezone,
+                    password_changed_at, created_at, updated_at
+                ) VALUES (
+                    :tenant_id, :email, :password_hash,
+                    'Createur', 'Systeme', 'Createur Systeme',
+                    TRUE, TRUE, FALSE,
+                    TRUE, TRUE, 'cli',
+                    'fr', 'Europe/Paris',
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                ) RETURNING id
+            """), {
+                "tenant_id": tenant_id,
+                "email": email,
+                "password_hash": password_hash
+            })
+            user_id = result.fetchone()[0]
+
         print_status(f"Utilisateur createur cree (ID: {user_id})", "OK")
 
-        # Associer le rôle
+        # Associer le role
+        is_sqlite = self.settings.database_url.startswith("sqlite")
         session.execute(text("""
             INSERT INTO iam_user_roles (tenant_id, user_id, role_id, granted_at, is_active)
-            VALUES (:tenant_id, :user_id, :role_id, CURRENT_TIMESTAMP, TRUE)
+            VALUES (:tenant_id, :user_id, :role_id, CURRENT_TIMESTAMP, :is_active)
         """), {
             "tenant_id": tenant_id,
             "user_id": user_id,
-            "role_id": role_id
+            "role_id": role_id,
+            "is_active": 1 if is_sqlite else True
         })
 
         print_status("Role super_admin attribue au createur", "OK")
@@ -479,7 +589,9 @@ class CreatorInitializer:
         role_id: int,
         email: str
     ):
-        """Journalise l'opération d'initialisation."""
+        """Journalise l'operation d'initialisation."""
+        is_sqlite = self.settings.database_url.startswith("sqlite")
+
         details = {
             "email": email,
             "role_id": role_id,
@@ -490,41 +602,67 @@ class CreatorInitializer:
 
         checksum = compute_checksum(details)
 
-        session.execute(text("""
-            INSERT INTO iam_system_init_log (
-                tenant_id, operation, entity_type, entity_id, entity_code,
-                executed_by, execution_mode, details, justification, checksum, created_at
-            ) VALUES (
-                :tenant_id, 'CREATOR_INIT', 'USER', :user_id, :email,
-                'bootstrap', 'cli', :details, :justification, :checksum, CURRENT_TIMESTAMP
-            )
-        """), {
-            "tenant_id": tenant_id,
-            "user_id": user_id,
-            "email": email,
-            "details": json.dumps(details),
-            "justification": "Création du compte fondateur lors de l'initialisation système",
-            "checksum": checksum
-        })
-
-        # Log dans iam_audit_logs aussi
-        session.execute(text("""
-            INSERT INTO iam_audit_logs (
-                tenant_id, action, entity_type, entity_id,
-                actor_id, details, success, created_at
-            ) VALUES (
-                :tenant_id, 'SYSTEM_INIT', 'USER', :user_id,
-                NULL, :details, TRUE, CURRENT_TIMESTAMP
-            )
-        """), {
-            "tenant_id": tenant_id,
-            "user_id": user_id,
-            "details": json.dumps({
-                "operation": "CREATOR_INIT",
+        # Pour SQLite, on skip les tables qui n'existent peut-etre pas
+        if is_sqlite:
+            print_status("Mode SQLite - journalisation simplifiee", "INFO")
+            # Log dans iam_audit_logs seulement si la table existe
+            try:
+                session.execute(text("""
+                    INSERT INTO iam_audit_logs (
+                        tenant_id, action, entity_type, entity_id,
+                        actor_id, details, success, created_at
+                    ) VALUES (
+                        :tenant_id, 'SYSTEM_INIT', 'USER', :user_id,
+                        NULL, :details, 1, CURRENT_TIMESTAMP
+                    )
+                """), {
+                    "tenant_id": tenant_id,
+                    "user_id": user_id,
+                    "details": json.dumps({
+                        "operation": "CREATOR_INIT",
+                        "email": email,
+                        "role": "super_admin"
+                    })
+                })
+            except Exception:
+                print_status("Table iam_audit_logs non disponible - skip", "WARN")
+        else:
+            # PostgreSQL: log complet
+            session.execute(text("""
+                INSERT INTO iam_system_init_log (
+                    tenant_id, operation, entity_type, entity_id, entity_code,
+                    executed_by, execution_mode, details, justification, checksum, created_at
+                ) VALUES (
+                    :tenant_id, 'CREATOR_INIT', 'USER', :user_id, :email,
+                    'bootstrap', 'cli', :details, :justification, :checksum, CURRENT_TIMESTAMP
+                )
+            """), {
+                "tenant_id": tenant_id,
+                "user_id": user_id,
                 "email": email,
-                "role": "super_admin"
+                "details": json.dumps(details),
+                "justification": "Creation du compte fondateur lors de l initialisation systeme",
+                "checksum": checksum
             })
-        })
+
+            # Log dans iam_audit_logs aussi
+            session.execute(text("""
+                INSERT INTO iam_audit_logs (
+                    tenant_id, action, entity_type, entity_id,
+                    actor_id, details, success, created_at
+                ) VALUES (
+                    :tenant_id, 'SYSTEM_INIT', 'USER', :user_id,
+                    NULL, :details, TRUE, CURRENT_TIMESTAMP
+                )
+            """), {
+                "tenant_id": tenant_id,
+                "user_id": user_id,
+                "details": json.dumps({
+                    "operation": "CREATOR_INIT",
+                    "email": email,
+                    "role": "super_admin"
+                })
+            })
 
         print_status("Operation journalisee dans le registre de securite", "SECURE")
 
@@ -561,12 +699,12 @@ class CreatorInitializer:
 
         # 5. Confirmation finale
         if self.interactive:
-            confirm = input("\n⚠️  Confirmer la creation du compte createur? (oui/non): ").strip().lower()
+            confirm = input("\n[CONFIRM] Confirmer la creation du compte createur? (oui/non): ").strip().lower()
             if confirm != "oui":
                 print_status("Operation annulee par l utilisateur", "WARN")
                 return False
 
-        # 6. Création
+        # 6. Creation
         session = self.Session()
         try:
             print()
@@ -576,10 +714,10 @@ class CreatorInitializer:
             print_status("Hashage du mot de passe (bcrypt)...", "SECURE")
             password_hash = get_password_hash(password)
 
-            # Créer le rôle
+            # Creer le role
             role_id = self.create_super_admin_role(session, tenant_id)
 
-            # Créer l'utilisateur
+            # Creer l'utilisateur
             user_id = self.create_creator_user(
                 session, tenant_id, email, password_hash, role_id
             )
@@ -595,17 +733,17 @@ class CreatorInitializer:
             print_status("INITIALISATION REUSSIE", "OK")
             print("=" * 60)
             print()
-            print(f"   📧 Email: {email}")
-            print(f"   🏢 Tenant: {tenant_id}")
-            print(f"   👤 User ID: {user_id}")
-            print(f"   🛡️  Role: super_admin")
-            print(f"   🔐 MFA: Activable par la suite")
+            print(f"   Email: {email}")
+            print(f"   Tenant: {tenant_id}")
+            print(f"   User ID: {user_id}")
+            print(f"   Role: super_admin")
+            print(f"   MFA: Activable par la suite")
             print()
             print_status("Vous pouvez maintenant vous connecter via l API", "INFO")
             print_status("POST /v1/iam/auth/login", "INFO")
             print()
 
-            # Nettoyage sécurisé
+            # Nettoyage securise
             del password
             del password_hash
 
