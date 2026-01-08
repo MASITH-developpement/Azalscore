@@ -6,7 +6,8 @@ ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 """
 
 import asyncio
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Depends, Request
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from fastapi.staticfiles import StaticFiles
@@ -226,6 +227,19 @@ app = FastAPI(
     openapi_url=_openapi_url,
     lifespan=lifespan
 )
+
+
+# Handler pour afficher les erreurs de validation 422
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"[DEBUG] 422 Validation Error on {request.method} {request.url}")
+    print(f"[DEBUG] Request body: {await request.body()}")
+    print(f"[DEBUG] Validation errors: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()}
+    )
+
 
 # Middleware stack (ordre important: dernier ajouté = premier exécuté)
 # En Starlette, les middlewares s'exécutent dans l'ordre INVERSE d'ajout
