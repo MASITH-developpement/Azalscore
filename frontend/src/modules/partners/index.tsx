@@ -172,7 +172,155 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
 };
 
 // Pages
-export const ClientsPage: React.FC = () => <PartnerList type="client" title="Clients" />;
+// Clients Page - Schéma spécifique pour les clients
+export const ClientsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [showCreate, setShowCreate] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['partners', 'clients', page, pageSize],
+    queryFn: async () => {
+      const response = await api.get<PaginatedResponse<Partner>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
+      return response.data;
+    },
+  });
+
+  const createClient = useMutation({
+    mutationFn: async (clientData: any) => {
+      const response = await api.post('/v1/partners/clients', clientData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
+      setShowCreate(false);
+    },
+    onError: (error: any) => {
+      console.error('Erreur création client:', error);
+      alert('Erreur lors de la création du client: ' + (error.response?.data?.detail || error.message));
+    },
+  });
+
+  const columns: TableColumn<Partner>[] = [
+    { id: 'code', header: 'Code', accessor: 'code', sortable: true },
+    { id: 'name', header: 'Nom', accessor: 'name', sortable: true },
+    { id: 'email', header: 'Email', accessor: 'email' },
+    { id: 'phone', header: 'Téléphone', accessor: 'phone' },
+    { id: 'city', header: 'Ville', accessor: 'city' },
+    {
+      id: 'is_active',
+      header: 'Statut',
+      accessor: 'is_active',
+      render: (value) =>
+        value ? (
+          <span className="azals-badge azals-badge--green">Actif</span>
+        ) : (
+          <span className="azals-badge azals-badge--gray">Inactif</span>
+        ),
+    },
+  ];
+
+  const actions = [
+    {
+      id: 'view',
+      label: 'Voir',
+      onClick: (row: Partner) => navigate(`/partners/clients/${row.id}`),
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      capability: 'partners.clients.edit',
+      onClick: (row: Partner) => navigate(`/partners/clients/${row.id}/edit`),
+    },
+  ];
+
+  const clientSchema = z.object({
+    code: z.string().min(1, 'Code requis').max(50),
+    name: z.string().min(2, 'Nom requis').max(255),
+    type: z.enum(['PROSPECT', 'LEAD', 'CUSTOMER', 'VIP', 'PARTNER', 'CHURNED']).default('CUSTOMER'),
+    email: z.string().email('Email invalide').optional().or(z.literal('')),
+    phone: z.string().optional(),
+    address_line1: z.string().optional(),
+    city: z.string().optional(),
+    postal_code: z.string().optional(),
+    country_code: z.string().default('FR'),
+    tax_id: z.string().optional(),
+  });
+
+  const fields = [
+    { name: 'code', label: 'Code client', type: 'text' as const, required: true, placeholder: 'CLI001' },
+    { name: 'name', label: 'Nom / Raison sociale', type: 'text' as const, required: true },
+    {
+      name: 'type',
+      label: 'Type',
+      type: 'select' as const,
+      options: [
+        { value: 'PROSPECT', label: 'Prospect' },
+        { value: 'LEAD', label: 'Lead' },
+        { value: 'CUSTOMER', label: 'Client' },
+        { value: 'VIP', label: 'VIP' },
+        { value: 'PARTNER', label: 'Partenaire' },
+      ],
+      defaultValue: 'CUSTOMER'
+    },
+    { name: 'email', label: 'Email', type: 'email' as const },
+    { name: 'phone', label: 'Téléphone', type: 'text' as const },
+    { name: 'address_line1', label: 'Adresse', type: 'text' as const },
+    { name: 'city', label: 'Ville', type: 'text' as const },
+    { name: 'postal_code', label: 'Code postal', type: 'text' as const },
+    { name: 'country_code', label: 'Pays', type: 'text' as const, defaultValue: 'FR' },
+    { name: 'tax_id', label: 'N° TVA', type: 'text' as const },
+  ];
+
+  return (
+    <PageWrapper
+      title="Clients"
+      actions={
+        <CapabilityGuard capability="partners.clients.create">
+          <Button leftIcon={<Plus size={16} />} onClick={() => setShowCreate(true)}>
+            Ajouter
+          </Button>
+        </CapabilityGuard>
+      }
+    >
+      <Card noPadding>
+        <DataTable
+          columns={columns}
+          data={data?.items || []}
+          keyField="id"
+          actions={actions}
+          isLoading={isLoading}
+          pagination={{
+            page,
+            pageSize,
+            total: data?.total || 0,
+            onPageChange: setPage,
+            onPageSizeChange: setPageSize,
+          }}
+          onRefresh={refetch}
+        />
+      </Card>
+
+      {showCreate && (
+        <Modal isOpen onClose={() => setShowCreate(false)} title="Nouveau client" size="md">
+          <DynamicForm
+            fields={fields}
+            schema={clientSchema}
+            defaultValues={{ type: 'CUSTOMER', country_code: 'FR' }}
+            onSubmit={async (data) => {
+              await createClient.mutateAsync(data);
+            }}
+            onCancel={() => setShowCreate(false)}
+            isLoading={createClient.isPending}
+          />
+        </Modal>
+      )}
+    </PageWrapper>
+  );
+};
+
 export const SuppliersPage: React.FC = () => <PartnerList type="supplier" title="Fournisseurs" />;
 
 // Contacts Page - Schéma différent des clients/fournisseurs
