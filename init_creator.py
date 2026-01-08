@@ -371,10 +371,10 @@ class CreatorInitializer:
             session.execute(text("""
                 INSERT INTO iam_roles (
                     tenant_id, code, name, description, level,
-                    is_system, is_active, is_assignable, requires_approval, created_at
+                    is_system, is_active, is_assignable, requires_approval, created_at, updated_at
                 ) VALUES (
                     :tenant_id, :code, :name, :description, :level,
-                    :is_system, 1, :is_assignable, :requires_approval, CURRENT_TIMESTAMP
+                    :is_system, 1, :is_assignable, :requires_approval, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
             """), {
                 "tenant_id": tenant_id,
