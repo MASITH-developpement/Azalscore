@@ -45,7 +45,7 @@ class CommercialService:
         customer = Customer(
             tenant_id=self.tenant_id,
             created_by=user_id,
-            **data.model_dump()
+            **data.model_dump(by_alias=True, exclude_unset=False)
         )
         self.db.add(customer)
         self.db.commit()
@@ -708,7 +708,7 @@ class CommercialService:
         activity = CustomerActivity(
             tenant_id=self.tenant_id,
             created_by=user_id,
-            **data.model_dump()
+            **data.model_dump(by_alias=True, exclude_unset=False)
         )
         self.db.add(activity)
         self.db.commit()
@@ -981,6 +981,159 @@ class CommercialService:
             quote_to_order_rate=quote_to_order,
             average_deal_size=avg_deal
         )
+
+
+    # ========================================================================
+    # EXPORT CSV
+    # ========================================================================
+
+    def export_customers_csv(
+        self,
+        type: Optional[CustomerType] = None,
+        is_active: Optional[bool] = None
+    ) -> str:
+        """
+        Exporter les clients au format CSV.
+        SÉCURITÉ: Filtrage strict par tenant_id.
+        """
+        import csv
+        import io
+
+        query = self.db.query(Customer).filter(Customer.tenant_id == self.tenant_id)
+
+        if type:
+            query = query.filter(Customer.type == type)
+        if is_active is not None:
+            query = query.filter(Customer.is_active == is_active)
+
+        customers = query.order_by(Customer.name).all()
+
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+
+        # En-têtes
+        writer.writerow([
+            'Code', 'Nom', 'Type', 'Email', 'Téléphone', 'Mobile',
+            'Adresse', 'Ville', 'Code Postal', 'Pays',
+            'SIRET', 'TVA Intra', 'Conditions Paiement',
+            'CA Total', 'Nb Commandes', 'Actif', 'Créé le'
+        ])
+
+        # Données
+        for c in customers:
+            writer.writerow([
+                c.code,
+                c.name,
+                c.type.value if c.type else '',
+                c.email or '',
+                c.phone or '',
+                c.mobile or '',
+                c.address_line1 or '',
+                c.city or '',
+                c.postal_code or '',
+                c.country_code or 'FR',
+                c.registration_number or '',
+                c.tax_id or '',
+                c.payment_terms.value if c.payment_terms else '',
+                str(c.total_revenue or 0),
+                str(c.order_count or 0),
+                'Oui' if c.is_active else 'Non',
+                c.created_at.strftime('%Y-%m-%d') if c.created_at else ''
+            ])
+
+        return output.getvalue()
+
+    def export_contacts_csv(self, customer_id: Optional[UUID] = None) -> str:
+        """
+        Exporter les contacts au format CSV.
+        SÉCURITÉ: Filtrage strict par tenant_id.
+        """
+        import csv
+        import io
+
+        query = self.db.query(Contact).filter(Contact.tenant_id == self.tenant_id)
+
+        if customer_id:
+            query = query.filter(Contact.customer_id == customer_id)
+
+        contacts = query.order_by(Contact.last_name, Contact.first_name).all()
+
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+
+        # En-têtes
+        writer.writerow([
+            'Prénom', 'Nom', 'Fonction', 'Email', 'Téléphone', 'Mobile',
+            'Principal', 'Facturation', 'Décideur', 'Actif', 'Créé le'
+        ])
+
+        # Données
+        for c in contacts:
+            writer.writerow([
+                c.first_name,
+                c.last_name,
+                c.job_title or '',
+                c.email or '',
+                c.phone or '',
+                c.mobile or '',
+                'Oui' if c.is_primary else 'Non',
+                'Oui' if c.is_billing else 'Non',
+                'Oui' if c.is_decision_maker else 'Non',
+                'Oui' if c.is_active else 'Non',
+                c.created_at.strftime('%Y-%m-%d') if c.created_at else ''
+            ])
+
+        return output.getvalue()
+
+    def export_opportunities_csv(
+        self,
+        status: Optional[OpportunityStatus] = None,
+        customer_id: Optional[UUID] = None
+    ) -> str:
+        """
+        Exporter les opportunités au format CSV.
+        SÉCURITÉ: Filtrage strict par tenant_id.
+        """
+        import csv
+        import io
+
+        query = self.db.query(Opportunity).filter(Opportunity.tenant_id == self.tenant_id)
+
+        if status:
+            query = query.filter(Opportunity.status == status)
+        if customer_id:
+            query = query.filter(Opportunity.customer_id == customer_id)
+
+        opportunities = query.order_by(Opportunity.expected_close_date).all()
+
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+
+        # En-têtes
+        writer.writerow([
+            'Code', 'Nom', 'Statut', 'Montant', 'Probabilité', 'Montant Pondéré',
+            'Date Conclusion Prévue', 'Date Conclusion Réelle',
+            'Source', 'Raison Gain', 'Raison Perte', 'Créé le'
+        ])
+
+        # Données
+        for o in opportunities:
+            writer.writerow([
+                o.code,
+                o.name,
+                o.status.value if o.status else '',
+                str(o.amount or 0),
+                str(o.probability or 0),
+                str(o.weighted_amount or 0),
+                o.expected_close_date.strftime('%Y-%m-%d') if o.expected_close_date else '',
+                o.actual_close_date.strftime('%Y-%m-%d') if o.actual_close_date else '',
+                o.source or '',
+                o.win_reason or '',
+                o.loss_reason or '',
+                o.created_at.strftime('%Y-%m-%d') if o.created_at else ''
+            ])
+
+        return output.getvalue()
 
 
 def get_commercial_service(db: Session, tenant_id: str) -> CommercialService:

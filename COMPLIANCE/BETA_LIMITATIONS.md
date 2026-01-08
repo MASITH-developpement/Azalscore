@@ -1,9 +1,9 @@
 # AZALSCORE - Limitations Version Bêta
 ## COMPLIANCE/BETA_LIMITATIONS.md
 
-**Version**: 1.0-BETA
+**Version**: 1.1-BETA
 **Date**: 2026-01-08
-**Statut**: Bêta Fermée
+**Statut**: Bêta Fermée - Module CRM T0 ACTIVÉ
 
 ---
 
@@ -22,20 +22,20 @@
 
 Les modules suivants sont **préparés mais NON activés** :
 
-| Module | Code | Raison |
+| Module | Code | Statut |
 |--------|------|--------|
-| IAM Avancé | T0 | Validation en cours |
-| AutoConfig | T1 | Tests incomplets |
-| Triggers | T2 | Validation en cours |
-| Audit Avancé | T3 | Validation en cours |
-| QC | T4 | Non prioritaire bêta |
+| IAM Avancé | T0 | ✅ ACTIVÉ |
+| AutoConfig | T1 | En validation |
+| Triggers | T2 | En validation |
+| Audit Avancé | T3 | En validation |
+| QC | T4 | En attente |
 | Country Packs | T5 | France uniquement |
-| Broadcast | T6 | Non prioritaire bêta |
-| Web Services | T7 | Non prioritaire bêta |
-| Website | T8 | Non prioritaire bêta |
+| Broadcast | T6 | En attente |
+| Web Services | T7 | En attente |
+| Website | T8 | En attente |
 | Multi-Tenant Admin | T9 | En développement |
-| Commercial/CRM | M1 | Prochaine activation |
-| Finance | M2 | En attente M1 |
+| **CRM/Commercial** | **M1** | **✅ ACTIVÉ (CRM T0)** |
+| Finance | M2 | En attente validation M1 |
 | HR | M3 | En attente M2 |
 | Tous autres | M4-M18 | Séquence gating |
 
@@ -150,10 +150,11 @@ Les modules suivants sont **préparés mais NON activés** :
 ### Phase Bêta (Actuelle)
 
 ```
-Janvier 2026  : Socle technique validé
-Février 2026  : Module IAM (T0) activé
-Mars 2026     : Module Commercial (M1) activé
-Avril 2026    : Module Finance (M2) activé
+Janvier 2026  : Socle technique validé ✅
+              : Module IAM (T0) activé ✅
+              : Module CRM T0 activé ✅ (8 janvier 2026)
+Février 2026  : Module Finance (M2) prévu
+Mars 2026     : Modules complémentaires
 ```
 
 ### Phase GA (Général Availability)
@@ -193,4 +194,5 @@ Pour toute question sur les limitations :
 
 | Version | Date | Changements |
 |---------|------|-------------|
+| 1.1 | 2026-01-08 | Activation Module CRM T0 (PASS) |
 | 1.0 | 2026-01-08 | Création initiale |
