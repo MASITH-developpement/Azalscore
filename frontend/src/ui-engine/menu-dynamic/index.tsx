@@ -380,15 +380,16 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
   section,
   onItemClick,
 }) => {
-  const { hasCapability, hasAnyCapability } = useCapabilities();
+  const { capabilities } = useCapabilities();
 
   // Filtrer les items selon les capacités
+  // CRITICAL: Utiliser `capabilities` directement pour que le memo se recalcule
   const visibleItems = useMemo(() => {
     return section.items.filter((item) => {
       if (!item.capability) return true;
-      return hasCapability(item.capability);
+      return capabilities.includes(item.capability);
     });
-  }, [section.items, hasCapability]);
+  }, [section.items, capabilities]);
 
   // Ne pas afficher la section si aucun item visible
   if (visibleItems.length === 0) {
@@ -396,7 +397,7 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
   }
 
   // Vérifier la capacité de la section
-  if (section.capability && !hasCapability(section.capability)) {
+  if (section.capability && !capabilities.includes(section.capability)) {
     return null;
   }
 

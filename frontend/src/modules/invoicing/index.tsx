@@ -693,10 +693,11 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
   const exportDocuments = useExportDocuments();
 
   const typeConfig = TYPE_CONFIG[type];
-  const canCreate = useHasCapability(`invoicing.${type.toLowerCase()}s.create`);
-  const canEdit = useHasCapability(`invoicing.${type.toLowerCase()}s.edit`);
-  const canDelete = useHasCapability(`invoicing.${type.toLowerCase()}s.delete`);
-  const canValidate = useHasCapability(`invoicing.${type.toLowerCase()}s.validate`);
+  // Utiliser les capabilities générales (invoicing.create) plutôt que granulaires (invoicing.quotes.create)
+  const canCreate = useHasCapability('invoicing.create');
+  const canEdit = useHasCapability('invoicing.edit');
+  const canDelete = useHasCapability('invoicing.delete');
+  const canValidate = useHasCapability('invoicing.edit'); // validate = edit permission
 
   const handleExport = async () => {
     try {
@@ -1157,8 +1158,8 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({ type }) => {
   const convertQuote = useConvertQuoteToInvoice();
 
   const typeConfig = TYPE_CONFIG[type];
-  const canEdit = useHasCapability(`invoicing.${type.toLowerCase()}s.edit`);
-  const canValidate = useHasCapability(`invoicing.${type.toLowerCase()}s.validate`);
+  const canEdit = useHasCapability('invoicing.edit');
+  const canValidate = useHasCapability('invoicing.edit');
 
   if (isLoading) {
     return (
