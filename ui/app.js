@@ -27,6 +27,25 @@
 const API_BASE = '';
 
 // =============================================
+// BRANDING CONFIGURATION
+// Titre et favicon Azalscore - Multi-tenant prêt mais désactivé
+// =============================================
+
+const BRANDING = {
+    defaultTitle: 'Azalscore',
+    faviconPath: '/favicon.png',
+    enableTenantBranding: false
+};
+
+/**
+ * Initialise le branding (titre d'onglet)
+ * Multi-tenant désactivé par défaut
+ */
+function initBranding() {
+    document.title = BRANDING.defaultTitle;
+}
+
+// =============================================
 // MODE TEST AZALS (TEMPORAIRE)
 // =============================================
 
@@ -2315,8 +2334,11 @@ async function loadAndDisplayTreasury() {
 // =============================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialiser le branding (titre d'onglet Azalscore)
+    initBranding();
+
     const page = document.body.dataset.page;
-    
+
     switch (page) {
         case 'login':
             // Si l'utilisateur est déjà connecté, rediriger vers le cockpit

@@ -699,9 +699,25 @@ if UI_DIR.exists():
         return {"message": "Page Trésorerie non disponible"}
     
     @app.get("/favicon.ico")
-    async def serve_favicon():
-        """Servir le favicon"""
-        favicon_path = UI_DIR / "favicon.svg"
+    async def serve_favicon_ico():
+        """Servir le favicon (format .ico redirige vers PNG)"""
+        favicon_path = UI_DIR / "favicon.png"
         if favicon_path.exists():
-            return FileResponse(favicon_path, media_type="image/svg+xml")
-        return FileResponse(UI_DIR / "favicon.svg", status_code=404)
+            return FileResponse(favicon_path, media_type="image/png")
+        return FileResponse(UI_DIR / "favicon.png", status_code=404)
+
+    @app.get("/favicon.png")
+    async def serve_favicon_png():
+        """Servir le favicon PNG - Asset système non modifiable"""
+        favicon_path = UI_DIR / "favicon.png"
+        if favicon_path.exists():
+            return FileResponse(
+                favicon_path,
+                media_type="image/png",
+                headers={
+                    "Cache-Control": "public, max-age=31536000, immutable",
+                    "X-Asset-Type": "system",
+                    "X-Content-Type-Options": "nosniff"
+                }
+            )
+        return FileResponse(UI_DIR / "favicon.png", status_code=404)
