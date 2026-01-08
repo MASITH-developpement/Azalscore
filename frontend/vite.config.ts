@@ -8,10 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'AZALSCORE ERP',
-        short_name: 'AZALSCORE',
+        name: 'Azalscore',
+        short_name: 'Azalscore',
         description: 'ERP SaaS Multi-tenant - Gestion complète entreprise',
         theme_color: '#1e40af',
         background_color: '#ffffff',
