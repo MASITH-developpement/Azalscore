@@ -24,6 +24,7 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
+  Palette,
   type LucideIcon,
 } from 'lucide-react';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
@@ -48,6 +49,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   mobile: Smartphone,
   settings: Settings,
   admin: Shield,
+  branding: Palette,
 };
 
 // ============================================================
@@ -260,6 +262,13 @@ const MENU_SECTIONS: MenuSection[] = [
         icon: 'settings',
         path: '/admin/logs',
         capability: 'admin.logs.view',
+      },
+      {
+        id: 'admin-branding',
+        label: 'Personnalisation',
+        icon: 'branding',
+        path: '/admin/branding',
+        capability: 'admin.branding.view',
       },
     ],
   },
