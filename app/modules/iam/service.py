@@ -196,6 +196,18 @@ class IAMService:
         if not user:
             return False
 
+        # Protection des comptes système
+        if getattr(user, 'is_protected', False):
+            raise ValueError(
+                f"Le compte '{user.email}' est un compte système protégé et ne peut pas être supprimé."
+            )
+
+        if getattr(user, 'is_system_account', False):
+            raise ValueError(
+                f"Le compte '{user.email}' est un compte fondateur du système. "
+                "La suppression nécessite une intervention directe en base de données."
+            )
+
         user.is_active = False
         user.is_locked = True
         user.lock_reason = "Account deleted"
@@ -348,6 +360,13 @@ class IAMService:
         if role.is_system:
             raise ValueError("Impossible de modifier un rôle système")
 
+        # Protection renforcée pour les rôles protégés (super_admin)
+        if getattr(role, 'is_protected', False):
+            raise ValueError(
+                f"Le rôle '{role.code}' est protégé et ne peut pas être modifié. "
+                "Cette opération nécessite une intervention système directe."
+            )
+
         old_values = {"name": role.name, "level": role.level}
 
         for field, value in data.model_dump(exclude_unset=True).items():
@@ -369,6 +388,18 @@ class IAMService:
 
         if role.is_system:
             raise ValueError("Impossible de supprimer un rôle système")
+
+        # Protection renforcée pour les rôles non supprimables
+        if getattr(role, 'is_deletable', True) is False:
+            raise ValueError(
+                f"Le rôle '{role.code}' est un rôle fondamental et ne peut pas être supprimé."
+            )
+
+        if getattr(role, 'is_protected', False):
+            raise ValueError(
+                f"Le rôle '{role.code}' est protégé. "
+                "Cette opération est interdite pour maintenir l'intégrité du système."
+            )
 
         # Vérifier si des utilisateurs ont ce rôle
         user_count = self.db.query(user_roles).filter(
@@ -403,6 +434,28 @@ class IAMService:
 
         if not role.is_assignable:
             raise ValueError(f"Le rôle {role_code} ne peut pas être attribué")
+
+        # Protection spéciale pour super_admin
+        if role_code == 'super_admin':
+            # Vérifier max_assignments (par défaut 1 pour super_admin)
+            max_assignments = getattr(role, 'max_assignments', None)
+            if max_assignments is not None:
+                current_count = self.db.query(user_roles).filter(
+                    user_roles.c.role_id == role.id,
+                    user_roles.c.tenant_id == self.tenant_id,
+                    user_roles.c.is_active == True
+                ).count()
+                if current_count >= max_assignments:
+                    raise ValueError(
+                        f"Nombre maximum de super_admins atteint ({max_assignments}). "
+                        "La création d'un nouveau super_admin nécessite une action système explicite."
+                    )
+
+            # Audit spécial pour attribution super_admin
+            self._audit_log(
+                "SUPER_ADMIN_ASSIGN_ATTEMPT", "USER", user_id, granted_by,
+                details={"role_code": role_code}
+            )
 
         # Vérifier incompatibilités
         if role.incompatible_roles:
@@ -460,6 +513,21 @@ class IAMService:
         role = self.get_role_by_code(role_code)
         if not role:
             return False
+
+        # Protection contre la rétrogradation des comptes protégés
+        if role_code == 'super_admin':
+            user = self.get_user(user_id)
+            if user and getattr(user, 'is_protected', False):
+                raise ValueError(
+                    f"Impossible de révoquer le rôle super_admin du compte protégé '{user.email}'. "
+                    "Cette opération nécessite une intervention système directe."
+                )
+
+            # Audit spécial pour tentative de révocation super_admin
+            self._audit_log(
+                "SUPER_ADMIN_REVOKE_ATTEMPT", "USER", user_id, revoked_by,
+                details={"role_code": role_code, "blocked": getattr(user, 'is_protected', False) if user else False}
+            )
 
         result = self.db.execute(
             user_roles.delete().where(and_(
