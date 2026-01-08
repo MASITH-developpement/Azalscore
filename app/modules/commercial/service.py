@@ -403,6 +403,7 @@ class CommercialService:
         customer_id: Optional[UUID] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
+        search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[CommercialDocument], int]:
@@ -421,6 +422,13 @@ class CommercialService:
             query = query.filter(CommercialDocument.date >= date_from)
         if date_to:
             query = query.filter(CommercialDocument.date <= date_to)
+        if search:
+            query = query.outerjoin(Customer, CommercialDocument.customer_id == Customer.id)
+            search_filter = or_(
+                CommercialDocument.number.ilike(f"%{search}%"),
+                Customer.name.ilike(f"%{search}%")
+            )
+            query = query.filter(search_filter)
 
         total = query.count()
         items = query.order_by(CommercialDocument.date.desc()).offset((page - 1) * page_size).limit(page_size).all()
