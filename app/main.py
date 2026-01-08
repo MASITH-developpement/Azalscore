@@ -625,13 +625,20 @@ def create_admin_user(
     if role_value not in valid_roles:
         role_value = "EMPLOYE"
 
+    # Validation du mot de passe
+    password = data.get("password")
+    if not password or len(password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="Le mot de passe doit contenir au moins 8 caractères"
+        )
+
     new_user = User(
         email=data.get("email"),
-        password_hash=get_password_hash("TempPassword123!"),  # Mot de passe temporaire
+        password_hash=get_password_hash(password),
         tenant_id=current_user.tenant_id,
         role=UserRole(role_value),
         is_active=1,
-        full_name=data.get("name", ""),
     )
 
     db.add(new_user)
@@ -641,7 +648,7 @@ def create_admin_user(
     return {
         "id": str(new_user.id),
         "email": new_user.email,
-        "name": getattr(new_user, 'full_name', new_user.email),
+        "name": new_user.email,
         "roles": [new_user.role.value],
         "is_active": True,
     }
