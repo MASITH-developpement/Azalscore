@@ -668,6 +668,20 @@ def regenerate_backup_codes(
     }
 
 
+# ===== LOGOUT =====
+
+@router.post("/logout")
+def logout(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Déconnexion de l'utilisateur.
+    Avec JWT, le logout est géré côté client (suppression du token).
+    Cet endpoint permet au frontend d'avoir un point de terminaison cohérent.
+    """
+    return {"success": True, "message": "Logged out successfully"}
+
+
 # ===== REFRESH TOKEN =====
 
 class RefreshTokenRequest(BaseModel):
