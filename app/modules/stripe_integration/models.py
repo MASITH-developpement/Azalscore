@@ -2,18 +2,18 @@
 AZALS MODULE 15 - Stripe Integration Models
 ============================================
 Modèles SQLAlchemy pour l'intégration Stripe.
+MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Numeric, Enum, Index, JSON
-)
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
-
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -74,14 +74,14 @@ class StripeCustomer(Base):
     """Client Stripe synchronisé."""
     __tablename__ = "stripe_customers"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     stripe_customer_id = Column(String(100), nullable=False, unique=True)
 
-    # Lien avec CRM
-    customer_id = Column(Integer, nullable=False, index=True)
+    # Lien avec CRM (UUID reference)
+    customer_id = Column(UniversalUUID(), nullable=False, index=True)
     customer_type = Column(String(50), default="company")  # company, individual
 
     # Données client
@@ -136,12 +136,12 @@ class StripePaymentMethod(Base):
     """Méthode de paiement Stripe."""
     __tablename__ = "stripe_payment_methods"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     stripe_payment_method_id = Column(String(100), nullable=False, unique=True)
-    stripe_customer_id = Column(Integer, ForeignKey("stripe_customers.id"))
+    stripe_customer_id = Column(UniversalUUID(), ForeignKey("stripe_customers.id"))
 
     # Type
     method_type = Column(String(30), nullable=False)  # card, sepa_debit, bank_transfer
@@ -187,12 +187,12 @@ class StripePaymentIntent(Base):
     """PaymentIntent Stripe."""
     __tablename__ = "stripe_payment_intents"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     stripe_payment_intent_id = Column(String(100), nullable=False, unique=True)
-    stripe_customer_id = Column(Integer, ForeignKey("stripe_customers.id"))
+    stripe_customer_id = Column(UniversalUUID(), ForeignKey("stripe_customers.id"))
 
     # Montants
     amount = Column(Numeric(12, 2), nullable=False)
@@ -214,10 +214,10 @@ class StripePaymentIntent(Base):
     # Client secret (pour frontend)
     client_secret = Column(String(255))
 
-    # Références
-    invoice_id = Column(Integer)  # Lien facture AZALS
-    order_id = Column(Integer)  # Lien commande AZALS
-    subscription_id = Column(Integer)  # Lien abonnement AZALS
+    # Références (UUID pour liens AZALS)
+    invoice_id = Column(UniversalUUID())  # Lien facture AZALS
+    order_id = Column(UniversalUUID())  # Lien commande AZALS
+    subscription_id = Column(UniversalUUID())  # Lien abonnement AZALS
     description = Column(Text)
 
     # Métadonnées
@@ -252,7 +252,7 @@ class StripeCheckoutSession(Base):
     """Session de checkout Stripe."""
     __tablename__ = "stripe_checkout_sessions"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -274,10 +274,10 @@ class StripeCheckoutSession(Base):
     amount_subtotal = Column(Numeric(12, 2))
     currency = Column(String(3), default="EUR")
 
-    # Références
-    invoice_id = Column(Integer)
-    order_id = Column(Integer)
-    subscription_id = Column(Integer)
+    # Références (UUID)
+    invoice_id = Column(UniversalUUID())
+    order_id = Column(UniversalUUID())
+    subscription_id = Column(UniversalUUID())
 
     # Résultat
     payment_intent_id = Column(String(100))
@@ -305,12 +305,12 @@ class StripeRefund(Base):
     """Remboursement Stripe."""
     __tablename__ = "stripe_refunds"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     stripe_refund_id = Column(String(100), nullable=False, unique=True)
-    payment_intent_id = Column(Integer, ForeignKey("stripe_payment_intents.id"))
+    payment_intent_id = Column(UniversalUUID(), ForeignKey("stripe_payment_intents.id"))
     stripe_charge_id = Column(String(100))
 
     # Montant
@@ -349,7 +349,7 @@ class StripeDispute(Base):
     """Litige Stripe."""
     __tablename__ = "stripe_disputes"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -390,7 +390,7 @@ class StripeWebhook(Base):
     """Événement webhook Stripe."""
     __tablename__ = "stripe_webhooks"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -433,15 +433,15 @@ class StripeProduct(Base):
     """Produit Stripe synchronisé."""
     __tablename__ = "stripe_products"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     stripe_product_id = Column(String(100), nullable=False, unique=True)
 
-    # Lien AZALS
-    product_id = Column(Integer)  # Produit AZALS
-    plan_id = Column(Integer)  # Plan abonnement AZALS
+    # Lien AZALS (UUID)
+    product_id = Column(UniversalUUID())  # Produit AZALS
+    plan_id = Column(UniversalUUID())  # Plan abonnement AZALS
 
     # Données produit
     name = Column(String(255), nullable=False)
@@ -469,12 +469,12 @@ class StripePrice(Base):
     """Prix Stripe synchronisé."""
     __tablename__ = "stripe_prices"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     stripe_price_id = Column(String(100), nullable=False, unique=True)
-    stripe_product_id = Column(Integer, ForeignKey("stripe_products.id"))
+    stripe_product_id = Column(UniversalUUID(), ForeignKey("stripe_products.id"))
 
     # Tarification
     unit_amount = Column(Numeric(12, 2))  # En centimes
@@ -514,14 +514,14 @@ class StripeConnectAccount(Base):
     """Compte Stripe Connect."""
     __tablename__ = "stripe_connect_accounts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     stripe_account_id = Column(String(100), nullable=False, unique=True)
 
-    # Lien AZALS
-    vendor_id = Column(Integer)  # Vendeur/Partenaire AZALS
+    # Lien AZALS (UUID)
+    vendor_id = Column(UniversalUUID())  # Vendeur/Partenaire AZALS
 
     # Type de compte
     account_type = Column(String(20), default="standard")  # standard, express, custom
@@ -568,7 +568,7 @@ class StripePayout(Base):
     """Virement Stripe."""
     __tablename__ = "stripe_payouts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -612,7 +612,7 @@ class StripeConfig(Base):
     """Configuration Stripe par tenant."""
     __tablename__ = "stripe_config"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, unique=True)
 
     # Clés API (chiffrées en production)

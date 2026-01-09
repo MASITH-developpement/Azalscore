@@ -3,17 +3,18 @@ AZALS MODULE T1 - Modèles Configuration Automatique
 ====================================================
 
 Modèles SQLAlchemy pour la configuration automatique par fonction.
+MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 """
 
-from datetime import datetime
-from sqlalchemy import (
-    Column, Integer, String, DateTime, Text, Boolean, ForeignKey,
-    Index, Enum, UniqueConstraint, func
-)
-from sqlalchemy.orm import relationship
 import enum
-from app.core.database import Base
+import uuid
+from datetime import datetime
 
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy.orm import relationship
+
+from app.core.database import Base
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -72,7 +73,7 @@ class JobProfile(Base):
     """
     __tablename__ = "autoconfig_job_profiles"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -106,7 +107,7 @@ class JobProfile(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_job_profile_code'),
@@ -123,17 +124,17 @@ class ProfileAssignment(Base):
     """
     __tablename__ = "autoconfig_profile_assignments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Relation
-    user_id = Column(Integer, nullable=False, index=True)
-    profile_id = Column(Integer, ForeignKey('autoconfig_job_profiles.id'), nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    profile_id = Column(UniversalUUID(), ForeignKey('autoconfig_job_profiles.id'), nullable=False)
 
     # Contexte d'attribution
     job_title = Column(String(200), nullable=True)  # Titre au moment de l'attribution
     department = Column(String(200), nullable=True)
-    manager_id = Column(Integer, nullable=True)
+    manager_id = Column(UniversalUUID(), nullable=True)
 
     # Statut
     is_active = Column(Boolean, default=True, nullable=False)
@@ -141,9 +142,9 @@ class ProfileAssignment(Base):
 
     # Audit
     assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    assigned_by = Column(Integer, nullable=True)  # NULL si automatique
+    assigned_by = Column(UniversalUUID(), nullable=True)  # NULL si automatique
     revoked_at = Column(DateTime, nullable=True)
-    revoked_by = Column(Integer, nullable=True)
+    revoked_by = Column(UniversalUUID(), nullable=True)
     revocation_reason = Column(Text, nullable=True)
 
     # Relation
@@ -163,11 +164,11 @@ class PermissionOverride(Base):
     """
     __tablename__ = "autoconfig_permission_overrides"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Cible
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
 
     # Type d'override
     override_type = Column(Enum(OverrideType), nullable=False)
@@ -190,18 +191,18 @@ class PermissionOverride(Base):
     expires_at = Column(DateTime, nullable=True)  # NULL = permanent
 
     # Workflow
-    requested_by = Column(Integer, nullable=False)
+    requested_by = Column(UniversalUUID(), nullable=False)
     requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    approved_by = Column(Integer, nullable=True)
+    approved_by = Column(UniversalUUID(), nullable=True)
     approved_at = Column(DateTime, nullable=True)
-    rejected_by = Column(Integer, nullable=True)
+    rejected_by = Column(UniversalUUID(), nullable=True)
     rejected_at = Column(DateTime, nullable=True)
     rejection_reason = Column(Text, nullable=True)
 
     # Application
     applied_at = Column(DateTime, nullable=True)
     revoked_at = Column(DateTime, nullable=True)
-    revoked_by = Column(Integer, nullable=True)
+    revoked_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index('idx_overrides_tenant', 'tenant_id'),
@@ -218,11 +219,11 @@ class OnboardingProcess(Base):
     """
     __tablename__ = "autoconfig_onboarding"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Employé
-    user_id = Column(Integer, nullable=True, index=True)  # NULL jusqu'à création
+    user_id = Column(UniversalUUID(), nullable=True, index=True)  # NULL jusqu'à création
     email = Column(String(255), nullable=False)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
@@ -230,12 +231,12 @@ class OnboardingProcess(Base):
     # Poste
     job_title = Column(String(200), nullable=False)
     department = Column(String(200), nullable=True)
-    manager_id = Column(Integer, nullable=True)
+    manager_id = Column(UniversalUUID(), nullable=True)
     start_date = Column(DateTime, nullable=False)
 
     # Profil détecté
-    detected_profile_id = Column(Integer, ForeignKey('autoconfig_job_profiles.id'), nullable=True)
-    profile_override = Column(Integer, nullable=True)  # Si override manuel
+    detected_profile_id = Column(UniversalUUID(), ForeignKey('autoconfig_job_profiles.id'), nullable=True)
+    profile_override = Column(UniversalUUID(), nullable=True)  # Si override manuel
 
     # Statut
     status = Column(Enum(OnboardingStatus), default=OnboardingStatus.PENDING, nullable=False)
@@ -250,7 +251,7 @@ class OnboardingProcess(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     completed_at = Column(DateTime, nullable=True)
 
     # Relation
@@ -270,18 +271,18 @@ class OffboardingProcess(Base):
     """
     __tablename__ = "autoconfig_offboarding"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Employé
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
 
     # Départ
     departure_date = Column(DateTime, nullable=False)
     departure_type = Column(String(50), nullable=False)  # resignation, termination, end_of_contract
 
     # Transfert
-    transfer_to_user_id = Column(Integer, nullable=True)  # Transfert responsabilités
+    transfer_to_user_id = Column(UniversalUUID(), nullable=True)  # Transfert responsabilités
     transfer_notes = Column(Text, nullable=True)
 
     # Statut
@@ -303,7 +304,7 @@ class OffboardingProcess(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     completed_at = Column(DateTime, nullable=True)
 
     __table_args__ = (
@@ -320,7 +321,7 @@ class AutoConfigRule(Base):
     """
     __tablename__ = "autoconfig_rules"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -343,7 +344,7 @@ class AutoConfigRule(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_autoconfig_rule_code'),
@@ -359,16 +360,16 @@ class AutoConfigLog(Base):
     """
     __tablename__ = "autoconfig_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Action
     action = Column(String(100), nullable=False)
     entity_type = Column(String(50), nullable=False)  # PROFILE, OVERRIDE, ONBOARDING, etc.
-    entity_id = Column(Integer, nullable=True)
+    entity_id = Column(UniversalUUID(), nullable=True)
 
     # Cible
-    user_id = Column(Integer, nullable=True)
+    user_id = Column(UniversalUUID(), nullable=True)
 
     # Détails
     old_values = Column(Text, nullable=True)  # JSON
@@ -377,7 +378,7 @@ class AutoConfigLog(Base):
 
     # Source
     source = Column(String(50), nullable=False)  # AUTO, MANUAL, SCHEDULED
-    triggered_by = Column(Integer, nullable=True)
+    triggered_by = Column(UniversalUUID(), nullable=True)
 
     # Résultat
     success = Column(Boolean, default=True, nullable=False)

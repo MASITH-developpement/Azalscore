@@ -9,18 +9,18 @@ Inclut:
 - FEC (Fichier des Écritures Comptables)
 - DSN (Déclaration Sociale Nominative)
 - RGPD
+
+MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 """
 
-from datetime import datetime, date
+import uuid
+from datetime import date, datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, JSON, Date, Index, Numeric
-)
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
 
 from app.core.database import Base
-
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -120,7 +120,7 @@ class PCGAccount(Base):
     """Compte du Plan Comptable Général français."""
     __tablename__ = "fr_pcg_accounts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -149,7 +149,7 @@ class PCGAccount(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index('idx_fr_pcg_tenant', 'tenant_id'),
@@ -166,7 +166,7 @@ class FRVATRate(Base):
     """Taux de TVA français."""
     __tablename__ = "fr_vat_rates"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -208,7 +208,7 @@ class FRVATDeclaration(Base):
     """Déclaration de TVA (CA3, CA12)."""
     __tablename__ = "fr_vat_declarations"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -244,8 +244,8 @@ class FRVATDeclaration(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
-    validated_by = Column(Integer)
+    created_by = Column(UniversalUUID())
+    validated_by = Column(UniversalUUID())
     validated_at = Column(DateTime)
 
     __table_args__ = (
@@ -262,7 +262,7 @@ class FECExport(Base):
     """Export FEC (Fichier des Écritures Comptables)."""
     __tablename__ = "fr_fec_exports"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -295,9 +295,9 @@ class FECExport(Base):
 
     # Audit
     generated_at = Column(DateTime)
-    generated_by = Column(Integer)
+    generated_by = Column(UniversalUUID())
     validated_at = Column(DateTime)
-    validated_by = Column(Integer)
+    validated_by = Column(UniversalUUID())
     exported_at = Column(DateTime)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -313,9 +313,9 @@ class FECEntry(Base):
     """Entrée dans le FEC."""
     __tablename__ = "fr_fec_entries"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    fec_export_id = Column(Integer, ForeignKey("fr_fec_exports.id"), nullable=False)
+    fec_export_id = Column(UniversalUUID(), ForeignKey("fr_fec_exports.id"), nullable=False)
 
     # Champs FEC obligatoires (norme DGFIP)
     journal_code = Column(String(10), nullable=False)      # JournalCode
@@ -354,7 +354,7 @@ class DSNDeclaration(Base):
     """Déclaration Sociale Nominative."""
     __tablename__ = "fr_dsn_declarations"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -388,8 +388,8 @@ class DSNDeclaration(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
-    validated_by = Column(Integer)
+    created_by = Column(UniversalUUID())
+    validated_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index('idx_fr_dsn_tenant', 'tenant_id'),
@@ -401,10 +401,10 @@ class DSNEmployee(Base):
     """Données salarié pour la DSN."""
     __tablename__ = "fr_dsn_employees"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    dsn_declaration_id = Column(Integer, ForeignKey("fr_dsn_declarations.id"), nullable=False)
-    employee_id = Column(Integer, nullable=False)  # Référence vers HR
+    dsn_declaration_id = Column(UniversalUUID(), ForeignKey("fr_dsn_declarations.id"), nullable=False)
+    employee_id = Column(UniversalUUID(), nullable=False)  # Référence vers HR
 
     # Identification salarié
     nir = Column(String(15), nullable=False)  # NIR (sécurité sociale)
@@ -445,9 +445,9 @@ class FREmploymentContract(Base):
     """Spécificités contrat de travail français."""
     __tablename__ = "fr_employment_contracts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    employee_id = Column(Integer, nullable=False)
+    employee_id = Column(UniversalUUID(), nullable=False)
 
     # Type de contrat
     contract_type = Column(Enum(ContractType), nullable=False)
@@ -490,7 +490,7 @@ class FREmploymentContract(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index('idx_fr_contract_tenant', 'tenant_id'),
@@ -506,12 +506,12 @@ class RGPDConsent(Base):
     """Consentements RGPD."""
     __tablename__ = "fr_rgpd_consents"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Personne concernée
     data_subject_type = Column(String(50), nullable=False)  # customer, employee, contact
-    data_subject_id = Column(Integer, nullable=False)
+    data_subject_id = Column(UniversalUUID(), nullable=False)
     data_subject_email = Column(String(255))
 
     # Consentement
@@ -547,7 +547,7 @@ class RGPDRequest(Base):
     """Demandes RGPD (droits des personnes)."""
     __tablename__ = "fr_rgpd_requests"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -556,7 +556,7 @@ class RGPDRequest(Base):
 
     # Demandeur
     data_subject_type = Column(String(50), nullable=False)
-    data_subject_id = Column(Integer)
+    data_subject_id = Column(UniversalUUID())
     requester_name = Column(String(255), nullable=False)
     requester_email = Column(String(255), nullable=False)
     requester_phone = Column(String(50))
@@ -568,7 +568,7 @@ class RGPDRequest(Base):
 
     # Traitement
     status = Column(String(30), default="pending")  # pending, processing, completed, rejected
-    assigned_to = Column(Integer)
+    assigned_to = Column(UniversalUUID())
     received_at = Column(DateTime, default=datetime.utcnow)
     due_date = Column(Date)  # 1 mois max légal
     processed_at = Column(DateTime)
@@ -585,7 +585,7 @@ class RGPDRequest(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    processed_by = Column(Integer)
+    processed_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index('idx_fr_rgpd_request_tenant', 'tenant_id'),
@@ -597,7 +597,7 @@ class RGPDDataProcessing(Base):
     """Registre des traitements RGPD (Article 30)."""
     __tablename__ = "fr_rgpd_data_processing"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification du traitement
@@ -646,9 +646,9 @@ class RGPDDataProcessing(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
     last_review_date = Column(Date)
-    last_review_by = Column(Integer)
+    last_review_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index('idx_fr_rgpd_processing_tenant', 'tenant_id'),
@@ -660,7 +660,7 @@ class RGPDDataBreach(Base):
     """Violations de données (Article 33)."""
     __tablename__ = "fr_rgpd_data_breaches"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -669,7 +669,7 @@ class RGPDDataBreach(Base):
 
     # Détection
     detected_at = Column(DateTime, nullable=False)
-    detected_by = Column(Integer)
+    detected_by = Column(UniversalUUID())
     detection_method = Column(String(100))
 
     # Description
@@ -707,7 +707,7 @@ class RGPDDataBreach(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    managed_by = Column(Integer)
+    managed_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index('idx_fr_rgpd_breach_tenant', 'tenant_id'),

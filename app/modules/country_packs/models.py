@@ -3,19 +3,18 @@ AZALS MODULE T5 - Modèles Packs Pays
 =====================================
 
 Modèles SQLAlchemy pour les configurations par pays.
+MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 """
 
-from datetime import datetime, date
+import uuid
+from datetime import date, datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Float, Enum, JSON, Date, Index
-)
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
-
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -90,7 +89,7 @@ class CountryPack(Base):
     """Configuration d'un pack pays."""
     __tablename__ = "country_packs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     country_code = Column(String(2), nullable=False)  # ISO 3166-1 alpha-2
@@ -135,7 +134,7 @@ class CountryPack(Base):
     is_default = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
     # Relations
     tax_rates = relationship("TaxRate", back_populates="country_pack", cascade="all, delete-orphan")
@@ -152,10 +151,10 @@ class TaxRate(Base):
     """Taux de taxe par pays."""
     __tablename__ = "country_tax_rates"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
-    country_pack_id = Column(Integer, ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
+    country_pack_id = Column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
     tax_type = Column(Enum(TaxType), nullable=False)
     code = Column(String(20), nullable=False)  # TVA_20, TVA_10, IS, etc.
@@ -196,10 +195,10 @@ class DocumentTemplate(Base):
     """Templates de documents légaux par pays."""
     __tablename__ = "country_document_templates"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
-    country_pack_id = Column(Integer, ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
+    country_pack_id = Column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
     document_type = Column(Enum(DocumentType), nullable=False)
     code = Column(String(50), nullable=False)
@@ -226,7 +225,7 @@ class DocumentTemplate(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
     country_pack = relationship("CountryPack", back_populates="document_templates")
 
@@ -240,10 +239,10 @@ class BankConfig(Base):
     """Configuration bancaire par pays."""
     __tablename__ = "country_bank_configs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
-    country_pack_id = Column(Integer, ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
+    country_pack_id = Column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
     bank_format = Column(Enum(BankFormat), nullable=False)
     code = Column(String(50), nullable=False)
@@ -281,10 +280,10 @@ class PublicHoliday(Base):
     """Jours fériés par pays."""
     __tablename__ = "country_public_holidays"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
-    country_pack_id = Column(Integer, ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
+    country_pack_id = Column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
     name = Column(String(200), nullable=False)
     name_local = Column(String(200))
@@ -323,10 +322,10 @@ class LegalRequirement(Base):
     """Exigences légales par pays."""
     __tablename__ = "country_legal_requirements"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
-    country_pack_id = Column(Integer, ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
+    country_pack_id = Column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
     category = Column(String(50), nullable=False)  # fiscal, social, commercial
     code = Column(String(50), nullable=False)
@@ -362,10 +361,10 @@ class TenantCountrySettings(Base):
     """Paramètres pays activés pour un tenant."""
     __tablename__ = "tenant_country_settings"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
-    country_pack_id = Column(Integer, ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
+    country_pack_id = Column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
     is_primary = Column(Boolean, default=False)  # Pays principal
     is_active = Column(Boolean, default=True)
@@ -377,7 +376,7 @@ class TenantCountrySettings(Base):
     custom_config = Column(JSON)
 
     activated_at = Column(DateTime, default=datetime.utcnow)
-    activated_by = Column(Integer)
+    activated_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index("idx_tenant_country_tenant", "tenant_id"),
