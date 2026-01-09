@@ -4,6 +4,7 @@ AZALS MODULE 16 - Helpdesk Models
 Modèles SQLAlchemy pour le système de support client.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import (
@@ -13,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.core.types import UniversalUUID
 
 
 # ============================================================================
@@ -64,19 +66,19 @@ class TicketCategory(Base):
     """Catégorie de ticket."""
     __tablename__ = "helpdesk_categories"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Hiérarchie
-    parent_id = Column(Integer, ForeignKey("helpdesk_categories.id"))
+    parent_id = Column(UniversalUUID(), ForeignKey("helpdesk_categories.id"))
     code = Column(String(50), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
 
     # Configuration
     default_priority = Column(Enum(TicketPriority), default=TicketPriority.MEDIUM)
-    default_team_id = Column(Integer, ForeignKey("helpdesk_teams.id"))
-    sla_id = Column(Integer, ForeignKey("helpdesk_sla.id"))
+    default_team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
+    sla_id = Column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
 
     # Options
     is_public = Column(Boolean, default=True)  # Visible clients
@@ -101,7 +103,7 @@ class HelpdeskTeam(Base):
     """Équipe support."""
     __tablename__ = "helpdesk_teams"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     name = Column(String(100), nullable=False)
@@ -109,8 +111,8 @@ class HelpdeskTeam(Base):
     email = Column(String(255))
 
     # Configuration
-    manager_id = Column(Integer)  # Agent manager
-    default_sla_id = Column(Integer, ForeignKey("helpdesk_sla.id"))
+    manager_id = Column(UniversalUUID())  # Agent manager
+    default_sla_id = Column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
     auto_assign_method = Column(String(20), default="round_robin")  # round_robin, least_busy, random
 
     # Paramètres
@@ -138,12 +140,12 @@ class HelpdeskAgent(Base):
     """Agent support."""
     __tablename__ = "helpdesk_agents"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Lien utilisateur
-    user_id = Column(Integer, nullable=False, index=True)
-    team_id = Column(Integer, ForeignKey("helpdesk_teams.id"))
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
 
     # Profil
     display_name = Column(String(255), nullable=False)
@@ -194,7 +196,7 @@ class HelpdeskSLA(Base):
     """SLA Helpdesk."""
     __tablename__ = "helpdesk_sla"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     name = Column(String(100), nullable=False)
@@ -241,16 +243,16 @@ class Ticket(Base):
     """Ticket support."""
     __tablename__ = "helpdesk_tickets"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     ticket_number = Column(String(50), nullable=False, unique=True)
 
     # Classification
-    category_id = Column(Integer, ForeignKey("helpdesk_categories.id"))
-    team_id = Column(Integer, ForeignKey("helpdesk_teams.id"))
-    sla_id = Column(Integer, ForeignKey("helpdesk_sla.id"))
+    category_id = Column(UniversalUUID(), ForeignKey("helpdesk_categories.id"))
+    team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
+    sla_id = Column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
 
     # Contenu
     subject = Column(String(500), nullable=False)
@@ -262,14 +264,14 @@ class Ticket(Base):
     priority = Column(Enum(TicketPriority), nullable=False, default=TicketPriority.MEDIUM)
 
     # Demandeur
-    requester_id = Column(Integer, index=True)  # ID client CRM
+    requester_id = Column(UniversalUUID(), index=True)  # ID client CRM
     requester_name = Column(String(255))
     requester_email = Column(String(255), index=True)
     requester_phone = Column(String(50))
-    company_id = Column(Integer)  # Entreprise cliente
+    company_id = Column(UniversalUUID())  # Entreprise cliente
 
     # Assignation
-    assigned_to_id = Column(Integer, ForeignKey("helpdesk_agents.id"))
+    assigned_to_id = Column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
 
     # SLA tracking
     first_response_due = Column(DateTime)
@@ -283,8 +285,8 @@ class Ticket(Base):
     custom_fields = Column(JSON)  # Champs personnalisés
 
     # Ticket lié
-    parent_ticket_id = Column(Integer, ForeignKey("helpdesk_tickets.id"))
-    merged_into_id = Column(Integer, ForeignKey("helpdesk_tickets.id"))
+    parent_ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"))
+    merged_into_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"))
 
     # Stats
     reply_count = Column(Integer, default=0)
@@ -319,13 +321,13 @@ class TicketReply(Base):
     """Réponse à un ticket."""
     __tablename__ = "helpdesk_replies"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(Integer, ForeignKey("helpdesk_tickets.id"), nullable=False)
+    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
 
     # Auteur
     author_type = Column(String(20), nullable=False)  # agent, customer, system
-    author_id = Column(Integer)
+    author_id = Column(UniversalUUID())
     author_name = Column(String(255))
     author_email = Column(String(255))
 
@@ -356,10 +358,10 @@ class TicketAttachment(Base):
     """Pièce jointe."""
     __tablename__ = "helpdesk_attachments"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(Integer, ForeignKey("helpdesk_tickets.id"), nullable=False)
-    reply_id = Column(Integer, ForeignKey("helpdesk_replies.id"))
+    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
+    reply_id = Column(UniversalUUID(), ForeignKey("helpdesk_replies.id"))
 
     # Fichier
     filename = Column(String(255), nullable=False)
@@ -369,7 +371,7 @@ class TicketAttachment(Base):
     mime_type = Column(String(100))
 
     # Upload
-    uploaded_by_id = Column(Integer)
+    uploaded_by_id = Column(UniversalUUID())
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
@@ -385,9 +387,9 @@ class TicketHistory(Base):
     """Historique des changements."""
     __tablename__ = "helpdesk_history"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(Integer, ForeignKey("helpdesk_tickets.id"), nullable=False)
+    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
 
     # Changement
     action = Column(String(50), nullable=False)  # created, status_changed, assigned, etc.
@@ -397,7 +399,7 @@ class TicketHistory(Base):
 
     # Auteur
     actor_type = Column(String(20))  # agent, customer, system, automation
-    actor_id = Column(Integer)
+    actor_id = Column(UniversalUUID())
     actor_name = Column(String(255))
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -418,7 +420,7 @@ class CannedResponse(Base):
     """Réponse pré-enregistrée."""
     __tablename__ = "helpdesk_canned_responses"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -435,8 +437,8 @@ class CannedResponse(Base):
 
     # Scope
     scope = Column(String(20), default="team")  # personal, team, global
-    team_id = Column(Integer, ForeignKey("helpdesk_teams.id"))
-    agent_id = Column(Integer, ForeignKey("helpdesk_agents.id"))
+    team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
+    agent_id = Column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
 
     # Stats
     usage_count = Column(Integer, default=0)
@@ -459,10 +461,10 @@ class KBCategory(Base):
     """Catégorie base de connaissances."""
     __tablename__ = "helpdesk_kb_categories"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    parent_id = Column(Integer, ForeignKey("helpdesk_kb_categories.id"))
+    parent_id = Column(UniversalUUID(), ForeignKey("helpdesk_kb_categories.id"))
     name = Column(String(255), nullable=False)
     slug = Column(String(255), nullable=False)
     description = Column(Text)
@@ -488,9 +490,9 @@ class KBArticle(Base):
     """Article base de connaissances."""
     __tablename__ = "helpdesk_kb_articles"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    category_id = Column(Integer, ForeignKey("helpdesk_kb_categories.id"))
+    category_id = Column(UniversalUUID(), ForeignKey("helpdesk_kb_categories.id"))
 
     # Contenu
     title = Column(String(500), nullable=False)
@@ -505,7 +507,7 @@ class KBArticle(Base):
     keywords = Column(JSON)
 
     # Auteur
-    author_id = Column(Integer)
+    author_id = Column(UniversalUUID())
     author_name = Column(String(255))
 
     # Statut
@@ -541,20 +543,20 @@ class SatisfactionSurvey(Base):
     """Enquête satisfaction."""
     __tablename__ = "helpdesk_satisfaction"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(Integer, ForeignKey("helpdesk_tickets.id"), nullable=False)
+    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
 
     # Note
     rating = Column(Integer, nullable=False)  # 1-5
     feedback = Column(Text)
 
     # Auteur
-    customer_id = Column(Integer)
+    customer_id = Column(UniversalUUID())
     customer_email = Column(String(255))
 
     # Agent évalué
-    agent_id = Column(Integer, ForeignKey("helpdesk_agents.id"))
+    agent_id = Column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -573,7 +575,7 @@ class HelpdeskAutomation(Base):
     """Règle d'automatisation."""
     __tablename__ = "helpdesk_automations"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     name = Column(String(255), nullable=False)

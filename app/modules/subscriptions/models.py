@@ -4,6 +4,7 @@ AZALS MODULE 14 - Subscriptions Models
 Modèles SQLAlchemy pour la gestion des abonnements.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import (
@@ -13,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.core.types import UniversalUUID
 
 
 # ============================================================================
@@ -74,7 +76,7 @@ class SubscriptionPlan(Base):
     """Plan d'abonnement."""
     __tablename__ = "subscription_plans"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -136,9 +138,9 @@ class PlanAddOn(Base):
     """Add-on de plan."""
     __tablename__ = "subscription_plan_addons"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    plan_id = Column(Integer, ForeignKey("subscription_plans.id"), nullable=False)
+    plan_id = Column(UniversalUUID(), ForeignKey("subscription_plans.id"), nullable=False)
 
     # Identification
     code = Column(String(50), nullable=False)
@@ -174,7 +176,7 @@ class Subscription(Base):
     """Abonnement client."""
     __tablename__ = "subscriptions"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -182,8 +184,8 @@ class Subscription(Base):
     external_id = Column(String(100))  # ID Stripe/autre
 
     # Relation plan et client
-    plan_id = Column(Integer, ForeignKey("subscription_plans.id"), nullable=False)
-    customer_id = Column(Integer, nullable=False, index=True)  # Référence CRM
+    plan_id = Column(UniversalUUID(), ForeignKey("subscription_plans.id"), nullable=False)
+    customer_id = Column(UniversalUUID(), nullable=False, index=True)  # Référence CRM
     customer_name = Column(String(255))
     customer_email = Column(String(255))
 
@@ -221,7 +223,7 @@ class Subscription(Base):
     # Remises
     discount_percent = Column(Numeric(5, 2), default=0)
     discount_end_date = Column(Date)
-    coupon_id = Column(Integer, ForeignKey("subscription_coupons.id"))
+    coupon_id = Column(UniversalUUID(), ForeignKey("subscription_coupons.id"))
 
     # Métriques
     mrr = Column(Numeric(12, 2), default=0)  # Monthly Recurring Revenue
@@ -253,9 +255,9 @@ class SubscriptionItem(Base):
     """Élément d'abonnement (add-ons, quantités)."""
     __tablename__ = "subscription_items"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    subscription_id = Column(Integer, ForeignKey("subscriptions.id"), nullable=False)
+    subscription_id = Column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
 
     # Identification
     add_on_code = Column(String(50))
@@ -286,17 +288,17 @@ class SubscriptionChange(Base):
     """Historique des changements d'abonnement."""
     __tablename__ = "subscription_changes"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    subscription_id = Column(Integer, ForeignKey("subscriptions.id"), nullable=False)
+    subscription_id = Column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
 
     # Type de changement
     change_type = Column(String(50), nullable=False)  # upgrade, downgrade, quantity_change, cancel, pause, resume
     change_reason = Column(Text)
 
     # Avant/Après
-    previous_plan_id = Column(Integer)
-    new_plan_id = Column(Integer)
+    previous_plan_id = Column(UniversalUUID())
+    new_plan_id = Column(UniversalUUID())
     previous_quantity = Column(Integer)
     new_quantity = Column(Integer)
     previous_mrr = Column(Numeric(12, 2))
@@ -307,7 +309,7 @@ class SubscriptionChange(Base):
     effective_date = Column(Date, nullable=False)
 
     # Metadata
-    changed_by = Column(Integer)  # User ID
+    changed_by = Column(UniversalUUID())  # User ID
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
@@ -324,16 +326,16 @@ class SubscriptionInvoice(Base):
     """Facture d'abonnement."""
     __tablename__ = "subscription_invoices"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    subscription_id = Column(Integer, ForeignKey("subscriptions.id"), nullable=False)
+    subscription_id = Column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
 
     # Identification
     invoice_number = Column(String(50), nullable=False, unique=True)
     external_id = Column(String(100))  # ID Stripe/autre
 
     # Client
-    customer_id = Column(Integer, nullable=False)
+    customer_id = Column(UniversalUUID(), nullable=False)
     customer_name = Column(String(255))
     customer_email = Column(String(255))
     billing_address = Column(JSON)
@@ -395,9 +397,9 @@ class InvoiceLine(Base):
     """Ligne de facture."""
     __tablename__ = "subscription_invoice_lines"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    invoice_id = Column(Integer, ForeignKey("subscription_invoices.id"), nullable=False)
+    invoice_id = Column(UniversalUUID(), ForeignKey("subscription_invoices.id"), nullable=False)
 
     # Description
     description = Column(String(500), nullable=False)
@@ -418,7 +420,7 @@ class InvoiceLine(Base):
     tax_amount = Column(Numeric(10, 2), default=0)
 
     # Référence
-    subscription_item_id = Column(Integer)
+    subscription_item_id = Column(UniversalUUID())
     proration = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -439,16 +441,16 @@ class SubscriptionPayment(Base):
     """Paiement d'abonnement."""
     __tablename__ = "subscription_payments"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    invoice_id = Column(Integer, ForeignKey("subscription_invoices.id"))
+    invoice_id = Column(UniversalUUID(), ForeignKey("subscription_invoices.id"))
 
     # Identification
     payment_number = Column(String(50), nullable=False)
     external_id = Column(String(100))  # ID Stripe/autre
 
     # Client
-    customer_id = Column(Integer, nullable=False)
+    customer_id = Column(UniversalUUID(), nullable=False)
 
     # Montant
     amount = Column(Numeric(12, 2), nullable=False)
@@ -494,10 +496,10 @@ class UsageRecord(Base):
     """Enregistrement d'usage pour abonnements metered."""
     __tablename__ = "subscription_usage_records"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    subscription_id = Column(Integer, ForeignKey("subscriptions.id"), nullable=False)
-    subscription_item_id = Column(Integer, ForeignKey("subscription_items.id"))
+    subscription_id = Column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
+    subscription_item_id = Column(UniversalUUID(), ForeignKey("subscription_items.id"))
 
     # Usage
     quantity = Column(Numeric(14, 4), nullable=False)
@@ -534,7 +536,7 @@ class SubscriptionCoupon(Base):
     """Code promo/coupon pour abonnements."""
     __tablename__ = "subscription_coupons"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -582,7 +584,7 @@ class SubscriptionMetrics(Base):
     """Métriques d'abonnement (snapshot quotidien)."""
     __tablename__ = "subscription_metrics"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Date du snapshot
@@ -634,7 +636,7 @@ class SubscriptionWebhook(Base):
     """Événements webhook abonnement."""
     __tablename__ = "subscription_webhooks"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification

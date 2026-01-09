@@ -5,13 +5,15 @@ AZALS MODULE T6 - Modèles Diffusion Périodique
 Modèles SQLAlchemy pour la gestion des diffusions automatiques.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, Float,
-    ForeignKey, Enum, Index, JSON
+    Column, String, Text, Boolean, DateTime, Float,
+    ForeignKey, Enum, Index, Integer
 )
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSON
 
 
 # ============================================================================
@@ -87,7 +89,7 @@ class BroadcastTemplate(Base):
     """Template réutilisable pour les diffusions"""
     __tablename__ = "broadcast_templates"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -122,7 +124,7 @@ class BroadcastTemplate(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_broadcast_templates_tenant_code", "tenant_id", "code", unique=True),
@@ -138,7 +140,7 @@ class RecipientList(Base):
     """Liste de destinataires réutilisable"""
     __tablename__ = "broadcast_recipient_lists"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -160,7 +162,7 @@ class RecipientList(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_recipient_lists_tenant_code", "tenant_id", "code", unique=True),
@@ -175,14 +177,14 @@ class RecipientMember(Base):
     """Membre d'une liste de destinataires"""
     __tablename__ = "broadcast_recipient_members"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    list_id = Column(Integer, ForeignKey("broadcast_recipient_lists.id"), nullable=False)
+    list_id = Column(UniversalUUID(), ForeignKey("broadcast_recipient_lists.id"), nullable=False)
 
     # Type et référence
     recipient_type = Column(Enum(RecipientType), nullable=False)
-    user_id = Column(Integer, nullable=True)  # Pour USER
-    group_id = Column(Integer, nullable=True)  # Pour GROUP
+    user_id = Column(UniversalUUID(), nullable=True)  # Pour USER
+    group_id = Column(UniversalUUID(), nullable=True)  # Pour GROUP
     role_code = Column(String(50), nullable=True)  # Pour ROLE
     external_email = Column(String(255), nullable=True)  # Pour EXTERNAL
     external_name = Column(String(200), nullable=True)
@@ -199,7 +201,7 @@ class RecipientMember(Base):
 
     # Audit
     added_at = Column(DateTime, default=datetime.utcnow)
-    added_by = Column(Integer, nullable=True)
+    added_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_recipient_members_list", "tenant_id", "list_id"),
@@ -215,7 +217,7 @@ class ScheduledBroadcast(Base):
     """Diffusion programmée/récurrente"""
     __tablename__ = "scheduled_broadcasts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -224,8 +226,8 @@ class ScheduledBroadcast(Base):
     description = Column(Text, nullable=True)
 
     # Template et destinataires
-    template_id = Column(Integer, ForeignKey("broadcast_templates.id"), nullable=True)
-    recipient_list_id = Column(Integer, ForeignKey("broadcast_recipient_lists.id"), nullable=True)
+    template_id = Column(UniversalUUID(), ForeignKey("broadcast_templates.id"), nullable=True)
+    recipient_list_id = Column(UniversalUUID(), ForeignKey("broadcast_recipient_lists.id"), nullable=True)
 
     # Contenu personnalisé (si pas de template)
     content_type = Column(Enum(ContentType), nullable=False)
@@ -275,7 +277,7 @@ class ScheduledBroadcast(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_scheduled_broadcasts_tenant_code", "tenant_id", "code", unique=True),
@@ -292,9 +294,9 @@ class BroadcastExecution(Base):
     """Historique d'exécution d'une diffusion"""
     __tablename__ = "broadcast_executions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    scheduled_broadcast_id = Column(Integer, ForeignKey("scheduled_broadcasts.id"), nullable=False)
+    scheduled_broadcast_id = Column(UniversalUUID(), ForeignKey("scheduled_broadcasts.id"), nullable=False)
 
     # Exécution
     execution_number = Column(Integer, default=1)
@@ -326,7 +328,7 @@ class BroadcastExecution(Base):
 
     # Audit
     triggered_by = Column(String(50), default="scheduler")  # scheduler, manual, api
-    triggered_user = Column(Integer, nullable=True)
+    triggered_user = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_broadcast_executions_scheduled", "tenant_id", "scheduled_broadcast_id"),
@@ -342,13 +344,13 @@ class DeliveryDetail(Base):
     """Détail de livraison par destinataire"""
     __tablename__ = "broadcast_delivery_details"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    execution_id = Column(Integer, ForeignKey("broadcast_executions.id"), nullable=False)
+    execution_id = Column(UniversalUUID(), ForeignKey("broadcast_executions.id"), nullable=False)
 
     # Destinataire
     recipient_type = Column(Enum(RecipientType), nullable=False)
-    user_id = Column(Integer, nullable=True)
+    user_id = Column(UniversalUUID(), nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
 
@@ -394,9 +396,9 @@ class BroadcastPreference(Base):
     """Préférences de diffusion par utilisateur"""
     __tablename__ = "broadcast_preferences"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
 
     # Préférences globales
     receive_digests = Column(Boolean, default=True)
@@ -442,7 +444,7 @@ class BroadcastMetric(Base):
     """Métriques agrégées de diffusion"""
     __tablename__ = "broadcast_metrics"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Période

@@ -3,10 +3,12 @@ AZALS - Modèles SQLAlchemy Multi-Tenant
 Isolation stricte par tenant_id - AUCUNE fuite inter-tenant possible
 """
 
+import uuid
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Text, Index, Enum, func
+from sqlalchemy import Column, String, DateTime, Text, Index, Enum, func, Numeric
 import enum
 from app.core.database import Base
+from app.core.types import UniversalUUID
 
 
 class UserRole(str, enum.Enum):
@@ -62,7 +64,7 @@ class User(Base, TenantMixin):
     """
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
@@ -94,10 +96,10 @@ class CoreAuditJournal(Base, TenantMixin):
     - Trace toute action critique : tenant_id + user_id + action + détails
     """
     __tablename__ = "core_audit_journal"
-    
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
     action = Column(String(255), nullable=False)
     details = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
@@ -116,8 +118,8 @@ class Item(Base, TenantMixin):
     Chaque item appartient à UN SEUL tenant.
     """
     __tablename__ = "items"
-    
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -137,13 +139,13 @@ class Decision(Base, TenantMixin):
     - GREEN : Opération normale
     - ORANGE : Vigilance accrue
     - RED : IRRÉVERSIBLE - bloque toute action automatique
-    
+
     Règle fondamentale : RED ne peut JAMAIS être rétrogradé.
     Chaque RED est automatiquement journalisé.
     """
     __tablename__ = "decisions"
-    
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
     entity_type = Column(String(255), nullable=False)
     entity_id = Column(String(255), nullable=False)
@@ -165,7 +167,7 @@ class RedDecisionWorkflow(Base, TenantMixin):
     1) ACKNOWLEDGE : Accusé de lecture des risques
     2) COMPLETENESS : Confirmation de complétude des informations
     3) FINAL : Confirmation finale explicite
-    
+
     Règles :
     - Chaque étape ne peut être validée qu'UNE seule fois
     - Les étapes doivent être dans l'ordre strict
@@ -174,12 +176,12 @@ class RedDecisionWorkflow(Base, TenantMixin):
     - AUCUN retour arrière possible
     """
     __tablename__ = "red_decision_workflows"
-    
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
-    decision_id = Column(Integer, nullable=False, index=True)
+    decision_id = Column(UniversalUUID(), nullable=False, index=True)
     step = Column(Enum(RedWorkflowStep), nullable=False)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
     confirmed_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
     
     __table_args__ = (
@@ -193,14 +195,14 @@ class RedDecisionReport(Base, TenantMixin):
     """
     Rapport 🔴 AZALS - IMMUTABLE.
     Généré AUTOMATIQUEMENT lors de la validation finale d'une décision RED.
-    
+
     Règles d'immutabilité :
     - Créé UNIQUEMENT lors de l'étape FINAL du workflow RED
     - AUCUNE modification possible (aucun UPDATE)
     - AUCUNE suppression possible (aucun DELETE)
     - Un rapport par décision RED validée
     - Contient un snapshot complet des données décisionnelles
-    
+
     Contenu obligatoire :
     - decision_id : Identifiant de la décision RED
     - decision_reason : Motif du RED
@@ -210,14 +212,14 @@ class RedDecisionReport(Base, TenantMixin):
     - journal_references : Liste des IDs d'entrées journal liées
     """
     __tablename__ = "red_decision_reports"
-    
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
-    decision_id = Column(Integer, nullable=False, unique=True, index=True)
+    decision_id = Column(UniversalUUID(), nullable=False, unique=True, index=True)
     decision_reason = Column(Text, nullable=False)
     trigger_data = Column(Text, nullable=False)
     validated_at = Column(DateTime, nullable=False)
-    validator_id = Column(Integer, nullable=False)
+    validator_id = Column(UniversalUUID(), nullable=False)
     journal_references = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
     
@@ -230,21 +232,21 @@ class RedDecisionReport(Base, TenantMixin):
 class TreasuryForecast(Base, TenantMixin):
     """
     Prévisions de trésorerie.
-    
+
     Règle critique :
     - forecast_balance < 0 → décision RED automatique
     - forecast_balance = opening_balance + inflows - outflows
     """
     __tablename__ = "treasury_forecasts"
-    
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
-    user_id = Column(Integer, nullable=True)  # Nullable pour compatibilité données existantes
-    opening_balance = Column(Integer, nullable=False)
-    inflows = Column(Integer, nullable=False)
-    outflows = Column(Integer, nullable=False)
-    forecast_balance = Column(Integer, nullable=False)
-    red_triggered = Column(Integer, default=0)  # 0 = False, 1 = True (compatibilité SQLite)
+    user_id = Column(UniversalUUID(), nullable=True)
+    opening_balance = Column(Numeric(20, 2), nullable=False)
+    inflows = Column(Numeric(20, 2), nullable=False)
+    outflows = Column(Numeric(20, 2), nullable=False)
+    forecast_balance = Column(Numeric(20, 2), nullable=False)
+    red_triggered = Column(String(1), default='0')
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
     
     __table_args__ = (

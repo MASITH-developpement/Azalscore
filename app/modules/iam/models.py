@@ -6,14 +6,16 @@ Modèles SQLAlchemy pour la gestion des identités et accès.
 Tous les modèles héritent de TenantMixin pour l'isolation multi-tenant.
 """
 
+import uuid
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Text, Boolean, ForeignKey,
-    Index, Enum, UniqueConstraint, Table, func
+    Column, String, DateTime, Text, Boolean, ForeignKey,
+    Index, Enum, UniqueConstraint, Table, func, Integer
 )
 from sqlalchemy.orm import relationship
 import enum
 from app.core.database import Base
+from app.core.types import UniversalUUID
 
 
 # ============================================================================
@@ -83,11 +85,11 @@ class MFAType(str, enum.Enum):
 user_roles = Table(
     'iam_user_roles',
     Base.metadata,
-    Column('id', Integer, primary_key=True),
+    Column('id', UniversalUUID(), primary_key=True, default=uuid.uuid4),
     Column('tenant_id', String(255), nullable=False, index=True),
-    Column('user_id', Integer, ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False),
-    Column('role_id', Integer, ForeignKey('iam_roles.id', ondelete='CASCADE'), nullable=False),
-    Column('granted_by', Integer, nullable=True),  # Audit only, no FK to avoid ambiguity
+    Column('user_id', UniversalUUID(), ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False),
+    Column('role_id', UniversalUUID(), ForeignKey('iam_roles.id', ondelete='CASCADE'), nullable=False),
+    Column('granted_by', UniversalUUID(), nullable=True),  # Audit only, no FK to avoid ambiguity
     Column('granted_at', DateTime, default=datetime.utcnow, nullable=False),
     Column('expires_at', DateTime, nullable=True),
     Column('is_active', Boolean, default=True, nullable=False),
@@ -101,10 +103,10 @@ user_roles = Table(
 role_permissions = Table(
     'iam_role_permissions',
     Base.metadata,
-    Column('id', Integer, primary_key=True),
+    Column('id', UniversalUUID(), primary_key=True, default=uuid.uuid4),
     Column('tenant_id', String(255), nullable=False, index=True),
-    Column('role_id', Integer, ForeignKey('iam_roles.id', ondelete='CASCADE'), nullable=False),
-    Column('permission_id', Integer, ForeignKey('iam_permissions.id', ondelete='CASCADE'), nullable=False),
+    Column('role_id', UniversalUUID(), ForeignKey('iam_roles.id', ondelete='CASCADE'), nullable=False),
+    Column('permission_id', UniversalUUID(), ForeignKey('iam_permissions.id', ondelete='CASCADE'), nullable=False),
     Column('granted_at', DateTime, default=datetime.utcnow, nullable=False),
     UniqueConstraint('tenant_id', 'role_id', 'permission_id', name='uq_role_permission_tenant'),
     Index('idx_role_permissions_tenant', 'tenant_id'),
@@ -115,11 +117,11 @@ role_permissions = Table(
 user_groups = Table(
     'iam_user_groups',
     Base.metadata,
-    Column('id', Integer, primary_key=True),
+    Column('id', UniversalUUID(), primary_key=True, default=uuid.uuid4),
     Column('tenant_id', String(255), nullable=False, index=True),
-    Column('user_id', Integer, ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False),
-    Column('group_id', Integer, ForeignKey('iam_groups.id', ondelete='CASCADE'), nullable=False),
-    Column('added_by', Integer, nullable=True),  # Audit only, no FK to avoid ambiguity
+    Column('user_id', UniversalUUID(), ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False),
+    Column('group_id', UniversalUUID(), ForeignKey('iam_groups.id', ondelete='CASCADE'), nullable=False),
+    Column('added_by', UniversalUUID(), nullable=True),  # Audit only, no FK to avoid ambiguity
     Column('added_at', DateTime, default=datetime.utcnow, nullable=False),
     UniqueConstraint('tenant_id', 'user_id', 'group_id', name='uq_user_group_tenant'),
     Index('idx_user_groups_tenant', 'tenant_id'),
@@ -131,10 +133,10 @@ user_groups = Table(
 group_roles = Table(
     'iam_group_roles',
     Base.metadata,
-    Column('id', Integer, primary_key=True),
+    Column('id', UniversalUUID(), primary_key=True, default=uuid.uuid4),
     Column('tenant_id', String(255), nullable=False, index=True),
-    Column('group_id', Integer, ForeignKey('iam_groups.id', ondelete='CASCADE'), nullable=False),
-    Column('role_id', Integer, ForeignKey('iam_roles.id', ondelete='CASCADE'), nullable=False),
+    Column('group_id', UniversalUUID(), ForeignKey('iam_groups.id', ondelete='CASCADE'), nullable=False),
+    Column('role_id', UniversalUUID(), ForeignKey('iam_roles.id', ondelete='CASCADE'), nullable=False),
     Column('granted_at', DateTime, default=datetime.utcnow, nullable=False),
     UniqueConstraint('tenant_id', 'group_id', 'role_id', name='uq_group_role_tenant'),
     Index('idx_group_roles_tenant', 'tenant_id'),
@@ -152,7 +154,7 @@ class IAMUser(Base):
     """
     __tablename__ = "iam_users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identifiants
@@ -202,7 +204,7 @@ class IAMUser(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
     last_login_at = Column(DateTime, nullable=True)
     last_login_ip = Column(String(50), nullable=True)
 
@@ -226,7 +228,7 @@ class IAMRole(Base):
     """
     __tablename__ = "iam_roles"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -236,7 +238,7 @@ class IAMRole(Base):
 
     # Hiérarchie
     level = Column(Integer, default=5, nullable=False)  # 0=max, 5=min
-    parent_id = Column(Integer, ForeignKey('iam_roles.id'), nullable=True)
+    parent_id = Column(UniversalUUID(), ForeignKey('iam_roles.id'), nullable=True)
 
     # Configuration
     is_system = Column(Boolean, default=False, nullable=False)  # Non modifiable
@@ -256,7 +258,7 @@ class IAMRole(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations (simples car plus d'ambiguïté FK)
     users = relationship("IAMUser", secondary=user_roles, back_populates="roles")
@@ -279,7 +281,7 @@ class IAMPermission(Base):
     """
     __tablename__ = "iam_permissions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification (module.resource.action)
@@ -318,7 +320,7 @@ class IAMGroup(Base):
     """
     __tablename__ = "iam_groups"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -332,7 +334,7 @@ class IAMGroup(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations (simples car plus d'ambiguïté FK)
     users = relationship("IAMUser", secondary=user_groups, back_populates="groups")
@@ -350,9 +352,9 @@ class IAMSession(Base):
     """
     __tablename__ = "iam_sessions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(UniversalUUID(), ForeignKey('iam_users.id', ondelete='CASCADE'), nullable=False)
 
     # Token
     token_jti = Column(String(100), unique=True, nullable=False, index=True)  # JWT ID
@@ -392,11 +394,11 @@ class IAMTokenBlacklist(Base):
     """
     __tablename__ = "iam_token_blacklist"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     token_jti = Column(String(100), unique=True, nullable=False, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
     blacklisted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     expires_at = Column(DateTime, nullable=False)  # Pour nettoyage auto
     reason = Column(String(200), nullable=True)
@@ -413,7 +415,7 @@ class IAMInvitation(Base):
     """
     __tablename__ = "iam_invitations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Destinataire
@@ -432,9 +434,9 @@ class IAMInvitation(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     expires_at = Column(DateTime, nullable=False)
-    invited_by = Column(Integer, nullable=False)
+    invited_by = Column(UniversalUUID(), nullable=False)
     accepted_at = Column(DateTime, nullable=True)
-    accepted_user_id = Column(Integer, nullable=True)
+    accepted_user_id = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index('idx_iam_invitations_tenant', 'tenant_id'),
@@ -450,7 +452,7 @@ class IAMPasswordPolicy(Base):
     """
     __tablename__ = "iam_password_policies"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), unique=True, nullable=False, index=True)
 
     # Complexité
@@ -472,7 +474,7 @@ class IAMPasswordPolicy(Base):
 
     # Audit
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    updated_by = Column(Integer, nullable=True)
+    updated_by = Column(UniversalUUID(), nullable=True)
 
 
 class IAMPasswordHistory(Base):
@@ -481,9 +483,9 @@ class IAMPasswordHistory(Base):
     """
     __tablename__ = "iam_password_history"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -499,16 +501,16 @@ class IAMAuditLog(Base):
     """
     __tablename__ = "iam_audit_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Action
     action = Column(String(100), nullable=False)  # LOGIN, LOGOUT, ROLE_ASSIGNED, etc.
     entity_type = Column(String(50), nullable=False)  # USER, ROLE, PERMISSION, etc.
-    entity_id = Column(Integer, nullable=True)
+    entity_id = Column(UniversalUUID(), nullable=True)
 
     # Acteur
-    actor_id = Column(Integer, nullable=True)  # NULL si système
+    actor_id = Column(UniversalUUID(), nullable=True)  # NULL si système
     actor_ip = Column(String(50), nullable=True)
     actor_user_agent = Column(String(500), nullable=True)
 
@@ -539,7 +541,7 @@ class IAMRateLimit(Base):
     """
     __tablename__ = "iam_rate_limits"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
 
     # Identification
     key = Column(String(255), nullable=False, index=True)  # IP ou user:action

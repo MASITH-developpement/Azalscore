@@ -4,15 +4,17 @@ AZALS MODULE 17 - Field Service Models
 Modèles SQLAlchemy pour la gestion des interventions terrain.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Numeric, Enum, Index, JSON, Date, Time
+    Column, String, Text, Boolean, DateTime,
+    ForeignKey, Numeric, Enum, Index, Date, Time, Integer
 )
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSON
 
 
 # ============================================================================
@@ -72,7 +74,7 @@ class ServiceZone(Base):
     """Zone de service."""
     __tablename__ = "fs_zones"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -86,8 +88,8 @@ class ServiceZone(Base):
     geo_boundaries = Column(JSON)  # GeoJSON ou coordonnées
 
     # Configuration
-    manager_id = Column(Integer)
-    default_team_id = Column(Integer)
+    manager_id = Column(UniversalUUID())
+    default_team_id = Column(UniversalUUID())
     timezone = Column(String(50), default="Europe/Paris")
 
     is_active = Column(Boolean, default=True)
@@ -110,11 +112,11 @@ class Technician(Base):
     """Technicien terrain."""
     __tablename__ = "fs_technicians"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Lien utilisateur
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
     employee_id = Column(String(50))  # Lien RH
 
     # Profil
@@ -125,8 +127,8 @@ class Technician(Base):
     photo_url = Column(String(500))
 
     # Zone et équipe
-    zone_id = Column(Integer, ForeignKey("fs_zones.id"))
-    team_id = Column(Integer)
+    zone_id = Column(UniversalUUID(), ForeignKey("fs_zones.id"))
+    team_id = Column(UniversalUUID())
 
     # Statut
     status = Column(Enum(TechnicianStatus), default=TechnicianStatus.OFF_DUTY)
@@ -140,7 +142,7 @@ class Technician(Base):
     languages = Column(JSON, default=["fr"])
 
     # Véhicule
-    vehicle_id = Column(Integer, ForeignKey("fs_vehicles.id"))
+    vehicle_id = Column(UniversalUUID(), ForeignKey("fs_vehicles.id"))
     has_vehicle = Column(Boolean, default=True)
 
     # Paramètres
@@ -179,7 +181,7 @@ class Vehicle(Base):
     """Véhicule de service."""
     __tablename__ = "fs_vehicles"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -238,7 +240,7 @@ class InterventionTemplate(Base):
     """Template d'intervention."""
     __tablename__ = "fs_intervention_templates"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
@@ -280,12 +282,12 @@ class Intervention(Base):
     """Intervention terrain."""
     __tablename__ = "fs_interventions"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     reference = Column(String(50), nullable=False, unique=True)
-    template_id = Column(Integer, ForeignKey("fs_intervention_templates.id"))
+    template_id = Column(UniversalUUID(), ForeignKey("fs_intervention_templates.id"))
 
     # Type et statut
     intervention_type = Column(Enum(InterventionType), default=InterventionType.MAINTENANCE)
@@ -298,7 +300,7 @@ class Intervention(Base):
     internal_notes = Column(Text)
 
     # Client
-    customer_id = Column(Integer, index=True)  # CRM customer
+    customer_id = Column(UniversalUUID(), index=True)  # CRM customer
     customer_name = Column(String(255))
     contact_name = Column(String(255))
     contact_phone = Column(String(50))
@@ -314,8 +316,8 @@ class Intervention(Base):
     access_instructions = Column(Text)
 
     # Assignation
-    technician_id = Column(Integer, ForeignKey("fs_technicians.id"))
-    zone_id = Column(Integer, ForeignKey("fs_zones.id"))
+    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"))
+    zone_id = Column(UniversalUUID(), ForeignKey("fs_zones.id"))
 
     # Planification
     scheduled_date = Column(Date)
@@ -355,7 +357,7 @@ class Intervention(Base):
     parts_cost = Column(Numeric(10, 2), default=0)
     travel_cost = Column(Numeric(10, 2), default=0)
     total_cost = Column(Numeric(10, 2), default=0)
-    invoice_id = Column(Integer)
+    invoice_id = Column(UniversalUUID())
 
     # Satisfaction
     customer_rating = Column(Integer)  # 1-5
@@ -364,12 +366,12 @@ class Intervention(Base):
     # Récurrence
     is_recurring = Column(Boolean, default=False)
     recurrence_rule = Column(JSON)  # {frequency, interval, until}
-    parent_intervention_id = Column(Integer, ForeignKey("fs_interventions.id"))
+    parent_intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"))
 
     # Liens
-    ticket_id = Column(Integer)  # Helpdesk ticket
-    maintenance_id = Column(Integer)  # M8 Maintenance
-    sales_order_id = Column(Integer)  # M1 Commercial
+    ticket_id = Column(UniversalUUID())  # Helpdesk ticket
+    maintenance_id = Column(UniversalUUID())  # M8 Maintenance
+    sales_order_id = Column(UniversalUUID())  # M1 Commercial
 
     # Dates
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -394,9 +396,9 @@ class InterventionHistory(Base):
     """Historique intervention."""
     __tablename__ = "fs_intervention_history"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    intervention_id = Column(Integer, ForeignKey("fs_interventions.id"), nullable=False)
+    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"), nullable=False)
 
     # Changement
     action = Column(String(50), nullable=False)
@@ -406,7 +408,7 @@ class InterventionHistory(Base):
 
     # Auteur
     actor_type = Column(String(20))  # technician, dispatcher, customer, system
-    actor_id = Column(Integer)
+    actor_id = Column(UniversalUUID())
     actor_name = Column(String(255))
 
     # Localisation
@@ -431,11 +433,11 @@ class FSTimeEntry(Base):
     """Pointage temps."""
     __tablename__ = "fs_time_entries"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    technician_id = Column(Integer, ForeignKey("fs_technicians.id"), nullable=False)
-    intervention_id = Column(Integer, ForeignKey("fs_interventions.id"))
+    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
+    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"))
 
     # Type
     entry_type = Column(String(50), nullable=False)  # work, travel, break, admin
@@ -478,14 +480,14 @@ class PartUsage(Base):
     """Utilisation pièces."""
     __tablename__ = "fs_part_usage"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    intervention_id = Column(Integer, ForeignKey("fs_interventions.id"), nullable=False)
-    technician_id = Column(Integer, ForeignKey("fs_technicians.id"))
+    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"), nullable=False)
+    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"))
 
     # Pièce
-    part_id = Column(Integer, index=True)  # Stock module
+    part_id = Column(UniversalUUID(), index=True)  # Stock module
     part_code = Column(String(50))
     part_name = Column(String(255))
 
@@ -499,7 +501,7 @@ class PartUsage(Base):
 
     # Source
     from_vehicle_stock = Column(Boolean, default=True)
-    warehouse_id = Column(Integer)
+    warehouse_id = Column(UniversalUUID())
 
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -518,10 +520,10 @@ class Route(Base):
     """Tournée planifiée."""
     __tablename__ = "fs_routes"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    technician_id = Column(Integer, ForeignKey("fs_technicians.id"), nullable=False)
+    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
     route_date = Column(Date, nullable=False)
 
     # Planning
@@ -569,11 +571,11 @@ class Expense(Base):
     """Frais technicien."""
     __tablename__ = "fs_expenses"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    technician_id = Column(Integer, ForeignKey("fs_technicians.id"), nullable=False)
-    intervention_id = Column(Integer, ForeignKey("fs_interventions.id"))
+    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
+    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"))
 
     # Type
     expense_type = Column(String(50), nullable=False)  # fuel, parking, toll, meal, other
@@ -592,7 +594,7 @@ class Expense(Base):
 
     # Remboursement
     status = Column(String(20), default="pending")  # pending, approved, rejected, paid
-    approved_by = Column(Integer)
+    approved_by = Column(UniversalUUID())
     approved_at = Column(DateTime)
     paid_at = Column(DateTime)
 
@@ -614,7 +616,7 @@ class ServiceContract(Base):
     """Contrat de service."""
     __tablename__ = "fs_contracts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -622,7 +624,7 @@ class ServiceContract(Base):
     name = Column(String(255), nullable=False)
 
     # Client
-    customer_id = Column(Integer, nullable=False, index=True)
+    customer_id = Column(UniversalUUID(), nullable=False, index=True)
     customer_name = Column(String(255))
 
     # Période

@@ -7,13 +7,15 @@ Benchmark: Square, Lightspeed, Shopify POS, Toast
 Target: POS enterprise intégré ERP avec mode offline
 """
 
+import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, JSON, Numeric, Index
+    Column, String, Text, Boolean, DateTime,
+    ForeignKey, Enum, Numeric, Index, Integer
 )
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSON
 
 
 # ============================================================================
@@ -76,7 +78,7 @@ class POSStore(Base):
     """Point de vente / Magasin."""
     __tablename__ = "pos_stores"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Informations
@@ -120,9 +122,9 @@ class POSTerminal(Base):
     """Terminal de caisse."""
     __tablename__ = "pos_terminals"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    store_id = Column(Integer, ForeignKey("pos_stores.id"), nullable=False)
+    store_id = Column(UniversalUUID(), ForeignKey("pos_stores.id"), nullable=False)
 
     # Identification
     terminal_id = Column(String(50), nullable=False)  # Identifiant unique du terminal
@@ -141,7 +143,7 @@ class POSTerminal(Base):
     last_sync = Column(DateTime)
 
     # Session courante
-    current_session_id = Column(Integer)
+    current_session_id = Column(UniversalUUID())
 
     # Configuration
     settings = Column(JSON)
@@ -160,11 +162,11 @@ class POSUser(Base):
     """Utilisateur POS (caissier)."""
     __tablename__ = "pos_users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Lien utilisateur système
-    user_id = Column(Integer)  # FK vers users si applicable
+    user_id = Column(UniversalUUID())  # FK vers users si applicable
 
     # Informations
     employee_code = Column(String(20), nullable=False)
@@ -204,16 +206,16 @@ class POSSession(Base):
     """Session de caisse."""
     __tablename__ = "pos_sessions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    terminal_id = Column(Integer, ForeignKey("pos_terminals.id"), nullable=False)
+    terminal_id = Column(UniversalUUID(), ForeignKey("pos_terminals.id"), nullable=False)
 
     # Numéro de session
     session_number = Column(String(50), nullable=False)
 
     # Utilisateur
-    opened_by_id = Column(Integer, ForeignKey("pos_users.id"), nullable=False)
-    closed_by_id = Column(Integer, ForeignKey("pos_users.id"))
+    opened_by_id = Column(UniversalUUID(), ForeignKey("pos_users.id"), nullable=False)
+    closed_by_id = Column(UniversalUUID(), ForeignKey("pos_users.id"))
 
     # Statut
     status = Column(Enum(POSSessionStatus), default=POSSessionStatus.OPEN)
@@ -261,9 +263,9 @@ class CashMovement(Base):
     """Mouvement de caisse (entrée/sortie)."""
     __tablename__ = "pos_cash_movements"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    session_id = Column(Integer, ForeignKey("pos_sessions.id"), nullable=False)
+    session_id = Column(UniversalUUID(), ForeignKey("pos_sessions.id"), nullable=False)
 
     # Type
     movement_type = Column(String(20), nullable=False)  # IN, OUT
@@ -276,7 +278,7 @@ class CashMovement(Base):
     description = Column(Text)
 
     # Utilisateur
-    performed_by_id = Column(Integer, ForeignKey("pos_users.id"), nullable=False)
+    performed_by_id = Column(UniversalUUID(), ForeignKey("pos_users.id"), nullable=False)
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -294,9 +296,9 @@ class POSTransaction(Base):
     """Transaction POS (vente)."""
     __tablename__ = "pos_transactions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    session_id = Column(Integer, ForeignKey("pos_sessions.id"), nullable=False)
+    session_id = Column(UniversalUUID(), ForeignKey("pos_sessions.id"), nullable=False)
 
     # Numéro de ticket
     receipt_number = Column(String(50), nullable=False)
@@ -306,14 +308,14 @@ class POSTransaction(Base):
     status = Column(Enum(POSTransactionStatus), default=POSTransactionStatus.PENDING)
 
     # Client (optionnel)
-    customer_id = Column(Integer)  # FK vers customers
+    customer_id = Column(UniversalUUID())  # FK vers customers
     customer_name = Column(String(255))
     customer_email = Column(String(255))
     customer_phone = Column(String(50))
 
     # Vendeur
-    cashier_id = Column(Integer, ForeignKey("pos_users.id"), nullable=False)
-    salesperson_id = Column(Integer, ForeignKey("pos_users.id"))
+    cashier_id = Column(UniversalUUID(), ForeignKey("pos_users.id"), nullable=False)
+    salesperson_id = Column(UniversalUUID(), ForeignKey("pos_users.id"))
 
     # Montants
     subtotal = Column(Numeric(15, 2), nullable=False, default=0)
@@ -336,8 +338,8 @@ class POSTransaction(Base):
     internal_notes = Column(Text)
 
     # Référence
-    original_transaction_id = Column(Integer)  # Pour retours/échanges
-    ecommerce_order_id = Column(Integer)  # Lien commande web
+    original_transaction_id = Column(UniversalUUID())  # Pour retours/échanges
+    ecommerce_order_id = Column(UniversalUUID())  # Lien commande web
 
     # Synchronisation
     is_synced = Column(Boolean, default=True)
@@ -346,7 +348,7 @@ class POSTransaction(Base):
     # Dates
     completed_at = Column(DateTime)
     voided_at = Column(DateTime)
-    voided_by_id = Column(Integer, ForeignKey("pos_users.id"))
+    voided_by_id = Column(UniversalUUID(), ForeignKey("pos_users.id"))
     void_reason = Column(String(255))
 
     # Audit
@@ -365,16 +367,16 @@ class POSTransactionLine(Base):
     """Ligne de transaction POS."""
     __tablename__ = "pos_transaction_lines"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    transaction_id = Column(Integer, ForeignKey("pos_transactions.id"), nullable=False)
+    transaction_id = Column(UniversalUUID(), ForeignKey("pos_transactions.id"), nullable=False)
 
     # Numéro de ligne
     line_number = Column(Integer, default=1)
 
     # Produit
-    product_id = Column(Integer)  # FK vers products
-    variant_id = Column(Integer)
+    product_id = Column(UniversalUUID())  # FK vers products
+    variant_id = Column(UniversalUUID())
     sku = Column(String(100))
     barcode = Column(String(100))
     name = Column(String(255), nullable=False)
@@ -401,7 +403,7 @@ class POSTransactionLine(Base):
     line_total = Column(Numeric(15, 2), nullable=False)
 
     # Vendeur sur la ligne (si différent)
-    salesperson_id = Column(Integer, ForeignKey("pos_users.id"))
+    salesperson_id = Column(UniversalUUID(), ForeignKey("pos_users.id"))
 
     # Notes
     notes = Column(Text)
@@ -423,9 +425,9 @@ class POSPayment(Base):
     """Paiement sur transaction POS."""
     __tablename__ = "pos_payments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    transaction_id = Column(Integer, ForeignKey("pos_transactions.id"), nullable=False)
+    transaction_id = Column(UniversalUUID(), ForeignKey("pos_transactions.id"), nullable=False)
 
     # Type de paiement
     payment_method = Column(Enum(PaymentMethodType), nullable=False)
@@ -475,9 +477,9 @@ class POSDailyReport(Base):
     """Rapport journalier (Z-Report)."""
     __tablename__ = "pos_daily_reports"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    store_id = Column(Integer, ForeignKey("pos_stores.id"), nullable=False)
+    store_id = Column(UniversalUUID(), ForeignKey("pos_stores.id"), nullable=False)
 
     # Date
     report_date = Column(DateTime, nullable=False)
@@ -526,7 +528,7 @@ class POSDailyReport(Base):
     session_ids = Column(JSON)
 
     # Généré par
-    generated_by_id = Column(Integer, ForeignKey("pos_users.id"))
+    generated_by_id = Column(UniversalUUID(), ForeignKey("pos_users.id"))
     generated_at = Column(DateTime, default=datetime.utcnow)
 
     # Audit
@@ -545,17 +547,17 @@ class POSProductQuickKey(Base):
     """Raccourci clavier produit (favorites)."""
     __tablename__ = "pos_quick_keys"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    store_id = Column(Integer, ForeignKey("pos_stores.id"))
+    store_id = Column(UniversalUUID(), ForeignKey("pos_stores.id"))
 
     # Position
     page = Column(Integer, default=1)
     position = Column(Integer, nullable=False)  # 1-20 par page
 
     # Produit
-    product_id = Column(Integer)
-    variant_id = Column(Integer)
+    product_id = Column(UniversalUUID())
+    variant_id = Column(UniversalUUID())
 
     # Affichage
     label = Column(String(50))
@@ -579,9 +581,9 @@ class POSHoldTransaction(Base):
     """Transaction en attente."""
     __tablename__ = "pos_hold_transactions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    session_id = Column(Integer, ForeignKey("pos_sessions.id"), nullable=False)
+    session_id = Column(UniversalUUID(), ForeignKey("pos_sessions.id"), nullable=False)
 
     # Identification
     hold_number = Column(String(50), nullable=False)
@@ -591,11 +593,11 @@ class POSHoldTransaction(Base):
     transaction_data = Column(JSON, nullable=False)  # Snapshot complet
 
     # Client
-    customer_id = Column(Integer)
+    customer_id = Column(UniversalUUID())
     customer_name = Column(String(255))
 
     # Utilisateur
-    held_by_id = Column(Integer, ForeignKey("pos_users.id"), nullable=False)
+    held_by_id = Column(UniversalUUID(), ForeignKey("pos_users.id"), nullable=False)
 
     # État
     is_active = Column(Boolean, default=True)
@@ -619,9 +621,9 @@ class POSOfflineQueue(Base):
     """File d'attente synchronisation offline."""
     __tablename__ = "pos_offline_queue"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    terminal_id = Column(Integer, ForeignKey("pos_terminals.id"), nullable=False)
+    terminal_id = Column(UniversalUUID(), ForeignKey("pos_terminals.id"), nullable=False)
 
     # Type d'opération
     operation_type = Column(String(50))  # TRANSACTION, PAYMENT, CASH_MOVEMENT

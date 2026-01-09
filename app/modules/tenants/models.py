@@ -5,13 +5,15 @@ AZALS MODULE T9 - Modèles Tenants
 Modèles SQLAlchemy pour la gestion des tenants.
 """
 
+import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    Enum, JSON, Float
+    Column, String, Text, Boolean, DateTime,
+    Enum, Float, Numeric
 )
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSON
 
 
 # ============================================================================
@@ -65,7 +67,7 @@ class Tenant(Base):
     """Tenant (client) de la plateforme."""
     __tablename__ = "tenants"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), unique=True, nullable=False, index=True)
 
     # Informations entreprise
@@ -128,7 +130,7 @@ class TenantSubscription(Base):
     """Abonnement d'un tenant."""
     __tablename__ = "tenant_subscriptions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Plan
@@ -164,7 +166,7 @@ class TenantModule(Base):
     """Module activé pour un tenant."""
     __tablename__ = "tenant_modules"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Module
@@ -192,7 +194,7 @@ class TenantInvitation(Base):
     """Invitation à rejoindre un tenant."""
     __tablename__ = "tenant_invitations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
 
     # Invitation
     token = Column(String(255), unique=True, nullable=False)
@@ -222,7 +224,7 @@ class TenantUsage(Base):
     """Utilisation des ressources par tenant."""
     __tablename__ = "tenant_usage"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Période
@@ -253,7 +255,7 @@ class TenantEvent(Base):
     """Événements tenant (audit)."""
     __tablename__ = "tenant_events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Événement
@@ -262,7 +264,7 @@ class TenantEvent(Base):
     description = Column(Text)
 
     # Acteur
-    actor_id = Column(Integer)
+    actor_id = Column(UniversalUUID())
     actor_email = Column(String(255))
     actor_ip = Column(String(50))
 
@@ -274,7 +276,7 @@ class TenantSettings(Base):
     """Paramètres avancés du tenant."""
     __tablename__ = "tenant_settings"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, unique=True, index=True)
 
     # Sécurité
@@ -308,7 +310,7 @@ class TenantOnboarding(Base):
     """Progression de l'onboarding tenant."""
     __tablename__ = "tenant_onboarding"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, unique=True, index=True)
 
     # Étapes complétées

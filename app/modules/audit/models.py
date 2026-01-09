@@ -5,13 +5,15 @@ AZALS MODULE T3 - Modèles Audit & Benchmark
 Modèles SQLAlchemy pour l'audit et les benchmarks.
 """
 
+import uuid
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Text, Boolean, ForeignKey,
-    Index, Enum, UniqueConstraint, Float, BigInteger, func
+    Column, String, DateTime, Text, Boolean, ForeignKey,
+    Index, Enum, UniqueConstraint, Float, BigInteger, func, Integer
 )
 import enum
 from app.core.database import Base
+from app.core.types import UniversalUUID
 
 
 # ============================================================================
@@ -105,7 +107,7 @@ class AuditLog(Base):
     """
     __tablename__ = "audit_logs"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Action
@@ -119,7 +121,7 @@ class AuditLog(Base):
     entity_id = Column(String(255), nullable=True)
 
     # Utilisateur
-    user_id = Column(Integer, nullable=True, index=True)
+    user_id = Column(UniversalUUID(), nullable=True, index=True)
     user_email = Column(String(255), nullable=True)
     user_role = Column(String(50), nullable=True)
 
@@ -169,12 +171,12 @@ class AuditSession(Base):
     """
     __tablename__ = "audit_sessions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Session
     session_id = Column(String(255), nullable=False, unique=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
     user_email = Column(String(255), nullable=True)
 
     # Connexion
@@ -213,7 +215,7 @@ class MetricDefinition(Base):
     """
     __tablename__ = "audit_metric_definitions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -252,11 +254,11 @@ class MetricValue(Base):
     """
     __tablename__ = "audit_metric_values"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Métrique
-    metric_id = Column(Integer, ForeignKey('audit_metric_definitions.id', ondelete='CASCADE'), nullable=False)
+    metric_id = Column(UniversalUUID(), ForeignKey('audit_metric_definitions.id', ondelete='CASCADE'), nullable=False)
     metric_code = Column(String(100), nullable=False, index=True)
 
     # Valeur
@@ -287,7 +289,7 @@ class Benchmark(Base):
     """
     __tablename__ = "audit_benchmarks"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -316,7 +318,7 @@ class Benchmark(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', 'version', name='uq_benchmark_code_version'),
@@ -331,11 +333,11 @@ class BenchmarkResult(Base):
     """
     __tablename__ = "audit_benchmark_results"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Benchmark
-    benchmark_id = Column(Integer, ForeignKey('audit_benchmarks.id', ondelete='CASCADE'), nullable=False)
+    benchmark_id = Column(UniversalUUID(), ForeignKey('audit_benchmarks.id', ondelete='CASCADE'), nullable=False)
 
     # Exécution
     started_at = Column(DateTime, nullable=False)
@@ -358,7 +360,7 @@ class BenchmarkResult(Base):
     error_message = Column(Text, nullable=True)
     warnings = Column(Text, nullable=True)  # JSON: liste des warnings
 
-    executed_by = Column(Integer, nullable=True)
+    executed_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index('idx_results_tenant', 'tenant_id'),
@@ -373,7 +375,7 @@ class ComplianceCheck(Base):
     """
     __tablename__ = "audit_compliance_checks"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Framework
@@ -394,7 +396,7 @@ class ComplianceCheck(Base):
     # Statut
     status = Column(String(20), default='PENDING', nullable=False)  # PENDING, COMPLIANT, NON_COMPLIANT, N/A
     last_checked_at = Column(DateTime, nullable=True)
-    checked_by = Column(Integer, nullable=True)
+    checked_by = Column(UniversalUUID(), nullable=True)
 
     # Résultat
     actual_result = Column(Text, nullable=True)
@@ -424,7 +426,7 @@ class DataRetentionRule(Base):
     """
     __tablename__ = "audit_retention_rules"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -468,7 +470,7 @@ class AuditExport(Base):
     """
     __tablename__ = "audit_exports"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Configuration
@@ -493,7 +495,7 @@ class AuditExport(Base):
     error_message = Column(Text, nullable=True)
 
     # Audit
-    requested_by = Column(Integer, nullable=False)
+    requested_by = Column(UniversalUUID(), nullable=False)
     requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)
 
@@ -513,7 +515,7 @@ class AuditDashboard(Base):
     """
     __tablename__ = "audit_dashboards"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -528,7 +530,7 @@ class AuditDashboard(Base):
 
     # Accès
     is_public = Column(Boolean, default=False, nullable=False)
-    owner_id = Column(Integer, nullable=False)
+    owner_id = Column(UniversalUUID(), nullable=False)
     shared_with = Column(Text, nullable=True)  # JSON: utilisateurs/rôles
 
     is_default = Column(Boolean, default=False, nullable=False)
