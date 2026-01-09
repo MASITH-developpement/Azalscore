@@ -159,32 +159,18 @@ def upgrade() -> None:
     )
 
     # ========================================================================
-    # FK VERS MODULES EXTERNES (inventory_products)
+    # FK VERS MODULES EXTERNES - DÉSACTIVÉES POUR ARCHITECTURE SAAS MODULAIRE
     # ========================================================================
-
-    # quality_non_conformances -> inventory_products
-    op.create_foreign_key(
-        'fk_nc_product',
-        'quality_non_conformances', 'inventory_products',
-        ['product_id'], ['id'],
-        ondelete='SET NULL'
-    )
-
-    # quality_controls -> inventory_products
-    op.create_foreign_key(
-        'fk_qc_product',
-        'quality_controls', 'inventory_products',
-        ['product_id'], ['id'],
-        ondelete='SET NULL'
-    )
-
-    # quality_customer_claims -> inventory_products
-    op.create_foreign_key(
-        'fk_claim_product',
-        'quality_customer_claims', 'inventory_products',
-        ['product_id'], ['id'],
-        ondelete='SET NULL'
-    )
+    # NOTE: Les FK vers inventory_products sont gérées au niveau applicatif
+    # uniquement. Cela permet un déploiement modulaire où le module Quality
+    # peut fonctionner indépendamment du module Inventory.
+    #
+    # product_id dans quality_non_conformances, quality_controls,
+    # quality_customer_claims sont des colonnes UUID sans contrainte FK.
+    # La validation de l'intégrité référentielle est faite au niveau service.
+    #
+    # Cette approche est recommandée pour les architectures SaaS multi-tenant
+    # où les modules peuvent être activés/désactivés par tenant.
 
     # ========================================================================
     # MODULE QC CENTRAL (T4) - FOREIGN KEYS INTERNES
@@ -267,12 +253,10 @@ def downgrade() -> None:
     """Drop all foreign key constraints from Quality module tables."""
 
     # ========================================================================
-    # FK VERS MODULES EXTERNES - DROP FK
+    # FK VERS MODULES EXTERNES - AUCUNE (architecture SaaS modulaire)
     # ========================================================================
-
-    op.drop_constraint('fk_claim_product', 'quality_customer_claims', type_='foreignkey')
-    op.drop_constraint('fk_qc_product', 'quality_controls', type_='foreignkey')
-    op.drop_constraint('fk_nc_product', 'quality_non_conformances', type_='foreignkey')
+    # Les FK vers inventory_products ont été retirées pour permettre
+    # un déploiement modulaire indépendant.
 
     # ========================================================================
     # MODULE QC CENTRAL (T4) - DROP FK

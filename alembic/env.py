@@ -3,7 +3,7 @@ AZALS - Alembic Environment Configuration
 ==========================================
 
 This module configures Alembic for database migrations.
-It imports all SQLAlchemy models to enable auto-generation of migrations.
+SIMPLIFIED for Quality Module testing.
 """
 
 import os
@@ -27,35 +27,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Import the database Base and all models
+# Import the database Base
 from app.core.database import Base
 
-# Import all models to ensure they're registered with Base.metadata
-# Core models
-from app.core.models import User, CoreAuditJournal, Item, Decision, RedDecisionWorkflow, RedDecisionReport, TreasuryForecast
-
-# Tenant models
-from app.modules.tenants.models import (
-    Tenant, TenantSubscription, TenantModule, TenantInvitation,
-    TenantUsage, TenantEvent, TenantSettings, TenantOnboarding
-)
-
-# Inventory models (already using UUID)
-from app.modules.inventory.models import (
-    Product, ProductCategory, ProductAttribute, ProductVariant,
-    Warehouse, WarehouseZone, StockMovement, StockLevel,
-    InventoryCount, InventoryCountLine, StockAlert
-)
-
-# Maintenance models (REFACTORED to UUID)
-from app.modules.maintenance.models import (
-    Asset, AssetComponent, AssetDocument, AssetMeter, MeterReading,
-    MaintenancePlan, MaintenancePlanTask, MaintenanceWorkOrder, WorkOrderTask,
-    WorkOrderLabor, WorkOrderPart, Failure, FailureCause,
-    SparePart, SparePartStock, PartRequest, MaintenanceContract, MaintenanceKPI
-)
-
-# Quality models (REFACTORED to UUID)
+# Quality models (REFACTORED to UUID) - PRIMARY MODULE FOR THIS TEST
 from app.modules.quality.models import (
     NonConformance, NonConformanceAction, QualityControlTemplate,
     QualityControlTemplateItem, QualityControl, QualityControlLine,
@@ -64,33 +39,11 @@ from app.modules.quality.models import (
     Certification, CertificationAudit
 )
 
-# Production models (already using UUID)
-try:
-    from app.modules.production.models import (
-        ProductionLine, WorkCenter, BillOfMaterials, BOMLine,
-        ProductionOrder, ProductionOrderLine, ProductionOperation,
-        ProductionConsumption, ProductionOutput, ProductionKPI
-    )
-except ImportError:
-    pass  # Module may not exist
-
-# Compliance models (already using UUID)
-try:
-    from app.modules.compliance.models import (
-        ComplianceRequirement, ComplianceControl, ComplianceEvidence,
-        ComplianceAssessment, ComplianceRisk, ComplianceAction
-    )
-except ImportError:
-    pass  # Module may not exist
-
-# Automated Accounting models (already using UUID)
-try:
-    from app.modules.automated_accounting.models import (
-        AccountingRule, BankAccount, BankTransaction,
-        AccountingEntry, Reconciliation
-    )
-except ImportError:
-    pass  # Module may not exist
+# QC Central models (REFACTORED to UUID)
+from app.modules.qc.models import (
+    QCRule, ModuleRegistry, QCValidation, QCCheckResult,
+    QCTestRun, QCMetric, QCAlert, QCDashboard, QCTemplate
+)
 
 # Add metadata for autogenerate support
 target_metadata = Base.metadata
