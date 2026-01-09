@@ -2,11 +2,23 @@
 AZALS - Middleware Multi-Tenant
 Validation stricte du header X-Tenant-ID pour TOUTES les requêtes
 Exception : /health (monitoring public)
+
+SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
+          qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
 """
 
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 from typing import Optional
+
+# Import de la fonction SAFE de gestion des erreurs
+# Note: Utilise error_response.py au lieu de middleware.py pour éviter les imports circulaires
+from app.modules.guardian.error_response import (
+    build_error_response,
+    build_safe_error_response,
+    ErrorType,
+)
 
 
 class TenantMiddleware(BaseHTTPMiddleware):
@@ -63,16 +75,20 @@ class TenantMiddleware(BaseHTTPMiddleware):
         
         # Routes protégées : validation obligatoire
         if not tenant_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Missing X-Tenant-ID header. Multi-tenant isolation required."
+            return build_error_response(
+                status_code=401,
+                error_type=ErrorType.AUTHENTICATION,
+                message="Missing X-Tenant-ID header. Multi-tenant isolation required.",
+                html_path="frontend/errors/401.html"
             )
-        
+
         # Validation : format du tenant_id (alphanumerique + tirets)
         if not self._is_valid_tenant_id(tenant_id):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid X-Tenant-ID format. Alphanumeric and hyphens only."
+            return build_error_response(
+                status_code=400,
+                error_type=ErrorType.VALIDATION,
+                message="Invalid X-Tenant-ID format. Alphanumeric and hyphens only.",
+                html_path="frontend/errors/400.html"
             )
         
         # Injection du tenant_id dans request.state

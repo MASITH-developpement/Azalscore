@@ -4,6 +4,11 @@ AZALS MODULE GUARDIAN - Middleware
 
 Middleware pour l'interception automatique des erreurs HTTP.
 Enregistre les erreurs détectées dans le système GUARDIAN.
+
+IMPORTANT: Ce module utilise les fonctions SAFE de error_response.py qui:
+- Ne dépendent JAMAIS d'un fichier HTML pour répondre
+- Renvoient toujours une réponse HTTP valide (JSON en fallback)
+- Ne lèvent jamais d'exception non gérée
 """
 
 import traceback
@@ -30,6 +35,16 @@ from .models import (
 )
 from .service import GuardianService
 from .schemas import ErrorDetectionCreate
+
+# Import des fonctions SAFE de gestion des erreurs
+# Ces fonctions sont dans un module séparé pour éviter les imports circulaires
+from .error_response import (
+    build_error_response,
+    build_safe_error_response,
+    get_error_type_for_status,
+    get_error_severity_for_status,
+    DEFAULT_ERROR_MESSAGES,
+)
 
 logger = get_logger(__name__)
 
