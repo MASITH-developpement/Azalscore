@@ -6,18 +6,20 @@ global:
   evaluation_interval: 15s
   external_labels:
     environment: production
-    application: azals
+    application: azalscore
 
 # Alerting configuration
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # - alertmanager:9093
+        - targets:
+          - alertmanager:9093
 
-# Rule files
+# Rule files - Alert definitions
 rule_files:
-  - "alerts/*.yml"
+  - "alerts/api-alerts.yml"
+  - "alerts/database-alerts.yml"
+  - "alerts/infrastructure-alerts.yml"
 
 # Scrape configurations
 scrape_configs:
@@ -41,30 +43,30 @@ scrape_configs:
         regex: '(.+):\d+'
         replacement: '${1}'
 
-  # PostgreSQL (via postgres_exporter si déployé)
-  # - job_name: 'postgres'
-  #   static_configs:
-  #     - targets: ['postgres-exporter:9187']
-  #       labels:
-  #         service: postgres
+  # PostgreSQL metrics (via postgres_exporter)
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: postgres
 
-  # Redis (via redis_exporter si déployé)
-  # - job_name: 'redis'
-  #   static_configs:
-  #     - targets: ['redis-exporter:9121']
-  #       labels:
-  #         service: redis
+  # Redis metrics (via redis_exporter)
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: redis
 
-  # Nginx (via nginx_exporter si déployé)
-  # - job_name: 'nginx'
-  #   static_configs:
-  #     - targets: ['nginx-exporter:9113']
-  #       labels:
-  #         service: nginx
+  # Nginx metrics (via nginx_exporter)
+  - job_name: 'nginx-exporter'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: nginx
 
-  # Node exporter (métriques système)
-  # - job_name: 'node'
-  #   static_configs:
-  #     - targets: ['node-exporter:9100']
-  #       labels:
-  #         service: node
+  # Node/System metrics (via node_exporter)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: node

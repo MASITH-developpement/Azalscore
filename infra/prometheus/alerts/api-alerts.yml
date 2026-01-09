@@ -1,0 +1,158 @@
+# AZALSCORE - API & Application Alert Rules
+# ==========================================
+# Prometheus alert rules for API monitoring and SLA compliance
+
+groups:
+  - name: azalscore.api.availability
+    interval: 30s
+    rules:
+      # API Down Alert
+      - alert: APIDown
+        expr: up{job="azalscore-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "AZALSCORE API is down"
+          description: "API instance {{ $labels.instance }} has been unreachable for more than 1 minute."
+          runbook_url: "https://docs.azalscore.com/runbook/api-down"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="azalscore-api", status=~"5.."}[5m])) /
+            sum(rate(http_requests_total{job="azalscore-api"}[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is {{ printf \"%.2f\" $value }}% (threshold: 5%)"
+
+      # Critical Error Rate
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="azalscore-api", status=~"5.."}[5m])) /
+            sum(rate(http_requests_total{job="azalscore-api"}[5m]))
+          ) * 100 > 15
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Critical API error rate"
+          description: "API error rate is {{ printf \"%.2f\" $value }}% (threshold: 15%)"
+
+  - name: azalscore.api.latency
+    interval: 30s
+    rules:
+      # Slow API Response
+      - alert: SlowAPIResponse
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="azalscore-api"}[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Slow API response times"
+          description: "95th percentile latency is {{ printf \"%.2f\" $value }}s (threshold: 2s)"
+
+      # Very Slow API Response
+      - alert: VerySlowAPIResponse
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="azalscore-api"}[5m])) by (le)
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Very slow API response times"
+          description: "95th percentile latency is {{ printf \"%.2f\" $value }}s (threshold: 5s)"
+
+      # Endpoint Specific Latency
+      - alert: SlowEndpoint
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="azalscore-api"}[5m])) by (le, path)
+          ) > 3
+        for: 10m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Slow endpoint: {{ $labels.path }}"
+          description: "Endpoint {{ $labels.path }} has 95th percentile latency of {{ printf \"%.2f\" $value }}s"
+
+  - name: azalscore.api.throughput
+    interval: 30s
+    rules:
+      # High Request Rate (potential DDoS)
+      - alert: HighRequestRate
+        expr: sum(rate(http_requests_total{job="azalscore-api"}[1m])) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Unusually high request rate"
+          description: "Request rate is {{ printf \"%.0f\" $value }} req/s (threshold: 1000)"
+
+      # Low Request Rate (potential issue)
+      - alert: LowRequestRate
+        expr: sum(rate(http_requests_total{job="azalscore-api"}[5m])) < 1
+        for: 10m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Unusually low request rate"
+          description: "Request rate is {{ printf \"%.2f\" $value }} req/s - check if service is accessible"
+
+  - name: azalscore.api.resources
+    interval: 30s
+    rules:
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: |
+          (process_resident_memory_bytes{job="azalscore-api"} / 1024 / 1024 / 1024) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High memory usage"
+          description: "API is using {{ printf \"%.2f\" $value }}GB of memory"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="azalscore-api"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High CPU usage"
+          description: "API CPU usage is {{ printf \"%.1f\" $value }}%"
+
+      # Too Many Open Files
+      - alert: TooManyOpenFiles
+        expr: |
+          process_open_fds{job="azalscore-api"} / process_max_fds{job="azalscore-api"} * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Too many open file descriptors"
+          description: "{{ printf \"%.1f\" $value }}% of file descriptors are in use"

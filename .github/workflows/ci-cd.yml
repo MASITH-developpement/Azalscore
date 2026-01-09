@@ -280,18 +280,62 @@ jobs:
     if: github.ref == 'refs/heads/develop'
     environment:
       name: staging
-      url: https://staging.azals.example.com
+      url: ${{ vars.STAGING_URL }}
 
     steps:
-      - name: Deploy to Staging
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render (Staging)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_STAGING_SERVICE_ID }}
         run: |
-          echo "Deploying to staging environment..."
-          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop"
+          if [ -n "$RENDER_API_KEY" ] && [ -n "$RENDER_SERVICE_ID" ]; then
+            echo "Triggering Render deployment..."
+            curl -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+              -H "Authorization: Bearer ${RENDER_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{"clearCache": false}'
+          else
+            echo "::warning::RENDER_API_KEY or RENDER_SERVICE_ID not set. Skipping deployment."
+          fi
+
+      - name: Wait for deployment
+        run: sleep 60
+
+      - name: Run smoke tests
+        env:
+          STAGING_URL: ${{ vars.STAGING_URL }}
+        run: |
+          if [ -n "$STAGING_URL" ]; then
+            echo "Running smoke tests against $STAGING_URL"
+
+            # Health check
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${STAGING_URL}/health" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Health check passed"
+            else
+              echo "❌ Health check failed (HTTP $HTTP_CODE)"
+              exit 1
+            fi
+
+            # API docs check
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${STAGING_URL}/docs" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ API docs accessible"
+            else
+              echo "⚠️ API docs not accessible (HTTP $HTTP_CODE)"
+            fi
+          else
+            echo "::warning::STAGING_URL not set. Skipping smoke tests."
+          fi
 
       - name: Staging deployment summary
         run: |
           echo "## Staging Deployment" >> $GITHUB_STEP_SUMMARY
           echo "✅ Deployed to staging" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 URL: ${{ vars.STAGING_URL }}" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================
   # JOB 7: Déploiement Production (main branch)
@@ -303,16 +347,130 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://azals.example.com
+      url: ${{ vars.PRODUCTION_URL }}
 
     steps:
-      - name: Deploy to Production
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies for migrations
         run: |
-          echo "Deploying to production environment..."
-          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          pip install alembic sqlalchemy psycopg2-binary
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            echo "Running database migrations..."
+            python scripts/automation/run_alembic.py upgrade head --verbose || {
+              echo "::error::Database migration failed!"
+              exit 1
+            }
+          else
+            echo "::warning::DATABASE_URL not set. Skipping migrations."
+          fi
+
+      - name: Deploy to Render (Production)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_PRODUCTION_SERVICE_ID }}
+        run: |
+          if [ -n "$RENDER_API_KEY" ] && [ -n "$RENDER_SERVICE_ID" ]; then
+            echo "Triggering Render production deployment..."
+            curl -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+              -H "Authorization: Bearer ${RENDER_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{"clearCache": false}'
+          else
+            echo "::warning::RENDER_API_KEY or RENDER_SERVICE_ID not set. Skipping deployment."
+          fi
+
+      - name: Wait for deployment
+        run: sleep 90
+
+      - name: Run production smoke tests
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          if [ -n "$PRODUCTION_URL" ]; then
+            echo "Running production smoke tests..."
+
+            # Health check
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${PRODUCTION_URL}/health" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Health check passed"
+            else
+              echo "❌ Health check failed (HTTP $HTTP_CODE)"
+              exit 1
+            fi
+
+            # API docs check
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${PRODUCTION_URL}/docs" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ API docs accessible"
+            else
+              echo "⚠️ API docs not accessible (HTTP $HTTP_CODE)"
+            fi
+
+            # Metrics endpoint
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${PRODUCTION_URL}/metrics" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Metrics endpoint accessible"
+            fi
+          else
+            echo "::warning::PRODUCTION_URL not set. Skipping smoke tests."
+          fi
+
+      - name: Notify deployment success
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST "$SLACK_WEBHOOK" \
+              -H 'Content-type: application/json' \
+              -d '{
+                "text": "✅ AZALSCORE Production Deployment Successful",
+                "attachments": [{
+                  "color": "good",
+                  "fields": [
+                    {"title": "Version", "value": "${{ github.sha }}", "short": true},
+                    {"title": "Branch", "value": "main", "short": true},
+                    {"title": "URL", "value": "${{ vars.PRODUCTION_URL }}", "short": false}
+                  ]
+                }]
+              }'
+          fi
+
+      - name: Notify deployment failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST "$SLACK_WEBHOOK" \
+              -H 'Content-type: application/json' \
+              -d '{
+                "text": "❌ AZALSCORE Production Deployment Failed",
+                "attachments": [{
+                  "color": "danger",
+                  "fields": [
+                    {"title": "Version", "value": "${{ github.sha }}", "short": true},
+                    {"title": "Run", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}
+                  ]
+                }]
+              }'
+          fi
 
       - name: Production deployment summary
         run: |
           echo "## Production Deployment" >> $GITHUB_STEP_SUMMARY
           echo "✅ Deployed to production" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 URL: https://azals.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 URL: ${{ vars.PRODUCTION_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Version: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
