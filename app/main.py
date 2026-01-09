@@ -168,44 +168,45 @@ async def lifespan(app: FastAPI):
             tables_created = 0
             tables_existed = 0
             pending_tables = list(Base.metadata.sorted_tables)
-            max_passes = 5
+            max_passes = 10
+            last_errors = {}
 
             for pass_num in range(1, max_passes + 1):
                 if not pending_tables:
                     break
 
                 still_pending = []
-                progress_made = False
+                pass_created = 0
 
                 for table in pending_tables:
                     try:
                         table.create(bind=engine, checkfirst=True)
                         tables_created += 1
-                        progress_made = True
+                        pass_created += 1
+                        last_errors.pop(table.name, None)
                     except Exception as table_error:
                         error_str = str(table_error).lower()
                         if "already exists" in error_str or "duplicate" in error_str:
                             tables_existed += 1
-                            progress_made = True
-                        elif "n'existe pas" in error_str or "does not exist" in error_str:
-                            # FK dependency not yet created - retry in next pass
-                            still_pending.append(table)
+                            pass_created += 1
+                            last_errors.pop(table.name, None)
                         else:
-                            # Other error - log and retry
+                            # FK dependency or other error - retry in next pass
                             still_pending.append(table)
-                            if pass_num == max_passes:
-                                print(f"[WARN] Erreur table {table.name}: {table_error}")
+                            last_errors[table.name] = str(table_error)[:200]
 
                 pending_tables = still_pending
 
-                # Stop if no progress made (circular deps or unresolvable errors)
-                if not progress_made and still_pending:
-                    for table in still_pending:
-                        print(f"[WARN] Table non creee apres {pass_num} passes: {table.name}")
+                # Stop early if no progress (same tables failing repeatedly)
+                if pass_created == 0 and pass_num >= 3:
                     break
 
-            if pending_tables and pass_num == max_passes:
-                print(f"[WARN] {len(pending_tables)} tables non creees apres {max_passes} passes")
+            # Report final errors
+            if pending_tables:
+                print(f"[WARN] {len(pending_tables)} tables non creees:")
+                for table in pending_tables:
+                    err = last_errors.get(table.name, "Unknown error")
+                    print(f"  - {table.name}: {err}")
 
             print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
             break
