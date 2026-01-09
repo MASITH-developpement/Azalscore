@@ -10,7 +10,7 @@ import enum
 from datetime import datetime
 from sqlalchemy import (
     Column, String, Text, Boolean, DateTime,
-    Enum, Float, Numeric
+    Enum, Float, Integer
 )
 from app.core.database import Base
 from app.core.types import UniversalUUID, JSON

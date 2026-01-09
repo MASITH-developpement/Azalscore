@@ -5,7 +5,7 @@ Isolation stricte par tenant_id - AUCUNE fuite inter-tenant possible
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, Index, Enum, func, Numeric
+from sqlalchemy import Column, String, DateTime, Text, Index, Enum, func, Numeric, Integer
 import enum
 from app.core.database import Base
 from app.core.types import UniversalUUID
