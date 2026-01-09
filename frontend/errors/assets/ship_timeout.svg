@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="spaceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a1a"/>
+      <stop offset="100%" style="stop-color:#1a1a3a"/>
+    </linearGradient>
+    <linearGradient id="shipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5568"/>
+      <stop offset="100%" style="stop-color:#2d3748"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="staticNoise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#spaceGradient)"/>
+
+  <!-- Distant stars (ship is far) -->
+  <circle cx="30" cy="40" r="0.8" fill="#fff" opacity="0.4"/>
+  <circle cx="100" cy="25" r="1" fill="#fff" opacity="0.3"/>
+  <circle cx="200" cy="50" r="0.8" fill="#fff" opacity="0.5"/>
+  <circle cx="300" cy="30" r="1" fill="#fff" opacity="0.4"/>
+  <circle cx="370" cy="60" r="0.8" fill="#fff" opacity="0.3"/>
+  <circle cx="50" cy="260" r="1" fill="#fff" opacity="0.4"/>
+  <circle cx="350" cy="250" r="0.8" fill="#fff" opacity="0.5"/>
+
+  <!-- Distant Spaceship (small, far away) -->
+  <g transform="translate(320, 200) scale(0.5)" opacity="0.6">
+    <ellipse cx="0" cy="0" rx="50" ry="18" fill="url(#shipGradient)" stroke="#4b5563" stroke-width="1"/>
+    <ellipse cx="0" cy="-5" rx="12" ry="6" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1"/>
+    <path d="M-35 0 L-55 15 L-55 20 L-30 6 Z" fill="url(#shipGradient)"/>
+    <path d="M35 0 L55 15 L55 20 L30 6 Z" fill="url(#shipGradient)"/>
+    <!-- Weak signal indicator -->
+    <circle cx="0" cy="-20" r="3" fill="#f59e0b" opacity="0.3">
+      <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Communication Tower/Base Station -->
+  <g transform="translate(100, 220)">
+    <!-- Base -->
+    <rect x="-15" y="30" width="30" height="50" fill="#2d3748"/>
+    <rect x="-25" y="70" width="50" height="10" fill="#374151"/>
+
+    <!-- Tower -->
+    <rect x="-4" y="-30" width="8" height="60" fill="#4b5563"/>
+
+    <!-- Antenna -->
+    <line x1="0" y1="-30" x2="0" y2="-50" stroke="#6b7280" stroke-width="3"/>
+    <circle cx="0" cy="-55" r="5" fill="#1e3a5f" stroke="#4b5563" stroke-width="1"/>
+
+    <!-- Signal waves (failing) -->
+    <g stroke="#f59e0b" fill="none" stroke-width="1.5" opacity="0.5">
+      <path d="M10 -55 Q25 -55 25 -40" stroke-dasharray="4,4">
+        <animate attributeName="opacity" values="0.5;0;0.5" dur="1.5s" repeatCount="indefinite"/>
+      </path>
+      <path d="M15 -55 Q35 -55 35 -35" stroke-dasharray="4,4">
+        <animate attributeName="opacity" values="0;0.5;0" dur="1.5s" repeatCount="indefinite" begin="0.5s"/>
+      </path>
+    </g>
+
+    <!-- Warning light -->
+    <circle cx="0" cy="-55" r="3" fill="#f59e0b" filter="url(#glow)">
+      <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- "Signal Lost" broken line -->
+  <g stroke="#f59e0b" stroke-width="2" stroke-dasharray="10,5,2,5" opacity="0.4">
+    <line x1="120" y1="165" x2="280" y2="200"/>
+    <!-- Break in the line -->
+    <line x1="180" y1="178" x2="220" y2="186" stroke="none"/>
+  </g>
+
+  <!-- Static/interference pattern -->
+  <g opacity="0.1">
+    <rect x="150" y="170" width="100" height="40" fill="#f59e0b" filter="url(#staticNoise)"/>
+  </g>
+
+  <!-- Timer/Clock Display -->
+  <g transform="translate(200, 80)">
+    <circle cx="0" cy="0" r="40" fill="#1a1a3a" stroke="#f59e0b" stroke-width="2"/>
+    <circle cx="0" cy="0" r="35" fill="none" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+
+    <!-- Clock hands (stopped) -->
+    <line x1="0" y1="0" x2="0" y2="-20" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="15" y2="10" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="4" fill="#f59e0b"/>
+
+    <!-- X mark overlay -->
+    <g stroke="#ef4444" stroke-width="3" opacity="0.7">
+      <line x1="-25" y1="-25" x2="25" y2="25"/>
+      <line x1="25" y1="-25" x2="-25" y2="25"/>
+    </g>
+  </g>
+
+  <!-- "Hors Signal" Text -->
+  <g transform="translate(200, 140)">
+    <rect x="-50" y="-12" width="100" height="24" rx="3" fill="#1a1a3a" stroke="#f59e0b" stroke-width="1" opacity="0.9"/>
+    <text x="0" y="5" fill="#f59e0b" font-family="monospace" font-size="11" text-anchor="middle" font-weight="bold">HORS SIGNAL</text>
+  </g>
+</svg>
