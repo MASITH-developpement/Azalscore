@@ -163,35 +163,49 @@ async def lifespan(app: FastAPI):
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
 
-            # Create tables one by one to handle existing indexes gracefully
-            # Two passes: first creates parent tables, second creates dependent tables
+            # Create tables with multi-pass retry for FK dependencies
+            # sorted_tables respects FK order, but cross-module deps may need retries
             tables_created = 0
             tables_existed = 0
-            failed_tables = []
+            pending_tables = list(Base.metadata.sorted_tables)
+            max_passes = 5
 
-            # First pass
-            for table in Base.metadata.sorted_tables:
-                try:
-                    table.create(bind=engine, checkfirst=True)
-                    tables_created += 1
-                except Exception as table_error:
-                    error_str = str(table_error).lower()
-                    if "already exists" in error_str or "duplicate" in error_str:
-                        tables_existed += 1
-                    else:
-                        failed_tables.append((table, table_error))
+            for pass_num in range(1, max_passes + 1):
+                if not pending_tables:
+                    break
 
-            # Second pass for tables with FK dependencies
-            for table, _ in failed_tables:
-                try:
-                    table.create(bind=engine, checkfirst=True)
-                    tables_created += 1
-                except Exception as table_error:
-                    error_str = str(table_error).lower()
-                    if "already exists" in error_str or "duplicate" in error_str:
-                        tables_existed += 1
-                    else:
-                        print(f"[WARN] Erreur table {table.name}: {table_error}")
+                still_pending = []
+                progress_made = False
+
+                for table in pending_tables:
+                    try:
+                        table.create(bind=engine, checkfirst=True)
+                        tables_created += 1
+                        progress_made = True
+                    except Exception as table_error:
+                        error_str = str(table_error).lower()
+                        if "already exists" in error_str or "duplicate" in error_str:
+                            tables_existed += 1
+                            progress_made = True
+                        elif "n'existe pas" in error_str or "does not exist" in error_str:
+                            # FK dependency not yet created - retry in next pass
+                            still_pending.append(table)
+                        else:
+                            # Other error - log and retry
+                            still_pending.append(table)
+                            if pass_num == max_passes:
+                                print(f"[WARN] Erreur table {table.name}: {table_error}")
+
+                pending_tables = still_pending
+
+                # Stop if no progress made (circular deps or unresolvable errors)
+                if not progress_made and still_pending:
+                    for table in still_pending:
+                        print(f"[WARN] Table non creee apres {pass_num} passes: {table.name}")
+                    break
+
+            if pending_tables and pass_num == max_passes:
+                print(f"[WARN] {len(pending_tables)} tables non creees apres {max_passes} passes")
 
             print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
             break
