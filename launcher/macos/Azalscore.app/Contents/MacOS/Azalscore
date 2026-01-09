@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# Azalscore macOS Application Launcher
+# Ce script est exécuté lorsque l'utilisateur double-clique sur Azalscore.app
+#
+
+# Obtenir le chemin du script
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+LAUNCHER_DIR="$(dirname "$APP_DIR")"
+
+# Chemin vers le script de lancement principal
+LAUNCHER_SCRIPT="$LAUNCHER_DIR/azalscore-launcher.sh"
+
+# Fonction pour afficher une notification
+show_notification() {
+    osascript -e "display notification \"$1\" with title \"Azalscore\""
+}
+
+# Fonction pour afficher une alerte
+show_alert() {
+    osascript -e "display alert \"$1\" message \"$2\" as $3"
+}
+
+# Vérifier si le script de lancement existe
+if [ ! -f "$LAUNCHER_SCRIPT" ]; then
+    show_alert "Erreur" "Le script de lancement n'a pas été trouvé à: $LAUNCHER_SCRIPT" "critical"
+    exit 1
+fi
+
+# Rendre le script exécutable
+chmod +x "$LAUNCHER_SCRIPT"
+
+# Ouvrir un terminal et exécuter le script
+osascript <<EOF
+tell application "Terminal"
+    activate
+    do script "cd \"$LAUNCHER_DIR\" && ./azalscore-launcher.sh start"
+end tell
+EOF
+
+exit 0
