@@ -280,6 +280,14 @@ class NonConformance(Base):
     created_by = Column(UniversalUUID())
     updated_by = Column(UniversalUUID())
 
+    # Relationships (FK gérée via Alembic, pas dans SQLAlchemy)
+    actions = relationship(
+        "NonConformanceAction",
+        back_populates="non_conformance",
+        cascade="all, delete-orphan",
+        foreign_keys="NonConformanceAction.nc_id"
+    )
+
 
 class NonConformanceAction(Base):
     """Actions correctives pour non-conformité"""
@@ -324,6 +332,13 @@ class NonConformanceAction(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
+
+    # Relationship inverse
+    non_conformance = relationship(
+        "NonConformance",
+        back_populates="actions",
+        foreign_keys=[nc_id]
+    )
 
 
 # ============================================================================
@@ -376,6 +391,14 @@ class QualityControlTemplate(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
+    # Relationships
+    items = relationship(
+        "QualityControlTemplateItem",
+        back_populates="template",
+        cascade="all, delete-orphan",
+        foreign_keys="QualityControlTemplateItem.template_id"
+    )
+
 
 class QualityControlTemplateItem(Base):
     """Point de contrôle dans un template"""
@@ -423,6 +446,13 @@ class QualityControlTemplateItem(Base):
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationship inverse
+    template = relationship(
+        "QualityControlTemplate",
+        back_populates="items",
+        foreign_keys=[template_id]
+    )
 
 
 class QualityControl(Base):
@@ -499,6 +529,14 @@ class QualityControl(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
+    # Relationships
+    lines = relationship(
+        "QualityControlLine",
+        back_populates="control",
+        cascade="all, delete-orphan",
+        foreign_keys="QualityControlLine.control_id"
+    )
+
 
 class QualityControlLine(Base):
     """Ligne de contrôle qualité (mesure)"""
@@ -544,6 +582,13 @@ class QualityControlLine(Base):
 
     created_at = Column(DateTime, server_default=func.now())
     created_by = Column(UniversalUUID())
+
+    # Relationship inverse
+    control = relationship(
+        "QualityControl",
+        back_populates="lines",
+        foreign_keys=[control_id]
+    )
 
 
 # ============================================================================
@@ -629,6 +674,14 @@ class QualityAudit(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
+    # Relationships
+    findings = relationship(
+        "AuditFinding",
+        back_populates="audit",
+        cascade="all, delete-orphan",
+        foreign_keys="AuditFinding.audit_id"
+    )
+
 
 class AuditFinding(Base):
     """Constat d'audit"""
@@ -685,6 +738,13 @@ class AuditFinding(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
+
+    # Relationship inverse
+    audit = relationship(
+        "QualityAudit",
+        back_populates="findings",
+        foreign_keys=[audit_id]
+    )
 
 
 # ============================================================================
@@ -763,6 +823,14 @@ class CAPA(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
+    # Relationships
+    actions = relationship(
+        "CAPAAction",
+        back_populates="capa",
+        cascade="all, delete-orphan",
+        foreign_keys="CAPAAction.capa_id"
+    )
+
 
 class CAPAAction(Base):
     """Action d'un CAPA"""
@@ -816,6 +884,13 @@ class CAPAAction(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
+
+    # Relationship inverse
+    capa = relationship(
+        "CAPA",
+        back_populates="actions",
+        foreign_keys=[capa_id]
+    )
 
 
 # ============================================================================
@@ -912,6 +987,14 @@ class CustomerClaim(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
+    # Relationships
+    actions = relationship(
+        "ClaimAction",
+        back_populates="claim",
+        cascade="all, delete-orphan",
+        foreign_keys="ClaimAction.claim_id"
+    )
+
 
 class ClaimAction(Base):
     """Action pour une réclamation client"""
@@ -948,6 +1031,13 @@ class ClaimAction(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
+
+    # Relationship inverse
+    claim = relationship(
+        "CustomerClaim",
+        back_populates="actions",
+        foreign_keys=[claim_id]
+    )
 
 
 # ============================================================================
@@ -1006,6 +1096,14 @@ class QualityIndicator(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
+    # Relationships
+    measurements = relationship(
+        "IndicatorMeasurement",
+        back_populates="indicator",
+        cascade="all, delete-orphan",
+        foreign_keys="IndicatorMeasurement.indicator_id"
+    )
+
 
 class IndicatorMeasurement(Base):
     """Mesure d'un indicateur qualité"""
@@ -1051,6 +1149,13 @@ class IndicatorMeasurement(Base):
 
     created_at = Column(DateTime, server_default=func.now())
     created_by = Column(UniversalUUID())
+
+    # Relationship inverse
+    indicator = relationship(
+        "QualityIndicator",
+        back_populates="measurements",
+        foreign_keys=[indicator_id]
+    )
 
 
 # ============================================================================
@@ -1112,6 +1217,14 @@ class Certification(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
+    # Relationships
+    audits = relationship(
+        "CertificationAudit",
+        back_populates="certification",
+        cascade="all, delete-orphan",
+        foreign_keys="CertificationAudit.certification_id"
+    )
+
 
 class CertificationAudit(Base):
     """Audit de certification"""
@@ -1164,3 +1277,10 @@ class CertificationAudit(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
+
+    # Relationship inverse
+    certification = relationship(
+        "Certification",
+        back_populates="audits",
+        foreign_keys=[certification_id]
+    )
