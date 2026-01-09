@@ -9,6 +9,7 @@ gunicorn==21.2.0
 # Base de données
 sqlalchemy==2.0.25
 psycopg2-binary==2.9.9
+alembic==1.13.1
 
 # Configuration
 pydantic[email]==2.10.4

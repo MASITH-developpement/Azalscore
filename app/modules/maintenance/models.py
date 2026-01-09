@@ -3,14 +3,15 @@ AZALS MODULE M8 - Modèles Maintenance (GMAO)
 ============================================
 
 Modèles SQLAlchemy pour le module de gestion de la maintenance.
+REFACTORED: Migration vers UUID pour production SaaS industrielle.
 """
 
 import enum
+import uuid
 
 from sqlalchemy import (
     Column,
     Integer,
-    BigInteger,
     String,
     Text,
     Boolean,
@@ -18,132 +19,132 @@ from sqlalchemy import (
     Date,
     Numeric,
     ForeignKey,
-    Enum,
+    Enum as SQLEnum,
     Index,
     UniqueConstraint,
-    JSON,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSONB
 
 
 # ============================================================================
 # ENUMS
 # ============================================================================
 
-class AssetCategory(enum.Enum):
+class AssetCategory(str, enum.Enum):
     """Catégories d'actifs"""
-    MACHINE = "MACHINE"                     # Machine de production
-    EQUIPMENT = "EQUIPMENT"                 # Équipement
-    VEHICLE = "VEHICLE"                     # Véhicule
-    BUILDING = "BUILDING"                   # Bâtiment
-    INFRASTRUCTURE = "INFRASTRUCTURE"       # Infrastructure
-    IT_EQUIPMENT = "IT_EQUIPMENT"           # Équipement informatique
-    TOOL = "TOOL"                           # Outillage
-    UTILITY = "UTILITY"                     # Utilités (électricité, eau, etc.)
-    FURNITURE = "FURNITURE"                 # Mobilier
-    OTHER = "OTHER"                         # Autre
+    MACHINE = "MACHINE"
+    EQUIPMENT = "EQUIPMENT"
+    VEHICLE = "VEHICLE"
+    BUILDING = "BUILDING"
+    INFRASTRUCTURE = "INFRASTRUCTURE"
+    IT_EQUIPMENT = "IT_EQUIPMENT"
+    TOOL = "TOOL"
+    UTILITY = "UTILITY"
+    FURNITURE = "FURNITURE"
+    OTHER = "OTHER"
 
 
-class AssetStatus(enum.Enum):
+class AssetStatus(str, enum.Enum):
     """Statuts d'actif"""
-    ACTIVE = "ACTIVE"                       # En service
-    INACTIVE = "INACTIVE"                   # Hors service
-    IN_MAINTENANCE = "IN_MAINTENANCE"       # En maintenance
-    RESERVED = "RESERVED"                   # Réservé
-    DISPOSED = "DISPOSED"                   # Cédé/Éliminé
-    UNDER_REPAIR = "UNDER_REPAIR"           # En réparation
-    STANDBY = "STANDBY"                     # En veille
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    IN_MAINTENANCE = "IN_MAINTENANCE"
+    RESERVED = "RESERVED"
+    DISPOSED = "DISPOSED"
+    UNDER_REPAIR = "UNDER_REPAIR"
+    STANDBY = "STANDBY"
 
 
-class AssetCriticality(enum.Enum):
+class AssetCriticality(str, enum.Enum):
     """Niveaux de criticité"""
-    CRITICAL = "CRITICAL"                   # Critique - arrêt production
-    HIGH = "HIGH"                           # Haute - impact significatif
-    MEDIUM = "MEDIUM"                       # Moyenne - impact modéré
-    LOW = "LOW"                             # Basse - impact faible
+    CRITICAL = "CRITICAL"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
 
 
-class MaintenanceType(enum.Enum):
+class MaintenanceType(str, enum.Enum):
     """Types de maintenance"""
-    PREVENTIVE = "PREVENTIVE"               # Maintenance préventive
-    CORRECTIVE = "CORRECTIVE"               # Maintenance corrective
-    PREDICTIVE = "PREDICTIVE"               # Maintenance prédictive
-    CONDITION_BASED = "CONDITION_BASED"     # Maintenance conditionnelle
-    BREAKDOWN = "BREAKDOWN"                 # Dépannage
-    IMPROVEMENT = "IMPROVEMENT"             # Amélioration
-    INSPECTION = "INSPECTION"               # Inspection
-    CALIBRATION = "CALIBRATION"             # Étalonnage
+    PREVENTIVE = "PREVENTIVE"
+    CORRECTIVE = "CORRECTIVE"
+    PREDICTIVE = "PREDICTIVE"
+    CONDITION_BASED = "CONDITION_BASED"
+    BREAKDOWN = "BREAKDOWN"
+    IMPROVEMENT = "IMPROVEMENT"
+    INSPECTION = "INSPECTION"
+    CALIBRATION = "CALIBRATION"
 
 
-class WorkOrderStatus(enum.Enum):
+class WorkOrderStatus(str, enum.Enum):
     """Statuts d'ordre de travail"""
-    DRAFT = "DRAFT"                         # Brouillon
-    REQUESTED = "REQUESTED"                 # Demandé
-    APPROVED = "APPROVED"                   # Approuvé
-    PLANNED = "PLANNED"                     # Planifié
-    ASSIGNED = "ASSIGNED"                   # Assigné
-    IN_PROGRESS = "IN_PROGRESS"             # En cours
-    ON_HOLD = "ON_HOLD"                     # En attente
-    COMPLETED = "COMPLETED"                 # Terminé
-    VERIFIED = "VERIFIED"                   # Vérifié
-    CLOSED = "CLOSED"                       # Clôturé
-    CANCELLED = "CANCELLED"                 # Annulé
+    DRAFT = "DRAFT"
+    REQUESTED = "REQUESTED"
+    APPROVED = "APPROVED"
+    PLANNED = "PLANNED"
+    ASSIGNED = "ASSIGNED"
+    IN_PROGRESS = "IN_PROGRESS"
+    ON_HOLD = "ON_HOLD"
+    COMPLETED = "COMPLETED"
+    VERIFIED = "VERIFIED"
+    CLOSED = "CLOSED"
+    CANCELLED = "CANCELLED"
 
 
-class WorkOrderPriority(enum.Enum):
+class WorkOrderPriority(str, enum.Enum):
     """Priorités d'ordre de travail"""
-    EMERGENCY = "EMERGENCY"                 # Urgence absolue
-    CRITICAL = "CRITICAL"                   # Critique
-    HIGH = "HIGH"                           # Haute
-    MEDIUM = "MEDIUM"                       # Normale
-    LOW = "LOW"                             # Basse
-    SCHEDULED = "SCHEDULED"                 # Planifiée
+    EMERGENCY = "EMERGENCY"
+    CRITICAL = "CRITICAL"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    SCHEDULED = "SCHEDULED"
 
 
-class FailureType(enum.Enum):
+class FailureType(str, enum.Enum):
     """Types de panne"""
-    MECHANICAL = "MECHANICAL"               # Mécanique
-    ELECTRICAL = "ELECTRICAL"               # Électrique
-    ELECTRONIC = "ELECTRONIC"               # Électronique
-    HYDRAULIC = "HYDRAULIC"                 # Hydraulique
-    PNEUMATIC = "PNEUMATIC"                 # Pneumatique
-    SOFTWARE = "SOFTWARE"                   # Logiciel
-    OPERATOR_ERROR = "OPERATOR_ERROR"       # Erreur opérateur
-    WEAR = "WEAR"                           # Usure
-    CONTAMINATION = "CONTAMINATION"         # Contamination
-    UNKNOWN = "UNKNOWN"                     # Inconnue
+    MECHANICAL = "MECHANICAL"
+    ELECTRICAL = "ELECTRICAL"
+    ELECTRONIC = "ELECTRONIC"
+    HYDRAULIC = "HYDRAULIC"
+    PNEUMATIC = "PNEUMATIC"
+    SOFTWARE = "SOFTWARE"
+    OPERATOR_ERROR = "OPERATOR_ERROR"
+    WEAR = "WEAR"
+    CONTAMINATION = "CONTAMINATION"
+    UNKNOWN = "UNKNOWN"
 
 
-class PartRequestStatus(enum.Enum):
+class PartRequestStatus(str, enum.Enum):
     """Statuts de demande de pièce"""
-    REQUESTED = "REQUESTED"                 # Demandée
-    APPROVED = "APPROVED"                   # Approuvée
-    ORDERED = "ORDERED"                     # Commandée
-    RECEIVED = "RECEIVED"                   # Reçue
-    ISSUED = "ISSUED"                       # Sortie
-    CANCELLED = "CANCELLED"                 # Annulée
+    REQUESTED = "REQUESTED"
+    APPROVED = "APPROVED"
+    ORDERED = "ORDERED"
+    RECEIVED = "RECEIVED"
+    ISSUED = "ISSUED"
+    CANCELLED = "CANCELLED"
 
 
-class ContractType(enum.Enum):
+class ContractType(str, enum.Enum):
     """Types de contrat de maintenance"""
-    FULL_SERVICE = "FULL_SERVICE"           # Maintenance complète
-    PREVENTIVE = "PREVENTIVE"               # Préventive uniquement
-    ON_CALL = "ON_CALL"                     # Sur appel
-    PARTS_ONLY = "PARTS_ONLY"               # Pièces uniquement
-    LABOR_ONLY = "LABOR_ONLY"               # Main d'œuvre uniquement
-    WARRANTY = "WARRANTY"                   # Garantie
+    FULL_SERVICE = "FULL_SERVICE"
+    PREVENTIVE = "PREVENTIVE"
+    ON_CALL = "ON_CALL"
+    PARTS_ONLY = "PARTS_ONLY"
+    LABOR_ONLY = "LABOR_ONLY"
+    WARRANTY = "WARRANTY"
 
 
-class ContractStatus(enum.Enum):
+class ContractStatus(str, enum.Enum):
     """Statuts de contrat"""
-    DRAFT = "DRAFT"                         # Brouillon
-    ACTIVE = "ACTIVE"                       # Actif
-    SUSPENDED = "SUSPENDED"                 # Suspendu
-    EXPIRED = "EXPIRED"                     # Expiré
-    TERMINATED = "TERMINATED"               # Résilié
+    DRAFT = "DRAFT"
+    ACTIVE = "ACTIVE"
+    SUSPENDED = "SUSPENDED"
+    EXPIRED = "EXPIRED"
+    TERMINATED = "TERMINATED"
 
 
 # ============================================================================
@@ -163,25 +164,25 @@ class Asset(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     asset_code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(Text)
-    category = Column(Enum(AssetCategory), nullable=False)
-    asset_type = Column(String(100))  # Type spécifique
+    category = Column(SQLEnum(AssetCategory), nullable=False)
+    asset_type = Column(String(100))
 
     # Statut
-    status = Column(Enum(AssetStatus), default=AssetStatus.ACTIVE)
-    criticality = Column(Enum(AssetCriticality), default=AssetCriticality.MEDIUM)
+    status = Column(SQLEnum(AssetStatus), default=AssetStatus.ACTIVE)
+    criticality = Column(SQLEnum(AssetCriticality), default=AssetCriticality.MEDIUM)
 
     # Hiérarchie
-    parent_id = Column(BigInteger, ForeignKey("maintenance_assets.id"))
+    parent_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id"))
 
     # Localisation
-    location_id = Column(BigInteger)  # Référence warehouse/zone
+    location_id = Column(UniversalUUID())  # Référence warehouse/zone (inventory_warehouses)
     location_description = Column(String(200))
     building = Column(String(100))
     floor = Column(String(50))
@@ -215,7 +216,7 @@ class Asset(Base):
     depreciation_rate = Column(Numeric(5, 2))
 
     # Spécifications techniques
-    specifications = Column(JSON)
+    specifications = Column(JSONB, default=dict)
     power_rating = Column(String(100))
     dimensions = Column(String(200))
     weight = Column(Numeric(10, 2))
@@ -223,26 +224,26 @@ class Asset(Base):
 
     # Compteurs
     operating_hours = Column(Numeric(12, 2), default=0)
-    cycle_count = Column(BigInteger, default=0)
+    cycle_count = Column(Integer, default=0)
     energy_consumption = Column(Numeric(15, 4))
 
     # Maintenance
     maintenance_strategy = Column(String(50))  # PREVENTIVE, REACTIVE, PREDICTIVE
-    default_maintenance_plan_id = Column(BigInteger)
+    default_maintenance_plan_id = Column(UniversalUUID())
 
     # Fournisseur
-    supplier_id = Column(BigInteger)  # Référence fournisseur (table purchase_suppliers non implémentée)
+    supplier_id = Column(UniversalUUID())  # Référence fournisseur (procurement module)
 
     # Responsable
-    responsible_id = Column(BigInteger, ForeignKey("users.id"))
+    responsible_id = Column(UniversalUUID())  # Référence users
     department = Column(String(100))
 
     # Contrat
-    contract_id = Column(BigInteger)
+    contract_id = Column(UniversalUUID())
 
     # Média
     photo_url = Column(String(500))
-    documents = Column(JSON)  # Liste des documents
+    documents = Column(JSONB, default=list)
 
     # Notes
     notes = Column(Text)
@@ -254,16 +255,16 @@ class Asset(Base):
     # Indicateurs
     mtbf_hours = Column(Numeric(10, 2))  # Mean Time Between Failures
     mttr_hours = Column(Numeric(10, 2))  # Mean Time To Repair
-    availability_rate = Column(Numeric(5, 2))  # Taux de disponibilité
+    availability_rate = Column(Numeric(5, 2))
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
-    components = relationship("AssetComponent", back_populates="asset")
-    documents_rel = relationship("AssetDocument", back_populates="asset")
-    meters = relationship("AssetMeter", back_populates="asset")
+    components = relationship("AssetComponent", back_populates="asset", cascade="all, delete-orphan")
+    documents_rel = relationship("AssetDocument", back_populates="asset", cascade="all, delete-orphan")
+    meters = relationship("AssetMeter", back_populates="asset", cascade="all, delete-orphan")
     work_orders = relationship("MaintenanceWorkOrder", back_populates="asset")
     failures = relationship("Failure", back_populates="asset")
 
@@ -272,13 +273,14 @@ class AssetComponent(Base):
     """Composant d'un actif"""
     __tablename__ = "maintenance_asset_components"
     __table_args__ = (
+        Index("idx_component_tenant", "tenant_id"),
         Index("idx_component_asset", "asset_id"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    asset_id = Column(BigInteger, ForeignKey("maintenance_assets.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    asset_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id", ondelete="CASCADE"), nullable=False)
 
     # Identification
     component_code = Column(String(50), nullable=False)
@@ -299,20 +301,20 @@ class AssetComponent(Base):
     expected_life_hours = Column(Integer)
     expected_life_cycles = Column(Integer)
     current_hours = Column(Numeric(10, 2), default=0)
-    current_cycles = Column(BigInteger, default=0)
+    current_cycles = Column(Integer, default=0)
 
     # Criticité
-    criticality = Column(Enum(AssetCriticality))
+    criticality = Column(SQLEnum(AssetCriticality))
 
     # Pièce de rechange associée
-    spare_part_id = Column(BigInteger, ForeignKey("maintenance_spare_parts.id"))
+    spare_part_id = Column(UniversalUUID(), ForeignKey("maintenance_spare_parts.id"))
 
     # Notes
     notes = Column(Text)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     asset = relationship("Asset", back_populates="components")
@@ -322,13 +324,14 @@ class AssetDocument(Base):
     """Document associé à un actif"""
     __tablename__ = "maintenance_asset_documents"
     __table_args__ = (
+        Index("idx_asset_doc_tenant", "tenant_id"),
         Index("idx_asset_doc_asset", "asset_id"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    asset_id = Column(BigInteger, ForeignKey("maintenance_assets.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    asset_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id", ondelete="CASCADE"), nullable=False)
 
     # Document
     document_type = Column(String(50), nullable=False)  # MANUAL, DRAWING, CERTIFICATE, etc.
@@ -348,7 +351,7 @@ class AssetDocument(Base):
     is_active = Column(Boolean, default=True)
 
     created_at = Column(DateTime, server_default=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     asset = relationship("Asset", back_populates="documents_rel")
@@ -358,14 +361,15 @@ class AssetMeter(Base):
     """Compteur d'un actif"""
     __tablename__ = "maintenance_asset_meters"
     __table_args__ = (
+        Index("idx_meter_tenant", "tenant_id"),
         Index("idx_meter_asset", "asset_id"),
         UniqueConstraint("asset_id", "meter_code", name="uq_asset_meter"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    asset_id = Column(BigInteger, ForeignKey("maintenance_assets.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    asset_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id", ondelete="CASCADE"), nullable=False)
 
     # Identification
     meter_code = Column(String(50), nullable=False)
@@ -395,30 +399,31 @@ class AssetMeter(Base):
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     asset = relationship("Asset", back_populates="meters")
-    readings = relationship("MeterReading", back_populates="meter")
+    readings = relationship("MeterReading", back_populates="meter", cascade="all, delete-orphan")
 
 
 class MeterReading(Base):
     """Relevé de compteur"""
     __tablename__ = "maintenance_meter_readings"
     __table_args__ = (
+        Index("idx_reading_tenant", "tenant_id"),
         Index("idx_reading_meter", "meter_id"),
         Index("idx_reading_date", "reading_date"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    meter_id = Column(BigInteger, ForeignKey("maintenance_asset_meters.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    meter_id = Column(UniversalUUID(), ForeignKey("maintenance_asset_meters.id", ondelete="CASCADE"), nullable=False)
 
     # Relevé
     reading_date = Column(DateTime, nullable=False)
     reading_value = Column(Numeric(15, 4), nullable=False)
-    delta = Column(Numeric(15, 4))  # Différence avec relevé précédent
+    delta = Column(Numeric(15, 4))
 
     # Source
     source = Column(String(50))  # MANUAL, AUTOMATIC, IMPORT
@@ -427,7 +432,7 @@ class MeterReading(Base):
     notes = Column(Text)
 
     created_at = Column(DateTime, server_default=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     meter = relationship("AssetMeter", back_populates="readings")
@@ -447,8 +452,8 @@ class MaintenancePlan(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     plan_code = Column(String(50), nullable=False)
@@ -456,11 +461,11 @@ class MaintenancePlan(Base):
     description = Column(Text)
 
     # Type
-    maintenance_type = Column(Enum(MaintenanceType), nullable=False)
+    maintenance_type = Column(SQLEnum(MaintenanceType), nullable=False)
 
     # Actif concerné
-    asset_id = Column(BigInteger, ForeignKey("maintenance_assets.id"))
-    asset_category = Column(Enum(AssetCategory))  # Ou applicable à une catégorie
+    asset_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id"))
+    asset_category = Column(SQLEnum(AssetCategory))  # Ou applicable à une catégorie
 
     # Déclenchement
     trigger_type = Column(String(50), nullable=False)  # TIME, METER, CONDITION
@@ -470,7 +475,7 @@ class MaintenancePlan(Base):
     frequency_unit = Column(String(20))  # DAYS, WEEKS, MONTHS, YEARS
 
     # Déclenchement compteur
-    trigger_meter_id = Column(BigInteger, ForeignKey("maintenance_asset_meters.id"))
+    trigger_meter_id = Column(UniversalUUID(), ForeignKey("maintenance_asset_meters.id"))
     trigger_meter_interval = Column(Numeric(15, 4))
 
     # Planification
@@ -482,7 +487,7 @@ class MaintenancePlan(Base):
     estimated_duration_hours = Column(Numeric(6, 2))
 
     # Responsable
-    responsible_id = Column(BigInteger, ForeignKey("users.id"))
+    responsible_id = Column(UniversalUUID())  # Référence users
 
     # Statut
     is_active = Column(Boolean, default=True)
@@ -495,28 +500,29 @@ class MaintenancePlan(Base):
     # Instructions
     instructions = Column(Text)
     safety_instructions = Column(Text)
-    required_tools = Column(JSON)
-    required_certifications = Column(JSON)
+    required_tools = Column(JSONB, default=list)
+    required_certifications = Column(JSONB, default=list)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
-    tasks = relationship("MaintenancePlanTask", back_populates="plan")
+    tasks = relationship("MaintenancePlanTask", back_populates="plan", cascade="all, delete-orphan")
 
 
 class MaintenancePlanTask(Base):
     """Tâche d'un plan de maintenance"""
     __tablename__ = "maintenance_plan_tasks"
     __table_args__ = (
+        Index("idx_mplan_task_tenant", "tenant_id"),
         Index("idx_mplan_task_plan", "plan_id"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    plan_id = Column(BigInteger, ForeignKey("maintenance_plans.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    plan_id = Column(UniversalUUID(), ForeignKey("maintenance_plans.id", ondelete="CASCADE"), nullable=False)
 
     # Tâche
     sequence = Column(Integer, nullable=False)
@@ -531,10 +537,10 @@ class MaintenancePlanTask(Base):
     required_skill = Column(String(100))
 
     # Pièces
-    required_parts = Column(JSON)  # Liste des pièces nécessaires
+    required_parts = Column(JSONB, default=list)
 
     # Points de contrôle
-    check_points = Column(JSON)
+    check_points = Column(JSONB, default=list)
 
     # Criticité
     is_mandatory = Column(Boolean, default=True)
@@ -563,8 +569,8 @@ class MaintenanceWorkOrder(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     wo_number = Column(String(50), nullable=False)
@@ -572,22 +578,22 @@ class MaintenanceWorkOrder(Base):
     description = Column(Text)
 
     # Type et priorité
-    maintenance_type = Column(Enum(MaintenanceType), nullable=False)
-    priority = Column(Enum(WorkOrderPriority), default=WorkOrderPriority.MEDIUM)
-    status = Column(Enum(WorkOrderStatus), default=WorkOrderStatus.DRAFT)
+    maintenance_type = Column(SQLEnum(MaintenanceType), nullable=False)
+    priority = Column(SQLEnum(WorkOrderPriority), default=WorkOrderPriority.MEDIUM)
+    status = Column(SQLEnum(WorkOrderStatus), default=WorkOrderStatus.DRAFT)
 
     # Actif
-    asset_id = Column(BigInteger, ForeignKey("maintenance_assets.id"), nullable=False)
-    component_id = Column(BigInteger, ForeignKey("maintenance_asset_components.id"))
+    asset_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id"), nullable=False)
+    component_id = Column(UniversalUUID(), ForeignKey("maintenance_asset_components.id"))
 
     # Origine
     source = Column(String(50))  # MANUAL, PLAN, FAILURE, REQUEST
     source_reference = Column(String(100))
-    maintenance_plan_id = Column(BigInteger, ForeignKey("maintenance_plans.id"))
-    failure_id = Column(BigInteger, ForeignKey("maintenance_failures.id"))
+    maintenance_plan_id = Column(UniversalUUID(), ForeignKey("maintenance_plans.id"))
+    failure_id = Column(UniversalUUID(), ForeignKey("maintenance_failures.id"))
 
     # Demandeur
-    requester_id = Column(BigInteger, ForeignKey("users.id"))
+    requester_id = Column(UniversalUUID())  # Référence users
     request_date = Column(DateTime)
     request_description = Column(Text)
 
@@ -602,24 +608,24 @@ class MaintenanceWorkOrder(Base):
     downtime_hours = Column(Numeric(8, 2))
 
     # Affectation
-    assigned_to_id = Column(BigInteger, ForeignKey("users.id"))
-    team_id = Column(BigInteger)
-    external_vendor_id = Column(BigInteger)  # Référence fournisseur externe (table purchase_suppliers non implémentée)
+    assigned_to_id = Column(UniversalUUID())  # Référence users
+    team_id = Column(UniversalUUID())
+    external_vendor_id = Column(UniversalUUID())  # Référence fournisseur externe
 
     # Instructions
     work_instructions = Column(Text)
     safety_precautions = Column(Text)
-    tools_required = Column(JSON)
-    certifications_required = Column(JSON)
+    tools_required = Column(JSONB, default=list)
+    certifications_required = Column(JSONB, default=list)
 
     # Localisation
     location_description = Column(String(200))
 
     # Completion
     completion_notes = Column(Text)
-    completed_by_id = Column(BigInteger, ForeignKey("users.id"))
+    completed_by_id = Column(UniversalUUID())  # Référence users
     verification_required = Column(Boolean, default=False)
-    verified_by_id = Column(BigInteger, ForeignKey("users.id"))
+    verified_by_id = Column(UniversalUUID())  # Référence users
     verified_date = Column(DateTime)
 
     # Coûts
@@ -637,34 +643,35 @@ class MaintenanceWorkOrder(Base):
     meter_reading_end = Column(Numeric(15, 4))
 
     # Pièces jointes
-    attachments = Column(JSON)
+    attachments = Column(JSONB, default=list)
 
     # Notes
     notes = Column(Text)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     asset = relationship("Asset", back_populates="work_orders")
-    tasks = relationship("WorkOrderTask", back_populates="work_order")
-    labor_entries = relationship("WorkOrderLabor", back_populates="work_order")
-    parts_used = relationship("WorkOrderPart", back_populates="work_order")
+    tasks = relationship("WorkOrderTask", back_populates="work_order", cascade="all, delete-orphan")
+    labor_entries = relationship("WorkOrderLabor", back_populates="work_order", cascade="all, delete-orphan")
+    parts_used = relationship("WorkOrderPart", back_populates="work_order", cascade="all, delete-orphan")
 
 
 class WorkOrderTask(Base):
     """Tâche d'un ordre de travail"""
     __tablename__ = "maintenance_wo_tasks"
     __table_args__ = (
+        Index("idx_wo_task_tenant", "tenant_id"),
         Index("idx_wo_task_wo", "work_order_id"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    work_order_id = Column(BigInteger, ForeignKey("maintenance_work_orders.id"), nullable=False)
-    plan_task_id = Column(BigInteger, ForeignKey("maintenance_plan_tasks.id"))
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    work_order_id = Column(UniversalUUID(), ForeignKey("maintenance_work_orders.id", ondelete="CASCADE"), nullable=False)
+    plan_task_id = Column(UniversalUUID(), ForeignKey("maintenance_plan_tasks.id"))
 
     # Tâche
     sequence = Column(Integer, nullable=False)
@@ -678,7 +685,7 @@ class WorkOrderTask(Base):
     # Statut
     status = Column(String(50), default="PENDING")  # PENDING, IN_PROGRESS, COMPLETED, SKIPPED
     completed_date = Column(DateTime)
-    completed_by_id = Column(BigInteger, ForeignKey("users.id"))
+    completed_by_id = Column(UniversalUUID())  # Référence users
 
     # Résultat
     result = Column(Text)
@@ -698,16 +705,17 @@ class WorkOrderLabor(Base):
     """Temps de main d'œuvre sur un OT"""
     __tablename__ = "maintenance_wo_labor"
     __table_args__ = (
+        Index("idx_wo_labor_tenant", "tenant_id"),
         Index("idx_wo_labor_wo", "work_order_id"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    work_order_id = Column(BigInteger, ForeignKey("maintenance_work_orders.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    work_order_id = Column(UniversalUUID(), ForeignKey("maintenance_work_orders.id", ondelete="CASCADE"), nullable=False)
 
     # Technicien
-    technician_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    technician_id = Column(UniversalUUID(), nullable=False)  # Référence users
     technician_name = Column(String(200))
 
     # Temps
@@ -728,7 +736,7 @@ class WorkOrderLabor(Base):
     work_description = Column(Text)
 
     created_at = Column(DateTime, server_default=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     work_order = relationship("MaintenanceWorkOrder", back_populates="labor_entries")
@@ -738,16 +746,17 @@ class WorkOrderPart(Base):
     """Pièce utilisée sur un OT"""
     __tablename__ = "maintenance_wo_parts"
     __table_args__ = (
+        Index("idx_wo_part_tenant", "tenant_id"),
         Index("idx_wo_part_wo", "work_order_id"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    work_order_id = Column(BigInteger, ForeignKey("maintenance_work_orders.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    work_order_id = Column(UniversalUUID(), ForeignKey("maintenance_work_orders.id", ondelete="CASCADE"), nullable=False)
 
     # Pièce
-    spare_part_id = Column(BigInteger, ForeignKey("maintenance_spare_parts.id"))
+    spare_part_id = Column(UniversalUUID(), ForeignKey("maintenance_spare_parts.id"))
     part_code = Column(String(100))
     part_description = Column(String(300), nullable=False)
 
@@ -768,7 +777,7 @@ class WorkOrderPart(Base):
     notes = Column(Text)
 
     created_at = Column(DateTime, server_default=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     work_order = relationship("MaintenanceWorkOrder", back_populates="parts_used")
@@ -788,18 +797,18 @@ class Failure(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     failure_number = Column(String(50), nullable=False)
 
     # Actif
-    asset_id = Column(BigInteger, ForeignKey("maintenance_assets.id"), nullable=False)
-    component_id = Column(BigInteger, ForeignKey("maintenance_asset_components.id"))
+    asset_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id"), nullable=False)
+    component_id = Column(UniversalUUID(), ForeignKey("maintenance_asset_components.id"))
 
     # Description
-    failure_type = Column(Enum(FailureType), nullable=False)
+    failure_type = Column(SQLEnum(FailureType), nullable=False)
     description = Column(Text, nullable=False)
     symptoms = Column(Text)
 
@@ -816,10 +825,10 @@ class Failure(Base):
     estimated_cost_impact = Column(Numeric(15, 2))
 
     # Signalé par
-    reported_by_id = Column(BigInteger, ForeignKey("users.id"))
+    reported_by_id = Column(UniversalUUID())  # Référence users
 
     # Ordre de travail généré
-    work_order_id = Column(BigInteger)
+    work_order_id = Column(UniversalUUID())
 
     # Résolution
     resolution = Column(Text)
@@ -835,28 +844,29 @@ class Failure(Base):
 
     # Notes
     notes = Column(Text)
-    attachments = Column(JSON)
+    attachments = Column(JSONB, default=list)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     asset = relationship("Asset", back_populates="failures")
-    causes = relationship("FailureCause", back_populates="failure")
+    causes = relationship("FailureCause", back_populates="failure", cascade="all, delete-orphan")
 
 
 class FailureCause(Base):
     """Cause de panne (analyse)"""
     __tablename__ = "maintenance_failure_causes"
     __table_args__ = (
+        Index("idx_failure_cause_tenant", "tenant_id"),
         Index("idx_failure_cause_failure", "failure_id"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    failure_id = Column(BigInteger, ForeignKey("maintenance_failures.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    failure_id = Column(UniversalUUID(), ForeignKey("maintenance_failures.id", ondelete="CASCADE"), nullable=False)
 
     # Cause
     cause_category = Column(String(100))  # EQUIPMENT, HUMAN, PROCESS, etc.
@@ -870,7 +880,7 @@ class FailureCause(Base):
     recommended_action = Column(Text)
 
     created_at = Column(DateTime, server_default=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
     failure = relationship("Failure", back_populates="causes")
@@ -890,8 +900,8 @@ class SparePart(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     part_code = Column(String(100), nullable=False)
@@ -904,10 +914,10 @@ class SparePart(Base):
     manufacturer_part_number = Column(String(100))
 
     # Fournisseur
-    preferred_supplier_id = Column(BigInteger)  # Référence fournisseur préféré (table purchase_suppliers non implémentée)
+    preferred_supplier_id = Column(UniversalUUID())  # Référence fournisseur préféré
 
     # Équivalences
-    equivalent_parts = Column(JSON)  # Liste des pièces équivalentes
+    equivalent_parts = Column(JSONB, default=list)
 
     # Unité
     unit = Column(String(50), nullable=False)
@@ -927,7 +937,7 @@ class SparePart(Base):
     lead_time_days = Column(Integer)
 
     # Criticité
-    criticality = Column(Enum(AssetCriticality))
+    criticality = Column(SQLEnum(AssetCriticality))
 
     # Durée de vie
     shelf_life_days = Column(Integer)
@@ -936,35 +946,36 @@ class SparePart(Base):
     is_active = Column(Boolean, default=True)
 
     # Lien produit inventaire
-    product_id = Column(BigInteger, ForeignKey("inventory_products.id"))
+    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"))
 
     # Notes
     notes = Column(Text)
-    specifications = Column(JSON)
+    specifications = Column(JSONB, default=dict)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
     # Relations
-    stock_locations = relationship("SparePartStock", back_populates="spare_part")
+    stock_locations = relationship("SparePartStock", back_populates="spare_part", cascade="all, delete-orphan")
 
 
 class SparePartStock(Base):
     """Stock de pièce de rechange par emplacement"""
     __tablename__ = "maintenance_spare_part_stock"
     __table_args__ = (
+        Index("idx_spare_stock_tenant", "tenant_id"),
         Index("idx_spare_stock_part", "spare_part_id"),
         UniqueConstraint("spare_part_id", "location_id", name="uq_spare_stock_loc"),
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
-    spare_part_id = Column(BigInteger, ForeignKey("maintenance_spare_parts.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    spare_part_id = Column(UniversalUUID(), ForeignKey("maintenance_spare_parts.id", ondelete="CASCADE"), nullable=False)
 
     # Emplacement
-    location_id = Column(BigInteger)  # Référence warehouse
+    location_id = Column(UniversalUUID())  # Référence warehouse
     location_description = Column(String(200))
     bin_location = Column(String(100))
 
@@ -993,17 +1004,17 @@ class PartRequest(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     request_number = Column(String(50), nullable=False)
 
     # Ordre de travail
-    work_order_id = Column(BigInteger, ForeignKey("maintenance_work_orders.id"))
+    work_order_id = Column(UniversalUUID(), ForeignKey("maintenance_work_orders.id"))
 
     # Pièce
-    spare_part_id = Column(BigInteger, ForeignKey("maintenance_spare_parts.id"))
+    spare_part_id = Column(UniversalUUID(), ForeignKey("maintenance_spare_parts.id"))
     part_description = Column(String(300), nullable=False)
 
     # Quantité
@@ -1013,23 +1024,23 @@ class PartRequest(Base):
     unit = Column(String(50))
 
     # Urgence
-    priority = Column(Enum(WorkOrderPriority), default=WorkOrderPriority.MEDIUM)
+    priority = Column(SQLEnum(WorkOrderPriority), default=WorkOrderPriority.MEDIUM)
     required_date = Column(Date)
 
     # Statut
-    status = Column(Enum(PartRequestStatus), default=PartRequestStatus.REQUESTED)
+    status = Column(SQLEnum(PartRequestStatus), default=PartRequestStatus.REQUESTED)
 
     # Demandeur
-    requester_id = Column(BigInteger, ForeignKey("users.id"))
+    requester_id = Column(UniversalUUID())  # Référence users
     request_date = Column(DateTime)
     request_reason = Column(Text)
 
     # Approbation
-    approved_by_id = Column(BigInteger, ForeignKey("users.id"))
+    approved_by_id = Column(UniversalUUID())  # Référence users
     approved_date = Column(DateTime)
 
     # Issue
-    issued_by_id = Column(BigInteger, ForeignKey("users.id"))
+    issued_by_id = Column(UniversalUUID())  # Référence users
     issued_date = Column(DateTime)
 
     # Notes
@@ -1037,7 +1048,7 @@ class PartRequest(Base):
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
 
 # ============================================================================
@@ -1053,8 +1064,8 @@ class MaintenanceContract(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     contract_code = Column(String(50), nullable=False)
@@ -1062,11 +1073,11 @@ class MaintenanceContract(Base):
     description = Column(Text)
 
     # Type
-    contract_type = Column(Enum(ContractType), nullable=False)
-    status = Column(Enum(ContractStatus), default=ContractStatus.DRAFT)
+    contract_type = Column(SQLEnum(ContractType), nullable=False)
+    status = Column(SQLEnum(ContractStatus), default=ContractStatus.DRAFT)
 
     # Fournisseur
-    vendor_id = Column(BigInteger, nullable=False)  # Référence fournisseur (table purchase_suppliers non implémentée)
+    vendor_id = Column(UniversalUUID(), nullable=False)  # Référence fournisseur
     vendor_contact = Column(String(200))
     vendor_phone = Column(String(50))
     vendor_email = Column(String(200))
@@ -1082,7 +1093,7 @@ class MaintenanceContract(Base):
     renewal_terms = Column(Text)
 
     # Périmètre
-    covered_assets = Column(JSON)  # Liste des IDs d'actifs couverts
+    covered_assets = Column(JSONB, default=list)  # Liste des IDs d'actifs couverts
     coverage_description = Column(Text)
     exclusions = Column(Text)
 
@@ -1106,17 +1117,17 @@ class MaintenanceContract(Base):
 
     # Documents
     contract_file = Column(String(500))
-    documents = Column(JSON)
+    documents = Column(JSONB, default=list)
 
     # Responsable
-    manager_id = Column(BigInteger, ForeignKey("users.id"))
+    manager_id = Column(UniversalUUID())  # Référence users
 
     # Notes
     notes = Column(Text)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_by = Column(UniversalUUID())
 
 
 # ============================================================================
@@ -1133,11 +1144,11 @@ class MaintenanceKPI(Base):
         {"schema": None},
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenants.id"), nullable=False)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Actif (optionnel - si null = KPIs globaux)
-    asset_id = Column(BigInteger, ForeignKey("maintenance_assets.id"))
+    asset_id = Column(UniversalUUID(), ForeignKey("maintenance_assets.id"))
 
     # Période
     period_start = Column(Date, nullable=False)
