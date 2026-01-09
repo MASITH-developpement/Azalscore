@@ -7,15 +7,12 @@ Modèles SQLAlchemy pour la gestion des interventions terrain.
 import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    ForeignKey, Numeric, Enum, Index, Date, Time, Integer
-)
+
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text, Time
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
-from app.core.types import UniversalUUID, JSON
-
+from app.core.types import JSON, UniversalUUID
 
 # ============================================================================
 # ENUMS

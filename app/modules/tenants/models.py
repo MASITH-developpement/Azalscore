@@ -5,16 +5,14 @@ AZALS MODULE T9 - Modèles Tenants
 Modèles SQLAlchemy pour la gestion des tenants.
 """
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Enum, Float, Integer
-)
-from app.core.database import Base
-from app.core.types import UniversalUUID, JSON
 
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
+
+from app.core.database import Base
+from app.core.types import JSON, UniversalUUID
 
 # ============================================================================
 # ENUMS

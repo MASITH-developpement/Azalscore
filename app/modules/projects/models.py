@@ -6,17 +6,28 @@ Modèles SQLAlchemy pour la gestion de projets.
 """
 
 import enum
-from datetime import datetime, date
-from sqlalchemy import (
-    Column, String, Integer, Boolean, DateTime, Date,
-    ForeignKey, Numeric, Text, Enum, Float, JSON, Index
-)
-from app.core.types import UniversalUUID
-from sqlalchemy.orm import relationship
 import uuid
+from datetime import date, datetime
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
-
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
