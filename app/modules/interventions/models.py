@@ -13,18 +13,27 @@ Entités:
 """
 
 import enum
+import uuid
 from datetime import datetime
-from decimal import Decimal
+
 from sqlalchemy import (
-    Column, String, Integer, Text, Boolean, DateTime,
-    ForeignKey, Numeric, Enum, Index, JSON, Date, UniqueConstraint
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
-import uuid
 
 from app.core.database import Base
 from app.core.types import UniversalUUID
-
 
 # ============================================================================
 # ENUMS
@@ -77,7 +86,7 @@ class InterventionSequence(Base):
     """
     __tablename__ = "int_sequences"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False)
     year = Column(Integer, nullable=False)
     last_number = Column(Integer, nullable=False, default=0)

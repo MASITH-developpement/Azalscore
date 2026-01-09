@@ -5,18 +5,28 @@ AZALS MODULE M3 - Modèles RH
 Modèles SQLAlchemy pour la gestion des ressources humaines.
 """
 
-from datetime import datetime
-from sqlalchemy import (
-    Column, String, DateTime, Text, Boolean, ForeignKey,
-    Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint
-)
-from app.core.types import UniversalUUID, JSONB
-from sqlalchemy.orm import relationship
-import uuid
 import enum
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
-
+from app.core.types import JSONB, UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -199,7 +209,7 @@ class Employee(Base):
 
     # Identifiants
     employee_number = Column(String(50), nullable=False)
-    user_id = Column(Integer, nullable=True)  # Lien vers User si existe
+    user_id = Column(UniversalUUID(), nullable=True)  # Lien vers User si existe
 
     # Informations personnelles
     first_name = Column(String(100), nullable=False)

@@ -3,17 +3,30 @@ AZALS MODULE T2 - Modèles Déclencheurs & Diffusion
 ===================================================
 
 Modèles SQLAlchemy pour le système de déclencheurs.
+MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 """
 
+import enum
+import uuid
 from datetime import datetime
+
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Text, Boolean, ForeignKey,
-    Index, Enum, UniqueConstraint, func
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import relationship
-import enum
-from app.core.database import Base
 
+from app.core.database import Base
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -109,7 +122,7 @@ class Trigger(Base):
     """
     __tablename__ = "triggers_definitions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -145,7 +158,7 @@ class Trigger(Base):
     escalation_level = Column(Enum(EscalationLevel), default=EscalationLevel.L1, nullable=True)
 
     # Actions
-    action_template_id = Column(Integer, ForeignKey('triggers_templates.id'), nullable=True)
+    action_template_id = Column(UniversalUUID(), ForeignKey('triggers_templates.id'), nullable=True)
 
     # Cooldown (éviter spam)
     cooldown_minutes = Column(Integer, default=60, nullable=False)
@@ -160,7 +173,7 @@ class Trigger(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     template = relationship("NotificationTemplate", foreign_keys=[action_template_id])
@@ -183,14 +196,14 @@ class TriggerSubscription(Base):
     """
     __tablename__ = "triggers_subscriptions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Relation
-    trigger_id = Column(Integer, ForeignKey('triggers_definitions.id', ondelete='CASCADE'), nullable=False)
+    trigger_id = Column(UniversalUUID(), ForeignKey('triggers_definitions.id', ondelete='CASCADE'), nullable=False)
 
     # Cible
-    user_id = Column(Integer, nullable=True)  # Utilisateur spécifique
+    user_id = Column(UniversalUUID(), nullable=True)  # Utilisateur spécifique
     role_code = Column(String(50), nullable=True)  # Ou tous les utilisateurs d'un rôle
     group_code = Column(String(50), nullable=True)  # Ou tous les utilisateurs d'un groupe
     email_external = Column(String(255), nullable=True)  # Ou email externe
@@ -207,7 +220,7 @@ class TriggerSubscription(Base):
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     trigger = relationship("Trigger", back_populates="subscriptions")
@@ -226,11 +239,11 @@ class TriggerEvent(Base):
     """
     __tablename__ = "triggers_events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Relation
-    trigger_id = Column(Integer, ForeignKey('triggers_definitions.id', ondelete='CASCADE'), nullable=False)
+    trigger_id = Column(UniversalUUID(), ForeignKey('triggers_definitions.id', ondelete='CASCADE'), nullable=False)
 
     # Contexte du déclenchement
     triggered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -247,7 +260,7 @@ class TriggerEvent(Base):
     # Résolution
     resolved = Column(Boolean, default=False, nullable=False)
     resolved_at = Column(DateTime, nullable=True)
-    resolved_by = Column(Integer, nullable=True)
+    resolved_by = Column(UniversalUUID(), nullable=True)
     resolution_notes = Column(Text, nullable=True)
 
     # Relation
@@ -268,14 +281,14 @@ class Notification(Base):
     """
     __tablename__ = "triggers_notifications"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Relation
-    event_id = Column(Integer, ForeignKey('triggers_events.id', ondelete='CASCADE'), nullable=False)
+    event_id = Column(UniversalUUID(), ForeignKey('triggers_events.id', ondelete='CASCADE'), nullable=False)
 
     # Destinataire
-    user_id = Column(Integer, nullable=True)
+    user_id = Column(UniversalUUID(), nullable=True)
     email = Column(String(255), nullable=True)
 
     # Canal et contenu
@@ -315,7 +328,7 @@ class NotificationTemplate(Base):
     """
     __tablename__ = "triggers_templates"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -338,7 +351,7 @@ class NotificationTemplate(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_template_code'),
@@ -352,7 +365,7 @@ class ScheduledReport(Base):
     """
     __tablename__ = "triggers_scheduled_reports"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -372,7 +385,7 @@ class ScheduledReport(Base):
     schedule_cron = Column(String(100), nullable=True)  # Pour CUSTOM
 
     # Destinataires (JSON)
-    recipients = Column(Text, nullable=False)  # {"users": [1,2], "roles": ["DAF"], "emails": ["ext@test.com"]}
+    recipients = Column(Text, nullable=False)  # {"users": [uuid1,uuid2], "roles": ["DAF"], "emails": ["ext@test.com"]}
 
     # Format
     output_format = Column(String(20), default='PDF', nullable=False)  # PDF, EXCEL, HTML
@@ -388,7 +401,7 @@ class ScheduledReport(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_report_code'),
@@ -404,15 +417,15 @@ class ReportHistory(Base):
     """
     __tablename__ = "triggers_report_history"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Relation
-    report_id = Column(Integer, ForeignKey('triggers_scheduled_reports.id', ondelete='CASCADE'), nullable=False)
+    report_id = Column(UniversalUUID(), ForeignKey('triggers_scheduled_reports.id', ondelete='CASCADE'), nullable=False)
 
     # Génération
     generated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    generated_by = Column(Integer, nullable=True)  # NULL si automatique
+    generated_by = Column(UniversalUUID(), nullable=True)  # NULL si automatique
 
     # Fichier
     file_name = Column(String(255), nullable=False)
@@ -441,7 +454,7 @@ class WebhookEndpoint(Base):
     """
     __tablename__ = "triggers_webhooks"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Identification
@@ -469,7 +482,7 @@ class WebhookEndpoint(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_webhook_code'),
@@ -483,13 +496,13 @@ class TriggerLog(Base):
     """
     __tablename__ = "triggers_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Action
     action = Column(String(100), nullable=False)
     entity_type = Column(String(50), nullable=False)
-    entity_id = Column(Integer, nullable=True)
+    entity_id = Column(UniversalUUID(), nullable=True)
 
     # Détails
     details = Column(Text, nullable=True)
