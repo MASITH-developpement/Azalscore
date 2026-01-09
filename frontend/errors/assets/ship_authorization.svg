@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="spaceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a1a"/>
+      <stop offset="100%" style="stop-color:#1a1a3a"/>
+    </linearGradient>
+    <linearGradient id="shipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5568"/>
+      <stop offset="100%" style="stop-color:#2d3748"/>
+    </linearGradient>
+    <linearGradient id="barrierGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c3aed" stop-opacity="0"/>
+      <stop offset="50%" style="stop-color:#7c3aed" stop-opacity="0.8"/>
+      <stop offset="100%" style="stop-color:#7c3aed" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="barrierGlow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#spaceGradient)"/>
+
+  <!-- Stars -->
+  <circle cx="30" cy="40" r="1" fill="#fff" opacity="0.8"/>
+  <circle cx="100" cy="70" r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="60" cy="180" r="1" fill="#fff" opacity="0.7"/>
+  <circle cx="45" cy="250" r="1.2" fill="#fff" opacity="0.5"/>
+  <circle cx="370" cy="30" r="1" fill="#fff" opacity="0.6"/>
+  <circle cx="380" cy="120" r="1.5" fill="#fff" opacity="0.7"/>
+  <circle cx="350" cy="220" r="0.8" fill="#fff" opacity="0.5"/>
+  <circle cx="390" cy="270" r="1" fill="#fff" opacity="0.6"/>
+
+  <!-- Forbidden Zone Barrier -->
+  <g filter="url(#barrierGlow)">
+    <rect x="220" y="0" width="8" height="300" fill="url(#barrierGradient)"/>
+    <line x1="224" y1="0" x2="224" y2="300" stroke="#a855f7" stroke-width="2" stroke-dasharray="10,5">
+      <animate attributeName="stroke-dashoffset" values="0;30" dur="1s" repeatCount="indefinite"/>
+    </line>
+  </g>
+
+  <!-- Forbidden Zone Symbol -->
+  <g transform="translate(320, 80)">
+    <circle cx="0" cy="0" r="30" fill="#1a0a2a" stroke="#a855f7" stroke-width="2" filter="url(#glow)"/>
+    <line x1="-15" y1="-15" x2="15" y2="15" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+    <line x1="15" y1="-15" x2="-15" y2="15" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Zone Interdite Text -->
+  <g transform="translate(320, 140)">
+    <rect x="-50" y="-12" width="100" height="24" rx="3" fill="#1a0a2a" stroke="#a855f7" stroke-width="1" opacity="0.9"/>
+    <text x="0" y="5" fill="#a855f7" font-family="monospace" font-size="10" text-anchor="middle" font-weight="bold">ZONE INTERDITE</text>
+  </g>
+
+  <!-- Spaceship (stopped before barrier) -->
+  <g transform="translate(-30, 0)">
+    <ellipse cx="150" cy="150" rx="60" ry="22" fill="url(#shipGradient)" stroke="#6b7280" stroke-width="2"/>
+    <ellipse cx="150" cy="147" rx="50" ry="15" fill="#3d4852" opacity="0.6"/>
+
+    <!-- Cockpit -->
+    <ellipse cx="150" cy="143" rx="18" ry="9" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5" filter="url(#glow)"/>
+
+    <!-- Wings -->
+    <path d="M95 150 L65 175 L65 182 L100 160 Z" fill="url(#shipGradient)" stroke="#6b7280" stroke-width="1"/>
+    <path d="M205 150 L235 175 L235 182 L200 160 Z" fill="url(#shipGradient)" stroke="#6b7280" stroke-width="1"/>
+
+    <!-- Engine -->
+    <rect x="125" y="165" width="50" height="12" rx="3" fill="#374151"/>
+
+    <!-- Engine Glow -->
+    <ellipse cx="150" cy="177" rx="15" ry="4" fill="#60a5fa" opacity="0.4" filter="url(#glow)"/>
+  </g>
+
+  <!-- Warning signals from barrier -->
+  <g stroke="#a855f7" stroke-width="1.5" opacity="0.6" filter="url(#glow)">
+    <path d="M210 100 Q195 120 210 140" fill="none"/>
+    <path d="M210 160 Q195 180 210 200" fill="none"/>
+  </g>
+
+  <!-- Shield/Permission Icon -->
+  <g transform="translate(320, 210)">
+    <path d="M0 -20 L20 -10 L20 10 C20 25 0 35 0 35 C0 35 -20 25 -20 10 L-20 -10 Z" fill="#1a0a2a" stroke="#a855f7" stroke-width="2"/>
+    <text x="0" y="5" fill="#a855f7" font-family="monospace" font-size="14" text-anchor="middle">!</text>
+  </g>
+</svg>

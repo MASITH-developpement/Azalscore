@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erreur 403 - Acces Interdit | AZALS</title>
+    <style>
+        :root {
+            --color-space-dark: #0a0a1a;
+            --color-space-mid: #1a1a3a;
+            --color-space-light: #2a2a4a;
+            --color-neon-blue: #60a5fa;
+            --color-neon-purple: #a855f7;
+            --color-neon-cyan: #22d3ee;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --color-text: #e2e8f0;
+            --color-text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--color-space-dark) 0%, var(--color-space-mid) 50%, var(--color-space-dark) 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--color-text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.7), transparent);
+            background-repeat: repeat;
+            background-size: 200px 150px;
+            animation: twinkle 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .error-code {
+            font-size: clamp(4rem, 15vw, 8rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--color-neon-purple) 0%, var(--color-error) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(168, 85, 247, 0.3);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-type {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: var(--color-neon-purple);
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .illustration {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            margin: 0 auto 2rem;
+            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.2));
+        }
+
+        .message-box {
+            background: rgba(26, 26, 58, 0.8);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-text);
+        }
+
+        .message-description {
+            color: var(--color-text-muted);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .technical-info {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.75rem;
+            color: var(--color-neon-purple);
+            opacity: 0.7;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--color-space-light) 0%, var(--color-space-mid) 100%);
+            border: 1px solid var(--color-neon-blue);
+            border-radius: 8px;
+            color: var(--color-neon-blue);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.1);
+        }
+
+        .btn-home:hover {
+            background: linear-gradient(135deg, var(--color-neon-blue) 0%, var(--color-neon-purple) 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(96, 165, 250, 0.3);
+        }
+
+        .btn-home svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .logo {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--color-neon-blue) 0%, var(--color-neon-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+
+            .message-box {
+                padding: 1.5rem;
+            }
+
+            .logo {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">AZALS</div>
+
+    <div class="container">
+        <div class="error-code">403</div>
+        <div class="error-type">Acces Interdit</div>
+
+        <img src="assets/ship_authorization.svg" alt="Zone spatiale interdite" class="illustration">
+
+        <div class="message-box">
+            <h1 class="message-title">Zone spatiale interdite</h1>
+            <p class="message-description">
+                Cette zone de l'espace est restreinte. Votre niveau d'autorisation actuel ne permet pas d'y acceder.
+                Contactez le commandement si vous pensez avoir les droits necessaires.
+            </p>
+            <div class="technical-info">
+                CODE ERREUR: AUTHORIZATION_ERROR | TYPE: FORBIDDEN
+            </div>
+        </div>
+
+        <a href="/" class="btn-home">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Retour a la base
+        </a>
+    </div>
+</body>
+</html>
