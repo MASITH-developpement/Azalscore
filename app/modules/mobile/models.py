@@ -2,18 +2,29 @@
 AZALS MODULE 18 - Mobile App Models
 ====================================
 Modèles SQLAlchemy pour le backend mobile.
+MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
+
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Index, JSON, BigInteger
+    JSON,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
-
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -52,9 +63,9 @@ class MobileDevice(Base):
     """Appareil mobile enregistré."""
     __tablename__ = "mobile_devices"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
 
     # Identification appareil
     device_id = Column(String(255), nullable=False)  # UUID unique
@@ -105,10 +116,10 @@ class MobileSession(Base):
     """Session mobile."""
     __tablename__ = "mobile_sessions"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    device_id = Column(Integer, ForeignKey("mobile_devices.id"), nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    device_id = Column(UniversalUUID(), ForeignKey("mobile_devices.id"), nullable=False)
 
     # Token
     session_token = Column(String(500), nullable=False, unique=True)
@@ -148,12 +159,12 @@ class PushNotification(Base):
     """Notification push."""
     __tablename__ = "mobile_notifications"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Destinataire
-    user_id = Column(Integer, nullable=False, index=True)
-    device_id = Column(Integer, ForeignKey("mobile_devices.id"))
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    device_id = Column(UniversalUUID(), ForeignKey("mobile_devices.id"))
 
     # Contenu
     title = Column(String(255), nullable=False)
@@ -205,10 +216,10 @@ class SyncQueue(Base):
     """File de synchronisation offline."""
     __tablename__ = "mobile_sync_queue"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    device_id = Column(Integer, ForeignKey("mobile_devices.id"))
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    device_id = Column(UniversalUUID(), ForeignKey("mobile_devices.id"))
 
     # Opération
     entity_type = Column(String(100), nullable=False)  # order, customer, etc.
@@ -249,10 +260,10 @@ class SyncCheckpoint(Base):
     """Point de synchronisation par entité."""
     __tablename__ = "mobile_sync_checkpoints"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    device_id = Column(Integer, ForeignKey("mobile_devices.id"))
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    device_id = Column(UniversalUUID(), ForeignKey("mobile_devices.id"))
 
     # Entité
     entity_type = Column(String(100), nullable=False)
@@ -283,9 +294,9 @@ class MobilePreferences(Base):
     """Préférences utilisateur mobile."""
     __tablename__ = "mobile_preferences"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
 
     # Notifications
     push_enabled = Column(Boolean, default=True)
@@ -342,11 +353,11 @@ class MobileActivityLog(Base):
     """Log d'activité mobile."""
     __tablename__ = "mobile_activity_logs"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    device_id = Column(Integer, ForeignKey("mobile_devices.id"))
-    session_id = Column(Integer, ForeignKey("mobile_sessions.id"))
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    device_id = Column(UniversalUUID(), ForeignKey("mobile_devices.id"))
+    session_id = Column(UniversalUUID(), ForeignKey("mobile_sessions.id"))
 
     # Action
     action = Column(String(100), nullable=False)  # login, logout, view, create, etc.
@@ -387,7 +398,7 @@ class MobileAppConfig(Base):
     """Configuration application mobile."""
     __tablename__ = "mobile_app_configs"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Version
@@ -449,10 +460,10 @@ class MobileCrashReport(Base):
     """Rapport de crash mobile."""
     __tablename__ = "mobile_crash_reports"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, index=True)
-    device_id = Column(Integer, ForeignKey("mobile_devices.id"))
+    user_id = Column(UniversalUUID(), index=True)
+    device_id = Column(UniversalUUID(), ForeignKey("mobile_devices.id"))
 
     # Crash info
     crash_id = Column(String(100), unique=True)

@@ -8,18 +8,31 @@ Principes:
 - Double confirmation pour points rouges
 - Traçabilité complète
 - Apprentissage transversal anonymisé
+
+MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
+
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Index, JSON, Numeric, Float
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
-
+from app.core.types import UniversalUUID
 
 # ============================================================================
 # ENUMS
@@ -83,9 +96,9 @@ class AIConversation(Base):
     """Conversation avec l'IA."""
     __tablename__ = "ai_conversations"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
 
     # Métadonnées
     title = Column(String(255))
@@ -114,9 +127,9 @@ class AIMessage(Base):
     """Message dans une conversation IA."""
     __tablename__ = "ai_messages"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    conversation_id = Column(Integer, ForeignKey("ai_conversations.id"), nullable=False)
+    conversation_id = Column(UniversalUUID(), ForeignKey("ai_conversations.id"), nullable=False)
 
     # Type et contenu
     role = Column(String(20), nullable=False)  # user, assistant, system
@@ -149,9 +162,9 @@ class AIAnalysis(Base):
     """Analyse IA pour aide à la décision."""
     __tablename__ = "ai_analyses"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
 
     # Identification
     analysis_code = Column(String(50), unique=True, nullable=False)
@@ -200,7 +213,7 @@ class AIDecisionSupport(Base):
     """Support de décision avec validation obligatoire."""
     __tablename__ = "ai_decision_supports"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -215,7 +228,7 @@ class AIDecisionSupport(Base):
     deadline = Column(DateTime)
 
     # Analyse liée
-    analysis_id = Column(Integer, ForeignKey("ai_analyses.id"))
+    analysis_id = Column(UniversalUUID(), ForeignKey("ai_analyses.id"))
 
     # Options proposées
     options = Column(JSON)  # Liste d'options avec pros/cons
@@ -236,19 +249,19 @@ class AIDecisionSupport(Base):
 
     # Décision
     status = Column(String(30), default="pending_review")
-    decided_by_id = Column(Integer)
+    decided_by_id = Column(UniversalUUID())
     decided_at = Column(DateTime)
     decision_made = Column(Integer)  # Index option choisie
     decision_notes = Column(Text)
 
     # Double confirmation (si point rouge)
-    first_confirmation_by = Column(Integer)
+    first_confirmation_by = Column(UniversalUUID())
     first_confirmation_at = Column(DateTime)
-    second_confirmation_by = Column(Integer)
+    second_confirmation_by = Column(UniversalUUID())
     second_confirmation_at = Column(DateTime)
 
     # Audit
-    created_by_id = Column(Integer, nullable=False)
+    created_by_id = Column(UniversalUUID(), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -267,7 +280,7 @@ class AIRiskAlert(Base):
     """Alerte de risque détectée par l'IA."""
     __tablename__ = "ai_risk_alerts"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -300,9 +313,9 @@ class AIRiskAlert(Base):
 
     # État
     status = Column(String(30), default="active")  # active, acknowledged, mitigated, resolved, expired
-    acknowledged_by = Column(Integer)
+    acknowledged_by = Column(UniversalUUID())
     acknowledged_at = Column(DateTime)
-    resolved_by = Column(Integer)
+    resolved_by = Column(UniversalUUID())
     resolved_at = Column(DateTime)
     resolution_notes = Column(Text)
 
@@ -326,7 +339,7 @@ class AIPrediction(Base):
     """Prédiction IA."""
     __tablename__ = "ai_predictions"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -378,13 +391,13 @@ class AIFeedback(Base):
     """Feedback utilisateur sur les réponses IA."""
     __tablename__ = "ai_feedbacks"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
 
     # Référence
     reference_type = Column(String(50), nullable=False)  # message, analysis, prediction, decision
-    reference_id = Column(Integer, nullable=False)
+    reference_id = Column(UniversalUUID(), nullable=False)
 
     # Évaluation
     rating = Column(Integer)  # 1-5
@@ -409,7 +422,7 @@ class AILearningData(Base):
     """Données d'apprentissage anonymisées."""
     __tablename__ = "ai_learning_data"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
 
     # Anonymisé - pas de tenant_id ni user_id direct
     data_hash = Column(String(64), unique=True)
@@ -444,7 +457,7 @@ class AIConfiguration(Base):
     """Configuration IA par tenant."""
     __tablename__ = "ai_configurations"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, unique=True)
 
     # Activation
@@ -475,7 +488,7 @@ class AIConfiguration(Base):
     notification_channels = Column(JSON)
 
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(Integer)
+    updated_by = Column(UniversalUUID())
 
     __table_args__ = (
         Index('idx_ai_config_tenant', 'tenant_id'),
@@ -490,9 +503,9 @@ class AIAuditLog(Base):
     """Journal d'audit des actions IA."""
     __tablename__ = "ai_audit_logs"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer)
+    user_id = Column(UniversalUUID())
 
     # Action
     action = Column(String(100), nullable=False)
@@ -500,7 +513,7 @@ class AIAuditLog(Base):
 
     # Référence
     reference_type = Column(String(50))
-    reference_id = Column(Integer)
+    reference_id = Column(UniversalUUID())
 
     # Détails
     request_summary = Column(Text)
