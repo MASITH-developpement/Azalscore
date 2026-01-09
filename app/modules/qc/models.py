@@ -3,18 +3,22 @@ AZALS MODULE T4 - Modèles Contrôle Qualité Central
 ===================================================
 
 Modèles SQLAlchemy pour le système de contrôle qualité.
+REFACTORED: Migration vers UUID pour production SaaS industrielle.
+NOTE: ForeignKey retirées des modèles pour bootstrap Alembic sécurisé.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    Column, Integer, BigInteger, String, Text, Boolean, DateTime,
-    ForeignKey, Float, Enum, Index
+    Column, Integer, String, Text, Boolean, DateTime,
+    Float, Enum, Index
 )
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSONB
 
 
 # ============================================================================
@@ -89,15 +93,20 @@ class ValidationPhase(str, PyEnum):
 
 
 # ============================================================================
-# MODÈLES
+# MODÈLES - REFACTORED TO UUID FOR SAAS PRODUCTION
 # ============================================================================
 
 class QCRule(Base):
     """Définition d'une règle de contrôle qualité."""
     __tablename__ = "qc_rules"
+    __table_args__ = (
+        Index("idx_qc_rules_tenant_code", "tenant_id", "code", unique=True),
+        Index("idx_qc_rules_category", "tenant_id", "category"),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
@@ -125,20 +134,20 @@ class QCRule(Base):
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer)
-
-    __table_args__ = (
-        Index("idx_qc_rules_tenant_code", "tenant_id", "code", unique=True),
-        Index("idx_qc_rules_category", "tenant_id", "category"),
-    )
+    created_by = Column(UniversalUUID())
 
 
 class ModuleRegistry(Base):
     """Registre des modules avec leur statut de validation."""
     __tablename__ = "qc_module_registry"
+    __table_args__ = (
+        Index("idx_module_registry_tenant_code", "tenant_id", "module_code", unique=True),
+        Index("idx_module_registry_status", "tenant_id", "status"),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     module_code = Column(String(10), nullable=False)  # T0, T1, M1, etc.
     module_name = Column(String(200), nullable=False)
@@ -168,32 +177,33 @@ class ModuleRegistry(Base):
     # Dates importantes
     last_qc_run = Column(DateTime)
     validated_at = Column(DateTime)
-    validated_by = Column(Integer)
+    validated_by = Column(UniversalUUID())
     production_at = Column(DateTime)
 
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    __table_args__ = (
-        Index("idx_module_registry_tenant_code", "tenant_id", "module_code", unique=True),
-        Index("idx_module_registry_status", "tenant_id", "status"),
-    )
-
 
 class QCValidation(Base):
     """Session de validation QC pour un module."""
     __tablename__ = "qc_validations"
+    __table_args__ = (
+        Index("idx_validations_tenant_module", "tenant_id", "module_id"),
+        Index("idx_validations_status", "tenant_id", "status"),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
-    module_id = Column(Integer, ForeignKey("qc_module_registry.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    module_id = Column(UniversalUUID(), nullable=False)
     validation_phase = Column(Enum(ValidationPhase), nullable=False)
 
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime)
-    started_by = Column(Integer)
+    started_by = Column(UniversalUUID())
 
     # Résultats
     status = Column(Enum(QCCheckStatus), default=QCCheckStatus.PENDING, nullable=False)
@@ -212,25 +222,23 @@ class QCValidation(Base):
     report_summary = Column(Text)
     report_details = Column(Text)  # JSON avec tous les détails
 
-    # Relations
-    module = relationship("ModuleRegistry")
-    check_results = relationship("QCCheckResult", back_populates="validation", cascade="all, delete-orphan")
-
-    __table_args__ = (
-        Index("idx_validations_tenant_module", "tenant_id", "module_id"),
-        Index("idx_validations_status", "tenant_id", "status"),
-    )
-
 
 class QCCheckResult(Base):
     """Résultat d'un check QC individuel."""
     __tablename__ = "qc_check_results"
+    __table_args__ = (
+        Index("idx_check_results_validation", "validation_id"),
+        Index("idx_check_results_status", "tenant_id", "status"),
+        Index("idx_check_results_category", "tenant_id", "category"),
+        {"schema": None},
+    )
 
-    id = Column(BigInteger, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
-    validation_id = Column(Integer, ForeignKey("qc_validations.id", ondelete="CASCADE"), nullable=False)
-    rule_id = Column(Integer, ForeignKey("qc_rules.id", ondelete="SET NULL"))
+    # FK gérées via migration Alembic séparée
+    validation_id = Column(UniversalUUID(), nullable=False)
+    rule_id = Column(UniversalUUID())
 
     rule_code = Column(String(50), nullable=False)
     rule_name = Column(String(200))
@@ -255,25 +263,22 @@ class QCCheckResult(Base):
     # Preuves
     evidence = Column(Text)  # JSON avec fichiers, lignes, etc.
 
-    # Relations
-    validation = relationship("QCValidation", back_populates="check_results")
-
-    __table_args__ = (
-        Index("idx_check_results_validation", "validation_id"),
-        Index("idx_check_results_status", "tenant_id", "status"),
-        Index("idx_check_results_category", "tenant_id", "category"),
-    )
-
 
 class QCTestRun(Base):
     """Exécution de tests pour un module."""
     __tablename__ = "qc_test_runs"
+    __table_args__ = (
+        Index("idx_test_runs_tenant_module", "tenant_id", "module_id"),
+        Index("idx_test_runs_type", "tenant_id", "test_type"),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
-    module_id = Column(Integer, ForeignKey("qc_module_registry.id", ondelete="CASCADE"), nullable=False)
-    validation_id = Column(Integer, ForeignKey("qc_validations.id", ondelete="SET NULL"))
+    # FK gérées via migration Alembic séparée
+    module_id = Column(UniversalUUID(), nullable=False)
+    validation_id = Column(UniversalUUID())
 
     test_type = Column(Enum(TestType), nullable=False)
     test_suite = Column(String(200))
@@ -299,12 +304,7 @@ class QCTestRun(Base):
 
     # Métadonnées
     triggered_by = Column(String(50))  # manual, ci, scheduled
-    triggered_user = Column(Integer)
-
-    __table_args__ = (
-        Index("idx_test_runs_tenant_module", "tenant_id", "module_id"),
-        Index("idx_test_runs_type", "tenant_id", "test_type"),
-    )
+    triggered_user = Column(UniversalUUID())
 
 
 # Alias pour compatibilité
@@ -314,11 +314,17 @@ TestRun = QCTestRun
 class QCMetric(Base):
     """Métriques QC agrégées."""
     __tablename__ = "qc_metrics"
+    __table_args__ = (
+        Index("idx_qc_metrics_tenant_date", "tenant_id", "metric_date"),
+        Index("idx_qc_metrics_module", "tenant_id", "module_id"),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
-    module_id = Column(Integer, ForeignKey("qc_module_registry.id", ondelete="CASCADE"))
+    # FK gérée via migration Alembic séparée
+    module_id = Column(UniversalUUID())
     metric_date = Column(DateTime, nullable=False)
 
     # Métriques globales
@@ -353,22 +359,23 @@ class QCMetric(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    __table_args__ = (
-        Index("idx_qc_metrics_tenant_date", "tenant_id", "metric_date"),
-        Index("idx_qc_metrics_module", "tenant_id", "module_id"),
-    )
-
 
 class QCAlert(Base):
     """Alertes QC."""
     __tablename__ = "qc_alerts"
+    __table_args__ = (
+        Index("idx_qc_alerts_tenant_unresolved", "tenant_id", "is_resolved"),
+        Index("idx_qc_alerts_severity", "tenant_id", "severity"),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
-    module_id = Column(Integer, ForeignKey("qc_module_registry.id", ondelete="CASCADE"))
-    validation_id = Column(Integer, ForeignKey("qc_validations.id", ondelete="SET NULL"))
-    check_result_id = Column(BigInteger, ForeignKey("qc_check_results.id", ondelete="SET NULL"))
+    # FK gérées via migration Alembic séparée
+    module_id = Column(UniversalUUID())
+    validation_id = Column(UniversalUUID())
+    check_result_id = Column(UniversalUUID())
 
     alert_type = Column(String(50), nullable=False)  # validation_failed, score_dropped, blocker_found
     severity = Column(Enum(QCRuleSeverity), default=QCRuleSeverity.WARNING, nullable=False)
@@ -381,23 +388,22 @@ class QCAlert(Base):
     is_read = Column(Boolean, default=False, nullable=False)
     is_resolved = Column(Boolean, default=False, nullable=False)
     resolved_at = Column(DateTime)
-    resolved_by = Column(Integer)
+    resolved_by = Column(UniversalUUID())
     resolution_notes = Column(Text)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    __table_args__ = (
-        Index("idx_qc_alerts_tenant_unresolved", "tenant_id", "is_resolved"),
-        Index("idx_qc_alerts_severity", "tenant_id", "severity"),
-    )
 
 
 class QCDashboard(Base):
     """Configuration de dashboard QC personnalisé."""
     __tablename__ = "qc_dashboards"
+    __table_args__ = (
+        Index("idx_qc_dashboards_tenant_owner", "tenant_id", "owner_id"),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     name = Column(String(200), nullable=False)
     description = Column(Text)
@@ -410,7 +416,7 @@ class QCDashboard(Base):
     # Partage
     is_default = Column(Boolean, default=False, nullable=False)
     is_public = Column(Boolean, default=False, nullable=False)
-    owner_id = Column(Integer)
+    owner_id = Column(UniversalUUID())
     shared_with = Column(Text)  # JSON user/role ids
 
     # Rafraîchissement
@@ -420,17 +426,17 @@ class QCDashboard(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    __table_args__ = (
-        Index("idx_qc_dashboards_tenant_owner", "tenant_id", "owner_id"),
-    )
-
 
 class QCTemplate(Base):
     """Templates de règles QC prédéfinies."""
     __tablename__ = "qc_templates"
+    __table_args__ = (
+        Index("idx_qc_templates_tenant_code", "tenant_id", "code", unique=True),
+        {"schema": None},
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     code = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
@@ -447,8 +453,4 @@ class QCTemplate(Base):
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer)
-
-    __table_args__ = (
-        Index("idx_qc_templates_tenant_code", "tenant_id", "code", unique=True),
-    )
+    created_by = Column(UniversalUUID())
