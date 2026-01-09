@@ -7,13 +7,15 @@ Benchmark: Shopify, WooCommerce, Magento, BigCommerce
 Target: ERP-native e-commerce avec intégration complète
 """
 
+import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, JSON, Float, Numeric, Index
+    Column, String, Text, Boolean, DateTime,
+    ForeignKey, Enum, Float, Numeric, Index, Integer
 )
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSON
 
 
 # ============================================================================
@@ -95,11 +97,11 @@ class EcommerceCategory(Base):
     """Catégorie de produits e-commerce."""
     __tablename__ = "ecommerce_categories"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Hiérarchie
-    parent_id = Column(Integer, ForeignKey("ecommerce_categories.id"))
+    parent_id = Column(UniversalUUID(), ForeignKey("ecommerce_categories.id"))
 
     # Informations
     name = Column(String(255), nullable=False)
@@ -135,7 +137,7 @@ class EcommerceProduct(Base):
     """Produit e-commerce."""
     __tablename__ = "ecommerce_products"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identifiants
@@ -143,7 +145,7 @@ class EcommerceProduct(Base):
     barcode = Column(String(100))
 
     # Lien avec module Articles existant
-    item_id = Column(Integer)  # FK vers items si applicable
+    item_id = Column(UniversalUUID())  # FK vers items si applicable
 
     # Informations produit
     name = Column(String(255), nullable=False)
@@ -224,9 +226,9 @@ class ProductVariant(Base):
     """Variante de produit (taille, couleur, etc.)."""
     __tablename__ = "ecommerce_product_variants"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    product_id = Column(Integer, ForeignKey("ecommerce_products.id"), nullable=False)
+    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
 
     # Identifiants
     sku = Column(String(100), nullable=False)
@@ -271,14 +273,14 @@ class EcommerceCart(Base):
     """Panier d'achat."""
     __tablename__ = "ecommerce_carts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identifiant unique pour visiteurs anonymes
     session_id = Column(String(255), index=True)
 
     # Client (si connecté)
-    customer_id = Column(Integer)
+    customer_id = Column(UniversalUUID())
 
     # Statut
     status = Column(Enum(CartStatus), default=CartStatus.ACTIVE)
@@ -307,7 +309,7 @@ class EcommerceCart(Base):
     recovery_email_sent = Column(Boolean, default=False)
 
     # Conversion
-    converted_to_order_id = Column(Integer)
+    converted_to_order_id = Column(UniversalUUID())
     converted_at = Column(DateTime)
 
     # Expiration
@@ -328,13 +330,13 @@ class CartItem(Base):
     """Article dans un panier."""
     __tablename__ = "ecommerce_cart_items"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    cart_id = Column(Integer, ForeignKey("ecommerce_carts.id"), nullable=False)
+    cart_id = Column(UniversalUUID(), ForeignKey("ecommerce_carts.id"), nullable=False)
 
     # Produit
-    product_id = Column(Integer, ForeignKey("ecommerce_products.id"), nullable=False)
-    variant_id = Column(Integer, ForeignKey("ecommerce_product_variants.id"))
+    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
+    variant_id = Column(UniversalUUID(), ForeignKey("ecommerce_product_variants.id"))
 
     # Quantité
     quantity = Column(Integer, nullable=False, default=1)
@@ -362,18 +364,18 @@ class EcommerceOrder(Base):
     """Commande e-commerce."""
     __tablename__ = "ecommerce_orders"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Numéro de commande
     order_number = Column(String(50), nullable=False)
 
     # Origine
-    cart_id = Column(Integer, ForeignKey("ecommerce_carts.id"))
+    cart_id = Column(UniversalUUID(), ForeignKey("ecommerce_carts.id"))
     channel = Column(String(50), default="web")  # web, mobile, api, pos
 
     # Client
-    customer_id = Column(Integer)  # FK vers commercial.customers
+    customer_id = Column(UniversalUUID())  # FK vers commercial.customers
     customer_email = Column(String(255), nullable=False)
     customer_phone = Column(String(50))
 
@@ -435,7 +437,7 @@ class EcommerceOrder(Base):
     extra_data = Column(JSON)
 
     # Lien avec facturation AZALS
-    invoice_id = Column(Integer)  # FK vers finance.invoices
+    invoice_id = Column(UniversalUUID())  # FK vers finance.invoices
 
     # IP et infos client
     ip_address = Column(String(50))
@@ -465,13 +467,13 @@ class OrderItem(Base):
     """Ligne de commande."""
     __tablename__ = "ecommerce_order_items"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    order_id = Column(Integer, ForeignKey("ecommerce_orders.id"), nullable=False)
+    order_id = Column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
 
     # Produit (snapshot au moment de la commande)
-    product_id = Column(Integer)
-    variant_id = Column(Integer)
+    product_id = Column(UniversalUUID())
+    variant_id = Column(UniversalUUID())
     sku = Column(String(100))
     name = Column(String(255), nullable=False)
 
@@ -510,9 +512,9 @@ class EcommercePayment(Base):
     """Paiement de commande."""
     __tablename__ = "ecommerce_payments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    order_id = Column(Integer, ForeignKey("ecommerce_orders.id"), nullable=False)
+    order_id = Column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
 
     # Référence externe (Stripe, PayPal, etc.)
     external_id = Column(String(255))
@@ -561,7 +563,7 @@ class ShippingMethod(Base):
     """Méthode de livraison."""
     __tablename__ = "ecommerce_shipping_methods"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Informations
@@ -606,9 +608,9 @@ class Shipment(Base):
     """Expédition de commande."""
     __tablename__ = "ecommerce_shipments"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    order_id = Column(Integer, ForeignKey("ecommerce_orders.id"), nullable=False)
+    order_id = Column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
 
     # Numéro d'expédition
     shipment_number = Column(String(50), nullable=False)
@@ -655,7 +657,7 @@ class Coupon(Base):
     """Code promo / Coupon."""
     __tablename__ = "ecommerce_coupons"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Code
@@ -708,11 +710,11 @@ class EcommerceCustomer(Base):
     """Client e-commerce (extension du CRM)."""
     __tablename__ = "ecommerce_customers"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Lien CRM
-    crm_customer_id = Column(Integer)  # FK vers commercial.customers
+    crm_customer_id = Column(UniversalUUID())  # FK vers commercial.customers
 
     # Compte
     email = Column(String(255), nullable=False)
@@ -724,8 +726,8 @@ class EcommerceCustomer(Base):
     phone = Column(String(50))
 
     # Adresses par défaut
-    default_billing_address_id = Column(Integer)
-    default_shipping_address_id = Column(Integer)
+    default_billing_address_id = Column(UniversalUUID())
+    default_shipping_address_id = Column(UniversalUUID())
 
     # Marketing
     accepts_marketing = Column(Boolean, default=False)
@@ -760,9 +762,9 @@ class CustomerAddress(Base):
     """Adresse client."""
     __tablename__ = "ecommerce_customer_addresses"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(Integer, ForeignKey("ecommerce_customers.id"), nullable=False)
+    customer_id = Column(UniversalUUID(), ForeignKey("ecommerce_customers.id"), nullable=False)
 
     # Type
     address_type = Column(String(20), default="both")  # billing, shipping, both
@@ -795,12 +797,12 @@ class ProductReview(Base):
     """Avis produit."""
     __tablename__ = "ecommerce_product_reviews"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    product_id = Column(Integer, ForeignKey("ecommerce_products.id"), nullable=False)
+    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
 
     # Auteur
-    customer_id = Column(Integer, ForeignKey("ecommerce_customers.id"))
+    customer_id = Column(UniversalUUID(), ForeignKey("ecommerce_customers.id"))
     author_name = Column(String(100))
     author_email = Column(String(255))
 
@@ -810,7 +812,7 @@ class ProductReview(Base):
     content = Column(Text)
 
     # Commande vérifiée
-    order_id = Column(Integer)
+    order_id = Column(UniversalUUID())
     is_verified_purchase = Column(Boolean, default=False)
 
     # Modération
@@ -842,9 +844,9 @@ class Wishlist(Base):
     """Liste de souhaits."""
     __tablename__ = "ecommerce_wishlists"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(Integer, ForeignKey("ecommerce_customers.id"), nullable=False)
+    customer_id = Column(UniversalUUID(), ForeignKey("ecommerce_customers.id"), nullable=False)
 
     # Informations
     name = Column(String(255), default="Ma liste")
@@ -860,12 +862,12 @@ class WishlistItem(Base):
     """Article dans une wishlist."""
     __tablename__ = "ecommerce_wishlist_items"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    wishlist_id = Column(Integer, ForeignKey("ecommerce_wishlists.id"), nullable=False)
+    wishlist_id = Column(UniversalUUID(), ForeignKey("ecommerce_wishlists.id"), nullable=False)
 
-    product_id = Column(Integer, ForeignKey("ecommerce_products.id"), nullable=False)
-    variant_id = Column(Integer)
+    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
+    variant_id = Column(UniversalUUID())
 
     # Prix au moment de l'ajout (pour alertes)
     added_price = Column(Numeric(15, 2))

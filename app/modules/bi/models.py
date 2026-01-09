@@ -3,6 +3,7 @@ AZALS - Module M10: BI & Reporting
 Modèles SQLAlchemy pour Business Intelligence
 """
 
+import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import (
@@ -11,6 +12,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.types import UniversalUUID
 
 
 # ============================================================================
@@ -164,7 +166,7 @@ class Dashboard(Base):
         Index("ix_bi_dashboards_owner", "tenant_id", "owner_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -174,7 +176,7 @@ class Dashboard(Base):
     dashboard_type = Column(Enum(DashboardType), default=DashboardType.CUSTOM)
 
     # Propriétaire
-    owner_id = Column(Integer, nullable=False)
+    owner_id = Column(UniversalUUID(), nullable=False)
     is_shared = Column(Boolean, default=False)
     shared_with = Column(JSON, nullable=True)  # Liste d'IDs utilisateurs/rôles
 
@@ -198,8 +200,8 @@ class Dashboard(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
-    updated_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
+    updated_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     widgets = relationship("DashboardWidget", back_populates="dashboard", cascade="all, delete-orphan")
@@ -212,9 +214,9 @@ class DashboardWidget(Base):
         Index("ix_bi_widgets_dashboard", "dashboard_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    dashboard_id = Column(Integer, ForeignKey("bi_dashboards.id", ondelete="CASCADE"), nullable=False)
+    dashboard_id = Column(UniversalUUID(), ForeignKey("bi_dashboards.id", ondelete="CASCADE"), nullable=False)
 
     # Identification
     title = Column(String(200), nullable=False)
@@ -228,9 +230,9 @@ class DashboardWidget(Base):
     height = Column(Integer, default=3)  # Unités
 
     # Source de données
-    data_source_id = Column(Integer, ForeignKey("bi_data_sources.id"), nullable=True)
-    query_id = Column(Integer, ForeignKey("bi_data_queries.id"), nullable=True)
-    kpi_id = Column(Integer, ForeignKey("bi_kpi_definitions.id"), nullable=True)
+    data_source_id = Column(UniversalUUID(), ForeignKey("bi_data_sources.id"), nullable=True)
+    query_id = Column(UniversalUUID(), ForeignKey("bi_data_queries.id"), nullable=True)
+    kpi_id = Column(UniversalUUID(), ForeignKey("bi_kpi_definitions.id"), nullable=True)
 
     # Configuration du widget
     config = Column(JSON, nullable=True)  # Options spécifiques au type
@@ -265,9 +267,9 @@ class WidgetFilter(Base):
     """Filtre appliqué à un widget."""
     __tablename__ = "bi_widget_filters"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    widget_id = Column(Integer, ForeignKey("bi_dashboard_widgets.id", ondelete="CASCADE"), nullable=False)
+    widget_id = Column(UniversalUUID(), ForeignKey("bi_dashboard_widgets.id", ondelete="CASCADE"), nullable=False)
 
     # Définition du filtre
     field_name = Column(String(100), nullable=False)
@@ -295,7 +297,7 @@ class Report(Base):
         Index("ix_bi_reports_tenant", "tenant_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -325,7 +327,7 @@ class Report(Base):
     footer_template = Column(Text, nullable=True)
 
     # Accès
-    owner_id = Column(Integer, nullable=False)
+    owner_id = Column(UniversalUUID(), nullable=False)
     is_public = Column(Boolean, default=False)
     allowed_roles = Column(JSON, nullable=True)
 
@@ -334,8 +336,8 @@ class Report(Base):
     version = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
-    updated_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
+    updated_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     schedules = relationship("ReportSchedule", back_populates="report", cascade="all, delete-orphan")
@@ -350,9 +352,9 @@ class ReportSchedule(Base):
         Index("ix_bi_schedules_next_run", "next_run_at"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    report_id = Column(Integer, ForeignKey("bi_reports.id", ondelete="CASCADE"), nullable=False)
+    report_id = Column(UniversalUUID(), ForeignKey("bi_reports.id", ondelete="CASCADE"), nullable=False)
 
     # Planification
     name = Column(String(200), nullable=False)
@@ -379,7 +381,7 @@ class ReportSchedule(Base):
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     report = relationship("Report", back_populates="schedules")
@@ -394,10 +396,10 @@ class ReportExecution(Base):
         Index("ix_bi_executions_date", "started_at"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    report_id = Column(Integer, ForeignKey("bi_reports.id", ondelete="CASCADE"), nullable=False)
-    schedule_id = Column(Integer, ForeignKey("bi_report_schedules.id"), nullable=True)
+    report_id = Column(UniversalUUID(), ForeignKey("bi_reports.id", ondelete="CASCADE"), nullable=False)
+    schedule_id = Column(UniversalUUID(), ForeignKey("bi_report_schedules.id"), nullable=True)
 
     # Exécution
     status = Column(Enum(ReportStatus), default=ReportStatus.PENDING)
@@ -420,7 +422,7 @@ class ReportExecution(Base):
     error_details = Column(JSON, nullable=True)
 
     # Métadonnées
-    triggered_by = Column(Integer, nullable=True)  # user_id ou null si planifié
+    triggered_by = Column(UniversalUUID(), nullable=True)  # user_id ou null si planifié
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relations
@@ -440,7 +442,7 @@ class KPIDefinition(Base):
         Index("ix_bi_kpis_category", "tenant_id", "category"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -456,7 +458,7 @@ class KPIDefinition(Base):
     aggregation_method = Column(String(50), default="sum")  # sum, avg, count, max, min
 
     # Source de données
-    data_source_id = Column(Integer, ForeignKey("bi_data_sources.id"), nullable=True)
+    data_source_id = Column(UniversalUUID(), ForeignKey("bi_data_sources.id"), nullable=True)
     query = Column(Text, nullable=True)
 
     # Affichage
@@ -479,7 +481,7 @@ class KPIDefinition(Base):
     is_system = Column(Boolean, default=False)  # KPI système non modifiable
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     values = relationship("KPIValue", back_populates="kpi", cascade="all, delete-orphan")
@@ -494,9 +496,9 @@ class KPIValue(Base):
         Index("ix_bi_kpi_values_date", "kpi_id", "period_date"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    kpi_id = Column(Integer, ForeignKey("bi_kpi_definitions.id", ondelete="CASCADE"), nullable=False)
+    kpi_id = Column(UniversalUUID(), ForeignKey("bi_kpi_definitions.id", ondelete="CASCADE"), nullable=False)
 
     # Période
     period_date = Column(Date, nullable=False)
@@ -528,9 +530,9 @@ class KPITarget(Base):
         Index("ix_bi_kpi_targets_kpi", "kpi_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    kpi_id = Column(Integer, ForeignKey("bi_kpi_definitions.id", ondelete="CASCADE"), nullable=False)
+    kpi_id = Column(UniversalUUID(), ForeignKey("bi_kpi_definitions.id", ondelete="CASCADE"), nullable=False)
 
     # Période
     year = Column(Integer, nullable=False)
@@ -550,7 +552,7 @@ class KPITarget(Base):
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     # Relations
     kpi = relationship("KPIDefinition", back_populates="targets")
@@ -569,9 +571,9 @@ class Alert(Base):
         Index("ix_bi_alerts_severity", "tenant_id", "severity"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    rule_id = Column(Integer, ForeignKey("bi_alert_rules.id"), nullable=True)
+    rule_id = Column(UniversalUUID(), ForeignKey("bi_alert_rules.id"), nullable=True)
 
     # Alerte
     title = Column(String(200), nullable=False)
@@ -581,7 +583,7 @@ class Alert(Base):
 
     # Source
     source_type = Column(String(50), nullable=True)  # kpi, report, threshold, etc.
-    source_id = Column(Integer, nullable=True)
+    source_id = Column(UniversalUUID(), nullable=True)
     source_value = Column(Numeric(20, 4), nullable=True)
     threshold_value = Column(Numeric(20, 4), nullable=True)
 
@@ -591,9 +593,9 @@ class Alert(Base):
 
     # Gestion
     acknowledged_at = Column(DateTime, nullable=True)
-    acknowledged_by = Column(Integer, nullable=True)
+    acknowledged_by = Column(UniversalUUID(), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
-    resolved_by = Column(Integer, nullable=True)
+    resolved_by = Column(UniversalUUID(), nullable=True)
     resolution_notes = Column(Text, nullable=True)
 
     # Snooze
@@ -615,7 +617,7 @@ class AlertRule(Base):
         Index("ix_bi_alert_rules_tenant", "tenant_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -626,7 +628,7 @@ class AlertRule(Base):
 
     # Condition
     source_type = Column(String(50), nullable=False)  # kpi, query, threshold
-    source_id = Column(Integer, nullable=True)
+    source_id = Column(UniversalUUID(), nullable=True)
     condition = Column(JSON, nullable=False)  # {operator, value, field}
 
     # Exemple condition:
@@ -650,7 +652,7 @@ class AlertRule(Base):
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
 
 # ============================================================================
@@ -665,7 +667,7 @@ class DataSource(Base):
         Index("ix_bi_datasources_tenant", "tenant_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -698,7 +700,7 @@ class DataSource(Base):
     is_system = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
 
 class DataQuery(Base):
@@ -709,9 +711,9 @@ class DataQuery(Base):
         Index("ix_bi_queries_tenant", "tenant_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    data_source_id = Column(Integer, ForeignKey("bi_data_sources.id"), nullable=True)
+    data_source_id = Column(UniversalUUID(), ForeignKey("bi_data_sources.id"), nullable=True)
 
     # Identification
     code = Column(String(50), nullable=False)
@@ -737,7 +739,7 @@ class DataQuery(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
 
 # ============================================================================
@@ -751,13 +753,13 @@ class Bookmark(Base):
         Index("ix_bi_bookmarks_user", "tenant_id", "user_id"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
 
     # Élément
     item_type = Column(String(50), nullable=False)  # dashboard, report, kpi
-    item_id = Column(Integer, nullable=False)
+    item_id = Column(UniversalUUID(), nullable=False)
     item_name = Column(String(200), nullable=True)
 
     # Organisation
@@ -776,14 +778,14 @@ class ExportHistory(Base):
         Index("ix_bi_exports_date", "created_at"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
 
     # Export
     export_type = Column(String(50), nullable=False)  # dashboard, report, data
     item_type = Column(String(50), nullable=True)
-    item_id = Column(Integer, nullable=True)
+    item_id = Column(UniversalUUID(), nullable=True)
     item_name = Column(String(200), nullable=True)
 
     # Format

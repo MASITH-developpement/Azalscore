@@ -5,12 +5,14 @@ AZALS MODULE T7 - Modèles Web Transverse
 Modèles SQLAlchemy pour la configuration web.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Enum, Index, JSON
+    Column, String, Text, Boolean, DateTime, ForeignKey, Enum, Index, Integer
 )
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSON
 
 
 # ============================================================================
@@ -86,7 +88,7 @@ class Theme(Base):
     """Configuration de thème"""
     __tablename__ = "web_themes"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -135,7 +137,7 @@ class Theme(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_themes_tenant_code", "tenant_id", "code", unique=True),
@@ -151,7 +153,7 @@ class Widget(Base):
     """Définition de widget"""
     __tablename__ = "web_widgets"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -183,7 +185,7 @@ class Widget(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_widgets_tenant_code", "tenant_id", "code", unique=True),
@@ -199,7 +201,7 @@ class WebDashboard(Base):
     """Configuration de dashboard (distinct de bi.Dashboard)"""
     __tablename__ = "web_dashboards"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -231,8 +233,8 @@ class WebDashboard(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
-    owner_id = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
+    owner_id = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_dashboards_tenant_code", "tenant_id", "code", unique=True),
@@ -249,7 +251,7 @@ class MenuItem(Base):
     """Élément de menu"""
     __tablename__ = "web_menu_items"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Type de menu
@@ -266,7 +268,7 @@ class MenuItem(Base):
     target = Column(String(20), default="_self")
 
     # Hiérarchie
-    parent_id = Column(Integer, ForeignKey("web_menu_items.id"), nullable=True)
+    parent_id = Column(UniversalUUID(), ForeignKey("web_menu_items.id"), nullable=True)
     sort_order = Column(Integer, default=0)
 
     # Permissions
@@ -301,7 +303,7 @@ class UIComponent(Base):
     """Composant UI réutilisable"""
     __tablename__ = "web_ui_components"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -328,7 +330,7 @@ class UIComponent(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_components_tenant_code", "tenant_id", "code", unique=True),
@@ -344,12 +346,12 @@ class UserUIPreference(Base):
     """Préférences interface utilisateur"""
     __tablename__ = "web_user_preferences"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(UniversalUUID(), nullable=False)
 
     # Thème
-    theme_id = Column(Integer, ForeignKey("web_themes.id"), nullable=True)
+    theme_id = Column(UniversalUUID(), ForeignKey("web_themes.id"), nullable=True)
     theme_mode = Column(Enum(ThemeMode), default=ThemeMode.SYSTEM)
 
     # Layout
@@ -358,7 +360,7 @@ class UserUIPreference(Base):
     toolbar_dense = Column(Boolean, default=False)
 
     # Dashboard
-    default_dashboard_id = Column(Integer, ForeignKey("web_dashboards.id"), nullable=True)
+    default_dashboard_id = Column(UniversalUUID(), ForeignKey("web_dashboards.id"), nullable=True)
     dashboard_auto_refresh = Column(Boolean, default=True)
 
     # Table preferences
@@ -404,7 +406,7 @@ class Shortcut(Base):
     """Raccourci clavier"""
     __tablename__ = "web_shortcuts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -445,7 +447,7 @@ class CustomPage(Base):
     """Page personnalisée"""
     __tablename__ = "web_custom_pages"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -480,7 +482,7 @@ class CustomPage(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_pages_tenant_slug", "tenant_id", "slug", unique=True),

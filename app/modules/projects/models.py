@@ -158,7 +158,7 @@ class Project(Base):
     __tablename__ = "projects"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     code = Column(String(50), nullable=False)
@@ -242,7 +242,7 @@ class ProjectPhase(Base):
     __tablename__ = "project_phases"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
@@ -287,7 +287,7 @@ class ProjectTask(Base):
     __tablename__ = "project_tasks"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
     phase_id = Column(UniversalUUID(), ForeignKey("project_phases.id"))
     parent_task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
@@ -369,7 +369,7 @@ class TaskDependency(Base):
     __tablename__ = "task_dependencies"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     predecessor_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"), nullable=False)
     successor_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"), nullable=False)
@@ -394,7 +394,7 @@ class ProjectMilestone(Base):
     __tablename__ = "project_milestones"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
     phase_id = Column(UniversalUUID(), ForeignKey("project_phases.id"))
 
@@ -441,7 +441,7 @@ class ProjectTeamMember(Base):
     __tablename__ = "project_team_members"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Membre
@@ -493,7 +493,7 @@ class ProjectRisk(Base):
     __tablename__ = "project_risks"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
@@ -553,7 +553,7 @@ class ProjectIssue(Base):
     __tablename__ = "project_issues"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
     task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
 
@@ -614,7 +614,7 @@ class ProjectTimeEntry(Base):
     __tablename__ = "project_time_entries"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
     task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
 
@@ -672,7 +672,7 @@ class ProjectExpense(Base):
     __tablename__ = "project_expenses"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
     task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
     budget_line_id = Column(UniversalUUID(), ForeignKey("project_budget_lines.id"))
@@ -732,7 +732,7 @@ class ProjectDocument(Base):
     __tablename__ = "project_documents"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
@@ -775,7 +775,7 @@ class ProjectBudget(Base):
     __tablename__ = "project_budgets"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification
@@ -824,7 +824,7 @@ class BudgetLine(Base):
     __tablename__ = "project_budget_lines"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     budget_id = Column(UniversalUUID(), ForeignKey("project_budgets.id"), nullable=False)
     phase_id = Column(UniversalUUID(), ForeignKey("project_phases.id"))
 
@@ -871,7 +871,7 @@ class ProjectTemplate(Base):
     __tablename__ = "project_templates"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
     name = Column(String(255), nullable=False)
@@ -920,7 +920,7 @@ class ProjectComment(Base):
     __tablename__ = "project_comments"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
     task_id = Column(UniversalUUID(), ForeignKey("project_tasks.id"))
 
@@ -964,7 +964,7 @@ class ProjectKPI(Base):
     __tablename__ = "project_kpis"
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
     project_id = Column(UniversalUUID(), ForeignKey("projects.id"), nullable=False)
 
     # Identification

@@ -5,14 +5,16 @@ AZALS MODULE T8 - Modèles Site Web
 Modèles SQLAlchemy pour le site web officiel.
 """
 
+import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, JSON, Float
+    Column, String, Text, Boolean, DateTime,
+    ForeignKey, Enum, Float, Integer
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.types import UniversalUUID, JSON
 
 
 # ============================================================================
@@ -86,7 +88,7 @@ class SitePage(Base):
     """Pages du site web."""
     __tablename__ = "site_pages"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -120,7 +122,7 @@ class SitePage(Base):
     published_at = Column(DateTime)
 
     # Navigation
-    parent_id = Column(Integer, ForeignKey("site_pages.id"))
+    parent_id = Column(UniversalUUID(), ForeignKey("site_pages.id"))
     sort_order = Column(Integer, default=0)
     show_in_menu = Column(Boolean, default=True)
     show_in_footer = Column(Boolean, default=False)
@@ -140,7 +142,7 @@ class SitePage(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
     # Relations
     children = relationship("SitePage", backref="parent", remote_side=[id])
@@ -150,7 +152,7 @@ class BlogPost(Base):
     """Articles de blog."""
     __tablename__ = "blog_posts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Identification
@@ -177,7 +179,7 @@ class BlogPost(Base):
     tags = Column(JSON)  # ["tag1", "tag2"]
 
     # Auteur
-    author_id = Column(Integer)
+    author_id = Column(UniversalUUID())
     author_name = Column(String(255))
     author_avatar = Column(String(500))
     author_bio = Column(Text)
@@ -207,14 +209,14 @@ class BlogPost(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
 
 class Testimonial(Base):
     """Témoignages clients."""
     __tablename__ = "testimonials"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Client
@@ -258,14 +260,14 @@ class Testimonial(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
 
 class ContactSubmission(Base):
     """Soumissions de formulaires de contact."""
     __tablename__ = "contact_submissions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Catégorie
@@ -303,12 +305,12 @@ class ContactSubmission(Base):
     status = Column(Enum(SubmissionStatus), default=SubmissionStatus.NEW)
 
     # Assignation
-    assigned_to = Column(Integer)
+    assigned_to = Column(UniversalUUID())
 
     # Réponse
     response = Column(Text)
     responded_at = Column(DateTime)
-    responded_by = Column(Integer)
+    responded_by = Column(UniversalUUID())
 
     # Suivi
     notes = Column(Text)
@@ -333,7 +335,7 @@ class NewsletterSubscriber(Base):
     """Abonnés newsletter."""
     __tablename__ = "newsletter_subscribers"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Contact
@@ -382,7 +384,7 @@ class SiteMedia(Base):
     """Médiathèque du site."""
     __tablename__ = "site_media"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Fichier
@@ -422,14 +424,14 @@ class SiteMedia(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer)
+    created_by = Column(UniversalUUID())
 
 
 class SiteSEO(Base):
     """Configuration SEO globale."""
     __tablename__ = "site_seo"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Meta globales
@@ -474,14 +476,14 @@ class SiteSEO(Base):
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    updated_by = Column(Integer)
+    updated_by = Column(UniversalUUID())
 
 
 class SiteAnalytics(Base):
     """Données analytics agrégées."""
     __tablename__ = "site_analytics"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(50), nullable=False, index=True)
 
     # Période

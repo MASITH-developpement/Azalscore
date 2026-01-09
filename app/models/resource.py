@@ -3,9 +3,11 @@ AZALS - Modèle Resource
 Exemple de ressource métier isolée par tenant
 """
 
-from sqlalchemy import Column, Integer, String, Text
+import uuid
+from sqlalchemy import Column, String, Text
 from app.core.database import Base
 from app.models.base import TenantMixin
+from app.core.types import UniversalUUID
 
 
 class Resource(Base, TenantMixin):
@@ -14,9 +16,8 @@ class Resource(Base, TenantMixin):
     Toute ressource appartient à un et un seul tenant.
     """
     __tablename__ = 'resources'
-    
-    # Clé primaire auto-incrémentée
-    id = Column(Integer, primary_key=True, index=True)
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     
     # Nom de la ressource
     name = Column(String(255), nullable=False, index=True)

@@ -8,15 +8,15 @@ IMPORTANT: Le CorrectionRegistry est append-only (INSERT uniquement).
 Les UPDATE et DELETE sont interdits par contrainte logique.
 """
 
+import uuid
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, BigInteger, String, DateTime, Text, Boolean,
-    ForeignKey, Index, Enum, Float, func, CheckConstraint
+    Column, String, DateTime, Text, Boolean,
+    ForeignKey, Index, Enum, Float, func, CheckConstraint, Integer
 )
-from app.core.types import JSONB
+from app.core.types import JSONB, UniversalUUID
 from sqlalchemy.orm import relationship
 import enum
-import uuid
 
 from app.core.database import Base
 
@@ -128,7 +128,7 @@ class ErrorDetection(Base):
     """
     __tablename__ = "guardian_error_detections"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     error_uid = Column(String(36), unique=True, nullable=False, index=True,
                        default=lambda: str(uuid.uuid4()))
     tenant_id = Column(String(255), nullable=False, index=True)
@@ -172,11 +172,11 @@ class ErrorDetection(Base):
     # Statut de traitement
     is_processed = Column(Boolean, default=False, nullable=False, index=True)
     is_acknowledged = Column(Boolean, default=False, nullable=False)
-    acknowledged_by = Column(Integer, nullable=True)
+    acknowledged_by = Column(UniversalUUID(), nullable=True)
     acknowledged_at = Column(DateTime, nullable=True)
 
     # Relation avec la correction
-    correction_id = Column(BigInteger, ForeignKey('guardian_correction_registry.id'), nullable=True)
+    correction_id = Column(UniversalUUID(), ForeignKey('guardian_correction_registry.id'), nullable=True)
 
     # Timestamps
     detected_at = Column(DateTime, server_default=func.current_timestamp(), nullable=False, index=True)
@@ -201,7 +201,7 @@ class CorrectionRegistry(Base):
     """
     __tablename__ = "guardian_correction_registry"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     correction_uid = Column(String(36), unique=True, nullable=False, index=True,
                            default=lambda: str(uuid.uuid4()))
     tenant_id = Column(String(255), nullable=False, index=True)
@@ -218,7 +218,7 @@ class CorrectionRegistry(Base):
 
     # 3. Source de l'erreur
     error_source = Column(Enum(ErrorSource), nullable=False)
-    error_detection_id = Column(BigInteger, nullable=True)  # Lien vers ErrorDetection
+    error_detection_id = Column(UniversalUUID(), nullable=True)  # Lien vers ErrorDetection
 
     # 4. Type d'erreur détectée
     error_type = Column(Enum(ErrorType), nullable=False)
@@ -276,7 +276,7 @@ class CorrectionRegistry(Base):
 
     # Validation humaine (si requise)
     requires_human_validation = Column(Boolean, default=False, nullable=False)
-    validated_by = Column(Integer, nullable=True)
+    validated_by = Column(UniversalUUID(), nullable=True)
     validated_at = Column(DateTime, nullable=True)
     validation_comment = Column(Text, nullable=True)
 
@@ -315,7 +315,7 @@ class CorrectionRule(Base):
     """
     __tablename__ = "guardian_correction_rules"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
     rule_uid = Column(String(36), unique=True, nullable=False, index=True,
                       default=lambda: str(uuid.uuid4()))
@@ -365,7 +365,7 @@ class CorrectionRule(Base):
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(Integer, nullable=True)
+    created_by = Column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index('idx_guardian_rules_tenant', 'tenant_id'),
@@ -381,11 +381,11 @@ class CorrectionTest(Base):
     """
     __tablename__ = "guardian_correction_tests"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Lien avec la correction
-    correction_id = Column(BigInteger, ForeignKey('guardian_correction_registry.id', ondelete='CASCADE'),
+    correction_id = Column(UniversalUUID(), ForeignKey('guardian_correction_registry.id', ondelete='CASCADE'),
                           nullable=False, index=True)
 
     # Test identifiant
@@ -429,7 +429,7 @@ class GuardianAlert(Base):
     """
     __tablename__ = "guardian_alerts"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     alert_uid = Column(String(36), unique=True, nullable=False, index=True,
                        default=lambda: str(uuid.uuid4()))
     tenant_id = Column(String(255), nullable=False, index=True)
@@ -444,8 +444,8 @@ class GuardianAlert(Base):
     details = Column(JSONB, nullable=True)
 
     # Liens
-    error_detection_id = Column(BigInteger, nullable=True)
-    correction_id = Column(BigInteger, nullable=True)
+    error_detection_id = Column(UniversalUUID(), nullable=True)
+    correction_id = Column(UniversalUUID(), nullable=True)
 
     # Destinataires
     target_roles = Column(JSONB, nullable=True)  # ["DIRIGEANT", "ADMIN"]
@@ -453,15 +453,15 @@ class GuardianAlert(Base):
 
     # Statut
     is_read = Column(Boolean, default=False, nullable=False, index=True)
-    read_by = Column(Integer, nullable=True)
+    read_by = Column(UniversalUUID(), nullable=True)
     read_at = Column(DateTime, nullable=True)
 
     is_acknowledged = Column(Boolean, default=False, nullable=False)
-    acknowledged_by = Column(Integer, nullable=True)
+    acknowledged_by = Column(UniversalUUID(), nullable=True)
     acknowledged_at = Column(DateTime, nullable=True)
 
     is_resolved = Column(Boolean, default=False, nullable=False, index=True)
-    resolved_by = Column(Integer, nullable=True)
+    resolved_by = Column(UniversalUUID(), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     resolution_comment = Column(Text, nullable=True)
 
@@ -482,7 +482,7 @@ class GuardianConfig(Base):
     """
     __tablename__ = "guardian_config"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), unique=True, nullable=False, index=True)
 
     # Activation
