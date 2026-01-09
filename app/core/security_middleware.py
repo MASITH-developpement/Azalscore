@@ -2,6 +2,9 @@
 AZALS - Security Middleware Production
 ======================================
 CORS, Rate Limiting, Security Headers, Request Validation.
+
+SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
+          qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
 """
 
 import time
@@ -13,6 +16,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from app.core.config import get_settings
+
+# Import de la fonction SAFE de gestion des erreurs
+# Note: Utilise error_response.py au lieu de middleware.py pour éviter les imports circulaires
+from app.modules.guardian.error_response import (
+    build_error_response,
+    build_safe_error_response,
+    ErrorType,
+)
 
 
 # ============================================================================
@@ -179,18 +190,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def _rate_limit_response(
         self, request: Request, message: str, limit: int
     ) -> Response:
-        """Retourne une réponse 429 Too Many Requests."""
-        return Response(
-            content=f'{{"detail": "{message}", "limit": {limit}}}',
+        """Retourne une réponse 429 Too Many Requests de manière SAFE."""
+        response = build_error_response(
             status_code=429,
-            media_type="application/json",
-            headers={
-                "Retry-After": "60",
-                "X-RateLimit-Limit": str(limit),
-                "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset": str(int(time.time()) + 60),
-            }
+            error_type=ErrorType.RATE_LIMIT,
+            message=message,
+            html_path="frontend/errors/429.html",
+            extra_data={"limit": limit}
         )
+        # Ajouter les headers spécifiques au rate limiting
+        response.headers["Retry-After"] = "60"
+        response.headers["X-RateLimit-Limit"] = str(limit)
+        response.headers["X-RateLimit-Remaining"] = "0"
+        response.headers["X-RateLimit-Reset"] = str(int(time.time()) + 60)
+        return response
 
 
 # ============================================================================
@@ -296,9 +309,11 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
         if content_length:
             try:
                 if int(content_length) > self.MAX_CONTENT_LENGTH:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"Request body too large. Max: {self.MAX_CONTENT_LENGTH} bytes"
+                    return build_error_response(
+                        status_code=413,
+                        error_type=ErrorType.VALIDATION,
+                        message=f"Request body too large. Max: {self.MAX_CONTENT_LENGTH} bytes",
+                        html_path="frontend/errors/413.html"
                     )
             except ValueError:
                 pass
@@ -311,9 +326,11 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
             if base_content_type and base_content_type not in self.ALLOWED_CONTENT_TYPES:
                 # Autoriser si pas de body ou body vide
                 if content_length and int(content_length) > 0:
-                    raise HTTPException(
-                        status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                        detail=f"Unsupported content type: {base_content_type}"
+                    return build_error_response(
+                        status_code=415,
+                        error_type=ErrorType.VALIDATION,
+                        message=f"Unsupported content type: {base_content_type}",
+                        html_path="frontend/errors/415.html"
                     )
 
         return await call_next(request)
@@ -340,10 +357,11 @@ class IPBlocklistMiddleware(BaseHTTPMiddleware):
 
         # Vérifier si IP bloquée
         if client_ip in self.blocked_ips:
-            return Response(
-                content='{"detail": "Access denied"}',
+            return build_error_response(
                 status_code=403,
-                media_type="application/json"
+                error_type=ErrorType.AUTHORIZATION,
+                message="Access denied",
+                html_path="frontend/errors/403.html"
             )
 
         return await call_next(request)

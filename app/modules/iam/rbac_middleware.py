@@ -9,6 +9,9 @@ PRINCIPE: Deny by default
 - Routes non listées → 403
 - Permissions non accordées → 403
 - Logs sur tous les refus critiques
+
+SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
+          qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
 """
 
 import logging
@@ -18,6 +21,7 @@ from dataclasses import dataclass
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 from .rbac_matrix import (
     StandardRole,
@@ -27,6 +31,15 @@ from .rbac_matrix import (
     check_permission,
     map_legacy_role_to_standard,
     SecurityRules,
+)
+
+# Import de la fonction SAFE de gestion des erreurs
+# Note: Utilise error_response.py au lieu de middleware.py pour éviter les imports circulaires
+from app.modules.guardian.error_response import (
+    build_error_response,
+    build_safe_error_response,
+    get_error_type_for_status,
+    ErrorType,
 )
 
 
@@ -268,9 +281,11 @@ class RBACMiddleware(BaseHTTPMiddleware):
         # 2. Routes authentifiées uniquement (pas de permission spécifique)
         if self._is_authenticated_only_route(path):
             if not self._is_authenticated(request):
-                return JSONResponse(
+                return build_error_response(
                     status_code=401,
-                    content={"detail": "Authentification requise"}
+                    error_type=ErrorType.AUTHENTICATION,
+                    message="Authentification requise",
+                    html_path="frontend/errors/401.html"
                 )
             return await call_next(request)
 
@@ -291,25 +306,31 @@ class RBACMiddleware(BaseHTTPMiddleware):
 
         # 4. Route configurée → Vérifier l'authentification
         if not self._is_authenticated(request):
-            return JSONResponse(
+            return build_error_response(
                 status_code=401,
-                content={"detail": "Authentification requise"}
+                error_type=ErrorType.AUTHENTICATION,
+                message="Authentification requise",
+                html_path="frontend/errors/401.html"
             )
 
         # 5. Vérifier la permission
         user = self._get_user(request)
         if not user:
-            return JSONResponse(
+            return build_error_response(
                 status_code=401,
-                content={"detail": "Utilisateur non trouvé"}
+                error_type=ErrorType.AUTHENTICATION,
+                message="Utilisateur non trouvé",
+                html_path="frontend/errors/401.html"
             )
 
         user_role = self._get_user_role(user)
         if not user_role:
             self._log_denied(request, route_perm, "Rôle non défini")
-            return JSONResponse(
+            return build_error_response(
                 status_code=403,
-                content={"detail": "Rôle utilisateur non défini"}
+                error_type=ErrorType.AUTHORIZATION,
+                message="Rôle utilisateur non défini",
+                html_path="frontend/errors/403.html"
             )
 
         # Vérifier la permission
@@ -317,10 +338,12 @@ class RBACMiddleware(BaseHTTPMiddleware):
 
         if not permission.allowed:
             self._log_denied(request, route_perm, f"Permission refusée pour {user_role.value}")
-            return JSONResponse(
+            return build_error_response(
                 status_code=403,
-                content={
-                    "detail": f"Accès refusé: {route_perm.module.value}.{route_perm.action.value}",
+                error_type=ErrorType.AUTHORIZATION,
+                message=f"Accès refusé: {route_perm.module.value}.{route_perm.action.value}",
+                html_path="frontend/errors/403.html",
+                extra_data={
                     "required_permission": f"{route_perm.module.value}.{route_perm.action.value}"
                 }
             )
