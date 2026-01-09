@@ -1,0 +1,239 @@
+# AZALSCORE - Infrastructure Alert Rules
+# =======================================
+# Prometheus alert rules for system and infrastructure monitoring
+
+groups:
+  - name: azalscore.infra.system
+    interval: 30s
+    rules:
+      # High CPU Usage
+      - alert: HighSystemCPU
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ printf \"%.1f\" $value }}% (threshold: 80%)"
+
+      # Critical CPU Usage
+      - alert: CriticalSystemCPU
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 5m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Critical CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ printf \"%.1f\" $value }}%"
+
+      # High Memory Usage
+      - alert: HighSystemMemory
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ printf \"%.1f\" $value }}%"
+
+      # Critical Memory Usage
+      - alert: CriticalSystemMemory
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Critical memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ printf \"%.1f\" $value }}%"
+
+  - name: azalscore.infra.disk
+    interval: 60s
+    rules:
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} /
+           node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) * 100 < 20
+        for: 15m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk {{ $labels.mountpoint }} has {{ printf \"%.1f\" $value }}% free space"
+
+      # Disk Space Critical
+      - alert: DiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} /
+           node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Disk {{ $labels.mountpoint }} has only {{ printf \"%.1f\" $value }}% free"
+
+      # Disk Will Fill Soon
+      - alert: DiskWillFillSoon
+        expr: |
+          predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"}[6h], 24*60*60) < 0
+        for: 1h
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Disk will fill within 24 hours"
+          description: "{{ $labels.mountpoint }} on {{ $labels.instance }} will run out of space"
+
+      # High Disk I/O
+      - alert: HighDiskIO
+        expr: |
+          rate(node_disk_io_time_seconds_total[5m]) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "High disk I/O on {{ $labels.instance }}"
+          description: "Disk {{ $labels.device }} is spending {{ printf \"%.0f\" (multiply $value 100) }}% of time on I/O"
+
+  - name: azalscore.infra.network
+    interval: 30s
+    rules:
+      # High Network Traffic
+      - alert: HighNetworkTraffic
+        expr: |
+          (rate(node_network_receive_bytes_total[5m]) +
+           rate(node_network_transmit_bytes_total[5m])) / 1024 / 1024 > 100
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "High network traffic on {{ $labels.instance }}"
+          description: "Network traffic is {{ printf \"%.0f\" $value }} MB/s"
+
+      # Network Errors
+      - alert: NetworkErrors
+        expr: |
+          rate(node_network_receive_errs_total[5m]) +
+          rate(node_network_transmit_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Network errors on {{ $labels.instance }}"
+          description: "{{ printf \"%.0f\" $value }} errors/s on {{ $labels.device }}"
+
+  - name: azalscore.infra.containers
+    interval: 30s
+    rules:
+      # Container Down
+      - alert: ContainerDown
+        expr: |
+          absent(container_last_seen{name=~"azalscore.*"})
+        for: 5m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Container is down"
+          description: "AZALSCORE container has been down for more than 5 minutes"
+
+      # Container High CPU
+      - alert: ContainerHighCPU
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{name=~"azalscore.*"}[5m])) by (name) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Container {{ $labels.name }} high CPU"
+          description: "Container is using {{ printf \"%.1f\" $value }}% CPU"
+
+      # Container High Memory
+      - alert: ContainerHighMemory
+        expr: |
+          container_memory_usage_bytes{name=~"azalscore.*"} /
+          container_spec_memory_limit_bytes{name=~"azalscore.*"} * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Container {{ $labels.name }} high memory"
+          description: "Container is using {{ printf \"%.1f\" $value }}% of memory limit"
+
+      # Container Restarting
+      - alert: ContainerRestarting
+        expr: |
+          increase(container_restart_count{name=~"azalscore.*"}[1h]) > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Container {{ $labels.name }} restarting frequently"
+          description: "Container has restarted {{ printf \"%.0f\" $value }} times in the last hour"
+
+  - name: azalscore.infra.redis
+    interval: 30s
+    rules:
+      # Redis Down
+      - alert: RedisDown
+        expr: redis_up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} is unreachable"
+
+      # Redis High Memory
+      - alert: RedisHighMemory
+        expr: |
+          redis_memory_used_bytes{job="redis-exporter"} /
+          redis_memory_max_bytes{job="redis-exporter"} * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis is using {{ printf \"%.1f\" $value }}% of max memory"
+
+      # Redis Too Many Connections
+      - alert: RedisTooManyConnections
+        expr: redis_connected_clients{job="redis-exporter"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Redis too many connections"
+          description: "Redis has {{ printf \"%.0f\" $value }} connected clients"
+
+      # Redis Rejected Connections
+      - alert: RedisRejectedConnections
+        expr: |
+          increase(redis_rejected_connections_total{job="redis-exporter"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Redis rejecting connections"
+          description: "Redis rejected {{ printf \"%.0f\" $value }} connections"

@@ -4,6 +4,7 @@ AZALS MODULE M7 - Modèles Qualité (Quality Management)
 
 Modèles SQLAlchemy pour le module de gestion de la qualité.
 REFACTORED: Migration vers UUID pour production SaaS industrielle.
+NOTE: ForeignKey retirées des modèles pour bootstrap Alembic sécurisé.
 """
 
 import enum
@@ -18,7 +19,6 @@ from sqlalchemy import (
     DateTime,
     Date,
     Numeric,
-    ForeignKey,
     Enum as SQLEnum,
     Index,
     UniqueConstraint,
@@ -215,8 +215,8 @@ class NonConformance(Base):
     source_reference = Column(String(100))
     source_id = Column(UniversalUUID())
 
-    # Produit/Article concerné
-    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"))
+    # Produit/Article concerné - FK gérée via migration Alembic séparée
+    product_id = Column(UniversalUUID())
     lot_number = Column(String(100))
     serial_number = Column(String(100))
     quantity_affected = Column(Numeric(15, 3))
@@ -256,8 +256,8 @@ class NonConformance(Base):
     disposition_by_id = Column(UniversalUUID())  # Référence users
     disposition_justification = Column(Text)
 
-    # CAPA associé
-    capa_id = Column(UniversalUUID(), ForeignKey("quality_capas.id"))
+    # CAPA associé - FK gérée via migration Alembic séparée
+    capa_id = Column(UniversalUUID())
     capa_required = Column(Boolean, default=False)
 
     # Clôture
@@ -280,8 +280,13 @@ class NonConformance(Base):
     created_by = Column(UniversalUUID())
     updated_by = Column(UniversalUUID())
 
-    # Relations
-    actions = relationship("NonConformanceAction", back_populates="non_conformance", cascade="all, delete-orphan")
+    # Relationships (FK gérée via Alembic, pas dans SQLAlchemy)
+    actions = relationship(
+        "NonConformanceAction",
+        back_populates="non_conformance",
+        cascade="all, delete-orphan",
+        foreign_keys="NonConformanceAction.nc_id"
+    )
 
 
 class NonConformanceAction(Base):
@@ -296,7 +301,8 @@ class NonConformanceAction(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    nc_id = Column(UniversalUUID(), ForeignKey("quality_non_conformances.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    nc_id = Column(UniversalUUID(), nullable=False)
 
     # Action
     action_number = Column(Integer, nullable=False)
@@ -327,8 +333,12 @@ class NonConformanceAction(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    non_conformance = relationship("NonConformance", back_populates="actions")
+    # Relationship inverse
+    non_conformance = relationship(
+        "NonConformance",
+        back_populates="actions",
+        foreign_keys=[nc_id]
+    )
 
 
 # ============================================================================
@@ -381,8 +391,13 @@ class QualityControlTemplate(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    items = relationship("QualityControlTemplateItem", back_populates="template", cascade="all, delete-orphan")
+    # Relationships
+    items = relationship(
+        "QualityControlTemplateItem",
+        back_populates="template",
+        cascade="all, delete-orphan",
+        foreign_keys="QualityControlTemplateItem.template_id"
+    )
 
 
 class QualityControlTemplateItem(Base):
@@ -396,7 +411,8 @@ class QualityControlTemplateItem(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    template_id = Column(UniversalUUID(), ForeignKey("quality_control_templates.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    template_id = Column(UniversalUUID(), nullable=False)
 
     # Identification
     sequence = Column(Integer, nullable=False)
@@ -431,8 +447,12 @@ class QualityControlTemplateItem(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # Relations
-    template = relationship("QualityControlTemplate", back_populates="items")
+    # Relationship inverse
+    template = relationship(
+        "QualityControlTemplate",
+        back_populates="items",
+        foreign_keys=[template_id]
+    )
 
 
 class QualityControl(Base):
@@ -450,9 +470,9 @@ class QualityControl(Base):
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
 
-    # Identification
+    # Identification - FK gérées via migration Alembic séparée
     control_number = Column(String(50), nullable=False)
-    template_id = Column(UniversalUUID(), ForeignKey("quality_control_templates.id"))
+    template_id = Column(UniversalUUID())
     control_type = Column(SQLEnum(ControlType), nullable=False)
 
     # Objet du contrôle
@@ -460,8 +480,8 @@ class QualityControl(Base):
     source_reference = Column(String(100))
     source_id = Column(UniversalUUID())
 
-    # Produit contrôlé
-    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"))
+    # Produit contrôlé - FK gérée via migration Alembic séparée
+    product_id = Column(UniversalUUID())
     lot_number = Column(String(100))
     serial_number = Column(String(100))
 
@@ -498,8 +518,8 @@ class QualityControl(Base):
     decision_date = Column(DateTime)
     decision_comments = Column(Text)
 
-    # Non-conformité générée
-    nc_id = Column(UniversalUUID(), ForeignKey("quality_non_conformances.id"))
+    # Non-conformité générée - FK gérée via migration Alembic séparée
+    nc_id = Column(UniversalUUID())
 
     # Observations
     observations = Column(Text)
@@ -509,8 +529,13 @@ class QualityControl(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    lines = relationship("QualityControlLine", back_populates="control", cascade="all, delete-orphan")
+    # Relationships
+    lines = relationship(
+        "QualityControlLine",
+        back_populates="control",
+        cascade="all, delete-orphan",
+        foreign_keys="QualityControlLine.control_id"
+    )
 
 
 class QualityControlLine(Base):
@@ -524,8 +549,9 @@ class QualityControlLine(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    control_id = Column(UniversalUUID(), ForeignKey("quality_controls.id", ondelete="CASCADE"), nullable=False)
-    template_item_id = Column(UniversalUUID(), ForeignKey("quality_control_template_items.id"))
+    # FK gérées via migration Alembic séparée
+    control_id = Column(UniversalUUID(), nullable=False)
+    template_item_id = Column(UniversalUUID())
 
     # Identification
     sequence = Column(Integer, nullable=False)
@@ -557,8 +583,12 @@ class QualityControlLine(Base):
     created_at = Column(DateTime, server_default=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    control = relationship("QualityControl", back_populates="lines")
+    # Relationship inverse
+    control = relationship(
+        "QualityControl",
+        back_populates="lines",
+        foreign_keys=[control_id]
+    )
 
 
 # ============================================================================
@@ -644,8 +674,13 @@ class QualityAudit(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    findings = relationship("AuditFinding", back_populates="audit", cascade="all, delete-orphan")
+    # Relationships
+    findings = relationship(
+        "AuditFinding",
+        back_populates="audit",
+        cascade="all, delete-orphan",
+        foreign_keys="AuditFinding.audit_id"
+    )
 
 
 class AuditFinding(Base):
@@ -660,7 +695,8 @@ class AuditFinding(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    audit_id = Column(UniversalUUID(), ForeignKey("quality_audits.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    audit_id = Column(UniversalUUID(), nullable=False)
 
     # Identification
     finding_number = Column(Integer, nullable=False)
@@ -680,9 +716,9 @@ class AuditFinding(Base):
     risk_description = Column(Text)
     risk_level = Column(String(50))
 
-    # CAPA
+    # CAPA - FK gérée via migration Alembic séparée
     capa_required = Column(Boolean, default=False)
-    capa_id = Column(UniversalUUID(), ForeignKey("quality_capas.id"))
+    capa_id = Column(UniversalUUID())
 
     # Réponse
     auditee_response = Column(Text)
@@ -703,8 +739,12 @@ class AuditFinding(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    audit = relationship("QualityAudit", back_populates="findings")
+    # Relationship inverse
+    audit = relationship(
+        "QualityAudit",
+        back_populates="findings",
+        foreign_keys=[audit_id]
+    )
 
 
 # ============================================================================
@@ -783,8 +823,13 @@ class CAPA(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    actions = relationship("CAPAAction", back_populates="capa", cascade="all, delete-orphan")
+    # Relationships
+    actions = relationship(
+        "CAPAAction",
+        back_populates="capa",
+        cascade="all, delete-orphan",
+        foreign_keys="CAPAAction.capa_id"
+    )
 
 
 class CAPAAction(Base):
@@ -799,7 +844,8 @@ class CAPAAction(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    capa_id = Column(UniversalUUID(), ForeignKey("quality_capas.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    capa_id = Column(UniversalUUID(), nullable=False)
 
     # Identification
     action_number = Column(Integer, nullable=False)
@@ -839,8 +885,12 @@ class CAPAAction(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    capa = relationship("CAPA", back_populates="actions")
+    # Relationship inverse
+    capa = relationship(
+        "CAPA",
+        back_populates="actions",
+        foreign_keys=[capa_id]
+    )
 
 
 # ============================================================================
@@ -877,8 +927,8 @@ class CustomerClaim(Base):
     received_via = Column(String(50))  # EMAIL, PHONE, LETTER, PORTAL
     received_by_id = Column(UniversalUUID())  # Référence users
 
-    # Produit/Service concerné
-    product_id = Column(UniversalUUID(), ForeignKey("inventory_products.id"))
+    # Produit/Service concerné - FK gérée via migration Alembic séparée
+    product_id = Column(UniversalUUID())
     order_reference = Column(String(100))
     invoice_reference = Column(String(100))
     lot_number = Column(String(100))
@@ -900,11 +950,11 @@ class CustomerClaim(Base):
     root_cause = Column(Text)
     our_responsibility = Column(Boolean)
 
-    # Non-conformité associée
-    nc_id = Column(UniversalUUID(), ForeignKey("quality_non_conformances.id"))
+    # Non-conformité associée - FK gérée via migration Alembic séparée
+    nc_id = Column(UniversalUUID())
 
-    # CAPA associé
-    capa_id = Column(UniversalUUID(), ForeignKey("quality_capas.id"))
+    # CAPA associé - FK gérée via migration Alembic séparée
+    capa_id = Column(UniversalUUID())
 
     # Réponse
     response_due_date = Column(Date)
@@ -937,8 +987,13 @@ class CustomerClaim(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    actions = relationship("ClaimAction", back_populates="claim", cascade="all, delete-orphan")
+    # Relationships
+    actions = relationship(
+        "ClaimAction",
+        back_populates="claim",
+        cascade="all, delete-orphan",
+        foreign_keys="ClaimAction.claim_id"
+    )
 
 
 class ClaimAction(Base):
@@ -952,7 +1007,8 @@ class ClaimAction(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    claim_id = Column(UniversalUUID(), ForeignKey("quality_customer_claims.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    claim_id = Column(UniversalUUID(), nullable=False)
 
     # Action
     action_number = Column(Integer, nullable=False)
@@ -976,8 +1032,12 @@ class ClaimAction(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    claim = relationship("CustomerClaim", back_populates="actions")
+    # Relationship inverse
+    claim = relationship(
+        "CustomerClaim",
+        back_populates="actions",
+        foreign_keys=[claim_id]
+    )
 
 
 # ============================================================================
@@ -1036,8 +1096,13 @@ class QualityIndicator(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    measurements = relationship("IndicatorMeasurement", back_populates="indicator", cascade="all, delete-orphan")
+    # Relationships
+    measurements = relationship(
+        "IndicatorMeasurement",
+        back_populates="indicator",
+        cascade="all, delete-orphan",
+        foreign_keys="IndicatorMeasurement.indicator_id"
+    )
 
 
 class IndicatorMeasurement(Base):
@@ -1052,7 +1117,8 @@ class IndicatorMeasurement(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    indicator_id = Column(UniversalUUID(), ForeignKey("quality_indicators.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    indicator_id = Column(UniversalUUID(), nullable=False)
 
     # Période
     measurement_date = Column(Date, nullable=False)
@@ -1084,8 +1150,12 @@ class IndicatorMeasurement(Base):
     created_at = Column(DateTime, server_default=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    indicator = relationship("QualityIndicator", back_populates="measurements")
+    # Relationship inverse
+    indicator = relationship(
+        "QualityIndicator",
+        back_populates="measurements",
+        foreign_keys=[indicator_id]
+    )
 
 
 # ============================================================================
@@ -1147,8 +1217,13 @@ class Certification(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    audits = relationship("CertificationAudit", back_populates="certification", cascade="all, delete-orphan")
+    # Relationships
+    audits = relationship(
+        "CertificationAudit",
+        back_populates="certification",
+        cascade="all, delete-orphan",
+        foreign_keys="CertificationAudit.certification_id"
+    )
 
 
 class CertificationAudit(Base):
@@ -1163,7 +1238,8 @@ class CertificationAudit(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    certification_id = Column(UniversalUUID(), ForeignKey("quality_certifications.id", ondelete="CASCADE"), nullable=False)
+    # FK gérée via migration Alembic séparée
+    certification_id = Column(UniversalUUID(), nullable=False)
 
     # Type d'audit
     audit_type = Column(String(50), nullable=False)  # INITIAL, SURVEILLANCE, RENEWAL, SPECIAL
@@ -1192,8 +1268,8 @@ class CertificationAudit(Base):
     corrective_actions_closed = Column(Date)
     follow_up_audit_date = Column(Date)
 
-    # Lien avec audit interne
-    quality_audit_id = Column(UniversalUUID(), ForeignKey("quality_audits.id"))
+    # Lien avec audit interne - FK gérée via migration Alembic séparée
+    quality_audit_id = Column(UniversalUUID())
 
     # Notes
     notes = Column(Text)
@@ -1202,5 +1278,9 @@ class CertificationAudit(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_by = Column(UniversalUUID())
 
-    # Relations
-    certification = relationship("Certification", back_populates="audits")
+    # Relationship inverse
+    certification = relationship(
+        "Certification",
+        back_populates="audits",
+        foreign_keys=[certification_id]
+    )

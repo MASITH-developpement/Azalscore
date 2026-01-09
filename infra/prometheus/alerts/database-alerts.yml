@@ -1,0 +1,189 @@
+# AZALSCORE - Database Alert Rules
+# =================================
+# Prometheus alert rules for PostgreSQL monitoring
+
+groups:
+  - name: azalscore.database.availability
+    interval: 30s
+    rules:
+      # Database Down
+      - alert: PostgreSQLDown
+        expr: pg_up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: dba
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL instance {{ $labels.instance }} is unreachable"
+          runbook_url: "https://docs.azalscore.com/runbook/database-down"
+
+      # Too Many Connections
+      - alert: PostgreSQLTooManyConnections
+        expr: |
+          pg_stat_activity_count{job="postgres-exporter"} /
+          pg_settings_max_connections{job="postgres-exporter"} * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL too many connections"
+          description: "{{ printf \"%.1f\" $value }}% of connections are in use (threshold: 80%)"
+
+      # Connection Pool Exhaustion
+      - alert: PostgreSQLConnectionPoolExhausted
+        expr: |
+          pg_stat_activity_count{job="postgres-exporter"} /
+          pg_settings_max_connections{job="postgres-exporter"} * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          team: dba
+        annotations:
+          summary: "PostgreSQL connection pool nearly exhausted"
+          description: "{{ printf \"%.1f\" $value }}% of connections are in use"
+
+  - name: azalscore.database.performance
+    interval: 30s
+    rules:
+      # Slow Queries
+      - alert: PostgreSQLSlowQueries
+        expr: |
+          rate(pg_stat_statements_seconds_total{job="postgres-exporter"}[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "High query execution time detected"
+
+      # High Query Rate
+      - alert: PostgreSQLHighQueryRate
+        expr: |
+          rate(pg_stat_statements_calls_total{job="postgres-exporter"}[5m]) > 10000
+        for: 5m
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL high query rate"
+          description: "Query rate is {{ printf \"%.0f\" $value }} queries/s"
+
+      # Lock Contention
+      - alert: PostgreSQLLockContention
+        expr: |
+          pg_locks_count{job="postgres-exporter", mode="ExclusiveLock"} > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL lock contention detected"
+          description: "{{ $value }} exclusive locks are held"
+
+      # Long Running Queries
+      - alert: PostgreSQLLongRunningQuery
+        expr: |
+          max(pg_stat_activity_max_tx_duration{job="postgres-exporter"}) > 300
+        for: 1m
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL long running query"
+          description: "Query running for {{ printf \"%.0f\" $value }} seconds"
+
+  - name: azalscore.database.replication
+    interval: 30s
+    rules:
+      # Replication Lag
+      - alert: PostgreSQLReplicationLag
+        expr: |
+          pg_replication_lag{job="postgres-exporter"} > 30
+        for: 5m
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL replication lag"
+          description: "Replication lag is {{ printf \"%.0f\" $value }} seconds"
+
+      # Critical Replication Lag
+      - alert: PostgreSQLCriticalReplicationLag
+        expr: |
+          pg_replication_lag{job="postgres-exporter"} > 120
+        for: 2m
+        labels:
+          severity: critical
+          team: dba
+        annotations:
+          summary: "Critical PostgreSQL replication lag"
+          description: "Replication lag is {{ printf \"%.0f\" $value }} seconds"
+
+      # Replica Down
+      - alert: PostgreSQLReplicaDown
+        expr: |
+          pg_stat_replication_pid{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: dba
+        annotations:
+          summary: "PostgreSQL replica is down"
+          description: "Replica {{ $labels.application_name }} is not connected"
+
+  - name: azalscore.database.storage
+    interval: 60s
+    rules:
+      # Database Size Growing Fast
+      - alert: PostgreSQLDatabaseGrowingFast
+        expr: |
+          predict_linear(pg_database_size_bytes{job="postgres-exporter"}[1d], 7*24*60*60) > 100*1024*1024*1024
+        for: 1h
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL database growing fast"
+          description: "Database {{ $labels.datname }} predicted to exceed 100GB in 7 days"
+
+      # Table Bloat
+      - alert: PostgreSQLTableBloat
+        expr: |
+          pg_stat_user_tables_dead_tup{job="postgres-exporter"} > 10000
+        for: 1h
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL table bloat detected"
+          description: "Table {{ $labels.relname }} has {{ $value }} dead tuples - VACUUM recommended"
+
+      # VACUUM Not Running
+      - alert: PostgreSQLVacuumNotRunning
+        expr: |
+          time() - pg_stat_user_tables_last_vacuum{job="postgres-exporter"} > 86400
+        for: 1h
+        labels:
+          severity: warning
+          team: dba
+        annotations:
+          summary: "PostgreSQL VACUUM not running"
+          description: "Table {{ $labels.relname }} has not been vacuumed in over 24 hours"
+
+  - name: azalscore.database.backup
+    interval: 60s
+    rules:
+      # Backup Age
+      - alert: PostgreSQLBackupTooOld
+        expr: |
+          time() - azalscore_last_backup_timestamp > 86400
+        for: 1h
+        labels:
+          severity: critical
+          team: dba
+        annotations:
+          summary: "Database backup is too old"
+          description: "Last backup was more than 24 hours ago"
