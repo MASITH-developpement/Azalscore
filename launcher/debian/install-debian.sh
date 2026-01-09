@@ -17,6 +17,7 @@ REPO_URL="https://github.com/MASITH-developpement/Azalscore.git"
 BRANCH="main"
 INSTALL_DIR="$HOME/Azalscore"
 LOG_FILE="/tmp/azalscore-install.log"
+SUDO_CMD="sudo"
 
 # ═══════════════════════════════════════════════════════════════
 # COULEURS
@@ -105,13 +106,26 @@ detect_system() {
 # ═══════════════════════════════════════════════════════════════
 
 check_privileges() {
+    # Option --force pour permettre l'execution en tant que root
+    if [ "$FORCE_ROOT" = "1" ] || [ "$1" = "--force" ]; then
+        if [ "$EUID" -eq 0 ]; then
+            log_warning "Execution en tant que root (mode force)"
+            SUDO_CMD=""
+            return 0
+        fi
+    fi
+
     if [ "$EUID" -eq 0 ]; then
         log_warning "Ce script ne doit pas etre execute en tant que root."
         log_warning "Il utilisera sudo pour les operations necessitant des privileges."
         log_warning ""
         log_warning "Executez: ./install-debian.sh (sans sudo)"
+        log_warning ""
+        log_warning "Pour forcer l'execution en root: ./install-debian.sh --force"
         exit 1
     fi
+
+    SUDO_CMD="sudo"
 
     # Verifier que sudo fonctionne
     if ! sudo -v 2>/dev/null; then
@@ -132,7 +146,7 @@ check_privileges() {
 update_system() {
     log_step "Mise a jour des paquets"
 
-    sudo apt-get update -y
+    $SUDO_CMD apt-get update -y
     log_success "Liste des paquets mise a jour"
 }
 
