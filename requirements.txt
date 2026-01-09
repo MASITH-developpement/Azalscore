@@ -40,3 +40,8 @@ psutil==5.9.8
 
 # Cache & Rate Limiting
 redis==5.0.1
+
+# Connexions Serveur Distant (SSH/SFTP)
+paramiko==3.4.0
+fabric==3.2.2
+asyncssh==2.14.2

@@ -137,6 +137,9 @@ from app.modules.ai_assistant.router import router as ai_router
 from app.modules.guardian.router import router as guardian_router
 from app.modules.guardian.middleware import setup_guardian_middleware
 
+# Module Server Connections - Gestion des connexions aux serveurs distants
+from app.modules.server_connections.router import router as server_connections_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -391,6 +394,9 @@ api_v1.include_router(ai_router)
 
 # Module GUARDIAN - Correction Automatique Gouvernee & Auditable
 api_v1.include_router(guardian_router)
+
+# Module Server Connections - Gestion des serveurs distants
+api_v1.include_router(server_connections_router)
 
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)
