@@ -7,16 +7,14 @@ Benchmark: Square, Lightspeed, Shopify POS, Toast
 Target: POS enterprise intégré ERP avec mode offline
 """
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, Numeric, Index, Integer
-)
-from app.core.database import Base
-from app.core.types import UniversalUUID, JSON
 
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+
+from app.core.database import Base
+from app.core.types import JSON, UniversalUUID
 
 # ============================================================================
 # ENUMS

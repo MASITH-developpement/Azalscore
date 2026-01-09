@@ -3,17 +3,29 @@ AZALS - Module M10: BI & Reporting
 Modèles SQLAlchemy pour Business Intelligence
 """
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
+
 from sqlalchemy import (
-    Column, Integer, String, Text, DateTime, Boolean, ForeignKey,
-    Numeric, Enum, JSON, Date, UniqueConstraint, Index
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
+
 from app.core.database import Base
 from app.core.types import UniversalUUID
-
 
 # ============================================================================
 # ENUMS

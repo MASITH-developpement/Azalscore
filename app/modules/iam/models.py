@@ -6,17 +6,28 @@ Modèles SQLAlchemy pour la gestion des identités et accès.
 Tous les modèles héritent de TenantMixin pour l'isolation multi-tenant.
 """
 
+import enum
 import uuid
 from datetime import datetime
+
 from sqlalchemy import (
-    Column, String, DateTime, Text, Boolean, ForeignKey,
-    Index, Enum, UniqueConstraint, Table, func, Integer
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import relationship
-import enum
+
 from app.core.database import Base
 from app.core.types import UniversalUUID
-
 
 # ============================================================================
 # ENUMS

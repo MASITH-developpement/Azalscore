@@ -5,16 +5,28 @@ AZALS MODULE T3 - Modèles Audit & Benchmark
 Modèles SQLAlchemy pour l'audit et les benchmarks.
 """
 
+import enum
 import uuid
 from datetime import datetime
+
 from sqlalchemy import (
-    Column, String, DateTime, Text, Boolean, ForeignKey,
-    Index, Enum, UniqueConstraint, Float, BigInteger, func, Integer
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
 )
-import enum
+
 from app.core.database import Base
 from app.core.types import UniversalUUID
-
 
 # ============================================================================
 # ENUMS

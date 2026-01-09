@@ -8,13 +8,11 @@ Modèles SQLAlchemy pour la gestion des diffusions automatiques.
 import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Float,
-    ForeignKey, Enum, Index, Integer
-)
-from app.core.database import Base
-from app.core.types import UniversalUUID, JSON
 
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
+
+from app.core.database import Base
+from app.core.types import JSON, UniversalUUID
 
 # ============================================================================
 # ENUMS

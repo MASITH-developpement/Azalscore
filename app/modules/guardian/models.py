@@ -8,18 +8,28 @@ IMPORTANT: Le CorrectionRegistry est append-only (INSERT uniquement).
 Les UPDATE et DELETE sont interdits par contrainte logique.
 """
 
+import enum
 import uuid
 from datetime import datetime
+
 from sqlalchemy import (
-    Column, String, DateTime, Text, Boolean,
-    ForeignKey, Index, Enum, Float, func, CheckConstraint, Integer
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
 )
-from app.core.types import JSONB, UniversalUUID
 from sqlalchemy.orm import relationship
-import enum
 
 from app.core.database import Base
-
+from app.core.types import JSONB, UniversalUUID
 
 # ============================================================================
 # ENUMS

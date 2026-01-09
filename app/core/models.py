@@ -3,10 +3,12 @@ AZALS - Modèles SQLAlchemy Multi-Tenant
 Isolation stricte par tenant_id - AUCUNE fuite inter-tenant possible
 """
 
+import enum
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, Index, Enum, func, Numeric
-import enum
+
+from sqlalchemy import Column, DateTime, Enum, Index, Integer, Numeric, String, Text, func
+
 from app.core.database import Base
 from app.core.types import UniversalUUID
 
@@ -103,7 +105,7 @@ class CoreAuditJournal(Base, TenantMixin):
     action = Column(String(255), nullable=False)
     details = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
-    
+
     __table_args__ = (
         Index('idx_core_audit_tenant_id', 'tenant_id'),
         Index('idx_core_audit_user_id', 'user_id'),
@@ -125,7 +127,7 @@ class Item(Base, TenantMixin):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+
     # Index composite pour optimiser les requêtes par tenant
     __table_args__ = (
         Index('idx_items_tenant_id', 'tenant_id'),
@@ -152,7 +154,7 @@ class Decision(Base, TenantMixin):
     level = Column(Enum(DecisionLevel), nullable=False)
     reason = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
-    
+
     __table_args__ = (
         Index('idx_decisions_tenant_id', 'tenant_id'),
         Index('idx_decisions_entity', 'tenant_id', 'entity_type', 'entity_id'),
@@ -183,7 +185,7 @@ class RedDecisionWorkflow(Base, TenantMixin):
     step = Column(Enum(RedWorkflowStep), nullable=False)
     user_id = Column(UniversalUUID(), nullable=False)
     confirmed_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
-    
+
     __table_args__ = (
         Index('idx_red_workflow_tenant', 'tenant_id'),
         Index('idx_red_workflow_decision', 'decision_id'),
@@ -222,7 +224,7 @@ class RedDecisionReport(Base, TenantMixin):
     validator_id = Column(UniversalUUID(), nullable=False)
     journal_references = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
-    
+
     __table_args__ = (
         Index('idx_report_tenant', 'tenant_id'),
         Index('idx_report_decision', 'decision_id'),
@@ -248,7 +250,7 @@ class TreasuryForecast(Base, TenantMixin):
     forecast_balance = Column(Numeric(20, 2), nullable=False)
     red_triggered = Column(String(1), default='0')
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
-    
+
     __table_args__ = (
         Index('idx_treasury_tenant', 'tenant_id'),
         Index('idx_treasury_created', 'created_at'),
@@ -257,7 +259,7 @@ class TreasuryForecast(Base, TenantMixin):
 
 
 # Re-export JournalEntry pour compatibilité avec les tests existants
-from app.modules.finance.models import JournalEntry, JournalEntryLine
+from app.modules.finance.models import JournalEntry, JournalEntryLine  # noqa: E402
 
 __all__ = [
     'Base', 'TenantMixin', 'User', 'UserRole', 'DecisionLevel', 'RedWorkflowStep',

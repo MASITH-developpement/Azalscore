@@ -5,17 +5,15 @@ AZALS MODULE T8 - Modèles Site Web
 Modèles SQLAlchemy pour le site web officiel.
 """
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    ForeignKey, Enum, Float, Integer
-)
-from sqlalchemy.orm import relationship
-from app.core.database import Base
-from app.core.types import UniversalUUID, JSON
 
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+
+from app.core.database import Base
+from app.core.types import JSON, UniversalUUID
 
 # ============================================================================
 # ENUMS
