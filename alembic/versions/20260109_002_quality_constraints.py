@@ -8,8 +8,8 @@ DESCRIPTION:
 ============
 Migration pour ajouter les ForeignKey au module Quality (M7) et QC Central (T4).
 - Ajoute TOUTES les ForeignKey internes au module Quality
+- Ajoute les FK vers inventory_products (module externe)
 - Ajoute les ON DELETE appropriés
-- Aucune FK vers des tables externes (inventory_products) pour éviter les dépendances circulaires
 """
 
 from alembic import op
@@ -159,6 +159,34 @@ def upgrade() -> None:
     )
 
     # ========================================================================
+    # FK VERS MODULES EXTERNES (inventory_products)
+    # ========================================================================
+
+    # quality_non_conformances -> inventory_products
+    op.create_foreign_key(
+        'fk_nc_product',
+        'quality_non_conformances', 'inventory_products',
+        ['product_id'], ['id'],
+        ondelete='SET NULL'
+    )
+
+    # quality_controls -> inventory_products
+    op.create_foreign_key(
+        'fk_qc_product',
+        'quality_controls', 'inventory_products',
+        ['product_id'], ['id'],
+        ondelete='SET NULL'
+    )
+
+    # quality_customer_claims -> inventory_products
+    op.create_foreign_key(
+        'fk_claim_product',
+        'quality_customer_claims', 'inventory_products',
+        ['product_id'], ['id'],
+        ondelete='SET NULL'
+    )
+
+    # ========================================================================
     # MODULE QC CENTRAL (T4) - FOREIGN KEYS INTERNES
     # ========================================================================
 
@@ -237,6 +265,14 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop all foreign key constraints from Quality module tables."""
+
+    # ========================================================================
+    # FK VERS MODULES EXTERNES - DROP FK
+    # ========================================================================
+
+    op.drop_constraint('fk_claim_product', 'quality_customer_claims', type_='foreignkey')
+    op.drop_constraint('fk_qc_product', 'quality_controls', type_='foreignkey')
+    op.drop_constraint('fk_nc_product', 'quality_non_conformances', type_='foreignkey')
 
     # ========================================================================
     # MODULE QC CENTRAL (T4) - DROP FK
