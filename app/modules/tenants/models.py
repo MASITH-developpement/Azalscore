@@ -30,6 +30,14 @@ class TenantStatus(str, enum.Enum):
     TRIAL = "TRIAL"
 
 
+class TenantEnvironment(str, enum.Enum):
+    """Environnements de déploiement."""
+    BETA = "beta"
+    PRODUCTION = "production"
+    STAGING = "staging"
+    DEVELOPMENT = "development"
+
+
 class SubscriptionPlan(str, enum.Enum):
     """Plans d'abonnement."""
     STARTER = "STARTER"
@@ -92,6 +100,13 @@ class Tenant(Base):
     # Statut et plan
     status: Mapped[Optional[str]] = mapped_column(Enum(TenantStatus), default=TenantStatus.PENDING)
     plan: Mapped[Optional[str]] = mapped_column(Enum(SubscriptionPlan), default=SubscriptionPlan.STARTER)
+
+    # Environnement (beta, production, staging, development)
+    environment: Mapped[Optional[str]] = mapped_column(
+        Enum(TenantEnvironment),
+        default=TenantEnvironment.PRODUCTION,
+        nullable=False
+    )
 
     # Configuration
     timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
