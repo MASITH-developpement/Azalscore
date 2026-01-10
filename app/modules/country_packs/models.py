@@ -13,8 +13,9 @@ from enum import Enum as PyEnum
 from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import UniversalUUID
+from sqlalchemy.dialects.postgresql import UUID
 
 # ============================================================================
 # ENUMS

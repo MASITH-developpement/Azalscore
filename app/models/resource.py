@@ -7,9 +7,10 @@ import uuid
 
 from sqlalchemy import Column, String, Text
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import UniversalUUID
 from app.models.base import TenantMixin
+from sqlalchemy.dialects.postgresql import UUID
 
 
 class Resource(Base, TenantMixin):

@@ -11,8 +11,9 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import JSON, UniversalUUID
+from sqlalchemy.dialects.postgresql import UUID
 
 # ============================================================================
 # ENUMS
