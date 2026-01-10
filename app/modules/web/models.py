@@ -11,8 +11,9 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import JSON, UniversalUUID
+from sqlalchemy.dialects.postgresql import UUID
 
 # ============================================================================
 # ENUMS

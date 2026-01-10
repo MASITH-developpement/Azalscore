@@ -13,8 +13,9 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import UniversalUUID
+from sqlalchemy.dialects.postgresql import UUID
 
 # ============================================================================
 # ENUMS

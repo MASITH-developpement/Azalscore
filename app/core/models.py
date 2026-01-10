@@ -9,8 +9,9 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Enum, Index, Integer, Numeric, String, Text, func
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import UniversalUUID
+from sqlalchemy.dialects.postgresql import UUID
 
 
 class UserRole(str, enum.Enum):
