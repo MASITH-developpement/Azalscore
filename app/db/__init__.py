@@ -7,9 +7,10 @@ EXPORTS PRINCIPAUX:
 - Base: Classe de base ORM avec UUIDMixin integre
 - load_all_models: Fonction pour charger tous les modeles ORM
 - verify_models_loaded: Verification que les modeles sont charges
+- UUIDComplianceManager: Gestionnaire de conformite UUID
 
 USAGE:
-    from app.db import Base, load_all_models
+    from app.db import Base, load_all_models, UUIDComplianceManager
     load_all_models()  # Charger tous les modeles avant operations DB
 """
 
@@ -20,6 +21,12 @@ from app.db.model_loader import (
     verify_models_loaded,
     get_loaded_table_count,
     get_loaded_modules
+)
+from app.db.uuid_reset import (
+    UUIDComplianceManager,
+    UUIDComplianceError,
+    UUIDResetBlockedError,
+    reset_database_for_uuid
 )
 
 __all__ = [
@@ -34,5 +41,10 @@ __all__ = [
     'load_all_models',
     'verify_models_loaded',
     'get_loaded_table_count',
-    'get_loaded_modules'
+    'get_loaded_modules',
+    # UUID compliance
+    'UUIDComplianceManager',
+    'UUIDComplianceError',
+    'UUIDResetBlockedError',
+    'reset_database_for_uuid'
 ]
