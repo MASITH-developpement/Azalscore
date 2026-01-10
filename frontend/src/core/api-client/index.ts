@@ -584,25 +584,156 @@ export const api = {
 // UTILITAIRES ERREURS
 // ============================================================
 
+/**
+ * Interface pour le format d'erreur standardise AZALS
+ */
+interface StandardHttpError {
+  error: string;
+  message: string;
+  code: number;
+  path?: string;
+  trace_id?: string;
+  details?: unknown[];
+}
+
+/**
+ * Verifie si la reponse est au format d'erreur standardise AZALS
+ */
+const isStandardHttpError = (data: unknown): data is StandardHttpError => {
+  if (typeof data !== 'object' || data === null) return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.error === 'string' &&
+    typeof d.message === 'string' &&
+    typeof d.code === 'number'
+  );
+};
+
+/**
+ * Parse les erreurs API en format uniforme
+ * Compatible avec le nouveau format standardise et l'ancien format
+ */
 export const parseApiError = (error: unknown): ApiError[] => {
   if (axios.isAxiosError(error)) {
     const response = error.response?.data;
+    const statusCode = error.response?.status;
+
+    // Nouveau format standardise AZALS
+    if (isStandardHttpError(response)) {
+      const errorCode = getErrorCodeFromStatus(statusCode, response.error);
+      return [{
+        code: errorCode,
+        message: response.message,
+        // Inclure trace_id pour les erreurs 500
+        ...(response.trace_id && { trace_id: response.trace_id }),
+        // Inclure path pour les erreurs 404
+        ...(response.path && { path: response.path }),
+      }];
+    }
+
+    // Format avec errors array
     if (response?.errors) {
       return response.errors;
     }
+
+    // Format avec detail (validation errors, etc.)
     if (response?.detail) {
-      return [{ code: 'API_ERROR', message: response.detail }];
+      if (Array.isArray(response.detail)) {
+        return response.detail.map((d: { msg?: string; message?: string; loc?: string[] }) => ({
+          code: 'VALIDATION_ERROR',
+          message: d.msg || d.message || JSON.stringify(d),
+          field: d.loc ? d.loc.join('.') : undefined,
+        }));
+      }
+      return [{ code: 'API_ERROR', message: String(response.detail) }];
     }
-    if (error.message) {
+
+    // Erreur reseau (pas de reponse du serveur)
+    if (!error.response && error.message) {
       return [{ code: 'NETWORK_ERROR', message: error.message }];
     }
+
+    // Erreur HTTP generique
+    if (statusCode) {
+      return [{
+        code: getErrorCodeFromStatus(statusCode),
+        message: getDefaultMessageForStatus(statusCode),
+      }];
+    }
   }
+
   return [{ code: 'UNKNOWN_ERROR', message: 'Une erreur inattendue est survenue' }];
 };
 
+/**
+ * Retourne un code d'erreur AZALS selon le status HTTP
+ */
+const getErrorCodeFromStatus = (status?: number, errorType?: string): string => {
+  if (errorType) {
+    return `AZALS-${errorType.toUpperCase().replace(/_/g, '-')}`;
+  }
+
+  switch (status) {
+    case 401: return 'AZALS-AUTH-UNAUTHORIZED';
+    case 403: return 'AZALS-AUTH-FORBIDDEN';
+    case 404: return 'AZALS-NOT-FOUND';
+    case 422: return 'AZALS-VALIDATION-ERROR';
+    case 429: return 'AZALS-RATE-LIMITED';
+    case 500: return 'AZALS-INTERNAL-ERROR';
+    case 502:
+    case 503:
+    case 504: return 'AZALS-SERVICE-UNAVAILABLE';
+    default: return 'AZALS-HTTP-ERROR';
+  }
+};
+
+/**
+ * Retourne un message par defaut selon le status HTTP
+ */
+const getDefaultMessageForStatus = (status: number): string => {
+  switch (status) {
+    case 401: return 'Authentification requise';
+    case 403: return 'Acces refuse';
+    case 404: return 'Ressource non trouvee';
+    case 422: return 'Donnees invalides';
+    case 429: return 'Trop de requetes, veuillez patienter';
+    case 500: return 'Erreur serveur inattendue';
+    case 502: return 'Service temporairement indisponible';
+    case 503: return 'Service en maintenance';
+    case 504: return 'Delai d\'attente depasse';
+    default: return `Erreur HTTP ${status}`;
+  }
+};
+
+/**
+ * Extrait le message d'erreur lisible
+ */
 export const getErrorMessage = (error: unknown): string => {
   const errors = parseApiError(error);
   return errors.map((e) => e.message).join(', ');
+};
+
+/**
+ * Extrait le status code d'une erreur Axios
+ */
+export const getErrorStatusCode = (error: unknown): number | undefined => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.status;
+  }
+  return undefined;
+};
+
+/**
+ * Extrait le trace_id d'une erreur 500 (si disponible)
+ */
+export const getErrorTraceId = (error: unknown): string | undefined => {
+  if (axios.isAxiosError(error)) {
+    const response = error.response?.data;
+    if (isStandardHttpError(response)) {
+      return response.trace_id;
+    }
+  }
+  return undefined;
 };
 
 // ============================================================

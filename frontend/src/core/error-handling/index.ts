@@ -261,3 +261,188 @@ export const ERROR_CODES = {
   BG_PHRASE_MISMATCH: 'AZALS-BG-002',
   BG_AUTH_FAILED: 'AZALS-BG-003',
 } as const;
+
+// ============================================================
+// HTTP ERROR HANDLING - STANDARDIZED BACKEND FORMAT
+// ============================================================
+
+/**
+ * Format standardise des erreurs HTTP backend AZALS
+ */
+export interface StandardHttpError {
+  error: string;
+  message: string;
+  code: number;
+  path?: string;
+  trace_id?: string;
+  details?: unknown[];
+}
+
+/**
+ * Verifie si l'erreur est au format standardise AZALS
+ */
+export const isStandardHttpError = (error: unknown): error is StandardHttpError => {
+  if (typeof error !== 'object' || error === null) return false;
+  const e = error as Record<string, unknown>;
+  return (
+    typeof e.error === 'string' &&
+    typeof e.message === 'string' &&
+    typeof e.code === 'number'
+  );
+};
+
+/**
+ * Determine si une redirection vers la page d'erreur est necessaire
+ * selon le code HTTP
+ */
+export const shouldRedirectToErrorPage = (statusCode: number): boolean => {
+  return [401, 403, 404, 500].includes(statusCode);
+};
+
+/**
+ * Redirige vers la page d'erreur appropriee
+ * NE redirige PAS automatiquement pour 401 si c'est une erreur d'API
+ * (le frontend gere la deconnexion)
+ */
+export const redirectToErrorPage = (
+  statusCode: number,
+  options?: {
+    skipFor401?: boolean;
+    inNewTab?: boolean;
+  }
+): void => {
+  const { skipFor401 = true, inNewTab = false } = options || {};
+
+  // Ne pas rediriger pour 401 si skipFor401 est true (comportement par defaut)
+  // car le frontend gere deja la deconnexion via le refresh token
+  if (statusCode === 401 && skipFor401) {
+    return;
+  }
+
+  const errorPageUrl = `/errors/${statusCode}`;
+
+  if (inNewTab) {
+    window.open(errorPageUrl, '_blank');
+  } else {
+    window.location.href = errorPageUrl;
+  }
+};
+
+/**
+ * Gestionnaire d'erreur HTTP standardise
+ * Parse l'erreur et affiche une notification appropriee
+ */
+export const handleHttpError = (
+  statusCode: number,
+  errorData?: StandardHttpError | unknown,
+  options?: {
+    showNotification?: boolean;
+    redirectOnError?: boolean;
+    context?: string;
+  }
+): void => {
+  const {
+    showNotification = true,
+    redirectOnError = false,
+    context
+  } = options || {};
+
+  // Parser l'erreur standardisee
+  const standardError = isStandardHttpError(errorData)
+    ? errorData
+    : {
+        error: 'unknown',
+        message: 'Une erreur inattendue est survenue',
+        code: statusCode
+      };
+
+  // Afficher une notification selon le type d'erreur
+  if (showNotification) {
+    switch (statusCode) {
+      case 401:
+        showWarning(
+          'Session expiree. Veuillez vous reconnecter.',
+          context
+        );
+        break;
+      case 403:
+        showError(
+          'Acces refuse. Vous n\'avez pas les permissions requises.',
+          context
+        );
+        break;
+      case 404:
+        showWarning(
+          standardError.path
+            ? `Ressource non trouvee: ${standardError.path}`
+            : 'La ressource demandee n\'existe pas.',
+          context
+        );
+        break;
+      case 422:
+        showWarning(
+          'Donnees invalides. Veuillez verifier votre saisie.',
+          context
+        );
+        break;
+      case 500:
+        showCritical(
+          standardError.trace_id
+            ? `Erreur serveur (ref: ${standardError.trace_id}). Contactez le support si le probleme persiste.`
+            : 'Erreur serveur inattendue. Veuillez reessayer.',
+          context,
+          {
+            label: 'Recharger',
+            onClick: () => window.location.reload()
+          }
+        );
+        break;
+      default:
+        showError(standardError.message, context);
+    }
+  }
+
+  // Rediriger vers la page d'erreur si demande
+  if (redirectOnError && shouldRedirectToErrorPage(statusCode)) {
+    redirectToErrorPage(statusCode);
+  }
+};
+
+/**
+ * Hook pour les appels API avec gestion d'erreur standardisee
+ * Usage: wrapApiCall(async () => await api.get('/endpoint'))
+ */
+export const wrapApiCall = async <T>(
+  apiCall: () => Promise<T>,
+  options?: {
+    context?: string;
+    showNotification?: boolean;
+    redirectOn?: number[];
+  }
+): Promise<T | null> => {
+  const { context, showNotification = true, redirectOn = [] } = options || {};
+
+  try {
+    return await apiCall();
+  } catch (error: unknown) {
+    // Extraire le status code et les donnees d'erreur
+    let statusCode = 500;
+    let errorData: unknown = null;
+
+    if (typeof error === 'object' && error !== null) {
+      const e = error as { response?: { status?: number; data?: unknown } };
+      if (e.response) {
+        statusCode = e.response.status || 500;
+        errorData = e.response.data;
+      }
+    }
+
+    handleHttpError(statusCode, errorData, {
+      showNotification,
+      redirectOnError: redirectOn.includes(statusCode),
+      context
+    });
+
+    return null;
+  }
+};
