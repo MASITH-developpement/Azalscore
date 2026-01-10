@@ -44,7 +44,9 @@ USAGE EXTERNE (script standalone):
     python scripts/reset_database_uuid.py
 """
 
+import os
 import logging
+from pathlib import Path
 from typing import List, Tuple, Optional, Set
 from datetime import datetime
 
@@ -53,6 +55,10 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
+
+# Fichier sentinel pour empecher les resets multiples
+# Ce fichier est cree apres un reset reussi
+SENTINEL_FILE = Path(".uuid_reset_done")
 
 
 class UUIDComplianceError(Exception):
@@ -63,6 +69,39 @@ class UUIDComplianceError(Exception):
 class UUIDResetBlockedError(Exception):
     """Reset bloque (production ou non autorise)."""
     pass
+
+
+def is_reset_already_done() -> bool:
+    """
+    Verifie si un reset UUID a deja ete effectue.
+
+    Returns:
+        True si le fichier sentinel existe
+    """
+    return SENTINEL_FILE.exists()
+
+
+def mark_reset_done() -> None:
+    """
+    Cree le fichier sentinel apres un reset reussi.
+    """
+    timestamp = datetime.now().isoformat()
+    SENTINEL_FILE.write_text(
+        f"UUID reset completed at {timestamp}\n"
+        f"This file prevents duplicate resets.\n"
+        f"Delete this file to allow a new reset.\n"
+    )
+    logger.info(f"[UUID_RESET] Sentinel file created: {SENTINEL_FILE}")
+    print(f"[OK] Fichier sentinel cree: {SENTINEL_FILE}")
+
+
+def clear_reset_sentinel() -> None:
+    """
+    Supprime le fichier sentinel (pour tests ou reset manuel).
+    """
+    if SENTINEL_FILE.exists():
+        SENTINEL_FILE.unlink()
+        logger.info(f"[UUID_RESET] Sentinel file removed: {SENTINEL_FILE}")
 
 
 class UUIDComplianceManager:
@@ -309,6 +348,27 @@ class UUIDComplianceManager:
 
         # Dev/Test avec auto-reset
         if self.auto_reset_enabled:
+            # VERROU ANTI-DOUBLE RESET : verifier le fichier sentinel
+            if is_reset_already_done():
+                logger.warning(
+                    "[UUID_RESET] Reset deja effectue (sentinel: .uuid_reset_done). "
+                    "Supprimez le fichier pour autoriser un nouveau reset."
+                )
+                print(f"\n{'='*60}")
+                print("[UUID_RESET] RESET DEJA EFFECTUE")
+                print(f"{'='*60}")
+                print(f"Le fichier sentinel '{SENTINEL_FILE}' existe.")
+                print(f"Le reset ne sera pas relance.")
+                print(f"")
+                print(f"Pour forcer un nouveau reset :")
+                print(f"  rm {SENTINEL_FILE}")
+                print(f"{'='*60}\n")
+                # Lever une erreur car la base est toujours legacy
+                raise UUIDComplianceError(
+                    f"Base LEGACY avec {violation_count} violations. "
+                    f"Reset bloque par sentinel. Supprimez {SENTINEL_FILE} pour re-reset."
+                )
+
             logger.warning("[UUID_RESET] Auto-reset active - execution...")
             print(f"\n{'='*60}")
             print("[UUID_RESET] MODE AUTO-RESET ACTIVE")
@@ -320,6 +380,10 @@ class UUIDComplianceManager:
 
             self._execute_reset()
             self.reset_performed = True
+
+            # Creer le fichier sentinel apres reset reussi
+            mark_reset_done()
+
             return True
 
         # Dev/Test avec reset manuel requis

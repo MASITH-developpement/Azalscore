@@ -221,7 +221,7 @@ async def lifespan(app: FastAPI):
             if db_violation_count > 0:
                 tables_affected = len(set(v[0] for v in initial_violations))
                 print(f"\n{'='*60}")
-                print("[UUID] SCAN INITIAL DE LA BASE")
+                print("[UUID] BASE LEGACY UUID DETECTEE")
                 print(f"{'='*60}")
                 print(f"Colonnes INT/BIGINT detectees : {db_violation_count}")
                 print(f"Tables affectees : {tables_affected}")
@@ -239,6 +239,9 @@ async def lifespan(app: FastAPI):
                     # Reset effectue - les tables ont deja ete recreees par le manager
                     db_uuid_status = "UUID-native"
                     db_violation_count = 0
+                    print(f"\n{'='*60}")
+                    print("[OK] BASE UUID-NATIVE VALIDEE")
+                    print(f"{'='*60}")
                     print("[OK] Reset UUID effectue - tables recreees avec UUID")
                     # Passer directement a la validation schema
                     tables_created = len(uuid_manager.get_all_tables())
@@ -366,38 +369,60 @@ async def lifespan(app: FastAPI):
     scheduler_service.start()
 
     # =========================================================================
-    # DEMARRAGE TERMINE - APPLICATION PRETE
+    # DEMARRAGE TERMINE - AFFICHAGE ETAT REEL
     # =========================================================================
-    # Afficher l'etat REEL de la base (pas de mensonge dans les logs)
+    # INTERDICTION d'afficher "Application startup complete" si violations > 0
     print(f"\n{'='*60}")
-    print("[AZALS] APPLICATION STARTUP COMPLETE")
-    print(f"{'='*60}")
-    print(f"Environnement      : {_settings.environment}")
-    print(f"Verrou UUID        : ACTIF")
-    print(f"Violations UUID    : {db_violation_count}")
-    print(f"Base de donnees    : {db_uuid_status}")
 
-    # Avertissement explicite si base non conforme
-    if db_violation_count > 0 or db_uuid_status != "UUID-native":
+    if db_violation_count == 0 and db_uuid_status == "UUID-native":
+        # Base conforme - startup complet
+        print("[AZALS] APPLICATION STARTUP COMPLETE")
+        print(f"{'='*60}")
+        print(f"Environnement      : {_settings.environment}")
+        print(f"Verrou UUID        : ACTIF")
+        print(f"Violations UUID    : 0")
+        print(f"Base de donnees    : UUID-native")
+        print(f"ORM                : {len(Base.metadata.tables)} tables")
+        print(f"{'='*60}\n")
+
+        logger.info(
+            "[STARTUP] Application startup complete - Base UUID-native",
+            extra={
+                "environment": _settings.environment,
+                "uuid_lock": "active",
+                "database": "uuid-native",
+                "violations": 0,
+                "tables": len(Base.metadata.tables)
+            }
+        )
+    else:
+        # Base non conforme - avertissement explicite
+        print("[AZALS] DEMARRAGE EN MODE DEGRADE")
+        print(f"{'='*60}")
+        print(f"Environnement      : {_settings.environment}")
+        print(f"Verrou UUID        : ACTIF")
+        print(f"Violations UUID    : {db_violation_count}")
+        print(f"Base de donnees    : {db_uuid_status}")
         print(f"{'='*60}")
         print("[WARN] BASE NON CONFORME UUID - RESET REQUIS")
         print(f"{'='*60}")
         print(f"Pour corriger, executez :")
+        print(f"  ./scripts/run_dev.sh")
+        print(f"OU :")
         print(f"  export AZALS_ENV=dev")
         print(f"  export DB_AUTO_RESET_ON_VIOLATION=true")
         print(f"  # Relancez l'application")
+        print(f"{'='*60}\n")
 
-    print(f"{'='*60}\n")
-
-    logger.info(
-        "[STARTUP] Application startup complete",
-        extra={
-            "environment": _settings.environment,
-            "uuid_lock": "active",
-            "database": db_uuid_status,
-            "violations": db_violation_count
-        }
-    )
+        logger.warning(
+            "[STARTUP] Demarrage en mode degrade - Base LEGACY",
+            extra={
+                "environment": _settings.environment,
+                "uuid_lock": "active",
+                "database": db_uuid_status,
+                "violations": db_violation_count
+            }
+        )
 
     yield
 
