@@ -14,27 +14,31 @@ Usage correct:
 
     class MyModel(Base):
         __tablename__ = "my_table"
-        name = Column(String(255))
+        name: Mapped[Optional[str]] = mapped_column(String(255))
         # id est automatiquement UUID
 
 Usage INTERDIT:
-    from sqlalchemy.orm import declarative_base
+    from sqlalchemy.orm import declarative_base, Mapped, mapped_column
     Base = declarative_base()  # INTERDIT
 
-    id = Column(Integer, primary_key=True)  # INTERDIT
-    id = Column(BigInteger, primary_key=True)  # INTERDIT
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)  # INTERDIT
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)  # INTERDIT
 """
 
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 from app.db.uuid_base import UUIDMixin
+from typing import Optional
 
 
 class _UUIDDeclarativeBase:
     """
     Classe de base interne combinant les fonctionnalités SQLAlchemy
     avec le mixin UUID obligatoire.
+
+    __allow_unmapped__ permet d'utiliser Column() sans Mapped[] pour
+    compatibilité avec le code existant.
     """
-    pass
+    __allow_unmapped__ = True
 
 
 # Base unifiée avec UUIDMixin intégré

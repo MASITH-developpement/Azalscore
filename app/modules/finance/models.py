@@ -15,7 +15,7 @@ from app.core.types import UniversalUUID, JSON
 from sqlalchemy.orm import relationship
 import uuid
 
-from app.core.database import Base
+from app.db import Base
 
 
 # ============================================================================

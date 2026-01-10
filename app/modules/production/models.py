@@ -15,7 +15,7 @@ from sqlalchemy.orm import relationship
 import uuid
 import enum
 
-from app.core.database import Base
+from app.db import Base
 
 
 # ============================================================================

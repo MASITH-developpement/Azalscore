@@ -16,7 +16,7 @@ from sqlalchemy import (
 from app.core.types import UniversalUUID
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
+from app.db import Base
 
 
 # =============================================================================

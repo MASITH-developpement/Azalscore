@@ -8,12 +8,13 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy import JSON, Boolean DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db import Base
 from app.core.types import UniversalUUID
 from sqlalchemy.dialects.postgresql import UUID
+from typing import Optional
 
 # ============================================================================
 # ENUMS
@@ -64,28 +65,28 @@ class TicketCategory(Base):
     """Catégorie de ticket."""
     __tablename__ = "helpdesk_categories"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Hiérarchie
-    parent_id = Column(UniversalUUID(), ForeignKey("helpdesk_categories.id"))
-    code = Column(String(50), nullable=False)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
+    parent_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_categories.id"))
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Configuration
-    default_priority = Column(Enum(TicketPriority), default=TicketPriority.MEDIUM)
-    default_team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
-    sla_id = Column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
+    default_priority: Mapped[Optional[str]] = mapped_column(Enum(TicketPriority), default=TicketPriority.MEDIUM)
+    default_team_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
+    sla_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
 
     # Options
-    is_public = Column(Boolean, default=True)  # Visible clients
-    require_approval = Column(Boolean, default=False)
-    auto_assign = Column(Boolean, default=True)
-    sort_order = Column(Integer, default=0)
+    is_public: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)  # Visible clients
+    require_approval: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    auto_assign: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     parent = relationship("TicketCategory", remote_side=[id], backref="children")
@@ -101,25 +102,25 @@ class HelpdeskTeam(Base):
     """Équipe support."""
     __tablename__ = "helpdesk_teams"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    name = Column(String(100), nullable=False)
-    description = Column(Text)
-    email = Column(String(255))
+    name: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Configuration
-    manager_id = Column(UniversalUUID())  # Agent manager
-    default_sla_id = Column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
-    auto_assign_method = Column(String(20), default="round_robin")  # round_robin, least_busy, random
+    manager_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # Agent manager
+    default_sla_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
+    auto_assign_method: Mapped[Optional[str]] = mapped_column(String(20), default="round_robin")  # round_robin, least_busy, random
 
     # Paramètres
-    max_tickets_per_agent = Column(Integer, default=20)
-    working_hours = Column(JSON)  # {mon: {start: "09:00", end: "18:00"}, ...}
-    timezone = Column(String(50), default="Europe/Paris")
+    max_tickets_per_agent: Mapped[Optional[int]] = mapped_column(Integer, default=20)
+    working_hours: Mapped[Optional[dict]] = mapped_column(JSON)  # {mon: {start: "09:00", end: "18:00"}, ...}
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     members = relationship("HelpdeskAgent", back_populates="team")
@@ -138,42 +139,42 @@ class HelpdeskAgent(Base):
     """Agent support."""
     __tablename__ = "helpdesk_agents"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Lien utilisateur
-    user_id = Column(UniversalUUID(), nullable=False, index=True)
-    team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False, index=True)
+    team_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
 
     # Profil
-    display_name = Column(String(255), nullable=False)
-    email = Column(String(255))
-    avatar_url = Column(String(500))
-    signature = Column(Text)
+    display_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500))
+    signature: Mapped[Optional[str]] = mapped_column(Text)
 
     # Statut
-    status = Column(Enum(AgentStatus), default=AgentStatus.OFFLINE)
-    last_seen = Column(DateTime)
+    status: Mapped[Optional[str]] = mapped_column(Enum(AgentStatus), default=AgentStatus.OFFLINE)
+    last_seen: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Compétences
-    skills = Column(JSON)  # ["billing", "technical", "sales"]
-    languages = Column(JSON, default=["fr"])  # ["fr", "en", "es"]
+    skills: Mapped[Optional[dict]] = mapped_column(JSON)  # ["billing", "technical", "sales"]
+    languages: Mapped[Optional[dict]] = mapped_column(JSON, default=["fr"])  # ["fr", "en", "es"]
 
     # Permissions
-    can_assign = Column(Boolean, default=True)
-    can_merge = Column(Boolean, default=False)
-    can_delete = Column(Boolean, default=False)
-    can_view_all = Column(Boolean, default=False)
-    is_supervisor = Column(Boolean, default=False)
+    can_assign: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    can_merge: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    can_delete: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    can_view_all: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_supervisor: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Stats
-    tickets_assigned = Column(Integer, default=0)
-    tickets_resolved = Column(Integer, default=0)
-    avg_resolution_time = Column(Integer, default=0)  # En minutes
-    satisfaction_score = Column(Numeric(3, 2), default=0)
+    tickets_assigned: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    tickets_resolved: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    avg_resolution_time: Mapped[Optional[int]] = mapped_column(Integer, default=0)  # En minutes
+    satisfaction_score: Mapped[Optional[Decimal]] = mapped_column(Numeric(3, 2), default=0)
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     team = relationship("HelpdeskTeam", back_populates="members")
@@ -194,39 +195,39 @@ class HelpdeskSLA(Base):
     """SLA Helpdesk."""
     __tablename__ = "helpdesk_sla"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    name = Column(String(100), nullable=False)
-    description = Column(Text)
+    name: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Temps de réponse (en minutes)
-    first_response_low = Column(Integer, default=1440)  # 24h
-    first_response_medium = Column(Integer, default=480)  # 8h
-    first_response_high = Column(Integer, default=120)  # 2h
-    first_response_urgent = Column(Integer, default=60)  # 1h
-    first_response_critical = Column(Integer, default=15)  # 15min
+    first_response_low: Mapped[Optional[int]] = mapped_column(Integer, default=1440)  # 24h
+    first_response_medium: Mapped[Optional[int]] = mapped_column(Integer, default=480)  # 8h
+    first_response_high: Mapped[Optional[int]] = mapped_column(Integer, default=120)  # 2h
+    first_response_urgent: Mapped[Optional[int]] = mapped_column(Integer, default=60)  # 1h
+    first_response_critical: Mapped[Optional[int]] = mapped_column(Integer, default=15)  # 15min
 
     # Temps de résolution (en minutes)
-    resolution_low = Column(Integer, default=10080)  # 7 jours
-    resolution_medium = Column(Integer, default=2880)  # 2 jours
-    resolution_high = Column(Integer, default=1440)  # 1 jour
-    resolution_urgent = Column(Integer, default=480)  # 8h
-    resolution_critical = Column(Integer, default=120)  # 2h
+    resolution_low: Mapped[Optional[int]] = mapped_column(Integer, default=10080)  # 7 jours
+    resolution_medium: Mapped[Optional[int]] = mapped_column(Integer, default=2880)  # 2 jours
+    resolution_high: Mapped[Optional[int]] = mapped_column(Integer, default=1440)  # 1 jour
+    resolution_urgent: Mapped[Optional[int]] = mapped_column(Integer, default=480)  # 8h
+    resolution_critical: Mapped[Optional[int]] = mapped_column(Integer, default=120)  # 2h
 
     # Heures ouvrées
-    business_hours_only = Column(Boolean, default=True)
-    working_hours = Column(JSON)  # {mon: {start: "09:00", end: "18:00"}, ...}
-    timezone = Column(String(50), default="Europe/Paris")
-    holidays = Column(JSON)  # ["2024-12-25", ...]
+    business_hours_only: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    working_hours: Mapped[Optional[dict]] = mapped_column(JSON)  # {mon: {start: "09:00", end: "18:00"}, ...}
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
+    holidays: Mapped[Optional[dict]] = mapped_column(JSON)  # ["2024-12-25", ...]
 
     # Escalade
-    escalation_enabled = Column(Boolean, default=True)
-    escalation_rules = Column(JSON)  # [{delay_minutes, action, target}, ...]
+    escalation_enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    escalation_rules: Mapped[Optional[dict]] = mapped_column(JSON)  # [{delay_minutes, action, target}, ...]
 
-    is_default = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_helpdesk_sla_tenant', 'tenant_id'),
@@ -241,60 +242,60 @@ class Ticket(Base):
     """Ticket support."""
     __tablename__ = "helpdesk_tickets"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    ticket_number = Column(String(50), nullable=False, unique=True)
+    ticket_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, unique=True)
 
     # Classification
-    category_id = Column(UniversalUUID(), ForeignKey("helpdesk_categories.id"))
-    team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
-    sla_id = Column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
+    category_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_categories.id"))
+    team_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
+    sla_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_sla.id"))
 
     # Contenu
-    subject = Column(String(500), nullable=False)
-    description = Column(Text)
-    source = Column(Enum(TicketSource), default=TicketSource.WEB)
+    subject: Mapped[Optional[str]] = mapped_column(String(500), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    source: Mapped[Optional[str]] = mapped_column(Enum(TicketSource), default=TicketSource.WEB)
 
     # Statut et priorité
-    status = Column(Enum(TicketStatus), nullable=False, default=TicketStatus.NEW)
-    priority = Column(Enum(TicketPriority), nullable=False, default=TicketPriority.MEDIUM)
+    status: Mapped[Optional[str]] = mapped_column(Enum(TicketStatus), nullable=False, default=TicketStatus.NEW)
+    priority: Mapped[Optional[str]] = mapped_column(Enum(TicketPriority), nullable=False, default=TicketPriority.MEDIUM)
 
     # Demandeur
-    requester_id = Column(UniversalUUID(), index=True)  # ID client CRM
-    requester_name = Column(String(255))
-    requester_email = Column(String(255), index=True)
-    requester_phone = Column(String(50))
-    company_id = Column(UniversalUUID())  # Entreprise cliente
+    requester_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), index=True)  # ID client CRM
+    requester_name: Mapped[Optional[str]] = mapped_column(String(255))
+    requester_email: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    requester_phone: Mapped[Optional[str]] = mapped_column(String(50))
+    company_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # Entreprise cliente
 
     # Assignation
-    assigned_to_id = Column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
+    assigned_to_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
 
     # SLA tracking
-    first_response_due = Column(DateTime)
-    first_responded_at = Column(DateTime)
-    resolution_due = Column(DateTime)
-    resolved_at = Column(DateTime)
-    sla_breached = Column(Boolean, default=False)
+    first_response_due: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    first_responded_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    resolution_due: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    sla_breached: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Tags et metadata
-    tags = Column(JSON)  # ["urgent", "vip", "billing"]
-    custom_fields = Column(JSON)  # Champs personnalisés
+    tags: Mapped[Optional[dict]] = mapped_column(JSON)  # ["urgent", "vip", "billing"]
+    custom_fields: Mapped[Optional[dict]] = mapped_column(JSON)  # Champs personnalisés
 
     # Ticket lié
-    parent_ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"))
-    merged_into_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"))
+    parent_ticket_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"))
+    merged_into_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"))
 
     # Stats
-    reply_count = Column(Integer, default=0)
-    internal_note_count = Column(Integer, default=0)
-    satisfaction_rating = Column(Integer)  # 1-5
+    reply_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    internal_note_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    satisfaction_rating: Mapped[Optional[int]] = mapped_column(Integer)  # 1-5
 
     # Dates
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    closed_at = Column(DateTime)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Relations
     category = relationship("TicketCategory", back_populates="tickets")
@@ -319,29 +320,29 @@ class TicketReply(Base):
     """Réponse à un ticket."""
     __tablename__ = "helpdesk_replies"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    ticket_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
 
     # Auteur
-    author_type = Column(String(20), nullable=False)  # agent, customer, system
-    author_id = Column(UniversalUUID())
-    author_name = Column(String(255))
-    author_email = Column(String(255))
+    author_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=False)  # agent, customer, system
+    author_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    author_name: Mapped[Optional[str]] = mapped_column(String(255))
+    author_email: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Contenu
-    body = Column(Text, nullable=False)
-    body_html = Column(Text)
+    body: Mapped[str] = mapped_column(Text)
+    body_html: Mapped[Optional[str]] = mapped_column(Text)
 
     # Type
-    is_internal = Column(Boolean, default=False)  # Note interne
-    is_first_response = Column(Boolean, default=False)
+    is_internal: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # Note interne
+    is_first_response: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Forward/CC
-    cc_emails = Column(JSON)
-    bcc_emails = Column(JSON)
+    cc_emails: Mapped[Optional[dict]] = mapped_column(JSON)
+    bcc_emails: Mapped[Optional[dict]] = mapped_column(JSON)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     ticket = relationship("Ticket", back_populates="replies")
@@ -356,21 +357,21 @@ class TicketAttachment(Base):
     """Pièce jointe."""
     __tablename__ = "helpdesk_attachments"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
-    reply_id = Column(UniversalUUID(), ForeignKey("helpdesk_replies.id"))
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    ticket_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
+    reply_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_replies.id"))
 
     # Fichier
-    filename = Column(String(255), nullable=False)
-    file_path = Column(String(500))
-    file_url = Column(String(500))
-    file_size = Column(Integer)  # En bytes
-    mime_type = Column(String(100))
+    filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    file_path: Mapped[Optional[str]] = mapped_column(String(500))
+    file_url: Mapped[Optional[str]] = mapped_column(String(500))
+    file_size: Mapped[Optional[int]] = mapped_column(Integer)  # En bytes
+    mime_type: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Upload
-    uploaded_by_id = Column(UniversalUUID())
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    uploaded_by_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    uploaded_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     ticket = relationship("Ticket", back_populates="attachments")
@@ -385,22 +386,22 @@ class TicketHistory(Base):
     """Historique des changements."""
     __tablename__ = "helpdesk_history"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    ticket_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
 
     # Changement
-    action = Column(String(50), nullable=False)  # created, status_changed, assigned, etc.
-    field_name = Column(String(50))
-    old_value = Column(String(500))
-    new_value = Column(String(500))
+    action: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # created, status_changed, assigned, etc.
+    field_name: Mapped[Optional[str]] = mapped_column(String(50))
+    old_value: Mapped[Optional[str]] = mapped_column(String(500))
+    new_value: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Auteur
-    actor_type = Column(String(20))  # agent, customer, system, automation
-    actor_id = Column(UniversalUUID())
-    actor_name = Column(String(255))
+    actor_type: Mapped[Optional[str]] = mapped_column(String(20))  # agent, customer, system, automation
+    actor_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    actor_name: Mapped[Optional[str]] = mapped_column(String(255))
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     ticket = relationship("Ticket", back_populates="history")
@@ -418,32 +419,32 @@ class CannedResponse(Base):
     """Réponse pré-enregistrée."""
     __tablename__ = "helpdesk_canned_responses"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    title = Column(String(255), nullable=False)
-    shortcut = Column(String(50))  # Ex: #greeting
+    title: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    shortcut: Mapped[Optional[str]] = mapped_column(String(50))  # Ex: #greeting
 
     # Contenu
-    body = Column(Text, nullable=False)
-    body_html = Column(Text)
+    body: Mapped[str] = mapped_column(Text)
+    body_html: Mapped[Optional[str]] = mapped_column(Text)
 
     # Classification
-    category = Column(String(100))
-    tags = Column(JSON)
+    category: Mapped[Optional[str]] = mapped_column(String(100))
+    tags: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Scope
-    scope = Column(String(20), default="team")  # personal, team, global
-    team_id = Column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
-    agent_id = Column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
+    scope: Mapped[Optional[str]] = mapped_column(String(20), default="team")  # personal, team, global
+    team_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_teams.id"))
+    agent_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
 
     # Stats
-    usage_count = Column(Integer, default=0)
+    usage_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_helpdesk_canned_tenant', 'tenant_id'),
@@ -459,20 +460,20 @@ class KBCategory(Base):
     """Catégorie base de connaissances."""
     __tablename__ = "helpdesk_kb_categories"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    parent_id = Column(UniversalUUID(), ForeignKey("helpdesk_kb_categories.id"))
-    name = Column(String(255), nullable=False)
-    slug = Column(String(255), nullable=False)
-    description = Column(Text)
-    icon = Column(String(50))
+    parent_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_kb_categories.id"))
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    slug: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    icon: Mapped[Optional[str]] = mapped_column(String(50))
 
-    sort_order = Column(Integer, default=0)
-    is_public = Column(Boolean, default=True)
-    is_active = Column(Boolean, default=True)
+    sort_order: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    is_public: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     parent = relationship("KBCategory", remote_side=[id], backref="subcategories")
@@ -488,40 +489,40 @@ class KBArticle(Base):
     """Article base de connaissances."""
     __tablename__ = "helpdesk_kb_articles"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    category_id = Column(UniversalUUID(), ForeignKey("helpdesk_kb_categories.id"))
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    category_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_kb_categories.id"))
 
     # Contenu
-    title = Column(String(500), nullable=False)
-    slug = Column(String(500), nullable=False)
-    excerpt = Column(Text)
-    body = Column(Text, nullable=False)
-    body_html = Column(Text)
+    title: Mapped[Optional[str]] = mapped_column(String(500), nullable=False)
+    slug: Mapped[Optional[str]] = mapped_column(String(500), nullable=False)
+    excerpt: Mapped[Optional[str]] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text)
+    body_html: Mapped[Optional[str]] = mapped_column(Text)
 
     # SEO
-    meta_title = Column(String(255))
-    meta_description = Column(String(500))
-    keywords = Column(JSON)
+    meta_title: Mapped[Optional[str]] = mapped_column(String(255))
+    meta_description: Mapped[Optional[str]] = mapped_column(String(500))
+    keywords: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Auteur
-    author_id = Column(UniversalUUID())
-    author_name = Column(String(255))
+    author_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    author_name: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Statut
-    status = Column(String(20), default="draft")  # draft, published, archived
-    is_featured = Column(Boolean, default=False)
-    is_public = Column(Boolean, default=True)
+    status: Mapped[Optional[str]] = mapped_column(String(20), default="draft")  # draft, published, archived
+    is_featured: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_public: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # Stats
-    view_count = Column(Integer, default=0)
-    helpful_count = Column(Integer, default=0)
-    not_helpful_count = Column(Integer, default=0)
+    view_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    helpful_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    not_helpful_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Dates
-    published_at = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
     category = relationship("KBCategory", back_populates="articles")
@@ -541,22 +542,22 @@ class SatisfactionSurvey(Base):
     """Enquête satisfaction."""
     __tablename__ = "helpdesk_satisfaction"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    ticket_id = Column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    ticket_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_tickets.id"), nullable=False)
 
     # Note
-    rating = Column(Integer, nullable=False)  # 1-5
-    feedback = Column(Text)
+    rating: Mapped[int] = mapped_column(Integer)  # 1-5
+    feedback: Mapped[Optional[str]] = mapped_column(Text)
 
     # Auteur
-    customer_id = Column(UniversalUUID())
-    customer_email = Column(String(255))
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    customer_email: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Agent évalué
-    agent_id = Column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
+    agent_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("helpdesk_agents.id"))
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_satisfaction_tenant', 'tenant_id'),
@@ -573,28 +574,28 @@ class HelpdeskAutomation(Base):
     """Règle d'automatisation."""
     __tablename__ = "helpdesk_automations"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Déclencheur
-    trigger_type = Column(String(50), nullable=False)  # ticket_created, ticket_updated, time_based
-    trigger_conditions = Column(JSON)  # [{field, operator, value}, ...]
+    trigger_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # ticket_created, ticket_updated, time_based
+    trigger_conditions: Mapped[Optional[dict]] = mapped_column(JSON)  # [{field, operator, value}, ...]
 
     # Actions
-    actions = Column(JSON)  # [{type, params}, ...]
+    actions: Mapped[Optional[dict]] = mapped_column(JSON)  # [{type, params}, ...]
 
     # Priorité d'exécution
-    priority = Column(Integer, default=0)
+    priority: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Stats
-    execution_count = Column(Integer, default=0)
-    last_executed_at = Column(DateTime)
+    execution_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    last_executed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_automation_tenant', 'tenant_id'),

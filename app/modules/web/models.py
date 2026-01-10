@@ -9,11 +9,13 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean DateTime, Enum, ForeignKey, Index, Integer, String, Text
 
 from app.db import Base
 from app.core.types import JSON, UniversalUUID
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+from typing import Optional
 
 # ============================================================================
 # ENUMS
@@ -88,56 +90,56 @@ class Theme(Base):
     """Configuration de thème"""
     __tablename__ = "web_themes"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Mode de base
-    mode = Column(Enum(ThemeMode), default=ThemeMode.LIGHT)
+    mode: Mapped[Optional[str]] = mapped_column(Enum(ThemeMode), default=ThemeMode.LIGHT)
 
     # Couleurs principales
-    primary_color = Column(String(20), default="#1976D2")
-    secondary_color = Column(String(20), default="#424242")
-    accent_color = Column(String(20), default="#82B1FF")
-    error_color = Column(String(20), default="#FF5252")
-    warning_color = Column(String(20), default="#FB8C00")
-    success_color = Column(String(20), default="#4CAF50")
-    info_color = Column(String(20), default="#2196F3")
+    primary_color: Mapped[Optional[str]] = mapped_column(String(20), default="#1976D2")
+    secondary_color: Mapped[Optional[str]] = mapped_column(String(20), default="#424242")
+    accent_color: Mapped[Optional[str]] = mapped_column(String(20), default="#82B1FF")
+    error_color: Mapped[Optional[str]] = mapped_column(String(20), default="#FF5252")
+    warning_color: Mapped[Optional[str]] = mapped_column(String(20), default="#FB8C00")
+    success_color: Mapped[Optional[str]] = mapped_column(String(20), default="#4CAF50")
+    info_color: Mapped[Optional[str]] = mapped_column(String(20), default="#2196F3")
 
     # Couleurs de fond
-    background_color = Column(String(20), default="#FFFFFF")
-    surface_color = Column(String(20), default="#FAFAFA")
-    card_color = Column(String(20), default="#FFFFFF")
+    background_color: Mapped[Optional[str]] = mapped_column(String(20), default="#FFFFFF")
+    surface_color: Mapped[Optional[str]] = mapped_column(String(20), default="#FAFAFA")
+    card_color: Mapped[Optional[str]] = mapped_column(String(20), default="#FFFFFF")
 
     # Couleurs de texte
-    text_primary = Column(String(20), default="#212121")
-    text_secondary = Column(String(20), default="#757575")
-    text_disabled = Column(String(20), default="#9E9E9E")
+    text_primary: Mapped[Optional[str]] = mapped_column(String(20), default="#212121")
+    text_secondary: Mapped[Optional[str]] = mapped_column(String(20), default="#757575")
+    text_disabled: Mapped[Optional[str]] = mapped_column(String(20), default="#9E9E9E")
 
     # Typographie
-    font_family = Column(String(200), default="'Roboto', sans-serif")
-    font_size_base = Column(String(10), default="14px")
+    font_family: Mapped[Optional[str]] = mapped_column(String(200), default="'Roboto', sans-serif")
+    font_size_base: Mapped[Optional[str]] = mapped_column(String(10), default="14px")
 
     # Bordures et ombres
-    border_radius = Column(String(10), default="4px")
-    box_shadow = Column(String(200), nullable=True)
+    border_radius: Mapped[Optional[str]] = mapped_column(String(10), default="4px")
+    box_shadow: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Configuration complète (JSON)
-    full_config = Column(JSON, nullable=True)
+    full_config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_default = Column(Boolean, default=False)
-    is_system = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_system: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_themes_tenant_code", "tenant_id", "code", unique=True),
@@ -153,39 +155,39 @@ class Widget(Base):
     """Définition de widget"""
     __tablename__ = "web_widgets"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Type et taille
-    widget_type = Column(Enum(WidgetType), nullable=False)
-    default_size = Column(Enum(WidgetSize), default=WidgetSize.MEDIUM)
+    widget_type: Mapped[Optional[str]] = mapped_column(Enum(WidgetType), nullable=False)
+    default_size: Mapped[Optional[str]] = mapped_column(Enum(WidgetSize), default=WidgetSize.MEDIUM)
 
     # Source de données
-    data_source = Column(String(200), nullable=True)  # Endpoint API
-    data_query = Column(JSON, nullable=True)  # Requête/filtres
-    refresh_interval = Column(Integer, default=60)  # Secondes
+    data_source: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # Endpoint API
+    data_query: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Requête/filtres
+    refresh_interval: Mapped[Optional[int]] = mapped_column(Integer, default=60)  # Secondes
 
     # Configuration affichage
-    display_config = Column(JSON, nullable=True)  # Options d'affichage
-    chart_config = Column(JSON, nullable=True)  # Pour CHART type
+    display_config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Options d'affichage
+    chart_config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Pour CHART type
 
     # Permissions
-    required_permission = Column(String(100), nullable=True)
-    visible_roles = Column(JSON, nullable=True)
+    required_permission: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    visible_roles: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_system = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_system: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_widgets_tenant_code", "tenant_id", "code", unique=True),
@@ -201,40 +203,40 @@ class WebDashboard(Base):
     """Configuration de dashboard (distinct de bi.Dashboard)"""
     __tablename__ = "web_dashboards"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Type et layout
-    page_type = Column(Enum(PageType), default=PageType.DASHBOARD)
-    layout_type = Column(String(50), default="grid")  # grid, flex, masonry
-    columns = Column(Integer, default=4)
+    page_type: Mapped[Optional[str]] = mapped_column(Enum(PageType), default=PageType.DASHBOARD)
+    layout_type: Mapped[Optional[str]] = mapped_column(String(50), default="grid")  # grid, flex, masonry
+    columns: Mapped[Optional[int]] = mapped_column(Integer, default=4)
 
     # Widgets (ordre et position)
-    widgets_config = Column(JSON, nullable=True)  # [{widget_id, position, size}]
+    widgets_config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # [{widget_id, position, size}]
 
     # Filtres par défaut
-    default_filters = Column(JSON, nullable=True)
-    date_range = Column(String(50), nullable=True)  # last_7_days, etc.
+    default_filters: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    date_range: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # last_7_days, etc.
 
     # Permissions
-    visible_roles = Column(JSON, nullable=True)
-    editable_roles = Column(JSON, nullable=True)
+    visible_roles: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    editable_roles: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_default = Column(Boolean, default=False)
-    is_public = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_public: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
-    owner_id = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_dashboards_tenant_code", "tenant_id", "code", unique=True),
@@ -251,42 +253,42 @@ class MenuItem(Base):
     """Élément de menu"""
     __tablename__ = "web_menu_items"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Type de menu
-    menu_type = Column(Enum(MenuType), default=MenuType.MAIN)
+    menu_type: Mapped[Optional[str]] = mapped_column(Enum(MenuType), default=MenuType.MAIN)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    label = Column(String(200), nullable=False)
-    icon = Column(String(100), nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    label: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    icon: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Navigation
-    route = Column(String(500), nullable=True)
-    external_url = Column(String(500), nullable=True)
-    target = Column(String(20), default="_self")
+    route: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    external_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    target: Mapped[Optional[str]] = mapped_column(String(20), default="_self")
 
     # Hiérarchie
-    parent_id = Column(UniversalUUID(), ForeignKey("web_menu_items.id"), nullable=True)
-    sort_order = Column(Integer, default=0)
+    parent_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("web_menu_items.id"), nullable=True)
+    sort_order: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Permissions
-    required_permission = Column(String(100), nullable=True)
-    visible_roles = Column(JSON, nullable=True)
+    required_permission: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    visible_roles: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Badge (notification)
-    badge_source = Column(String(200), nullable=True)  # Endpoint API pour badge
-    badge_color = Column(String(20), nullable=True)
+    badge_source: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # Endpoint API pour badge
+    badge_color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_separator = Column(Boolean, default=False)
-    is_expanded = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_separator: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_expanded: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index("ix_web_menu_tenant_type", "tenant_id", "menu_type"),
@@ -303,34 +305,34 @@ class UIComponent(Base):
     """Composant UI réutilisable"""
     __tablename__ = "web_ui_components"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Catégorie
-    category = Column(Enum(ComponentCategory), nullable=False)
+    category: Mapped[Optional[str]] = mapped_column(Enum(ComponentCategory), nullable=False)
 
     # Configuration
-    props_schema = Column(JSON, nullable=True)  # Schéma des propriétés
-    default_props = Column(JSON, nullable=True)  # Valeurs par défaut
-    template = Column(Text, nullable=True)  # Template HTML/Vue
+    props_schema: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Schéma des propriétés
+    default_props: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Valeurs par défaut
+    template: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Template HTML/Vue
 
     # Styles
-    styles = Column(Text, nullable=True)  # CSS personnalisé
-    css_classes = Column(JSON, nullable=True)  # Classes CSS
+    styles: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # CSS personnalisé
+    css_classes: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Classes CSS
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_system = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_system: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_components_tenant_code", "tenant_id", "code", unique=True),
@@ -346,52 +348,52 @@ class UserUIPreference(Base):
     """Préférences interface utilisateur"""
     __tablename__ = "web_user_preferences"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(UniversalUUID(), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)
 
     # Thème
-    theme_id = Column(UniversalUUID(), ForeignKey("web_themes.id"), nullable=True)
-    theme_mode = Column(Enum(ThemeMode), default=ThemeMode.SYSTEM)
+    theme_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("web_themes.id"), nullable=True)
+    theme_mode: Mapped[Optional[str]] = mapped_column(Enum(ThemeMode), default=ThemeMode.SYSTEM)
 
     # Layout
-    sidebar_collapsed = Column(Boolean, default=False)
-    sidebar_mini = Column(Boolean, default=False)
-    toolbar_dense = Column(Boolean, default=False)
+    sidebar_collapsed: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    sidebar_mini: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    toolbar_dense: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Dashboard
-    default_dashboard_id = Column(UniversalUUID(), ForeignKey("web_dashboards.id"), nullable=True)
-    dashboard_auto_refresh = Column(Boolean, default=True)
+    default_dashboard_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("web_dashboards.id"), nullable=True)
+    dashboard_auto_refresh: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # Table preferences
-    table_density = Column(String(20), default="default")  # compact, default, comfortable
-    table_page_size = Column(Integer, default=25)
+    table_density: Mapped[Optional[str]] = mapped_column(String(20), default="default")  # compact, default, comfortable
+    table_page_size: Mapped[Optional[int]] = mapped_column(Integer, default=25)
 
     # Accessibilité
-    font_size = Column(String(20), default="medium")  # small, medium, large
-    high_contrast = Column(Boolean, default=False)
-    reduced_motion = Column(Boolean, default=False)
+    font_size: Mapped[Optional[str]] = mapped_column(String(20), default="medium")  # small, medium, large
+    high_contrast: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    reduced_motion: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Langue et région
-    language = Column(String(5), default="fr")
-    date_format = Column(String(20), default="DD/MM/YYYY")
-    time_format = Column(String(20), default="24h")
-    timezone = Column(String(50), default="Europe/Paris")
+    language: Mapped[Optional[str]] = mapped_column(String(5), default="fr")
+    date_format: Mapped[Optional[str]] = mapped_column(String(20), default="DD/MM/YYYY")
+    time_format: Mapped[Optional[str]] = mapped_column(String(20), default="24h")
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
 
     # Notifications UI
-    show_tooltips = Column(Boolean, default=True)
-    sound_enabled = Column(Boolean, default=True)
-    desktop_notifications = Column(Boolean, default=False)
+    show_tooltips: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    sound_enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    desktop_notifications: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Raccourcis personnalisés
-    custom_shortcuts = Column(JSON, nullable=True)
+    custom_shortcuts: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Widgets favoris
-    favorite_widgets = Column(JSON, nullable=True)
+    favorite_widgets: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index("ix_web_user_prefs_tenant_user", "tenant_id", "user_id", unique=True),
@@ -406,32 +408,32 @@ class Shortcut(Base):
     """Raccourci clavier"""
     __tablename__ = "web_shortcuts"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Combinaison de touches
-    key_combination = Column(String(100), nullable=False)  # Ex: "Ctrl+Shift+N"
-    key_code = Column(String(50), nullable=True)  # Code technique
+    key_combination: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)  # Ex: "Ctrl+Shift+N"
+    key_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # Code technique
 
     # Action
-    action_type = Column(String(50), nullable=False)  # navigate, execute, toggle
-    action_value = Column(String(500), nullable=True)  # Route ou commande
+    action_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # navigate, execute, toggle
+    action_value: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Route ou commande
 
     # Contexte
-    context = Column(String(100), default="global")  # global, dashboard, form, etc.
+    context: Mapped[Optional[str]] = mapped_column(String(100), default="global")  # global, dashboard, form, etc.
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_system = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_system: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index("ix_web_shortcuts_tenant_code", "tenant_id", "code", unique=True),
@@ -447,42 +449,42 @@ class CustomPage(Base):
     """Page personnalisée"""
     __tablename__ = "web_custom_pages"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    slug = Column(String(100), nullable=False)
-    title = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    slug: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    title: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Type et contenu
-    page_type = Column(Enum(PageType), default=PageType.CUSTOM)
-    content = Column(Text, nullable=True)  # HTML/Markdown
-    template = Column(String(100), nullable=True)  # Template à utiliser
-    data_source = Column(String(200), nullable=True)
+    page_type: Mapped[Optional[str]] = mapped_column(Enum(PageType), default=PageType.CUSTOM)
+    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # HTML/Markdown
+    template: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Template à utiliser
+    data_source: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Layout
-    layout = Column(String(50), default="default")
-    show_sidebar = Column(Boolean, default=True)
-    show_toolbar = Column(Boolean, default=True)
+    layout: Mapped[Optional[str]] = mapped_column(String(50), default="default")
+    show_sidebar: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    show_toolbar: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # SEO
-    meta_title = Column(String(200), nullable=True)
-    meta_description = Column(String(500), nullable=True)
+    meta_title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    meta_description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     # Permissions
-    required_permission = Column(String(100), nullable=True)
-    visible_roles = Column(JSON, nullable=True)
+    required_permission: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    visible_roles: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_published = Column(Boolean, default=False)
-    published_at = Column(DateTime, nullable=True)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_published: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_web_pages_tenant_slug", "tenant_id", "slug", unique=True),

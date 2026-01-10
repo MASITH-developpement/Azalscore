@@ -11,11 +11,13 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import Boolean DateTime, Enum, Float, ForeignKey, Index, Integer, Numeric, String, Text
 
 from app.db import Base
 from app.core.types import JSON, UniversalUUID
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+from typing import Optional
 
 # ============================================================================
 # ENUMS
@@ -96,35 +98,35 @@ class EcommerceCategory(Base):
     """Catégorie de produits e-commerce."""
     __tablename__ = "ecommerce_categories"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Hiérarchie
-    parent_id = Column(UniversalUUID(), ForeignKey("ecommerce_categories.id"))
+    parent_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_categories.id"))
 
     # Informations
-    name = Column(String(255), nullable=False)
-    slug = Column(String(255), nullable=False)
-    description = Column(Text)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    slug: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # SEO
-    meta_title = Column(String(255))
-    meta_description = Column(Text)
-    meta_keywords = Column(String(500))
+    meta_title: Mapped[Optional[str]] = mapped_column(String(255))
+    meta_description: Mapped[Optional[str]] = mapped_column(Text)
+    meta_keywords: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Affichage
-    image_url = Column(String(500))
-    icon = Column(String(100))
-    sort_order = Column(Integer, default=0)
-    is_visible = Column(Boolean, default=True)
-    is_featured = Column(Boolean, default=False)
+    image_url: Mapped[Optional[str]] = mapped_column(String(500))
+    icon: Mapped[Optional[str]] = mapped_column(String(100))
+    sort_order: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    is_visible: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_featured: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Configuration
-    settings = Column(JSON)  # {"show_in_menu": true, "filters": [...]}
+    settings: Mapped[Optional[dict]] = mapped_column(JSON)  # {"show_in_menu": true, "filters": [...]}
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Index
     __table_args__ = (
@@ -136,83 +138,83 @@ class EcommerceProduct(Base):
     """Produit e-commerce."""
     __tablename__ = "ecommerce_products"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identifiants
-    sku = Column(String(100), nullable=False)
-    barcode = Column(String(100))
+    sku: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    barcode: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Lien avec module Articles existant
-    item_id = Column(UniversalUUID())  # FK vers items si applicable
+    item_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # FK vers items si applicable
 
     # Informations produit
-    name = Column(String(255), nullable=False)
-    slug = Column(String(255), nullable=False)
-    short_description = Column(Text)
-    description = Column(Text)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    slug: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    short_description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Type et statut
-    product_type = Column(Enum(ProductType), default=ProductType.PHYSICAL)
-    status = Column(Enum(ProductStatus), default=ProductStatus.DRAFT)
+    product_type: Mapped[Optional[str]] = mapped_column(Enum(ProductType), default=ProductType.PHYSICAL)
+    status: Mapped[Optional[str]] = mapped_column(Enum(ProductStatus), default=ProductStatus.DRAFT)
 
     # Prix
-    price = Column(Numeric(15, 2), nullable=False)
-    compare_at_price = Column(Numeric(15, 2))  # Prix barré
-    cost_price = Column(Numeric(15, 2))  # Prix de revient
-    currency = Column(String(3), default="EUR")
+    price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
+    compare_at_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))  # Prix barré
+    cost_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))  # Prix de revient
+    currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
 
     # Taxes
-    tax_class = Column(String(50), default="standard")
-    is_taxable = Column(Boolean, default=True)
+    tax_class: Mapped[Optional[str]] = mapped_column(String(50), default="standard")
+    is_taxable: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # Stock (synchronisé avec module Inventory)
-    track_inventory = Column(Boolean, default=True)
-    stock_quantity = Column(Integer, default=0)
-    low_stock_threshold = Column(Integer, default=5)
-    allow_backorder = Column(Boolean, default=False)
+    track_inventory: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    stock_quantity: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    low_stock_threshold: Mapped[Optional[int]] = mapped_column(Integer, default=5)
+    allow_backorder: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Poids et dimensions (livraison)
-    weight = Column(Float)  # kg
-    weight_unit = Column(String(10), default="kg")
-    length = Column(Float)
-    width = Column(Float)
-    height = Column(Float)
-    dimension_unit = Column(String(10), default="cm")
+    weight: Mapped[Optional[float]] = mapped_column(Float)  # kg
+    weight_unit: Mapped[Optional[str]] = mapped_column(String(10), default="kg")
+    length: Mapped[Optional[float]] = mapped_column(Float)
+    width: Mapped[Optional[float]] = mapped_column(Float)
+    height: Mapped[Optional[float]] = mapped_column(Float)
+    dimension_unit: Mapped[Optional[str]] = mapped_column(String(10), default="cm")
 
     # SEO
-    meta_title = Column(String(255))
-    meta_description = Column(Text)
-    meta_keywords = Column(String(500))
+    meta_title: Mapped[Optional[str]] = mapped_column(String(255))
+    meta_description: Mapped[Optional[str]] = mapped_column(Text)
+    meta_keywords: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Médias
-    images = Column(JSON)  # [{"url": "...", "alt": "...", "position": 1}]
+    images: Mapped[Optional[dict]] = mapped_column(JSON)  # [{"url": "...", "alt": "...", "position": 1}]
 
     # Attributs personnalisés
-    attributes = Column(JSON)  # {"color": "red", "size": "M"}
+    attributes: Mapped[Optional[dict]] = mapped_column(JSON)  # {"color": "red", "size": "M"}
 
     # Catégories
-    category_ids = Column(JSON)  # [1, 2, 3]
+    category_ids: Mapped[Optional[dict]] = mapped_column(JSON)  # [1, 2, 3]
 
     # Tags
-    tags = Column(JSON)  # ["new", "sale", "featured"]
+    tags: Mapped[Optional[dict]] = mapped_column(JSON)  # ["new", "sale", "featured"]
 
     # Visibilité
-    is_visible = Column(Boolean, default=True)
-    is_featured = Column(Boolean, default=False)
-    published_at = Column(DateTime)
+    is_visible: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_featured: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Configuration
-    settings = Column(JSON)
+    settings: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Statistiques
-    view_count = Column(Integer, default=0)
-    sale_count = Column(Integer, default=0)
+    view_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    sale_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(String(100))
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[Optional[str]] = mapped_column(String(100))
 
     __table_args__ = (
         Index('idx_ecom_prod_tenant_sku', 'tenant_id', 'sku', unique=True),
@@ -225,39 +227,39 @@ class ProductVariant(Base):
     """Variante de produit (taille, couleur, etc.)."""
     __tablename__ = "ecommerce_product_variants"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
 
     # Identifiants
-    sku = Column(String(100), nullable=False)
-    barcode = Column(String(100))
+    sku: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    barcode: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Attributs de la variante
-    name = Column(String(255))  # "Rouge - XL"
-    options = Column(JSON)  # {"color": "red", "size": "XL"}
+    name: Mapped[Optional[str]] = mapped_column(String(255))  # "Rouge - XL"
+    options: Mapped[Optional[dict]] = mapped_column(JSON)  # {"color": "red", "size": "XL"}
 
     # Prix (peut différer du produit parent)
-    price = Column(Numeric(15, 2))
-    compare_at_price = Column(Numeric(15, 2))
-    cost_price = Column(Numeric(15, 2))
+    price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
+    compare_at_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
+    cost_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
 
     # Stock
-    stock_quantity = Column(Integer, default=0)
+    stock_quantity: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Poids/dimensions spécifiques
-    weight = Column(Float)
+    weight: Mapped[Optional[float]] = mapped_column(Float)
 
     # Image spécifique
-    image_url = Column(String(500))
+    image_url: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Position
-    position = Column(Integer, default=0)
-    is_default = Column(Boolean, default=False)
+    position: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_ecom_var_tenant_sku', 'tenant_id', 'sku', unique=True),
@@ -272,51 +274,51 @@ class EcommerceCart(Base):
     """Panier d'achat."""
     __tablename__ = "ecommerce_carts"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identifiant unique pour visiteurs anonymes
-    session_id = Column(String(255), index=True)
+    session_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
 
     # Client (si connecté)
-    customer_id = Column(UniversalUUID())
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     # Statut
-    status = Column(Enum(CartStatus), default=CartStatus.ACTIVE)
+    status: Mapped[Optional[str]] = mapped_column(Enum(CartStatus), default=CartStatus.ACTIVE)
 
     # Devise
-    currency = Column(String(3), default="EUR")
+    currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
 
     # Totaux (calculés)
-    subtotal = Column(Numeric(15, 2), default=0)
-    discount_total = Column(Numeric(15, 2), default=0)
-    tax_total = Column(Numeric(15, 2), default=0)
-    shipping_total = Column(Numeric(15, 2), default=0)
-    total = Column(Numeric(15, 2), default=0)
+    subtotal: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    discount_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    tax_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    shipping_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
 
     # Codes promo appliqués
-    coupon_codes = Column(JSON)  # ["CODE1", "CODE2"]
+    coupon_codes: Mapped[Optional[dict]] = mapped_column(JSON)  # ["CODE1", "CODE2"]
 
     # Notes
-    notes = Column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # Métadonnées
-    extra_data = Column(JSON)  # Infos tracking, UTM, etc.
+    extra_data: Mapped[Optional[dict]] = mapped_column(JSON)  # Infos tracking, UTM, etc.
 
     # Abandon
-    abandoned_at = Column(DateTime)
-    recovery_email_sent = Column(Boolean, default=False)
+    abandoned_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    recovery_email_sent: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Conversion
-    converted_to_order_id = Column(UniversalUUID())
-    converted_at = Column(DateTime)
+    converted_to_order_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    converted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Expiration
-    expires_at = Column(DateTime)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_ecom_cart_session', 'tenant_id', 'session_id'),
@@ -329,30 +331,30 @@ class CartItem(Base):
     """Article dans un panier."""
     __tablename__ = "ecommerce_cart_items"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    cart_id = Column(UniversalUUID(), ForeignKey("ecommerce_carts.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    cart_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_carts.id"), nullable=False)
 
     # Produit
-    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
-    variant_id = Column(UniversalUUID(), ForeignKey("ecommerce_product_variants.id"))
+    product_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
+    variant_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_product_variants.id"))
 
     # Quantité
-    quantity = Column(Integer, nullable=False, default=1)
+    quantity: Mapped[int] = mapped_column(Integer default=1)
 
     # Prix au moment de l'ajout
-    unit_price = Column(Numeric(15, 2), nullable=False)
-    total_price = Column(Numeric(15, 2), nullable=False)
+    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
+    total_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
 
     # Réductions sur cette ligne
-    discount_amount = Column(Numeric(15, 2), default=0)
+    discount_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
 
     # Options personnalisées
-    custom_options = Column(JSON)  # {"engraving": "John"}
+    custom_options: Mapped[Optional[dict]] = mapped_column(JSON)  # {"engraving": "John"}
 
     # Audit
-    added_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    added_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 # ============================================================================
@@ -363,96 +365,96 @@ class EcommerceOrder(Base):
     """Commande e-commerce."""
     __tablename__ = "ecommerce_orders"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Numéro de commande
-    order_number = Column(String(50), nullable=False)
+    order_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
 
     # Origine
-    cart_id = Column(UniversalUUID(), ForeignKey("ecommerce_carts.id"))
-    channel = Column(String(50), default="web")  # web, mobile, api, pos
+    cart_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_carts.id"))
+    channel: Mapped[Optional[str]] = mapped_column(String(50), default="web")  # web, mobile, api, pos
 
     # Client
-    customer_id = Column(UniversalUUID())  # FK vers commercial.customers
-    customer_email = Column(String(255), nullable=False)
-    customer_phone = Column(String(50))
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # FK vers commercial.customers
+    customer_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    customer_phone: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Statuts
-    status = Column(Enum(OrderStatus), default=OrderStatus.PENDING)
-    payment_status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
-    shipping_status = Column(Enum(ShippingStatus), default=ShippingStatus.PENDING)
+    status: Mapped[Optional[str]] = mapped_column(Enum(OrderStatus), default=OrderStatus.PENDING)
+    payment_status: Mapped[Optional[str]] = mapped_column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
+    shipping_status: Mapped[Optional[str]] = mapped_column(Enum(ShippingStatus), default=ShippingStatus.PENDING)
 
     # Devise
-    currency = Column(String(3), default="EUR")
-    exchange_rate = Column(Numeric(10, 6), default=1)
+    currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
+    exchange_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 6), default=1)
 
     # Montants
-    subtotal = Column(Numeric(15, 2), nullable=False)
-    discount_total = Column(Numeric(15, 2), default=0)
-    shipping_total = Column(Numeric(15, 2), default=0)
-    tax_total = Column(Numeric(15, 2), default=0)
-    total = Column(Numeric(15, 2), nullable=False)
+    subtotal: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
+    discount_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    shipping_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    tax_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
 
     # Coupons
-    coupon_codes = Column(JSON)
+    coupon_codes: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Adresse de facturation
-    billing_first_name = Column(String(100))
-    billing_last_name = Column(String(100))
-    billing_company = Column(String(255))
-    billing_address1 = Column(String(255))
-    billing_address2 = Column(String(255))
-    billing_city = Column(String(100))
-    billing_postal_code = Column(String(20))
-    billing_country = Column(String(2))
-    billing_phone = Column(String(50))
+    billing_first_name: Mapped[Optional[str]] = mapped_column(String(100))
+    billing_last_name: Mapped[Optional[str]] = mapped_column(String(100))
+    billing_company: Mapped[Optional[str]] = mapped_column(String(255))
+    billing_address1: Mapped[Optional[str]] = mapped_column(String(255))
+    billing_address2: Mapped[Optional[str]] = mapped_column(String(255))
+    billing_city: Mapped[Optional[str]] = mapped_column(String(100))
+    billing_postal_code: Mapped[Optional[str]] = mapped_column(String(20))
+    billing_country: Mapped[Optional[str]] = mapped_column(String(2))
+    billing_phone: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Adresse de livraison
-    shipping_first_name = Column(String(100))
-    shipping_last_name = Column(String(100))
-    shipping_company = Column(String(255))
-    shipping_address1 = Column(String(255))
-    shipping_address2 = Column(String(255))
-    shipping_city = Column(String(100))
-    shipping_postal_code = Column(String(20))
-    shipping_country = Column(String(2))
-    shipping_phone = Column(String(50))
+    shipping_first_name: Mapped[Optional[str]] = mapped_column(String(100))
+    shipping_last_name: Mapped[Optional[str]] = mapped_column(String(100))
+    shipping_company: Mapped[Optional[str]] = mapped_column(String(255))
+    shipping_address1: Mapped[Optional[str]] = mapped_column(String(255))
+    shipping_address2: Mapped[Optional[str]] = mapped_column(String(255))
+    shipping_city: Mapped[Optional[str]] = mapped_column(String(100))
+    shipping_postal_code: Mapped[Optional[str]] = mapped_column(String(20))
+    shipping_country: Mapped[Optional[str]] = mapped_column(String(2))
+    shipping_phone: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Livraison
-    shipping_method = Column(String(100))
-    shipping_carrier = Column(String(100))
-    tracking_number = Column(String(255))
-    tracking_url = Column(String(500))
+    shipping_method: Mapped[Optional[str]] = mapped_column(String(100))
+    shipping_carrier: Mapped[Optional[str]] = mapped_column(String(100))
+    tracking_number: Mapped[Optional[str]] = mapped_column(String(255))
+    tracking_url: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Dates estimées
-    estimated_delivery_date = Column(DateTime)
+    estimated_delivery_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Notes
-    customer_notes = Column(Text)
-    internal_notes = Column(Text)
+    customer_notes: Mapped[Optional[str]] = mapped_column(Text)
+    internal_notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # Métadonnées
-    extra_data = Column(JSON)
+    extra_data: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Lien avec facturation AZALS
-    invoice_id = Column(UniversalUUID())  # FK vers finance.invoices
+    invoice_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # FK vers finance.invoices
 
     # IP et infos client
-    ip_address = Column(String(50))
-    user_agent = Column(String(500))
+    ip_address: Mapped[Optional[str]] = mapped_column(String(50))
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Dates importantes
-    paid_at = Column(DateTime)
-    shipped_at = Column(DateTime)
-    delivered_at = Column(DateTime)
-    cancelled_at = Column(DateTime)
-    refunded_at = Column(DateTime)
+    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    shipped_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    refunded_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(String(100))
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[Optional[str]] = mapped_column(String(100))
 
     __table_args__ = (
         Index('idx_ecom_order_number', 'tenant_id', 'order_number', unique=True),
@@ -466,41 +468,41 @@ class OrderItem(Base):
     """Ligne de commande."""
     __tablename__ = "ecommerce_order_items"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    order_id = Column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    order_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
 
     # Produit (snapshot au moment de la commande)
-    product_id = Column(UniversalUUID())
-    variant_id = Column(UniversalUUID())
-    sku = Column(String(100))
-    name = Column(String(255), nullable=False)
+    product_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    variant_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    sku: Mapped[Optional[str]] = mapped_column(String(100))
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
 
     # Quantité
-    quantity = Column(Integer, nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer)
 
     # Prix
-    unit_price = Column(Numeric(15, 2), nullable=False)
-    discount_amount = Column(Numeric(15, 2), default=0)
-    tax_amount = Column(Numeric(15, 2), default=0)
-    total = Column(Numeric(15, 2), nullable=False)
+    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
+    discount_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    tax_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
 
     # Taxes détaillées
-    tax_rate = Column(Numeric(5, 2))
-    tax_class = Column(String(50))
+    tax_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    tax_class: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Options personnalisées
-    custom_options = Column(JSON)
+    custom_options: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Statut de la ligne
-    status = Column(String(50), default="pending")
+    status: Mapped[Optional[str]] = mapped_column(String(50), default="pending")
 
     # Fulfillment
-    quantity_fulfilled = Column(Integer, default=0)
-    quantity_refunded = Column(Integer, default=0)
+    quantity_fulfilled: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    quantity_refunded: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 # ============================================================================
@@ -511,42 +513,42 @@ class EcommercePayment(Base):
     """Paiement de commande."""
     __tablename__ = "ecommerce_payments"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    order_id = Column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    order_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
 
     # Référence externe (Stripe, PayPal, etc.)
-    external_id = Column(String(255))
-    provider = Column(String(50))  # stripe, paypal, bank_transfer
+    external_id: Mapped[Optional[str]] = mapped_column(String(255))
+    provider: Mapped[Optional[str]] = mapped_column(String(50))  # stripe, paypal, bank_transfer
 
     # Montant
-    amount = Column(Numeric(15, 2), nullable=False)
-    currency = Column(String(3), default="EUR")
+    amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
+    currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
 
     # Statut
-    status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
+    status: Mapped[Optional[str]] = mapped_column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
 
     # Méthode
-    payment_method = Column(String(50))  # card, sepa, paypal
-    card_brand = Column(String(20))  # visa, mastercard
-    card_last4 = Column(String(4))
+    payment_method: Mapped[Optional[str]] = mapped_column(String(50))  # card, sepa, paypal
+    card_brand: Mapped[Optional[str]] = mapped_column(String(20))  # visa, mastercard
+    card_last4: Mapped[Optional[str]] = mapped_column(String(4))
 
     # Détails
-    details = Column(JSON)
+    details: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Erreurs
-    error_code = Column(String(50))
-    error_message = Column(Text)
+    error_code: Mapped[Optional[str]] = mapped_column(String(50))
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
 
     # Dates
-    authorized_at = Column(DateTime)
-    captured_at = Column(DateTime)
-    failed_at = Column(DateTime)
-    refunded_at = Column(DateTime)
+    authorized_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    captured_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    failed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    refunded_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_ecom_payment_order', 'tenant_id', 'order_id'),
@@ -562,41 +564,41 @@ class ShippingMethod(Base):
     """Méthode de livraison."""
     __tablename__ = "ecommerce_shipping_methods"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Informations
-    name = Column(String(255), nullable=False)
-    code = Column(String(50), nullable=False)
-    description = Column(Text)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Transporteur
-    carrier = Column(String(100))
+    carrier: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Prix
-    price = Column(Numeric(15, 2), default=0)
-    free_shipping_threshold = Column(Numeric(15, 2))  # Gratuit au-dessus de X€
+    price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    free_shipping_threshold: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))  # Gratuit au-dessus de X€
 
     # Délais
-    min_delivery_days = Column(Integer)
-    max_delivery_days = Column(Integer)
+    min_delivery_days: Mapped[Optional[int]] = mapped_column(Integer)
+    max_delivery_days: Mapped[Optional[int]] = mapped_column(Integer)
 
     # Zones
-    countries = Column(JSON)  # ["FR", "BE", "CH"]
+    countries: Mapped[Optional[dict]] = mapped_column(JSON)  # ["FR", "BE", "CH"]
 
     # Conditions
-    min_order_amount = Column(Numeric(15, 2))
-    max_order_amount = Column(Numeric(15, 2))
-    min_weight = Column(Float)
-    max_weight = Column(Float)
+    min_order_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
+    max_order_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
+    min_weight: Mapped[Optional[float]] = mapped_column(Float)
+    max_weight: Mapped[Optional[float]] = mapped_column(Float)
 
     # Statut
-    is_active = Column(Boolean, default=True)
-    sort_order = Column(Integer, default=0)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_ecom_ship_method', 'tenant_id', 'code', unique=True),
@@ -607,40 +609,40 @@ class Shipment(Base):
     """Expédition de commande."""
     __tablename__ = "ecommerce_shipments"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    order_id = Column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    order_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_orders.id"), nullable=False)
 
     # Numéro d'expédition
-    shipment_number = Column(String(50), nullable=False)
+    shipment_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
 
     # Transporteur
-    carrier = Column(String(100))
-    shipping_method = Column(String(100))
+    carrier: Mapped[Optional[str]] = mapped_column(String(100))
+    shipping_method: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Tracking
-    tracking_number = Column(String(255))
-    tracking_url = Column(String(500))
+    tracking_number: Mapped[Optional[str]] = mapped_column(String(255))
+    tracking_url: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Statut
-    status = Column(Enum(ShippingStatus), default=ShippingStatus.PENDING)
+    status: Mapped[Optional[str]] = mapped_column(Enum(ShippingStatus), default=ShippingStatus.PENDING)
 
     # Poids
-    weight = Column(Float)
+    weight: Mapped[Optional[float]] = mapped_column(Float)
 
     # Articles inclus
-    items = Column(JSON)  # [{"order_item_id": 1, "quantity": 2}]
+    items: Mapped[Optional[dict]] = mapped_column(JSON)  # [{"order_item_id": 1, "quantity": 2}]
 
     # Dates
-    shipped_at = Column(DateTime)
-    delivered_at = Column(DateTime)
+    shipped_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Notes
-    notes = Column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_ecom_shipment_order', 'tenant_id', 'order_id'),
@@ -656,45 +658,45 @@ class Coupon(Base):
     """Code promo / Coupon."""
     __tablename__ = "ecommerce_coupons"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Code
-    code = Column(String(50), nullable=False)
-    name = Column(String(255))
-    description = Column(Text)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255))
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Type de réduction
-    discount_type = Column(Enum(DiscountType), nullable=False)
-    discount_value = Column(Numeric(15, 2), nullable=False)
+    discount_type: Mapped[Optional[str]] = mapped_column(Enum(DiscountType), nullable=False)
+    discount_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)
 
     # Conditions
-    min_order_amount = Column(Numeric(15, 2))
-    max_discount_amount = Column(Numeric(15, 2))  # Plafond
+    min_order_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
+    max_discount_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))  # Plafond
 
     # Limites d'utilisation
-    usage_limit = Column(Integer)  # Total
-    usage_limit_per_customer = Column(Integer)  # Par client
-    usage_count = Column(Integer, default=0)
+    usage_limit: Mapped[Optional[int]] = mapped_column(Integer)  # Total
+    usage_limit_per_customer: Mapped[Optional[int]] = mapped_column(Integer)  # Par client
+    usage_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Validité
-    starts_at = Column(DateTime)
-    expires_at = Column(DateTime)
+    starts_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Restrictions
-    product_ids = Column(JSON)  # Produits spécifiques
-    category_ids = Column(JSON)  # Catégories spécifiques
-    customer_ids = Column(JSON)  # Clients spécifiques
+    product_ids: Mapped[Optional[dict]] = mapped_column(JSON)  # Produits spécifiques
+    category_ids: Mapped[Optional[dict]] = mapped_column(JSON)  # Catégories spécifiques
+    customer_ids: Mapped[Optional[dict]] = mapped_column(JSON)  # Clients spécifiques
 
     # Options
-    is_active = Column(Boolean, default=True)
-    is_first_order_only = Column(Boolean, default=False)
-    is_combinable = Column(Boolean, default=False)  # Cumulable
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_first_order_only: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_combinable: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # Cumulable
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(String(100))
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[Optional[str]] = mapped_column(String(100))
 
     __table_args__ = (
         Index('idx_ecom_coupon_code', 'tenant_id', 'code', unique=True),
@@ -709,48 +711,48 @@ class EcommerceCustomer(Base):
     """Client e-commerce (extension du CRM)."""
     __tablename__ = "ecommerce_customers"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Lien CRM
-    crm_customer_id = Column(UniversalUUID())  # FK vers commercial.customers
+    crm_customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # FK vers commercial.customers
 
     # Compte
-    email = Column(String(255), nullable=False)
-    password_hash = Column(String(255))  # Si compte créé
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255))  # Si compte créé
 
     # Informations
-    first_name = Column(String(100))
-    last_name = Column(String(100))
-    phone = Column(String(50))
+    first_name: Mapped[Optional[str]] = mapped_column(String(100))
+    last_name: Mapped[Optional[str]] = mapped_column(String(100))
+    phone: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Adresses par défaut
-    default_billing_address_id = Column(UniversalUUID())
-    default_shipping_address_id = Column(UniversalUUID())
+    default_billing_address_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    default_shipping_address_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     # Marketing
-    accepts_marketing = Column(Boolean, default=False)
-    marketing_opt_in_at = Column(DateTime)
+    accepts_marketing: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    marketing_opt_in_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Statistiques
-    total_orders = Column(Integer, default=0)
-    total_spent = Column(Numeric(15, 2), default=0)
-    average_order_value = Column(Numeric(15, 2), default=0)
-    last_order_at = Column(DateTime)
+    total_orders: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_spent: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    average_order_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    last_order_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Tags
-    tags = Column(JSON)
+    tags: Mapped[Optional[dict]] = mapped_column(JSON)
 
     # Notes
-    notes = Column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # Statut
-    is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_verified: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_ecom_customer_email', 'tenant_id', 'email', unique=True),
@@ -761,31 +763,31 @@ class CustomerAddress(Base):
     """Adresse client."""
     __tablename__ = "ecommerce_customer_addresses"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(UniversalUUID(), ForeignKey("ecommerce_customers.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_customers.id"), nullable=False)
 
     # Type
-    address_type = Column(String(20), default="both")  # billing, shipping, both
+    address_type: Mapped[Optional[str]] = mapped_column(String(20), default="both")  # billing, shipping, both
 
     # Adresse
-    first_name = Column(String(100))
-    last_name = Column(String(100))
-    company = Column(String(255))
-    address1 = Column(String(255), nullable=False)
-    address2 = Column(String(255))
-    city = Column(String(100), nullable=False)
-    postal_code = Column(String(20), nullable=False)
-    country = Column(String(2), nullable=False)
-    province = Column(String(100))  # État/Région
-    phone = Column(String(50))
+    first_name: Mapped[Optional[str]] = mapped_column(String(100))
+    last_name: Mapped[Optional[str]] = mapped_column(String(100))
+    company: Mapped[Optional[str]] = mapped_column(String(255))
+    address1: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    address2: Mapped[Optional[str]] = mapped_column(String(255))
+    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    postal_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=False)
+    country: Mapped[Optional[str]] = mapped_column(String(2), nullable=False)
+    province: Mapped[Optional[str]] = mapped_column(String(100))  # État/Région
+    phone: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Défaut
-    is_default = Column(Boolean, default=False)
+    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 # ============================================================================
@@ -796,39 +798,39 @@ class ProductReview(Base):
     """Avis produit."""
     __tablename__ = "ecommerce_product_reviews"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
 
     # Auteur
-    customer_id = Column(UniversalUUID(), ForeignKey("ecommerce_customers.id"))
-    author_name = Column(String(100))
-    author_email = Column(String(255))
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_customers.id"))
+    author_name: Mapped[Optional[str]] = mapped_column(String(100))
+    author_email: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Avis
-    rating = Column(Integer, nullable=False)  # 1-5
-    title = Column(String(255))
-    content = Column(Text)
+    rating: Mapped[int] = mapped_column(Integer)  # 1-5
+    title: Mapped[Optional[str]] = mapped_column(String(255))
+    content: Mapped[Optional[str]] = mapped_column(Text)
 
     # Commande vérifiée
-    order_id = Column(UniversalUUID())
-    is_verified_purchase = Column(Boolean, default=False)
+    order_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    is_verified_purchase: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Modération
-    is_approved = Column(Boolean, default=False)
-    is_featured = Column(Boolean, default=False)
+    is_approved: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_featured: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Réponse vendeur
-    vendor_response = Column(Text)
-    vendor_responded_at = Column(DateTime)
+    vendor_response: Mapped[Optional[str]] = mapped_column(Text)
+    vendor_responded_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Utilité
-    helpful_votes = Column(Integer, default=0)
-    unhelpful_votes = Column(Integer, default=0)
+    helpful_votes: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    unhelpful_votes: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_ecom_review_product', 'tenant_id', 'product_id'),
@@ -843,33 +845,33 @@ class Wishlist(Base):
     """Liste de souhaits."""
     __tablename__ = "ecommerce_wishlists"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    customer_id = Column(UniversalUUID(), ForeignKey("ecommerce_customers.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_customers.id"), nullable=False)
 
     # Informations
-    name = Column(String(255), default="Ma liste")
-    is_public = Column(Boolean, default=False)
-    share_token = Column(String(100))
+    name: Mapped[Optional[str]] = mapped_column(String(255), default="Ma liste")
+    is_public: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    share_token: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class WishlistItem(Base):
     """Article dans une wishlist."""
     __tablename__ = "ecommerce_wishlist_items"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    wishlist_id = Column(UniversalUUID(), ForeignKey("ecommerce_wishlists.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    wishlist_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_wishlists.id"), nullable=False)
 
-    product_id = Column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
-    variant_id = Column(UniversalUUID())
+    product_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_products.id"), nullable=False)
+    variant_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     # Prix au moment de l'ajout (pour alertes)
-    added_price = Column(Numeric(15, 2))
+    added_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
 
     # Audit
-    added_at = Column(DateTime, default=datetime.utcnow)
+    added_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
