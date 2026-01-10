@@ -31,7 +31,11 @@ env/
 
 # Variables d'environnement
 .env
+.env.*
 .env.local
+*.env
+*.secret
+secrets/
 
 # Tests
 .pytest_cache/
