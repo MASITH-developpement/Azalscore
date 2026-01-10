@@ -193,6 +193,7 @@ class LoginResponse(BaseModel):
     user: UserResponse
     tokens: TokensSchema
     tenant_id: str
+    must_change_password: bool = False
 
 
 # ===== SCHÉMAS 2FA =====
@@ -366,6 +367,9 @@ def login(
     # Enregistrer le succes (reset du compteur d'echecs)
     auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=True)
 
+    # Vérifier si changement de mot de passe obligatoire
+    must_change = getattr(user, 'must_change_password', 0) == 1
+
     # Retourner le format attendu par le frontend
     return {
         "user": {
@@ -380,7 +384,8 @@ def login(
             "refresh_token": refresh_token,
             "token_type": "bearer"
         },
-        "tenant_id": user.tenant_id
+        "tenant_id": user.tenant_id,
+        "must_change_password": must_change
     }
 
 
@@ -864,3 +869,147 @@ def get_user_capabilities(
         "capabilities": capabilities,
         "role": role_name,
     }}
+
+
+# ===== CHANGEMENT DE MOT DE PASSE =====
+
+class ChangePasswordRequest(BaseModel):
+    """Schema pour changement de mot de passe."""
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+
+
+class ChangePasswordResponse(BaseModel):
+    """Schema de réponse changement de mot de passe."""
+    success: bool
+    message: str
+
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+def change_password(
+    request: Request,
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Change le mot de passe de l'utilisateur connecté.
+
+    SÉCURITÉ:
+    - Requiert le mot de passe actuel pour validation
+    - Le nouveau mot de passe est hashé avec bcrypt
+    - Met à jour password_changed_at
+    - Désactive must_change_password
+
+    AUDIT:
+    - Log l'événement sans exposer les mots de passe
+    """
+    from datetime import datetime
+
+    # Vérifier le mot de passe actuel
+    if not verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect"
+        )
+
+    # Vérifier que le nouveau mot de passe est différent
+    if data.current_password == data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password"
+        )
+
+    # Hash du nouveau mot de passe
+    new_password_hash = get_password_hash(data.new_password)
+
+    # Mise à jour en base
+    current_user.password_hash = new_password_hash
+    current_user.must_change_password = 0
+    current_user.password_changed_at = datetime.utcnow()
+    current_user.updated_at = datetime.utcnow()
+
+    db.commit()
+
+    # Log d'audit (sans mot de passe)
+    client_ip = get_client_ip(request)
+
+    return ChangePasswordResponse(
+        success=True,
+        message="Password changed successfully"
+    )
+
+
+@router.post("/force-change-password", response_model=ChangePasswordResponse)
+def force_change_password(
+    request: Request,
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint spécial pour le changement de mot de passe obligatoire.
+    Utilisé quand must_change_password=true après le login initial.
+
+    SÉCURITÉ:
+    - L'utilisateur doit fournir son mot de passe actuel
+    - Ne nécessite pas d'être "vraiment" connecté (juste authentifié)
+    - Met à jour must_change_password à false après succès
+    """
+    from datetime import datetime
+    from app.core.security import decode_access_token
+
+    # Récupérer le token depuis le header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authorization header"
+        )
+
+    token = auth_header.split(" ")[1]
+    payload = decode_access_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+
+    user_id = payload.get("sub")
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+
+    # Vérifier le mot de passe actuel
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect"
+        )
+
+    # Vérifier que le nouveau mot de passe est différent
+    if data.current_password == data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password"
+        )
+
+    # Hash du nouveau mot de passe
+    new_password_hash = get_password_hash(data.new_password)
+
+    # Mise à jour en base
+    user.password_hash = new_password_hash
+    user.must_change_password = 0
+    user.password_changed_at = datetime.utcnow()
+    user.updated_at = datetime.utcnow()
+
+    db.commit()
+
+    return ChangePasswordResponse(
+        success=True,
+        message="Password changed successfully. You can now login with your new password."
+    )
