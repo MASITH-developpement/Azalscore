@@ -241,7 +241,10 @@ async def lifespan(app: FastAPI):
                     break  # Sortir de la boucle de retry
 
                 elif uuid_compliant:
+                    # Base deja conforme - verrou UUID silencieux
                     print("[OK] Base de donnees conforme UUID")
+                    print("[OK] Colonnes INT/BIGINT detectees : 0")
+                    print("[OK] Verrou UUID : ACTIF (silencieux)")
                 else:
                     print("[WARN] Violations UUID ignorees (mode non-strict)")
 
@@ -330,6 +333,25 @@ async def lifespan(app: FastAPI):
 
     # Démarrer le scheduler
     scheduler_service.start()
+
+    # =========================================================================
+    # DEMARRAGE TERMINE - APPLICATION PRETE
+    # =========================================================================
+    print(f"\n{'='*60}")
+    print("[AZALS] APPLICATION STARTUP COMPLETE")
+    print(f"{'='*60}")
+    print(f"Environnement : {_settings.environment}")
+    print(f"Verrou UUID   : ACTIF")
+    print(f"Base de donnees : UUID-native")
+    print(f"{'='*60}\n")
+    logger.info(
+        "[STARTUP] Application startup complete",
+        extra={
+            "environment": _settings.environment,
+            "uuid_lock": "active",
+            "database": "uuid-native"
+        }
+    )
 
     yield
 

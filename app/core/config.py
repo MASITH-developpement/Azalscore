@@ -20,10 +20,20 @@ class Settings(BaseSettings):
     - AUCUN secret par défaut en production
     - Validation stricte de tous les paramètres sensibles
     - Erreur fatale si configuration invalide
+
+    VARIABLES UUID:
+    - AZALS_ENV / ENVIRONMENT: dev | test | prod
+    - DB_AUTO_RESET_ON_VIOLATION: Active le reset automatique (dev/test only)
+    - DB_STRICT_UUID: Bloque le démarrage si violations détectées
     """
 
     # Environnement (test, development, production)
-    environment: str = Field(default="development", description="Environnement d'exécution")
+    # Supporte AZALS_ENV comme alias principal, ENVIRONMENT comme fallback
+    environment: str = Field(
+        default="development",
+        description="Environnement d'exécution (dev, test, prod)",
+        validation_alias="AZALS_ENV"
+    )
 
     database_url: str = Field(
         ...,
@@ -89,11 +99,26 @@ class Settings(BaseSettings):
     @field_validator('environment')
     @classmethod
     def validate_environment(cls, v: str) -> str:
-        """Valide l'environnement."""
+        """
+        Valide l'environnement.
+        Supporte les alias courts: dev, test, prod
+        """
+        v_lower = v.lower()
+
+        # Mapping des alias courts vers les noms complets
+        alias_mapping = {
+            'dev': 'development',
+            'prod': 'production',
+        }
+        v_lower = alias_mapping.get(v_lower, v_lower)
+
         allowed = ('test', 'development', 'staging', 'production')
-        if v.lower() not in allowed:
-            raise ValueError(f'ENVIRONMENT doit être parmi: {allowed}')
-        return v.lower()
+        if v_lower not in allowed:
+            raise ValueError(
+                f'AZALS_ENV/ENVIRONMENT doit être parmi: {allowed} '
+                f'(ou alias: dev, prod)'
+            )
+        return v_lower
 
     @field_validator('database_url')
     @classmethod
