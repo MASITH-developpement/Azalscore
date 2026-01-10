@@ -15,6 +15,7 @@ MIGRATED: All PKs and FKs use UUID for PostgreSQL compatibility.
 
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from enum import Enum as PyEnum
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text

@@ -10,6 +10,7 @@ Target: POS enterprise intégré ERP avec mode offline
 import enum
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
 
