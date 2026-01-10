@@ -132,7 +132,10 @@ class DonneurOrdre(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
-    interventions = relationship("Intervention", back_populates="donneur_ordre")
+    interventions = relationship(
+        "app.modules.interventions.models.Intervention",
+        back_populates="donneur_ordre"
+    )
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_do_tenant_code'),
@@ -325,7 +328,10 @@ class RapportIntervention(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relation
-    intervention = relationship("Intervention", back_populates="rapport")
+    intervention = relationship(
+        "app.modules.interventions.models.Intervention",
+        back_populates="rapport"
+    )
 
     __table_args__ = (
         Index('idx_rapport_tenant', 'tenant_id'),
