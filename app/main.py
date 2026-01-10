@@ -180,6 +180,9 @@ async def lifespan(app: FastAPI):
         raise  # Arret immediat - pas de demarrage sans modeles
 
     max_retries = 5
+    # Variable pour tracker l'etat reel de la conformite UUID
+    db_uuid_status = "UNKNOWN"
+    db_violation_count = 0
 
     for attempt in range(max_retries):
         try:
@@ -211,12 +214,31 @@ async def lifespan(app: FastAPI):
 
             uuid_manager = UUIDComplianceManager(engine, _settings)
 
+            # DETECTION INITIALE - OBLIGATOIRE AVANT TOUT
+            initial_violations = uuid_manager.detect_violations()
+            db_violation_count = len(initial_violations)
+
+            if db_violation_count > 0:
+                tables_affected = len(set(v[0] for v in initial_violations))
+                print(f"\n{'='*60}")
+                print("[UUID] SCAN INITIAL DE LA BASE")
+                print(f"{'='*60}")
+                print(f"Colonnes INT/BIGINT detectees : {db_violation_count}")
+                print(f"Tables affectees : {tables_affected}")
+                print(f"{'='*60}\n")
+                logger.warning(
+                    f"[UUID] Base LEGACY detectee: {db_violation_count} violations, "
+                    f"{tables_affected} tables"
+                )
+
             try:
                 # Cette methode gere tout: detection, reset si autorise, erreur sinon
                 uuid_compliant = uuid_manager.ensure_uuid_compliance()
 
                 if uuid_manager.reset_performed:
                     # Reset effectue - les tables ont deja ete recreees par le manager
+                    db_uuid_status = "UUID-native"
+                    db_violation_count = 0
                     print("[OK] Reset UUID effectue - tables recreees avec UUID")
                     # Passer directement a la validation schema
                     tables_created = len(uuid_manager.get_all_tables())
@@ -242,20 +264,29 @@ async def lifespan(app: FastAPI):
 
                 elif uuid_compliant:
                     # Base deja conforme - verrou UUID silencieux
+                    db_uuid_status = "UUID-native"
+                    db_violation_count = 0
                     print("[OK] Base de donnees conforme UUID")
                     print("[OK] Colonnes INT/BIGINT detectees : 0")
                     print("[OK] Verrou UUID : ACTIF (silencieux)")
                 else:
-                    print("[WARN] Violations UUID ignorees (mode non-strict)")
+                    # Mode non-strict avec violations - NE PAS mentir sur l'etat
+                    db_uuid_status = "LEGACY (violations ignorees)"
+                    db_violation_count = len(uuid_manager.violations)
+                    print(f"[WARN] Violations UUID ignorees (mode non-strict)")
+                    print(f"[WARN] Colonnes INT/BIGINT : {db_violation_count}")
+                    print(f"[WARN] Base de donnees : INCOMPATIBLE UUID")
 
             except UUIDComplianceError as uuid_err:
                 # Violations detectees et mode strict - arreter le demarrage
+                db_uuid_status = "INCOMPATIBLE (blocage strict)"
                 logger.critical(f"[UUID] {uuid_err}")
                 print(str(uuid_err))
                 raise RuntimeError(str(uuid_err))
 
             except UUIDResetBlockedError as reset_err:
                 # Reset bloque (production ou non autorise)
+                db_uuid_status = "INCOMPATIBLE (reset bloque)"
                 logger.critical(f"[UUID_RESET] {reset_err}")
                 print(str(reset_err))
                 raise RuntimeError(str(reset_err))
@@ -337,19 +368,34 @@ async def lifespan(app: FastAPI):
     # =========================================================================
     # DEMARRAGE TERMINE - APPLICATION PRETE
     # =========================================================================
+    # Afficher l'etat REEL de la base (pas de mensonge dans les logs)
     print(f"\n{'='*60}")
     print("[AZALS] APPLICATION STARTUP COMPLETE")
     print(f"{'='*60}")
-    print(f"Environnement : {_settings.environment}")
-    print(f"Verrou UUID   : ACTIF")
-    print(f"Base de donnees : UUID-native")
+    print(f"Environnement      : {_settings.environment}")
+    print(f"Verrou UUID        : ACTIF")
+    print(f"Violations UUID    : {db_violation_count}")
+    print(f"Base de donnees    : {db_uuid_status}")
+
+    # Avertissement explicite si base non conforme
+    if db_violation_count > 0 or db_uuid_status != "UUID-native":
+        print(f"{'='*60}")
+        print("[WARN] BASE NON CONFORME UUID - RESET REQUIS")
+        print(f"{'='*60}")
+        print(f"Pour corriger, executez :")
+        print(f"  export AZALS_ENV=dev")
+        print(f"  export DB_AUTO_RESET_ON_VIOLATION=true")
+        print(f"  # Relancez l'application")
+
     print(f"{'='*60}\n")
+
     logger.info(
         "[STARTUP] Application startup complete",
         extra={
             "environment": _settings.environment,
             "uuid_lock": "active",
-            "database": "uuid-native"
+            "database": db_uuid_status,
+            "violations": db_violation_count
         }
     )
 

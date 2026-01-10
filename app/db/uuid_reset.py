@@ -191,8 +191,15 @@ class UUIDComplianceManager:
 
         if not self.reset_authorized and not self.auto_reset_enabled:
             raise UUIDResetBlockedError(
-                "Reset non autorise. Definissez AZALS_DB_RESET_UUID=true "
-                "et assurez-vous d'etre en environnement dev/test."
+                f"Reset non autorise.\n"
+                f"Environnement: {self.settings.environment}\n"
+                f"db_reset_uuid: {self.settings.db_reset_uuid}\n"
+                f"db_auto_reset_on_violation: {self.settings.db_auto_reset_on_violation}\n\n"
+                f"Pour autoriser le reset, definissez:\n"
+                f"  export AZALS_ENV=dev\n"
+                f"  export DB_AUTO_RESET_ON_VIOLATION=true\n"
+                f"OU (pour reset manuel):\n"
+                f"  export AZALS_DB_RESET_UUID=true"
             )
 
         tables = self.get_all_tables()
@@ -203,6 +210,7 @@ class UUIDComplianceManager:
             return 0
 
         logger.info(f"[UUID_RESET] Suppression de {len(tables)} tables...")
+        print(f"[UUID_RESET] Suppression de {len(tables)} tables du schema public...")
 
         with self.engine.connect() as conn:
             for table_name in tables:
@@ -211,7 +219,9 @@ class UUIDComplianceManager:
                     safe_name = table_name.replace('"', '""')
                     conn.execute(text(f'DROP TABLE IF EXISTS "{safe_name}" CASCADE'))
                     self.tables_dropped.append(table_name)
-                    logger.debug(f"  [DROP] {table_name}")
+                    # Log explicite de chaque suppression
+                    print(f"  [DROP] {table_name}")
+                    logger.info(f"[DROP] Table supprimee: {table_name}")
                 except SQLAlchemyError as e:
                     logger.warning(f"  [WARN] {table_name}: {e}")
 

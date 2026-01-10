@@ -86,12 +86,41 @@ def verify_not_production(settings) -> None:
     """
     Verifie que l'environnement n'est pas production.
 
+    Verification DOUBLE :
+    1. Variable AZALS_ENV ou ENVIRONMENT
+    2. settings.environment (validation Pydantic)
+
     Args:
         settings: Configuration applicative
 
     Raises:
         ResetError: Si en production
     """
+    # Verification directe des variables d'environnement
+    azals_env = os.environ.get('AZALS_ENV', '').lower()
+    env = os.environ.get('ENVIRONMENT', '').lower()
+
+    # Bloquer si l'une des deux est 'prod' ou 'production'
+    if azals_env in ('prod', 'production') or env in ('prod', 'production'):
+        raise ResetError(
+            f"\n"
+            f"{'='*60}\n"
+            f"ERREUR FATALE: Reset INTERDIT en PRODUCTION\n"
+            f"{'='*60}\n"
+            f"\n"
+            f"Le reset de base de donnees est IMPOSSIBLE en production.\n"
+            f"AZALS_ENV detecte: {azals_env or '(non defini)'}\n"
+            f"ENVIRONMENT detecte: {env or '(non defini)'}\n"
+            f"\n"
+            f"OPTIONS:\n"
+            f"1. Utilisez un environnement de dev/test\n"
+            f"2. Migrez les donnees manuellement\n"
+            f"3. Recreez la base PostgreSQL manuellement\n"
+            f"\n"
+            f"{'='*60}\n"
+        )
+
+    # Verification via settings (validation Pydantic)
     if settings.environment.lower() == 'production':
         raise ResetError(
             f"\n"
@@ -100,12 +129,7 @@ def verify_not_production(settings) -> None:
             f"{'='*60}\n"
             f"\n"
             f"Le reset de base de donnees est IMPOSSIBLE en production.\n"
-            f"Environnement detecte: {settings.environment}\n"
-            f"\n"
-            f"OPTIONS:\n"
-            f"1. Utilisez un environnement de dev/test\n"
-            f"2. Migrez les donnees manuellement\n"
-            f"3. Recreez la base PostgreSQL manuellement\n"
+            f"Environnement settings: {settings.environment}\n"
             f"\n"
             f"{'='*60}\n"
         )
@@ -202,9 +226,46 @@ def run_reset() -> bool:
         settings.db_reset_uuid = True
 
         try:
-            # 9. Supprimer les tables
+            # 9. Supprimer les tables - avec log explicite
             print("\n[RESET] Suppression des tables...")
-            dropped = manager.drop_all_tables()
+            from sqlalchemy import text
+
+            with engine.connect() as conn:
+                # Lister toutes les tables
+                result = conn.execute(text("""
+                    SELECT tablename FROM pg_tables
+                    WHERE schemaname = 'public'
+                    ORDER BY tablename
+                """))
+                tables_to_drop = [row[0] for row in result]
+
+                print(f"[INFO] {len(tables_to_drop)} tables a supprimer")
+
+                # Supprimer chaque table avec log explicite
+                for table_name in tables_to_drop:
+                    try:
+                        safe_name = table_name.replace('"', '""')
+                        conn.execute(text(f'DROP TABLE IF EXISTS "{safe_name}" CASCADE'))
+                        print(f"  [DROP] {table_name}")
+                        logger.info(f"[DROP] Table supprimee: {table_name}")
+                    except Exception as drop_err:
+                        print(f"  [WARN] {table_name}: {drop_err}")
+                        logger.warning(f"[DROP] Echec: {table_name}: {drop_err}")
+
+                conn.commit()
+
+                # Verifier qu'aucune table ne reste
+                result = conn.execute(text("""
+                    SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public'
+                """))
+                remaining = result.scalar()
+
+                if remaining > 0:
+                    print(f"[WARN] {remaining} tables restantes apres DROP")
+                else:
+                    print(f"[OK] Schema public vide - toutes les tables supprimees")
+
+            dropped = len(tables_to_drop)
             print(f"[OK] {dropped} tables supprimees")
 
             # 10. Recreer depuis ORM
