@@ -35,6 +35,7 @@ from app.services.scheduler import scheduler_service
 from app.core.config import get_settings
 from app.core.version import AZALS_VERSION
 from app.core.guards import enforce_startup_security, log_security_status
+from app.core.http_errors import register_error_handlers
 from app.api.items import router as items_router
 from app.api.auth import router as auth_router
 from app.api.protected import router as protected_router
@@ -501,16 +502,13 @@ app = FastAPI(
 )
 
 
-# Handler pour afficher les erreurs de validation 422
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    print(f"[DEBUG] 422 Validation Error on {request.method} {request.url}")
-    print(f"[DEBUG] Request body: {await request.body()}")
-    print(f"[DEBUG] Validation errors: {exc.errors()}")
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()}
-    )
+# ===========================================================================
+# GESTION CENTRALISEE DES ERREURS HTTP
+# ===========================================================================
+# Enregistrement des handlers pour 401, 403, 404, 422, 500
+# Format de reponse JSON standardise, logging structure
+# ===========================================================================
+register_error_handlers(app)
 
 
 # Middleware stack (ordre important: dernier ajouté = premier exécuté)
@@ -1026,3 +1024,100 @@ if UI_DIR.exists():
                 }
             )
         return FileResponse(UI_DIR / "favicon.png", status_code=404)
+
+
+# ===========================================================================
+# PAGES D'ERREURS STATIQUES (THEME VAISSEAU SPATIAL)
+# ===========================================================================
+# Routes pour servir les pages d'erreurs avec theme visuel coherent
+# Accessibles directement pour le frontend en cas de redirection
+# ===========================================================================
+
+ERRORS_DIR = Path(__file__).parent.parent / "frontend" / "errors"
+
+if ERRORS_DIR.exists():
+    # Monter les assets des pages d'erreurs (SVG illustrations)
+    ERRORS_ASSETS_DIR = ERRORS_DIR / "assets"
+    if ERRORS_ASSETS_DIR.exists():
+        app.mount("/errors/assets", StaticFiles(directory=str(ERRORS_ASSETS_DIR)), name="error_assets")
+
+    @app.get("/errors/401")
+    async def serve_error_401():
+        """Page d'erreur 401 - Cockpit verrouille"""
+        error_path = ERRORS_DIR / "401.html"
+        if error_path.exists():
+            return FileResponse(error_path, media_type="text/html")
+        return JSONResponse(
+            status_code=401,
+            content={"error": "unauthorized", "message": "Authentication required", "code": 401}
+        )
+
+    @app.get("/errors/403")
+    async def serve_error_403():
+        """Page d'erreur 403 - Zone interdite"""
+        error_path = ERRORS_DIR / "403.html"
+        if error_path.exists():
+            return FileResponse(error_path, media_type="text/html")
+        return JSONResponse(
+            status_code=403,
+            content={"error": "forbidden", "message": "Access denied", "code": 403}
+        )
+
+    @app.get("/errors/404")
+    async def serve_error_404():
+        """Page d'erreur 404 - Destination introuvable"""
+        error_path = ERRORS_DIR / "404.html"
+        if error_path.exists():
+            return FileResponse(error_path, media_type="text/html")
+        return JSONResponse(
+            status_code=404,
+            content={"error": "not_found", "message": "Resource not found", "code": 404}
+        )
+
+    @app.get("/errors/500")
+    async def serve_error_500():
+        """Page d'erreur 500 - Defaillance systeme"""
+        error_path = ERRORS_DIR / "500.html"
+        if error_path.exists():
+            return FileResponse(error_path, media_type="text/html")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "internal_error", "message": "Unexpected server error", "code": 500}
+        )
+
+
+# ===========================================================================
+# ROUTE DE TEST DES ERREURS (DEV UNIQUEMENT)
+# ===========================================================================
+# Permet de tester les handlers d'erreur sans modifier la logique metier
+# DESACTIVEE en production
+# ===========================================================================
+
+if _settings.is_development:
+    @app.get("/test-errors/401")
+    async def test_error_401():
+        """Test: Declanche une erreur 401"""
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Test unauthorized")
+
+    @app.get("/test-errors/403")
+    async def test_error_403():
+        """Test: Declanche une erreur 403"""
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Test forbidden")
+
+    @app.get("/test-errors/404")
+    async def test_error_404():
+        """Test: Declanche une erreur 404"""
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    @app.get("/test-errors/500")
+    async def test_error_500():
+        """Test: Declanche une erreur 500"""
+        raise RuntimeError("Test internal server error")
+
+    @app.get("/test-errors/422")
+    async def test_error_422(required_param: int):
+        """Test: Declanche une erreur 422 (appeler sans parametres)"""
+        return {"value": required_param}
