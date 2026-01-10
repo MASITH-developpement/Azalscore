@@ -3,6 +3,7 @@ AZALS - Service de tâches planifiées
 Réinitialise les alertes RED tous les jours à 23h59
 """
 
+import uuid
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import text
@@ -11,6 +12,9 @@ import logging
 from app.core.database import SessionLocal
 
 logger = logging.getLogger(__name__)
+
+# UUID système pour les opérations automatiques
+SYSTEM_USER_UUID = "00000000-0000-0000-0000-000000000001"
 
 
 class SchedulerService:
@@ -48,8 +52,8 @@ class SchedulerService:
     def reset_red_alerts():
         """
         Réinitialise les alertes RED.
-        
-        Règle: 
+
+        Règle:
         - Marquer toutes les décisions RED de la veille comme "réinitialisées"
         - Réactiver le workflow (remet completed_steps à vide)
         - Les tresoreries en deficit redeviennent RED
@@ -57,54 +61,57 @@ class SchedulerService:
         db = SessionLocal()
         try:
             logger.info("[...] Reinitialisation des alertes RED...")
-            
+
             # Vérifier les décisions RED complétées
+            # Note: reason est la colonne principale, is_fully_validated=1 signifie validé
             result = db.execute(text("""
-                SELECT d.id, d.decision_reason
+                SELECT d.id, d.reason
                 FROM decisions d
                 WHERE d.level = 'RED'
-                AND d.is_fully_validated = TRUE
+                AND d.is_fully_validated = 1
                 AND DATE(d.created_at) < CURRENT_DATE
             """))
-            
+
             old_reds = result.fetchall()
-            
+
             if old_reds:
                 # Réinitialiser les étapes du workflow
                 for red_id, reason in old_reds:
-                    # Supprimer les étapes complétées
+                    # Supprimer les étapes complétées (table correcte: red_decision_workflows)
                     db.execute(text("""
-                        DELETE FROM red_workflow_steps 
+                        DELETE FROM red_decision_workflows
                         WHERE decision_id = :decision_id
-                    """), {"decision_id": red_id})
-                    
-                    # Réinitialiser is_fully_validated
+                    """), {"decision_id": str(red_id)})
+
+                    # Réinitialiser is_fully_validated (0 = False)
                     db.execute(text("""
-                        UPDATE decisions 
-                        SET is_fully_validated = FALSE
+                        UPDATE decisions
+                        SET is_fully_validated = 0
                         WHERE id = :decision_id AND level = 'RED'
-                    """), {"decision_id": red_id})
-                
+                    """), {"decision_id": str(red_id)})
+
                 db.commit()
                 logger.info(f"[OK] {len(old_reds)} alerte(s) RED reinitialisee(s)")
-                
-                # Journaliser l'action
+
+                # Journaliser l'action avec UUID système valide
                 for red_id, reason in old_reds:
+                    journal_id = str(uuid.uuid4())
                     db.execute(text("""
                         INSERT INTO core_audit_journal
-                        (tenant_id, user_id, action, details, created_at)
-                        VALUES (:tenant_id, :user_id, :action, :details, CURRENT_TIMESTAMP)
+                        (id, tenant_id, user_id, action, details, created_at)
+                        VALUES (:id, :tenant_id, :user_id, :action, :details, CURRENT_TIMESTAMP)
                     """), {
+                        "id": journal_id,
                         "tenant_id": "system",
-                        "user_id": 1,  # Utilisateur système
+                        "user_id": SYSTEM_USER_UUID,
                         "action": "RED_RESET_DAILY",
                         "details": f"Réinitialisation RED quotidienne - ID: {red_id}"
                     })
-                
+
                 db.commit()
             else:
                 logger.info("[INFO] Aucune alerte RED a reinitialiser")
-        
+
         except Exception as e:
             logger.error(f"[ERROR] Erreur reinitialisation RED: {e}")
             db.rollback()

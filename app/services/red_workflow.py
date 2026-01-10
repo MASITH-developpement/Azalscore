@@ -237,6 +237,8 @@ class RedWorkflowService:
                 tenant_id=tenant_id,
                 validated_at=datetime.utcnow()
             )
+            # Marquer la décision comme entièrement validée
+            decision.is_fully_validated = 1
         
         self.db.commit()
         self.db.refresh(workflow)
