@@ -14,7 +14,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from contextlib import asynccontextmanager
-from app.core.database import check_database_connection, engine, Base
+# IMPORTANT: Importer Base depuis app.db (avec UUIDMixin), PAS depuis app.core.database
+from app.db import Base
+from app.core.database import check_database_connection, engine
+from app.db.model_loader import load_all_models, verify_models_loaded
 from app.core.middleware import TenantMiddleware
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
@@ -154,6 +157,27 @@ async def lifespan(app: FastAPI):
 
     # Initialiser les métriques Prometheus
     init_metrics()
+
+    # =========================================================================
+    # CHARGEMENT OBLIGATOIRE DES MODELES ORM
+    # =========================================================================
+    # CRITIQUE: Charger TOUS les modeles AVANT toute operation DB
+    # Cela garantit que Base.metadata.tables contient toutes les tables
+    # et que create_all() et le verrou UUID fonctionnent correctement.
+    # =========================================================================
+    try:
+        modules_loaded = load_all_models()
+        verify_models_loaded()
+        table_count = len(Base.metadata.tables)
+        logger.info(
+            f"[MODEL_LOADER] {modules_loaded} modules charges, "
+            f"{table_count} tables ORM enregistrees"
+        )
+        print(f"[OK] Modeles ORM charges: {table_count} tables")
+    except (RuntimeError, AssertionError) as model_err:
+        logger.critical(f"[MODEL_LOADER] ECHEC CRITIQUE: {model_err}")
+        print(f"[FATAL] {model_err}")
+        raise  # Arret immediat - pas de demarrage sans modeles
 
     max_retries = 5
 

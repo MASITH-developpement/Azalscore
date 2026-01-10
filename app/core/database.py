@@ -1,11 +1,15 @@
 """
 AZALS - Connexion PostgreSQL
-Gestion sécurisée de la connexion base de données avec SQLAlchemy
+Gestion securisee de la connexion base de donnees avec SQLAlchemy
+
+IMPORTANT: Ce module exporte la Base depuis app.db pour garantir
+l'unicite du registre de metadonnees ORM. NE JAMAIS utiliser
+declarative_base() ici.
 """
 
 import logging
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from app.core.config import get_settings
 
@@ -24,7 +28,11 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+# IMPORTANT: Reutiliser la Base unifiee depuis app.db
+# Cette Base inclut UUIDMixin et garantit que TOUS les modeles
+# sont enregistres dans le MEME registre de metadonnees.
+# NE PAS utiliser declarative_base() ici - cela creerait un registre separe.
+from app.db import Base  # noqa: E402
 
 
 def get_db():

@@ -461,8 +461,8 @@ class BankConnection(Base):
     # Comptes liés
     linked_accounts = Column(JSON, default=list)
 
-    # Métadonnées
-    metadata = Column(JSON, default=dict)
+    # Metadonnees
+    extra_data = Column(JSON, default=dict)
 
     # Audit
     created_by = Column(UniversalUUID(), nullable=False)
@@ -513,8 +513,8 @@ class SyncedBankAccount(Base):
     last_transaction_date = Column(Date)
     oldest_transaction_date = Column(Date)
 
-    # Métadonnées
-    metadata = Column(JSON, default=dict)
+    # Metadonnees
+    extra_data = Column(JSON, default=dict)
 
     # Timestamps
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
@@ -775,8 +775,8 @@ class AccountingAlert(Base):
     # Auto-expiration
     expires_at = Column(DateTime)
 
-    # Métadonnées
-    metadata = Column(JSON, default=dict)
+    # Metadonnees
+    extra_data = Column(JSON, default=dict)
 
     # Timestamps
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
