@@ -544,6 +544,11 @@ setup_cors(app)
 app.include_router(health_router)
 app.include_router(metrics_router)
 
+# ==================== AUTH LEGACY (sans prefix /v1) ====================
+# Route /auth/login directement accessible pour compatibilité V0
+# Ceci expose /auth/login, /auth/register, /auth/bootstrap, etc.
+app.include_router(auth_router)
+
 # ==================== API v1 ====================
 # Toutes les routes metier sous le prefixe /v1
 api_v1 = APIRouter(prefix="/v1")
