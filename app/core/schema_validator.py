@@ -16,8 +16,64 @@ from typing import List, Set
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import TypeDecorator
 
 logger = logging.getLogger(__name__)
+
+
+def _is_uuid_type(col_type) -> bool:
+    """
+    Vérifie si un type de colonne est un type UUID valide.
+    Gère les TypeDecorator comme UniversalUUID correctement.
+    """
+    type_name = type(col_type).__name__
+
+    # Types UUID connus
+    uuid_type_names = {'UniversalUUID', 'UUID', 'GUID', 'Uuid'}
+    if type_name in uuid_type_names:
+        return True
+
+    # Vérifier le module pour les types PostgreSQL UUID
+    type_module = type(col_type).__module__
+    if 'uuid' in type_module.lower():
+        return True
+
+    # Pour les TypeDecorator, vérifier le nom de la classe
+    if isinstance(col_type, TypeDecorator):
+        impl_class_name = type(col_type).__name__
+        if impl_class_name in uuid_type_names:
+            return True
+        # Vérifier si le nom contient UUID
+        if 'uuid' in impl_class_name.lower():
+            return True
+
+    # Vérifier dans la représentation string
+    type_str = str(col_type).lower()
+    if 'uuid' in type_str:
+        return True
+
+    return False
+
+
+def _is_integer_type(col_type) -> bool:
+    """
+    Vérifie si un type de colonne est un type Integer/BigInteger interdit pour les IDs.
+    """
+    type_name = type(col_type).__name__
+
+    # Types Integer interdits pour les identifiants
+    forbidden_types = {'Integer', 'BigInteger', 'SmallInteger', 'INT', 'BIGINT'}
+    if type_name in forbidden_types:
+        return True
+
+    # Vérifier dans la représentation string
+    type_str = str(col_type).lower()
+    if 'integer' in type_str or 'bigint' in type_str:
+        # Mais pas si c'est un UUID
+        if 'uuid' not in type_str:
+            return True
+
+    return False
 
 
 class SchemaValidationError(Exception):
@@ -189,11 +245,16 @@ class SchemaValidator:
     def validate_orm_models(self) -> bool:
         """
         Valide tous les modèles ORM pour détecter les incohérences.
+        Utilise une détection robuste des types UUID et Integer.
 
         Returns:
             True si tous les modèles sont valides.
         """
         logger.info("[SCHEMA] Validation des modèles ORM...")
+
+        tables_checked = 0
+        pk_checked = 0
+        fk_checked = 0
 
         for mapper in self.base.registry.mappers:
             table = mapper.local_table
@@ -201,34 +262,43 @@ class SchemaValidator:
                 continue
 
             table_name = table.name
+            tables_checked += 1
 
             # Vérifier les colonnes PK
             for col in table.primary_key.columns:
-                col_type_str = str(col.type).lower()
+                pk_checked += 1
 
-                # Détecter Integer/BigInteger dans le type
-                if 'integer' in col_type_str or 'bigint' in col_type_str:
-                    if 'uuid' not in col_type_str:
-                        self.critical_errors.append(
-                            f"[ORM CRITICAL] {table_name}.{col.name}: PK définie comme {col.type}. "
-                            f"DOIT utiliser UniversalUUID()."
-                        )
+                # Vérifier si c'est un type UUID valide
+                if _is_uuid_type(col.type):
+                    continue  # OK - type UUID correct
+
+                # Vérifier si c'est un type Integer interdit
+                if _is_integer_type(col.type):
+                    self.critical_errors.append(
+                        f"[ORM CRITICAL] {table_name}.{col.name}: PK définie comme {type(col.type).__name__}. "
+                        f"DOIT utiliser UniversalUUID()."
+                    )
 
             # Vérifier les FK
             for fk in table.foreign_keys:
                 col = fk.parent
                 col_name = col.name.lower()
-                col_type_str = str(col.type).lower()
+                fk_checked += 1
 
                 # Colonnes *_id doivent être UUID
                 if col_name.endswith('_id') or col_name == 'id':
-                    if 'integer' in col_type_str or 'bigint' in col_type_str:
-                        if 'uuid' not in col_type_str:
-                            self.critical_errors.append(
-                                f"[ORM CRITICAL] {table_name}.{col.name}: FK définie comme {col.type}. "
-                                f"DOIT utiliser UniversalUUID()."
-                            )
+                    # Vérifier si c'est un type UUID valide
+                    if _is_uuid_type(col.type):
+                        continue  # OK - type UUID correct
 
+                    # Vérifier si c'est un type Integer interdit
+                    if _is_integer_type(col.type):
+                        self.critical_errors.append(
+                            f"[ORM CRITICAL] {table_name}.{col.name}: FK définie comme {type(col.type).__name__}. "
+                            f"DOIT utiliser UniversalUUID()."
+                        )
+
+        logger.info(f"[SCHEMA] ORM: {tables_checked} tables, {pk_checked} PK, {fk_checked} FK vérifiées")
         return len(self.critical_errors) == 0
 
     def get_cleanup_sql(self) -> str:
