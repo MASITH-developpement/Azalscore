@@ -5,7 +5,7 @@ Modèles SQLAlchemy pour la gestion des abonnements.
 """
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum as PyEnum
 
