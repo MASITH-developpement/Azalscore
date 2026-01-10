@@ -153,12 +153,18 @@ class Decision(Base, TenantMixin):
     entity_id = Column(String(255), nullable=False)
     level = Column(Enum(DecisionLevel), nullable=False)
     reason = Column(Text, nullable=False)
+    # Alias pour compatibilité scheduler
+    decision_reason = Column(Text, nullable=True)
+    # Validation RED workflow
+    is_fully_validated = Column(Integer, default=0, nullable=False)  # 0=False, 1=True
     created_at = Column(DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at = Column(DateTime, server_default=func.current_timestamp(), onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_decisions_tenant_id', 'tenant_id'),
         Index('idx_decisions_entity', 'tenant_id', 'entity_type', 'entity_id'),
         Index('idx_decisions_level', 'level'),
+        Index('idx_decisions_validated', 'level', 'is_fully_validated'),
     )
 
 

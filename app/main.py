@@ -162,6 +162,14 @@ async def lifespan(app: FastAPI):
             # Test connection first
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
+                # Enable pgcrypto extension for UUID generation (if PostgreSQL)
+                try:
+                    conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+                    conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
+                    conn.commit()
+                    logger.info("PostgreSQL extensions pgcrypto et uuid-ossp activees")
+                except Exception:
+                    pass  # Ignore if already exists or not PostgreSQL
 
             # Create tables with multi-pass retry for FK dependencies
             # sorted_tables respects FK order, but cross-module deps may need retries
