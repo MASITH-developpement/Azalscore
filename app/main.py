@@ -3,6 +3,11 @@ AZALS - Point d'entrée principal SÉCURISÉ ÉLITE
 =================================================
 ERP décisionnel critique - Sécurité by design - Multi-tenant strict
 ÉLITE: Docs API désactivées en production, Observabilité complète
+
+SECURITE:
+- Garde-fous de sécurité exécutés AVANT toute opération
+- Version canonique depuis app/core/version.py
+- Crash immédiat si violation de sécurité
 """
 
 import asyncio
@@ -28,6 +33,8 @@ from app.core.health import router as health_router
 from app.core.logging_config import setup_logging, get_logger
 from app.services.scheduler import scheduler_service
 from app.core.config import get_settings
+from app.core.version import AZALS_VERSION
+from app.core.guards import enforce_startup_security, log_security_status
 from app.api.items import router as items_router
 from app.api.auth import router as auth_router
 from app.api.protected import router as protected_router
@@ -154,6 +161,28 @@ async def lifespan(app: FastAPI):
     )
     logger = get_logger(__name__)
     logger.info("AZALS démarrage", extra={"environment": _settings.environment})
+
+    # =========================================================================
+    # GARDE-FOUS DE SECURITE - EXECUTION AVANT TOUTE OPERATION
+    # =========================================================================
+    # CRITIQUE: Ces verifications s'executent AVANT toute connexion DB
+    # Une violation provoque un CRASH IMMEDIAT (pas de demarrage)
+    # =========================================================================
+    try:
+        security_status = enforce_startup_security(_settings)
+        logger.info(
+            "[SECURITY] Garde-fous valides",
+            extra={
+                "environment": security_status.environment,
+                "version": security_status.version,
+                "branch": security_status.branch,
+                "locked": security_status.is_locked
+            }
+        )
+    except Exception as security_error:
+        logger.critical(f"[SECURITY] VIOLATION FATALE: {security_error}")
+        print(str(security_error))
+        raise  # Arret immediat - pas de demarrage sans validation securite
 
     # Initialiser les métriques Prometheus
     init_metrics()
@@ -372,23 +401,36 @@ async def lifespan(app: FastAPI):
     # DEMARRAGE TERMINE - AFFICHAGE ETAT REEL
     # =========================================================================
     # INTERDICTION d'afficher "Application startup complete" si violations > 0
+    # Inclut maintenant la version et le statut de securite
+    from app.core.guards import get_current_git_branch
+    current_branch = get_current_git_branch() or "unknown"
+    security_locked = "LOCKED" if _settings.is_production or current_branch == "main" else "UNLOCKED"
+
     print(f"\n{'='*60}")
 
     if db_violation_count == 0 and db_uuid_status == "UUID-native":
         # Base conforme - startup complet
         print("[AZALS] APPLICATION STARTUP COMPLETE")
         print(f"{'='*60}")
+        print(f"Version            : {AZALS_VERSION}")
         print(f"Environnement      : {_settings.environment}")
+        print(f"Branche Git        : {current_branch}")
+        print(f"Securite           : {security_locked}")
         print(f"Verrou UUID        : ACTIF")
         print(f"Violations UUID    : 0")
         print(f"Base de donnees    : UUID-native")
         print(f"ORM                : {len(Base.metadata.tables)} tables")
+        print(f"{'='*60}")
+        print(f"[SECURITY] ENV={_settings.environment} | VERSION={AZALS_VERSION} | BRANCH={current_branch} | STATUS={security_locked}")
         print(f"{'='*60}\n")
 
         logger.info(
             "[STARTUP] Application startup complete - Base UUID-native",
             extra={
+                "version": AZALS_VERSION,
                 "environment": _settings.environment,
+                "branch": current_branch,
+                "security_status": security_locked,
                 "uuid_lock": "active",
                 "database": "uuid-native",
                 "violations": 0,
@@ -399,7 +441,10 @@ async def lifespan(app: FastAPI):
         # Base non conforme - avertissement explicite
         print("[AZALS] DEMARRAGE EN MODE DEGRADE")
         print(f"{'='*60}")
+        print(f"Version            : {AZALS_VERSION}")
         print(f"Environnement      : {_settings.environment}")
+        print(f"Branche Git        : {current_branch}")
+        print(f"Securite           : {security_locked}")
         print(f"Verrou UUID        : ACTIF")
         print(f"Violations UUID    : {db_violation_count}")
         print(f"Base de donnees    : {db_uuid_status}")
@@ -412,12 +457,17 @@ async def lifespan(app: FastAPI):
         print(f"  export AZALS_ENV=dev")
         print(f"  export DB_AUTO_RESET_ON_VIOLATION=true")
         print(f"  # Relancez l'application")
+        print(f"{'='*60}")
+        print(f"[SECURITY] ENV={_settings.environment} | VERSION={AZALS_VERSION} | BRANCH={current_branch} | STATUS={security_locked}")
         print(f"{'='*60}\n")
 
         logger.warning(
             "[STARTUP] Demarrage en mode degrade - Base LEGACY",
             extra={
+                "version": AZALS_VERSION,
                 "environment": _settings.environment,
+                "branch": current_branch,
+                "security_status": security_locked,
                 "uuid_lock": "active",
                 "database": db_uuid_status,
                 "violations": db_violation_count
@@ -443,7 +493,7 @@ if _settings.is_production:
 app = FastAPI(
     title="AZALS",
     description="ERP decisionnel critique - Multi-tenant + Authentification JWT",
-    version="0.3.0",
+    version=AZALS_VERSION,
     docs_url=_docs_url,
     redoc_url=_redoc_url,
     openapi_url=_openapi_url,
