@@ -171,6 +171,41 @@ async def lifespan(app: FastAPI):
                 except Exception:
                     pass  # Ignore if already exists or not PostgreSQL
 
+            # NETTOYAGE AUTOMATIQUE: Supprimer les tables BIGINT legacy AVANT création
+            # Ce bloc résout définitivement le problème UUID ↔ BIGINT
+            try:
+                with engine.connect() as cleanup_conn:
+                    # Détecter les tables avec PK BIGINT
+                    result = cleanup_conn.execute(text("""
+                        SELECT DISTINCT tc.table_name
+                        FROM information_schema.table_constraints tc
+                        JOIN information_schema.key_column_usage kcu
+                            ON tc.constraint_name = kcu.constraint_name
+                        JOIN information_schema.columns c
+                            ON c.table_name = tc.table_name
+                            AND c.column_name = kcu.column_name
+                        WHERE tc.constraint_type = 'PRIMARY KEY'
+                        AND tc.table_schema = 'public'
+                        AND c.udt_name IN ('int4', 'int8', 'serial', 'bigserial')
+                        AND tc.table_name NOT LIKE 'pg_%'
+                    """))
+                    bigint_tables = [row[0] for row in result]
+
+                    if bigint_tables:
+                        print(f"[CLEANUP] {len(bigint_tables)} table(s) BIGINT détectée(s) - suppression forcée...")
+                        cleanup_conn.execute(text("SET session_replication_role = 'replica'"))
+                        for table_name in bigint_tables:
+                            try:
+                                cleanup_conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
+                                print(f"  [DROP] {table_name}")
+                            except Exception as drop_err:
+                                print(f"  [WARN] {table_name}: {drop_err}")
+                        cleanup_conn.execute(text("SET session_replication_role = 'origin'"))
+                        cleanup_conn.commit()
+                        print("[CLEANUP] Tables BIGINT supprimées - recréation avec UUID...")
+            except Exception as cleanup_err:
+                print(f"[WARN] Cleanup BIGINT ignoré: {cleanup_err}")
+
             # Create tables with multi-pass retry for FK dependencies
             # sorted_tables respects FK order, but cross-module deps may need retries
             tables_created = 0
