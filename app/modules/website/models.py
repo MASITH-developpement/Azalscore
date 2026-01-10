@@ -9,7 +9,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db import Base
@@ -487,7 +487,7 @@ class SiteAnalytics(Base):
     tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Période
-    date: Mapped[datetime] = mapped_column(DateTime index=True)
+    date: Mapped[datetime] = mapped_column(DateTime, index=True)
     period: Mapped[Optional[str]] = mapped_column(String(20), default="daily")  # daily, weekly, monthly
 
     # Trafic

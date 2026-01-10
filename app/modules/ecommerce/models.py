@@ -11,7 +11,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean DateTime, Enum, Float, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, Numeric, String, Text
 
 from app.db import Base
 from app.core.types import JSON, UniversalUUID
@@ -340,7 +340,7 @@ class CartItem(Base):
     variant_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("ecommerce_product_variants.id"))
 
     # Quantité
-    quantity: Mapped[int] = mapped_column(Integer default=1)
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
 
     # Prix au moment de l'ajout
     unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=False)

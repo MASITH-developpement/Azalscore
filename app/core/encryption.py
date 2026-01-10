@@ -187,7 +187,6 @@ class EncryptedString(TypeDecorator):
             # En cas d'erreur, stocker en clair (fallback développement)
             # En production, cette erreur devrait être fatale
             import logging
-from sqlalchemy.orm import Mapped, mapped_column
             logging.warning("Encryption failed, storing plaintext (DEV ONLY)")
             return value
 

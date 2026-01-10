@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import JSON, Boolean Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db import Base
@@ -87,7 +87,7 @@ class SubscriptionPlan(Base):
     base_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     currency: Mapped[Optional[str]] = mapped_column(String(3), nullable=False, default="EUR")
     interval: Mapped[Optional[str]] = mapped_column(Enum(PlanInterval), nullable=False, default=PlanInterval.MONTHLY)
-    interval_count: Mapped[int] = mapped_column(Integer default=1)
+    interval_count: Mapped[int] = mapped_column(Integer, default=1)
 
     # Période d'essai
     trial_days: Mapped[Optional[int]] = mapped_column(Integer, default=0)
@@ -506,7 +506,7 @@ class UsageRecord(Base):
     action: Mapped[Optional[str]] = mapped_column(String(20), nullable=False, default="increment")  # set, increment
 
     # Période
-    timestamp: Mapped[datetime] = mapped_column(DateTime default=datetime.utcnow)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     period_start: Mapped[Optional[date]] = mapped_column(Date)
     period_end: Mapped[Optional[date]] = mapped_column(Date)
 
