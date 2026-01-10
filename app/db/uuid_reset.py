@@ -5,6 +5,36 @@ AZALS - Module de Reset Database UUID
 Module reutilisable pour le reset controle de la base de donnees
 vers une architecture UUID-only.
 
+ARCHITECTURE DEFINITIVE - SANS DETTE TECHNIQUE
+===============================================
+
+VARIABLES D'ENVIRONNEMENT:
+    - AZALS_ENV = dev | test | prod
+    - DB_AUTO_RESET_ON_VIOLATION = true | false
+    - DB_STRICT_UUID = true | false
+
+LOGIQUE DE DEMARRAGE:
+    SI violations UUID detectees:
+        SI AZALS_ENV != prod ET DB_AUTO_RESET_ON_VIOLATION == true:
+            → reset complet du schema public
+            → recreation ORM UUID
+            → re-scan UUID
+        SINON:
+            → erreur fatale bloquante
+
+RESULTAT ATTENDU APRES RESET:
+    - Colonnes INT/BIGINT detectees : 0
+    - Tables affectees : 0
+    - Verrou UUID silencieux
+    - Application startup complete
+
+INTERDICTIONS ABSOLUES:
+    ❌ Pas de migration partielle
+    ❌ Pas de SQL manuel (ALTER COLUMN INT → UUID)
+    ❌ Pas de contournement du verrou
+    ❌ Pas de reset implicite
+    ❌ Pas de reset en PRODUCTION
+
 USAGE INTERNE (depuis main.py):
     from app.db.uuid_reset import UUIDComplianceManager
     manager = UUIDComplianceManager(engine, settings)
@@ -12,12 +42,6 @@ USAGE INTERNE (depuis main.py):
 
 USAGE EXTERNE (script standalone):
     python scripts/reset_database_uuid.py
-
-REGLES DE SECURITE:
-    - PROD: Reset IMPOSSIBLE (erreur fatale)
-    - DEV/TEST: Reset possible si AZALS_DB_RESET_UUID=true
-    - Logging complet de chaque operation
-    - Verification post-reset obligatoire
 """
 
 import logging
@@ -311,7 +335,7 @@ class UUIDComplianceManager:
         created = self.recreate_from_orm()
         print(f"[OK] {created} tables creees avec UUID")
 
-        # 3. Verifier conformite
+        # 3. Verifier conformite post-reset
         if not self.verify_uuid_compliance():
             remaining = len(self.violations)
             raise UUIDComplianceError(
@@ -319,7 +343,15 @@ class UUIDComplianceManager:
                 "Verifiez les modeles ORM."
             )
 
-        print("[OK] Verification UUID: CONFORME")
+        # 4. Affichage du resultat conforme aux exigences
+        print(f"\n{'='*60}")
+        print("[UUID_RESET] RESULTAT POST-RESET")
+        print(f"{'='*60}")
+        print(f"Colonnes INT/BIGINT detectees : 0")
+        print(f"Tables affectees : 0")
+        print(f"Verrou UUID : ACTIF (silencieux)")
+        print(f"{'='*60}\n")
+
         logger.info("[UUID_RESET] Reset termine avec succes - base conforme UUID")
 
     def _print_violations(self) -> None:
@@ -345,10 +377,12 @@ class UUIDComplianceManager:
             f"{'='*60}\n"
             f"\n"
             f"{violation_count} colonnes identifiants en BIGINT/INT detectees.\n"
+            f"Environnement actuel: {self.settings.environment}\n"
             f"\n"
-            f"SOLUTIONS:\n"
+            f"SOLUTIONS (dev/test uniquement):\n"
             f"\n"
             f"1. Reset automatique (recommande en dev):\n"
+            f"   export AZALS_ENV=dev\n"
             f"   export DB_AUTO_RESET_ON_VIOLATION=true\n"
             f"   # Relancez l'application\n"
             f"\n"
@@ -356,8 +390,13 @@ class UUIDComplianceManager:
             f"   export AZALS_DB_RESET_UUID=true\n"
             f"   python scripts/reset_database_uuid.py\n"
             f"\n"
-            f"3. Desactiver le mode strict (non recommande):\n"
+            f"3. Desactiver le mode strict (NON RECOMMANDE):\n"
             f"   export DB_STRICT_UUID=false\n"
+            f"\n"
+            f"IMPORTANT:\n"
+            f"- Aucun reset possible en PRODUCTION\n"
+            f"- Pas de migration partielle INT → UUID\n"
+            f"- Le verrou UUID reste actif apres reset\n"
             f"\n"
             f"{'='*60}\n"
         )
