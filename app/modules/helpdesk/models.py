@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import JSON, Boolean DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db import Base

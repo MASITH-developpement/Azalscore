@@ -9,7 +9,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean DateTime, Enum, Float, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, Float, Integer, String, Text
 
 from app.db import Base
 from app.core.types import JSON, UniversalUUID
@@ -229,7 +229,7 @@ class TenantUsage(Base):
     tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Période
-    date: Mapped[datetime] = mapped_column(DateTime index=True)
+    date: Mapped[datetime] = mapped_column(DateTime, index=True)
     period: Mapped[Optional[str]] = mapped_column(String(20), default="daily")
 
     # Utilisateurs
