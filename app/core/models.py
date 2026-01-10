@@ -81,6 +81,10 @@ class User(Base, TenantMixin):
     totp_verified_at = Column(DateTime, nullable=True)  # Date première vérification
     backup_codes = Column(Text, nullable=True)  # Codes de secours JSON
 
+    # Gestion du mot de passe
+    must_change_password = Column(Integer, default=0, nullable=False)  # 1=doit changer au prochain login
+    password_changed_at = Column(DateTime, nullable=True)  # Date du dernier changement
+
     # Index pour optimisation
     __table_args__ = (
         Index('idx_users_tenant_id', 'tenant_id'),
