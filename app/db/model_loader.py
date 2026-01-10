@@ -1,0 +1,190 @@
+"""
+AZALS - Loader Central des Modeles ORM
+======================================
+Module CRITIQUE pour le chargement de TOUS les modeles ORM
+AVANT toute operation de base de donnees.
+
+OBJECTIF:
+- Garantir que Base.metadata.tables contient TOUS les modeles
+- Permettre a create_all() de creer TOUTES les tables
+- Permettre au verrou UUID de valider TOUTES les tables
+
+USAGE OBLIGATOIRE dans main.py:
+    from app.db.model_loader import load_all_models
+    load_all_models()  # AVANT create_all() et validation
+
+NE JAMAIS:
+- Conditionner cet import
+- Importer les modeles "a la volee"
+- Bypasser ce loader
+"""
+
+import pkgutil
+import importlib
+import logging
+from typing import Set
+
+logger = logging.getLogger(__name__)
+
+# Registre des modules charges pour eviter les doublons
+_loaded_modules: Set[str] = set()
+_models_loaded: bool = False
+
+
+def load_all_models() -> int:
+    """
+    Charge TOUS les modeles ORM de l'application.
+
+    Cette fonction DOIT etre appelee AVANT:
+    - Base.metadata.create_all()
+    - Toute validation de schema
+    - Tout acces aux tables
+
+    Returns:
+        int: Nombre de modules charges
+
+    Raises:
+        RuntimeError: Si aucun modele n'est trouve (echec critique)
+    """
+    global _models_loaded, _loaded_modules
+
+    if _models_loaded:
+        logger.debug("Modeles deja charges, skip")
+        return len(_loaded_modules)
+
+    # 1. Charger les modeles core en premier
+    _load_core_models()
+
+    # 2. Charger tous les modules metier
+    _load_module_models()
+
+    # 3. Validation BLOQUANTE
+    # Import direct depuis app.db.base pour eviter import circulaire
+    from app.db.base import Base
+    table_count = len(Base.metadata.tables)
+
+    if table_count == 0:
+        raise RuntimeError(
+            "ERREUR CRITIQUE: Aucun modele ORM charge. "
+            "Verifiez que les modeles heritent de app.db.Base"
+        )
+
+    _models_loaded = True
+
+    logger.info(
+        f"[MODEL_LOADER] Chargement termine: "
+        f"{len(_loaded_modules)} modules, {table_count} tables ORM"
+    )
+
+    return len(_loaded_modules)
+
+
+def _load_core_models() -> None:
+    """
+    Charge les modeles du core (app.core.models).
+    Ces modeles sont prioritaires (User, Decision, etc.)
+    """
+    global _loaded_modules
+
+    try:
+        # Import explicite des modeles core
+        import app.core.models
+        _loaded_modules.add("app.core.models")
+        logger.debug("[MODEL_LOADER] Core models charges")
+    except ImportError as e:
+        logger.warning(f"[MODEL_LOADER] Impossible de charger core.models: {e}")
+
+
+def _load_module_models() -> None:
+    """
+    Charge dynamiquement TOUS les sous-modules de app.modules.
+    Utilise pkgutil.walk_packages pour decouverte recursive.
+    """
+    global _loaded_modules
+
+    try:
+        import app.modules
+    except ImportError as e:
+        logger.error(f"[MODEL_LOADER] Package app.modules introuvable: {e}")
+        return
+
+    # Parcourir recursivement tous les sous-modules
+    for importer, module_name, is_pkg in pkgutil.walk_packages(
+        path=app.modules.__path__,
+        prefix=app.modules.__name__ + "."
+    ):
+        # Ne charger que les modules models.py pour optimisation
+        # Mais aussi charger les packages pour les FK cross-module
+        if module_name in _loaded_modules:
+            continue
+
+        try:
+            importlib.import_module(module_name)
+            _loaded_modules.add(module_name)
+
+            if module_name.endswith('.models'):
+                logger.debug(f"[MODEL_LOADER] Modeles charges: {module_name}")
+
+        except ImportError as e:
+            # Log mais ne pas bloquer - certains modules peuvent avoir des deps optionnelles
+            logger.warning(f"[MODEL_LOADER] Skip {module_name}: {e}")
+        except Exception as e:
+            logger.error(f"[MODEL_LOADER] Erreur {module_name}: {e}")
+
+
+def get_loaded_table_count() -> int:
+    """
+    Retourne le nombre de tables chargees dans Base.metadata.
+    Utile pour les diagnostics.
+    """
+    # Import direct depuis app.db.base pour eviter import circulaire
+    from app.db.base import Base
+    return len(Base.metadata.tables)
+
+
+def get_loaded_modules() -> Set[str]:
+    """
+    Retourne l'ensemble des modules charges.
+    Utile pour le debug.
+    """
+    return _loaded_modules.copy()
+
+
+def verify_models_loaded() -> None:
+    """
+    Verification BLOQUANTE que les modeles sont charges.
+    A appeler apres load_all_models() pour garantie supplementaire.
+
+    Raises:
+        AssertionError: Si aucun modele n'est charge
+    """
+    # Import direct depuis app.db.base pour eviter import circulaire
+    from app.db.base import Base
+
+    table_count = len(Base.metadata.tables)
+
+    assert table_count > 0, (
+        f"ERREUR CRITIQUE: Base.metadata.tables est vide ({table_count} tables). "
+        f"Verifiez que load_all_models() a ete appele et que les modeles "
+        f"heritent correctement de app.db.Base"
+    )
+
+    # Verification secondaire: au moins les tables core doivent exister
+    expected_core_tables = {'users', 'items', 'decisions', 'core_audit_journal'}
+    existing_tables = set(Base.metadata.tables.keys())
+    missing_core = expected_core_tables - existing_tables
+
+    if missing_core:
+        logger.warning(
+            f"[MODEL_LOADER] Tables core manquantes: {missing_core}. "
+            f"Verifiez app/core/models.py"
+        )
+
+
+# Export pour usage direct
+__all__ = [
+    'load_all_models',
+    'verify_models_loaded',
+    'get_loaded_table_count',
+    'get_loaded_modules'
+]
