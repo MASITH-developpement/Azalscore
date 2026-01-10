@@ -10,6 +10,7 @@ Target: ERP-native e-commerce avec intégration complète
 import enum
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, Numeric, String, Text
 

@@ -6,6 +6,7 @@ Modèles SQLAlchemy pour la gestion des abonnements.
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum as PyEnum
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
