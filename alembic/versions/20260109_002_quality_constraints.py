@@ -159,32 +159,41 @@ def upgrade() -> None:
     )
 
     # ========================================================================
-    # FK VERS MODULES EXTERNES (inventory_products)
+    # FK VERS MODULES EXTERNES (inventory_products) - OPTIONNELLES
+    # Ces FK sont créées uniquement si la table inventory_products existe
     # ========================================================================
 
-    # quality_non_conformances -> inventory_products
-    op.create_foreign_key(
-        'fk_nc_product',
-        'quality_non_conformances', 'inventory_products',
-        ['product_id'], ['id'],
-        ondelete='SET NULL'
-    )
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    tables = inspector.get_table_names()
 
-    # quality_controls -> inventory_products
-    op.create_foreign_key(
-        'fk_qc_product',
-        'quality_controls', 'inventory_products',
-        ['product_id'], ['id'],
-        ondelete='SET NULL'
-    )
+    if 'inventory_products' in tables:
+        # quality_non_conformances -> inventory_products
+        op.create_foreign_key(
+            'fk_nc_product',
+            'quality_non_conformances', 'inventory_products',
+            ['product_id'], ['id'],
+            ondelete='SET NULL'
+        )
 
-    # quality_customer_claims -> inventory_products
-    op.create_foreign_key(
-        'fk_claim_product',
-        'quality_customer_claims', 'inventory_products',
-        ['product_id'], ['id'],
-        ondelete='SET NULL'
-    )
+        # quality_controls -> inventory_products
+        op.create_foreign_key(
+            'fk_qc_product',
+            'quality_controls', 'inventory_products',
+            ['product_id'], ['id'],
+            ondelete='SET NULL'
+        )
+
+        # quality_customer_claims -> inventory_products
+        op.create_foreign_key(
+            'fk_claim_product',
+            'quality_customer_claims', 'inventory_products',
+            ['product_id'], ['id'],
+            ondelete='SET NULL'
+        )
+    else:
+        print("  [INFO] Table 'inventory_products' not found - skipping external FK constraints")
 
     # ========================================================================
     # MODULE QC CENTRAL (T4) - FOREIGN KEYS INTERNES
@@ -267,12 +276,28 @@ def downgrade() -> None:
     """Drop all foreign key constraints from Quality module tables."""
 
     # ========================================================================
-    # FK VERS MODULES EXTERNES - DROP FK
+    # FK VERS MODULES EXTERNES - DROP FK (optionnel si non créées)
     # ========================================================================
 
-    op.drop_constraint('fk_claim_product', 'quality_customer_claims', type_='foreignkey')
-    op.drop_constraint('fk_qc_product', 'quality_controls', type_='foreignkey')
-    op.drop_constraint('fk_nc_product', 'quality_non_conformances', type_='foreignkey')
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
+
+    # Vérifier si les FK existent avant de les supprimer
+    try:
+        op.drop_constraint('fk_claim_product', 'quality_customer_claims', type_='foreignkey')
+    except Exception:
+        pass  # FK n'existe pas
+
+    try:
+        op.drop_constraint('fk_qc_product', 'quality_controls', type_='foreignkey')
+    except Exception:
+        pass  # FK n'existe pas
+
+    try:
+        op.drop_constraint('fk_nc_product', 'quality_non_conformances', type_='foreignkey')
+    except Exception:
+        pass  # FK n'existe pas
 
     # ========================================================================
     # MODULE QC CENTRAL (T4) - DROP FK
