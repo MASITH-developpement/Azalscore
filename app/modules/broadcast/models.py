@@ -9,11 +9,13 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
 
 from app.db import Base
 from app.core.types import JSON, UniversalUUID
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+from typing import Optional
 
 # ============================================================================
 # ENUMS
@@ -88,42 +90,42 @@ class BroadcastTemplate(Base):
     """Template réutilisable pour les diffusions"""
     __tablename__ = "broadcast_templates"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Type et contenu
-    content_type = Column(Enum(ContentType), nullable=False)
-    subject_template = Column(String(500), nullable=True)
-    body_template = Column(Text, nullable=True)
-    html_template = Column(Text, nullable=True)
+    content_type: Mapped[Optional[str]] = mapped_column(Enum(ContentType), nullable=False)
+    subject_template: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    body_template: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    html_template: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Configuration
-    default_channel = Column(Enum(DeliveryChannel), default=DeliveryChannel.EMAIL)
-    available_channels = Column(JSON, nullable=True)  # Liste des canaux supportés
-    variables = Column(JSON, nullable=True)  # Variables disponibles
-    styling = Column(JSON, nullable=True)  # CSS et mise en forme
+    default_channel: Mapped[Optional[str]] = mapped_column(Enum(DeliveryChannel), default=DeliveryChannel.EMAIL)
+    available_channels: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Liste des canaux supportés
+    variables: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Variables disponibles
+    styling: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # CSS et mise en forme
 
     # Data sources
-    data_sources = Column(JSON, nullable=True)  # Sources de données à agréger
-    aggregation_config = Column(JSON, nullable=True)  # Config d'agrégation
+    data_sources: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Sources de données à agréger
+    aggregation_config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Config d'agrégation
 
     # Localisation
-    language = Column(String(5), default="fr")
-    country_code = Column(String(2), nullable=True)
+    language: Mapped[Optional[str]] = mapped_column(String(5), default="fr")
+    country_code: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_system = Column(Boolean, default=False)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_system: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_broadcast_templates_tenant_code", "tenant_id", "code", unique=True),
@@ -139,29 +141,29 @@ class RecipientList(Base):
     """Liste de destinataires réutilisable"""
     __tablename__ = "broadcast_recipient_lists"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Configuration
-    is_dynamic = Column(Boolean, default=False)  # Liste dynamique (requête)
-    query_config = Column(JSON, nullable=True)  # Config pour listes dynamiques
+    is_dynamic: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # Liste dynamique (requête)
+    query_config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Config pour listes dynamiques
 
     # Statistiques
-    total_recipients = Column(Integer, default=0)
-    active_recipients = Column(Integer, default=0)
+    total_recipients: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    active_recipients: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # État
-    is_active = Column(Boolean, default=True)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_recipient_lists_tenant_code", "tenant_id", "code", unique=True),
@@ -176,31 +178,31 @@ class RecipientMember(Base):
     """Membre d'une liste de destinataires"""
     __tablename__ = "broadcast_recipient_members"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    list_id = Column(UniversalUUID(), ForeignKey("broadcast_recipient_lists.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    list_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("broadcast_recipient_lists.id"), nullable=False)
 
     # Type et référence
-    recipient_type = Column(Enum(RecipientType), nullable=False)
-    user_id = Column(UniversalUUID(), nullable=True)  # Pour USER
-    group_id = Column(UniversalUUID(), nullable=True)  # Pour GROUP
-    role_code = Column(String(50), nullable=True)  # Pour ROLE
-    external_email = Column(String(255), nullable=True)  # Pour EXTERNAL
-    external_name = Column(String(200), nullable=True)
+    recipient_type: Mapped[Optional[str]] = mapped_column(Enum(RecipientType), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)  # Pour USER
+    group_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)  # Pour GROUP
+    role_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # Pour ROLE
+    external_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # Pour EXTERNAL
+    external_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Préférences
-    preferred_channel = Column(Enum(DeliveryChannel), nullable=True)
-    preferred_language = Column(String(5), nullable=True)
-    preferred_format = Column(String(20), nullable=True)  # HTML, TEXT, PDF
+    preferred_channel: Mapped[Optional[str]] = mapped_column(Enum(DeliveryChannel), nullable=True)
+    preferred_language: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
+    preferred_format: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # HTML, TEXT, PDF
 
     # État
-    is_active = Column(Boolean, default=True)
-    is_unsubscribed = Column(Boolean, default=False)
-    unsubscribed_at = Column(DateTime, nullable=True)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_unsubscribed: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    unsubscribed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Audit
-    added_at = Column(DateTime, default=datetime.utcnow)
-    added_by = Column(UniversalUUID(), nullable=True)
+    added_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    added_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_recipient_members_list", "tenant_id", "list_id"),
@@ -216,67 +218,67 @@ class ScheduledBroadcast(Base):
     """Diffusion programmée/récurrente"""
     __tablename__ = "scheduled_broadcasts"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Template et destinataires
-    template_id = Column(UniversalUUID(), ForeignKey("broadcast_templates.id"), nullable=True)
-    recipient_list_id = Column(UniversalUUID(), ForeignKey("broadcast_recipient_lists.id"), nullable=True)
+    template_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("broadcast_templates.id"), nullable=True)
+    recipient_list_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("broadcast_recipient_lists.id"), nullable=True)
 
     # Contenu personnalisé (si pas de template)
-    content_type = Column(Enum(ContentType), nullable=False)
-    subject = Column(String(500), nullable=True)
-    body_content = Column(Text, nullable=True)
-    html_content = Column(Text, nullable=True)
+    content_type: Mapped[Optional[str]] = mapped_column(Enum(ContentType), nullable=False)
+    subject: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    body_content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    html_content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Configuration livraison
-    delivery_channel = Column(Enum(DeliveryChannel), nullable=False, default=DeliveryChannel.EMAIL)
-    additional_channels = Column(JSON, nullable=True)
+    delivery_channel: Mapped[Optional[str]] = mapped_column(Enum(DeliveryChannel), nullable=False, default=DeliveryChannel.EMAIL)
+    additional_channels: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Planification
-    frequency = Column(Enum(BroadcastFrequency), nullable=False)
-    cron_expression = Column(String(100), nullable=True)  # Pour CUSTOM
-    timezone = Column(String(50), default="Europe/Paris")
+    frequency: Mapped[Optional[str]] = mapped_column(Enum(BroadcastFrequency), nullable=False)
+    cron_expression: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Pour CUSTOM
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
 
     # Fenêtre de diffusion
-    start_date = Column(DateTime, nullable=True)
-    end_date = Column(DateTime, nullable=True)
-    send_time = Column(String(5), nullable=True)  # HH:MM
+    start_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    end_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    send_time: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)  # HH:MM
 
     # Pour fréquence spécifique
-    day_of_week = Column(Integer, nullable=True)  # 0-6 pour WEEKLY
-    day_of_month = Column(Integer, nullable=True)  # 1-31 pour MONTHLY
-    month_of_year = Column(Integer, nullable=True)  # 1-12 pour YEARLY
+    day_of_week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 0-6 pour WEEKLY
+    day_of_month: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 1-31 pour MONTHLY
+    month_of_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 1-12 pour YEARLY
 
     # Data dynamique
-    data_query = Column(JSON, nullable=True)  # Requête pour données
-    data_filters = Column(JSON, nullable=True)  # Filtres
+    data_query: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Requête pour données
+    data_filters: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Filtres
 
     # État
-    status = Column(Enum(BroadcastStatus), default=BroadcastStatus.DRAFT)
-    is_active = Column(Boolean, default=True)
+    status: Mapped[Optional[str]] = mapped_column(Enum(BroadcastStatus), default=BroadcastStatus.DRAFT)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # Statistiques
-    total_sent = Column(Integer, default=0)
-    total_delivered = Column(Integer, default=0)
-    total_failed = Column(Integer, default=0)
-    total_opened = Column(Integer, default=0)
-    total_clicked = Column(Integer, default=0)
+    total_sent: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_delivered: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_failed: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_opened: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_clicked: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Exécution
-    last_run_at = Column(DateTime, nullable=True)
-    next_run_at = Column(DateTime, nullable=True)
-    last_error = Column(Text, nullable=True)
+    last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    next_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_scheduled_broadcasts_tenant_code", "tenant_id", "code", unique=True),
@@ -293,41 +295,41 @@ class BroadcastExecution(Base):
     """Historique d'exécution d'une diffusion"""
     __tablename__ = "broadcast_executions"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    scheduled_broadcast_id = Column(UniversalUUID(), ForeignKey("scheduled_broadcasts.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    scheduled_broadcast_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("scheduled_broadcasts.id"), nullable=False)
 
     # Exécution
-    execution_number = Column(Integer, default=1)
-    started_at = Column(DateTime, default=datetime.utcnow)
-    completed_at = Column(DateTime, nullable=True)
-    duration_seconds = Column(Float, nullable=True)
+    execution_number: Mapped[Optional[int]] = mapped_column(Integer, default=1)
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    duration_seconds: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Résultats
-    status = Column(Enum(DeliveryStatus), default=DeliveryStatus.PENDING)
-    total_recipients = Column(Integer, default=0)
-    sent_count = Column(Integer, default=0)
-    delivered_count = Column(Integer, default=0)
-    failed_count = Column(Integer, default=0)
-    bounced_count = Column(Integer, default=0)
+    status: Mapped[Optional[str]] = mapped_column(Enum(DeliveryStatus), default=DeliveryStatus.PENDING)
+    total_recipients: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    sent_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    delivered_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    failed_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    bounced_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Contenu généré
-    generated_subject = Column(String(500), nullable=True)
-    generated_content = Column(Text, nullable=True)
-    attachments = Column(JSON, nullable=True)
+    generated_subject: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    generated_content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    attachments: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Erreurs
-    error_message = Column(Text, nullable=True)
-    error_details = Column(JSON, nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Métriques engagement
-    opened_count = Column(Integer, default=0)
-    clicked_count = Column(Integer, default=0)
-    unsubscribed_count = Column(Integer, default=0)
+    opened_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    clicked_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    unsubscribed_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Audit
-    triggered_by = Column(String(50), default="scheduler")  # scheduler, manual, api
-    triggered_user = Column(UniversalUUID(), nullable=True)
+    triggered_by: Mapped[Optional[str]] = mapped_column(String(50), default="scheduler")  # scheduler, manual, api
+    triggered_user: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index("ix_broadcast_executions_scheduled", "tenant_id", "scheduled_broadcast_id"),
@@ -343,41 +345,41 @@ class DeliveryDetail(Base):
     """Détail de livraison par destinataire"""
     __tablename__ = "broadcast_delivery_details"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    execution_id = Column(UniversalUUID(), ForeignKey("broadcast_executions.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    execution_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("broadcast_executions.id"), nullable=False)
 
     # Destinataire
-    recipient_type = Column(Enum(RecipientType), nullable=False)
-    user_id = Column(UniversalUUID(), nullable=True)
-    email = Column(String(255), nullable=True)
-    phone = Column(String(20), nullable=True)
+    recipient_type: Mapped[Optional[str]] = mapped_column(Enum(RecipientType), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
     # Livraison
-    channel = Column(Enum(DeliveryChannel), nullable=False)
-    status = Column(Enum(DeliveryStatus), default=DeliveryStatus.PENDING)
+    channel: Mapped[Optional[str]] = mapped_column(Enum(DeliveryChannel), nullable=False)
+    status: Mapped[Optional[str]] = mapped_column(Enum(DeliveryStatus), default=DeliveryStatus.PENDING)
 
     # Timing
-    queued_at = Column(DateTime, default=datetime.utcnow)
-    sent_at = Column(DateTime, nullable=True)
-    delivered_at = Column(DateTime, nullable=True)
+    queued_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Engagement
-    opened_at = Column(DateTime, nullable=True)
-    opened_count = Column(Integer, default=0)
-    clicked_at = Column(DateTime, nullable=True)
-    click_count = Column(Integer, default=0)
+    opened_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    opened_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    clicked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    click_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Erreurs
-    error_code = Column(String(50), nullable=True)
-    error_message = Column(Text, nullable=True)
-    retry_count = Column(Integer, default=0)
-    last_retry_at = Column(DateTime, nullable=True)
+    error_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    retry_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    last_retry_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Tracking
-    tracking_id = Column(String(100), nullable=True)  # UUID pour tracking
-    user_agent = Column(String(500), nullable=True)
-    ip_address = Column(String(50), nullable=True)
+    tracking_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # UUID pour tracking
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     __table_args__ = (
         Index("ix_delivery_details_execution", "tenant_id", "execution_id"),
@@ -395,40 +397,40 @@ class BroadcastPreference(Base):
     """Préférences de diffusion par utilisateur"""
     __tablename__ = "broadcast_preferences"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    user_id = Column(UniversalUUID(), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)
 
     # Préférences globales
-    receive_digests = Column(Boolean, default=True)
-    receive_newsletters = Column(Boolean, default=True)
-    receive_reports = Column(Boolean, default=True)
-    receive_alerts = Column(Boolean, default=True)
+    receive_digests: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    receive_newsletters: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    receive_reports: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    receive_alerts: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # Canal préféré
-    preferred_channel = Column(Enum(DeliveryChannel), default=DeliveryChannel.EMAIL)
-    preferred_language = Column(String(5), default="fr")
-    preferred_format = Column(String(20), default="HTML")  # HTML, TEXT, PDF
+    preferred_channel: Mapped[Optional[str]] = mapped_column(Enum(DeliveryChannel), default=DeliveryChannel.EMAIL)
+    preferred_language: Mapped[Optional[str]] = mapped_column(String(5), default="fr")
+    preferred_format: Mapped[Optional[str]] = mapped_column(String(20), default="HTML")  # HTML, TEXT, PDF
 
     # Fréquence
-    digest_frequency = Column(Enum(BroadcastFrequency), default=BroadcastFrequency.DAILY)
-    report_frequency = Column(Enum(BroadcastFrequency), default=BroadcastFrequency.WEEKLY)
+    digest_frequency: Mapped[Optional[str]] = mapped_column(Enum(BroadcastFrequency), default=BroadcastFrequency.DAILY)
+    report_frequency: Mapped[Optional[str]] = mapped_column(Enum(BroadcastFrequency), default=BroadcastFrequency.WEEKLY)
 
     # Horaires
-    preferred_send_time = Column(String(5), nullable=True)  # HH:MM
-    timezone = Column(String(50), default="Europe/Paris")
+    preferred_send_time: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)  # HH:MM
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
 
     # Exclusions
-    excluded_content_types = Column(JSON, nullable=True)
-    excluded_broadcasts = Column(JSON, nullable=True)  # IDs de broadcasts exclus
+    excluded_content_types: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    excluded_broadcasts: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # IDs de broadcasts exclus
 
     # État
-    is_unsubscribed_all = Column(Boolean, default=False)
-    unsubscribed_at = Column(DateTime, nullable=True)
+    is_unsubscribed_all: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    unsubscribed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index("ix_broadcast_preferences_tenant_user", "tenant_id", "user_id", unique=True),
@@ -443,45 +445,45 @@ class BroadcastMetric(Base):
     """Métriques agrégées de diffusion"""
     __tablename__ = "broadcast_metrics"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Période
-    metric_date = Column(DateTime, nullable=False)
-    period_type = Column(String(20), default="DAILY")  # DAILY, WEEKLY, MONTHLY
+    metric_date: Mapped[datetime] = mapped_column(DateTime)
+    period_type: Mapped[Optional[str]] = mapped_column(String(20), default="DAILY")  # DAILY, WEEKLY, MONTHLY
 
     # Volumes
-    total_broadcasts = Column(Integer, default=0)
-    total_executions = Column(Integer, default=0)
-    total_messages = Column(Integer, default=0)
+    total_broadcasts: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_executions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_messages: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Par type
-    digest_count = Column(Integer, default=0)
-    newsletter_count = Column(Integer, default=0)
-    report_count = Column(Integer, default=0)
-    alert_count = Column(Integer, default=0)
+    digest_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    newsletter_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    report_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    alert_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Par canal
-    email_count = Column(Integer, default=0)
-    in_app_count = Column(Integer, default=0)
-    webhook_count = Column(Integer, default=0)
-    sms_count = Column(Integer, default=0)
+    email_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    in_app_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    webhook_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    sms_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Taux de succès
-    delivered_count = Column(Integer, default=0)
-    failed_count = Column(Integer, default=0)
-    bounced_count = Column(Integer, default=0)
-    delivery_rate = Column(Float, nullable=True)
+    delivered_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    failed_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    bounced_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    delivery_rate: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Engagement
-    opened_count = Column(Integer, default=0)
-    clicked_count = Column(Integer, default=0)
-    unsubscribed_count = Column(Integer, default=0)
-    open_rate = Column(Float, nullable=True)
-    click_rate = Column(Float, nullable=True)
+    opened_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    clicked_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    unsubscribed_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    open_rate: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    click_rate: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index("ix_broadcast_metrics_tenant_date", "tenant_id", "metric_date"),

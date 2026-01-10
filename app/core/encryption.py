@@ -166,7 +166,7 @@ class EncryptedString(TypeDecorator):
 
     Usage:
         class User(Base):
-            phone = Column(EncryptedString(255))
+            phone: Mapped[Optional[Any]] = mapped_column(EncryptedString(255))
     """
     impl = String
     cache_ok = True
@@ -187,6 +187,7 @@ class EncryptedString(TypeDecorator):
             # En cas d'erreur, stocker en clair (fallback développement)
             # En production, cette erreur devrait être fatale
             import logging
+from sqlalchemy.orm import Mapped, mapped_column
             logging.warning("Encryption failed, storing plaintext (DEV ONLY)")
             return value
 
@@ -208,7 +209,7 @@ class EncryptedText(TypeDecorator):
 
     Usage:
         class User(Base):
-            notes = Column(EncryptedText())
+            notes: Mapped[Optional[Any]] = mapped_column(EncryptedText())
     """
     impl = Text
     cache_ok = True

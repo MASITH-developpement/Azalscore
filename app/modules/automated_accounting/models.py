@@ -19,7 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import UniversalUUID, JSON
 
 

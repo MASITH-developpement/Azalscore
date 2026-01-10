@@ -25,7 +25,7 @@ from sqlalchemy import (
     func,
 )
 
-from app.core.database import Base
+from app.db import Base
 from app.core.types import UniversalUUID
 
 # ============================================================================

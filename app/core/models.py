@@ -11,7 +11,6 @@ from sqlalchemy import Column, DateTime, Enum, Index, Integer, Numeric, String, 
 
 from app.db import Base
 from app.core.types import UniversalUUID
-from sqlalchemy.dialects.postgresql import UUID
 
 
 class UserRole(str, enum.Enum):

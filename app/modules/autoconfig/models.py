@@ -10,12 +10,13 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean DateTime, Enum, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db import Base
 from app.core.types import UniversalUUID
 from sqlalchemy.dialects.postgresql import UUID
+from typing import Optional
 
 # ============================================================================
 # ENUMS
@@ -74,41 +75,41 @@ class JobProfile(Base):
     """
     __tablename__ = "autoconfig_job_profiles"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Niveau hiérarchique
-    level = Column(Enum(ProfileLevel), nullable=False)
-    hierarchy_order = Column(Integer, default=5, nullable=False)  # 0=top, 10=bottom
+    level: Mapped[Optional[str]] = mapped_column(Enum(ProfileLevel), nullable=False)
+    hierarchy_order: Mapped[int] = mapped_column(Integer, default=5)  # 0=top, 10=bottom
 
     # Critères de matching
-    title_patterns = Column(Text, nullable=True)  # JSON: ["Directeur*", "Director*"]
-    department_patterns = Column(Text, nullable=True)  # JSON: ["Finance", "Comptabilité"]
+    title_patterns: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: ["Directeur*", "Director*"]
+    department_patterns: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: ["Finance", "Comptabilité"]
 
     # Configuration automatique
-    default_roles = Column(Text, nullable=False)  # JSON: ["COMPTABLE", "AUDITEUR"]
-    default_permissions = Column(Text, nullable=True)  # JSON: permissions additionnelles
-    default_modules = Column(Text, nullable=True)  # JSON: ["treasury", "accounting"]
+    default_roles: Mapped[str] = mapped_column(Text)  # JSON: ["COMPTABLE", "AUDITEUR"]
+    default_permissions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: permissions additionnelles
+    default_modules: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: ["treasury", "accounting"]
 
     # Sécurité
-    max_data_access_level = Column(Integer, default=5, nullable=False)  # 0=all, 5=own
-    requires_mfa = Column(Boolean, default=False, nullable=False)
-    requires_training = Column(Boolean, default=True, nullable=False)
+    max_data_access_level: Mapped[int] = mapped_column(Integer, default=5)  # 0=all, 5=own
+    requires_mfa: Mapped[bool] = mapped_column(Boolean, default=False)
+    requires_training: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Configuration
-    is_active = Column(Boolean, default=True, nullable=False)
-    is_system = Column(Boolean, default=False, nullable=False)
-    priority = Column(Integer, default=100, nullable=False)  # Plus bas = plus prioritaire
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False)
+    priority: Mapped[int] = mapped_column(Integer, default=100)  # Plus bas = plus prioritaire
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_job_profile_code'),
@@ -125,28 +126,28 @@ class ProfileAssignment(Base):
     """
     __tablename__ = "autoconfig_profile_assignments"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
 
     # Relation
-    user_id = Column(UniversalUUID(), nullable=False, index=True)
-    profile_id = Column(UniversalUUID(), ForeignKey('autoconfig_job_profiles.id'), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False, index=True)
+    profile_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey('autoconfig_job_profiles.id'), nullable=False)
 
     # Contexte d'attribution
-    job_title = Column(String(200), nullable=True)  # Titre au moment de l'attribution
-    department = Column(String(200), nullable=True)
-    manager_id = Column(UniversalUUID(), nullable=True)
+    job_title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # Titre au moment de l'attribution
+    department: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    manager_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     # Statut
-    is_active = Column(Boolean, default=True, nullable=False)
-    is_auto = Column(Boolean, default=True, nullable=False)  # Attribution automatique vs manuelle
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_auto: Mapped[bool] = mapped_column(Boolean, default=True)  # Attribution automatique vs manuelle
 
     # Audit
-    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    assigned_by = Column(UniversalUUID(), nullable=True)  # NULL si automatique
-    revoked_at = Column(DateTime, nullable=True)
-    revoked_by = Column(UniversalUUID(), nullable=True)
-    revocation_reason = Column(Text, nullable=True)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    assigned_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)  # NULL si automatique
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    revoked_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    revocation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relation
     profile = relationship("JobProfile")
@@ -165,45 +166,45 @@ class PermissionOverride(Base):
     """
     __tablename__ = "autoconfig_permission_overrides"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
 
     # Cible
-    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False, index=True)
 
     # Type d'override
-    override_type = Column(Enum(OverrideType), nullable=False)
-    status = Column(Enum(OverrideStatus), default=OverrideStatus.PENDING, nullable=False)
+    override_type: Mapped[Optional[str]] = mapped_column(Enum(OverrideType), nullable=False)
+    status: Mapped[Optional[str]] = mapped_column(Enum(OverrideStatus), default=OverrideStatus.PENDING, nullable=False)
 
     # Contenu de l'override
-    added_roles = Column(Text, nullable=True)  # JSON: rôles ajoutés
-    removed_roles = Column(Text, nullable=True)  # JSON: rôles retirés
-    added_permissions = Column(Text, nullable=True)  # JSON: permissions ajoutées
-    removed_permissions = Column(Text, nullable=True)  # JSON: permissions retirées
-    added_modules = Column(Text, nullable=True)  # JSON: modules ajoutés
-    removed_modules = Column(Text, nullable=True)  # JSON: modules retirés
+    added_roles: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: rôles ajoutés
+    removed_roles: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: rôles retirés
+    added_permissions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: permissions ajoutées
+    removed_permissions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: permissions retirées
+    added_modules: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: modules ajoutés
+    removed_modules: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON: modules retirés
 
     # Justification
-    reason = Column(Text, nullable=False)
-    business_justification = Column(Text, nullable=True)
+    reason: Mapped[str] = mapped_column(Text)
+    business_justification: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Temporalité
-    starts_at = Column(DateTime, nullable=True)  # NULL = immédiat
-    expires_at = Column(DateTime, nullable=True)  # NULL = permanent
+    starts_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # NULL = immédiat
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # NULL = permanent
 
     # Workflow
-    requested_by = Column(UniversalUUID(), nullable=False)
-    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    approved_by = Column(UniversalUUID(), nullable=True)
-    approved_at = Column(DateTime, nullable=True)
-    rejected_by = Column(UniversalUUID(), nullable=True)
-    rejected_at = Column(DateTime, nullable=True)
-    rejection_reason = Column(Text, nullable=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)
+    requested_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    approved_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    rejected_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    rejected_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Application
-    applied_at = Column(DateTime, nullable=True)
-    revoked_at = Column(DateTime, nullable=True)
-    revoked_by = Column(UniversalUUID(), nullable=True)
+    applied_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    revoked_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         Index('idx_overrides_tenant', 'tenant_id'),
@@ -220,40 +221,40 @@ class OnboardingProcess(Base):
     """
     __tablename__ = "autoconfig_onboarding"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
 
     # Employé
-    user_id = Column(UniversalUUID(), nullable=True, index=True)  # NULL jusqu'à création
-    email = Column(String(255), nullable=False)
-    first_name = Column(String(100), nullable=True)
-    last_name = Column(String(100), nullable=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True, index=True)  # NULL jusqu'à création
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    first_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Poste
-    job_title = Column(String(200), nullable=False)
-    department = Column(String(200), nullable=True)
-    manager_id = Column(UniversalUUID(), nullable=True)
-    start_date = Column(DateTime, nullable=False)
+    job_title: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    department: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    manager_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    start_date: Mapped[datetime] = mapped_column(DateTime)
 
     # Profil détecté
-    detected_profile_id = Column(UniversalUUID(), ForeignKey('autoconfig_job_profiles.id'), nullable=True)
-    profile_override = Column(UniversalUUID(), nullable=True)  # Si override manuel
+    detected_profile_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey('autoconfig_job_profiles.id'), nullable=True)
+    profile_override: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)  # Si override manuel
 
     # Statut
-    status = Column(Enum(OnboardingStatus), default=OnboardingStatus.PENDING, nullable=False)
+    status: Mapped[Optional[str]] = mapped_column(Enum(OnboardingStatus), default=OnboardingStatus.PENDING, nullable=False)
 
     # Étapes complétées (JSON)
-    steps_completed = Column(Text, nullable=True)  # {"account_created": true, ...}
+    steps_completed: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # {"account_created": true, ...}
 
     # Notifications
-    welcome_email_sent = Column(Boolean, default=False, nullable=False)
-    manager_notified = Column(Boolean, default=False, nullable=False)
-    it_notified = Column(Boolean, default=False, nullable=False)
+    welcome_email_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    manager_notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    it_notified: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UniversalUUID(), nullable=True)
-    completed_at = Column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Relation
     detected_profile = relationship("JobProfile")
@@ -272,41 +273,41 @@ class OffboardingProcess(Base):
     """
     __tablename__ = "autoconfig_offboarding"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
 
     # Employé
-    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False, index=True)
 
     # Départ
-    departure_date = Column(DateTime, nullable=False)
-    departure_type = Column(String(50), nullable=False)  # resignation, termination, end_of_contract
+    departure_date: Mapped[datetime] = mapped_column(DateTime)
+    departure_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # resignation, termination, end_of_contract
 
     # Transfert
-    transfer_to_user_id = Column(UniversalUUID(), nullable=True)  # Transfert responsabilités
-    transfer_notes = Column(Text, nullable=True)
+    transfer_to_user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)  # Transfert responsabilités
+    transfer_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Statut
-    status = Column(Enum(OffboardingStatus), default=OffboardingStatus.SCHEDULED, nullable=False)
+    status: Mapped[Optional[str]] = mapped_column(Enum(OffboardingStatus), default=OffboardingStatus.SCHEDULED, nullable=False)
 
     # Étapes (JSON)
-    steps_completed = Column(Text, nullable=True)
+    steps_completed: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Actions
-    account_deactivated = Column(Boolean, default=False, nullable=False)
-    access_revoked = Column(Boolean, default=False, nullable=False)
-    data_archived = Column(Boolean, default=False, nullable=False)
-    data_deleted = Column(Boolean, default=False, nullable=False)
+    account_deactivated: Mapped[bool] = mapped_column(Boolean, default=False)
+    access_revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    data_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    data_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Notifications
-    manager_notified = Column(Boolean, default=False, nullable=False)
-    it_notified = Column(Boolean, default=False, nullable=False)
-    team_notified = Column(Boolean, default=False, nullable=False)
+    manager_notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    it_notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    team_notified: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by = Column(UniversalUUID(), nullable=True)
-    completed_at = Column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     __table_args__ = (
         Index('idx_offboarding_tenant', 'tenant_id'),
@@ -322,30 +323,30 @@ class AutoConfigRule(Base):
     """
     __tablename__ = "autoconfig_rules"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
 
     # Identification
-    code = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Condition (JSON)
     # Ex: {"field": "department", "operator": "equals", "value": "Finance"}
-    condition = Column(Text, nullable=False)
+    condition: Mapped[str] = mapped_column(Text)
 
     # Action (JSON)
     # Ex: {"action": "add_role", "role": "COMPTABLE"}
-    action = Column(Text, nullable=False)
+    action: Mapped[str] = mapped_column(Text)
 
     # Configuration
-    priority = Column(Integer, default=100, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Audit
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    created_by = Column(UniversalUUID(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_autoconfig_rule_code'),
@@ -361,32 +362,32 @@ class AutoConfigLog(Base):
     """
     __tablename__ = "autoconfig_logs"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(String(255), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
 
     # Action
-    action = Column(String(100), nullable=False)
-    entity_type = Column(String(50), nullable=False)  # PROFILE, OVERRIDE, ONBOARDING, etc.
-    entity_id = Column(UniversalUUID(), nullable=True)
+    action: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    entity_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # PROFILE, OVERRIDE, ONBOARDING, etc.
+    entity_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     # Cible
-    user_id = Column(UniversalUUID(), nullable=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     # Détails
-    old_values = Column(Text, nullable=True)  # JSON
-    new_values = Column(Text, nullable=True)  # JSON
-    details = Column(Text, nullable=True)
+    old_values: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON
+    new_values: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON
+    details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Source
-    source = Column(String(50), nullable=False)  # AUTO, MANUAL, SCHEDULED
-    triggered_by = Column(UniversalUUID(), nullable=True)
+    source: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # AUTO, MANUAL, SCHEDULED
+    triggered_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=True)
 
     # Résultat
-    success = Column(Boolean, default=True, nullable=False)
-    error_message = Column(Text, nullable=True)
+    success: Mapped[bool] = mapped_column(Boolean, default=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Timestamp
-    created_at = Column(DateTime, server_default=func.current_timestamp(), nullable=False)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, server_default=func.current_timestamp(), nullable=False)
 
     __table_args__ = (
         Index('idx_autoconfig_logs_tenant', 'tenant_id'),

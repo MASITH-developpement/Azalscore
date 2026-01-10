@@ -8,12 +8,13 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text, Time
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text, Time
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db import Base
 from app.core.types import JSON, UniversalUUID
 from sqlalchemy.dialects.postgresql import UUID
+from typing import Optional
 
 # ============================================================================
 # ENUMS
@@ -72,26 +73,26 @@ class ServiceZone(Base):
     """Zone de service."""
     __tablename__ = "fs_zones"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    code = Column(String(50), nullable=False)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Géographie
-    country = Column(String(100))
-    region = Column(String(100))
-    postal_codes = Column(JSON)  # ["75001", "75002", ...]
-    geo_boundaries = Column(JSON)  # GeoJSON ou coordonnées
+    country: Mapped[Optional[str]] = mapped_column(String(100))
+    region: Mapped[Optional[str]] = mapped_column(String(100))
+    postal_codes: Mapped[Optional[dict]] = mapped_column(JSON)  # ["75001", "75002", ...]
+    geo_boundaries: Mapped[Optional[dict]] = mapped_column(JSON)  # GeoJSON ou coordonnées
 
     # Configuration
-    manager_id = Column(UniversalUUID())
-    default_team_id = Column(UniversalUUID())
-    timezone = Column(String(50), default="Europe/Paris")
+    manager_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    default_team_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     technicians = relationship("app.modules.field_service.models.Technician", back_populates="zone")
@@ -110,52 +111,52 @@ class Technician(Base):
     """Technicien terrain."""
     __tablename__ = "fs_technicians"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Lien utilisateur
-    user_id = Column(UniversalUUID(), nullable=False, index=True)
-    employee_id = Column(String(50))  # Lien RH
+    user_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False, index=True)
+    employee_id: Mapped[Optional[str]] = mapped_column(String(50))  # Lien RH
 
     # Profil
-    first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
-    email = Column(String(255))
-    phone = Column(String(50))
-    photo_url = Column(String(500))
+    first_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
+    phone: Mapped[Optional[str]] = mapped_column(String(50))
+    photo_url: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Zone et équipe
-    zone_id = Column(UniversalUUID(), ForeignKey("fs_zones.id"))
-    team_id = Column(UniversalUUID())
+    zone_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_zones.id"))
+    team_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     # Statut
-    status = Column(Enum(TechnicianStatus), default=TechnicianStatus.OFF_DUTY)
-    last_location_lat = Column(Numeric(10, 7))
-    last_location_lng = Column(Numeric(10, 7))
-    last_location_at = Column(DateTime)
+    status: Mapped[Optional[str]] = mapped_column(Enum(TechnicianStatus), default=TechnicianStatus.OFF_DUTY)
+    last_location_lat: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    last_location_lng: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    last_location_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Compétences
-    skills = Column(JSON)  # ["electrical", "plumbing", "hvac"]
-    certifications = Column(JSON)  # [{name, expiry_date}, ...]
-    languages = Column(JSON, default=["fr"])
+    skills: Mapped[Optional[dict]] = mapped_column(JSON)  # ["electrical", "plumbing", "hvac"]
+    certifications: Mapped[Optional[dict]] = mapped_column(JSON)  # [{name, expiry_date}, ...]
+    languages: Mapped[Optional[dict]] = mapped_column(JSON, default=["fr"])
 
     # Véhicule
-    vehicle_id = Column(UniversalUUID(), ForeignKey("fs_vehicles.id"))
-    has_vehicle = Column(Boolean, default=True)
+    vehicle_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_vehicles.id"))
+    has_vehicle: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
     # Paramètres
-    max_daily_interventions = Column(Integer, default=8)
-    working_hours = Column(JSON)  # {mon: {start: "08:00", end: "17:00"}, ...}
-    break_duration = Column(Integer, default=60)  # Minutes
+    max_daily_interventions: Mapped[Optional[int]] = mapped_column(Integer, default=8)
+    working_hours: Mapped[Optional[dict]] = mapped_column(JSON)  # {mon: {start: "08:00", end: "17:00"}, ...}
+    break_duration: Mapped[Optional[int]] = mapped_column(Integer, default=60)  # Minutes
 
     # Stats
-    total_interventions = Column(Integer, default=0)
-    completed_interventions = Column(Integer, default=0)
-    avg_rating = Column(Numeric(3, 2), default=0)
-    total_km_traveled = Column(Numeric(10, 2), default=0)
+    total_interventions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    completed_interventions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    avg_rating: Mapped[Optional[Decimal]] = mapped_column(Numeric(3, 2), default=0)
+    total_km_traveled: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     zone = relationship("app.modules.field_service.models.ServiceZone", back_populates="technicians")
@@ -179,47 +180,47 @@ class Vehicle(Base):
     """Véhicule de service."""
     __tablename__ = "fs_vehicles"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    registration = Column(String(50), nullable=False)
-    vin = Column(String(50))
-    name = Column(String(100))
+    registration: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    vin: Mapped[Optional[str]] = mapped_column(String(50))
+    name: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Caractéristiques
-    make = Column(String(100))  # Marque
-    model = Column(String(100))
-    year = Column(Integer)
-    vehicle_type = Column(String(50))  # van, truck, car
-    color = Column(String(50))
+    make: Mapped[Optional[str]] = mapped_column(String(100))  # Marque
+    model: Mapped[Optional[str]] = mapped_column(String(100))
+    year: Mapped[Optional[int]] = mapped_column(Integer)
+    vehicle_type: Mapped[Optional[str]] = mapped_column(String(50))  # van, truck, car
+    color: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Capacité
-    max_weight = Column(Numeric(10, 2))  # kg
-    max_volume = Column(Numeric(10, 2))  # m³
+    max_weight: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))  # kg
+    max_volume: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))  # m³
 
     # Suivi
-    current_odometer = Column(Integer, default=0)
-    fuel_type = Column(String(50))  # diesel, electric, hybrid
-    fuel_capacity = Column(Numeric(6, 2))
+    current_odometer: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    fuel_type: Mapped[Optional[str]] = mapped_column(String(50))  # diesel, electric, hybrid
+    fuel_capacity: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
 
     # GPS Tracker
-    tracker_id = Column(String(100))
-    last_location_lat = Column(Numeric(10, 7))
-    last_location_lng = Column(Numeric(10, 7))
-    last_location_at = Column(DateTime)
+    tracker_id: Mapped[Optional[str]] = mapped_column(String(100))
+    last_location_lat: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    last_location_lng: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    last_location_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Maintenance
-    last_service_date = Column(Date)
-    next_service_date = Column(Date)
-    next_service_odometer = Column(Integer)
+    last_service_date: Mapped[Optional[date]] = mapped_column(Date)
+    next_service_date: Mapped[Optional[date]] = mapped_column(Date)
+    next_service_odometer: Mapped[Optional[int]] = mapped_column(Integer)
 
     # Assurance
-    insurance_expiry = Column(Date)
-    registration_expiry = Column(Date)
+    insurance_expiry: Mapped[Optional[date]] = mapped_column(Date)
+    registration_expiry: Mapped[Optional[date]] = mapped_column(Date)
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     assigned_technician = relationship("app.modules.field_service.models.Technician", back_populates="vehicle", uselist=False)
@@ -238,33 +239,33 @@ class InterventionTemplate(Base):
     """Template d'intervention."""
     __tablename__ = "fs_intervention_templates"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    code = Column(String(50), nullable=False)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
+    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
 
     # Configuration
-    intervention_type = Column(Enum(InterventionType), default=InterventionType.MAINTENANCE)
-    estimated_duration = Column(Integer, default=60)  # Minutes
-    default_priority = Column(Enum(InterventionPriority), default=InterventionPriority.NORMAL)
+    intervention_type: Mapped[Optional[str]] = mapped_column(Enum(InterventionType), default=InterventionType.MAINTENANCE)
+    estimated_duration: Mapped[Optional[int]] = mapped_column(Integer, default=60)  # Minutes
+    default_priority: Mapped[Optional[str]] = mapped_column(Enum(InterventionPriority), default=InterventionPriority.NORMAL)
 
     # Checklist par défaut
-    checklist_template = Column(JSON)  # [{task, required}, ...]
+    checklist_template: Mapped[Optional[dict]] = mapped_column(JSON)  # [{task, required}, ...]
 
     # Compétences requises
-    required_skills = Column(JSON)  # ["electrical", "hvac"]
+    required_skills: Mapped[Optional[dict]] = mapped_column(JSON)  # ["electrical", "hvac"]
 
     # Matériel requis
-    required_parts = Column(JSON)  # [{part_id, quantity}, ...]
+    required_parts: Mapped[Optional[dict]] = mapped_column(JSON)  # [{part_id, quantity}, ...]
 
     # Prix
-    base_price = Column(Numeric(10, 2), default=0)
-    price_per_hour = Column(Numeric(10, 2), default=0)
+    base_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    price_per_hour: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
 
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fs_template_tenant', 'tenant_id'),
@@ -280,100 +281,100 @@ class Intervention(Base):
     """Intervention terrain."""
     __tablename__ = "fs_interventions"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    reference = Column(String(50), nullable=False, unique=True)
-    template_id = Column(UniversalUUID(), ForeignKey("fs_intervention_templates.id"))
+    reference: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, unique=True)
+    template_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_intervention_templates.id"))
 
     # Type et statut
-    intervention_type = Column(Enum(InterventionType), default=InterventionType.MAINTENANCE)
-    status = Column(Enum(InterventionStatus), default=InterventionStatus.DRAFT)
-    priority = Column(Enum(InterventionPriority), default=InterventionPriority.NORMAL)
+    intervention_type: Mapped[Optional[str]] = mapped_column(Enum(InterventionType), default=InterventionType.MAINTENANCE)
+    status: Mapped[Optional[str]] = mapped_column(Enum(InterventionStatus), default=InterventionStatus.DRAFT)
+    priority: Mapped[Optional[str]] = mapped_column(Enum(InterventionPriority), default=InterventionPriority.NORMAL)
 
     # Description
-    title = Column(String(500), nullable=False)
-    description = Column(Text)
-    internal_notes = Column(Text)
+    title: Mapped[Optional[str]] = mapped_column(String(500), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    internal_notes: Mapped[Optional[str]] = mapped_column(Text)
 
     # Client
-    customer_id = Column(UniversalUUID(), index=True)  # CRM customer
-    customer_name = Column(String(255))
-    contact_name = Column(String(255))
-    contact_phone = Column(String(50))
-    contact_email = Column(String(255))
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), index=True)  # CRM customer
+    customer_name: Mapped[Optional[str]] = mapped_column(String(255))
+    contact_name: Mapped[Optional[str]] = mapped_column(String(255))
+    contact_phone: Mapped[Optional[str]] = mapped_column(String(50))
+    contact_email: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Adresse intervention
-    address_street = Column(String(255))
-    address_city = Column(String(100))
-    address_postal_code = Column(String(20))
-    address_country = Column(String(100), default="France")
-    address_lat = Column(Numeric(10, 7))
-    address_lng = Column(Numeric(10, 7))
-    access_instructions = Column(Text)
+    address_street: Mapped[Optional[str]] = mapped_column(String(255))
+    address_city: Mapped[Optional[str]] = mapped_column(String(100))
+    address_postal_code: Mapped[Optional[str]] = mapped_column(String(20))
+    address_country: Mapped[Optional[str]] = mapped_column(String(100), default="France")
+    address_lat: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    address_lng: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    access_instructions: Mapped[Optional[str]] = mapped_column(Text)
 
     # Assignation
-    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"))
-    zone_id = Column(UniversalUUID(), ForeignKey("fs_zones.id"))
+    technician_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_technicians.id"))
+    zone_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_zones.id"))
 
     # Planification
-    scheduled_date = Column(Date)
-    scheduled_time_start = Column(Time)
-    scheduled_time_end = Column(Time)
-    estimated_duration = Column(Integer, default=60)  # Minutes
+    scheduled_date: Mapped[Optional[date]] = mapped_column(Date)
+    scheduled_time_start: Mapped[Optional[time]] = mapped_column(Time)
+    scheduled_time_end: Mapped[Optional[time]] = mapped_column(Time)
+    estimated_duration: Mapped[Optional[int]] = mapped_column(Integer, default=60)  # Minutes
 
     # Exécution
-    actual_start = Column(DateTime)
-    actual_end = Column(DateTime)
-    arrival_time = Column(DateTime)
-    departure_time = Column(DateTime)
+    actual_start: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    actual_end: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    arrival_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    departure_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Résultat
-    completion_notes = Column(Text)
-    failure_reason = Column(Text)
-    next_action = Column(Text)
+    completion_notes: Mapped[Optional[str]] = mapped_column(Text)
+    failure_reason: Mapped[Optional[str]] = mapped_column(Text)
+    next_action: Mapped[Optional[str]] = mapped_column(Text)
 
     # Signature client
-    signature_data = Column(Text)  # Base64
-    signature_name = Column(String(255))
-    signed_at = Column(DateTime)
+    signature_data: Mapped[Optional[str]] = mapped_column(Text)  # Base64
+    signature_name: Mapped[Optional[str]] = mapped_column(String(255))
+    signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     # Checklist
-    checklist = Column(JSON)  # [{task, completed, notes}, ...]
+    checklist: Mapped[Optional[dict]] = mapped_column(JSON)  # [{task, completed, notes}, ...]
 
     # Photos
-    photos = Column(JSON)  # [{url, caption, taken_at}, ...]
+    photos: Mapped[Optional[dict]] = mapped_column(JSON)  # [{url, caption, taken_at}, ...]
 
     # Pièces utilisées
-    parts_used = Column(JSON)  # [{part_id, quantity, price}, ...]
+    parts_used: Mapped[Optional[dict]] = mapped_column(JSON)  # [{part_id, quantity, price}, ...]
 
     # Facturation
-    billable = Column(Boolean, default=True)
-    labor_hours = Column(Numeric(6, 2), default=0)
-    labor_cost = Column(Numeric(10, 2), default=0)
-    parts_cost = Column(Numeric(10, 2), default=0)
-    travel_cost = Column(Numeric(10, 2), default=0)
-    total_cost = Column(Numeric(10, 2), default=0)
-    invoice_id = Column(UniversalUUID())
+    billable: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    labor_hours: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), default=0)
+    labor_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    parts_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    travel_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    total_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    invoice_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     # Satisfaction
-    customer_rating = Column(Integer)  # 1-5
-    customer_feedback = Column(Text)
+    customer_rating: Mapped[Optional[int]] = mapped_column(Integer)  # 1-5
+    customer_feedback: Mapped[Optional[str]] = mapped_column(Text)
 
     # Récurrence
-    is_recurring = Column(Boolean, default=False)
-    recurrence_rule = Column(JSON)  # {frequency, interval, until}
-    parent_intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"))
+    is_recurring: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    recurrence_rule: Mapped[Optional[dict]] = mapped_column(JSON)  # {frequency, interval, until}
+    parent_intervention_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_interventions.id"))
 
     # Liens
-    ticket_id = Column(UniversalUUID())  # Helpdesk ticket
-    maintenance_id = Column(UniversalUUID())  # M8 Maintenance
-    sales_order_id = Column(UniversalUUID())  # M1 Commercial
+    ticket_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # Helpdesk ticket
+    maintenance_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # M8 Maintenance
+    sales_order_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # M1 Commercial
 
     # Dates
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
     technician = relationship("app.modules.field_service.models.Technician", back_populates="interventions")
@@ -394,26 +395,26 @@ class InterventionHistory(Base):
     """Historique intervention."""
     __tablename__ = "fs_intervention_history"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
-    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    intervention_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_interventions.id"), nullable=False)
 
     # Changement
-    action = Column(String(50), nullable=False)
-    field_name = Column(String(50))
-    old_value = Column(String(500))
-    new_value = Column(String(500))
+    action: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    field_name: Mapped[Optional[str]] = mapped_column(String(50))
+    old_value: Mapped[Optional[str]] = mapped_column(String(500))
+    new_value: Mapped[Optional[str]] = mapped_column(String(500))
 
     # Auteur
-    actor_type = Column(String(20))  # technician, dispatcher, customer, system
-    actor_id = Column(UniversalUUID())
-    actor_name = Column(String(255))
+    actor_type: Mapped[Optional[str]] = mapped_column(String(20))  # technician, dispatcher, customer, system
+    actor_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    actor_name: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Localisation
-    latitude = Column(Numeric(10, 7))
-    longitude = Column(Numeric(10, 7))
+    latitude: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    longitude: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     intervention = relationship("app.modules.field_service.models.Intervention", back_populates="history")
@@ -431,33 +432,33 @@ class FSTimeEntry(Base):
     """Pointage temps."""
     __tablename__ = "fs_time_entries"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
-    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"))
+    technician_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
+    intervention_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_interventions.id"))
 
     # Type
-    entry_type = Column(String(50), nullable=False)  # work, travel, break, admin
+    entry_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # work, travel, break, admin
 
     # Temps
-    start_time = Column(DateTime, nullable=False)
-    end_time = Column(DateTime)
-    duration_minutes = Column(Integer)
+    start_time: Mapped[datetime] = mapped_column(DateTime)
+    end_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    duration_minutes: Mapped[Optional[int]] = mapped_column(Integer)
 
     # Localisation
-    start_lat = Column(Numeric(10, 7))
-    start_lng = Column(Numeric(10, 7))
-    end_lat = Column(Numeric(10, 7))
-    end_lng = Column(Numeric(10, 7))
+    start_lat: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    start_lng: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    end_lat: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    end_lng: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
 
     # Distance (pour travel)
-    distance_km = Column(Numeric(8, 2))
+    distance_km: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
 
-    notes = Column(Text)
-    is_billable = Column(Boolean, default=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
+    is_billable: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     technician = relationship("app.modules.field_service.models.Technician", back_populates="time_entries")
@@ -478,31 +479,31 @@ class PartUsage(Base):
     """Utilisation pièces."""
     __tablename__ = "fs_part_usage"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"), nullable=False)
-    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"))
+    intervention_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_interventions.id"), nullable=False)
+    technician_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_technicians.id"))
 
     # Pièce
-    part_id = Column(UniversalUUID(), index=True)  # Stock module
-    part_code = Column(String(50))
-    part_name = Column(String(255))
+    part_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), index=True)  # Stock module
+    part_code: Mapped[Optional[str]] = mapped_column(String(50))
+    part_name: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Quantité
-    quantity = Column(Numeric(10, 2), nullable=False)
-    unit = Column(String(20), default="unit")
+    quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=False)
+    unit: Mapped[Optional[str]] = mapped_column(String(20), default="unit")
 
     # Prix
-    unit_price = Column(Numeric(10, 2), default=0)
-    total_price = Column(Numeric(10, 2), default=0)
+    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    total_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
 
     # Source
-    from_vehicle_stock = Column(Boolean, default=True)
-    warehouse_id = Column(UniversalUUID())
+    from_vehicle_stock: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    warehouse_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
-    notes = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fs_parts_intervention', 'intervention_id'),
@@ -518,42 +519,42 @@ class Route(Base):
     """Tournée planifiée."""
     __tablename__ = "fs_routes"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
-    route_date = Column(Date, nullable=False)
+    technician_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
+    route_date: Mapped[date] = mapped_column(Date)
 
     # Planning
-    start_location = Column(String(255))
-    start_lat = Column(Numeric(10, 7))
-    start_lng = Column(Numeric(10, 7))
-    start_time = Column(Time)
+    start_location: Mapped[Optional[str]] = mapped_column(String(255))
+    start_lat: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    start_lng: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    start_time: Mapped[Optional[time]] = mapped_column(Time)
 
-    end_location = Column(String(255))
-    end_lat = Column(Numeric(10, 7))
-    end_lng = Column(Numeric(10, 7))
-    end_time = Column(Time)
+    end_location: Mapped[Optional[str]] = mapped_column(String(255))
+    end_lat: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    end_lng: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 7))
+    end_time: Mapped[Optional[time]] = mapped_column(Time)
 
     # Statistiques prévues
-    planned_distance = Column(Numeric(10, 2))  # km
-    planned_duration = Column(Integer)  # minutes
-    planned_interventions = Column(Integer)
+    planned_distance: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))  # km
+    planned_duration: Mapped[Optional[int]] = mapped_column(Integer)  # minutes
+    planned_interventions: Mapped[Optional[int]] = mapped_column(Integer)
 
     # Réalité
-    actual_distance = Column(Numeric(10, 2))
-    actual_duration = Column(Integer)
-    completed_interventions = Column(Integer, default=0)
+    actual_distance: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    actual_duration: Mapped[Optional[int]] = mapped_column(Integer)
+    completed_interventions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Optimisation
-    is_optimized = Column(Boolean, default=False)
-    optimization_score = Column(Numeric(5, 2))
+    is_optimized: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    optimization_score: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
 
     # Interventions ordonnées
-    intervention_order = Column(JSON)  # [intervention_id1, intervention_id2, ...]
+    intervention_order: Mapped[Optional[dict]] = mapped_column(JSON)  # [intervention_id1, intervention_id2, ...]
 
-    status = Column(String(20), default="planned")  # planned, in_progress, completed
-    created_at = Column(DateTime, default=datetime.utcnow)
+    status: Mapped[Optional[str]] = mapped_column(String(20), default="planned")  # planned, in_progress, completed
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fs_route_tenant', 'tenant_id'),
@@ -569,35 +570,35 @@ class Expense(Base):
     """Frais technicien."""
     __tablename__ = "fs_expenses"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
-    technician_id = Column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
-    intervention_id = Column(UniversalUUID(), ForeignKey("fs_interventions.id"))
+    technician_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_technicians.id"), nullable=False)
+    intervention_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fs_interventions.id"))
 
     # Type
-    expense_type = Column(String(50), nullable=False)  # fuel, parking, toll, meal, other
-    description = Column(String(255))
+    expense_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # fuel, parking, toll, meal, other
+    description: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Montant
-    amount = Column(Numeric(10, 2), nullable=False)
-    currency = Column(String(3), default="EUR")
+    amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=False)
+    currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
 
     # Justificatif
-    receipt_url = Column(String(500))
-    receipt_number = Column(String(100))
+    receipt_url: Mapped[Optional[str]] = mapped_column(String(500))
+    receipt_number: Mapped[Optional[str]] = mapped_column(String(100))
 
     # Date
-    expense_date = Column(Date, nullable=False)
+    expense_date: Mapped[date] = mapped_column(Date)
 
     # Remboursement
-    status = Column(String(20), default="pending")  # pending, approved, rejected, paid
-    approved_by = Column(UniversalUUID())
-    approved_at = Column(DateTime)
-    paid_at = Column(DateTime)
+    status: Mapped[Optional[str]] = mapped_column(String(20), default="pending")  # pending, approved, rejected, paid
+    approved_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
-    notes = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fs_expense_tech', 'technician_id'),
@@ -614,41 +615,41 @@ class ServiceContract(Base):
     """Contrat de service."""
     __tablename__ = "fs_contracts"
 
-    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id = Column(String(50), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    contract_number = Column(String(50), nullable=False)
-    name = Column(String(255), nullable=False)
+    contract_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
 
     # Client
-    customer_id = Column(UniversalUUID(), nullable=False, index=True)
-    customer_name = Column(String(255))
+    customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False, index=True)
+    customer_name: Mapped[Optional[str]] = mapped_column(String(255))
 
     # Période
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date)
-    auto_renew = Column(Boolean, default=False)
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[Optional[date]] = mapped_column(Date)
+    auto_renew: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     # Type
-    contract_type = Column(String(50))  # maintenance, support, full_service
+    contract_type: Mapped[Optional[str]] = mapped_column(String(50))  # maintenance, support, full_service
 
     # SLA
-    response_time_hours = Column(Integer, default=24)
-    resolution_time_hours = Column(Integer, default=72)
-    included_interventions = Column(Integer)
-    interventions_used = Column(Integer, default=0)
+    response_time_hours: Mapped[Optional[int]] = mapped_column(Integer, default=24)
+    resolution_time_hours: Mapped[Optional[int]] = mapped_column(Integer, default=72)
+    included_interventions: Mapped[Optional[int]] = mapped_column(Integer)
+    interventions_used: Mapped[Optional[int]] = mapped_column(Integer, default=0)
 
     # Tarifs
-    monthly_fee = Column(Numeric(10, 2), default=0)
-    hourly_rate = Column(Numeric(10, 2))
-    parts_discount = Column(Numeric(5, 2), default=0)  # %
+    monthly_fee: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    hourly_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    parts_discount: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), default=0)  # %
 
     # Équipements couverts
-    covered_equipment = Column(JSON)  # [equipment_id, ...]
+    covered_equipment: Mapped[Optional[dict]] = mapped_column(JSON)  # [equipment_id, ...]
 
-    status = Column(String(20), default="active")  # draft, active, suspended, expired
-    created_at = Column(DateTime, default=datetime.utcnow)
+    status: Mapped[Optional[str]] = mapped_column(String(20), default="active")  # draft, active, suspended, expired
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fs_contract_tenant', 'tenant_id'),

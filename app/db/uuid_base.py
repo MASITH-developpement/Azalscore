@@ -28,7 +28,7 @@ Pour les FK:
 import uuid as uuid_module
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import declared_attr
+from sqlalchemy.orm import declared_attr, Mapped, mapped_column
 from typing import Optional
 
 
@@ -112,7 +112,7 @@ class UUIDMixin:
     """
 
     @declared_attr
-    def id(cls) -> Column:
+    def id(cls):
         """
         Clé primaire UUID.
         Générée automatiquement avec uuid4.
