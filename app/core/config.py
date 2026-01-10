@@ -65,6 +65,27 @@ class Settings(BaseSettings):
         description="Clé Fernet pour chiffrement AES-256 - OBLIGATOIRE en production"
     )
 
+    # =========================================================================
+    # CONFIGURATION UUID DATABASE
+    # =========================================================================
+    # Controle du comportement de migration/reset de la base de donnees
+    # pour garantir la conformite UUID-only
+
+    db_reset_uuid: bool = Field(
+        default=False,
+        description="Active le mode reset UUID (DESTRUCTIF - supprime toutes les donnees)"
+    )
+
+    db_strict_uuid: bool = Field(
+        default=True,
+        description="Bloque le demarrage si des colonnes BIGINT sont detectees"
+    )
+
+    db_auto_reset_on_violation: bool = Field(
+        default=False,
+        description="Reset automatique si violation UUID detectee (DANGER - dev only)"
+    )
+
     @field_validator('environment')
     @classmethod
     def validate_environment(cls, v: str) -> str:
@@ -144,6 +165,13 @@ class Settings(BaseSettings):
                 raise ValueError(
                     'ENCRYPTION_KEY est OBLIGATOIRE en production pour le chiffrement AES-256. '
                     'Générez avec: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+                )
+
+            # Auto-reset UUID INTERDIT en production
+            if self.db_auto_reset_on_violation:
+                raise ValueError(
+                    'DB_AUTO_RESET_ON_VIOLATION=true est INTERDIT en production. '
+                    'Utilisez le script scripts/reset_database_uuid.py manuellement.'
                 )
 
         return self
