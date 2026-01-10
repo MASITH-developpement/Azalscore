@@ -195,40 +195,120 @@ async def lifespan(app: FastAPI):
                 except Exception:
                     pass  # Ignore if already exists or not PostgreSQL
 
-            # NETTOYAGE AUTOMATIQUE: Supprimer les tables BIGINT legacy AVANT création
-            # Ce bloc résout définitivement le problème UUID ↔ BIGINT
+            # =========================================================================
+            # DETECTION INCOMPATIBILITE UUID - AVANT TOUTE OPERATION
+            # =========================================================================
+            bigint_violations = []
             try:
-                with engine.connect() as cleanup_conn:
-                    # Détecter les tables avec PK BIGINT
-                    result = cleanup_conn.execute(text("""
-                        SELECT DISTINCT tc.table_name
-                        FROM information_schema.table_constraints tc
-                        JOIN information_schema.key_column_usage kcu
-                            ON tc.constraint_name = kcu.constraint_name
-                        JOIN information_schema.columns c
-                            ON c.table_name = tc.table_name
-                            AND c.column_name = kcu.column_name
-                        WHERE tc.constraint_type = 'PRIMARY KEY'
-                        AND tc.table_schema = 'public'
-                        AND c.udt_name IN ('int4', 'int8', 'serial', 'bigserial')
-                        AND tc.table_name NOT LIKE 'pg_%'
+                with engine.connect() as detect_conn:
+                    # Detecter TOUTES les colonnes identifiants non-UUID
+                    result = detect_conn.execute(text("""
+                        SELECT
+                            c.table_name,
+                            c.column_name,
+                            c.data_type
+                        FROM information_schema.columns c
+                        JOIN information_schema.tables t
+                            ON c.table_name = t.table_name
+                            AND c.table_schema = t.table_schema
+                        WHERE c.table_schema = 'public'
+                          AND t.table_type = 'BASE TABLE'
+                          AND c.data_type IN ('integer', 'bigint')
+                          AND (c.column_name = 'id' OR c.column_name LIKE '%_id')
+                        ORDER BY c.table_name, c.column_name
                     """))
-                    bigint_tables = [row[0] for row in result]
+                    bigint_violations = [(row[0], row[1], row[2]) for row in result]
+            except Exception as detect_err:
+                logger.warning(f"[UUID_DETECT] Detection ignoree: {detect_err}")
 
-                    if bigint_tables:
-                        print(f"[CLEANUP] {len(bigint_tables)} table(s) BIGINT détectée(s) - suppression forcée...")
-                        cleanup_conn.execute(text("SET session_replication_role = 'replica'"))
-                        for table_name in bigint_tables:
+            # =========================================================================
+            # GESTION INCOMPATIBILITE UUID
+            # =========================================================================
+            if bigint_violations:
+                violation_count = len(bigint_violations)
+                tables_affected = len(set(v[0] for v in bigint_violations))
+
+                logger.warning(
+                    f"[UUID_VIOLATION] {violation_count} colonnes BIGINT/INT detectees "
+                    f"dans {tables_affected} tables"
+                )
+
+                # Afficher les violations
+                print(f"\n{'='*60}")
+                print(f"[UUID] INCOMPATIBILITE DETECTEE")
+                print(f"{'='*60}")
+                print(f"Colonnes BIGINT/INT: {violation_count}")
+                print(f"Tables affectees: {tables_affected}")
+                print(f"\nExemples:")
+                for table, col, dtype in bigint_violations[:10]:
+                    print(f"  - {table}.{col}: {dtype}")
+                if violation_count > 10:
+                    print(f"  ... et {violation_count - 10} autres")
+                print(f"{'='*60}\n")
+
+                # Option 1: Auto-reset (dev only, si configure)
+                if _settings.db_auto_reset_on_violation and not _settings.is_production:
+                    logger.warning("[UUID_RESET] Auto-reset active - suppression des tables...")
+                    print("[UUID_RESET] Mode auto-reset active - suppression en cours...")
+
+                    with engine.connect() as reset_conn:
+                        # Recuperer toutes les tables du schema public
+                        tables_result = reset_conn.execute(text("""
+                            SELECT table_name FROM information_schema.tables
+                            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+                        """))
+                        all_tables = [row[0] for row in tables_result]
+
+                        for table_name in all_tables:
                             try:
-                                cleanup_conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
+                                safe_name = table_name.replace('"', '""')
+                                reset_conn.execute(text(f'DROP TABLE IF EXISTS "{safe_name}" CASCADE'))
                                 print(f"  [DROP] {table_name}")
                             except Exception as drop_err:
                                 print(f"  [WARN] {table_name}: {drop_err}")
-                        cleanup_conn.execute(text("SET session_replication_role = 'origin'"))
-                        cleanup_conn.commit()
-                        print("[CLEANUP] Tables BIGINT supprimées - recréation avec UUID...")
-            except Exception as cleanup_err:
-                print(f"[WARN] Cleanup BIGINT ignoré: {cleanup_err}")
+                        reset_conn.commit()
+
+                    print("[UUID_RESET] Tables supprimees - recreation avec UUID...")
+
+                # Option 2: Blocage strict (production ou si db_strict_uuid=true)
+                elif _settings.db_strict_uuid:
+                    error_msg = (
+                        f"\n"
+                        f"{'='*60}\n"
+                        f"ERREUR FATALE: BASE DE DONNEES INCOMPATIBLE UUID\n"
+                        f"{'='*60}\n"
+                        f"\n"
+                        f"La base de donnees contient {violation_count} colonnes identifiants\n"
+                        f"en BIGINT/INT au lieu de UUID.\n"
+                        f"\n"
+                        f"SOLUTIONS:\n"
+                        f"\n"
+                        f"1. Reset manuel (DESTRUCTIF - perd les donnees):\n"
+                        f"   export AZALS_DB_RESET_UUID=true\n"
+                        f"   python scripts/reset_database_uuid.py\n"
+                        f"\n"
+                        f"2. Desactiver le mode strict (dev uniquement):\n"
+                        f"   export DB_STRICT_UUID=false\n"
+                        f"\n"
+                        f"3. Auto-reset au demarrage (dev uniquement):\n"
+                        f"   export DB_AUTO_RESET_ON_VIOLATION=true\n"
+                        f"   export DB_STRICT_UUID=false\n"
+                        f"\n"
+                        f"{'='*60}\n"
+                    )
+                    logger.critical(error_msg)
+                    print(error_msg)
+                    raise RuntimeError("Base de donnees incompatible UUID - voir message ci-dessus")
+
+                # Option 3: Warning seulement (si db_strict_uuid=false)
+                else:
+                    logger.warning(
+                        "[UUID_WARN] Mode non-strict: demarrage avec violations UUID. "
+                        "Certaines operations peuvent echouer."
+                    )
+                    print("[WARN] Violations UUID ignorees (mode non-strict)")
+            else:
+                print("[OK] Base de donnees conforme UUID (aucune colonne BIGINT detectee)")
 
             # Create tables with multi-pass retry for FK dependencies
             # sorted_tables respects FK order, but cross-module deps may need retries
