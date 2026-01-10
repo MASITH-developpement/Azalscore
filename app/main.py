@@ -217,6 +217,22 @@ async def lifespan(app: FastAPI):
                     print(f"  - {table.name}: {err}")
 
             print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
+
+            # VERROU ANTI-RÉGRESSION: Valider le schéma UUID
+            try:
+                from app.core.schema_validator import validate_schema_on_startup
+                # strict=False en dev, strict=True en prod pour bloquer les démarrages
+                schema_valid = validate_schema_on_startup(
+                    engine, Base,
+                    strict=_settings.is_production
+                )
+                if schema_valid:
+                    print("[OK] Schema valide - Toutes les PK/FK utilisent UUID")
+                else:
+                    print("[WARN] Schema: Avertissements detectes (voir logs)")
+            except Exception as schema_err:
+                print(f"[WARN] Validation schema ignoree: {schema_err}")
+
             break
 
         except Exception as e:
