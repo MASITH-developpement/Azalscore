@@ -4,7 +4,8 @@ AZALS MODULE M7 - Modèles Qualité (Quality Management)
 
 Modèles SQLAlchemy pour le module de gestion de la qualité.
 REFACTORED: Migration vers UUID pour production SaaS industrielle.
-NOTE: ForeignKey retirées des modèles pour bootstrap Alembic sécurisé.
+NOTE: ForeignKey déclarées dans l'ORM pour permettre les jointures SQLAlchemy.
+      Les contraintes sont également gérées par migration Alembic (20260109_002).
 """
 
 import enum
@@ -12,6 +13,7 @@ import uuid
 
 from sqlalchemy import (
     Column,
+    ForeignKey,
     Integer,
     String,
     Text,
@@ -301,8 +303,8 @@ class NonConformanceAction(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérée via migration Alembic séparée
-    nc_id = Column(UniversalUUID(), nullable=False)
+    # FK déclarée pour SQLAlchemy + migration Alembic
+    nc_id = Column(UniversalUUID(), ForeignKey("quality_non_conformances.id", ondelete="CASCADE"), nullable=False)
 
     # Action
     action_number = Column(Integer, nullable=False)
@@ -411,8 +413,8 @@ class QualityControlTemplateItem(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérée via migration Alembic séparée
-    template_id = Column(UniversalUUID(), nullable=False)
+    # FK déclarée pour SQLAlchemy + migration Alembic
+    template_id = Column(UniversalUUID(), ForeignKey("quality_control_templates.id", ondelete="CASCADE"), nullable=False)
 
     # Identification
     sequence = Column(Integer, nullable=False)
@@ -549,9 +551,9 @@ class QualityControlLine(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérées via migration Alembic séparée
-    control_id = Column(UniversalUUID(), nullable=False)
-    template_item_id = Column(UniversalUUID())
+    # FK déclarées pour SQLAlchemy + migration Alembic
+    control_id = Column(UniversalUUID(), ForeignKey("quality_controls.id", ondelete="CASCADE"), nullable=False)
+    template_item_id = Column(UniversalUUID(), ForeignKey("quality_control_template_items.id", ondelete="SET NULL"))
 
     # Identification
     sequence = Column(Integer, nullable=False)
@@ -695,8 +697,8 @@ class AuditFinding(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérée via migration Alembic séparée
-    audit_id = Column(UniversalUUID(), nullable=False)
+    # FK déclarée pour SQLAlchemy + migration Alembic
+    audit_id = Column(UniversalUUID(), ForeignKey("quality_audits.id", ondelete="CASCADE"), nullable=False)
 
     # Identification
     finding_number = Column(Integer, nullable=False)
@@ -844,8 +846,8 @@ class CAPAAction(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérée via migration Alembic séparée
-    capa_id = Column(UniversalUUID(), nullable=False)
+    # FK déclarée pour SQLAlchemy + migration Alembic
+    capa_id = Column(UniversalUUID(), ForeignKey("quality_capas.id", ondelete="CASCADE"), nullable=False)
 
     # Identification
     action_number = Column(Integer, nullable=False)
@@ -1007,8 +1009,8 @@ class ClaimAction(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérée via migration Alembic séparée
-    claim_id = Column(UniversalUUID(), nullable=False)
+    # FK déclarée pour SQLAlchemy + migration Alembic
+    claim_id = Column(UniversalUUID(), ForeignKey("quality_customer_claims.id", ondelete="CASCADE"), nullable=False)
 
     # Action
     action_number = Column(Integer, nullable=False)
@@ -1117,8 +1119,8 @@ class IndicatorMeasurement(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérée via migration Alembic séparée
-    indicator_id = Column(UniversalUUID(), nullable=False)
+    # FK déclarée pour SQLAlchemy + migration Alembic
+    indicator_id = Column(UniversalUUID(), ForeignKey("quality_indicators.id", ondelete="CASCADE"), nullable=False)
 
     # Période
     measurement_date = Column(Date, nullable=False)
@@ -1238,8 +1240,8 @@ class CertificationAudit(Base):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(String(50), nullable=False, index=True)
-    # FK gérée via migration Alembic séparée
-    certification_id = Column(UniversalUUID(), nullable=False)
+    # FK déclarée pour SQLAlchemy + migration Alembic
+    certification_id = Column(UniversalUUID(), ForeignKey("quality_certifications.id", ondelete="CASCADE"), nullable=False)
 
     # Type d'audit
     audit_type = Column(String(50), nullable=False)  # INITIAL, SURVEILLANCE, RENEWAL, SPECIAL
