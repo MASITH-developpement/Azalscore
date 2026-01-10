@@ -42,9 +42,10 @@ from app.modules.tenants.models import (
 
 # Inventory models (already using UUID)
 from app.modules.inventory.models import (
-    Product, ProductCategory, ProductAttribute, ProductVariant,
-    Warehouse, WarehouseZone, StockMovement, StockLevel,
-    InventoryCount, InventoryCountLine, StockAlert
+    Product, ProductCategory, Warehouse, Location,
+    StockMovement, StockMovementLine, StockLevel,
+    InventoryCount, InventoryCountLine, Lot, SerialNumber,
+    Picking, PickingLine, ReplenishmentRule, StockValuation
 )
 
 # Maintenance models (REFACTORED to UUID)
