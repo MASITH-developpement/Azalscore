@@ -371,7 +371,10 @@ def login(
     must_change = getattr(user, 'must_change_password', 0) == 1
 
     # Retourner le format attendu par le frontend
+    # Note V0: access_token au niveau racine pour compatibilité frontend simple
     return {
+        "status": "ok",
+        "access_token": access_token,  # V0: accès direct pour frontend simple
         "user": {
             "id": user.id,
             "email": user.email,
