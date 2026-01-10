@@ -196,119 +196,66 @@ async def lifespan(app: FastAPI):
                     pass  # Ignore if already exists or not PostgreSQL
 
             # =========================================================================
-            # DETECTION INCOMPATIBILITE UUID - AVANT TOUTE OPERATION
+            # GESTION CONFORMITE UUID - DETECTION ET RESET AUTOMATIQUE
             # =========================================================================
-            bigint_violations = []
+            # Utilise UUIDComplianceManager pour:
+            # - Detecter les violations (colonnes BIGINT/INT)
+            # - Auto-reset en dev/test si configure
+            # - Blocage strict en production
+            # =========================================================================
+            from app.db.uuid_reset import (
+                UUIDComplianceManager,
+                UUIDComplianceError,
+                UUIDResetBlockedError
+            )
+
+            uuid_manager = UUIDComplianceManager(engine, _settings)
+
             try:
-                with engine.connect() as detect_conn:
-                    # Detecter TOUTES les colonnes identifiants non-UUID
-                    result = detect_conn.execute(text("""
-                        SELECT
-                            c.table_name,
-                            c.column_name,
-                            c.data_type
-                        FROM information_schema.columns c
-                        JOIN information_schema.tables t
-                            ON c.table_name = t.table_name
-                            AND c.table_schema = t.table_schema
-                        WHERE c.table_schema = 'public'
-                          AND t.table_type = 'BASE TABLE'
-                          AND c.data_type IN ('integer', 'bigint')
-                          AND (c.column_name = 'id' OR c.column_name LIKE '%_id')
-                        ORDER BY c.table_name, c.column_name
-                    """))
-                    bigint_violations = [(row[0], row[1], row[2]) for row in result]
-            except Exception as detect_err:
-                logger.warning(f"[UUID_DETECT] Detection ignoree: {detect_err}")
+                # Cette methode gere tout: detection, reset si autorise, erreur sinon
+                uuid_compliant = uuid_manager.ensure_uuid_compliance()
 
-            # =========================================================================
-            # GESTION INCOMPATIBILITE UUID
-            # =========================================================================
-            if bigint_violations:
-                violation_count = len(bigint_violations)
-                tables_affected = len(set(v[0] for v in bigint_violations))
+                if uuid_manager.reset_performed:
+                    # Reset effectue - les tables ont deja ete recreees par le manager
+                    print("[OK] Reset UUID effectue - tables recreees avec UUID")
+                    # Passer directement a la validation schema
+                    tables_created = len(uuid_manager.get_all_tables())
+                    tables_existed = 0
+                    print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
 
-                logger.warning(
-                    f"[UUID_VIOLATION] {violation_count} colonnes BIGINT/INT detectees "
-                    f"dans {tables_affected} tables"
-                )
+                    # Skip la creation manuelle des tables - deja fait par le manager
+                    # Aller directement a la validation schema
+                    try:
+                        from app.core.schema_validator import validate_schema_on_startup
+                        schema_valid = validate_schema_on_startup(
+                            engine, Base,
+                            strict=_settings.is_production
+                        )
+                        if schema_valid:
+                            print("[OK] Schema valide - Toutes les PK/FK utilisent UUID")
+                        else:
+                            print("[WARN] Schema: Avertissements detectes (voir logs)")
+                    except Exception as schema_err:
+                        print(f"[WARN] Validation schema ignoree: {schema_err}")
 
-                # Afficher les violations
-                print(f"\n{'='*60}")
-                print(f"[UUID] INCOMPATIBILITE DETECTEE")
-                print(f"{'='*60}")
-                print(f"Colonnes BIGINT/INT: {violation_count}")
-                print(f"Tables affectees: {tables_affected}")
-                print(f"\nExemples:")
-                for table, col, dtype in bigint_violations[:10]:
-                    print(f"  - {table}.{col}: {dtype}")
-                if violation_count > 10:
-                    print(f"  ... et {violation_count - 10} autres")
-                print(f"{'='*60}\n")
+                    break  # Sortir de la boucle de retry
 
-                # Option 1: Auto-reset (dev only, si configure)
-                if _settings.db_auto_reset_on_violation and not _settings.is_production:
-                    logger.warning("[UUID_RESET] Auto-reset active - suppression des tables...")
-                    print("[UUID_RESET] Mode auto-reset active - suppression en cours...")
-
-                    with engine.connect() as reset_conn:
-                        # Recuperer toutes les tables du schema public
-                        tables_result = reset_conn.execute(text("""
-                            SELECT table_name FROM information_schema.tables
-                            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-                        """))
-                        all_tables = [row[0] for row in tables_result]
-
-                        for table_name in all_tables:
-                            try:
-                                safe_name = table_name.replace('"', '""')
-                                reset_conn.execute(text(f'DROP TABLE IF EXISTS "{safe_name}" CASCADE'))
-                                print(f"  [DROP] {table_name}")
-                            except Exception as drop_err:
-                                print(f"  [WARN] {table_name}: {drop_err}")
-                        reset_conn.commit()
-
-                    print("[UUID_RESET] Tables supprimees - recreation avec UUID...")
-
-                # Option 2: Blocage strict (production ou si db_strict_uuid=true)
-                elif _settings.db_strict_uuid:
-                    error_msg = (
-                        f"\n"
-                        f"{'='*60}\n"
-                        f"ERREUR FATALE: BASE DE DONNEES INCOMPATIBLE UUID\n"
-                        f"{'='*60}\n"
-                        f"\n"
-                        f"La base de donnees contient {violation_count} colonnes identifiants\n"
-                        f"en BIGINT/INT au lieu de UUID.\n"
-                        f"\n"
-                        f"SOLUTIONS:\n"
-                        f"\n"
-                        f"1. Reset manuel (DESTRUCTIF - perd les donnees):\n"
-                        f"   export AZALS_DB_RESET_UUID=true\n"
-                        f"   python scripts/reset_database_uuid.py\n"
-                        f"\n"
-                        f"2. Desactiver le mode strict (dev uniquement):\n"
-                        f"   export DB_STRICT_UUID=false\n"
-                        f"\n"
-                        f"3. Auto-reset au demarrage (dev uniquement):\n"
-                        f"   export DB_AUTO_RESET_ON_VIOLATION=true\n"
-                        f"   export DB_STRICT_UUID=false\n"
-                        f"\n"
-                        f"{'='*60}\n"
-                    )
-                    logger.critical(error_msg)
-                    print(error_msg)
-                    raise RuntimeError("Base de donnees incompatible UUID - voir message ci-dessus")
-
-                # Option 3: Warning seulement (si db_strict_uuid=false)
+                elif uuid_compliant:
+                    print("[OK] Base de donnees conforme UUID")
                 else:
-                    logger.warning(
-                        "[UUID_WARN] Mode non-strict: demarrage avec violations UUID. "
-                        "Certaines operations peuvent echouer."
-                    )
                     print("[WARN] Violations UUID ignorees (mode non-strict)")
-            else:
-                print("[OK] Base de donnees conforme UUID (aucune colonne BIGINT detectee)")
+
+            except UUIDComplianceError as uuid_err:
+                # Violations detectees et mode strict - arreter le demarrage
+                logger.critical(f"[UUID] {uuid_err}")
+                print(str(uuid_err))
+                raise RuntimeError(str(uuid_err))
+
+            except UUIDResetBlockedError as reset_err:
+                # Reset bloque (production ou non autorise)
+                logger.critical(f"[UUID_RESET] {reset_err}")
+                print(str(reset_err))
+                raise RuntimeError(str(reset_err))
 
             # Create tables with multi-pass retry for FK dependencies
             # sorted_tables respects FK order, but cross-module deps may need retries
