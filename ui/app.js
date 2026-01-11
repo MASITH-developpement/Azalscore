@@ -24,7 +24,7 @@
 // CONFIGURATION
 // =============================================
 
-const API_BASE = '';
+const API_BASE = '/v1';
 
 // =============================================
 // BRANDING CONFIGURATION
