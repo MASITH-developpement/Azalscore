@@ -10,6 +10,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision: str = '078dfbe1e5a3'
@@ -409,6 +410,96 @@ def upgrade() -> None:
     sa.Column('calculated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('tenant_id', 'metric_date', 'metric_type', name='uq_dashmetrics_date_type')
+    )
+bind = op.get_bind()
+inspector = inspect(bind)
+
+# ============================================================
+# accounting_bank_connections
+# ============================================================
+if not inspector.has_table("accounting_bank_connections"):
+    op.create_table(
+        'accounting_bank_connections',
+        sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column('tenant_id', sa.String(length=50), nullable=False),
+        sa.Column('institution_id', sa.String(length=100), nullable=False),
+        sa.Column('institution_name', sa.String(length=255), nullable=False),
+        sa.Column('institution_logo_url', sa.String(length=500), nullable=True),
+        sa.Column('provider', sa.String(length=50), nullable=False),
+        sa.Column('connection_id', sa.String(length=255), nullable=False),
+        sa.Column('status', bankconnectionstatus_enum, nullable=False),
+        sa.Column('access_token_encrypted', sa.Text(), nullable=True),
+        sa.Column('refresh_token_encrypted', sa.Text(), nullable=True),
+        sa.Column('token_expires_at', sa.DateTime(), nullable=True),
+        sa.Column('consent_expires_at', sa.DateTime(), nullable=True),
+        sa.Column('last_consent_renewed_at', sa.DateTime(), nullable=True),
+        sa.Column('last_sync_at', sa.DateTime(), nullable=True),
+        sa.Column('last_sync_status', sa.String(length=50), nullable=True),
+        sa.Column('last_sync_error', sa.Text(), nullable=True),
+        sa.Column('linked_accounts', postgresql.JSONB(), nullable=True),
+        sa.Column('extra_data', postgresql.JSON(), nullable=True),
+        sa.Column('created_by', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint(
+            'tenant_id',
+            'provider',
+            'connection_id',
+            name='uq_bankconn_provider'
+        )
+    )
+
+    op.create_index(
+        'idx_bankconn_tenant',
+        'accounting_bank_connections',
+        ['tenant_id'],
+        unique=False
+    )
+
+    op.create_index(
+        'idx_bankconn_tenant_status',
+        'accounting_bank_connections',
+        ['tenant_id', 'status'],
+        unique=False
+    )
+
+# ============================================================
+# accounting_dashboard_metrics
+# ============================================================
+if not inspector.has_table("accounting_dashboard_metrics"):
+    op.create_table(
+        'accounting_dashboard_metrics',
+        sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column('tenant_id', sa.String(length=50), nullable=False),
+        sa.Column('metric_date', sa.Date(), nullable=False),
+        sa.Column('metric_type', sa.String(length=50), nullable=False),
+        sa.Column('cash_balance', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('cash_balance_updated_at', sa.DateTime(), nullable=True),
+        sa.Column('invoices_to_pay_count', sa.Integer(), nullable=True),
+        sa.Column('invoices_to_pay_amount', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('invoices_overdue_count', sa.Integer(), nullable=True),
+        sa.Column('invoices_overdue_amount', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('invoices_to_collect_count', sa.Integer(), nullable=True),
+        sa.Column('invoices_to_collect_amount', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('invoices_overdue_collect_count', sa.Integer(), nullable=True),
+        sa.Column('invoices_overdue_collect_amount', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('revenue_period', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('expenses_period', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('result_period', sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column('documents_pending_count', sa.Integer(), nullable=True),
+        sa.Column('documents_error_count', sa.Integer(), nullable=True),
+        sa.Column('transactions_unreconciled', sa.Integer(), nullable=True),
+        sa.Column('data_freshness_score', sa.Numeric(precision=5, scale=2), nullable=True),
+        sa.Column('last_bank_sync', sa.DateTime(), nullable=True),
+        sa.Column('calculated_at', sa.DateTime(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint(
+            'tenant_id',
+            'metric_date',
+            'metric_type',
+            name='uq_dashmetrics_date_type'
+        )
     )
     op.create_index('idx_dashmetrics_date', 'accounting_dashboard_metrics', ['tenant_id', 'metric_date'], unique=False)
     op.create_index('idx_dashmetrics_tenant', 'accounting_dashboard_metrics', ['tenant_id'], unique=False)
