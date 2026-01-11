@@ -18,12 +18,13 @@ class UserRole(str, enum.Enum):
     Rôles utilisateurs.
     Chaque rôle a des capacités différentes.
     """
-    DIRIGEANT = "DIRIGEANT"  # Accès complet
-    ADMIN = "ADMIN"          # Administration système
-    DAF = "DAF"              # Directeur Administratif et Financier
-    COMPTABLE = "COMPTABLE"  # Comptabilité
+    SUPERADMIN = "SUPERADMIN"  # Accès plateforme complet (bootstrap only)
+    DIRIGEANT = "DIRIGEANT"    # Accès complet tenant
+    ADMIN = "ADMIN"            # Administration système
+    DAF = "DAF"                # Directeur Administratif et Financier
+    COMPTABLE = "COMPTABLE"    # Comptabilité
     COMMERCIAL = "COMMERCIAL"  # Ventes et clients
-    EMPLOYE = "EMPLOYE"      # Accès limité
+    EMPLOYE = "EMPLOYE"        # Accès limité
 
 
 class DecisionLevel(str, enum.Enum):
