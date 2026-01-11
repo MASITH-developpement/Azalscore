@@ -80,14 +80,8 @@ def get_current_user(
         )
     
     # Charger l'utilisateur depuis la DB
-    try:
-        user_id_int = int(user_id)
-    except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid user ID in token"
-        )
-    user = db.query(User).filter(User.id == user_id_int).first()
+    # Support UUID et int pour user_id
+    user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
         raise HTTPException(
