@@ -17,10 +17,14 @@ set -e
 # ═══════════════════════════════════════════════════════════════
 
 REPO_URL="https://github.com/MASITH-developpement/Azalscore.git"
-BRANCH="main"
 INSTALL_DIR="$HOME/Azalscore"
 LOG_DIR="$HOME/.azalscore"
 LOG_FILE="$LOG_DIR/launcher.log"
+
+# Mode d'exécution: dev, demo, prod
+RUN_MODE="demo"
+# Branche Git (définie selon le mode)
+BRANCH="develop"
 
 # ═══════════════════════════════════════════════════════════════
 # COULEURS
@@ -265,10 +269,29 @@ update_repository() {
 # ═══════════════════════════════════════════════════════════════
 
 setup_environment() {
-    log_info "Configuration de l'environnement..."
+    log_info "Configuration de l'environnement (mode: $RUN_MODE)..."
     cd "$INSTALL_DIR"
 
-    if [ ! -f ".env" ]; then
+    local NEED_SETUP=false
+
+    # Forcer la reconfiguration si le mode a changé
+    if [ -f ".env" ]; then
+        local CURRENT_ENV=$(grep "^ENVIRONMENT=" .env 2>/dev/null | cut -d'=' -f2)
+        if [[ "$RUN_MODE" == "prod" && "$CURRENT_ENV" != "production" ]]; then
+            log_warning "Passage en mode PRODUCTION - reconfiguration..."
+            NEED_SETUP=true
+        elif [[ "$RUN_MODE" == "dev" && "$CURRENT_ENV" != "development" ]]; then
+            log_warning "Passage en mode DÉVELOPPEMENT - reconfiguration..."
+            NEED_SETUP=true
+        elif [[ "$RUN_MODE" == "demo" && "$CURRENT_ENV" != "demo" ]]; then
+            log_warning "Passage en mode DEMO - reconfiguration..."
+            NEED_SETUP=true
+        fi
+    else
+        NEED_SETUP=true
+    fi
+
+    if [ "$NEED_SETUP" = true ]; then
         if [ -f ".env.example" ]; then
             log_info "Création du fichier .env..."
             cp .env.example .env
@@ -277,24 +300,64 @@ setup_environment() {
             local SECRET_KEY=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p)
             local BOOTSTRAP_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p)
             local DB_PASSWORD=$(openssl rand -hex 16 2>/dev/null || head -c 16 /dev/urandom | xxd -p)
+            # Clé Fernet pour ENCRYPTION_KEY (32 bytes base64)
+            local ENCRYPTION_KEY=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64)
+
+            # Déterminer l'environnement
+            local ENV_VALUE="demo"
+            if [[ "$RUN_MODE" == "prod" ]]; then
+                ENV_VALUE="production"
+            elif [[ "$RUN_MODE" == "dev" ]]; then
+                ENV_VALUE="development"
+            fi
 
             # Remplacer les valeurs (compatible macOS et Linux)
             if [[ "$OS_TYPE" == "macos" ]]; then
                 sed -i '' "s/CHANGEME_PASSWORD/$DB_PASSWORD/g" .env 2>/dev/null || true
                 sed -i '' "s/CHANGEME_SECRET_KEY/$SECRET_KEY/g" .env 2>/dev/null || true
                 sed -i '' "s/CHANGEME_BOOTSTRAP_SECRET/$BOOTSTRAP_SECRET/g" .env 2>/dev/null || true
+                sed -i '' "s/^ENVIRONMENT=.*/ENVIRONMENT=$ENV_VALUE/g" .env 2>/dev/null || true
             else
                 sed -i "s/CHANGEME_PASSWORD/$DB_PASSWORD/g" .env 2>/dev/null || true
                 sed -i "s/CHANGEME_SECRET_KEY/$SECRET_KEY/g" .env 2>/dev/null || true
                 sed -i "s/CHANGEME_BOOTSTRAP_SECRET/$BOOTSTRAP_SECRET/g" .env 2>/dev/null || true
+                sed -i "s/^ENVIRONMENT=.*/ENVIRONMENT=$ENV_VALUE/g" .env 2>/dev/null || true
             fi
 
-            log_success "Fichier .env créé avec des clés sécurisées"
+            # Configuration spécifique PRODUCTION
+            if [[ "$RUN_MODE" == "prod" ]]; then
+                log_info "Configuration des paramètres de production..."
+
+                # Ajouter ENCRYPTION_KEY si absent
+                if ! grep -q "^ENCRYPTION_KEY=" .env; then
+                    echo "" >> .env
+                    echo "# Clé de chiffrement AES-256 (production)" >> .env
+                    echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env
+                fi
+
+                # Ajouter CORS_ORIGINS si absent
+                if ! grep -q "^CORS_ORIGINS=" .env; then
+                    echo "" >> .env
+                    echo "# CORS - Domaines autorisés (production)" >> .env
+                    echo "CORS_ORIGINS=http://localhost:8000,http://127.0.0.1:8000" >> .env
+                fi
+
+                # S'assurer que DEBUG=false
+                if [[ "$OS_TYPE" == "macos" ]]; then
+                    sed -i '' "s/^DEBUG=.*/DEBUG=false/g" .env 2>/dev/null || true
+                else
+                    sed -i "s/^DEBUG=.*/DEBUG=false/g" .env 2>/dev/null || true
+                fi
+
+                log_success "Configuration PRODUCTION appliquée"
+            else
+                log_success "Fichier .env créé (mode: $RUN_MODE)"
+            fi
         else
             log_warning "Fichier .env.example non trouvé"
         fi
     else
-        log_success "Fichier .env existant conservé"
+        log_success "Fichier .env existant conservé (mode: $RUN_MODE)"
     fi
 }
 
@@ -374,13 +437,20 @@ show_help() {
     echo ""
     echo "Usage: $0 [COMMANDE]"
     echo ""
-    echo "Commandes:"
-    echo "  start       Démarrer Azalscore (par défaut)"
+    echo "Commandes de démarrage:"
+    echo "  start       Démarrer Azalscore (mode demo par défaut)"
+    echo "  prod        Mode PRODUCTION  → branche main"
+    echo "  demo        Mode DÉMONSTRATION → branche develop"
+    echo "  dev         Mode DÉVELOPPEMENT → branche develop"
+    echo ""
+    echo "Commandes de gestion:"
     echo "  stop        Arrêter Azalscore"
     echo "  restart     Redémarrer Azalscore"
     echo "  update      Mettre à jour depuis GitHub"
     echo "  logs        Afficher les logs"
     echo "  status      État des conteneurs"
+    echo ""
+    echo "Autres:"
     echo "  install     Installer les prérequis"
     echo "  diagnose    Diagnostic du système"
     echo "  help        Afficher cette aide"
@@ -471,7 +541,52 @@ main() {
 
     case "$action" in
         start)
+            # Mode demo par défaut, branche develop
+            RUN_MODE="demo"
+            BRANCH="develop"
             show_logo
+            detect_system
+            check_prerequisites || exit 1
+            update_repository
+            setup_environment
+            start_application
+            show_info
+            ;;
+        prod|production)
+            RUN_MODE="prod"
+            BRANCH="main"
+            show_logo
+            echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+            echo -e "${MAGENTA}                    MODE PRODUCTION (branche: main)            ${NC}"
+            echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
+            detect_system
+            check_prerequisites || exit 1
+            update_repository
+            setup_environment
+            start_application
+            show_info
+            ;;
+        dev|development)
+            RUN_MODE="dev"
+            BRANCH="develop"
+            show_logo
+            echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
+            echo -e "${YELLOW}                MODE DÉVELOPPEMENT (branche: develop)          ${NC}"
+            echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
+            detect_system
+            check_prerequisites || exit 1
+            update_repository
+            setup_environment
+            start_application
+            show_info
+            ;;
+        demo)
+            RUN_MODE="demo"
+            BRANCH="develop"
+            show_logo
+            echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+            echo -e "${CYAN}                MODE DÉMONSTRATION (branche: develop)           ${NC}"
+            echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
             detect_system
             check_prerequisites || exit 1
             update_repository

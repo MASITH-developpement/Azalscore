@@ -112,7 +112,7 @@ class Settings(BaseSettings):
         }
         v_lower = alias_mapping.get(v_lower, v_lower)
 
-        allowed = ('test', 'development', 'staging', 'production')
+        allowed = ('test', 'development', 'staging', 'demo', 'production')
         if v_lower not in allowed:
             raise ValueError(
                 f'AZALS_ENV/ENVIRONMENT doit être parmi: {allowed} '
