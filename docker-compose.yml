@@ -1,8 +1,6 @@
 # AZALS - ERP Décisionnel Critique
 # Docker Compose - Orchestration des services
 
-version: '3.8'
-
 services:
   # Service PostgreSQL - Base de données principale
   postgres:
