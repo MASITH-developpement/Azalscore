@@ -27,7 +27,7 @@ SECURITE:
 # VERSION CANONIQUE - NE JAMAIS MODIFIER DYNAMIQUEMENT
 # =============================================================================
 
-AZALS_VERSION = "0.0.0-dev"
+AZALS_VERSION = "0.0.0-prod"
 
 # =============================================================================
 # CONSTANTES DE VERSION
