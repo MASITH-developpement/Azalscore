@@ -17,13 +17,14 @@ set -e
 # ═══════════════════════════════════════════════════════════════
 
 REPO_URL="https://github.com/MASITH-developpement/Azalscore.git"
-BRANCH="main"
 INSTALL_DIR="$HOME/Azalscore"
 LOG_DIR="$HOME/.azalscore"
 LOG_FILE="$LOG_DIR/launcher.log"
 
 # Mode d'exécution: dev, demo, prod
 RUN_MODE="demo"
+# Branche Git (définie selon le mode)
+BRANCH="develop"
 
 # ═══════════════════════════════════════════════════════════════
 # COULEURS
@@ -438,9 +439,9 @@ show_help() {
     echo ""
     echo "Commandes de démarrage:"
     echo "  start       Démarrer Azalscore (mode demo par défaut)"
-    echo "  prod        Démarrer en mode PRODUCTION (beta test)"
-    echo "  demo        Démarrer en mode DÉMONSTRATION"
-    echo "  dev         Démarrer en mode DÉVELOPPEMENT"
+    echo "  prod        Mode PRODUCTION  → branche main"
+    echo "  demo        Mode DÉMONSTRATION → branche develop"
+    echo "  dev         Mode DÉVELOPPEMENT → branche develop"
     echo ""
     echo "Commandes de gestion:"
     echo "  stop        Arrêter Azalscore"
@@ -540,6 +541,9 @@ main() {
 
     case "$action" in
         start)
+            # Mode demo par défaut, branche develop
+            RUN_MODE="demo"
+            BRANCH="develop"
             show_logo
             detect_system
             check_prerequisites || exit 1
@@ -550,9 +554,10 @@ main() {
             ;;
         prod|production)
             RUN_MODE="prod"
+            BRANCH="main"
             show_logo
             echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
-            echo -e "${MAGENTA}                    MODE PRODUCTION                            ${NC}"
+            echo -e "${MAGENTA}                    MODE PRODUCTION (branche: main)            ${NC}"
             echo -e "${MAGENTA}═══════════════════════════════════════════════════════════════${NC}"
             detect_system
             check_prerequisites || exit 1
@@ -563,9 +568,10 @@ main() {
             ;;
         dev|development)
             RUN_MODE="dev"
+            BRANCH="develop"
             show_logo
             echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
-            echo -e "${YELLOW}                    MODE DÉVELOPPEMENT                         ${NC}"
+            echo -e "${YELLOW}                MODE DÉVELOPPEMENT (branche: develop)          ${NC}"
             echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
             detect_system
             check_prerequisites || exit 1
@@ -576,9 +582,10 @@ main() {
             ;;
         demo)
             RUN_MODE="demo"
+            BRANCH="develop"
             show_logo
             echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
-            echo -e "${CYAN}                    MODE DÉMONSTRATION                         ${NC}"
+            echo -e "${CYAN}                MODE DÉMONSTRATION (branche: develop)           ${NC}"
             echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
             detect_system
             check_prerequisites || exit 1
