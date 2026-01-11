@@ -56,7 +56,9 @@ function initBranding() {
  * DÉSACTIVATION : mettre à false
  * SUPPRESSION : supprimer ce bloc + panneau HTML + logique dans collectStates()
  */
-const AZALS_TEST_MODE = true;
+// PRODUCTION: Mode test desactive
+// Pour reactiver en dev, mettre a true
+const AZALS_TEST_MODE = false;
 
 /**
  * États forcés par le mode test
