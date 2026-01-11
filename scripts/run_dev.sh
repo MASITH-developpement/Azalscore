@@ -106,10 +106,97 @@ echo "========================================"
 echo ""
 
 # ============================================================
-# DEMARRAGE
+# DEMARRAGE DOCKER
 # ============================================================
 
-echo "[START] Demarrage Uvicorn (developpement)..."
+echo "[START] Demarrage via Docker Compose (developpement)..."
 echo ""
 
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# Determiner le repertoire racine du projet
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+# Verifier que docker-compose.yml existe
+if [ ! -f "docker-compose.yml" ]; then
+    echo -e "${RED}[FATAL] docker-compose.yml non trouve${NC}"
+    echo "Chemin attendu: $PROJECT_ROOT/docker-compose.yml"
+    exit 1
+fi
+
+# Verifier que .env existe
+if [ ! -f ".env" ]; then
+    if [ -f ".env.example" ]; then
+        echo -e "${YELLOW}[WARN] .env non trouve, copie de .env.example${NC}"
+        cp .env.example .env
+        echo -e "${YELLOW}[WARN] Pensez a configurer .env avec vos valeurs${NC}"
+    else
+        echo -e "${RED}[FATAL] Aucun fichier .env trouve${NC}"
+        exit 1
+    fi
+fi
+
+# Arreter les conteneurs existants
+echo "[INFO] Arret des conteneurs existants..."
+docker compose down 2>/dev/null || docker-compose down 2>/dev/null || true
+
+# Demarrer avec Docker Compose (mode developpement avec logs attaches)
+echo "[INFO] Construction et demarrage des conteneurs..."
+echo ""
+
+# Option: mode detache ou attache?
+if [ "$2" = "-d" ] || [ "$2" = "--detach" ]; then
+    # Mode detache
+    if docker compose up --build -d 2>/dev/null; then
+        echo -e "${GREEN}[OK] Conteneurs demarres en arriere-plan${NC}"
+    elif docker-compose up --build -d 2>/dev/null; then
+        echo -e "${GREEN}[OK] Conteneurs demarres en arriere-plan${NC}"
+    else
+        echo -e "${RED}[FATAL] Erreur lors du demarrage Docker${NC}"
+        exit 1
+    fi
+
+    # Attendre que l'API soit prete
+    echo "[INFO] Attente de l'API (60s max)..."
+    counter=0
+    while [ $counter -lt 60 ]; do
+        if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+            echo ""
+            echo -e "${GREEN}[OK] API prete!${NC}"
+            break
+        fi
+        sleep 2
+        counter=$((counter + 2))
+        echo -n "."
+    done
+    echo ""
+
+    echo ""
+    echo "========================================"
+    echo -e "${CYAN}AZALS DEVELOPPEMENT - DOCKER${NC}"
+    echo "========================================"
+    echo ""
+    echo "URLs d'acces:"
+    echo "  API:          http://localhost:8000"
+    echo "  Health:       http://localhost:8000/health"
+    echo "  Docs:         http://localhost:8000/docs"
+    echo ""
+    echo "Commandes utiles:"
+    echo "  Logs:         docker compose logs -f"
+    echo "  Status:       docker compose ps"
+    echo "  Arreter:      docker compose down"
+    echo "  Rebuild:      docker compose up --build -d"
+    echo ""
+else
+    # Mode attache (logs en temps reel) - defaut pour le dev
+    echo -e "${CYAN}Mode developpement: logs en temps reel (Ctrl+C pour arreter)${NC}"
+    echo ""
+    if docker compose up --build 2>/dev/null; then
+        :
+    elif docker-compose up --build 2>/dev/null; then
+        :
+    else
+        echo -e "${RED}[FATAL] Erreur lors du demarrage Docker${NC}"
+        exit 1
+    fi
+fi
