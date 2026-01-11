@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision = "a15a43ff0165"
-down_revision = "system_setting_001"   # ou None si vraiment racine
+down_revision = "system_settings_001"   # ou None si vraiment racine
 branch_labels = None
 depends_on = None
 
