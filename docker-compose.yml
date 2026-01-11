@@ -1,8 +1,6 @@
 # AZALS - ERP Décisionnel Critique
 # Docker Compose - Orchestration des services
 
-version: '3.8'
-
 services:
   # Service PostgreSQL - Base de données principale
   postgres:
@@ -45,6 +43,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - azals_network
     restart: unless-stopped

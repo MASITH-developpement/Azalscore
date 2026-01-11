@@ -190,11 +190,84 @@ echo "========================================"
 echo ""
 
 # ============================================================
-# DEMARRAGE
+# DEMARRAGE DOCKER
 # ============================================================
 
-echo "[START] Demarrage Uvicorn (production)..."
+echo "[START] Demarrage via Docker Compose (production)..."
 echo ""
 
-# Mode production: pas de reload, 4 workers
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+# Determiner le repertoire racine du projet
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+# Verifier que docker-compose.prod.yml existe
+if [ ! -f "docker-compose.prod.yml" ]; then
+    echo -e "${RED}[FATAL] docker-compose.prod.yml non trouve${NC}"
+    echo "Chemin attendu: $PROJECT_ROOT/docker-compose.prod.yml"
+    exit 1
+fi
+
+# Verifier que .env.production existe
+if [ ! -f ".env.production" ]; then
+    if [ -f ".env" ]; then
+        echo -e "${YELLOW}[WARN] .env.production non trouve, copie de .env${NC}"
+        cp .env .env.production
+    else
+        echo -e "${RED}[FATAL] Aucun fichier .env trouve${NC}"
+        exit 1
+    fi
+fi
+
+# Arreter les conteneurs existants
+echo "[INFO] Arret des conteneurs existants..."
+docker compose -f docker-compose.prod.yml down 2>/dev/null || docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
+
+# Demarrer avec Docker Compose
+echo "[INFO] Construction et demarrage des conteneurs..."
+if docker compose -f docker-compose.prod.yml up --build -d 2>/dev/null; then
+    echo -e "${GREEN}[OK] Conteneurs demarres (docker compose)${NC}"
+elif docker-compose -f docker-compose.prod.yml up --build -d 2>/dev/null; then
+    echo -e "${GREEN}[OK] Conteneurs demarres (docker-compose)${NC}"
+else
+    echo -e "${RED}[FATAL] Erreur lors du demarrage Docker${NC}"
+    exit 1
+fi
+
+# Attendre que l'API soit prete
+echo "[INFO] Attente de l'API (90s max)..."
+counter=0
+while [ $counter -lt 90 ]; do
+    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+        echo ""
+        echo -e "${GREEN}[OK] API prete!${NC}"
+        break
+    fi
+    sleep 2
+    counter=$((counter + 2))
+    echo -n "."
+done
+echo ""
+
+if [ $counter -ge 90 ]; then
+    echo -e "${YELLOW}[WARN] L'API n'est pas encore prete${NC}"
+    echo "Verifiez: docker compose -f docker-compose.prod.yml logs -f api"
+fi
+
+echo ""
+echo "========================================"
+echo -e "${GREEN}AZALS PRODUCTION - DOCKER${NC}"
+echo "========================================"
+echo ""
+echo "URLs d'acces:"
+echo "  API:          http://localhost:8000"
+echo "  Health:       http://localhost:8000/health"
+echo "  Docs:         http://localhost:8000/docs"
+echo "  Grafana:      http://localhost:3000 (admin/admin)"
+echo "  Prometheus:   http://localhost:9090"
+echo ""
+echo "Commandes utiles:"
+echo "  Logs:         docker compose -f docker-compose.prod.yml logs -f"
+echo "  Status:       docker compose -f docker-compose.prod.yml ps"
+echo "  Arreter:      docker compose -f docker-compose.prod.yml down"
+echo ""
