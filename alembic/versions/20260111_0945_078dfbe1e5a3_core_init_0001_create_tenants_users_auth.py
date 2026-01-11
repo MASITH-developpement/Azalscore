@@ -17,6 +17,341 @@ down_revision: Union[str, None] = 'system_settings_001'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+# ==============================================================================
+# ENUMs PostgreSQL déclarés en mode SAFE (no CREATE TYPE)
+# Tous les ENUMs utilisent create_type=False pour éviter l'erreur
+# "psycopg2.errors.DuplicateObject: type XXX already exists"
+# Cette migration est IDEMPOTENTE et safe pour production/CI/rebuild
+# ==============================================================================
+
+# --- Accounting & Banking ---
+bankconnectionstatus_enum = postgresql.ENUM(
+    'ACTIVE', 'EXPIRED', 'REQUIRES_ACTION', 'ERROR', 'DISCONNECTED',
+    name='bankconnectionstatus', create_type=False
+)
+emailinboxtype_enum = postgresql.ENUM(
+    'INVOICES', 'EXPENSE_NOTES', 'GENERAL',
+    name='emailinboxtype', create_type=False
+)
+banktransactiontype_enum = postgresql.ENUM(
+    'CREDIT', 'DEBIT', 'TRANSFER', 'FEE', 'INTEREST',
+    name='banktransactiontype', create_type=False
+)
+reconciliationstatus_enum = postgresql.ENUM(
+    'PENDING', 'MATCHED', 'PARTIAL', 'UNMATCHED',
+    name='reconciliationstatus', create_type=False
+)
+reconciliationstatusauto_enum = postgresql.ENUM(
+    'PENDING', 'MATCHED', 'PARTIAL', 'MANUAL', 'UNMATCHED',
+    name='reconciliationstatusauto', create_type=False
+)
+journaltype_enum = postgresql.ENUM(
+    'GENERAL', 'PURCHASES', 'SALES', 'BANK', 'CASH', 'OD', 'OPENING', 'CLOSING',
+    name='journaltype', create_type=False
+)
+entrystatus_enum = postgresql.ENUM(
+    'DRAFT', 'PENDING', 'VALIDATED', 'POSTED', 'CANCELLED',
+    name='entrystatus', create_type=False
+)
+accounttype_enum = postgresql.ENUM(
+    'ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE',
+    name='accounttype', create_type=False
+)
+fiscalyearstatus_enum = postgresql.ENUM(
+    'OPEN', 'CLOSING', 'CLOSED',
+    name='fiscalyearstatus', create_type=False
+)
+forecastperiod_enum = postgresql.ENUM(
+    'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY',
+    name='forecastperiod', create_type=False
+)
+paymentstatus_enum = postgresql.ENUM(
+    'UNPAID', 'PARTIALLY_PAID', 'PAID', 'OVERPAID', 'CANCELLED',
+    name='paymentstatus', create_type=False
+)
+
+# --- Document Processing ---
+documenttype_enum = postgresql.ENUM(
+    'INVOICE_RECEIVED', 'INVOICE_SENT', 'EXPENSE_NOTE', 'CREDIT_NOTE_RECEIVED',
+    'CREDIT_NOTE_SENT', 'QUOTE', 'PURCHASE_ORDER', 'DELIVERY_NOTE', 'BANK_STATEMENT', 'OTHER',
+    name='documenttype', create_type=False
+)
+documentsource_enum = postgresql.ENUM(
+    'EMAIL', 'UPLOAD', 'MOBILE_SCAN', 'API', 'BANK_SYNC', 'INTERNAL',
+    name='documentsource', create_type=False
+)
+documentstatus_enum = postgresql.ENUM(
+    'RECEIVED', 'PROCESSING', 'ANALYZED', 'PENDING_VALIDATION', 'VALIDATED', 'ACCOUNTED', 'REJECTED', 'ERROR',
+    name='documentstatus', create_type=False
+)
+confidencelevel_enum = postgresql.ENUM(
+    'HIGH', 'MEDIUM', 'LOW', 'VERY_LOW',
+    name='confidencelevel', create_type=False
+)
+alerttype_enum = postgresql.ENUM(
+    'DOCUMENT_UNREADABLE', 'MISSING_INFO', 'LOW_CONFIDENCE', 'DUPLICATE_SUSPECTED',
+    'AMOUNT_MISMATCH', 'TAX_ERROR', 'OVERDUE_PAYMENT', 'CASH_FLOW_WARNING', 'RECONCILIATION_ISSUE',
+    name='alerttype', create_type=False
+)
+alertseverity_enum = postgresql.ENUM(
+    'INFO', 'WARNING', 'ERROR', 'CRITICAL',
+    name='alertseverity', create_type=False
+)
+
+# --- Compliance & GRC (documenttype différent - compliance) ---
+compliancedocumenttype_enum = postgresql.ENUM(
+    'POLICY', 'PROCEDURE', 'WORK_INSTRUCTION', 'FORM', 'RECORD', 'CERTIFICATE', 'LICENSE', 'PERMIT', 'REPORT',
+    name='compliancedocumenttype', create_type=False
+)
+regulationtype_enum = postgresql.ENUM(
+    'ISO', 'GDPR', 'SOX', 'FDA', 'CUSTOMS', 'TAX', 'LABOR', 'ENVIRONMENTAL', 'SAFETY', 'QUALITY', 'INDUSTRY_SPECIFIC', 'INTERNAL',
+    name='regulationtype', create_type=False
+)
+reporttype_enum = postgresql.ENUM(
+    'COMPLIANCE_STATUS', 'GAP_ANALYSIS', 'RISK_ASSESSMENT', 'AUDIT_SUMMARY', 'INCIDENT_REPORT', 'TRAINING_STATUS', 'REGULATORY_FILING',
+    name='reporttype', create_type=False
+)
+compliancestatus_enum = postgresql.ENUM(
+    'COMPLIANT', 'NON_COMPLIANT', 'PARTIAL', 'PENDING', 'EXPIRED', 'NOT_APPLICABLE',
+    name='compliancestatus', create_type=False
+)
+assessmentstatus_enum = postgresql.ENUM(
+    'DRAFT', 'IN_PROGRESS', 'COMPLETED', 'APPROVED', 'REJECTED',
+    name='assessmentstatus', create_type=False
+)
+auditstatus_enum = postgresql.ENUM(
+    'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CLOSED', 'CANCELLED',
+    name='auditstatus', create_type=False
+)
+incidentseverity_enum = postgresql.ENUM(
+    'LOW', 'MEDIUM', 'HIGH', 'CRITICAL',
+    name='incidentseverity', create_type=False
+)
+incidentstatus_enum = postgresql.ENUM(
+    'REPORTED', 'INVESTIGATING', 'ACTION_REQUIRED', 'RESOLVED', 'CLOSED',
+    name='incidentstatus', create_type=False
+)
+requirementpriority_enum = postgresql.ENUM(
+    'LOW', 'MEDIUM', 'HIGH', 'CRITICAL',
+    name='requirementpriority', create_type=False
+)
+risklevel_enum = postgresql.ENUM(
+    'LOW', 'MEDIUM', 'HIGH', 'CRITICAL',
+    name='risklevel', create_type=False
+)
+findingseverity_enum = postgresql.ENUM(
+    'OBSERVATION', 'MINOR', 'MAJOR', 'CRITICAL',
+    name='findingseverity', create_type=False
+)
+actionstatus_enum = postgresql.ENUM(
+    'OPEN', 'IN_PROGRESS', 'COMPLETED', 'VERIFIED', 'CANCELLED', 'OVERDUE',
+    name='actionstatus', create_type=False
+)
+
+# --- Tenant & Users ---
+tenantstatus_enum = postgresql.ENUM(
+    'PENDING', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'TRIAL',
+    name='tenantstatus', create_type=False
+)
+tenantenvironment_enum = postgresql.ENUM(
+    'BETA', 'PRODUCTION', 'STAGING', 'DEVELOPMENT',
+    name='tenantenvironment', create_type=False
+)
+subscriptionplan_enum = postgresql.ENUM(
+    'STARTER', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM',
+    name='subscriptionplan', create_type=False
+)
+billingcycle_enum = postgresql.ENUM(
+    'MONTHLY', 'QUARTERLY', 'YEARLY',
+    name='billingcycle', create_type=False
+)
+invitationstatus_enum = postgresql.ENUM(
+    'PENDING', 'ACCEPTED', 'EXPIRED', 'CANCELLED',
+    name='invitationstatus', create_type=False
+)
+tenantmodulestatus_enum = postgresql.ENUM(
+    'ACTIVE', 'DISABLED', 'PENDING',
+    name='modulestatus', create_type=False
+)
+userrole_enum = postgresql.ENUM(
+    'SUPERADMIN', 'DIRIGEANT', 'ADMIN', 'DAF', 'COMPTABLE', 'COMMERCIAL', 'EMPLOYE',
+    name='userrole', create_type=False
+)
+viewtype_enum = postgresql.ENUM(
+    'DIRIGEANT', 'ASSISTANTE', 'EXPERT_COMPTABLE',
+    name='viewtype', create_type=False
+)
+decisionlevel_enum = postgresql.ENUM(
+    'GREEN', 'ORANGE', 'RED',
+    name='decisionlevel', create_type=False
+)
+synctype_enum = postgresql.ENUM(
+    'MANUAL', 'SCHEDULED', 'ON_DEMAND',
+    name='synctype', create_type=False
+)
+syncstatus_enum = postgresql.ENUM(
+    'PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED',
+    name='syncstatus', create_type=False
+)
+redworkflowstep_enum = postgresql.ENUM(
+    'ACKNOWLEDGE', 'COMPLETENESS', 'FINAL',
+    name='redworkflowstep', create_type=False
+)
+
+# --- Inventory & Warehouse ---
+warehousetype_enum = postgresql.ENUM(
+    'INTERNAL', 'EXTERNAL', 'TRANSIT', 'VIRTUAL',
+    name='warehousetype', create_type=False
+)
+locationtype_enum = postgresql.ENUM(
+    'STORAGE', 'RECEIVING', 'SHIPPING', 'PRODUCTION', 'QUALITY', 'VIRTUAL',
+    name='locationtype', create_type=False
+)
+movementtype_enum = postgresql.ENUM(
+    'IN', 'OUT', 'TRANSFER', 'ADJUSTMENT', 'PRODUCTION', 'RETURN', 'SCRAP',
+    name='movementtype', create_type=False
+)
+movementstatus_enum = postgresql.ENUM(
+    'DRAFT', 'CONFIRMED', 'CANCELLED',
+    name='movementstatus', create_type=False
+)
+pickingstatus_enum = postgresql.ENUM(
+    'PENDING', 'ASSIGNED', 'IN_PROGRESS', 'DONE', 'CANCELLED',
+    name='pickingstatus', create_type=False
+)
+inventorystatus_enum = postgresql.ENUM(
+    'DRAFT', 'IN_PROGRESS', 'VALIDATED', 'CANCELLED',
+    name='inventorystatus', create_type=False
+)
+lotstatus_enum = postgresql.ENUM(
+    'AVAILABLE', 'RESERVED', 'BLOCKED', 'EXPIRED',
+    name='lotstatus', create_type=False
+)
+valuationmethod_enum = postgresql.ENUM(
+    'FIFO', 'LIFO', 'AVG', 'STANDARD',
+    name='valuationmethod', create_type=False
+)
+
+# --- Products ---
+producttype_enum = postgresql.ENUM(
+    'STOCKABLE', 'CONSUMABLE', 'SERVICE',
+    name='producttype', create_type=False
+)
+productstatus_enum = postgresql.ENUM(
+    'DRAFT', 'ACTIVE', 'DISCONTINUED', 'BLOCKED',
+    name='productstatus', create_type=False
+)
+
+# --- Assets & Maintenance ---
+assetcategory_enum = postgresql.ENUM(
+    'MACHINE', 'EQUIPMENT', 'VEHICLE', 'BUILDING', 'INFRASTRUCTURE', 'IT_EQUIPMENT', 'TOOL', 'UTILITY', 'FURNITURE', 'OTHER',
+    name='assetcategory', create_type=False
+)
+assetstatus_enum = postgresql.ENUM(
+    'ACTIVE', 'INACTIVE', 'IN_MAINTENANCE', 'RESERVED', 'DISPOSED', 'UNDER_REPAIR', 'STANDBY',
+    name='assetstatus', create_type=False
+)
+assetcriticality_enum = postgresql.ENUM(
+    'CRITICAL', 'HIGH', 'MEDIUM', 'LOW',
+    name='assetcriticality', create_type=False
+)
+contracttype_enum = postgresql.ENUM(
+    'FULL_SERVICE', 'PREVENTIVE', 'ON_CALL', 'PARTS_ONLY', 'LABOR_ONLY', 'WARRANTY',
+    name='contracttype', create_type=False
+)
+contractstatus_enum = postgresql.ENUM(
+    'DRAFT', 'ACTIVE', 'SUSPENDED', 'EXPIRED', 'TERMINATED',
+    name='contractstatus', create_type=False
+)
+maintenancetype_enum = postgresql.ENUM(
+    'PREVENTIVE', 'CORRECTIVE', 'PREDICTIVE', 'CONDITION_BASED', 'BREAKDOWN', 'IMPROVEMENT', 'INSPECTION', 'CALIBRATION',
+    name='maintenancetype', create_type=False
+)
+maintenanceworkorderstatus_enum = postgresql.ENUM(
+    'DRAFT', 'REQUESTED', 'APPROVED', 'PLANNED', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'VERIFIED', 'CLOSED', 'CANCELLED',
+    name='maintenanceworkorderstatus', create_type=False
+)
+workorderpriority_enum = postgresql.ENUM(
+    'EMERGENCY', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'SCHEDULED',
+    name='workorderpriority', create_type=False
+)
+partrequeststatus_enum = postgresql.ENUM(
+    'REQUESTED', 'APPROVED', 'ORDERED', 'RECEIVED', 'ISSUED', 'CANCELLED',
+    name='partrequeststatus', create_type=False
+)
+failuretype_enum = postgresql.ENUM(
+    'MECHANICAL', 'ELECTRICAL', 'ELECTRONIC', 'HYDRAULIC', 'PNEUMATIC', 'SOFTWARE', 'OPERATOR_ERROR', 'WEAR', 'CONTAMINATION', 'UNKNOWN',
+    name='failuretype', create_type=False
+)
+scrapreason_enum = postgresql.ENUM(
+    'DEFECT', 'DAMAGE', 'QUALITY', 'EXPIRED', 'OTHER',
+    name='scrapreason', create_type=False
+)
+
+# --- Manufacturing (MRP) ---
+bomtype_enum = postgresql.ENUM(
+    'MANUFACTURING', 'KIT', 'PHANTOM', 'SUBCONTRACT',
+    name='bomtype', create_type=False
+)
+bomstatus_enum = postgresql.ENUM(
+    'DRAFT', 'ACTIVE', 'OBSOLETE',
+    name='bomstatus', create_type=False
+)
+workcentertype_enum = postgresql.ENUM(
+    'MACHINE', 'ASSEMBLY', 'MANUAL', 'QUALITY', 'PACKAGING', 'OUTSOURCED',
+    name='workcentertype', create_type=False
+)
+workcenterstatus_enum = postgresql.ENUM(
+    'AVAILABLE', 'BUSY', 'MAINTENANCE', 'OFFLINE',
+    name='workcenterstatus', create_type=False
+)
+operationtype_enum = postgresql.ENUM(
+    'SETUP', 'PRODUCTION', 'QUALITY_CHECK', 'CLEANING', 'PACKAGING', 'TRANSPORT',
+    name='operationtype', create_type=False
+)
+consumptiontype_enum = postgresql.ENUM(
+    'MANUAL', 'AUTO_ON_START', 'AUTO_ON_COMPLETE',
+    name='consumptiontype', create_type=False
+)
+mostatus_enum = postgresql.ENUM(
+    'DRAFT', 'CONFIRMED', 'PLANNED', 'IN_PROGRESS', 'DONE', 'CANCELLED',
+    name='mostatus', create_type=False
+)
+mopriority_enum = postgresql.ENUM(
+    'LOW', 'NORMAL', 'HIGH', 'URGENT',
+    name='mopriority', create_type=False
+)
+prodworkorderstatus_enum = postgresql.ENUM(
+    'PENDING', 'READY', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED',
+    name='prodworkorderstatus', create_type=False
+)
+
+# --- QC Module (Quality Control for modules) ---
+qctesttype_enum = postgresql.ENUM(
+    'UNIT', 'INTEGRATION', 'E2E', 'PERFORMANCE', 'SECURITY', 'REGRESSION',
+    name='qctesttype', create_type=False
+)
+qccheckstatus_enum = postgresql.ENUM(
+    'PENDING', 'RUNNING', 'PASSED', 'FAILED', 'SKIPPED', 'ERROR',
+    name='qccheckstatus', create_type=False
+)
+qcrulecategory_enum = postgresql.ENUM(
+    'ARCHITECTURE', 'SECURITY', 'PERFORMANCE', 'CODE_QUALITY', 'TESTING', 'DOCUMENTATION', 'API', 'DATABASE', 'INTEGRATION', 'COMPLIANCE',
+    name='qcrulecategory', create_type=False
+)
+qcruleseverity_enum = postgresql.ENUM(
+    'INFO', 'WARNING', 'CRITICAL', 'BLOCKER',
+    name='qcruleseverity', create_type=False
+)
+validationphase_enum = postgresql.ENUM(
+    'PRE_QC', 'AUTOMATED', 'MANUAL', 'FINAL', 'POST_DEPLOY',
+    name='validationphase', create_type=False
+)
+qcmodulestatus_enum = postgresql.ENUM(
+    'DRAFT', 'IN_DEVELOPMENT', 'READY_FOR_QC', 'QC_IN_PROGRESS', 'QC_PASSED', 'QC_FAILED', 'PRODUCTION', 'DEPRECATED',
+    name='qcmodulestatus', create_type=False
+)
+
 
 def upgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
@@ -28,7 +363,7 @@ def upgrade() -> None:
     sa.Column('institution_logo_url', sa.String(length=500), nullable=True),
     sa.Column('provider', sa.String(length=50), nullable=False),
     sa.Column('connection_id', sa.String(length=255), nullable=False),
-    sa.Column('status', sa.Enum('ACTIVE', 'EXPIRED', 'REQUIRES_ACTION', 'ERROR', 'DISCONNECTED', name='bankconnectionstatus'), nullable=False),
+    sa.Column('status', bankconnectionstatus_enum, nullable=False),
     sa.Column('access_token_encrypted', sa.Text(), nullable=True),
     sa.Column('refresh_token_encrypted', sa.Text(), nullable=True),
     sa.Column('token_expires_at', sa.DateTime(), nullable=True),
@@ -82,7 +417,7 @@ def upgrade() -> None:
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('email_address', sa.String(length=255), nullable=False),
-    sa.Column('email_type', sa.Enum('INVOICES', 'EXPENSE_NOTES', 'GENERAL', name='emailinboxtype'), nullable=False),
+    sa.Column('email_type', emailinboxtype_enum, nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('auto_process', sa.Boolean(), nullable=True),
     sa.Column('provider', sa.String(length=50), nullable=True),
@@ -163,7 +498,7 @@ def upgrade() -> None:
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('view_type', sa.Enum('DIRIGEANT', 'ASSISTANTE', 'EXPERT_COMPTABLE', name='viewtype'), nullable=False),
+    sa.Column('view_type', viewtype_enum, nullable=False),
     sa.Column('dashboard_widgets', postgresql.JSON(), nullable=True),
     sa.Column('default_period', sa.String(length=20), nullable=True),
     sa.Column('list_columns', postgresql.JSON(), nullable=True),
@@ -183,7 +518,7 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=20), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('type', sa.Enum('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE', name='accounttype'), nullable=False),
+    sa.Column('type', accounttype_enum, nullable=False),
     sa.Column('parent_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('is_auxiliary', sa.Boolean(), nullable=True),
     sa.Column('auxiliary_type', sa.String(length=50), nullable=True),
@@ -205,7 +540,7 @@ def upgrade() -> None:
     op.create_table('cash_forecasts',
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
-    sa.Column('period', sa.Enum('DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', name='forecastperiod'), nullable=False),
+    sa.Column('period', forecastperiod_enum, nullable=False),
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('opening_balance', sa.Numeric(precision=15, scale=2), nullable=False),
     sa.Column('expected_receipts', sa.Numeric(precision=15, scale=2), nullable=True),
@@ -228,7 +563,7 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('type', sa.Enum('POLICY', 'PROCEDURE', 'WORK_INSTRUCTION', 'FORM', 'RECORD', 'CERTIFICATE', 'LICENSE', 'PERMIT', 'REPORT', name='documenttype'), nullable=True),
+    sa.Column('type', compliancedocumenttype_enum, nullable=True),
     sa.Column('category', sa.String(length=100), nullable=True),
     sa.Column('department', sa.String(length=100), nullable=True),
     sa.Column('version', sa.String(length=20), nullable=True),
@@ -262,7 +597,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
-    sa.Column('type', sa.Enum('ISO', 'GDPR', 'SOX', 'FDA', 'CUSTOMS', 'TAX', 'LABOR', 'ENVIRONMENTAL', 'SAFETY', 'QUALITY', 'INDUSTRY_SPECIFIC', 'INTERNAL', name='regulationtype'), nullable=False),
+    sa.Column('type', regulationtype_enum, nullable=False),
     sa.Column('version', sa.String(length=50), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('scope', sa.Text(), nullable=True),
@@ -290,7 +625,7 @@ def upgrade() -> None:
     sa.Column('number', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('type', sa.Enum('COMPLIANCE_STATUS', 'GAP_ANALYSIS', 'RISK_ASSESSMENT', 'AUDIT_SUMMARY', 'INCIDENT_REPORT', 'TRAINING_STATUS', 'REGULATORY_FILING', name='reporttype'), nullable=False),
+    sa.Column('type', reporttype_enum, nullable=False),
     sa.Column('period_start', sa.Date(), nullable=True),
     sa.Column('period_end', sa.Date(), nullable=True),
     sa.Column('regulation_ids', sa.JSON(), nullable=True),
@@ -334,7 +669,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=255), nullable=False),
     sa.Column('entity_type', sa.String(length=255), nullable=False),
     sa.Column('entity_id', sa.String(length=255), nullable=False),
-    sa.Column('level', sa.Enum('GREEN', 'ORANGE', 'RED', name='decisionlevel'), nullable=False),
+    sa.Column('level', decisionlevel_enum, nullable=False),
     sa.Column('reason', sa.Text(), nullable=False),
     sa.Column('decision_reason', sa.Text(), nullable=True),
     sa.Column('is_fully_validated', sa.Integer(), nullable=False),
@@ -355,7 +690,7 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=20), nullable=False),
     sa.Column('start_date', sa.Date(), nullable=False),
     sa.Column('end_date', sa.Date(), nullable=False),
-    sa.Column('status', sa.Enum('OPEN', 'CLOSING', 'CLOSED', name='fiscalyearstatus'), nullable=True),
+    sa.Column('status', fiscalyearstatus_enum, nullable=True),
     sa.Column('closed_at', sa.DateTime(), nullable=True),
     sa.Column('closed_by', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('total_debit', sa.Numeric(precision=15, scale=2), nullable=True),
@@ -376,7 +711,7 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('parent_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('default_valuation', sa.Enum('FIFO', 'LIFO', 'AVG', 'STANDARD', name='valuationmethod'), nullable=True),
+    sa.Column('default_valuation', valuationmethod_enum, nullable=True),
     sa.Column('default_account_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('sort_order', sa.Integer(), nullable=True),
@@ -394,7 +729,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
-    sa.Column('type', sa.Enum('INTERNAL', 'EXTERNAL', 'TRANSIT', 'VIRTUAL', name='warehousetype'), nullable=True),
+    sa.Column('type', warehousetype_enum, nullable=True),
     sa.Column('address_line1', sa.String(length=255), nullable=True),
     sa.Column('address_line2', sa.String(length=255), nullable=True),
     sa.Column('postal_code', sa.String(length=20), nullable=True),
@@ -433,10 +768,10 @@ def upgrade() -> None:
     sa.Column('asset_code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('category', sa.Enum('MACHINE', 'EQUIPMENT', 'VEHICLE', 'BUILDING', 'INFRASTRUCTURE', 'IT_EQUIPMENT', 'TOOL', 'UTILITY', 'FURNITURE', 'OTHER', name='assetcategory'), nullable=False),
+    sa.Column('category', assetcategory_enum, nullable=False),
     sa.Column('asset_type', sa.String(length=100), nullable=True),
-    sa.Column('status', sa.Enum('ACTIVE', 'INACTIVE', 'IN_MAINTENANCE', 'RESERVED', 'DISPOSED', 'UNDER_REPAIR', 'STANDBY', name='assetstatus'), nullable=True),
-    sa.Column('criticality', sa.Enum('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', name='assetcriticality'), nullable=True),
+    sa.Column('status', assetstatus_enum, nullable=True),
+    sa.Column('criticality', assetcriticality_enum, nullable=True),
     sa.Column('parent_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('location_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('location_description', sa.String(length=200), nullable=True),
@@ -503,8 +838,8 @@ def upgrade() -> None:
     sa.Column('contract_code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('contract_type', sa.Enum('FULL_SERVICE', 'PREVENTIVE', 'ON_CALL', 'PARTS_ONLY', 'LABOR_ONLY', 'WARRANTY', name='contracttype'), nullable=False),
-    sa.Column('status', sa.Enum('DRAFT', 'ACTIVE', 'SUSPENDED', 'EXPIRED', 'TERMINATED', name='contractstatus'), nullable=True),
+    sa.Column('contract_type', contracttype_enum, nullable=False),
+    sa.Column('status', contractstatus_enum, nullable=True),
     sa.Column('vendor_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('vendor_contact', sa.String(length=200), nullable=True),
     sa.Column('vendor_phone', sa.String(length=50), nullable=True),
@@ -578,7 +913,7 @@ def upgrade() -> None:
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('version', sa.String(length=20), nullable=True),
     sa.Column('product_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'ACTIVE', 'OBSOLETE', name='bomstatus'), nullable=True),
+    sa.Column('status', bomstatus_enum, nullable=True),
     sa.Column('total_setup_time', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('total_operation_time', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('total_time', sa.Numeric(precision=10, scale=2), nullable=True),
@@ -603,8 +938,8 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('type', sa.Enum('MACHINE', 'ASSEMBLY', 'MANUAL', 'QUALITY', 'PACKAGING', 'OUTSOURCED', name='workcentertype'), nullable=True),
-    sa.Column('status', sa.Enum('AVAILABLE', 'BUSY', 'MAINTENANCE', 'OFFLINE', name='workcenterstatus'), nullable=True),
+    sa.Column('type', workcentertype_enum, nullable=True),
+    sa.Column('status', workcenterstatus_enum, nullable=True),
     sa.Column('warehouse_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('location', sa.String(length=100), nullable=True),
     sa.Column('capacity', sa.Numeric(precision=10, scale=2), nullable=True),
@@ -656,7 +991,7 @@ def upgrade() -> None:
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=255), nullable=False),
     sa.Column('decision_id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('step', sa.Enum('ACKNOWLEDGE', 'COMPLETENESS', 'FINAL', name='redworkflowstep'), nullable=False),
+    sa.Column('step', redworkflowstep_enum, nullable=False),
     sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('confirmed_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -688,9 +1023,9 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=True),
     sa.Column('tenant_name', sa.String(length=255), nullable=True),
-    sa.Column('plan', sa.Enum('STARTER', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM', name='subscriptionplan'), nullable=True),
+    sa.Column('plan', subscriptionplan_enum, nullable=True),
     sa.Column('proposed_role', sa.String(length=50), nullable=True),
-    sa.Column('status', sa.Enum('PENDING', 'ACCEPTED', 'EXPIRED', 'CANCELLED', name='invitationstatus'), nullable=True),
+    sa.Column('status', invitationstatus_enum, nullable=True),
     sa.Column('expires_at', sa.DateTime(), nullable=False),
     sa.Column('accepted_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -706,7 +1041,7 @@ def upgrade() -> None:
     sa.Column('module_code', sa.String(length=10), nullable=False),
     sa.Column('module_name', sa.String(length=100), nullable=True),
     sa.Column('module_version', sa.String(length=20), nullable=True),
-    sa.Column('status', sa.Enum('ACTIVE', 'DISABLED', 'PENDING', name='modulestatus'), nullable=True),
+    sa.Column('status', tenantmodulestatus_enum, nullable=True),
     sa.Column('config', postgresql.JSON(), nullable=True),
     sa.Column('limits', postgresql.JSON(), nullable=True),
     sa.Column('activated_at', sa.DateTime(), nullable=True),
@@ -760,8 +1095,8 @@ def upgrade() -> None:
     op.create_table('tenant_subscriptions',
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
-    sa.Column('plan', sa.Enum('STARTER', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM', name='subscriptionplan'), nullable=False),
-    sa.Column('billing_cycle', sa.Enum('MONTHLY', 'QUARTERLY', 'YEARLY', name='billingcycle'), nullable=True),
+    sa.Column('plan', subscriptionplan_enum, nullable=False),
+    sa.Column('billing_cycle', billingcycle_enum, nullable=True),
     sa.Column('price_monthly', sa.Float(), nullable=True),
     sa.Column('price_yearly', sa.Float(), nullable=True),
     sa.Column('discount_percent', sa.Float(), nullable=True),
@@ -814,9 +1149,9 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('phone', sa.String(length=50), nullable=True),
     sa.Column('website', sa.String(length=255), nullable=True),
-    sa.Column('status', sa.Enum('PENDING', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'TRIAL', name='tenantstatus'), nullable=True),
-    sa.Column('plan', sa.Enum('STARTER', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM', name='subscriptionplan'), nullable=True),
-    sa.Column('environment', sa.Enum('BETA', 'PRODUCTION', 'STAGING', 'DEVELOPMENT', name='tenantenvironment'), nullable=False),
+    sa.Column('status', tenantstatus_enum, nullable=True),
+    sa.Column('plan', subscriptionplan_enum, nullable=True),
+    sa.Column('environment', tenantenvironment_enum, nullable=False),
     sa.Column('timezone', sa.String(length=50), nullable=True),
     sa.Column('language', sa.String(length=5), nullable=True),
     sa.Column('currency', sa.String(length=3), nullable=True),
@@ -862,7 +1197,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=255), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('password_hash', sa.String(length=255), nullable=False),
-    sa.Column('role', sa.Enum('SUPERADMIN', 'DIRIGEANT', 'ADMIN', 'DAF', 'COMPTABLE', 'COMMERCIAL', 'EMPLOYE', name='userrole'), nullable=False),
+    sa.Column('role', userrole_enum, nullable=False),
     sa.Column('is_active', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
@@ -884,9 +1219,9 @@ def upgrade() -> None:
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('connection_id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('sync_type', sa.Enum('MANUAL', 'SCHEDULED', 'ON_DEMAND', name='synctype'), nullable=False),
+    sa.Column('sync_type', synctype_enum, nullable=False),
     sa.Column('triggered_by', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('status', sa.Enum('PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', name='syncstatus'), nullable=False),
+    sa.Column('status', syncstatus_enum, nullable=False),
     sa.Column('sync_from_date', sa.Date(), nullable=True),
     sa.Column('sync_to_date', sa.Date(), nullable=True),
     sa.Column('accounts_synced', sa.Integer(), nullable=True),
@@ -977,9 +1312,9 @@ def upgrade() -> None:
     sa.Column('planned_date', sa.Date(), nullable=True),
     sa.Column('start_date', sa.Date(), nullable=True),
     sa.Column('end_date', sa.Date(), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'IN_PROGRESS', 'COMPLETED', 'APPROVED', 'REJECTED', name='assessmentstatus'), nullable=True),
+    sa.Column('status', assessmentstatus_enum, nullable=True),
     sa.Column('overall_score', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('overall_status', sa.Enum('COMPLIANT', 'NON_COMPLIANT', 'PARTIAL', 'PENDING', 'EXPIRED', 'NOT_APPLICABLE', name='compliancestatus'), nullable=True),
+    sa.Column('overall_status', compliancestatus_enum, nullable=True),
     sa.Column('total_requirements', sa.Integer(), nullable=True),
     sa.Column('compliant_count', sa.Integer(), nullable=True),
     sa.Column('non_compliant_count', sa.Integer(), nullable=True),
@@ -1016,7 +1351,7 @@ def upgrade() -> None:
     sa.Column('lead_auditor_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('auditor_ids', sa.JSON(), nullable=True),
     sa.Column('auditee_ids', sa.JSON(), nullable=True),
-    sa.Column('status', sa.Enum('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CLOSED', 'CANCELLED', name='auditstatus'), nullable=True),
+    sa.Column('status', auditstatus_enum, nullable=True),
     sa.Column('total_findings', sa.Integer(), nullable=True),
     sa.Column('critical_findings', sa.Integer(), nullable=True),
     sa.Column('major_findings', sa.Integer(), nullable=True),
@@ -1043,7 +1378,7 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('type', sa.Enum('POLICY', 'PROCEDURE', 'WORK_INSTRUCTION', 'FORM', 'RECORD', 'CERTIFICATE', 'LICENSE', 'PERMIT', 'REPORT', name='documenttype'), nullable=False),
+    sa.Column('type', compliancedocumenttype_enum, nullable=False),
     sa.Column('category', sa.String(length=100), nullable=True),
     sa.Column('regulation_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('version', sa.String(length=20), nullable=True),
@@ -1079,7 +1414,7 @@ def upgrade() -> None:
     sa.Column('title', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
     sa.Column('incident_type', sa.String(length=100), nullable=True),
-    sa.Column('severity', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='incidentseverity'), nullable=True),
+    sa.Column('severity', incidentseverity_enum, nullable=True),
     sa.Column('regulation_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('incident_date', sa.DateTime(), nullable=False),
     sa.Column('reported_date', sa.DateTime(), nullable=True),
@@ -1088,7 +1423,7 @@ def upgrade() -> None:
     sa.Column('reporter_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('assigned_to', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('department', sa.String(length=100), nullable=True),
-    sa.Column('status', sa.Enum('REPORTED', 'INVESTIGATING', 'ACTION_REQUIRED', 'RESOLVED', 'CLOSED', name='incidentstatus'), nullable=True),
+    sa.Column('status', incidentstatus_enum, nullable=True),
     sa.Column('investigation_notes', sa.Text(), nullable=True),
     sa.Column('root_cause', sa.Text(), nullable=True),
     sa.Column('impact_assessment', sa.Text(), nullable=True),
@@ -1128,10 +1463,10 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('priority', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='requirementpriority'), nullable=True),
+    sa.Column('priority', requirementpriority_enum, nullable=True),
     sa.Column('category', sa.String(length=100), nullable=True),
     sa.Column('clause_reference', sa.String(length=100), nullable=True),
-    sa.Column('compliance_status', sa.Enum('COMPLIANT', 'NON_COMPLIANT', 'PARTIAL', 'PENDING', 'EXPIRED', 'NOT_APPLICABLE', name='compliancestatus'), nullable=True),
+    sa.Column('compliance_status', compliancestatus_enum, nullable=True),
     sa.Column('current_score', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('target_score', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('responsible_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -1163,11 +1498,11 @@ def upgrade() -> None:
     sa.Column('likelihood', sa.Integer(), nullable=True),
     sa.Column('impact', sa.Integer(), nullable=True),
     sa.Column('risk_score', sa.Integer(), nullable=True),
-    sa.Column('risk_level', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='risklevel'), nullable=True),
+    sa.Column('risk_level', risklevel_enum, nullable=True),
     sa.Column('residual_likelihood', sa.Integer(), nullable=True),
     sa.Column('residual_impact', sa.Integer(), nullable=True),
     sa.Column('residual_score', sa.Integer(), nullable=True),
-    sa.Column('residual_level', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='risklevel'), nullable=True),
+    sa.Column('residual_level', risklevel_enum, nullable=True),
     sa.Column('treatment_strategy', sa.String(length=50), nullable=True),
     sa.Column('treatment_description', sa.Text(), nullable=True),
     sa.Column('current_controls', sa.Text(), nullable=True),
@@ -1241,7 +1576,7 @@ def upgrade() -> None:
     sa.Column('warehouse_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
-    sa.Column('type', sa.Enum('STORAGE', 'RECEIVING', 'SHIPPING', 'PRODUCTION', 'QUALITY', 'VIRTUAL', name='locationtype'), nullable=True),
+    sa.Column('type', locationtype_enum, nullable=True),
     sa.Column('aisle', sa.String(length=20), nullable=True),
     sa.Column('rack', sa.String(length=20), nullable=True),
     sa.Column('level', sa.String(length=20), nullable=True),
@@ -1268,8 +1603,8 @@ def upgrade() -> None:
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('number', sa.String(length=50), nullable=False),
-    sa.Column('type', sa.Enum('IN', 'OUT', 'TRANSFER', 'ADJUSTMENT', 'PRODUCTION', 'RETURN', 'SCRAP', name='movementtype'), nullable=True),
-    sa.Column('status', sa.Enum('PENDING', 'ASSIGNED', 'IN_PROGRESS', 'DONE', 'CANCELLED', name='pickingstatus'), nullable=True),
+    sa.Column('type', movementtype_enum, nullable=True),
+    sa.Column('status', pickingstatus_enum, nullable=True),
     sa.Column('warehouse_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('reference_type', sa.String(length=50), nullable=True),
     sa.Column('reference_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -1321,7 +1656,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('code', sa.String(length=20), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('type', sa.Enum('GENERAL', 'PURCHASES', 'SALES', 'BANK', 'CASH', 'OD', 'OPENING', 'CLOSING', name='journaltype'), nullable=False),
+    sa.Column('type', journaltype_enum, nullable=False),
     sa.Column('default_debit_account_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('default_credit_account_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
@@ -1436,8 +1771,8 @@ def upgrade() -> None:
     sa.Column('product_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('quantity', sa.Numeric(precision=12, scale=4), nullable=True),
     sa.Column('unit', sa.String(length=20), nullable=True),
-    sa.Column('type', sa.Enum('MANUFACTURING', 'KIT', 'PHANTOM', 'SUBCONTRACT', name='bomtype'), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'ACTIVE', 'OBSOLETE', name='bomstatus'), nullable=True),
+    sa.Column('type', bomtype_enum, nullable=True),
+    sa.Column('status', bomstatus_enum, nullable=True),
     sa.Column('routing_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('valid_from', sa.Date(), nullable=True),
     sa.Column('valid_to', sa.Date(), nullable=True),
@@ -1448,7 +1783,7 @@ def upgrade() -> None:
     sa.Column('currency', sa.String(length=3), nullable=True),
     sa.Column('is_default', sa.Boolean(), nullable=True),
     sa.Column('allow_alternatives', sa.Boolean(), nullable=True),
-    sa.Column('consumption_type', sa.Enum('MANUAL', 'AUTO_ON_START', 'AUTO_ON_COMPLETE', name='consumptiontype'), nullable=True),
+    sa.Column('consumption_type', consumptiontype_enum, nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('extra_data', postgresql.JSONB(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
@@ -1493,7 +1828,7 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('type', sa.Enum('SETUP', 'PRODUCTION', 'QUALITY_CHECK', 'CLEANING', 'PACKAGING', 'TRANSPORT', name='operationtype'), nullable=True),
+    sa.Column('type', operationtype_enum, nullable=True),
     sa.Column('work_center_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('setup_time', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('operation_time', sa.Numeric(precision=10, scale=2), nullable=True),
@@ -1565,7 +1900,7 @@ def upgrade() -> None:
     sa.Column('number', sa.String(length=50), nullable=False),
     sa.Column('title', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
-    sa.Column('severity', sa.Enum('OBSERVATION', 'MINOR', 'MAJOR', 'CRITICAL', name='findingseverity'), nullable=True),
+    sa.Column('severity', findingseverity_enum, nullable=True),
     sa.Column('category', sa.String(length=100), nullable=True),
     sa.Column('evidence', sa.Text(), nullable=True),
     sa.Column('root_cause', sa.Text(), nullable=True),
@@ -1594,9 +1929,9 @@ def upgrade() -> None:
     sa.Column('gap_description', sa.Text(), nullable=False),
     sa.Column('root_cause', sa.Text(), nullable=True),
     sa.Column('impact_description', sa.Text(), nullable=True),
-    sa.Column('severity', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='risklevel'), nullable=True),
+    sa.Column('severity', risklevel_enum, nullable=True),
     sa.Column('risk_score', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('current_status', sa.Enum('COMPLIANT', 'NON_COMPLIANT', 'PARTIAL', 'PENDING', 'EXPIRED', 'NOT_APPLICABLE', name='compliancestatus'), nullable=True),
+    sa.Column('current_status', compliancestatus_enum, nullable=True),
     sa.Column('evidence_reviewed', sa.JSON(), nullable=True),
     sa.Column('evidence_gaps', sa.Text(), nullable=True),
     sa.Column('identified_date', sa.Date(), nullable=True),
@@ -1660,7 +1995,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('number', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
-    sa.Column('status', sa.Enum('DRAFT', 'IN_PROGRESS', 'VALIDATED', 'CANCELLED', name='inventorystatus'), nullable=True),
+    sa.Column('status', inventorystatus_enum, nullable=True),
     sa.Column('warehouse_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('location_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('category_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -1691,8 +2026,8 @@ def upgrade() -> None:
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('number', sa.String(length=50), nullable=False),
-    sa.Column('type', sa.Enum('IN', 'OUT', 'TRANSFER', 'ADJUSTMENT', 'PRODUCTION', 'RETURN', 'SCRAP', name='movementtype'), nullable=False),
-    sa.Column('status', sa.Enum('DRAFT', 'CONFIRMED', 'CANCELLED', name='movementstatus'), nullable=True),
+    sa.Column('type', movementtype_enum, nullable=False),
+    sa.Column('status', movementstatus_enum, nullable=True),
     sa.Column('movement_date', sa.DateTime(), nullable=False),
     sa.Column('from_warehouse_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('from_location_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -1730,8 +2065,8 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=100), nullable=False),
     sa.Column('name', sa.String(length=500), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('type', sa.Enum('STOCKABLE', 'CONSUMABLE', 'SERVICE', name='producttype'), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'ACTIVE', 'DISCONTINUED', 'BLOCKED', name='productstatus'), nullable=True),
+    sa.Column('type', producttype_enum, nullable=True),
+    sa.Column('status', productstatus_enum, nullable=True),
     sa.Column('category_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('barcode', sa.String(length=100), nullable=True),
     sa.Column('ean13', sa.String(length=13), nullable=True),
@@ -1747,7 +2082,7 @@ def upgrade() -> None:
     sa.Column('last_purchase_price', sa.Numeric(precision=15, scale=4), nullable=True),
     sa.Column('sale_price', sa.Numeric(precision=15, scale=4), nullable=True),
     sa.Column('currency', sa.String(length=3), nullable=True),
-    sa.Column('valuation_method', sa.Enum('FIFO', 'LIFO', 'AVG', 'STANDARD', name='valuationmethod'), nullable=True),
+    sa.Column('valuation_method', valuationmethod_enum, nullable=True),
     sa.Column('min_stock', sa.Numeric(precision=15, scale=4), nullable=True),
     sa.Column('max_stock', sa.Numeric(precision=15, scale=4), nullable=True),
     sa.Column('reorder_point', sa.Numeric(precision=15, scale=4), nullable=True),
@@ -1797,7 +2132,7 @@ def upgrade() -> None:
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('reference', sa.String(length=100), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'PENDING', 'VALIDATED', 'POSTED', 'CANCELLED', name='entrystatus'), nullable=True),
+    sa.Column('status', entrystatus_enum, nullable=True),
     sa.Column('total_debit', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('total_credit', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('source_type', sa.String(length=50), nullable=True),
@@ -1842,9 +2177,9 @@ def upgrade() -> None:
     sa.Column('plan_code', sa.String(length=50), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('maintenance_type', sa.Enum('PREVENTIVE', 'CORRECTIVE', 'PREDICTIVE', 'CONDITION_BASED', 'BREAKDOWN', 'IMPROVEMENT', 'INSPECTION', 'CALIBRATION', name='maintenancetype'), nullable=False),
+    sa.Column('maintenance_type', maintenancetype_enum, nullable=False),
     sa.Column('asset_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('asset_category', sa.Enum('MACHINE', 'EQUIPMENT', 'VEHICLE', 'BUILDING', 'INFRASTRUCTURE', 'IT_EQUIPMENT', 'TOOL', 'UTILITY', 'FURNITURE', 'OTHER', name='assetcategory'), nullable=True),
+    sa.Column('asset_category', assetcategory_enum, nullable=True),
     sa.Column('trigger_type', sa.String(length=50), nullable=False),
     sa.Column('frequency_value', sa.Integer(), nullable=True),
     sa.Column('frequency_unit', sa.String(length=20), nullable=True),
@@ -1886,7 +2221,7 @@ def upgrade() -> None:
     sa.Column('scrap_rate', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('is_critical', sa.Boolean(), nullable=True),
     sa.Column('alternative_group', sa.String(length=50), nullable=True),
-    sa.Column('consumption_type', sa.Enum('MANUAL', 'AUTO_ON_START', 'AUTO_ON_COMPLETE', name='consumptiontype'), nullable=True),
+    sa.Column('consumption_type', consumptiontype_enum, nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('extra_data', postgresql.JSONB(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -1907,8 +2242,8 @@ def upgrade() -> None:
     sa.Column('quantity_produced', sa.Numeric(precision=12, scale=4), nullable=True),
     sa.Column('quantity_scrapped', sa.Numeric(precision=12, scale=4), nullable=True),
     sa.Column('unit', sa.String(length=20), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'CONFIRMED', 'PLANNED', 'IN_PROGRESS', 'DONE', 'CANCELLED', name='mostatus'), nullable=True),
-    sa.Column('priority', sa.Enum('LOW', 'NORMAL', 'HIGH', 'URGENT', name='mopriority'), nullable=True),
+    sa.Column('status', mostatus_enum, nullable=True),
+    sa.Column('priority', mopriority_enum, nullable=True),
     sa.Column('scheduled_start', sa.DateTime(), nullable=True),
     sa.Column('scheduled_end', sa.DateTime(), nullable=True),
     sa.Column('actual_start', sa.DateTime(), nullable=True),
@@ -1947,9 +2282,9 @@ def upgrade() -> None:
     op.create_table('accounting_documents',
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
-    sa.Column('document_type', sa.Enum('INVOICE_RECEIVED', 'INVOICE_SENT', 'EXPENSE_NOTE', 'CREDIT_NOTE_RECEIVED', 'CREDIT_NOTE_SENT', 'QUOTE', 'PURCHASE_ORDER', 'DELIVERY_NOTE', 'BANK_STATEMENT', 'OTHER', name='documenttype'), nullable=False),
-    sa.Column('source', sa.Enum('EMAIL', 'UPLOAD', 'MOBILE_SCAN', 'API', 'BANK_SYNC', 'INTERNAL', name='documentsource'), nullable=False),
-    sa.Column('status', sa.Enum('RECEIVED', 'PROCESSING', 'ANALYZED', 'PENDING_VALIDATION', 'VALIDATED', 'ACCOUNTED', 'REJECTED', 'ERROR', name='documentstatus'), nullable=False),
+    sa.Column('document_type', documenttype_enum, nullable=False),
+    sa.Column('source', documentsource_enum, nullable=False),
+    sa.Column('status', documentstatus_enum, nullable=False),
     sa.Column('reference', sa.String(length=100), nullable=True),
     sa.Column('external_id', sa.String(length=255), nullable=True),
     sa.Column('original_filename', sa.String(length=255), nullable=True),
@@ -1968,12 +2303,12 @@ def upgrade() -> None:
     sa.Column('amount_tax', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('amount_total', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('currency', sa.String(length=3), nullable=True),
-    sa.Column('payment_status', sa.Enum('UNPAID', 'PARTIALLY_PAID', 'PAID', 'OVERPAID', 'CANCELLED', name='paymentstatus'), nullable=True),
+    sa.Column('payment_status', paymentstatus_enum, nullable=True),
     sa.Column('amount_paid', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('amount_remaining', sa.Numeric(precision=15, scale=2), nullable=True),
     sa.Column('ocr_raw_text', sa.Text(), nullable=True),
     sa.Column('ocr_confidence', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('ai_confidence', sa.Enum('HIGH', 'MEDIUM', 'LOW', 'VERY_LOW', name='confidencelevel'), nullable=True),
+    sa.Column('ai_confidence', confidencelevel_enum, nullable=True),
     sa.Column('ai_confidence_score', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('ai_suggested_account', sa.String(length=20), nullable=True),
     sa.Column('ai_suggested_journal', sa.String(length=20), nullable=True),
@@ -2072,8 +2407,8 @@ def upgrade() -> None:
     sa.Column('due_date', sa.Date(), nullable=False),
     sa.Column('start_date', sa.Date(), nullable=True),
     sa.Column('completion_date', sa.Date(), nullable=True),
-    sa.Column('status', sa.Enum('OPEN', 'IN_PROGRESS', 'COMPLETED', 'VERIFIED', 'CANCELLED', 'OVERDUE', name='actionstatus'), nullable=True),
-    sa.Column('priority', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='requirementpriority'), nullable=True),
+    sa.Column('status', actionstatus_enum, nullable=True),
+    sa.Column('priority', requirementpriority_enum, nullable=True),
     sa.Column('progress_percent', sa.Integer(), nullable=True),
     sa.Column('resolution_notes', sa.Text(), nullable=True),
     sa.Column('evidence_provided', sa.JSON(), nullable=True),
@@ -2097,7 +2432,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('product_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('number', sa.String(length=100), nullable=False),
-    sa.Column('status', sa.Enum('AVAILABLE', 'RESERVED', 'BLOCKED', 'EXPIRED', name='lotstatus'), nullable=True),
+    sa.Column('status', lotstatus_enum, nullable=True),
     sa.Column('production_date', sa.Date(), nullable=True),
     sa.Column('expiry_date', sa.Date(), nullable=True),
     sa.Column('reception_date', sa.Date(), nullable=True),
@@ -2235,7 +2570,7 @@ def upgrade() -> None:
     sa.Column('reorder_point', sa.Numeric(precision=12, scale=3), nullable=True),
     sa.Column('reorder_quantity', sa.Numeric(precision=12, scale=3), nullable=True),
     sa.Column('lead_time_days', sa.Integer(), nullable=True),
-    sa.Column('criticality', sa.Enum('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', name='assetcriticality'), nullable=True),
+    sa.Column('criticality', assetcriticality_enum, nullable=True),
     sa.Column('shelf_life_days', sa.Integer(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('product_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -2264,7 +2599,7 @@ def upgrade() -> None:
     sa.Column('planned_start', sa.Date(), nullable=True),
     sa.Column('planned_end', sa.Date(), nullable=True),
     sa.Column('mo_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('priority', sa.Enum('LOW', 'NORMAL', 'HIGH', 'URGENT', name='mopriority'), nullable=True),
+    sa.Column('priority', mopriority_enum, nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['mo_id'], ['production_manufacturing_orders.id'], ),
@@ -2283,7 +2618,7 @@ def upgrade() -> None:
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('operation_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('work_center_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('status', sa.Enum('PENDING', 'READY', 'IN_PROGRESS', 'PAUSED', 'DONE', 'CANCELLED', name='workorderstatus'), nullable=True),
+    sa.Column('status', prodworkorderstatus_enum, nullable=True),
     sa.Column('quantity_planned', sa.Numeric(precision=12, scale=4), nullable=False),
     sa.Column('quantity_done', sa.Numeric(precision=12, scale=4), nullable=True),
     sa.Column('quantity_scrapped', sa.Numeric(precision=12, scale=4), nullable=True),
@@ -2316,7 +2651,7 @@ def upgrade() -> None:
     sa.Column('document_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('model_name', sa.String(length=100), nullable=False),
     sa.Column('model_version', sa.String(length=20), nullable=True),
-    sa.Column('document_type_predicted', sa.Enum('INVOICE_RECEIVED', 'INVOICE_SENT', 'EXPENSE_NOTE', 'CREDIT_NOTE_RECEIVED', 'CREDIT_NOTE_SENT', 'QUOTE', 'PURCHASE_ORDER', 'DELIVERY_NOTE', 'BANK_STATEMENT', 'OTHER', name='documenttype'), nullable=True),
+    sa.Column('document_type_predicted', documenttype_enum, nullable=True),
     sa.Column('document_type_confidence', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('vendor_name', sa.String(length=255), nullable=True),
     sa.Column('vendor_confidence', sa.Numeric(precision=5, scale=2), nullable=True),
@@ -2339,7 +2674,7 @@ def upgrade() -> None:
     sa.Column('suggested_journal_confidence', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('expense_category', sa.String(length=100), nullable=True),
     sa.Column('expense_category_confidence', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('overall_confidence', sa.Enum('HIGH', 'MEDIUM', 'LOW', 'VERY_LOW', name='confidencelevel'), nullable=False),
+    sa.Column('overall_confidence', confidencelevel_enum, nullable=False),
     sa.Column('overall_confidence_score', sa.Numeric(precision=5, scale=2), nullable=False),
     sa.Column('classification_reasons', postgresql.JSON(), nullable=True),
     sa.Column('was_corrected', sa.Boolean(), nullable=True),
@@ -2356,8 +2691,8 @@ def upgrade() -> None:
     op.create_table('accounting_alerts',
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
-    sa.Column('alert_type', sa.Enum('DOCUMENT_UNREADABLE', 'MISSING_INFO', 'LOW_CONFIDENCE', 'DUPLICATE_SUSPECTED', 'AMOUNT_MISMATCH', 'TAX_ERROR', 'OVERDUE_PAYMENT', 'CASH_FLOW_WARNING', 'RECONCILIATION_ISSUE', name='alerttype'), nullable=False),
-    sa.Column('severity', sa.Enum('INFO', 'WARNING', 'ERROR', 'CRITICAL', name='alertseverity'), nullable=False),
+    sa.Column('alert_type', alerttype_enum, nullable=False),
+    sa.Column('severity', alertseverity_enum, nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('message', sa.Text(), nullable=False),
     sa.Column('entity_type', sa.String(length=50), nullable=True),
@@ -2388,7 +2723,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('document_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('journal_entry_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('confidence_level', sa.Enum('HIGH', 'MEDIUM', 'LOW', 'VERY_LOW', name='confidencelevel'), nullable=False),
+    sa.Column('confidence_level', confidencelevel_enum, nullable=False),
     sa.Column('confidence_score', sa.Numeric(precision=5, scale=2), nullable=False),
     sa.Column('entry_template', sa.String(length=100), nullable=True),
     sa.Column('accounting_rules_applied', postgresql.JSON(), nullable=True),
@@ -2448,7 +2783,7 @@ def upgrade() -> None:
     sa.Column('merchant_category', sa.String(length=100), nullable=True),
     sa.Column('ai_category', sa.String(length=100), nullable=True),
     sa.Column('ai_category_confidence', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('reconciliation_status', sa.Enum('PENDING', 'MATCHED', 'PARTIAL', 'MANUAL', 'UNMATCHED', name='reconciliationstatusauto'), nullable=True),
+    sa.Column('reconciliation_status', reconciliationstatusauto_enum, nullable=True),
     sa.Column('matched_document_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('matched_entry_line_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('matched_at', sa.DateTime(), nullable=True),
@@ -2476,7 +2811,7 @@ def upgrade() -> None:
     sa.Column('label', sa.String(length=255), nullable=False),
     sa.Column('reference', sa.String(length=100), nullable=True),
     sa.Column('amount', sa.Numeric(precision=15, scale=2), nullable=False),
-    sa.Column('status', sa.Enum('PENDING', 'MATCHED', 'PARTIAL', 'UNMATCHED', name='reconciliationstatus'), nullable=True),
+    sa.Column('status', reconciliationstatus_enum, nullable=True),
     sa.Column('matched_entry_line_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('matched_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -2491,7 +2826,7 @@ def upgrade() -> None:
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('tenant_id', sa.String(length=50), nullable=False),
     sa.Column('bank_account_id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('type', sa.Enum('CREDIT', 'DEBIT', 'TRANSFER', 'FEE', 'INTEREST', name='banktransactiontype'), nullable=False),
+    sa.Column('type', banktransactiontype_enum, nullable=False),
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('value_date', sa.Date(), nullable=True),
     sa.Column('amount', sa.Numeric(precision=15, scale=2), nullable=False),
@@ -2543,7 +2878,7 @@ def upgrade() -> None:
     sa.Column('product_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('lot_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('number', sa.String(length=100), nullable=False),
-    sa.Column('status', sa.Enum('AVAILABLE', 'RESERVED', 'BLOCKED', 'EXPIRED', name='lotstatus'), nullable=True),
+    sa.Column('status', lotstatus_enum, nullable=True),
     sa.Column('warehouse_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('location_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('supplier_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -2585,7 +2920,7 @@ def upgrade() -> None:
     sa.Column('expected_life_cycles', sa.Integer(), nullable=True),
     sa.Column('current_hours', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('current_cycles', sa.Integer(), nullable=True),
-    sa.Column('criticality', sa.Enum('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', name='assetcriticality'), nullable=True),
+    sa.Column('criticality', assetcriticality_enum, nullable=True),
     sa.Column('spare_part_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
@@ -2686,7 +3021,7 @@ def upgrade() -> None:
     sa.Column('unit', sa.String(length=20), nullable=True),
     sa.Column('lot_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('serial_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('reason', sa.Enum('DEFECT', 'DAMAGE', 'QUALITY', 'EXPIRED', 'OTHER', name='scrapreason'), nullable=True),
+    sa.Column('reason', scrapreason_enum, nullable=True),
     sa.Column('reason_detail', sa.Text(), nullable=True),
     sa.Column('work_center_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('unit_cost', sa.Numeric(precision=12, scale=4), nullable=True),
@@ -2714,7 +3049,7 @@ def upgrade() -> None:
     sa.Column('duration_minutes', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('quantity_produced', sa.Numeric(precision=12, scale=4), nullable=True),
     sa.Column('quantity_scrapped', sa.Numeric(precision=12, scale=4), nullable=True),
-    sa.Column('scrap_reason', sa.Enum('DEFECT', 'DAMAGE', 'QUALITY', 'EXPIRED', 'OTHER', name='scrapreason'), nullable=True),
+    sa.Column('scrap_reason', scrapreason_enum, nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['work_order_id'], ['production_work_orders.id'], ),
@@ -2813,7 +3148,7 @@ def upgrade() -> None:
     sa.Column('failure_number', sa.String(length=50), nullable=False),
     sa.Column('asset_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('component_id', postgresql.UUID(as_uuid=True), nullable=True),
-    sa.Column('failure_type', sa.Enum('MECHANICAL', 'ELECTRICAL', 'ELECTRONIC', 'HYDRAULIC', 'PNEUMATIC', 'SOFTWARE', 'OPERATOR_ERROR', 'WEAR', 'CONTAMINATION', 'UNKNOWN', name='failuretype'), nullable=False),
+    sa.Column('failure_type', failuretype_enum, nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
     sa.Column('symptoms', sa.Text(), nullable=True),
     sa.Column('failure_date', sa.DateTime(), nullable=False),
@@ -2868,9 +3203,9 @@ def upgrade() -> None:
     sa.Column('wo_number', sa.String(length=50), nullable=False),
     sa.Column('title', sa.String(length=300), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('maintenance_type', sa.Enum('PREVENTIVE', 'CORRECTIVE', 'PREDICTIVE', 'CONDITION_BASED', 'BREAKDOWN', 'IMPROVEMENT', 'INSPECTION', 'CALIBRATION', name='maintenancetype'), nullable=False),
-    sa.Column('priority', sa.Enum('EMERGENCY', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'SCHEDULED', name='workorderpriority'), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'REQUESTED', 'APPROVED', 'PLANNED', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'VERIFIED', 'CLOSED', 'CANCELLED', name='workorderstatus'), nullable=True),
+    sa.Column('maintenance_type', maintenancetype_enum, nullable=False),
+    sa.Column('priority', workorderpriority_enum, nullable=True),
+    sa.Column('status', maintenanceworkorderstatus_enum, nullable=True),
     sa.Column('asset_id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('component_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('source', sa.String(length=50), nullable=True),
@@ -2938,9 +3273,9 @@ def upgrade() -> None:
     sa.Column('quantity_approved', sa.Numeric(precision=12, scale=3), nullable=True),
     sa.Column('quantity_issued', sa.Numeric(precision=12, scale=3), nullable=True),
     sa.Column('unit', sa.String(length=50), nullable=True),
-    sa.Column('priority', sa.Enum('EMERGENCY', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'SCHEDULED', name='workorderpriority'), nullable=True),
+    sa.Column('priority', workorderpriority_enum, nullable=True),
     sa.Column('required_date', sa.Date(), nullable=True),
-    sa.Column('status', sa.Enum('REQUESTED', 'APPROVED', 'ORDERED', 'RECEIVED', 'ISSUED', 'CANCELLED', name='partrequeststatus'), nullable=True),
+    sa.Column('status', partrequeststatus_enum, nullable=True),
     sa.Column('requester_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column('request_date', sa.DateTime(), nullable=True),
     sa.Column('request_reason', sa.Text(), nullable=True),
@@ -3141,12 +3476,12 @@ def downgrade() -> None:
     sa.Column('tenant_id', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
     sa.Column('module_id', sa.UUID(), autoincrement=False, nullable=False),
     sa.Column('validation_id', sa.UUID(), autoincrement=False, nullable=True),
-    sa.Column('test_type', postgresql.ENUM('UNIT', 'INTEGRATION', 'E2E', 'PERFORMANCE', 'SECURITY', 'REGRESSION', name='qctesttype'), autoincrement=False, nullable=False),
+    sa.Column('test_type', qctesttype_enum, autoincrement=False, nullable=False),
     sa.Column('test_suite', sa.VARCHAR(length=200), autoincrement=False, nullable=True),
     sa.Column('started_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
     sa.Column('completed_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
     sa.Column('duration_seconds', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True),
-    sa.Column('status', postgresql.ENUM('PENDING', 'RUNNING', 'PASSED', 'FAILED', 'SKIPPED', 'ERROR', name='qccheckstatus'), autoincrement=False, nullable=False),
+    sa.Column('status', qccheckstatus_enum, autoincrement=False, nullable=False),
     sa.Column('total_tests', sa.INTEGER(), autoincrement=False, nullable=True),
     sa.Column('passed_tests', sa.INTEGER(), autoincrement=False, nullable=True),
     sa.Column('failed_tests', sa.INTEGER(), autoincrement=False, nullable=True),
@@ -3170,8 +3505,8 @@ def downgrade() -> None:
     sa.Column('code', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
     sa.Column('name', sa.VARCHAR(length=200), autoincrement=False, nullable=False),
     sa.Column('description', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('category', postgresql.ENUM('ARCHITECTURE', 'SECURITY', 'PERFORMANCE', 'CODE_QUALITY', 'TESTING', 'DOCUMENTATION', 'API', 'DATABASE', 'INTEGRATION', 'COMPLIANCE', name='qcrulecategory'), autoincrement=False, nullable=False),
-    sa.Column('severity', postgresql.ENUM('INFO', 'WARNING', 'CRITICAL', 'BLOCKER', name='qcruleseverity'), autoincrement=False, nullable=False),
+    sa.Column('category', qcrulecategory_enum, autoincrement=False, nullable=False),
+    sa.Column('severity', qcruleseverity_enum, autoincrement=False, nullable=False),
     sa.Column('applies_to_modules', sa.TEXT(), autoincrement=False, nullable=True),
     sa.Column('applies_to_phases', sa.TEXT(), autoincrement=False, nullable=True),
     sa.Column('check_type', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
@@ -3209,11 +3544,11 @@ def downgrade() -> None:
     sa.Column('id', sa.UUID(), autoincrement=False, nullable=False),
     sa.Column('tenant_id', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
     sa.Column('module_id', sa.UUID(), autoincrement=False, nullable=False),
-    sa.Column('validation_phase', postgresql.ENUM('PRE_QC', 'AUTOMATED', 'MANUAL', 'FINAL', 'POST_DEPLOY', name='validationphase'), autoincrement=False, nullable=False),
+    sa.Column('validation_phase', validationphase_enum, autoincrement=False, nullable=False),
     sa.Column('started_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
     sa.Column('completed_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
     sa.Column('started_by', sa.UUID(), autoincrement=False, nullable=True),
-    sa.Column('status', postgresql.ENUM('PENDING', 'RUNNING', 'PASSED', 'FAILED', 'SKIPPED', 'ERROR', name='qccheckstatus'), autoincrement=False, nullable=False),
+    sa.Column('status', qccheckstatus_enum, autoincrement=False, nullable=False),
     sa.Column('overall_score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True),
     sa.Column('total_rules', sa.INTEGER(), autoincrement=False, nullable=True),
     sa.Column('passed_rules', sa.INTEGER(), autoincrement=False, nullable=True),
@@ -3237,7 +3572,7 @@ def downgrade() -> None:
     sa.Column('validation_id', sa.UUID(), autoincrement=False, nullable=True),
     sa.Column('check_result_id', sa.UUID(), autoincrement=False, nullable=True),
     sa.Column('alert_type', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
-    sa.Column('severity', postgresql.ENUM('INFO', 'WARNING', 'CRITICAL', 'BLOCKER', name='qcruleseverity'), autoincrement=False, nullable=False),
+    sa.Column('severity', qcruleseverity_enum, autoincrement=False, nullable=False),
     sa.Column('title', sa.VARCHAR(length=200), autoincrement=False, nullable=False),
     sa.Column('message', sa.TEXT(), autoincrement=False, nullable=False),
     sa.Column('details', sa.TEXT(), autoincrement=False, nullable=True),
@@ -3284,7 +3619,7 @@ def downgrade() -> None:
     sa.Column('module_type', sa.VARCHAR(length=20), autoincrement=False, nullable=False),
     sa.Column('description', sa.TEXT(), autoincrement=False, nullable=True),
     sa.Column('dependencies', sa.TEXT(), autoincrement=False, nullable=True),
-    sa.Column('status', postgresql.ENUM('DRAFT', 'IN_DEVELOPMENT', 'READY_FOR_QC', 'QC_IN_PROGRESS', 'QC_PASSED', 'QC_FAILED', 'PRODUCTION', 'DEPRECATED', name='modulestatus'), autoincrement=False, nullable=False),
+    sa.Column('status', qcmodulestatus_enum, autoincrement=False, nullable=False),
     sa.Column('overall_score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True),
     sa.Column('architecture_score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True),
     sa.Column('security_score', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=True),
@@ -3315,9 +3650,9 @@ def downgrade() -> None:
     sa.Column('rule_id', sa.UUID(), autoincrement=False, nullable=True),
     sa.Column('rule_code', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
     sa.Column('rule_name', sa.VARCHAR(length=200), autoincrement=False, nullable=True),
-    sa.Column('category', postgresql.ENUM('ARCHITECTURE', 'SECURITY', 'PERFORMANCE', 'CODE_QUALITY', 'TESTING', 'DOCUMENTATION', 'API', 'DATABASE', 'INTEGRATION', 'COMPLIANCE', name='qcrulecategory'), autoincrement=False, nullable=False),
-    sa.Column('severity', postgresql.ENUM('INFO', 'WARNING', 'CRITICAL', 'BLOCKER', name='qcruleseverity'), autoincrement=False, nullable=False),
-    sa.Column('status', postgresql.ENUM('PENDING', 'RUNNING', 'PASSED', 'FAILED', 'SKIPPED', 'ERROR', name='qccheckstatus'), autoincrement=False, nullable=False),
+    sa.Column('category', qcrulecategory_enum, autoincrement=False, nullable=False),
+    sa.Column('severity', qcruleseverity_enum, autoincrement=False, nullable=False),
+    sa.Column('status', qccheckstatus_enum, autoincrement=False, nullable=False),
     sa.Column('executed_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
     sa.Column('duration_ms', sa.INTEGER(), autoincrement=False, nullable=True),
     sa.Column('expected_value', sa.VARCHAR(length=255), autoincrement=False, nullable=True),
