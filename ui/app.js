@@ -914,9 +914,10 @@ function onCockpitReady(data) {
     // Hook pour extensions futures
     // Exemple : analytics, notifications, auto-refresh
     console.log('Cockpit ready:', {
-        critical: data.criticalModules.length,
-        tension: data.tensionModules.length,
-        normal: data.normalModules.length
+        displayMode: data.displayMode,
+        primaryModule: data.primaryModule?.name || null,
+        visibleCount: data.visibleModules?.length || 0,
+        hiddenCount: data.hiddenCount || 0
     });
 }
 
