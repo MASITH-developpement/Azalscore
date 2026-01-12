@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
-from app.modules.stripe_integration.stripe_service_live import (
+from app.services.stripe_service import (
     StripeServiceLive, StripeWebhookHandler
 )
 

@@ -49,6 +49,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
         "/v1/auth/refresh", "/v1/auth/logout", "/v1/auth",
         # Audit routes (public for UI events without auth)
         "/v1/audit", "/v1/audit/ui-events",
+        # Signup et webhooks (public - nouvelles inscriptions et Stripe)
+        "/signup", "/webhooks",
     }
     
     async def dispatch(self, request: Request, call_next):
