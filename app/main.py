@@ -51,6 +51,8 @@ from app.api.admin_migration import router as admin_migration_router
 from app.api.partners import router as partners_router
 from app.api.invoicing import router as invoicing_router
 from app.api.branding import router as branding_router
+from app.api.signup import router as signup_router
+from app.api.webhooks import router as webhooks_router
 
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
 from app.modules.iam.router import router as iam_router
@@ -541,6 +543,10 @@ setup_cors(app)
 # Routes observabilite (PUBLIQUES - pas de tenant required)
 app.include_router(health_router)
 app.include_router(metrics_router)
+
+# Routes signup et webhooks (PUBLIQUES - nouvelles inscriptions)
+app.include_router(signup_router)
+app.include_router(webhooks_router)
 
 # ==================== AUTH LEGACY (sans prefix /v1) ====================
 # Route /auth/login directement accessible pour compatibilité V0

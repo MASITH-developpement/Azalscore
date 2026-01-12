@@ -242,6 +242,8 @@ PUBLIC_ROUTES: List[str] = [
     r"^/dashboard/?$",
     r"^/treasury/?$",
     r"^/login/?$",
+    r"^/signup/?.*$",       # Inscription publique
+    r"^/webhooks/?.*$",     # Webhooks Stripe
 ]
 
 
