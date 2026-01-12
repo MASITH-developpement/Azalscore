@@ -6,6 +6,7 @@ Injection sécurisée du tenant_id et vérification JWT
 from fastapi import Request, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from uuid import UUID
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.core.models import User
@@ -81,13 +82,18 @@ def get_current_user(
     
     # Charger l'utilisateur depuis la DB
     try:
-        user_id_int = int(user_id)
+        # Support UUID (nouveau) et int (legacy)
+        if isinstance(user_id, str) and '-' in user_id:
+            user_uuid = UUID(user_id)
+            user = db.query(User).filter(User.id == user_uuid).first()
+        else:
+            user_id_int = int(user_id)
+            user = db.query(User).filter(User.id == user_id_int).first()
     except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user ID in token"
         )
-    user = db.query(User).filter(User.id == user_id_int).first()
 
     if not user:
         raise HTTPException(
