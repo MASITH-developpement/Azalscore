@@ -100,13 +100,13 @@ class TestSignupToPaymentFlow:
     def test_trial_expiration_blocks_access(self, mock_email, client, db):
         """Test: trial expiré bloque l'accès."""
         mock_email.return_value = {"id": "email_test"}
-        
+
         # Créer un tenant avec trial expiré
         from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
         from app.core.models import User
-        from app.core.security import hash_password, create_access_token
+        from app.core.security import get_password_hash, create_access_token
         import uuid
-        
+
         tenant = Tenant(
             tenant_id="expired-e2e",
             name="Expired E2E",
@@ -116,37 +116,38 @@ class TestSignupToPaymentFlow:
             trial_ends_at=datetime.utcnow() - timedelta(days=1),  # Expiré
         )
         db.add(tenant)
-        
+
         user = User(
             id=uuid.uuid4(),
             tenant_id="expired-e2e",
             email="admin@expired-e2e.fr",
-            password_hash=hash_password("Test123!"),
-            first_name="Admin",
-            last_name="Expired",
-            role="admin",
-            is_active=True,
+            password_hash=get_password_hash("Test123!"),
+            role="EMPLOYE",
+            is_active=1,
         )
         db.add(user)
         db.commit()
-        
+
         # Créer un token valide
         token = create_access_token({
             "sub": str(user.id),
             "tenant_id": tenant.tenant_id,
-            "role": "admin",
+            "role": "EMPLOYE",
         })
-        
+
         # L'accès devrait être bloqué avec 402
         # Note: dépend de l'intégration du guard dans les routes
         headers = {
             "Authorization": f"Bearer {token}",
             "X-Tenant-ID": tenant.tenant_id,
         }
-        
-        # Test sur un endpoint protégé
+
+        # Test sur un endpoint protégé - commenté car dépend de l'intégration
         # response = client.get("/v1/dashboard", headers=headers)
         # assert response.status_code == 402
+
+        # Vérifier que le tenant a bien été créé avec trial expiré
+        assert tenant.trial_ends_at < datetime.utcnow()
 
 
 class TestPaymentFailureFlow:

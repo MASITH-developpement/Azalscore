@@ -491,7 +491,7 @@ class StripeWebhookHandler:
 
     def _handle_checkout_completed(self, session: Dict):
         """Checkout terminé - Activer l'abonnement."""
-        from app.core.tenant_status_guard import convert_trial_to_active
+        from app.services.tenant_status_guard import convert_trial_to_active
         
         metadata = session.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
@@ -540,7 +540,7 @@ class StripeWebhookHandler:
 
     def _handle_subscription_deleted(self, subscription: Dict):
         """Abonnement annulé/expiré."""
-        from app.core.tenant_status_guard import suspend_tenant
+        from app.services.tenant_status_guard import suspend_tenant
         
         subscription_id = subscription.get("id")
         metadata = subscription.get("metadata", {})
@@ -557,7 +557,7 @@ class StripeWebhookHandler:
 
     def _handle_invoice_paid(self, invoice: Dict):
         """Facture payée."""
-        from app.core.tenant_status_guard import reactivate_tenant
+        from app.services.tenant_status_guard import reactivate_tenant
         
         invoice_id = invoice.get("id")
         customer_id = invoice.get("customer")
@@ -578,7 +578,7 @@ class StripeWebhookHandler:
 
     def _handle_payment_failed(self, invoice: Dict):
         """Échec de paiement."""
-        from app.core.tenant_status_guard import suspend_tenant
+        from app.services.tenant_status_guard import suspend_tenant
         
         invoice_id = invoice.get("id")
         customer_id = invoice.get("customer")

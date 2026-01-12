@@ -347,11 +347,25 @@ class SignupService:
 
     def check_company_available(self, name: str) -> bool:
         """Vérifier si un nom d'entreprise est disponible."""
-        tenant_id = self._generate_tenant_id(name)
-        # Si le slug généré existe déjà (avec ou sans suffixe), considérer comme pris
+        # Générer le slug de base (sans suffixe d'unicité)
+        base_slug = self._generate_base_slug(name)
+        # Si le slug de base ou une variante existe déjà, considérer comme pris
         return not self.db.query(Tenant).filter(
-            Tenant.tenant_id.like(f"{tenant_id}%")
+            Tenant.tenant_id.like(f"{base_slug}%")
         ).first()
+
+    def _generate_base_slug(self, company_name: str) -> str:
+        """Générer un slug de base depuis le nom d'entreprise (sans suffixe d'unicité)."""
+        import unicodedata
+        normalized = unicodedata.normalize('NFKD', company_name.lower())
+        normalized = normalized.encode('ascii', 'ignore').decode('ascii')
+        normalized = re.sub(r'[^a-z0-9\s]', '', normalized)
+        slug = re.sub(r'\s+', '-', normalized.strip())
+        slug = slug[:40]
+        slug = slug.strip('-')
+        if not slug:
+            slug = "tenant"
+        return slug
 
 
 # ============================================================================
