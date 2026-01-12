@@ -120,8 +120,6 @@ def sample_tenant_data() -> Dict[str, Any]:
         "admin_last_name": "Dupont",
         "admin_phone": "+33612345678",
         "plan": "PROFESSIONAL",
-        "accept_terms": True,
-        "accept_privacy": True,
     }
 
 

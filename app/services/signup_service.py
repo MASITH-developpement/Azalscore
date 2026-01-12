@@ -195,17 +195,14 @@ class SignupService:
         logger.info(f"[SIGNUP] Tenant créé: {tenant_id} ({company_name})")
         
         # 6. Créer l'utilisateur admin
+        # Note: Le modèle User n'a pas first_name/last_name, on utilise les champs existants
         admin_user = User(
             id=uuid.uuid4(),
             tenant_id=tenant_id,
             email=admin_email,
             password_hash=hash_password(admin_password),
-            first_name=admin_first_name,
-            last_name=admin_last_name,
-            phone=admin_phone,
-            role="admin",
-            is_active=True,
-            is_verified=False,  # Email à vérifier
+            role="ADMIN",  # Enum UserRole
+            is_active=1,  # Integer pour SQLite
             created_at=datetime.utcnow(),
         )
         self.db.add(admin_user)
