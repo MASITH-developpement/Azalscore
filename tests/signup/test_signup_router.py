@@ -154,20 +154,24 @@ class TestSignupEndpoints:
 
         assert response.status_code == 422
 
-    @pytest.mark.xfail(reason="Test requires complex DB isolation - tested in test_signup_service.py")
     @patch("resend.Emails.send")
-    def test_signup_duplicate_email(self, mock_email, client):
+    @patch("app.services.signup_service.SignupService.signup")
+    def test_signup_duplicate_email(self, mock_signup, mock_email, client):
         """Test: email déjà utilisé → 400.
 
-        Note: Ce test a des problèmes d'isolation DB dans le contexte E2E.
-        La même fonctionnalité est testée dans test_signup_service.py::test_signup_duplicate_email_fails
+        Mock le service pour simuler une erreur de duplication d'email.
         """
+        from app.services.signup_service import SignupError
+
         mock_email.return_value = {"id": "email_test"}
 
-        # D'abord créer un utilisateur
-        first_signup = client.post("/signup/", json={
-            "company_name": "First Company",
-            "company_email": "contact@firstcompany.fr",
+        # Configurer le mock pour lever une erreur EMAIL_EXISTS
+        mock_signup.side_effect = SignupError("EMAIL_EXISTS", "L'email duplicate@test.fr est déjà utilisé")
+
+        # Tenter de créer un nouveau compte avec l'email existant
+        response = client.post("/signup/", json={
+            "company_name": "Another Company",
+            "company_email": "contact@anothercompany.fr",
             "admin_email": "duplicate@test.fr",
             "admin_password": "SecurePass123!",
             "admin_first_name": "Jean",
@@ -176,24 +180,12 @@ class TestSignupEndpoints:
             "accept_privacy": True,
         })
 
-        skip_if_db_error(first_signup)
-        assert first_signup.status_code == 201, f"First signup failed: {first_signup.json()}"
-
-        # Tenter de créer un autre utilisateur avec le même email
-        response = client.post("/signup/", json={
-            "company_name": "Another Company",
-            "company_email": "contact@another.fr",
-            "admin_email": "duplicate@test.fr",  # Email existant
-            "admin_password": "SecurePass123!",
-            "admin_first_name": "Jean",
-            "admin_last_name": "Test",
-            "accept_terms": True,
-            "accept_privacy": True,
-        })
-
-        assert response.status_code == 400
+        assert response.status_code == 400, f"Expected 400, got {response.status_code}: {response.json()}"
         data = response.json()
-        assert data["detail"]["code"] == "EMAIL_EXISTS"
+        # La réponse d'erreur est formatée par http_errors.py
+        # Format: {"error": "client_error", "message": str(detail), "code": 400}
+        assert data["code"] == 400
+        assert "EMAIL_EXISTS" in data["message"]
 
     # ========================================================================
     # GET /signup/check-email - VÉRIFICATION EMAIL
