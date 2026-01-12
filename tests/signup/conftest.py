@@ -242,18 +242,15 @@ def cancelled_tenant(db_session) -> "Tenant":
 def sample_user(db_session, sample_tenant) -> "User":
     """Créer un utilisateur de test."""
     from app.core.models import User
-    from app.core.security import hash_password
-    
+    from app.core.security import get_password_hash as hash_password
+
     user = User(
         id=uuid.uuid4(),
         tenant_id=sample_tenant.tenant_id,
         email="user@testcompany.fr",
         password_hash=hash_password("TestPass123!"),
-        first_name="Pierre",
-        last_name="Martin",
-        role="operator",
-        is_active=True,
-        is_verified=True,
+        role="EMPLOYE",
+        is_active=1,
     )
     db_session.add(user)
     db_session.commit()
@@ -265,18 +262,15 @@ def sample_user(db_session, sample_tenant) -> "User":
 def admin_user(db_session, sample_tenant) -> "User":
     """Créer un utilisateur admin de test."""
     from app.core.models import User
-    from app.core.security import hash_password
-    
+    from app.core.security import get_password_hash as hash_password
+
     user = User(
         id=uuid.uuid4(),
         tenant_id=sample_tenant.tenant_id,
         email="admin@testcompany.fr",
         password_hash=hash_password("AdminPass123!"),
-        first_name="Admin",
-        last_name="Test",
         role="admin",
-        is_active=True,
-        is_verified=True,
+        is_active=1,
     )
     db_session.add(user)
     db_session.commit()
@@ -454,17 +448,15 @@ def create_test_tenant(db: Session, tenant_id: str, status: str = "ACTIVE", **kw
 def create_test_user(db: Session, tenant_id: str, email: str, role: str = "operator"):
     """Helper pour créer un utilisateur de test."""
     from app.core.models import User
-    from app.core.security import hash_password
-    
+    from app.core.security import get_password_hash as hash_password
+
     user = User(
         id=uuid.uuid4(),
         tenant_id=tenant_id,
         email=email,
         password_hash=hash_password("TestPass123!"),
-        first_name="Test",
-        last_name="User",
         role=role,
-        is_active=True,
+        is_active=1,
     )
     db.add(user)
     db.commit()

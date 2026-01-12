@@ -282,11 +282,14 @@ def suspend_tenant(db: Session, tenant_id: str, reason: str = "payment_failed") 
     
     # Ajouter un event d'audit
     from app.modules.tenants.models import TenantEvent
+    import uuid as uuid_module
     event = TenantEvent(
         tenant_id=tenant_id,
         event_type="TENANT_SUSPENDED",
         event_data={"reason": reason},
-        description=f"Tenant suspendu: {reason}"
+        description=f"Tenant suspendu: {reason}",
+        actor_id=uuid_module.UUID("00000000-0000-0000-0000-000000000000"),  # System
+        actor_email="system@azalscore.com"
     )
     db.add(event)
     
@@ -318,11 +321,14 @@ def reactivate_tenant(db: Session, tenant_id: str) -> bool:
     
     # Ajouter un event d'audit
     from app.modules.tenants.models import TenantEvent
+    import uuid as uuid_module
     event = TenantEvent(
         tenant_id=tenant_id,
         event_type="TENANT_REACTIVATED",
         event_data={},
-        description="Tenant réactivé après régularisation"
+        description="Tenant réactivé après régularisation",
+        actor_id=uuid_module.UUID("00000000-0000-0000-0000-000000000000"),  # System
+        actor_email="system@azalscore.com"
     )
     db.add(event)
     
@@ -375,11 +381,14 @@ def convert_trial_to_active(db: Session, tenant_id: str, plan: str) -> bool:
     
     # Ajouter un event d'audit
     from app.modules.tenants.models import TenantEvent
+    import uuid as uuid_module
     event = TenantEvent(
         tenant_id=tenant_id,
         event_type="TRIAL_CONVERTED",
         event_data={"plan": plan},
-        description=f"Essai converti en abonnement {plan}"
+        description=f"Essai converti en abonnement {plan}",
+        actor_id=uuid_module.UUID("00000000-0000-0000-0000-000000000000"),  # System
+        actor_email="system@azalscore.com"
     )
     db.add(event)
     
