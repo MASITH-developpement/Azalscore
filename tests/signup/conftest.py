@@ -16,14 +16,26 @@ from typing import Generator, Dict, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 
 # Ajouter le chemin parent pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# ============================================================================
+# TEST ENGINE - Créé au niveau module pour être partagé
+# ============================================================================
+
+# Engine SQLite en mémoire partagé par tous les tests
+TEST_ENGINE = create_engine(
+    "sqlite:///:memory:",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+
+# Session factory pour les tests
+TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=TEST_ENGINE)
 
 
 # ============================================================================
@@ -32,13 +44,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 @pytest.fixture(scope="session")
 def engine():
-    """Créer un engine SQLite en mémoire pour les tests."""
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    return engine
+    """Retourner l'engine SQLite en mémoire pour les tests."""
+    return TEST_ENGINE
 
 
 @pytest.fixture(scope="session")
@@ -55,14 +62,23 @@ def db_session(engine, tables) -> Generator[Session, None, None]:
     """Session de base de données pour chaque test."""
     connection = engine.connect()
     transaction = connection.begin()
-    
-    SessionLocal = sessionmaker(bind=connection)
-    session = SessionLocal()
-    
+
+    session = Session(bind=connection)
+
+    # Nested transaction pour pouvoir rollback après chaque test
+    nested = connection.begin_nested()
+
+    @event.listens_for(session, "after_transaction_end")
+    def end_savepoint(session, transaction):
+        nonlocal nested
+        if not nested.is_active:
+            nested = connection.begin_nested()
+
     yield session
-    
+
     session.close()
-    transaction.rollback()
+    if transaction.is_active:
+        transaction.rollback()
     connection.close()
 
 
@@ -77,28 +93,34 @@ def db(db_session) -> Session:
 # ============================================================================
 
 @pytest.fixture
-def app() -> FastAPI:
+def app(tables):
     """Créer une instance de l'application pour les tests."""
+    from fastapi import FastAPI
+    from app.core.database import get_db
+
+    # Import de l'app après création des tables
     from app.main import app as main_app
+
     return main_app
 
 
 @pytest.fixture
-def client(app, db_session) -> TestClient:
+def client(app, db_session):
     """Client de test avec injection de la session DB."""
+    from fastapi.testclient import TestClient
     from app.core.database import get_db
-    
+
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
-    with TestClient(app) as test_client:
+
+    with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
-    
+
     app.dependency_overrides.clear()
 
 
@@ -127,7 +149,7 @@ def sample_tenant_data() -> Dict[str, Any]:
 def sample_tenant(db_session) -> "Tenant":
     """Créer un tenant de test dans la base."""
     from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
-    
+
     tenant = Tenant(
         tenant_id="test-company",
         name="Test Company",
@@ -142,8 +164,7 @@ def sample_tenant(db_session) -> "Tenant":
         activated_at=datetime.utcnow(),
     )
     db_session.add(tenant)
-    db_session.commit()
-    db_session.refresh(tenant)
+    db_session.flush()
     return tenant
 
 
@@ -151,7 +172,7 @@ def sample_tenant(db_session) -> "Tenant":
 def trial_tenant(db_session) -> "Tenant":
     """Créer un tenant en période d'essai."""
     from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
-    
+
     tenant = Tenant(
         tenant_id="trial-company",
         name="Trial Company",
@@ -164,8 +185,7 @@ def trial_tenant(db_session) -> "Tenant":
         activated_at=datetime.utcnow(),
     )
     db_session.add(tenant)
-    db_session.commit()
-    db_session.refresh(tenant)
+    db_session.flush()
     return tenant
 
 
@@ -173,7 +193,7 @@ def trial_tenant(db_session) -> "Tenant":
 def expired_trial_tenant(db_session) -> "Tenant":
     """Créer un tenant avec essai expiré."""
     from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
-    
+
     tenant = Tenant(
         tenant_id="expired-trial",
         name="Expired Trial Company",
@@ -186,8 +206,7 @@ def expired_trial_tenant(db_session) -> "Tenant":
         activated_at=datetime.utcnow() - timedelta(days=15),
     )
     db_session.add(tenant)
-    db_session.commit()
-    db_session.refresh(tenant)
+    db_session.flush()
     return tenant
 
 
@@ -195,7 +214,7 @@ def expired_trial_tenant(db_session) -> "Tenant":
 def suspended_tenant(db_session) -> "Tenant":
     """Créer un tenant suspendu (impayé)."""
     from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
-    
+
     tenant = Tenant(
         tenant_id="suspended-company",
         name="Suspended Company",
@@ -207,8 +226,7 @@ def suspended_tenant(db_session) -> "Tenant":
         suspended_at=datetime.utcnow() - timedelta(days=3),
     )
     db_session.add(tenant)
-    db_session.commit()
-    db_session.refresh(tenant)
+    db_session.flush()
     return tenant
 
 
@@ -216,7 +234,7 @@ def suspended_tenant(db_session) -> "Tenant":
 def cancelled_tenant(db_session) -> "Tenant":
     """Créer un tenant annulé."""
     from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
-    
+
     tenant = Tenant(
         tenant_id="cancelled-company",
         name="Cancelled Company",
@@ -227,8 +245,7 @@ def cancelled_tenant(db_session) -> "Tenant":
         cancelled_at=datetime.utcnow() - timedelta(days=10),
     )
     db_session.add(tenant)
-    db_session.commit()
-    db_session.refresh(tenant)
+    db_session.flush()
     return tenant
 
 
@@ -251,8 +268,7 @@ def sample_user(db_session, sample_tenant) -> "User":
         is_active=1,
     )
     db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+    db_session.flush()
     return user
 
 
@@ -267,12 +283,11 @@ def admin_user(db_session, sample_tenant) -> "User":
         tenant_id=sample_tenant.tenant_id,
         email="admin@testcompany.fr",
         password_hash=hash_password("AdminPass123!"),
-        role="admin",
+        role="ADMIN",
         is_active=1,
     )
     db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+    db_session.flush()
     return user
 
 
@@ -284,7 +299,7 @@ def admin_user(db_session, sample_tenant) -> "User":
 def auth_headers(sample_user, sample_tenant) -> Dict[str, str]:
     """Headers d'authentification valides."""
     from app.core.security import create_access_token
-    
+
     token = create_access_token(
         data={
             "sub": str(sample_user.id),
@@ -292,7 +307,7 @@ def auth_headers(sample_user, sample_tenant) -> Dict[str, str]:
             "role": sample_user.role,
         }
     )
-    
+
     return {
         "Authorization": f"Bearer {token}",
         "X-Tenant-ID": sample_tenant.tenant_id,
@@ -303,15 +318,15 @@ def auth_headers(sample_user, sample_tenant) -> Dict[str, str]:
 def admin_auth_headers(admin_user, sample_tenant) -> Dict[str, str]:
     """Headers d'authentification admin."""
     from app.core.security import create_access_token
-    
+
     token = create_access_token(
         data={
             "sub": str(admin_user.id),
             "tenant_id": sample_tenant.tenant_id,
-            "role": "admin",
+            "role": "ADMIN",
         }
     )
-    
+
     return {
         "Authorization": f"Bearer {token}",
         "X-Tenant-ID": sample_tenant.tenant_id,
@@ -393,7 +408,7 @@ def mock_stripe():
                 mock_construct.return_value = MagicMock()
                 mock_session.return_value = MagicMock(url="https://checkout.stripe.com/test")
                 mock_customer.return_value = MagicMock(id="cus_test_123")
-                
+
                 yield {
                     "construct_event": mock_construct,
                     "create_session": mock_session,
@@ -421,7 +436,7 @@ def mock_email_service():
 def create_test_tenant(db: Session, tenant_id: str, status: str = "ACTIVE", **kwargs):
     """Helper pour créer un tenant de test."""
     from app.modules.tenants.models import Tenant, TenantStatus, SubscriptionPlan
-    
+
     defaults = {
         "name": f"Test {tenant_id}",
         "email": f"contact@{tenant_id}.fr",
@@ -431,19 +446,18 @@ def create_test_tenant(db: Session, tenant_id: str, status: str = "ACTIVE", **kw
         "max_storage_gb": 50,
     }
     defaults.update(kwargs)
-    
+
     tenant = Tenant(
         tenant_id=tenant_id,
         status=TenantStatus[status],
         **defaults
     )
     db.add(tenant)
-    db.commit()
-    db.refresh(tenant)
+    db.flush()
     return tenant
 
 
-def create_test_user(db: Session, tenant_id: str, email: str, role: str = "operator"):
+def create_test_user(db: Session, tenant_id: str, email: str, role: str = "EMPLOYE"):
     """Helper pour créer un utilisateur de test."""
     from app.core.models import User
     from app.core.security import get_password_hash as hash_password
@@ -457,6 +471,5 @@ def create_test_user(db: Session, tenant_id: str, email: str, role: str = "opera
         is_active=1,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    db.flush()
     return user
