@@ -46,6 +46,13 @@ services:
       - key: LOG_LEVEL
         value: "INFO"
 
+      # UUID Database - Désactiver le mode strict pour déploiement initial
+      # La base sera créée avec UUID par les modèles ORM
+      - key: DB_STRICT_UUID
+        value: "false"
+      - key: DB_AUTO_RESET_ON_VIOLATION
+        value: "false"
+
       # SECRETS GÉNÉRÉS AUTOMATIQUEMENT
       - key: SECRET_KEY
         generateValue: true
