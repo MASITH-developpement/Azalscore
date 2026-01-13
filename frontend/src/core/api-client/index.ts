@@ -16,6 +16,11 @@ const API_TIMEOUT = 30000;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
+/**
+ * Retourne l'URL de base de l'API
+ */
+export const getApiUrl = (): string => API_BASE_URL;
+
 // ============================================================
 // GESTIONNAIRE DE TOKENS
 // ============================================================
@@ -186,12 +191,23 @@ const executeWithRetry = async <T>(
 // API PUBLIQUE
 // ============================================================
 
+const buildHeaders = (config?: ApiRequestConfig): Record<string, string> | undefined => {
+  const headers: Record<string, string> = {};
+  if (config?.skipAuth) {
+    headers['Skip-Auth'] = 'true';
+  }
+  if (config?.headers) {
+    Object.assign(headers, config.headers);
+  }
+  return Object.keys(headers).length > 0 ? headers : undefined;
+};
+
 export const api = {
   async get<T>(url: string, config?: ApiRequestConfig): Promise<ApiResponse<T>> {
     const response = await executeWithRetry(
       () => apiClient.get<ApiResponse<T>>(url, {
         timeout: config?.timeout,
-        headers: config?.skipAuth ? { 'Skip-Auth': 'true' } : undefined,
+        headers: buildHeaders(config),
       }),
       config
     );
@@ -202,7 +218,7 @@ export const api = {
     const response = await executeWithRetry(
       () => apiClient.post<ApiResponse<T>>(url, data, {
         timeout: config?.timeout,
-        headers: config?.skipAuth ? { 'Skip-Auth': 'true' } : undefined,
+        headers: buildHeaders(config),
       }),
       config
     );
@@ -213,6 +229,7 @@ export const api = {
     const response = await executeWithRetry(
       () => apiClient.put<ApiResponse<T>>(url, data, {
         timeout: config?.timeout,
+        headers: buildHeaders(config),
       }),
       config
     );
@@ -223,6 +240,7 @@ export const api = {
     const response = await executeWithRetry(
       () => apiClient.patch<ApiResponse<T>>(url, data, {
         timeout: config?.timeout,
+        headers: buildHeaders(config),
       }),
       config
     );
@@ -233,6 +251,7 @@ export const api = {
     const response = await executeWithRetry(
       () => apiClient.delete<ApiResponse<T>>(url, {
         timeout: config?.timeout,
+        headers: buildHeaders(config),
       }),
       config
     );

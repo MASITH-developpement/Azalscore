@@ -3,6 +3,8 @@
  * Aucune logique métier - Types uniquement
  */
 
+import React from 'react';
+
 // ============================================================
 // TYPES D'AUTHENTIFICATION
 // ============================================================
@@ -13,6 +15,7 @@ export interface User {
   name: string;
   tenant_id: string;
   roles: string[];
+  role?: string; // Alias pour compatibilité - premier rôle
   capabilities: string[];
   is_active: boolean;
   requires_2fa: boolean;
@@ -83,6 +86,7 @@ export interface ApiRequestConfig {
   skipAuth?: boolean;
   timeout?: number;
   retries?: number;
+  headers?: Record<string, string>;
 }
 
 // ============================================================
@@ -171,7 +175,7 @@ export interface TableColumn<T> {
 export interface TableAction<T> {
   id: string;
   label: string;
-  icon?: string;
+  icon?: string | React.ReactNode;
   capability?: string;
   onClick: (row: T) => void;
   isDisabled?: (row: T) => boolean;
