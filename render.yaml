@@ -90,7 +90,6 @@ services:
   - type: web
     name: azalscore-frontend
     runtime: static
-    region: frankfurt
     plan: free
 
     buildCommand: cd frontend && npm ci && npm run build
