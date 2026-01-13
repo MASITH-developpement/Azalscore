@@ -160,6 +160,9 @@ from app.modules.backup.router import router as backup_router
 # Module MARKETPLACE - Site marchand
 from app.modules.marketplace.router import router as marketplace_router
 
+# Module ENTERPRISE - Architecture Enterprise (SLA, Governance, Observability)
+from app.enterprise.router import router as enterprise_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -686,6 +689,9 @@ api_v1.include_router(backup_router)
 
 # Module MARKETPLACE - Site marchand & provisioning automatique
 api_v1.include_router(marketplace_router)
+
+# Module ENTERPRISE - Architecture Enterprise (SLA, Governance, Observability)
+api_v1.include_router(enterprise_router)
 
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)
