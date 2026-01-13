@@ -422,13 +422,15 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 // ============================================================
 
 interface StatusBadgeProps {
-  status: string;
+  status?: string;
+  children?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'success' | 'warning' | 'danger' | 'info' | 'default';
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({
   status,
+  children,
   size = 'md',
   variant = 'default',
 }) => {
@@ -440,7 +442,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         `azals-status-badge--${size}`
       )}
     >
-      {status}
+      {children ?? status}
     </span>
   );
 };
