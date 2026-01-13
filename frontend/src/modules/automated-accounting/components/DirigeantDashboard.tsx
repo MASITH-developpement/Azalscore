@@ -421,7 +421,7 @@ export const DirigeantDashboard: React.FC = () => {
 
   const handleRefresh = async () => {
     await bankSync.mutateAsync();
-    refetch();
+    void refetch();
   };
 
   if (isLoading) {
@@ -442,7 +442,7 @@ export const DirigeantDashboard: React.FC = () => {
           <div className="azals-error">
             <AlertTriangle size={48} />
             <p>Impossible de charger vos données</p>
-            <Button onClick={() => refetch()}>Réessayer</Button>
+            <Button onClick={() => { refetch(); }}>Réessayer</Button>
           </div>
         </Card>
       </PageWrapper>

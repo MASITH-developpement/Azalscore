@@ -722,7 +722,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
       sortable: true,
       render: (value, row) => (
         <Link to={`/invoicing/${type.toLowerCase()}s/${row.id}`} className="azals-link">
-          {value}
+          {value as string}
         </Link>
       ),
     },
