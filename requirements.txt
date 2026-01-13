@@ -41,3 +41,4 @@ psutil==5.9.8
 
 # Cache & Rate Limiting
 redis==5.0.1
+python-multipart>=0.0.6
