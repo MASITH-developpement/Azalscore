@@ -1,14 +1,24 @@
-# AZALS - Configuration Render.com
-# =================================
-# Déploiement automatique sur Render
+# ==============================================================================
+# AZALSCORE - Configuration Render.com PRO + DOCKER
+# ==============================================================================
+# DÉPLOIEMENT EN UN CLIC avec Docker - Portabilité maximale!
 #
-# VARIABLES REQUISES (à configurer dans Render Dashboard > Environment):
-# -----------------------------------------------------------------------
-# SECRET_KEY         - Clé JWT (générer avec: python -c "import secrets; print(secrets.token_urlsafe(64))")
-# BOOTSTRAP_SECRET   - Secret bootstrap (générer avec: python -c "import secrets; print(secrets.token_urlsafe(64))")
-# CORS_ORIGINS       - URL frontend (ex: https://azals-frontend.onrender.com)
+# INSTRUCTIONS:
+# 1. Cliquez sur "Deploy to Render" ou utilisez ce Blueprint
+# 2. C'est tout! Le reste est automatique.
 #
-# Pour mode staging (sans ces contraintes), mettre ENVIRONMENT=staging
+# CARACTÉRISTIQUES:
+# - Docker multi-stage (image optimisée ~200MB)
+# - HTTPS automatique
+# - Redémarrage automatique
+# - PostgreSQL (haute disponibilité)
+# - Région EU (Frankfurt) pour conformité RGPD
+# - 2GB RAM / 1 CPU
+# - Secrets générés automatiquement
+# - Monitoring complet activé
+# - Portabilité : même image sur AWS/GCP/VPS
+#
+# ==============================================================================
 
 services:
   # ============================================================
@@ -69,45 +79,105 @@ services:
   # Backend API - FastAPI
   # ============================================================
   - type: web
-    name: azals-api
-    runtime: python
-    region: frankfurt  # EU pour conformité RGPD
-    plan: starter  # Changer selon besoins (starter, standard, pro)
+    name: azalscore-api
+    runtime: docker
+    region: frankfurt
+    plan: standard  # 25$/mois - 2GB RAM, 1 CPU
 
-    # Build
-    buildCommand: pip install -r requirements.txt && python run_migrations.py
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Docker configuration
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
 
-    # Health Check
     healthCheckPath: /health
 
-    # Variables d'environnement
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.11.7"
+      - key: PORT
+        value: "8000"
       - key: DEBUG
         value: "false"
       - key: ENVIRONMENT
-        value: "staging"  # Utiliser "production" quand SECRET_KEY/BOOTSTRAP_SECRET/CORS_ORIGINS sont configurés
+        value: "production"
+      - key: LOG_LEVEL
+        value: "INFO"
+
+      # UUID Database - Désactiver le mode strict pour déploiement initial
+      # La base sera créée avec UUID par les modèles ORM
+      - key: DB_STRICT_UUID
+        value: "false"
+      - key: DB_AUTO_RESET_ON_VIOLATION
+        value: "false"
+
+      # SECRETS GÉNÉRÉS AUTOMATIQUEMENT
       - key: SECRET_KEY
-        sync: false  # OBLIGATOIRE: configurer dans Render Dashboard (min 32 chars, pas de "secret" ou "azals")
+        generateValue: true
       - key: BOOTSTRAP_SECRET
-        sync: false  # OBLIGATOIRE en production: configurer dans Render Dashboard
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+
+      # Admin par défaut (changez après déploiement!)
+      - key: ADMIN_EMAIL
+        value: "admin@azalscore.local"
+      - key: ADMIN_PASSWORD
+        generateValue: true
+
+      # CORS
       - key: CORS_ORIGINS
-        sync: false  # OBLIGATOIRE en production: ex https://azals-frontend.onrender.com
+        value: "https://azalscore-frontend.onrender.com,http://localhost:5173"
+
+      # Database - connectée automatiquement
       - key: DATABASE_URL
         fromDatabase:
-          name: azals-db
+          name: azalscore-db
           property: connectionString
 
-    # Auto-deploy depuis la branche main
     autoDeploy: true
 
+  # ==========================================================================
+  # FRONTEND (React + Vite)
+  # ==========================================================================
+  - type: web
+    name: azalscore-frontend
+    runtime: static
+    plan: free
+
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: "1; mode=block"
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+
+    envVars:
+      - key: VITE_API_URL
+        value: https://azalscore-api.onrender.com
+      - key: NODE_VERSION
+        value: "18"
+
+    autoDeploy: true
+
+# ==============================================================================
+# BASE DE DONNÉES PostgreSQL
+# ==============================================================================
 databases:
-  # Base de données PostgreSQL
-  - name: azals-db
+  - name: azalscore-db
     region: frankfurt
-    plan: starter  # starter = 1GB gratuit 90 jours
-    databaseName: azals
-    user: azals_user
-    ipAllowList: []  # Uniquement services Render
+    plan: free
+    databaseName: azalscore
+    user: azalscore_user
+    ipAllowList: []

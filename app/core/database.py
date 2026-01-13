@@ -18,11 +18,27 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+# Configuration robuste pour Render PostgreSQL avec SSL
+connect_args = {}
+
+# Ajouter les paramètres SSL si l'URL contient sslmode
+if "sslmode" in settings.database_url:
+    connect_args = {
+        "connect_timeout": 30,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    }
+
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
     pool_size=settings.db_pool_size,
     max_overflow=settings.db_max_overflow,
+    pool_recycle=300,  # Recycler les connexions toutes les 5 minutes
+    pool_timeout=30,   # Timeout pour obtenir une connexion du pool
+    connect_args=connect_args,
     echo=settings.debug  # Log SQL en mode debug
 )
 

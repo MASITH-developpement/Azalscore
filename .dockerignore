@@ -1,0 +1,116 @@
+# ==============================================================================
+# AZALSCORE - Docker Ignore
+# ==============================================================================
+# Exclure les fichiers inutiles pour réduire la taille de l'image Docker
+# ==============================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Tests
+tests/
+test/
+*_test.py
+test_*.py
+conftest.py
+
+# Documentation
+docs/
+*.md
+!README.md
+LICENSE
+
+# Logs
+logs/
+*.log
+
+# Local config
+.env
+.env.*
+!.env.example
+*.local
+
+# Frontend (built separately)
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Docker (avoid recursive copy)
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# Misc
+*.bak
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Alembic versions (included, but exclude __pycache__)
+alembic/versions/__pycache__/
+
+# Installer dist
+installer/
+dist/
+
+# Infra configs (for prod compose)
+infra/
+
+# Scripts not needed in image
+scripts/install/
+scripts/*.sh
+!scripts/bootstrap_production.py
