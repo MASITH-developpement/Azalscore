@@ -26,7 +26,7 @@ services:
     name: azalscore-api
     runtime: python
     region: frankfurt
-    plan: starter  # 7$/mois - 512MB RAM, 0.5 CPU (ou 'standard' pour 2GB)
+    plan: standard  # 25$/mois - 2GB RAM, 1 CPU (nécessaire pour AZALSCORE)
 
     # Build
     buildCommand: |
