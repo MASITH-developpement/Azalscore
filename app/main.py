@@ -989,7 +989,23 @@ if UI_DIR.exists():
         if treasury_path.exists():
             return FileResponse(treasury_path)
         return {"message": "Page Trésorerie non disponible"}
-    
+
+    @app.get("/partners")
+    async def serve_partners():
+        """Servir la page Partenaires"""
+        partners_path = UI_DIR / "partners.html"
+        if partners_path.exists():
+            return FileResponse(partners_path)
+        return {"message": "Page Partenaires non disponible"}
+
+    @app.get("/invoicing")
+    async def serve_invoicing():
+        """Servir la page Facturation"""
+        invoicing_path = UI_DIR / "invoicing.html"
+        if invoicing_path.exists():
+            return FileResponse(invoicing_path)
+        return {"message": "Page Facturation non disponible"}
+
     @app.get("/favicon.ico")
     async def serve_favicon_ico():
         """Servir le favicon (format .ico redirige vers PNG)"""
