@@ -94,9 +94,9 @@ services:
       - key: ADMIN_PASSWORD
         generateValue: true
 
-      # CORS - Frontend URL
+      # CORS - Frontend URL (production only, no localhost)
       - key: CORS_ORIGINS
-        value: "https://azalscore-frontend.onrender.com,http://localhost:5173"
+        value: "https://azalscore-frontend.onrender.com"
 
       # Database
       - key: DATABASE_URL
