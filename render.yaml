@@ -44,7 +44,7 @@ services:
           print(f'DB init skipped: {e}')
       "
 
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --limit-concurrency 10 --limit-max-requests 1000
 
     healthCheckPath: /health
 
@@ -56,7 +56,9 @@ services:
       - key: ENVIRONMENT
         value: "staging"
       - key: LOG_LEVEL
-        value: "INFO"
+        value: "WARNING"
+      - key: WEB_CONCURRENCY
+        value: "1"
 
       # SECRETS GÉNÉRÉS AUTOMATIQUEMENT
       - key: SECRET_KEY
