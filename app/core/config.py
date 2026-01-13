@@ -55,9 +55,9 @@ class Settings(BaseSettings):
         description="Secret pour bootstrap initial - OBLIGATOIRE en production"
     )
 
-    # Configuration pool de connexions DB
-    db_pool_size: int = Field(default=5, ge=1, le=100)
-    db_max_overflow: int = Field(default=10, ge=0, le=100)
+    # Configuration pool de connexions DB (réduit pour free tier)
+    db_pool_size: int = Field(default=2, ge=1, le=100)
+    db_max_overflow: int = Field(default=3, ge=0, le=100)
 
     # CORS (optionnel)
     cors_origins: Optional[str] = Field(default=None, description="Origins CORS séparées par des virgules")

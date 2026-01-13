@@ -44,7 +44,8 @@ services:
           print(f'DB init skipped: {e}')
       "
 
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --limit-concurrency 10 --limit-max-requests 1000
+    # Memory-optimized startup (512MB free tier)
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --limit-concurrency 5 --limit-max-requests 500 --no-access-log
 
     healthCheckPath: /health
 
@@ -58,6 +59,11 @@ services:
       - key: LOG_LEVEL
         value: "WARNING"
       - key: WEB_CONCURRENCY
+        value: "1"
+      # Memory optimization for free tier (512MB)
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+      - key: PYTHONUNBUFFERED
         value: "1"
 
       # SECRETS GÉNÉRÉS AUTOMATIQUEMENT

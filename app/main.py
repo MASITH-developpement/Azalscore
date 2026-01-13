@@ -395,8 +395,11 @@ async def lifespan(app: FastAPI):
             else:
                 print("[WARN] DB non disponible, l'app demarre quand meme")
 
-    # Démarrer le scheduler
-    scheduler_service.start()
+    # Démarrer le scheduler (désactivé en staging pour économiser la mémoire)
+    if _settings.environment not in ('staging', 'test'):
+        scheduler_service.start()
+    else:
+        print("[MEMORY] Scheduler desactive en staging/test pour economiser RAM")
 
     # =========================================================================
     # DEMARRAGE TERMINE - AFFICHAGE ETAT REEL
@@ -519,8 +522,11 @@ register_error_handlers(app)
 # 1. Compression (s'exécute en dernier)
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 
-# 2. Metrics
-app.add_middleware(MetricsMiddleware)
+# 2. Metrics (désactivé en staging/test pour économiser la mémoire)
+if _settings.environment not in ('staging', 'test'):
+    app.add_middleware(MetricsMiddleware)
+else:
+    print("[MEMORY] MetricsMiddleware desactive en staging/test pour economiser RAM")
 
 # 3. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
 # Note: Le middleware RBAC vérifie les permissions après authentification
