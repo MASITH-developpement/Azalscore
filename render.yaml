@@ -1,5 +1,5 @@
 # ==============================================================================
-# AZALSCORE - Configuration Render.com BETA (AUTO-DEPLOY)
+# AZALSCORE - Configuration Render.com PRO (AUTO-DEPLOY)
 # ==============================================================================
 # DÉPLOIEMENT EN UN CLIC - Tous les secrets sont générés automatiquement!
 #
@@ -10,22 +10,23 @@
 # CARACTÉRISTIQUES:
 # - HTTPS automatique
 # - Redémarrage automatique
-# - PostgreSQL gratuit (90 jours)
+# - PostgreSQL Pro (haute disponibilité)
 # - Région EU (Frankfurt) pour conformité RGPD
-# - Zéro coût
+# - 2GB RAM / 1 CPU
 # - Secrets générés automatiquement
+# - Monitoring complet activé
 #
 # ==============================================================================
 
 services:
   # ==========================================================================
-  # API BACKEND (FastAPI)
+  # API BACKEND (FastAPI) - PRO
   # ==========================================================================
   - type: web
     name: azalscore-api
     runtime: python
     region: frankfurt
-    plan: free
+    plan: starter  # 7$/mois - 512MB RAM, 0.5 CPU (ou 'standard' pour 2GB)
 
     # Build
     buildCommand: |
@@ -44,8 +45,8 @@ services:
           print(f'DB init skipped: {e}')
       "
 
-    # Memory-optimized startup (512MB free tier)
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --limit-concurrency 5 --limit-max-requests 500 --no-access-log
+    # Production startup (Pro tier - plus de ressources)
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2 --limit-concurrency 100 --limit-max-requests 10000
 
     healthCheckPath: /health
 
@@ -55,13 +56,10 @@ services:
       - key: DEBUG
         value: "false"
       - key: ENVIRONMENT
-        value: "staging"
+        value: "production"
       - key: LOG_LEVEL
-        value: "WARNING"
+        value: "INFO"
       - key: WEB_CONCURRENCY
-        value: "1"
-      # Memory optimization for free tier (512MB)
-      - key: MALLOC_ARENA_MAX
         value: "2"
       - key: PYTHONUNBUFFERED
         value: "1"
