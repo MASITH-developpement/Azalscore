@@ -148,6 +148,18 @@ from app.modules.ai_assistant.router import router as ai_router
 from app.modules.guardian.router import router as guardian_router
 from app.modules.guardian.middleware import setup_guardian_middleware
 
+# Module COCKPIT - Tableau de bord dirigeant
+from app.api.cockpit import router as cockpit_router
+
+# Module EMAIL - Email transactionnel
+from app.modules.email.router import router as email_router
+
+# Module BACKUP - Sauvegardes chiffrées
+from app.modules.backup.router import router as backup_router
+
+# Module MARKETPLACE - Site marchand
+from app.modules.marketplace.router import router as marketplace_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -662,6 +674,18 @@ api_v1.include_router(ai_router)
 
 # Module GUARDIAN - Correction Automatique Gouvernee & Auditable
 api_v1.include_router(guardian_router)
+
+# Module COCKPIT - Tableau de bord dirigeant
+api_v1.include_router(cockpit_router)
+
+# Module EMAIL - Email transactionnel
+api_v1.include_router(email_router)
+
+# Module BACKUP - Sauvegardes chiffrees AES-256
+api_v1.include_router(backup_router)
+
+# Module MARKETPLACE - Site marchand & provisioning automatique
+api_v1.include_router(marketplace_router)
 
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)

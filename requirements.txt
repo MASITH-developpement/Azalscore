@@ -41,3 +41,15 @@ psutil==5.9.8
 
 # Cache & Rate Limiting
 redis==5.0.1
+
+# Paiements
+stripe==7.10.0
+
+# Cryptographie (backups chiffrés)
+cryptography==42.0.2
+
+# HTTP Client
+httpx==0.26.0
+
+# SMTP
+aiosmtplib==3.0.1

@@ -52,6 +52,16 @@ RUN pip install --no-cache /wheels/* && rm -rf /wheels
 # Copie de l'application
 COPY --chown=azals:azals app/ ./app/
 COPY --chown=azals:azals ui/ ./ui/
+COPY --chown=azals:azals scripts/ ./scripts/
+COPY --chown=azals:azals alembic.ini ./
+COPY --chown=azals:azals alembic/ ./alembic/
+
+# Créer répertoire backups
+RUN mkdir -p /app/backups && chown azals:azals /app/backups
+
+# Script de démarrage
+COPY --chown=azals:azals scripts/deploy/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Changement vers utilisateur non-root
 USER azals
@@ -63,14 +73,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Port exposé
 EXPOSE 8000
 
-# Commande de démarrage avec Gunicorn pour production
-CMD ["python", "-m", "gunicorn", "app.main:app", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "4", \
-     "--threads", "2", \
-     "--timeout", "120", \
-     "--keep-alive", "5", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-", \
-     "--capture-output"]
+# Commande de démarrage avec initialisation automatique
+ENTRYPOINT ["/docker-entrypoint.sh"]
