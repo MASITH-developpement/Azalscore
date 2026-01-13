@@ -352,7 +352,7 @@ const DocumentPreview: React.FC<{ document: DocumentDetail }> = ({
           variant="ghost"
           size="sm"
           leftIcon={<Eye size={14} />}
-          onClick={() => window.open(previewUrl, '_blank')}
+          onClick={() => { window.open(previewUrl, '_blank'); }}
         >
           Ouvrir
         </Button>
@@ -389,9 +389,7 @@ const DocumentInfo: React.FC<{ document: DocumentDetail }> = ({ document }) => {
         <div className="azals-auto-accounting__info-item">
           <Clock size={14} />
           <span className="azals-auto-accounting__info-label">Statut</span>
-          <StatusBadge variant={getStatusVariant(document.status)} size="sm">
-            {getStatusLabel(document.status)}
-          </StatusBadge>
+          <StatusBadge variant={getStatusVariant(document.status)} size="sm" status={getStatusLabel(document.status)} />
         </div>
 
         {document.reference && (
@@ -537,9 +535,8 @@ const AIClassificationCard: React.FC<{ classification: AIClassification }> = ({
         <div className="azals-auto-accounting__ai-header">
           <StatusBadge
             variant={getConfidenceVariant(classification.confidence_level)}
-          >
-            Confiance: {(classification.confidence_score * 100).toFixed(0)}%
-          </StatusBadge>
+            status={`Confiance: ${(classification.confidence_score * 100).toFixed(0)}%`}
+          />
         </div>
 
         <div className="azals-auto-accounting__ai-suggestions">
@@ -610,9 +607,8 @@ const AutoEntryCard: React.FC<{ entry: AutoEntry }> = ({ entry }) => {
                 ? 'warning'
                 : 'default'
             }
-          >
-            {entry.status === 'VALIDATED' ? 'Validée' : 'En attente'}
-          </StatusBadge>
+            status={entry.status === 'VALIDATED' ? 'Validée' : 'En attente'}
+          />
           <span>Journal: {entry.journal_code}</span>
           <span>Date: {formatDate(entry.entry_date)}</span>
         </div>
@@ -753,7 +749,7 @@ const ContextModal: React.FC<{
           <label className="azals-form-label">Notes / Commentaire</label>
           <TextArea
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(value) => setNotes(value)}
             placeholder="Ajouter des informations utiles..."
             rows={4}
           />
@@ -763,7 +759,7 @@ const ContextModal: React.FC<{
           <label className="azals-form-label">Tags (séparés par virgule)</label>
           <Input
             value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
+            onChange={(value) => setTagsInput(value)}
             placeholder="projet-x, urgent, à vérifier..."
           />
         </div>
@@ -803,7 +799,7 @@ const ValidationModal: React.FC<{
           </label>
           <TextArea
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(value) => setComment(value)}
             placeholder={
               action === 'validate'
                 ? 'Commentaire...'

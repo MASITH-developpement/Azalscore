@@ -19,6 +19,7 @@ import type { PaginatedResponse, TableColumn } from '@/types';
 interface Partner {
   id: string;
   type: 'client' | 'supplier' | 'contact';
+  code?: string;
   name: string;
   email?: string;
   phone?: string;

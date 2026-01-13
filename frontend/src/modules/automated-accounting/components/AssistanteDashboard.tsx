@@ -371,7 +371,7 @@ const UploadModal: React.FC<{
           <label className="azals-form-label">Type de document</label>
           <Select
             value={documentType}
-            onChange={(e) => setDocumentType(e.target.value)}
+            onChange={(value) => setDocumentType(value)}
             options={documentTypes}
           />
         </div>
@@ -452,9 +452,7 @@ export const AssistanteDashboard: React.FC = () => {
       accessor: 'status',
       width: '120px',
       render: (value) => (
-        <StatusBadge variant={getStatusVariant(value as string)} size="sm">
-          {getStatusLabel(value as string)}
-        </StatusBadge>
+        <StatusBadge variant={getStatusVariant(value as string)} size="sm" status={getStatusLabel(value as string)} />
       ),
     },
     {
@@ -467,13 +465,13 @@ export const AssistanteDashboard: React.FC = () => {
       id: 'reference',
       header: 'Référence',
       accessor: 'reference',
-      render: (value, row) => value || row.original_filename || '-',
+      render: (value, row) => (value as string) || row.original_filename || '-',
     },
     {
       id: 'partner_name',
       header: 'Partenaire',
       accessor: 'partner_name',
-      render: (value) => value || '-',
+      render: (value) => (value as string) || '-',
     },
     {
       id: 'amount_total',
@@ -500,7 +498,7 @@ export const AssistanteDashboard: React.FC = () => {
     {
       id: 'view',
       label: 'Voir',
-      icon: Eye,
+      icon: <Eye size={16} />,
       onClick: (row: Document) => navigate(`/auto-accounting/documents/${row.id}`),
     },
   ];
@@ -585,9 +583,9 @@ export const AssistanteDashboard: React.FC = () => {
               pageSize: 20,
               total: documents?.total || 0,
               onPageChange: setPage,
+              onPageSizeChange: () => {},
             }}
             emptyMessage="Aucun document"
-            onRowClick={(row) => navigate(`/auto-accounting/documents/${row.id}`)}
           />
         </Card>
       </section>

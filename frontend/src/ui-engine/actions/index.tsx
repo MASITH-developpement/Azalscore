@@ -231,7 +231,7 @@ export const ButtonGroup: React.FC<ButtonGroupProps> = ({
 
 interface ConfirmDialogProps {
   title: string;
-  message: string;
+  message: React.ReactNode;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
   confirmLabel?: string;
