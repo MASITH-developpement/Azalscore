@@ -1,26 +1,52 @@
-# AZALS - Configuration Render.com
-# =================================
-# Déploiement automatique sur Render
+# ==============================================================================
+# AZALSCORE - Configuration Render.com BETA
+# ==============================================================================
+# Deploiement automatique sur Render (plateforme gratuite selectionnee)
 #
-# VARIABLES REQUISES (à configurer dans Render Dashboard > Environment):
-# -----------------------------------------------------------------------
-# SECRET_KEY         - Clé JWT (générer avec: python -c "import secrets; print(secrets.token_urlsafe(64))")
-# BOOTSTRAP_SECRET   - Secret bootstrap (générer avec: python -c "import secrets; print(secrets.token_urlsafe(64))")
-# CORS_ORIGINS       - URL frontend (ex: https://azals-frontend.onrender.com)
+# CARACTERISTIQUES:
+# - HTTPS automatique
+# - Redemarrage automatique
+# - PostgreSQL gratuit (90 jours)
+# - Region EU (Frankfurt) pour conformite RGPD
+# - Zero cout
 #
-# Pour mode staging (sans ces contraintes), mettre ENVIRONMENT=staging
+# VARIABLES REQUISES (configurer dans Render Dashboard > Environment):
+# ---------------------------------------------------------------------
+# SECRET_KEY         - Cle JWT (min 32 chars, pas de valeur faible)
+#                      Generer: python -c "import secrets; print(secrets.token_urlsafe(64))"
+# BOOTSTRAP_SECRET   - Secret bootstrap (min 32 chars)
+#                      Generer: python -c "import secrets; print(secrets.token_urlsafe(64))"
+# ENCRYPTION_KEY     - Cle Fernet pour chiffrement AES-256
+#                      Generer: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# CORS_ORIGINS       - URL frontend (ex: https://azalscore-frontend.onrender.com)
+# ADMIN_EMAIL        - Email administrateur initial
+# ADMIN_PASSWORD     - Mot de passe admin (min 12 chars, pas de valeur faible)
+#
+# ==============================================================================
 
 services:
-  # Service Web - API FastAPI
+  # ==========================================================================
+  # API BACKEND (FastAPI)
+  # ==========================================================================
   - type: web
-    name: azals-api
+    name: azalscore-api
     runtime: python
-    region: frankfurt  # EU pour conformité RGPD
-    plan: starter  # Changer selon besoins (starter, standard, pro)
+    region: frankfurt
+    plan: free  # Gratuit pour BETA
 
-    # Build
-    buildCommand: pip install -r requirements.txt && python run_migrations.py
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Build et demarrage
+    buildCommand: |
+      pip install -r requirements.txt
+      python -c "
+      from app.db.base import Base
+      from sqlalchemy import create_engine
+      import os
+      engine = create_engine(os.environ['DATABASE_URL'])
+      Base.metadata.create_all(bind=engine)
+      print('Database tables created')
+      "
+
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
 
     # Health Check
     healthCheckPath: /health
@@ -32,26 +58,78 @@ services:
       - key: DEBUG
         value: "false"
       - key: ENVIRONMENT
-        value: "staging"  # Utiliser "production" quand SECRET_KEY/BOOTSTRAP_SECRET/CORS_ORIGINS sont configurés
+        value: "staging"  # Mode staging pour BETA (moins de contraintes)
+      - key: LOG_LEVEL
+        value: "INFO"
+      # Secrets (configurer dans Dashboard)
       - key: SECRET_KEY
-        sync: false  # OBLIGATOIRE: configurer dans Render Dashboard (min 32 chars, pas de "secret" ou "azals")
+        sync: false
       - key: BOOTSTRAP_SECRET
-        sync: false  # OBLIGATOIRE en production: configurer dans Render Dashboard
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
       - key: CORS_ORIGINS
-        sync: false  # OBLIGATOIRE en production: ex https://azals-frontend.onrender.com
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Database
       - key: DATABASE_URL
         fromDatabase:
-          name: azals-db
+          name: azalscore-db
           property: connectionString
 
-    # Auto-deploy depuis la branche main
+    # Auto-deploy
     autoDeploy: true
 
-databases:
-  # Base de données PostgreSQL
-  - name: azals-db
+  # ==========================================================================
+  # FRONTEND (React + Vite)
+  # ==========================================================================
+  - type: web
+    name: azalscore-frontend
+    runtime: static
     region: frankfurt
-    plan: starter  # starter = 1GB gratuit 90 jours
-    databaseName: azals
-    user: azals_user
-    ipAllowList: []  # Uniquement services Render
+    plan: free
+
+    # Build
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+
+    # Routes SPA
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    # Headers de securite
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+
+    # Variables
+    envVars:
+      - key: VITE_API_URL
+        value: https://azalscore-api.onrender.com
+      - key: NODE_VERSION
+        value: "18"
+
+    autoDeploy: true
+
+# ==============================================================================
+# BASE DE DONNEES
+# ==============================================================================
+databases:
+  - name: azalscore-db
+    region: frankfurt
+    plan: free  # Gratuit 90 jours, puis limite
+    databaseName: azalscore
+    user: azalscore_user
+    ipAllowList: []  # Uniquement services Render (securite)

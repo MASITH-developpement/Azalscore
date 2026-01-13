@@ -59,10 +59,30 @@ class DataIntegrityError(BootstrapFatalError):
 # CONFIGURATION PRODUCTION
 # ============================================================================
 
-TENANT_SLUG = "masith"
-TENANT_NAME = "MASITH"
-ADMIN_EMAIL = "contact@masith.fr"
-ADMIN_PASSWORD = "gobelet"
+# ============================================================================
+# CONFIGURATION - LIRE DEPUIS ENVIRONNEMENT (SECURISE)
+# ============================================================================
+# AUCUN SECRET EN DUR - Tout est lu depuis les variables d'environnement
+
+def _get_required_env(name: str, description: str) -> str:
+    """Recupere une variable d'environnement obligatoire."""
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(f"{name} est OBLIGATOIRE: {description}")
+    return value
+
+def _get_optional_env(name: str, default: str) -> str:
+    """Recupere une variable d'environnement optionnelle."""
+    return os.environ.get(name, default)
+
+# Valeurs par defaut pour tenant (personnalisables)
+TENANT_SLUG = _get_optional_env("BOOTSTRAP_TENANT_SLUG", "default-tenant")
+TENANT_NAME = _get_optional_env("BOOTSTRAP_TENANT_NAME", "Default Tenant")
+
+# OBLIGATOIRE: Email et mot de passe admin depuis environnement
+# ADMIN_EMAIL et ADMIN_PASSWORD doivent etre definis dans l'environnement
+ADMIN_EMAIL = None  # Sera lu dynamiquement
+ADMIN_PASSWORD = None  # Sera lu dynamiquement - JAMAIS EN DUR
 
 
 # ============================================================================
@@ -97,6 +117,8 @@ def validate_environment() -> None:
         ("BOOTSTRAP_SECRET", "Secret de bootstrap (min 32 caractères)"),
         ("ENCRYPTION_KEY", "Clé de chiffrement Fernet"),
         ("CORS_ORIGINS", "Origins CORS autorisées"),
+        ("ADMIN_EMAIL", "Email de l'administrateur initial"),
+        ("ADMIN_PASSWORD", "Mot de passe de l'administrateur (min 12 caractères, sera changé à la première connexion)"),
     ]
 
     missing = []
@@ -116,6 +138,26 @@ def validate_environment() -> None:
         raise EnvironmentError(
             f"BOOTSTRAP_SECRET doit contenir au moins 32 caractères (actuel: {len(bootstrap_secret)})"
         )
+
+    # Validation ADMIN_PASSWORD (securite)
+    admin_password = os.environ.get("ADMIN_PASSWORD", "")
+    if len(admin_password) < 12:
+        raise EnvironmentError(
+            f"ADMIN_PASSWORD doit contenir au moins 12 caractères (actuel: {len(admin_password)})"
+        )
+
+    # Rejeter les mots de passe faibles
+    weak_patterns = ["password", "123456", "admin", "azals", "changeme", "default"]
+    for pattern in weak_patterns:
+        if pattern in admin_password.lower():
+            raise EnvironmentError(
+                f"ADMIN_PASSWORD ne doit pas contenir '{pattern}'. Utilisez un mot de passe fort."
+            )
+
+    # Charger les valeurs dans les variables globales
+    global ADMIN_EMAIL, ADMIN_PASSWORD
+    ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
     log("Variables d'environnement validées")
 
