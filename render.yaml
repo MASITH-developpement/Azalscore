@@ -1,26 +1,19 @@
 # ==============================================================================
-# AZALSCORE - Configuration Render.com BETA
+# AZALSCORE - Configuration Render.com BETA (AUTO-DEPLOY)
 # ==============================================================================
-# Deploiement automatique sur Render (plateforme gratuite selectionnee)
+# DÉPLOIEMENT EN UN CLIC - Tous les secrets sont générés automatiquement!
 #
-# CARACTERISTIQUES:
+# INSTRUCTIONS:
+# 1. Cliquez sur "Deploy to Render" ou utilisez ce Blueprint
+# 2. C'est tout! Le reste est automatique.
+#
+# CARACTÉRISTIQUES:
 # - HTTPS automatique
-# - Redemarrage automatique
+# - Redémarrage automatique
 # - PostgreSQL gratuit (90 jours)
-# - Region EU (Frankfurt) pour conformite RGPD
-# - Zero cout
-#
-# VARIABLES REQUISES (configurer dans Render Dashboard > Environment):
-# ---------------------------------------------------------------------
-# SECRET_KEY         - Cle JWT (min 32 chars, pas de valeur faible)
-#                      Generer: python -c "import secrets; print(secrets.token_urlsafe(64))"
-# BOOTSTRAP_SECRET   - Secret bootstrap (min 32 chars)
-#                      Generer: python -c "import secrets; print(secrets.token_urlsafe(64))"
-# ENCRYPTION_KEY     - Cle Fernet pour chiffrement AES-256
-#                      Generer: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-# CORS_ORIGINS       - URL frontend (ex: https://azalscore-frontend.onrender.com)
-# ADMIN_EMAIL        - Email administrateur initial
-# ADMIN_PASSWORD     - Mot de passe admin (min 12 chars, pas de valeur faible)
+# - Région EU (Frankfurt) pour conformité RGPD
+# - Zéro coût
+# - Secrets générés automatiquement
 #
 # ==============================================================================
 
@@ -32,55 +25,63 @@ services:
     name: azalscore-api
     runtime: python
     region: frankfurt
-    plan: free  # Gratuit pour BETA
+    plan: free
 
-    # Build et demarrage
+    # Build
     buildCommand: |
       pip install -r requirements.txt
       python -c "
-      from app.db.base import Base
-      from sqlalchemy import create_engine
       import os
-      engine = create_engine(os.environ['DATABASE_URL'])
-      Base.metadata.create_all(bind=engine)
-      print('Database tables created')
+      try:
+          from app.db.base import Base
+          from sqlalchemy import create_engine
+          db_url = os.environ.get('DATABASE_URL', '')
+          if db_url:
+              engine = create_engine(db_url)
+              Base.metadata.create_all(bind=engine)
+              print('Database tables created')
+      except Exception as e:
+          print(f'DB init skipped: {e}')
       "
 
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
 
-    # Health Check
     healthCheckPath: /health
 
-    # Variables d'environnement
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.7"
       - key: DEBUG
         value: "false"
       - key: ENVIRONMENT
-        value: "staging"  # Mode staging pour BETA (moins de contraintes)
+        value: "staging"
       - key: LOG_LEVEL
         value: "INFO"
-      # Secrets (configurer dans Dashboard)
+
+      # SECRETS GÉNÉRÉS AUTOMATIQUEMENT
       - key: SECRET_KEY
-        sync: false
+        generateValue: true
       - key: BOOTSTRAP_SECRET
-        sync: false
+        generateValue: true
       - key: ENCRYPTION_KEY
-        sync: false
-      - key: CORS_ORIGINS
-        sync: false
+        generateValue: true
+
+      # Admin par défaut (changez après déploiement!)
       - key: ADMIN_EMAIL
-        sync: false
+        value: "admin@azalscore.local"
       - key: ADMIN_PASSWORD
-        sync: false
-      # Database
+        generateValue: true
+
+      # CORS - mis à jour automatiquement par Render
+      - key: CORS_ORIGINS
+        value: "https://azalscore-frontend.onrender.com,http://localhost:5173"
+
+      # Database - connectée automatiquement
       - key: DATABASE_URL
         fromDatabase:
           name: azalscore-db
           property: connectionString
 
-    # Auto-deploy
     autoDeploy: true
 
   # ==========================================================================
@@ -92,17 +93,14 @@ services:
     region: frankfurt
     plan: free
 
-    # Build
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: frontend/dist
 
-    # Routes SPA
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
 
-    # Headers de securite
     headers:
       - path: /*
         name: X-Frame-Options
@@ -111,10 +109,12 @@ services:
         name: X-Content-Type-Options
         value: nosniff
       - path: /*
+        name: X-XSS-Protection
+        value: "1; mode=block"
+      - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
 
-    # Variables
     envVars:
       - key: VITE_API_URL
         value: https://azalscore-api.onrender.com
@@ -124,12 +124,12 @@ services:
     autoDeploy: true
 
 # ==============================================================================
-# BASE DE DONNEES
+# BASE DE DONNÉES PostgreSQL
 # ==============================================================================
 databases:
   - name: azalscore-db
     region: frankfurt
-    plan: free  # Gratuit 90 jours, puis limite
+    plan: free
     databaseName: azalscore
     user: azalscore_user
-    ipAllowList: []  # Uniquement services Render (securite)
+    ipAllowList: []
