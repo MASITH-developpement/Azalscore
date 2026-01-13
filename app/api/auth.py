@@ -172,7 +172,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """Schema de reponse utilisateur."""
-    id: int
+    id: str  # UUID serialized as string for JSON compatibility
     email: str
     tenant_id: str
     role: str
@@ -279,7 +279,14 @@ def register(
     # Enregistrer la tentative réussie
     auth_rate_limiter.record_register_attempt(client_ip)
 
-    return db_user
+    # Convert UUID to string for JSON serialization
+    return UserResponse(
+        id=str(db_user.id),
+        email=db_user.email,
+        tenant_id=db_user.tenant_id,
+        role=db_user.role.value,
+        full_name=getattr(db_user, 'full_name', None)
+    )
 
 
 @router.post("/login")
@@ -558,7 +565,7 @@ def verify_2fa_login(
         )
 
     user_id = payload.get("sub")
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
         raise HTTPException(
@@ -723,7 +730,7 @@ def refresh_access_token(
         )
 
     user_id = payload.get("sub")
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = db.query(User).filter(User.id == user_id).first()
 
     if not user or not user.is_active:
         raise HTTPException(
