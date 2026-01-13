@@ -27,7 +27,7 @@ services:
   - type: web
     name: azals-frontend
     runtime: static
-    region: frankfurt  # EU pour conformité RGPD
+    # Note: Les sites statiques sont automatiquement distribués via CDN global
     plan: starter
 
     # Build React avec Vite
