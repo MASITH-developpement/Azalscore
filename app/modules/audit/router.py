@@ -361,7 +361,7 @@ async def run_benchmark(
         )
         return BenchmarkResultResponseSchema.from_orm_custom(result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/benchmarks/{benchmark_id}/results", response_model=list[BenchmarkResultResponseSchema])
@@ -650,7 +650,7 @@ async def process_export(
         export = service.process_export(export_id)
         return ExportResponseSchema.from_orm_custom(export)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================

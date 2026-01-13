@@ -774,7 +774,7 @@ def create_project_from_template(
     try:
         return service.create_project_from_template(template_id, code, name, start_date)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ============================================================================

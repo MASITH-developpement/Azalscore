@@ -162,7 +162,7 @@ def calculate_vat_declaration(
     try:
         return service.calculate_vat_declaration(declaration_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ============================================================================
@@ -191,7 +191,7 @@ def validate_fec(
     try:
         return service.validate_fec(fec_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.get("/fec/{fec_id}/export")
@@ -206,7 +206,7 @@ def export_fec_file(
         content = service.export_fec_file(fec_id)
         return {"content": content, "format": "txt"}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -237,7 +237,7 @@ def add_dsn_employee(
         employee = service.add_dsn_employee(dsn_id, data)
         return {"message": "Salarié ajouté", "employee_id": employee.id}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post("/dsn/{dsn_id}/submit", response_model=DSNDeclarationResponse)
@@ -251,7 +251,7 @@ def submit_dsn(
     try:
         return service.submit_dsn(dsn_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ============================================================================
@@ -296,7 +296,7 @@ def withdraw_consent(
     try:
         return service.withdraw_consent(consent_id, reason)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post("/rgpd/requests", response_model=RGPDRequestResponse)
@@ -324,7 +324,7 @@ def process_rgpd_request(
     try:
         return service.process_rgpd_request(request_id, response, data_exported, data_deleted)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post("/rgpd/processing", response_model=RGPDProcessingResponse)

@@ -258,7 +258,7 @@ async def manual_assign_profile(
             assigned_by=assignment.assigned_by
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/users/{user_id}/profile", response_model=ProfileAssignmentResponse)
@@ -352,7 +352,7 @@ async def request_override(
             rejection_reason=override.rejection_reason
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/overrides", response_model=OverrideListResponse)
@@ -442,7 +442,7 @@ async def approve_override(
             rejection_reason=override.rejection_reason
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/overrides/{override_id}/reject", response_model=OverrideResponse)
@@ -484,7 +484,7 @@ async def reject_override(
             rejection_reason=override.rejection_reason
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/overrides/{override_id}/revoke", response_model=OverrideResponse)
@@ -521,7 +521,7 @@ async def revoke_override(
             rejection_reason=override.rejection_reason
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 # ============================================================================
@@ -619,7 +619,7 @@ async def execute_onboarding(
         result = service.execute_onboarding(onboarding_id, executed_by=current_user.id)
         return OnboardingExecutionResult(**result)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 # ============================================================================
@@ -711,4 +711,4 @@ async def execute_offboarding(
         result = service.execute_offboarding(offboarding_id, executed_by=current_user.id)
         return OffboardingExecutionResult(**result)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e

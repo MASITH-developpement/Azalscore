@@ -111,7 +111,7 @@ async def report_error(
         error = service.detect_error(data)
         return error
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/errors/frontend", response_model=ErrorDetectionResponse, status_code=status.HTTP_201_CREATED)
@@ -130,7 +130,7 @@ async def report_frontend_error(
         error = service.report_frontend_error(data, user_id=current_user.id)
         return error
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/errors", response_model=ErrorDetectionListResponse)
@@ -247,7 +247,7 @@ async def create_correction(
         )
         return correction
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/corrections", response_model=CorrectionRegistryListResponse)
@@ -365,7 +365,7 @@ async def validate_correction(
         )
         return correction
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/corrections/{correction_id}/rollback", response_model=CorrectionRegistryResponse)
@@ -395,7 +395,7 @@ async def rollback_correction(
         )
         return correction
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/corrections/{correction_id}/tests", response_model=CorrectionTestListResponse)
@@ -513,7 +513,7 @@ async def update_rule(
         rule = service.update_correction_rule(rule_id, data)
         return rule
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.delete("/rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -537,7 +537,7 @@ async def delete_rule(
     try:
         service.delete_correction_rule(rule_id)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 # ============================================================================
@@ -609,7 +609,7 @@ async def acknowledge_alert(
         alert = service.acknowledge_alert(alert_id, current_user.id)
         return alert
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.post("/alerts/{alert_id}/resolve", response_model=GuardianAlertResponse)
@@ -626,7 +626,7 @@ async def resolve_alert(
         alert = service.resolve_alert(alert_id, current_user.id, data.comment)
         return alert
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 # ============================================================================

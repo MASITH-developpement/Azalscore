@@ -64,7 +64,7 @@ def get_validated_user_id(
                     detail="User ID header ne correspond pas à l'utilisateur authentifié"
                 )
         except ValueError:
-            raise HTTPException(status_code=400, detail="User ID invalide")
+            raise HTTPException(status_code=400, detail="User ID invalide") from None
 
     # Toujours retourner l'ID de l'utilisateur authentifié (source de vérité)
     return current_user.id

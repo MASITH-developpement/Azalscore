@@ -71,7 +71,7 @@ class FieldEncryption:
         try:
             self.cipher = Fernet(key.encode() if isinstance(key, str) else key)
         except Exception as e:
-            raise EncryptionError(f"Clé de chiffrement invalide: {e}")
+            raise EncryptionError(f"Clé de chiffrement invalide: {e}") from e
 
     @classmethod
     def get_instance(cls) -> 'FieldEncryption':
@@ -105,7 +105,7 @@ class FieldEncryption:
             encrypted = self.cipher.encrypt(plaintext.encode('utf-8'))
             return encrypted.decode('utf-8')
         except Exception as e:
-            raise EncryptionError(f"Échec du chiffrement: {e}")
+            raise EncryptionError(f"Échec du chiffrement: {e}") from e
 
     def decrypt(self, ciphertext: str) -> str:
         """
@@ -132,7 +132,7 @@ class FieldEncryption:
                 "Vérifiez que la clé ENCRYPTION_KEY est correcte."
             )
         except Exception as e:
-            raise EncryptionError(f"Échec du déchiffrement: {e}")
+            raise EncryptionError(f"Échec du déchiffrement: {e}") from e
 
     def encrypt_if_not_encrypted(self, value: str) -> str:
         """

@@ -163,13 +163,13 @@ async def signup(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": e.code, "message": e.message}
-        )
+        ) from e
     except Exception as e:
         logger.error(f"[SIGNUP] Erreur inattendue: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "INTERNAL_ERROR", "message": "Une erreur est survenue. Réessayez."}
-        )
+        ) from e
 
 
 @router.get("/check-email", response_model=CheckAvailabilityResponse)

@@ -237,7 +237,7 @@ async def create_user(
             groups=[g.code for g in user.groups]
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/users", response_model=UserListResponse)
@@ -397,7 +397,7 @@ async def update_user(
             groups=[g.code for g in user.groups]
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -447,7 +447,7 @@ async def lock_user(
             groups=[g.code for g in user.groups]
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/users/{user_id}/unlock", response_model=UserResponse)
@@ -483,7 +483,7 @@ async def unlock_user(
             groups=[g.code for g in user.groups]
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 # ============================================================================
@@ -540,7 +540,7 @@ async def create_role(
             created_at=role.created_at
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/roles", response_model=RoleListResponse)
@@ -641,7 +641,7 @@ async def update_role(
             created_at=role.created_at
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.delete("/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -656,7 +656,7 @@ async def delete_role(
         if not service.delete_role(role_id, deleted_by=current_user.id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/roles/assign", status_code=status.HTTP_204_NO_CONTENT)
@@ -675,7 +675,7 @@ async def assign_role(
             expires_at=data.expires_at
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/roles/revoke", status_code=status.HTTP_204_NO_CONTENT)
@@ -783,7 +783,7 @@ async def create_group(
             created_at=group.created_at
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/groups", response_model=GroupListResponse)
@@ -929,7 +929,7 @@ async def create_invitation(
             accepted_at=invitation.accepted_at
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/invitations/accept", response_model=UserResponse)

@@ -92,7 +92,7 @@ async def create_trigger(
         )
         return trigger
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/", response_model=TriggerListResponseSchema)
@@ -156,7 +156,7 @@ async def update_trigger(
         trigger = service.update_trigger(trigger_id, **update_data)
         return trigger
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.delete("/{trigger_id}")
@@ -195,7 +195,7 @@ async def pause_trigger(
         trigger = service.pause_trigger(trigger_id)
         return trigger
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/{trigger_id}/resume", response_model=TriggerResponseSchema)
@@ -215,7 +215,7 @@ async def resume_trigger(
         trigger = service.resume_trigger(trigger_id)
         return trigger
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/{trigger_id}/fire", response_model=EventResponseSchema)
@@ -417,7 +417,7 @@ async def resolve_event(
         )
         return event
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/events/{event_id}/escalate", response_model=EventResponseSchema)
@@ -437,7 +437,7 @@ async def escalate_event(
         event = service.escalate_event(event_id)
         return event
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -828,7 +828,7 @@ async def generate_report_now(
         )
         return history
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/reports/{report_id}/history", response_model=list[ReportHistoryResponseSchema])

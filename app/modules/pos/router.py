@@ -66,7 +66,7 @@ def create_store(
     try:
         return service.create_store(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/stores", response_model=list[StoreResponse])
@@ -128,7 +128,7 @@ def create_terminal(
     try:
         return service.create_terminal(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/terminals", response_model=list[TerminalResponse])
@@ -203,7 +203,7 @@ def get_terminal_dashboard(
     try:
         return service.get_terminal_dashboard(terminal_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ============================================================================
@@ -219,7 +219,7 @@ def create_pos_user(
     try:
         return service.create_pos_user(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/users", response_model=list[POSUserResponse])
@@ -286,7 +286,7 @@ def open_session(
     try:
         return service.open_session(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/sessions", response_model=list[SessionResponse])
@@ -330,7 +330,7 @@ def close_session(
     try:
         return service.close_session(session_id, data, closed_by_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/terminals/{terminal_id}/session", response_model=SessionResponse)
@@ -364,7 +364,7 @@ def add_cash_movement(
     try:
         return service.add_cash_movement(session_id, data, performed_by_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get(
@@ -398,7 +398,7 @@ def create_transaction(
     try:
         return service.create_transaction(session_id, data, cashier_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/transactions", response_model=TransactionListResponse)
@@ -459,7 +459,7 @@ def add_payment(
     try:
         return service.add_payment(transaction_id, data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/transactions/{transaction_id}/void", response_model=TransactionResponse)
@@ -473,7 +473,7 @@ def void_transaction(
     try:
         return service.void_transaction(transaction_id, reason, voided_by_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post(
@@ -495,7 +495,7 @@ def refund_transaction(
             transaction_id, line_items or [], session_id, cashier_id, reason
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -511,7 +511,7 @@ def create_quick_key(
     try:
         return service.create_quick_key(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/quick-keys", response_model=list[QuickKeyResponse])
@@ -553,7 +553,7 @@ def hold_transaction(
     try:
         return service.hold_transaction(session_id, data, held_by_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/hold", response_model=list[HoldTransactionResponse])
@@ -595,7 +595,7 @@ def generate_daily_report(
     try:
         return service.generate_daily_report(store_id, report_date)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get(

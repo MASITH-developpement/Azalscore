@@ -64,4 +64,4 @@ def apply_treasury_migration(current_user: User = Depends(get_current_user)):
                 "message": "Migration 005 appliquée avec succès"
             }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}") from e

@@ -454,7 +454,7 @@ def create_payslip(
     try:
         return service.create_payslip(data, current_user.id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/payslips/{payslip_id}/validate", response_model=PayslipResponse)

@@ -315,14 +315,14 @@ async def lifespan(app: FastAPI):
                 db_uuid_status = "INCOMPATIBLE (blocage strict)"
                 logger.critical(f"[UUID] {uuid_err}")
                 print(str(uuid_err))
-                raise RuntimeError(str(uuid_err))
+                raise RuntimeError(str(uuid_err)) from uuid_err
 
             except UUIDResetBlockedError as reset_err:
                 # Reset bloque (production ou non autorise)
                 db_uuid_status = "INCOMPATIBLE (reset bloque)"
                 logger.critical(f"[UUID_RESET] {reset_err}")
                 print(str(reset_err))
-                raise RuntimeError(str(reset_err))
+                raise RuntimeError(str(reset_err)) from reset_err
 
             # Create tables with multi-pass retry for FK dependencies
             # sorted_tables respects FK order, but cross-module deps may need retries

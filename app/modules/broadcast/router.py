@@ -396,7 +396,7 @@ async def execute_broadcast_now(
             triggered_user=current_user["user_id"]
         )
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ============================================================================

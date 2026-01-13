@@ -79,7 +79,7 @@ def create_config(
             created_at=config.created_at
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/config", response_model=StripeConfigResponse)
@@ -131,7 +131,7 @@ def update_config(
             created_at=config.created_at
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -147,7 +147,7 @@ def create_customer(
     try:
         return service.create_customer(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/customers", response_model=list[StripeCustomerResponse])
@@ -207,7 +207,7 @@ def sync_customer(
     try:
         return service.sync_customer(customer_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -223,7 +223,7 @@ def add_payment_method(
     try:
         return service.add_payment_method(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/customers/{customer_id}/payment-methods", response_model=list[PaymentMethodResponse])
@@ -255,7 +255,7 @@ def create_setup_intent(
         result = service.create_setup_intent(data)
         return SetupIntentResponse(**result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -271,7 +271,7 @@ def create_payment_intent(
     try:
         return service.create_payment_intent(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/payment-intents", response_model=list[PaymentIntentResponse])
@@ -311,7 +311,7 @@ def confirm_payment_intent(
     try:
         return service.confirm_payment_intent(payment_intent_id, data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/payment-intents/{payment_intent_id}/capture", response_model=PaymentIntentResponse)
@@ -325,7 +325,7 @@ def capture_payment_intent(
         amount = data.amount_to_capture if data else None
         return service.capture_payment_intent(payment_intent_id, amount)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/payment-intents/{payment_intent_id}/cancel", response_model=PaymentIntentResponse)
@@ -338,7 +338,7 @@ def cancel_payment_intent(
     try:
         return service.cancel_payment_intent(payment_intent_id, reason)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -354,7 +354,7 @@ def create_checkout_session(
     try:
         return service.create_checkout_session(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/checkout-sessions/{session_id}", response_model=CheckoutSessionResponse)
@@ -382,7 +382,7 @@ def create_refund(
     try:
         return service.create_refund(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/refunds", response_model=list[RefundResponse])
@@ -411,7 +411,7 @@ def create_product(
     try:
         return service.create_product(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/prices", response_model=StripePriceResponse, status_code=201)
@@ -423,7 +423,7 @@ def create_price(
     try:
         return service.create_price(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -439,7 +439,7 @@ def create_connect_account(
     try:
         return service.create_connect_account(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/connect/accounts/{account_id}", response_model=ConnectAccountResponse)

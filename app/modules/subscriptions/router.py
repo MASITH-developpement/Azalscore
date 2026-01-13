@@ -71,7 +71,7 @@ def create_plan(
     try:
         return service.create_plan(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/plans", response_model=PlanListResponse)
@@ -124,7 +124,7 @@ def delete_plan(
         if not service.delete_plan(plan_id):
             raise HTTPException(status_code=404, detail="Plan introuvable")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -140,7 +140,7 @@ def create_addon(
     try:
         return service.create_addon(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/plans/{plan_id}/addons", response_model=list[AddOnResponse])
@@ -178,7 +178,7 @@ def create_subscription(
     try:
         return service.create_subscription(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("", response_model=SubscriptionListResponse)
@@ -235,7 +235,7 @@ def change_subscription_plan(
     try:
         return service.change_plan(subscription_id, data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/{subscription_id}/cancel", response_model=SubscriptionResponse)
@@ -248,7 +248,7 @@ def cancel_subscription(
     try:
         return service.cancel_subscription(subscription_id, data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/{subscription_id}/pause", response_model=SubscriptionResponse)
@@ -261,7 +261,7 @@ def pause_subscription(
     try:
         return service.pause_subscription(subscription_id, data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/{subscription_id}/resume", response_model=SubscriptionResponse)
@@ -273,7 +273,7 @@ def resume_subscription(
     try:
         return service.resume_subscription(subscription_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -289,7 +289,7 @@ def create_invoice(
     try:
         return service.create_invoice(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/invoices", response_model=InvoiceListResponse)
@@ -332,7 +332,7 @@ def finalize_invoice(
     try:
         return service.finalize_invoice(invoice_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/invoices/{invoice_id}/void", response_model=InvoiceResponse)
@@ -344,7 +344,7 @@ def void_invoice(
     try:
         return service.void_invoice(invoice_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/invoices/{invoice_id}/pay", response_model=InvoiceResponse)
@@ -359,7 +359,7 @@ def pay_invoice(
         payment_amount = Decimal(str(amount)) if amount else None
         return service.mark_invoice_paid(invoice_id, payment_amount)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -375,7 +375,7 @@ def create_payment(
     try:
         return service.create_payment(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/payments/{payment_id}/refund", response_model=PaymentResponse)
@@ -388,7 +388,7 @@ def refund_payment(
     try:
         return service.refund_payment(payment_id, data.amount, data.reason)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -404,7 +404,7 @@ def create_usage_record(
     try:
         return service.create_usage_record(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/{subscription_id}/usage", response_model=list[UsageSummary])
@@ -418,7 +418,7 @@ def get_usage_summary(
     try:
         return service.get_usage_summary(subscription_id, period_start, period_end)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ============================================================================
@@ -434,7 +434,7 @@ def create_coupon(
     try:
         return service.create_coupon(data)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/coupons", response_model=list[CouponResponse])

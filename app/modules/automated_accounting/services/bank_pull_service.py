@@ -578,7 +578,7 @@ class BankPullService:
                 except Exception as e:
                     connection.status = BankConnectionStatus.EXPIRED
                     self.db.commit()
-                    raise ValueError(f"Token refresh failed: {e}")
+                    raise ValueError(f"Token refresh failed: {e}") from e
             else:
                 connection.status = BankConnectionStatus.EXPIRED
                 self.db.commit()

@@ -432,7 +432,7 @@ def signup(data: SignupRequest, db: Session = Depends(get_db)):
         }
 
     except SignupError as e:
-        raise HTTPException(status_code=400, detail={"code": e.code, "message": e.message})
+        raise HTTPException(status_code=400, detail={"code": e.code, "message": e.message}) from e
 
 @router.get("/check-email")
 def check_email(email: str, db: Session = Depends(get_db)):
