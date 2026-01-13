@@ -1,23 +1,12 @@
 # ==============================================================================
-# AZALSCORE - Configuration Render.com PRO + DOCKER
+# AZALSCORE - Configuration Render.com
 # ==============================================================================
-# DÉPLOIEMENT EN UN CLIC avec Docker - Portabilité maximale!
+# Déploiement automatique avec Docker
 #
-# INSTRUCTIONS:
-# 1. Cliquez sur "Deploy to Render" ou utilisez ce Blueprint
-# 2. C'est tout! Le reste est automatique.
-#
-# CARACTÉRISTIQUES:
-# - Docker multi-stage (image optimisée ~200MB)
-# - HTTPS automatique
-# - Redémarrage automatique
-# - PostgreSQL (haute disponibilité)
-# - Région EU (Frankfurt) pour conformité RGPD
-# - 2GB RAM / 1 CPU
-# - Secrets générés automatiquement
-# - Monitoring complet activé
-# - Portabilité : même image sur AWS/GCP/VPS
-#
+# Services:
+# - Frontend React (Static Site - CDN global)
+# - Backend FastAPI (Docker)
+# - PostgreSQL (Frankfurt EU)
 # ==============================================================================
 
 services:
@@ -25,121 +14,9 @@ services:
   # Frontend - React SPA (Static Site)
   # ============================================================
   - type: web
-    name: azals-frontend
-    runtime: static
-    # Note: Les sites statiques sont automatiquement distribués via CDN global
-    plan: starter
-
-    # Build React avec Vite
-    buildCommand: cd frontend && npm ci && npm run build
-    staticPublishPath: frontend/dist
-
-    # Headers de sécurité
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: X-XSS-Protection
-        value: 1; mode=block
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-
-    # Routes - Proxy API vers backend + SPA fallback
-    routes:
-      # API routes vers le backend
-      - type: rewrite
-        source: /api/*
-        destination: https://azals-api.onrender.com/api/*
-      - type: rewrite
-        source: /v1/*
-        destination: https://azals-api.onrender.com/v1/*
-      - type: rewrite
-        source: /auth/*
-        destination: https://azals-api.onrender.com/auth/*
-      - type: rewrite
-        source: /health
-        destination: https://azals-api.onrender.com/health
-      # SPA fallback - toutes les autres routes vers index.html
-      - type: rewrite
-        source: /*
-        destination: /index.html
-
-    envVars:
-      - key: NODE_VERSION
-        value: "20"
-
-    autoDeploy: true
-
-  # ============================================================
-  # Backend API - FastAPI
-  # ============================================================
-  - type: web
-    name: azalscore-api
-    runtime: docker
-    region: frankfurt
-    plan: standard  # 25$/mois - 2GB RAM, 1 CPU
-
-    # Docker configuration
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-
-    healthCheckPath: /health
-
-    envVars:
-      - key: PORT
-        value: "8000"
-      - key: DEBUG
-        value: "false"
-      - key: ENVIRONMENT
-        value: "production"
-      - key: LOG_LEVEL
-        value: "INFO"
-
-      # UUID Database - Désactiver le mode strict pour déploiement initial
-      # La base sera créée avec UUID par les modèles ORM
-      - key: DB_STRICT_UUID
-        value: "false"
-      - key: DB_AUTO_RESET_ON_VIOLATION
-        value: "false"
-
-      # SECRETS GÉNÉRÉS AUTOMATIQUEMENT
-      - key: SECRET_KEY
-        generateValue: true
-      - key: BOOTSTRAP_SECRET
-        generateValue: true
-      - key: ENCRYPTION_KEY
-        generateValue: true
-
-      # Admin par défaut (changez après déploiement!)
-      - key: ADMIN_EMAIL
-        value: "admin@azalscore.local"
-      - key: ADMIN_PASSWORD
-        generateValue: true
-
-      # CORS
-      - key: CORS_ORIGINS
-        value: "https://azalscore-frontend.onrender.com,http://localhost:5173"
-
-      # Database - connectée automatiquement
-      - key: DATABASE_URL
-        fromDatabase:
-          name: azalscore-db
-          property: connectionString
-
-    autoDeploy: true
-
-  # ==========================================================================
-  # FRONTEND (React + Vite)
-  # ==========================================================================
-  - type: web
     name: azalscore-frontend
     runtime: static
-    plan: free
+    # Static sites sont gratuits et distribués via CDN global
 
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: frontend/dist
@@ -162,12 +39,70 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
 
     envVars:
       - key: VITE_API_URL
         value: https://azalscore-api.onrender.com
       - key: NODE_VERSION
-        value: "18"
+        value: "20"
+
+    autoDeploy: true
+
+  # ============================================================
+  # Backend API - FastAPI (Docker)
+  # ============================================================
+  - type: web
+    name: azalscore-api
+    runtime: docker
+    region: frankfurt
+    plan: standard  # 25$/mois - 2GB RAM, 1 CPU
+
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: DEBUG
+        value: "false"
+      - key: ENVIRONMENT
+        value: "production"
+      - key: LOG_LEVEL
+        value: "INFO"
+
+      # UUID Database
+      - key: DB_STRICT_UUID
+        value: "false"
+      - key: DB_AUTO_RESET_ON_VIOLATION
+        value: "false"
+
+      # Secrets générés automatiquement
+      - key: SECRET_KEY
+        generateValue: true
+      - key: BOOTSTRAP_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+
+      # Admin par défaut
+      - key: ADMIN_EMAIL
+        value: "admin@azalscore.local"
+      - key: ADMIN_PASSWORD
+        generateValue: true
+
+      # CORS - Frontend URL
+      - key: CORS_ORIGINS
+        value: "https://azalscore-frontend.onrender.com,http://localhost:5173"
+
+      # Database
+      - key: DATABASE_URL
+        fromDatabase:
+          name: azalscore-db
+          property: connectionString
 
     autoDeploy: true
 
@@ -177,7 +112,7 @@ services:
 databases:
   - name: azalscore-db
     region: frankfurt
-    plan: free
+    plan: basic-256mb  # Ne pas downgrader si déjà existante
     databaseName: azalscore
     user: azalscore_user
     ipAllowList: []
