@@ -395,6 +395,103 @@ async def lifespan(app: FastAPI):
             else:
                 print("[WARN] DB non disponible, l'app demarre quand meme")
 
+    # =========================================================================
+    # AUTO-BOOTSTRAP: Création automatique du premier admin
+    # =========================================================================
+    # Si ADMIN_EMAIL et ADMIN_PASSWORD sont définis dans l'environnement:
+    # - Si aucun utilisateur n'existe -> créer l'admin
+    # - Si l'admin existe déjà -> réinitialiser son mot de passe
+    # =========================================================================
+    try:
+        from app.core.models import User, UserRole
+        from app.core.security import get_password_hash
+        from sqlalchemy.orm import Session as SQLSession
+
+        admin_email = _settings.admin_email
+        admin_password = _settings.admin_password
+
+        if admin_email and admin_password and len(admin_password) >= 12:
+            with SQLSession(engine) as session:
+                user_count = session.query(User).count()
+
+                if user_count == 0:
+                    # Aucun utilisateur -> créer l'admin
+                    admin_user = User(
+                        email=admin_email,
+                        password_hash=get_password_hash(admin_password),
+                        tenant_id="masith",
+                        role=UserRole.DIRIGEANT,
+                        is_active=1
+                    )
+                    session.add(admin_user)
+                    session.commit()
+
+                    print(f"\n{'='*60}")
+                    print("[AUTO-BOOTSTRAP] ADMIN CREE AUTOMATIQUEMENT")
+                    print(f"{'='*60}")
+                    print(f"Email: {admin_email}")
+                    print(f"Tenant: masith")
+                    print(f"Role: DIRIGEANT")
+                    print(f"{'='*60}\n")
+
+                    logger.info(
+                        "[AUTO-BOOTSTRAP] Premier admin cree automatiquement",
+                        extra={"email": admin_email, "tenant": "masith"}
+                    )
+                else:
+                    # Utilisateurs existent -> vérifier si l'admin configuré existe
+                    existing_admin = session.query(User).filter(
+                        User.email == admin_email
+                    ).first()
+
+                    if existing_admin:
+                        # Admin existe -> réinitialiser son mot de passe
+                        existing_admin.password_hash = get_password_hash(admin_password)
+                        existing_admin.is_active = 1
+                        session.commit()
+
+                        print(f"\n{'='*60}")
+                        print("[AUTO-BOOTSTRAP] MOT DE PASSE ADMIN REINITIALISE")
+                        print(f"{'='*60}")
+                        print(f"Email: {admin_email}")
+                        print(f"Tenant: {existing_admin.tenant_id}")
+                        print(f"{'='*60}\n")
+
+                        logger.info(
+                            "[AUTO-BOOTSTRAP] Mot de passe admin reinitialise",
+                            extra={"email": admin_email}
+                        )
+                    else:
+                        # Admin configuré n'existe pas -> le créer
+                        admin_user = User(
+                            email=admin_email,
+                            password_hash=get_password_hash(admin_password),
+                            tenant_id="masith",
+                            role=UserRole.DIRIGEANT,
+                            is_active=1
+                        )
+                        session.add(admin_user)
+                        session.commit()
+
+                        print(f"\n{'='*60}")
+                        print("[AUTO-BOOTSTRAP] ADMIN AJOUTE A LA BASE EXISTANTE")
+                        print(f"{'='*60}")
+                        print(f"Email: {admin_email}")
+                        print(f"Tenant: masith")
+                        print(f"{'='*60}\n")
+
+                        logger.info(
+                            "[AUTO-BOOTSTRAP] Admin ajoute a base existante",
+                            extra={"email": admin_email, "tenant": "masith"}
+                        )
+        else:
+            if not admin_email or not admin_password:
+                logger.info("[AUTO-BOOTSTRAP] Variables ADMIN_EMAIL/ADMIN_PASSWORD non definies")
+            elif len(admin_password) < 12:
+                logger.warning("[AUTO-BOOTSTRAP] ADMIN_PASSWORD < 12 caracteres, bootstrap ignore")
+    except Exception as bootstrap_err:
+        logger.warning(f"[AUTO-BOOTSTRAP] Erreur (non bloquante): {bootstrap_err}")
+
     # Démarrer le scheduler (désactivé en staging pour économiser la mémoire)
     if _settings.environment not in ('staging', 'test'):
         scheduler_service.start()

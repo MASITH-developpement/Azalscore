@@ -69,6 +69,16 @@ class Settings(BaseSettings):
     # Redis (pour rate limiting distribué)
     redis_url: Optional[str] = Field(default=None, description="URL Redis pour cache et rate limiting")
 
+    # Admin par défaut pour auto-bootstrap
+    admin_email: Optional[str] = Field(
+        default=None,
+        description="Email admin pour auto-bootstrap au démarrage"
+    )
+    admin_password: Optional[str] = Field(
+        default=None,
+        description="Mot de passe admin pour auto-bootstrap au démarrage"
+    )
+
     # ENCRYPTION_KEY - OBLIGATOIRE EN PRODUCTION pour chiffrement AES-256 au repos
     encryption_key: Optional[str] = Field(
         default=None,
