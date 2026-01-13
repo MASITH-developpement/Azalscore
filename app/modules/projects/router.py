@@ -34,7 +34,7 @@ from .schemas import (
 )
 
 
-router = APIRouter(prefix="/api/v1/projects", tags=["Projets (Project Management)"])
+router = APIRouter(prefix="/projects", tags=["Projets (Project Management)"])
 
 
 # ============================================================================

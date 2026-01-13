@@ -53,6 +53,7 @@ from app.api.invoicing import router as invoicing_router
 from app.api.branding import router as branding_router
 from app.api.signup import router as signup_router
 from app.api.webhooks import router as webhooks_router
+from app.api.audit import router as audit_ui_router
 
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
 from app.modules.iam.router import router as iam_router
@@ -586,6 +587,8 @@ api_v1.include_router(triggers_router)
 
 # Module T3 - Audit & Benchmark Evolutif
 api_v1.include_router(audit_router)
+# API Audit UI - Endpoint simple pour events frontend
+api_v1.include_router(audit_ui_router)
 
 # Module T4 - Controle Qualite Central
 api_v1.include_router(qc_router)

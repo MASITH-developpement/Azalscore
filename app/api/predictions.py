@@ -22,7 +22,7 @@ from app.core.ml_predictions import (
 )
 
 
-router = APIRouter(prefix="/api/v1/predictions", tags=["predictions"])
+router = APIRouter(prefix="/predictions", tags=["predictions"])
 
 
 # ============================================================================

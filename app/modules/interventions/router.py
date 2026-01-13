@@ -55,7 +55,7 @@ from .service import (
 )
 
 
-router = APIRouter(prefix="/api/v1/interventions", tags=["M-INT - Interventions"])
+router = APIRouter(prefix="/interventions", tags=["M-INT - Interventions"])
 
 
 # ============================================================================

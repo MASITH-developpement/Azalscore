@@ -39,7 +39,7 @@ from .schemas import (
     ProductionDashboard
 )
 
-router = APIRouter(prefix="/api/v1/production", tags=["Production (M6)"])
+router = APIRouter(prefix="/production", tags=["Production (M6)"])
 
 
 # ============================================================================
