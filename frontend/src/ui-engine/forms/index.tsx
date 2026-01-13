@@ -462,6 +462,8 @@ interface InputProps {
   className?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  min?: number;
+  max?: number;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -474,6 +476,8 @@ export const Input: React.FC<InputProps> = ({
   className,
   leftIcon,
   rightIcon,
+  min,
+  max,
 }) => {
   if (leftIcon || rightIcon) {
     return (
@@ -485,6 +489,8 @@ export const Input: React.FC<InputProps> = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
+          min={min}
+          max={max}
           className={clsx('azals-input', { 'azals-input--error': error, 'azals-input--with-icon': leftIcon || rightIcon })}
         />
         {rightIcon && <span className="azals-input__icon azals-input__icon--right">{rightIcon}</span>}
@@ -498,6 +504,8 @@ export const Input: React.FC<InputProps> = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
+      min={min}
+      max={max}
       className={clsx('azals-input', className, { 'azals-input--error': error })}
     />
   );

@@ -361,7 +361,7 @@ const DocumentPreview: React.FC<{ document: DocumentDetail }> = ({
           size="sm"
           leftIcon={<Download size={14} />}
           onClick={() => {
-            const link = document.createElement('a');
+            const link = window.document.createElement('a');
             link.href = previewUrl;
             link.download = document.original_filename;
             link.click();

@@ -164,7 +164,7 @@ export interface DashboardWidget {
 export interface TableColumn<T> {
   id: string | keyof T;
   header: string | React.ReactNode;
-  accessor: keyof T | ((row: T) => unknown);
+  accessor?: keyof T | ((row: T) => unknown);
   sortable?: boolean;
   filterable?: boolean;
   width?: string;
