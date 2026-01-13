@@ -162,8 +162,8 @@ export interface DashboardWidget {
 // ============================================================
 
 export interface TableColumn<T> {
-  id: string;
-  header: string;
+  id: string | keyof T;
+  header: string | React.ReactNode;
   accessor: keyof T | ((row: T) => unknown);
   sortable?: boolean;
   filterable?: boolean;
@@ -172,10 +172,13 @@ export interface TableColumn<T> {
   render?: (value: unknown, row: T) => React.ReactNode;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IconType = string | React.ReactNode | React.ForwardRefExoticComponent<any> | React.FC<any>;
+
 export interface TableAction<T> {
   id: string;
   label: string;
-  icon?: string | React.ReactNode;
+  icon?: IconType;
   capability?: string;
   onClick: (row: T) => void;
   isDisabled?: (row: T) => boolean;

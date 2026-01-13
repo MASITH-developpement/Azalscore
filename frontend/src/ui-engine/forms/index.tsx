@@ -453,13 +453,15 @@ export const useFormState = <T extends FieldValues>(
 // ============================================================
 
 interface InputProps {
-  value: string;
+  value: string | number;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: 'text' | 'email' | 'password' | 'number';
   disabled?: boolean;
   error?: boolean;
   className?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -470,7 +472,25 @@ export const Input: React.FC<InputProps> = ({
   disabled,
   error,
   className,
+  leftIcon,
+  rightIcon,
 }) => {
+  if (leftIcon || rightIcon) {
+    return (
+      <div className={clsx('azals-input-wrapper', className)}>
+        {leftIcon && <span className="azals-input__icon azals-input__icon--left">{leftIcon}</span>}
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={clsx('azals-input', { 'azals-input--error': error, 'azals-input--with-icon': leftIcon || rightIcon })}
+        />
+        {rightIcon && <span className="azals-input__icon azals-input__icon--right">{rightIcon}</span>}
+      </div>
+    );
+  }
   return (
     <input
       type={type}
