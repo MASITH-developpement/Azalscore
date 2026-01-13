@@ -1,64 +1,137 @@
-# AZALS - ERP Décisionnel Critique
-# Docker Compose - Orchestration des services
+# ==============================================================================
+# AZALSCORE - Docker Compose Développement Local
+# ==============================================================================
+# Usage: docker-compose up -d
+# Accès: http://localhost:8000 (API) / http://localhost:5173 (Frontend)
+# ==============================================================================
 
 version: '3.8'
 
 services:
-  # Service PostgreSQL - Base de données principale
+  # ==========================================================================
+  # PostgreSQL 15 - Base de données principale
+  # ==========================================================================
   postgres:
     image: postgres:15-alpine
-    container_name: azals_postgres
-    env_file:
-      - .env
+    container_name: azalscore_postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-azals}
-      POSTGRES_USER: ${POSTGRES_USER:-azals_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-azalscore}
+      POSTGRES_USER: ${POSTGRES_USER:-azalscore_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-azalscore_dev_password}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U azals_user -d azals"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-azalscore_user} -d ${POSTGRES_DB:-azalscore}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - azals_network
+      - azalscore_network
+    restart: unless-stopped
 
-  # Service API FastAPI
+  # ==========================================================================
+  # Redis 7 - Cache et sessions (optionnel mais recommandé)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: azalscore_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - azalscore_network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # API Backend (FastAPI)
+  # ==========================================================================
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: azals_api
-    env_file:
-      - .env
+      target: production
+    container_name: azalscore_api
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      DEBUG: ${DEBUG:-false}
-      SECRET_KEY: ${SECRET_KEY}
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-azalscore_user}:${POSTGRES_PASSWORD:-azalscore_dev_password}@postgres:5432/${POSTGRES_DB:-azalscore}
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      # Application
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-minimum-32-characters-long}
+      BOOTSTRAP_SECRET: ${BOOTSTRAP_SECRET:-bootstrap-dev-secret}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      # Pool DB
       DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
+      # CORS
+      CORS_ORIGINS: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
-      - azals_network
+      - azalscore_network
     restart: unless-stopped
+    # Mode développement: recharge automatique
+    volumes:
+      - ./app:/app/app:ro
+      - ./alembic:/app/alembic:ro
 
+  # ==========================================================================
+  # Frontend (Vite dev server) - Optionnel
+  # ==========================================================================
+  frontend:
+    image: node:18-alpine
+    container_name: azalscore_frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    networks:
+      - azalscore_network
+    depends_on:
+      - api
+    profiles:
+      - frontend  # Activer avec: docker-compose --profile frontend up
+
+# ==============================================================================
+# Volumes persistants
+# ==============================================================================
 volumes:
   postgres_data:
     driver: local
+  redis_data:
+    driver: local
+  frontend_node_modules:
+    driver: local
 
+# ==============================================================================
+# Réseau isolé
+# ==============================================================================
 networks:
-  azals_network:
+  azalscore_network:
     driver: bridge

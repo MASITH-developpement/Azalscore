@@ -1,68 +1,50 @@
 # ==============================================================================
-# AZALSCORE - Configuration Render.com PRO (AUTO-DEPLOY)
+# AZALSCORE - Configuration Render.com PRO + DOCKER
 # ==============================================================================
-# DÉPLOIEMENT EN UN CLIC - Tous les secrets sont générés automatiquement!
+# DÉPLOIEMENT EN UN CLIC avec Docker - Portabilité maximale!
 #
 # INSTRUCTIONS:
 # 1. Cliquez sur "Deploy to Render" ou utilisez ce Blueprint
 # 2. C'est tout! Le reste est automatique.
 #
 # CARACTÉRISTIQUES:
+# - Docker multi-stage (image optimisée ~200MB)
 # - HTTPS automatique
 # - Redémarrage automatique
-# - PostgreSQL Pro (haute disponibilité)
+# - PostgreSQL (haute disponibilité)
 # - Région EU (Frankfurt) pour conformité RGPD
 # - 2GB RAM / 1 CPU
 # - Secrets générés automatiquement
 # - Monitoring complet activé
+# - Portabilité : même image sur AWS/GCP/VPS
 #
 # ==============================================================================
 
 services:
   # ==========================================================================
-  # API BACKEND (FastAPI) - PRO
+  # API BACKEND (FastAPI + Docker) - STANDARD
   # ==========================================================================
   - type: web
     name: azalscore-api
-    runtime: python
+    runtime: docker
     region: frankfurt
-    plan: standard  # 25$/mois - 2GB RAM, 1 CPU (nécessaire pour AZALSCORE)
+    plan: standard  # 25$/mois - 2GB RAM, 1 CPU
 
-    # Build
-    buildCommand: |
-      pip install -r requirements.txt
-      python -c "
-      import os
-      try:
-          from app.db.base import Base
-          from sqlalchemy import create_engine
-          db_url = os.environ.get('DATABASE_URL', '')
-          if db_url:
-              engine = create_engine(db_url)
-              Base.metadata.create_all(bind=engine)
-              print('Database tables created')
-      except Exception as e:
-          print(f'DB init skipped: {e}')
-      "
-
-    # Production startup (Pro tier - plus de ressources)
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2 --limit-concurrency 100 --limit-max-requests 10000
+    # Docker configuration
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
 
     healthCheckPath: /health
 
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.11.7"
+      - key: PORT
+        value: "8000"
       - key: DEBUG
         value: "false"
       - key: ENVIRONMENT
         value: "production"
       - key: LOG_LEVEL
         value: "INFO"
-      - key: WEB_CONCURRENCY
-        value: "2"
-      - key: PYTHONUNBUFFERED
-        value: "1"
 
       # SECRETS GÉNÉRÉS AUTOMATIQUEMENT
       - key: SECRET_KEY
@@ -78,7 +60,7 @@ services:
       - key: ADMIN_PASSWORD
         generateValue: true
 
-      # CORS - mis à jour automatiquement par Render
+      # CORS
       - key: CORS_ORIGINS
         value: "https://azalscore-frontend.onrender.com,http://localhost:5173"
 
