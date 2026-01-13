@@ -25,8 +25,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from app.db import Base
 from app.core.types import UniversalUUID
+from app.db import Base
 
 # ============================================================================
 # ENUMS

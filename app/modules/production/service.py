@@ -5,32 +5,58 @@ AZALS MODULE M6 - Service Production
 Logique métier pour la gestion de production.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
 from uuid import UUID
 
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
+
 from .models import (
-    WorkCenter, BillOfMaterials, BOMLine,
-    Routing, RoutingOperation, ManufacturingOrder, WorkOrder,
-    MaterialConsumption, ProductionOutput,
-    ProductionScrap, ProductionPlan, ProductionPlanLine, MaintenanceSchedule,
-    WorkCenterStatus, BOMStatus, MOStatus, WorkOrderStatus, MOPriority
+    BillOfMaterials,
+    BOMLine,
+    BOMStatus,
+    MaintenanceSchedule,
+    ManufacturingOrder,
+    MaterialConsumption,
+    MOPriority,
+    MOStatus,
+    ProductionOutput,
+    ProductionPlan,
+    ProductionPlanLine,
+    ProductionScrap,
+    Routing,
+    RoutingOperation,
+    WorkCenter,
+    WorkCenterStatus,
+    WorkOrder,
+    WorkOrderStatus,
 )
 from .schemas import (
-    WorkCenterCreate, WorkCenterUpdate, BOMCreate, BOMUpdate, BOMLineCreate,
-    RoutingCreate, MOCreate, MOUpdate, StartWorkOrderRequest, CompleteWorkOrderRequest, ConsumeRequest, ReturnRequest, ProduceRequest, ScrapCreate,
-    PlanCreate, MaintenanceScheduleCreate,
-    ProductionDashboard
+    BOMCreate,
+    BOMLineCreate,
+    BOMUpdate,
+    CompleteWorkOrderRequest,
+    ConsumeRequest,
+    MaintenanceScheduleCreate,
+    MOCreate,
+    MOUpdate,
+    PlanCreate,
+    ProduceRequest,
+    ProductionDashboard,
+    ReturnRequest,
+    RoutingCreate,
+    ScrapCreate,
+    StartWorkOrderRequest,
+    WorkCenterCreate,
+    WorkCenterUpdate,
 )
 
 
 class ProductionService:
     """Service de gestion de production."""
 
-    def __init__(self, db: Session, tenant_id: str, user_id: Optional[UUID] = None):
+    def __init__(self, db: Session, tenant_id: str, user_id: UUID | None = None):
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
@@ -73,7 +99,7 @@ class ProductionService:
         self.db.refresh(wc)
         return wc
 
-    def get_work_center(self, wc_id: UUID) -> Optional[WorkCenter]:
+    def get_work_center(self, wc_id: UUID) -> WorkCenter | None:
         """Récupérer un centre de travail."""
         return self.db.query(WorkCenter).filter(
             WorkCenter.tenant_id == self.tenant_id,
@@ -82,15 +108,15 @@ class ProductionService:
 
     def list_work_centers(
         self,
-        status: Optional[WorkCenterStatus] = None,
-        type_filter: Optional[str] = None,
+        status: WorkCenterStatus | None = None,
+        type_filter: str | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[WorkCenter], int]:
+    ) -> tuple[list[WorkCenter], int]:
         """Lister les centres de travail."""
         query = self.db.query(WorkCenter).filter(
             WorkCenter.tenant_id == self.tenant_id,
-            WorkCenter.is_active == True
+            WorkCenter.is_active
         )
 
         if status:
@@ -102,7 +128,7 @@ class ProductionService:
         items = query.order_by(WorkCenter.name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_work_center(self, wc_id: UUID, data: WorkCenterUpdate) -> Optional[WorkCenter]:
+    def update_work_center(self, wc_id: UUID, data: WorkCenterUpdate) -> WorkCenter | None:
         """Mettre à jour un centre de travail."""
         wc = self.get_work_center(wc_id)
         if not wc:
@@ -115,7 +141,7 @@ class ProductionService:
         self.db.refresh(wc)
         return wc
 
-    def set_work_center_status(self, wc_id: UUID, status: WorkCenterStatus) -> Optional[WorkCenter]:
+    def set_work_center_status(self, wc_id: UUID, status: WorkCenterStatus) -> WorkCenter | None:
         """Changer le statut d'un centre de travail."""
         wc = self.get_work_center(wc_id)
         if not wc:
@@ -176,33 +202,33 @@ class ProductionService:
         self.db.refresh(bom)
         return bom
 
-    def get_bom(self, bom_id: UUID) -> Optional[BillOfMaterials]:
+    def get_bom(self, bom_id: UUID) -> BillOfMaterials | None:
         """Récupérer une nomenclature."""
         return self.db.query(BillOfMaterials).filter(
             BillOfMaterials.tenant_id == self.tenant_id,
             BillOfMaterials.id == bom_id
         ).first()
 
-    def get_bom_for_product(self, product_id: UUID) -> Optional[BillOfMaterials]:
+    def get_bom_for_product(self, product_id: UUID) -> BillOfMaterials | None:
         """Récupérer la nomenclature par défaut d'un produit."""
         return self.db.query(BillOfMaterials).filter(
             BillOfMaterials.tenant_id == self.tenant_id,
             BillOfMaterials.product_id == product_id,
             BillOfMaterials.status == BOMStatus.ACTIVE,
-            BillOfMaterials.is_default == True
+            BillOfMaterials.is_default
         ).first()
 
     def list_boms(
         self,
-        product_id: Optional[UUID] = None,
-        status: Optional[BOMStatus] = None,
+        product_id: UUID | None = None,
+        status: BOMStatus | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[BillOfMaterials], int]:
+    ) -> tuple[list[BillOfMaterials], int]:
         """Lister les nomenclatures."""
         query = self.db.query(BillOfMaterials).filter(
             BillOfMaterials.tenant_id == self.tenant_id,
-            BillOfMaterials.is_active == True
+            BillOfMaterials.is_active
         )
 
         if product_id:
@@ -214,7 +240,7 @@ class ProductionService:
         items = query.order_by(BillOfMaterials.code).offset(skip).limit(limit).all()
         return items, total
 
-    def update_bom(self, bom_id: UUID, data: BOMUpdate) -> Optional[BillOfMaterials]:
+    def update_bom(self, bom_id: UUID, data: BOMUpdate) -> BillOfMaterials | None:
         """Mettre à jour une nomenclature."""
         bom = self.get_bom(bom_id)
         if not bom:
@@ -227,7 +253,7 @@ class ProductionService:
         self.db.refresh(bom)
         return bom
 
-    def activate_bom(self, bom_id: UUID) -> Optional[BillOfMaterials]:
+    def activate_bom(self, bom_id: UUID) -> BillOfMaterials | None:
         """Activer une nomenclature."""
         bom = self.get_bom(bom_id)
         if not bom:
@@ -238,7 +264,7 @@ class ProductionService:
         self.db.refresh(bom)
         return bom
 
-    def add_bom_line(self, bom_id: UUID, data: BOMLineCreate) -> Optional[BOMLine]:
+    def add_bom_line(self, bom_id: UUID, data: BOMLineCreate) -> BOMLine | None:
         """Ajouter une ligne à une nomenclature."""
         bom = self.get_bom(bom_id)
         if not bom:
@@ -334,7 +360,7 @@ class ProductionService:
         self.db.refresh(routing)
         return routing
 
-    def get_routing(self, routing_id: UUID) -> Optional[Routing]:
+    def get_routing(self, routing_id: UUID) -> Routing | None:
         """Récupérer une gamme."""
         return self.db.query(Routing).filter(
             Routing.tenant_id == self.tenant_id,
@@ -343,14 +369,14 @@ class ProductionService:
 
     def list_routings(
         self,
-        product_id: Optional[UUID] = None,
+        product_id: UUID | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Routing], int]:
+    ) -> tuple[list[Routing], int]:
         """Lister les gammes."""
         query = self.db.query(Routing).filter(
             Routing.tenant_id == self.tenant_id,
-            Routing.is_active == True
+            Routing.is_active
         )
 
         if product_id:
@@ -414,7 +440,7 @@ class ProductionService:
         self.db.refresh(mo)
         return mo
 
-    def get_manufacturing_order(self, mo_id: UUID) -> Optional[ManufacturingOrder]:
+    def get_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
         """Récupérer un ordre de fabrication."""
         return self.db.query(ManufacturingOrder).filter(
             ManufacturingOrder.tenant_id == self.tenant_id,
@@ -423,14 +449,14 @@ class ProductionService:
 
     def list_manufacturing_orders(
         self,
-        status: Optional[MOStatus] = None,
-        priority: Optional[MOPriority] = None,
-        product_id: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        status: MOStatus | None = None,
+        priority: MOPriority | None = None,
+        product_id: UUID | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[ManufacturingOrder], int]:
+    ) -> tuple[list[ManufacturingOrder], int]:
         """Lister les ordres de fabrication."""
         query = self.db.query(ManufacturingOrder).filter(
             ManufacturingOrder.tenant_id == self.tenant_id
@@ -451,7 +477,7 @@ class ProductionService:
         items = query.order_by(ManufacturingOrder.scheduled_start.desc()).offset(skip).limit(limit).all()
         return items, total
 
-    def update_manufacturing_order(self, mo_id: UUID, data: MOUpdate) -> Optional[ManufacturingOrder]:
+    def update_manufacturing_order(self, mo_id: UUID, data: MOUpdate) -> ManufacturingOrder | None:
         """Mettre à jour un OF."""
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status not in [MOStatus.DRAFT, MOStatus.CONFIRMED]:
@@ -464,7 +490,7 @@ class ProductionService:
         self.db.refresh(mo)
         return mo
 
-    def confirm_manufacturing_order(self, mo_id: UUID) -> Optional[ManufacturingOrder]:
+    def confirm_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
         """Confirmer un OF et créer les ordres de travail."""
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status != MOStatus.DRAFT:
@@ -513,7 +539,7 @@ class ProductionService:
         self.db.refresh(mo)
         return mo
 
-    def start_manufacturing_order(self, mo_id: UUID) -> Optional[ManufacturingOrder]:
+    def start_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
         """Démarrer un OF."""
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status not in [MOStatus.CONFIRMED, MOStatus.PLANNED]:
@@ -526,7 +552,7 @@ class ProductionService:
         self.db.refresh(mo)
         return mo
 
-    def complete_manufacturing_order(self, mo_id: UUID) -> Optional[ManufacturingOrder]:
+    def complete_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
         """Terminer un OF."""
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status != MOStatus.IN_PROGRESS:
@@ -540,7 +566,7 @@ class ProductionService:
         self.db.refresh(mo)
         return mo
 
-    def cancel_manufacturing_order(self, mo_id: UUID) -> Optional[ManufacturingOrder]:
+    def cancel_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
         """Annuler un OF."""
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status in [MOStatus.DONE, MOStatus.CANCELLED]:
@@ -561,7 +587,7 @@ class ProductionService:
     # ORDRES DE TRAVAIL
     # ========================================================================
 
-    def get_work_order(self, wo_id: UUID) -> Optional[WorkOrder]:
+    def get_work_order(self, wo_id: UUID) -> WorkOrder | None:
         """Récupérer un ordre de travail."""
         return self.db.query(WorkOrder).filter(
             WorkOrder.tenant_id == self.tenant_id,
@@ -571,8 +597,8 @@ class ProductionService:
     def list_work_orders_for_work_center(
         self,
         work_center_id: UUID,
-        status: Optional[WorkOrderStatus] = None
-    ) -> List[WorkOrder]:
+        status: WorkOrderStatus | None = None
+    ) -> list[WorkOrder]:
         """Lister les ordres de travail pour un centre."""
         query = self.db.query(WorkOrder).filter(
             WorkOrder.tenant_id == self.tenant_id,
@@ -584,7 +610,7 @@ class ProductionService:
 
         return query.order_by(WorkOrder.scheduled_start).all()
 
-    def start_work_order(self, wo_id: UUID, data: StartWorkOrderRequest) -> Optional[WorkOrder]:
+    def start_work_order(self, wo_id: UUID, data: StartWorkOrderRequest) -> WorkOrder | None:
         """Démarrer un ordre de travail."""
         wo = self.get_work_order(wo_id)
         if not wo or wo.status not in [WorkOrderStatus.PENDING, WorkOrderStatus.READY]:
@@ -611,7 +637,7 @@ class ProductionService:
         self.db.refresh(wo)
         return wo
 
-    def complete_work_order(self, wo_id: UUID, data: CompleteWorkOrderRequest) -> Optional[WorkOrder]:
+    def complete_work_order(self, wo_id: UUID, data: CompleteWorkOrderRequest) -> WorkOrder | None:
         """Terminer un ordre de travail."""
         wo = self.get_work_order(wo_id)
         if not wo or wo.status != WorkOrderStatus.IN_PROGRESS:
@@ -647,7 +673,7 @@ class ProductionService:
         self.db.refresh(wo)
         return wo
 
-    def pause_work_order(self, wo_id: UUID) -> Optional[WorkOrder]:
+    def pause_work_order(self, wo_id: UUID) -> WorkOrder | None:
         """Mettre en pause un ordre de travail."""
         wo = self.get_work_order(wo_id)
         if not wo or wo.status != WorkOrderStatus.IN_PROGRESS:
@@ -665,7 +691,7 @@ class ProductionService:
         self.db.refresh(wo)
         return wo
 
-    def resume_work_order(self, wo_id: UUID) -> Optional[WorkOrder]:
+    def resume_work_order(self, wo_id: UUID) -> WorkOrder | None:
         """Reprendre un ordre de travail."""
         wo = self.get_work_order(wo_id)
         if not wo or wo.status != WorkOrderStatus.PAUSED:
@@ -687,7 +713,7 @@ class ProductionService:
     # CONSOMMATION DE MATIÈRES
     # ========================================================================
 
-    def consume_material(self, mo_id: UUID, data: ConsumeRequest) -> Optional[MaterialConsumption]:
+    def consume_material(self, mo_id: UUID, data: ConsumeRequest) -> MaterialConsumption | None:
         """Consommer des matières."""
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status not in [MOStatus.IN_PROGRESS, MOStatus.CONFIRMED]:
@@ -734,7 +760,7 @@ class ProductionService:
         self.db.refresh(consumption)
         return consumption
 
-    def return_material(self, data: ReturnRequest) -> Optional[MaterialConsumption]:
+    def return_material(self, data: ReturnRequest) -> MaterialConsumption | None:
         """Retourner des matières non utilisées."""
         consumption = self.db.query(MaterialConsumption).filter(
             MaterialConsumption.tenant_id == self.tenant_id,
@@ -756,7 +782,7 @@ class ProductionService:
     # PRODUCTION (OUTPUT)
     # ========================================================================
 
-    def produce(self, mo_id: UUID, data: ProduceRequest) -> Optional[ProductionOutput]:
+    def produce(self, mo_id: UUID, data: ProduceRequest) -> ProductionOutput | None:
         """Déclarer une production."""
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status not in [MOStatus.IN_PROGRESS]:
@@ -822,13 +848,13 @@ class ProductionService:
 
     def list_scraps(
         self,
-        mo_id: Optional[UUID] = None,
-        product_id: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        mo_id: UUID | None = None,
+        product_id: UUID | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[ProductionScrap], int]:
+    ) -> tuple[list[ProductionScrap], int]:
         """Lister les rebuts."""
         query = self.db.query(ProductionScrap).filter(
             ProductionScrap.tenant_id == self.tenant_id
@@ -890,7 +916,7 @@ class ProductionService:
         self.db.refresh(plan)
         return plan
 
-    def get_production_plan(self, plan_id: UUID) -> Optional[ProductionPlan]:
+    def get_production_plan(self, plan_id: UUID) -> ProductionPlan | None:
         """Récupérer un plan de production."""
         return self.db.query(ProductionPlan).filter(
             ProductionPlan.tenant_id == self.tenant_id,
@@ -920,12 +946,12 @@ class ProductionService:
 
     def list_maintenance_schedules(
         self,
-        work_center_id: Optional[UUID] = None
-    ) -> List[MaintenanceSchedule]:
+        work_center_id: UUID | None = None
+    ) -> list[MaintenanceSchedule]:
         """Lister les calendriers de maintenance."""
         query = self.db.query(MaintenanceSchedule).filter(
             MaintenanceSchedule.tenant_id == self.tenant_id,
-            MaintenanceSchedule.is_active == True
+            MaintenanceSchedule.is_active
         )
 
         if work_center_id:
@@ -933,15 +959,15 @@ class ProductionService:
 
         return query.all()
 
-    def get_due_maintenance(self) -> List[MaintenanceSchedule]:
+    def get_due_maintenance(self) -> list[MaintenanceSchedule]:
         """Récupérer les maintenances dues."""
         now = datetime.utcnow()
         return self.db.query(MaintenanceSchedule).filter(
             MaintenanceSchedule.tenant_id == self.tenant_id,
-            MaintenanceSchedule.is_active == True,
+            MaintenanceSchedule.is_active,
             or_(
                 MaintenanceSchedule.next_maintenance <= now,
-                MaintenanceSchedule.next_maintenance == None
+                MaintenanceSchedule.next_maintenance is None
             )
         ).all()
 
@@ -1001,24 +1027,24 @@ class ProductionService:
         # Centres de travail
         total_wc = self.db.query(WorkCenter).filter(
             WorkCenter.tenant_id == self.tenant_id,
-            WorkCenter.is_active == True
+            WorkCenter.is_active
         ).count()
 
         wc_available = self.db.query(WorkCenter).filter(
             WorkCenter.tenant_id == self.tenant_id,
-            WorkCenter.is_active == True,
+            WorkCenter.is_active,
             WorkCenter.status == WorkCenterStatus.AVAILABLE
         ).count()
 
         wc_busy = self.db.query(WorkCenter).filter(
             WorkCenter.tenant_id == self.tenant_id,
-            WorkCenter.is_active == True,
+            WorkCenter.is_active,
             WorkCenter.status == WorkCenterStatus.BUSY
         ).count()
 
         wc_maintenance = self.db.query(WorkCenter).filter(
             WorkCenter.tenant_id == self.tenant_id,
-            WorkCenter.is_active == True,
+            WorkCenter.is_active,
             WorkCenter.status == WorkCenterStatus.MAINTENANCE
         ).count()
 
@@ -1042,6 +1068,6 @@ class ProductionService:
         )
 
 
-def get_production_service(db: Session, tenant_id: str, user_id: Optional[UUID] = None) -> ProductionService:
+def get_production_service(db: Session, tenant_id: str, user_id: UUID | None = None) -> ProductionService:
     """Factory function pour le service Production."""
     return ProductionService(db, tenant_id, user_id)

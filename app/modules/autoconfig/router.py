@@ -5,35 +5,44 @@ AZALS MODULE T1 - Router API Configuration Automatique
 Endpoints REST pour la configuration automatique par fonction.
 """
 
-from typing import Optional
 import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 
-from .service import AutoConfigService, get_autoconfig_service
-from .models import OverrideType, OverrideStatus
+from .models import OverrideStatus, OverrideType
 from .schemas import (
-    # Profils
-    ProfileResponse, ProfileListResponse,
-    ProfileDetectionRequest, ProfileDetectionResponse,
-    # Attributions
-    ProfileAssignmentResponse, ManualAssignmentRequest, AutoAssignmentRequest,
+    AutoAssignmentRequest,
     EffectiveConfigResponse,
-    # Overrides
-    OverrideRequest, OverrideResponse, OverrideListResponse,
-    OverrideRejectionRequest,
-    # Onboarding
-    OnboardingCreate, OnboardingResponse, OnboardingListResponse,
-    OnboardingExecutionResult,
+    ManualAssignmentRequest,
     # Offboarding
-    OffboardingCreate, OffboardingResponse, OffboardingListResponse,
-    OffboardingExecutionResult
+    OffboardingCreate,
+    OffboardingExecutionResult,
+    OffboardingListResponse,
+    OffboardingResponse,
+    # Onboarding
+    OnboardingCreate,
+    OnboardingExecutionResult,
+    OnboardingListResponse,
+    OnboardingResponse,
+    OverrideListResponse,
+    OverrideRejectionRequest,
+    # Overrides
+    OverrideRequest,
+    OverrideResponse,
+    # Attributions
+    ProfileAssignmentResponse,
+    ProfileDetectionRequest,
+    ProfileDetectionResponse,
+    ProfileListResponse,
+    # Profils
+    ProfileResponse,
 )
-
+from .service import AutoConfigService, get_autoconfig_service
 
 router = APIRouter(prefix="/autoconfig", tags=["autoconfig"])
 
@@ -348,8 +357,8 @@ async def request_override(
 
 @router.get("/overrides", response_model=OverrideListResponse)
 async def list_overrides(
-    user_id: Optional[int] = None,
-    status_filter: Optional[str] = None,
+    user_id: int | None = None,
+    status_filter: str | None = None,
     include_inactive: bool = False,
     current_user: User = Depends(get_current_user),
     service: AutoConfigService = Depends(get_service)

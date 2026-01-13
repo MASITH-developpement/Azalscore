@@ -6,8 +6,7 @@ pip install stripe
 """
 
 import os
-from datetime import datetime
-from typing import Optional, Dict, Any, List
+
 from sqlalchemy.orm import Session
 
 try:
@@ -48,7 +47,7 @@ AZALSCORE_PLANS = {
         "features": ["Multi-tenant", "Audit trail", "Support email"]
     },
     "professional": {
-        "name": "Professional", 
+        "name": "Professional",
         "price_monthly": 14900,
         "price_yearly": 149000,
         "stripe_price_monthly": os.getenv("STRIPE_PRICE_PRO_MONTHLY"),
@@ -106,8 +105,8 @@ class StripeServiceLive:
         self,
         email: str,
         name: str,
-        metadata: Optional[Dict[str, str]] = None
-    ) -> Optional[Dict]:
+        metadata: dict[str, str] | None = None
+    ) -> dict | None:
         """Créer un client Stripe."""
         if not STRIPE_AVAILABLE:
             return None
@@ -127,7 +126,7 @@ class StripeServiceLive:
             logger.error(f"[STRIPE] Erreur création customer: {e}")
             return None
 
-    def get_customer(self, customer_id: str) -> Optional[Dict]:
+    def get_customer(self, customer_id: str) -> dict | None:
         """Récupérer un client Stripe."""
         if not STRIPE_AVAILABLE:
             return None
@@ -142,7 +141,7 @@ class StripeServiceLive:
         self,
         customer_id: str,
         **kwargs
-    ) -> Optional[Dict]:
+    ) -> dict | None:
         """Mettre à jour un client."""
         if not STRIPE_AVAILABLE:
             return None
@@ -166,10 +165,10 @@ class StripeServiceLive:
         success_url: str = None,
         cancel_url: str = None,
         trial_days: int = 14
-    ) -> Optional[Dict[str, str]]:
+    ) -> dict[str, str] | None:
         """
         Créer une session de checkout Stripe.
-        
+
         Retourne:
             {"session_id": "...", "url": "..."}
         """
@@ -183,13 +182,13 @@ class StripeServiceLive:
 
         price_key = f"stripe_price_{billing_period}"
         price_id = plan_config.get(price_key)
-        
+
         if not price_id:
             logger.error(f"[STRIPE] Prix non configuré pour {plan}/{billing_period}")
             return None
 
         app_url = os.getenv("APP_URL", "https://app.azalscore.com")
-        
+
         try:
             session = stripe.checkout.Session.create(
                 customer=customer_id,
@@ -228,7 +227,7 @@ class StripeServiceLive:
             logger.error(f"[STRIPE] Erreur création checkout: {e}")
             return None
 
-    def get_checkout_session(self, session_id: str) -> Optional[Dict]:
+    def get_checkout_session(self, session_id: str) -> dict | None:
         """Récupérer une session de checkout."""
         if not STRIPE_AVAILABLE:
             return None
@@ -247,7 +246,7 @@ class StripeServiceLive:
     # SUBSCRIPTIONS
     # ========================================================================
 
-    def get_subscription(self, subscription_id: str) -> Optional[Dict]:
+    def get_subscription(self, subscription_id: str) -> dict | None:
         """Récupérer un abonnement."""
         if not STRIPE_AVAILABLE:
             return None
@@ -265,7 +264,7 @@ class StripeServiceLive:
     ) -> bool:
         """
         Annuler un abonnement.
-        
+
         Args:
             at_period_end: Si True, l'abonnement reste actif jusqu'à la fin de la période
         """
@@ -308,7 +307,7 @@ class StripeServiceLive:
         subscription_id: str,
         new_plan: str,
         billing_period: str = "monthly"
-    ) -> Optional[Dict]:
+    ) -> dict | None:
         """
         Changer le plan d'un abonnement.
         Gère automatiquement le prorata.
@@ -330,7 +329,7 @@ class StripeServiceLive:
 
         try:
             subscription = stripe.Subscription.retrieve(subscription_id)
-            
+
             updated = stripe.Subscription.modify(
                 subscription_id,
                 items=[{
@@ -359,7 +358,7 @@ class StripeServiceLive:
         self,
         customer_id: str,
         return_url: str = None
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Créer une session du portail de facturation Stripe.
         Permet au client de gérer son abonnement, factures, moyen de paiement.
@@ -387,7 +386,7 @@ class StripeServiceLive:
         self,
         customer_id: str,
         limit: int = 10
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Lister les factures d'un client."""
         if not STRIPE_AVAILABLE:
             return []
@@ -402,7 +401,7 @@ class StripeServiceLive:
             logger.error(f"[STRIPE] Erreur liste factures: {e}")
             return []
 
-    def get_invoice_pdf(self, invoice_id: str) -> Optional[str]:
+    def get_invoice_pdf(self, invoice_id: str) -> str | None:
         """Récupérer l'URL du PDF d'une facture."""
         if not STRIPE_AVAILABLE:
             return None
@@ -419,14 +418,14 @@ class StripeServiceLive:
     # ========================================================================
 
     @staticmethod
-    def verify_webhook(payload: bytes, signature: str) -> Optional[Dict]:
+    def verify_webhook(payload: bytes, signature: str) -> dict | None:
         """
         Vérifier et parser un webhook Stripe.
-        
+
         Args:
             payload: Corps de la requête (bytes)
             signature: Header Stripe-Signature
-            
+
         Returns:
             L'événement parsé ou None si invalide
         """
@@ -456,10 +455,10 @@ class StripeWebhookHandler:
     def __init__(self, db: Session):
         self.db = db
 
-    def handle_event(self, event: Dict) -> bool:
+    def handle_event(self, event: dict) -> bool:
         """
         Router l'événement vers le bon handler.
-        
+
         Returns:
             True si traité avec succès
         """
@@ -489,14 +488,14 @@ class StripeWebhookHandler:
             logger.debug(f"[WEBHOOK] Ignoré: {event_type}")
             return True
 
-    def _handle_checkout_completed(self, session: Dict):
+    def _handle_checkout_completed(self, session: dict):
         """Checkout terminé - Activer l'abonnement."""
         from app.services.tenant_status_guard import convert_trial_to_active
-        
+
         metadata = session.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
         plan = metadata.get("plan", "STARTER")
-        customer_id = session.get("customer")
+        session.get("customer")
         subscription_id = session.get("subscription")
 
         logger.info(
@@ -507,13 +506,13 @@ class StripeWebhookHandler:
         # Convertir le trial en compte actif
         if tenant_id:
             convert_trial_to_active(self.db, tenant_id, plan)
-            
+
             # TODO: Envoyer email de confirmation
             # from app.services.email_service import get_email_service
             # email_service = get_email_service()
             # email_service.send_payment_success(...)
 
-    def _handle_subscription_created(self, subscription: Dict):
+    def _handle_subscription_created(self, subscription: dict):
         """Nouvel abonnement créé."""
         subscription_id = subscription.get("id")
         status = subscription.get("status")
@@ -525,7 +524,7 @@ class StripeWebhookHandler:
             f"status={status}, tenant={tenant_id}"
         )
 
-    def _handle_subscription_updated(self, subscription: Dict):
+    def _handle_subscription_updated(self, subscription: dict):
         """Abonnement mis à jour (changement de plan, etc.)."""
         subscription_id = subscription.get("id")
         status = subscription.get("status")
@@ -538,10 +537,10 @@ class StripeWebhookHandler:
 
         # TODO: Mettre à jour le tenant si changement de plan
 
-    def _handle_subscription_deleted(self, subscription: Dict):
+    def _handle_subscription_deleted(self, subscription: dict):
         """Abonnement annulé/expiré."""
         from app.services.tenant_status_guard import suspend_tenant
-        
+
         subscription_id = subscription.get("id")
         metadata = subscription.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
@@ -555,14 +554,13 @@ class StripeWebhookHandler:
         if tenant_id:
             suspend_tenant(self.db, tenant_id, reason="subscription_cancelled")
 
-    def _handle_invoice_paid(self, invoice: Dict):
+    def _handle_invoice_paid(self, invoice: dict):
         """Facture payée."""
-        from app.services.tenant_status_guard import reactivate_tenant
-        
+
         invoice_id = invoice.get("id")
         customer_id = invoice.get("customer")
         amount_paid = invoice.get("amount_paid", 0) / 100  # centimes → euros
-        subscription_id = invoice.get("subscription")
+        invoice.get("subscription")
 
         logger.info(
             f"[WEBHOOK] Facture payée: {invoice_id}, "
@@ -573,17 +571,16 @@ class StripeWebhookHandler:
         # TODO: Récupérer tenant_id depuis customer_id ou subscription
         # if tenant_id:
         #     reactivate_tenant(self.db, tenant_id)
-        
+
         # TODO: Envoyer email de confirmation + facture PDF
 
-    def _handle_payment_failed(self, invoice: Dict):
+    def _handle_payment_failed(self, invoice: dict):
         """Échec de paiement."""
-        from app.services.tenant_status_guard import suspend_tenant
-        
+
         invoice_id = invoice.get("id")
         customer_id = invoice.get("customer")
         attempt_count = invoice.get("attempt_count", 1)
-        subscription_id = invoice.get("subscription")
+        invoice.get("subscription")
 
         logger.warning(
             f"[WEBHOOK] Échec paiement: {invoice_id}, "
@@ -595,16 +592,16 @@ class StripeWebhookHandler:
             # TODO: Récupérer tenant_id depuis customer_id
             # suspend_tenant(self.db, tenant_id, reason="payment_failed")
             logger.error(f"[WEBHOOK] 3 échecs de paiement - Suspension requise pour customer={customer_id}")
-        
+
         # TODO: Envoyer email de relance
 
-    def _handle_customer_updated(self, customer: Dict):
+    def _handle_customer_updated(self, customer: dict):
         """Client mis à jour."""
         customer_id = customer.get("id")
-        email = customer.get("email")
-        
+        customer.get("email")
+
         logger.info(f"[WEBHOOK] Customer mis à jour: {customer_id}")
-        
+
         # TODO: Synchroniser les infos si nécessaire
 
 
@@ -617,6 +614,6 @@ def format_price(amount_cents: int) -> str:
     return f"{amount_cents / 100:.2f} €"
 
 
-def get_plan_features(plan: str) -> Dict:
+def get_plan_features(plan: str) -> dict:
     """Récupérer les caractéristiques d'un plan."""
     return AZALSCORE_PLANS.get(plan, {})

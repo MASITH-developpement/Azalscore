@@ -3,16 +3,15 @@ AZALS - Endpoints Journal APPEND-ONLY
 API pour écriture et lecture du journal d'audit
 """
 
+
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-from typing import Optional
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 from app.services.journal import JournalService
-
 
 router = APIRouter(prefix="/journal", tags=["journal"])
 
@@ -20,7 +19,7 @@ router = APIRouter(prefix="/journal", tags=["journal"])
 class JournalWriteRequest(BaseModel):
     """Requête d'écriture dans le journal"""
     action: str = Field(..., min_length=1, max_length=255)
-    details: Optional[str] = Field(None, max_length=10000)
+    details: str | None = Field(None, max_length=10000)
 
 
 class JournalEntryResponse(BaseModel):
@@ -29,9 +28,9 @@ class JournalEntryResponse(BaseModel):
     tenant_id: str
     user_id: int
     action: str
-    details: Optional[str]
+    details: str | None
     created_at: str
-    
+
     model_config = {"from_attributes": True}
 
 
@@ -45,7 +44,7 @@ async def write_journal_entry(
     """
     Écrit une entrée dans le journal APPEND-ONLY.
     Requiert JWT valide + X-Tenant-ID cohérent.
-    
+
     Protections:
     - Écriture uniquement (INSERT)
     - UPDATE et DELETE impossibles (triggers DB)
@@ -58,7 +57,7 @@ async def write_journal_entry(
         action=request.action,
         details=request.details
     )
-    
+
     return JournalEntryResponse(
         id=entry.id,
         tenant_id=entry.tenant_id,
@@ -88,7 +87,7 @@ async def read_journal_entries(
         limit=min(limit, 1000),
         offset=offset
     )
-    
+
     return [
         JournalEntryResponse(
             id=entry.id,

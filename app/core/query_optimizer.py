@@ -5,10 +5,11 @@ Utilitaires pour optimiser les requêtes SQLAlchemy.
 Prévention des problèmes N+1 avec eager loading.
 """
 
-from typing import List, Type, TypeVar, Tuple, Optional, Any
+from functools import wraps
+from typing import Any, TypeVar
+
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy.orm.query import Query
-from functools import wraps
 
 from app.core.logging_config import get_logger
 
@@ -36,8 +37,8 @@ class QueryOptimizer:
 
     def query_with_relations(
         self,
-        model: Type[T],
-        relations: List[str],
+        model: type[T],
+        relations: list[str],
         use_selectin: bool = True
     ) -> Query:
         """
@@ -84,7 +85,7 @@ class QueryOptimizer:
         page: int = 1,
         page_size: int = 20,
         count_total: bool = True
-    ) -> Tuple[List[Any], int]:
+    ) -> tuple[list[Any], int]:
         """
         Pagination optimisée avec compte total optionnel.
 
@@ -118,11 +119,11 @@ class QueryOptimizer:
 
     def bulk_fetch_by_ids(
         self,
-        model: Type[T],
-        ids: List[Any],
+        model: type[T],
+        ids: list[Any],
         id_field: str = "id",
-        relations: Optional[List[str]] = None
-    ) -> List[T]:
+        relations: list[str] | None = None
+    ) -> list[T]:
         """
         Récupère plusieurs entités par leurs IDs en une seule requête.
         Évite le problème N+1 lors de boucles.
@@ -151,9 +152,9 @@ class QueryOptimizer:
 
     def preload_relation(
         self,
-        items: List[Any],
+        items: list[Any],
         relation_name: str,
-        related_model: Type[T],
+        related_model: type[T],
         foreign_key: str,
         local_key: str = "id"
     ) -> None:
@@ -263,7 +264,7 @@ EAGER_LOADING_CONFIG = {
 }
 
 
-def get_eager_relations(model_name: str) -> List[str]:
+def get_eager_relations(model_name: str) -> list[str]:
     """Retourne les relations à charger pour un modèle donné."""
     return EAGER_LOADING_CONFIG.get(model_name, [])
 
@@ -274,16 +275,16 @@ def get_eager_relations(model_name: str) -> List[str]:
 
 def optimize_list_query(
     db: Session,
-    model: Type[T],
+    model: type[T],
     tenant_id: str,
-    filters: Optional[dict] = None,
-    search_fields: Optional[List[str]] = None,
-    search_term: Optional[str] = None,
-    order_by: Optional[str] = None,
+    filters: dict | None = None,
+    search_fields: list[str] | None = None,
+    search_term: str | None = None,
+    order_by: str | None = None,
     page: int = 1,
     page_size: int = 20,
-    relations: Optional[List[str]] = None
-) -> Tuple[List[T], int]:
+    relations: list[str] | None = None
+) -> tuple[list[T], int]:
     """
     Helper pour créer une requête de liste optimisée.
 
@@ -310,10 +311,7 @@ def optimize_list_query(
     else:
         # Utiliser la config par défaut
         default_relations = get_eager_relations(model.__name__)
-        if default_relations:
-            query = optimizer.query_with_relations(model, default_relations)
-        else:
-            query = db.query(model)
+        query = optimizer.query_with_relations(model, default_relations) if default_relations else db.query(model)
 
     # Filtre tenant
     if hasattr(model, 'tenant_id'):

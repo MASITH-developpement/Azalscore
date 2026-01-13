@@ -6,14 +6,10 @@ Schémas Pydantic pour validation et sérialisation.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
+
 from pydantic import BaseModel, Field
 
-from .models import (
-    POSTerminalStatus, POSSessionStatus, POSTransactionStatus,
-    PaymentMethodType, DiscountType
-)
-
+from .models import DiscountType, PaymentMethodType, POSSessionStatus, POSTerminalStatus, POSTransactionStatus
 
 # ============================================================================
 # STORE SCHEMAS
@@ -23,18 +19,18 @@ class StoreBase(BaseModel):
     """Base magasin."""
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
+    description: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
     country: str = "FR"
-    phone: Optional[str] = None
-    email: Optional[str] = None
+    phone: str | None = None
+    email: str | None = None
     timezone: str = "Europe/Paris"
     currency: str = "EUR"
     default_tax_rate: Decimal = Decimal("20.00")
-    opening_hours: Optional[dict] = None
+    opening_hours: dict | None = None
     is_active: bool = True
 
 
@@ -45,15 +41,15 @@ class StoreCreate(StoreBase):
 
 class StoreUpdate(BaseModel):
     """Mise à jour magasin."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    address_line1: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    opening_hours: Optional[dict] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    address_line1: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    opening_hours: dict | None = None
+    is_active: bool | None = None
 
 
 class StoreResponse(StoreBase):
@@ -74,11 +70,11 @@ class TerminalBase(BaseModel):
     """Base terminal."""
     terminal_id: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
-    device_type: Optional[str] = None
-    device_id: Optional[str] = None
-    printer_ip: Optional[str] = None
-    drawer_ip: Optional[str] = None
+    description: str | None = None
+    device_type: str | None = None
+    device_id: str | None = None
+    printer_ip: str | None = None
+    drawer_ip: str | None = None
 
 
 class TerminalCreate(TerminalBase):
@@ -88,12 +84,12 @@ class TerminalCreate(TerminalBase):
 
 class TerminalUpdate(BaseModel):
     """Mise à jour terminal."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    device_type: Optional[str] = None
-    printer_ip: Optional[str] = None
-    drawer_ip: Optional[str] = None
-    status: Optional[POSTerminalStatus] = None
+    name: str | None = None
+    description: str | None = None
+    device_type: str | None = None
+    printer_ip: str | None = None
+    drawer_ip: str | None = None
+    status: POSTerminalStatus | None = None
 
 
 class TerminalResponse(TerminalBase):
@@ -102,9 +98,9 @@ class TerminalResponse(TerminalBase):
     tenant_id: str
     store_id: int
     status: POSTerminalStatus
-    last_ping: Optional[datetime] = None
-    last_sync: Optional[datetime] = None
-    current_session_id: Optional[int] = None
+    last_ping: datetime | None = None
+    last_sync: datetime | None = None
+    current_session_id: int | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -119,7 +115,7 @@ class POSUserBase(BaseModel):
     employee_code: str = Field(..., min_length=1, max_length=20)
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    pin_code: Optional[str] = None
+    pin_code: str | None = None
     can_open_drawer: bool = True
     can_void_transaction: bool = False
     can_give_discount: bool = False
@@ -127,35 +123,35 @@ class POSUserBase(BaseModel):
     can_refund: bool = False
     can_close_session: bool = False
     is_manager: bool = False
-    allowed_store_ids: Optional[List[int]] = None
+    allowed_store_ids: list[int] | None = None
 
 
 class POSUserCreate(POSUserBase):
     """Création utilisateur POS."""
-    user_id: Optional[int] = None
+    user_id: int | None = None
 
 
 class POSUserUpdate(BaseModel):
     """Mise à jour utilisateur POS."""
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    pin_code: Optional[str] = None
-    can_open_drawer: Optional[bool] = None
-    can_void_transaction: Optional[bool] = None
-    can_give_discount: Optional[bool] = None
-    max_discount_percent: Optional[Decimal] = None
-    can_refund: Optional[bool] = None
-    can_close_session: Optional[bool] = None
-    is_manager: Optional[bool] = None
-    allowed_store_ids: Optional[List[int]] = None
-    is_active: Optional[bool] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    pin_code: str | None = None
+    can_open_drawer: bool | None = None
+    can_void_transaction: bool | None = None
+    can_give_discount: bool | None = None
+    max_discount_percent: Decimal | None = None
+    can_refund: bool | None = None
+    can_close_session: bool | None = None
+    is_manager: bool | None = None
+    allowed_store_ids: list[int] | None = None
+    is_active: bool | None = None
 
 
 class POSUserResponse(POSUserBase):
     """Réponse utilisateur POS."""
     id: int
     tenant_id: str
-    user_id: Optional[int] = None
+    user_id: int | None = None
     is_active: bool
     created_at: datetime
 
@@ -165,7 +161,7 @@ class POSUserResponse(POSUserBase):
 class POSUserLogin(BaseModel):
     """Login utilisateur POS."""
     employee_code: str
-    pin_code: Optional[str] = None
+    pin_code: str | None = None
 
 
 # ============================================================================
@@ -177,13 +173,13 @@ class SessionOpenRequest(BaseModel):
     terminal_id: int
     cashier_id: int
     opening_cash: Decimal = Field(..., ge=0)
-    opening_note: Optional[str] = None
+    opening_note: str | None = None
 
 
 class SessionCloseRequest(BaseModel):
     """Fermeture de session."""
     actual_cash: Decimal = Field(..., ge=0)
-    closing_note: Optional[str] = None
+    closing_note: str | None = None
 
 
 class SessionResponse(BaseModel):
@@ -194,11 +190,11 @@ class SessionResponse(BaseModel):
     session_number: str
     status: POSSessionStatus
     opened_by_id: int
-    closed_by_id: Optional[int] = None
+    closed_by_id: int | None = None
     opening_cash: Decimal
-    expected_cash: Optional[Decimal] = None
-    actual_cash: Optional[Decimal] = None
-    cash_difference: Optional[Decimal] = None
+    expected_cash: Decimal | None = None
+    actual_cash: Decimal | None = None
+    cash_difference: Decimal | None = None
     total_sales: Decimal
     total_refunds: Decimal
     total_discounts: Decimal
@@ -207,7 +203,7 @@ class SessionResponse(BaseModel):
     card_total: Decimal
     check_total: Decimal
     opened_at: datetime
-    closed_at: Optional[datetime] = None
+    closed_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -217,7 +213,7 @@ class CashMovementCreate(BaseModel):
     movement_type: str = Field(..., pattern="^(IN|OUT)$")
     amount: Decimal = Field(..., gt=0)
     reason: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class CashMovementResponse(BaseModel):
@@ -227,7 +223,7 @@ class CashMovementResponse(BaseModel):
     movement_type: str
     amount: Decimal
     reason: str
-    description: Optional[str] = None
+    description: str | None = None
     performed_by_id: int
     created_at: datetime
 
@@ -240,29 +236,29 @@ class CashMovementResponse(BaseModel):
 
 class TransactionLineCreate(BaseModel):
     """Création ligne transaction."""
-    product_id: Optional[int] = None
-    variant_id: Optional[int] = None
-    sku: Optional[str] = None
-    barcode: Optional[str] = None
+    product_id: int | None = None
+    variant_id: int | None = None
+    sku: str | None = None
+    barcode: str | None = None
     name: str = Field(..., min_length=1, max_length=255)
     quantity: Decimal = Field(..., gt=0)
     unit_price: Decimal = Field(..., ge=0)
-    discount_type: Optional[DiscountType] = None
-    discount_value: Optional[Decimal] = None
-    discount_reason: Optional[str] = None
+    discount_type: DiscountType | None = None
+    discount_value: Decimal | None = None
+    discount_reason: str | None = None
     tax_rate: Decimal = Decimal("20.00")
-    salesperson_id: Optional[int] = None
-    notes: Optional[str] = None
+    salesperson_id: int | None = None
+    notes: str | None = None
     is_return: bool = False
-    return_reason: Optional[str] = None
+    return_reason: str | None = None
 
 
 class TransactionLineResponse(BaseModel):
     """Réponse ligne transaction."""
     id: int
-    product_id: Optional[int] = None
-    variant_id: Optional[int] = None
-    sku: Optional[str] = None
+    product_id: int | None = None
+    variant_id: int | None = None
+    sku: str | None = None
     name: str
     quantity: Decimal
     unit_price: Decimal
@@ -279,13 +275,13 @@ class PaymentCreate(BaseModel):
     """Création paiement."""
     payment_method: PaymentMethodType
     amount: Decimal = Field(..., gt=0)
-    amount_tendered: Optional[Decimal] = None  # Pour espèces
-    card_type: Optional[str] = None
-    card_last4: Optional[str] = None
-    card_auth_code: Optional[str] = None
-    check_number: Optional[str] = None
-    check_bank: Optional[str] = None
-    gift_card_number: Optional[str] = None
+    amount_tendered: Decimal | None = None  # Pour espèces
+    card_type: str | None = None
+    card_last4: str | None = None
+    card_auth_code: str | None = None
+    check_number: str | None = None
+    check_bank: str | None = None
+    gift_card_number: str | None = None
 
 
 class PaymentResponse(BaseModel):
@@ -293,10 +289,10 @@ class PaymentResponse(BaseModel):
     id: int
     payment_method: PaymentMethodType
     amount: Decimal
-    amount_tendered: Optional[Decimal] = None
-    change_amount: Optional[Decimal] = None
-    card_type: Optional[str] = None
-    card_last4: Optional[str] = None
+    amount_tendered: Decimal | None = None
+    change_amount: Decimal | None = None
+    card_type: str | None = None
+    card_last4: str | None = None
     status: str
     created_at: datetime
 
@@ -305,17 +301,17 @@ class PaymentResponse(BaseModel):
 
 class TransactionCreate(BaseModel):
     """Création transaction."""
-    customer_id: Optional[int] = None
-    customer_name: Optional[str] = None
-    customer_email: Optional[str] = None
-    customer_phone: Optional[str] = None
-    salesperson_id: Optional[int] = None
-    discount_type: Optional[DiscountType] = None
-    discount_value: Optional[Decimal] = None
-    discount_reason: Optional[str] = None
-    notes: Optional[str] = None
-    lines: List[TransactionLineCreate]
-    payments: Optional[List[PaymentCreate]] = None
+    customer_id: int | None = None
+    customer_name: str | None = None
+    customer_email: str | None = None
+    customer_phone: str | None = None
+    salesperson_id: int | None = None
+    discount_type: DiscountType | None = None
+    discount_value: Decimal | None = None
+    discount_reason: str | None = None
+    notes: str | None = None
+    lines: list[TransactionLineCreate]
+    payments: list[PaymentCreate] | None = None
 
 
 class TransactionResponse(BaseModel):
@@ -325,8 +321,8 @@ class TransactionResponse(BaseModel):
     session_id: int
     receipt_number: str
     status: POSTransactionStatus
-    customer_id: Optional[int] = None
-    customer_name: Optional[str] = None
+    customer_id: int | None = None
+    customer_name: str | None = None
     cashier_id: int
     subtotal: Decimal
     discount_total: Decimal
@@ -335,9 +331,9 @@ class TransactionResponse(BaseModel):
     amount_paid: Decimal
     amount_due: Decimal
     change_given: Decimal
-    lines: List[TransactionLineResponse] = []
-    payments: List[PaymentResponse] = []
-    completed_at: Optional[datetime] = None
+    lines: list[TransactionLineResponse] = []
+    payments: list[PaymentResponse] = []
+    completed_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -345,7 +341,7 @@ class TransactionResponse(BaseModel):
 
 class TransactionListResponse(BaseModel):
     """Liste transactions."""
-    items: List[TransactionResponse]
+    items: list[TransactionResponse]
     total: int
     page: int
     page_size: int
@@ -357,16 +353,16 @@ class TransactionListResponse(BaseModel):
 
 class QuickKeyCreate(BaseModel):
     """Création raccourci."""
-    store_id: Optional[int] = None
+    store_id: int | None = None
     page: int = 1
     position: int = Field(..., ge=1, le=20)
-    product_id: Optional[int] = None
-    variant_id: Optional[int] = None
-    label: Optional[str] = None
+    product_id: int | None = None
+    variant_id: int | None = None
+    label: str | None = None
     color: str = "#1976D2"
-    icon: Optional[str] = None
-    image_url: Optional[str] = None
-    custom_price: Optional[Decimal] = None
+    icon: str | None = None
+    image_url: str | None = None
+    custom_price: Decimal | None = None
 
 
 class QuickKeyResponse(BaseModel):
@@ -374,12 +370,12 @@ class QuickKeyResponse(BaseModel):
     id: int
     page: int
     position: int
-    product_id: Optional[int] = None
-    label: Optional[str] = None
+    product_id: int | None = None
+    label: str | None = None
     color: str
-    icon: Optional[str] = None
-    image_url: Optional[str] = None
-    custom_price: Optional[Decimal] = None
+    icon: str | None = None
+    image_url: str | None = None
+    custom_price: Decimal | None = None
 
     model_config = {"from_attributes": True}
 
@@ -390,9 +386,9 @@ class QuickKeyResponse(BaseModel):
 
 class HoldTransactionCreate(BaseModel):
     """Mise en attente transaction."""
-    hold_name: Optional[str] = None
-    customer_id: Optional[int] = None
-    customer_name: Optional[str] = None
+    hold_name: str | None = None
+    customer_id: int | None = None
+    customer_name: str | None = None
     transaction_data: dict
 
 
@@ -400,8 +396,8 @@ class HoldTransactionResponse(BaseModel):
     """Réponse transaction en attente."""
     id: int
     hold_number: str
-    hold_name: Optional[str] = None
-    customer_name: Optional[str] = None
+    hold_name: str | None = None
+    customer_name: str | None = None
     transaction_data: dict
     held_by_id: int
     created_at: datetime
@@ -433,7 +429,7 @@ class DailyReportResponse(BaseModel):
     opening_cash: Decimal
     closing_cash: Decimal
     cash_variance: Decimal
-    tax_breakdown: Optional[dict] = None
+    tax_breakdown: dict | None = None
     generated_at: datetime
 
     model_config = {"from_attributes": True}
@@ -461,19 +457,19 @@ class POSDashboard(BaseModel):
     other_today: Decimal
 
     # Top produits
-    top_products: List[dict]
+    top_products: list[dict]
 
     # Dernières transactions
-    recent_transactions: List[dict]
+    recent_transactions: list[dict]
 
 
 class TerminalDashboard(BaseModel):
     """Dashboard terminal."""
     terminal_id: int
     terminal_name: str
-    session_status: Optional[POSSessionStatus] = None
-    session_id: Optional[int] = None
-    cashier_name: Optional[str] = None
+    session_status: POSSessionStatus | None = None
+    session_id: int | None = None
+    cashier_name: str | None = None
     sales_this_session: Decimal
     transactions_this_session: int
-    last_transaction: Optional[dict] = None
+    last_transaction: dict | None = None

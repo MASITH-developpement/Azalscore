@@ -4,11 +4,11 @@ AZALS - PACK PAYS FRANCE - Schémas Pydantic
 Schémas pour validation et sérialisation.
 """
 
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import date, datetime
 from decimal import Decimal
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field
 
 # ============================================================================
 # PCG - PLAN COMPTABLE GÉNÉRAL
@@ -19,20 +19,20 @@ class PCGAccountCreate(BaseModel):
     account_number: str = Field(..., min_length=1, max_length=10)
     account_label: str = Field(..., min_length=1, max_length=255)
     pcg_class: str
-    parent_account: Optional[str] = None
+    parent_account: str | None = None
     is_summary: bool = False
     normal_balance: str = "D"
-    default_vat_code: Optional[str] = None
-    description: Optional[str] = None
+    default_vat_code: str | None = None
+    description: str | None = None
 
 
 class PCGAccountUpdate(BaseModel):
     """Mise à jour compte PCG."""
-    account_label: Optional[str] = None
-    is_active: Optional[bool] = None
-    default_vat_code: Optional[str] = None
-    description: Optional[str] = None
-    notes: Optional[str] = None
+    account_label: str | None = None
+    is_active: bool | None = None
+    default_vat_code: str | None = None
+    description: str | None = None
+    notes: str | None = None
 
 
 class PCGAccountResponse(BaseModel):
@@ -41,13 +41,13 @@ class PCGAccountResponse(BaseModel):
     account_number: str
     account_label: str
     pcg_class: str
-    parent_account: Optional[str]
+    parent_account: str | None
     is_summary: bool
     is_active: bool
     is_custom: bool
     normal_balance: str
-    default_vat_code: Optional[str]
-    description: Optional[str]
+    default_vat_code: str | None
+    description: str | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -63,12 +63,12 @@ class FRVATRateCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     rate_type: str
     rate: Decimal
-    account_collected: Optional[str] = None
-    account_deductible: Optional[str] = None
-    account_intra_eu: Optional[str] = None
+    account_collected: str | None = None
+    account_deductible: str | None = None
+    account_intra_eu: str | None = None
     applies_to_goods: bool = True
     applies_to_services: bool = True
-    legal_mention: Optional[str] = None
+    legal_mention: str | None = None
 
 
 class FRVATRateResponse(BaseModel):
@@ -78,8 +78,8 @@ class FRVATRateResponse(BaseModel):
     name: str
     rate_type: str
     rate: Decimal
-    account_collected: Optional[str]
-    account_deductible: Optional[str]
+    account_collected: str | None
+    account_deductible: str | None
     applies_to_goods: bool
     applies_to_services: bool
     is_active: bool
@@ -94,7 +94,7 @@ class VATDeclarationCreate(BaseModel):
     regime: str
     period_start: date
     period_end: date
-    due_date: Optional[date] = None
+    due_date: date | None = None
 
 
 class VATDeclarationDetails(BaseModel):
@@ -114,14 +114,14 @@ class VATDeclarationResponse(BaseModel):
     regime: str
     period_start: date
     period_end: date
-    due_date: Optional[date]
+    due_date: date | None
     total_ht: Decimal
     total_tva_collectee: Decimal
     total_tva_deductible: Decimal
     tva_nette: Decimal
     credit_tva: Decimal
     status: str
-    submitted_at: Optional[datetime]
+    submitted_at: datetime | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -147,18 +147,18 @@ class FECEntrySchema(BaseModel):
     ecriture_date: date
     compte_num: str
     compte_lib: str
-    comp_aux_num: Optional[str] = None
-    comp_aux_lib: Optional[str] = None
+    comp_aux_num: str | None = None
+    comp_aux_lib: str | None = None
     piece_ref: str
     piece_date: date
     ecriture_lib: str
     debit: Decimal = Decimal("0")
     credit: Decimal = Decimal("0")
-    ecriture_let: Optional[str] = None
-    date_let: Optional[date] = None
-    valid_date: Optional[date] = None
-    montant_devise: Optional[Decimal] = None
-    idevise: Optional[str] = None
+    ecriture_let: str | None = None
+    date_let: date | None = None
+    valid_date: date | None = None
+    montant_devise: Decimal | None = None
+    idevise: str | None = None
 
 
 class FECValidationResult(BaseModel):
@@ -168,8 +168,8 @@ class FECValidationResult(BaseModel):
     total_debit: Decimal
     total_credit: Decimal
     is_balanced: bool
-    errors: List[Dict[str, Any]] = []
-    warnings: List[Dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    warnings: list[dict[str, Any]] = []
 
 
 class FECExportResponse(BaseModel):
@@ -180,14 +180,14 @@ class FECExportResponse(BaseModel):
     fiscal_year: int
     period_start: date
     period_end: date
-    filename: Optional[str]
+    filename: str | None
     total_entries: int
     total_debit: Decimal
     total_credit: Decimal
     is_balanced: bool
     is_valid: bool
     status: str
-    generated_at: Optional[datetime]
+    generated_at: datetime | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -214,9 +214,9 @@ class DSNEmployeeData(BaseModel):
     date_naissance: date
     brut_periode: Decimal
     net_imposable: Decimal
-    heures_travaillees: Optional[Decimal] = None
-    cotisations: Optional[Dict[str, Decimal]] = None
-    absences: Optional[List[Dict[str, Any]]] = None
+    heures_travaillees: Decimal | None = None
+    cotisations: dict[str, Decimal] | None = None
+    absences: list[dict[str, Any]] | None = None
 
 
 class DSNDeclarationResponse(BaseModel):
@@ -231,8 +231,8 @@ class DSNDeclarationResponse(BaseModel):
     total_brut: Decimal
     total_cotisations: Decimal
     status: str
-    submitted_at: Optional[datetime]
-    ack_status: Optional[str]
+    submitted_at: datetime | None
+    ack_status: str | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -247,15 +247,15 @@ class FRContractCreate(BaseModel):
     employee_id: int
     contract_type: str
     start_date: date
-    end_date: Optional[date] = None
-    trial_period_end: Optional[date] = None
-    convention_collective: Optional[str] = None
-    niveau: Optional[str] = None
-    coefficient: Optional[str] = None
+    end_date: date | None = None
+    trial_period_end: date | None = None
+    convention_collective: str | None = None
+    niveau: str | None = None
+    coefficient: str | None = None
     is_full_time: bool = True
     work_hours_weekly: Decimal = Decimal("35")
     is_forfait_jours: bool = False
-    forfait_jours_annual: Optional[int] = None
+    forfait_jours_annual: int | None = None
     base_salary: Decimal
     salary_type: str = "mensuel"
     tickets_restaurant: bool = False
@@ -267,12 +267,12 @@ class FRContractResponse(BaseModel):
     id: int
     employee_id: int
     contract_type: str
-    contract_number: Optional[str]
+    contract_number: str | None
     start_date: date
-    end_date: Optional[date]
-    convention_collective: Optional[str]
-    niveau: Optional[str]
-    coefficient: Optional[str]
+    end_date: date | None
+    convention_collective: str | None
+    niveau: str | None
+    coefficient: str | None
     is_full_time: bool
     work_hours_weekly: Decimal
     is_forfait_jours: bool
@@ -291,13 +291,13 @@ class RGPDConsentCreate(BaseModel):
     """Création consentement RGPD."""
     data_subject_type: str
     data_subject_id: int
-    data_subject_email: Optional[str] = None
+    data_subject_email: str | None = None
     purpose: str
-    purpose_description: Optional[str] = None
+    purpose_description: str | None = None
     legal_basis: str
     consent_method: str
-    consent_proof: Optional[str] = None
-    valid_until: Optional[date] = None
+    consent_proof: str | None = None
+    valid_until: date | None = None
 
 
 class RGPDConsentResponse(BaseModel):
@@ -306,11 +306,11 @@ class RGPDConsentResponse(BaseModel):
     data_subject_type: str
     data_subject_id: int
     purpose: str
-    legal_basis: Optional[str]
+    legal_basis: str | None
     status: str
-    consent_given_at: Optional[datetime]
-    withdrawn_at: Optional[datetime]
-    valid_until: Optional[date]
+    consent_given_at: datetime | None
+    withdrawn_at: datetime | None
+    valid_until: date | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -320,11 +320,11 @@ class RGPDRequestCreate(BaseModel):
     """Création demande RGPD."""
     request_type: str
     data_subject_type: str
-    data_subject_id: Optional[int] = None
+    data_subject_id: int | None = None
     requester_name: str
     requester_email: str
-    requester_phone: Optional[str] = None
-    request_details: Optional[str] = None
+    requester_phone: str | None = None
+    request_details: str | None = None
 
 
 class RGPDRequestResponse(BaseModel):
@@ -337,8 +337,8 @@ class RGPDRequestResponse(BaseModel):
     requester_email: str
     status: str
     received_at: datetime
-    due_date: Optional[date]
-    processed_at: Optional[datetime]
+    due_date: date | None
+    processed_at: datetime | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -348,16 +348,16 @@ class RGPDProcessingCreate(BaseModel):
     """Création traitement RGPD."""
     processing_code: str
     processing_name: str
-    processing_description: Optional[str] = None
-    purposes: List[str]
+    processing_description: str | None = None
+    purposes: list[str]
     legal_basis: str
-    legal_basis_details: Optional[str] = None
-    data_categories: List[str]
+    legal_basis_details: str | None = None
+    data_categories: list[str]
     special_categories: bool = False
-    data_subjects: List[str]
-    recipients: Optional[List[str]] = None
+    data_subjects: list[str]
+    recipients: list[str] | None = None
     retention_period: str
-    security_measures: Optional[List[str]] = None
+    security_measures: list[str] | None = None
 
 
 class RGPDProcessingResponse(BaseModel):
@@ -365,15 +365,15 @@ class RGPDProcessingResponse(BaseModel):
     id: int
     processing_code: str
     processing_name: str
-    purposes: List[str]
+    purposes: list[str]
     legal_basis: str
-    data_categories: List[str]
+    data_categories: list[str]
     special_categories: bool
     retention_period: str
     is_active: bool
     aipd_required: bool
     created_at: datetime
-    last_review_date: Optional[date]
+    last_review_date: date | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -384,12 +384,12 @@ class RGPDBreachCreate(BaseModel):
     detected_at: datetime
     breach_description: str
     breach_nature: str
-    breach_cause: Optional[str] = None
-    data_categories_affected: List[str]
-    estimated_subjects_affected: Optional[int] = None
-    potential_consequences: Optional[str] = None
+    breach_cause: str | None = None
+    data_categories_affected: list[str]
+    estimated_subjects_affected: int | None = None
+    potential_consequences: str | None = None
     severity_level: str = "medium"
-    containment_measures: Optional[List[str]] = None
+    containment_measures: list[str] | None = None
 
 
 class RGPDBreachResponse(BaseModel):
@@ -400,9 +400,9 @@ class RGPDBreachResponse(BaseModel):
     detected_at: datetime
     breach_nature: str
     severity_level: str
-    estimated_subjects_affected: Optional[int]
+    estimated_subjects_affected: int | None
     cnil_notification_required: bool
-    cnil_notified_at: Optional[datetime]
+    cnil_notified_at: datetime | None
     subjects_notification_required: bool
     status: str
     created_at: datetime
@@ -422,10 +422,10 @@ class FrancePackStats(BaseModel):
     # TVA
     total_vat_declarations: int = 0
     pending_vat_declarations: int = 0
-    last_vat_declaration_date: Optional[date] = None
+    last_vat_declaration_date: date | None = None
     # FEC
     total_fec_exports: int = 0
-    last_fec_export_date: Optional[date] = None
+    last_fec_export_date: date | None = None
     # DSN
     total_dsn_declarations: int = 0
     pending_dsn: int = 0

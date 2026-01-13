@@ -4,26 +4,49 @@ AZALS MODULE 14 - Subscriptions Service
 Logique métier pour la gestion des abonnements.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
+
 from dateutil.relativedelta import relativedelta
-from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
 
 from .models import (
-    SubscriptionPlan, PlanAddOn, Subscription, SubscriptionItem,
-    SubscriptionChange, SubscriptionInvoice, InvoiceLine,
-    SubscriptionPayment, UsageRecord, SubscriptionCoupon,
-    SubscriptionMetrics, SubscriptionWebhook,
-    PlanInterval, SubscriptionStatus, InvoiceStatus,
-    PaymentStatus, UsageType
+    InvoiceLine,
+    InvoiceStatus,
+    PaymentStatus,
+    PlanAddOn,
+    PlanInterval,
+    Subscription,
+    SubscriptionChange,
+    SubscriptionCoupon,
+    SubscriptionInvoice,
+    SubscriptionItem,
+    SubscriptionMetrics,
+    SubscriptionPayment,
+    SubscriptionPlan,
+    SubscriptionStatus,
+    SubscriptionWebhook,
+    UsageRecord,
+    UsageType,
 )
 from .schemas import (
-    PlanCreate, PlanUpdate, AddOnCreate, AddOnUpdate,
-    SubscriptionCreate, SubscriptionUpdate, SubscriptionChangePlanRequest, SubscriptionCancelRequest,
-    SubscriptionPauseRequest, InvoiceCreate, PaymentCreate, UsageRecordCreate, CouponCreate, CouponUpdate,
-    CouponValidateRequest
+    AddOnCreate,
+    AddOnUpdate,
+    CouponCreate,
+    CouponUpdate,
+    CouponValidateRequest,
+    InvoiceCreate,
+    PaymentCreate,
+    PlanCreate,
+    PlanUpdate,
+    SubscriptionCancelRequest,
+    SubscriptionChangePlanRequest,
+    SubscriptionCreate,
+    SubscriptionPauseRequest,
+    SubscriptionUpdate,
+    UsageRecordCreate,
 )
 
 
@@ -58,14 +81,14 @@ class SubscriptionService:
         self.db.refresh(plan)
         return plan
 
-    def get_plan(self, plan_id: int) -> Optional[SubscriptionPlan]:
+    def get_plan(self, plan_id: int) -> SubscriptionPlan | None:
         """Récupérer un plan."""
         return self.db.query(SubscriptionPlan).filter(
             SubscriptionPlan.tenant_id == self.tenant_id,
             SubscriptionPlan.id == plan_id
         ).first()
 
-    def get_plan_by_code(self, code: str) -> Optional[SubscriptionPlan]:
+    def get_plan_by_code(self, code: str) -> SubscriptionPlan | None:
         """Récupérer plan par code."""
         return self.db.query(SubscriptionPlan).filter(
             SubscriptionPlan.tenant_id == self.tenant_id,
@@ -74,11 +97,11 @@ class SubscriptionService:
 
     def list_plans(
         self,
-        is_active: Optional[bool] = None,
-        is_public: Optional[bool] = None,
+        is_active: bool | None = None,
+        is_public: bool | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[SubscriptionPlan], int]:
+    ) -> tuple[list[SubscriptionPlan], int]:
         """Lister les plans."""
         query = self.db.query(SubscriptionPlan).filter(
             SubscriptionPlan.tenant_id == self.tenant_id
@@ -94,7 +117,7 @@ class SubscriptionService:
         ).offset(skip).limit(limit).all()
         return items, total
 
-    def update_plan(self, plan_id: int, data: PlanUpdate) -> Optional[SubscriptionPlan]:
+    def update_plan(self, plan_id: int, data: PlanUpdate) -> SubscriptionPlan | None:
         """Mettre à jour un plan."""
         plan = self.get_plan(plan_id)
         if not plan:
@@ -152,17 +175,17 @@ class SubscriptionService:
         self.db.refresh(addon)
         return addon
 
-    def list_addons(self, plan_id: int) -> List[PlanAddOn]:
+    def list_addons(self, plan_id: int) -> list[PlanAddOn]:
         """Lister les add-ons d'un plan."""
         return self.db.query(PlanAddOn).filter(
             PlanAddOn.tenant_id == self.tenant_id,
             PlanAddOn.plan_id == plan_id,
-            PlanAddOn.is_active == True
+            PlanAddOn.is_active
         ).all()
 
     def update_addon(
         self, addon_id: int, data: AddOnUpdate
-    ) -> Optional[PlanAddOn]:
+    ) -> PlanAddOn | None:
         """Mettre à jour un add-on."""
         addon = self.db.query(PlanAddOn).filter(
             PlanAddOn.tenant_id == self.tenant_id,
@@ -274,7 +297,7 @@ class SubscriptionService:
                     Subscription.tenant_id == self.tenant_id,
                     Subscription.customer_id == data.customer_id,
                     Subscription.plan_id == data.plan_id,
-                    Subscription.trial_start != None
+                    Subscription.trial_start is not None
                 ).first()
 
                 if not existing_trial:
@@ -366,7 +389,7 @@ class SubscriptionService:
         self.db.refresh(subscription)
         return subscription
 
-    def get_subscription(self, subscription_id: int) -> Optional[Subscription]:
+    def get_subscription(self, subscription_id: int) -> Subscription | None:
         """Récupérer un abonnement."""
         return self.db.query(Subscription).filter(
             Subscription.tenant_id == self.tenant_id,
@@ -375,7 +398,7 @@ class SubscriptionService:
 
     def get_subscription_by_number(
         self, subscription_number: str
-    ) -> Optional[Subscription]:
+    ) -> Subscription | None:
         """Récupérer abonnement par numéro."""
         return self.db.query(Subscription).filter(
             Subscription.tenant_id == self.tenant_id,
@@ -384,12 +407,12 @@ class SubscriptionService:
 
     def list_subscriptions(
         self,
-        customer_id: Optional[int] = None,
-        plan_id: Optional[int] = None,
-        status: Optional[SubscriptionStatus] = None,
+        customer_id: int | None = None,
+        plan_id: int | None = None,
+        status: SubscriptionStatus | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Subscription], int]:
+    ) -> tuple[list[Subscription], int]:
         """Lister les abonnements."""
         query = self.db.query(Subscription).filter(
             Subscription.tenant_id == self.tenant_id
@@ -407,7 +430,7 @@ class SubscriptionService:
 
     def update_subscription(
         self, subscription_id: int, data: SubscriptionUpdate
-    ) -> Optional[Subscription]:
+    ) -> Subscription | None:
         """Mettre à jour un abonnement."""
         subscription = self.get_subscription(subscription_id)
         if not subscription:
@@ -699,7 +722,7 @@ class SubscriptionService:
         self.db.refresh(invoice)
         return invoice
 
-    def get_invoice(self, invoice_id: int) -> Optional[SubscriptionInvoice]:
+    def get_invoice(self, invoice_id: int) -> SubscriptionInvoice | None:
         """Récupérer une facture."""
         return self.db.query(SubscriptionInvoice).filter(
             SubscriptionInvoice.tenant_id == self.tenant_id,
@@ -708,12 +731,12 @@ class SubscriptionService:
 
     def list_invoices(
         self,
-        subscription_id: Optional[int] = None,
-        customer_id: Optional[int] = None,
-        status: Optional[InvoiceStatus] = None,
+        subscription_id: int | None = None,
+        customer_id: int | None = None,
+        status: InvoiceStatus | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[SubscriptionInvoice], int]:
+    ) -> tuple[list[SubscriptionInvoice], int]:
         """Lister les factures."""
         query = self.db.query(SubscriptionInvoice).filter(
             SubscriptionInvoice.tenant_id == self.tenant_id
@@ -762,7 +785,7 @@ class SubscriptionService:
         return invoice
 
     def mark_invoice_paid(
-        self, invoice_id: int, payment_amount: Optional[Decimal] = None
+        self, invoice_id: int, payment_amount: Decimal | None = None
     ) -> SubscriptionInvoice:
         """Marquer facture comme payée."""
         invoice = self.get_invoice(invoice_id)
@@ -849,7 +872,7 @@ class SubscriptionService:
         self.db.commit()
 
     def refund_payment(
-        self, payment_id: int, amount: Optional[Decimal] = None, reason: str = None
+        self, payment_id: int, amount: Decimal | None = None, reason: str = None
     ) -> SubscriptionPayment:
         """Rembourser un paiement."""
         payment = self.db.query(SubscriptionPayment).filter(
@@ -933,9 +956,9 @@ class SubscriptionService:
 
     def get_usage_summary(
         self, subscription_id: int,
-        period_start: Optional[date] = None,
-        period_end: Optional[date] = None
-    ) -> List[Dict[str, Any]]:
+        period_start: date | None = None,
+        period_end: date | None = None
+    ) -> list[dict[str, Any]]:
         """Résumé d'usage par item."""
         subscription = self.get_subscription(subscription_id)
         if not subscription:
@@ -992,14 +1015,14 @@ class SubscriptionService:
         self.db.refresh(coupon)
         return coupon
 
-    def get_coupon(self, coupon_id: int) -> Optional[SubscriptionCoupon]:
+    def get_coupon(self, coupon_id: int) -> SubscriptionCoupon | None:
         """Récupérer un coupon."""
         return self.db.query(SubscriptionCoupon).filter(
             SubscriptionCoupon.tenant_id == self.tenant_id,
             SubscriptionCoupon.id == coupon_id
         ).first()
 
-    def get_coupon_by_code(self, code: str) -> Optional[SubscriptionCoupon]:
+    def get_coupon_by_code(self, code: str) -> SubscriptionCoupon | None:
         """Récupérer coupon par code."""
         return self.db.query(SubscriptionCoupon).filter(
             SubscriptionCoupon.tenant_id == self.tenant_id,
@@ -1008,10 +1031,10 @@ class SubscriptionService:
 
     def list_coupons(
         self,
-        is_active: Optional[bool] = None,
+        is_active: bool | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> List[SubscriptionCoupon]:
+    ) -> list[SubscriptionCoupon]:
         """Lister les coupons."""
         query = self.db.query(SubscriptionCoupon).filter(
             SubscriptionCoupon.tenant_id == self.tenant_id
@@ -1021,7 +1044,7 @@ class SubscriptionService:
 
         return query.order_by(SubscriptionCoupon.created_at.desc()).offset(skip).limit(limit).all()
 
-    def validate_coupon(self, data: CouponValidateRequest) -> Dict[str, Any]:
+    def validate_coupon(self, data: CouponValidateRequest) -> dict[str, Any]:
         """Valider un coupon."""
         coupon = self.get_coupon_by_code(data.code)
 
@@ -1042,14 +1065,12 @@ class SubscriptionService:
             return {"valid": False, "error_message": "Limite d'utilisation atteinte"}
 
         # Vérifier plans concernés
-        if coupon.applies_to_plans and data.plan_id:
-            if data.plan_id not in coupon.applies_to_plans:
-                return {"valid": False, "error_message": "Coupon non valide pour ce plan"}
+        if coupon.applies_to_plans and data.plan_id and data.plan_id not in coupon.applies_to_plans:
+            return {"valid": False, "error_message": "Coupon non valide pour ce plan"}
 
         # Vérifier montant minimum
-        if coupon.min_amount and data.amount:
-            if data.amount < coupon.min_amount:
-                return {"valid": False, "error_message": f"Montant minimum: {coupon.min_amount}"}
+        if coupon.min_amount and data.amount and data.amount < coupon.min_amount:
+            return {"valid": False, "error_message": f"Montant minimum: {coupon.min_amount}"}
 
         # Vérifier première commande
         if coupon.first_time_only and data.customer_id:
@@ -1076,7 +1097,7 @@ class SubscriptionService:
 
     def update_coupon(
         self, coupon_id: int, data: CouponUpdate
-    ) -> Optional[SubscriptionCoupon]:
+    ) -> SubscriptionCoupon | None:
         """Mettre à jour un coupon."""
         coupon = self.get_coupon(coupon_id)
         if not coupon:
@@ -1104,13 +1125,7 @@ class SubscriptionService:
             SubscriptionMetrics.metric_date == target_date
         ).first()
 
-        if existing:
-            metrics = existing
-        else:
-            metrics = SubscriptionMetrics(
-                tenant_id=self.tenant_id,
-                metric_date=target_date
-            )
+        metrics = existing or SubscriptionMetrics(tenant_id=self.tenant_id, metric_date=target_date)
 
         # Compteurs abonnements
         active_subs = self.db.query(Subscription).filter(
@@ -1183,7 +1198,7 @@ class SubscriptionService:
             Subscription.tenant_id == self.tenant_id,
             Subscription.started_at < month_start,
             or_(
-                Subscription.ended_at == None,
+                Subscription.ended_at is None,
                 Subscription.ended_at >= month_start
             )
         ).count()
@@ -1213,7 +1228,7 @@ class SubscriptionService:
         self.db.refresh(metrics)
         return metrics
 
-    def get_metrics(self, metric_date: date) -> Optional[SubscriptionMetrics]:
+    def get_metrics(self, metric_date: date) -> SubscriptionMetrics | None:
         """Récupérer métriques d'une date."""
         return self.db.query(SubscriptionMetrics).filter(
             SubscriptionMetrics.tenant_id == self.tenant_id,
@@ -1222,7 +1237,7 @@ class SubscriptionService:
 
     def get_metrics_trend(
         self, start_date: date, end_date: date
-    ) -> List[SubscriptionMetrics]:
+    ) -> list[SubscriptionMetrics]:
         """Récupérer tendance métriques."""
         return self.db.query(SubscriptionMetrics).filter(
             SubscriptionMetrics.tenant_id == self.tenant_id,
@@ -1234,7 +1249,7 @@ class SubscriptionService:
     # DASHBOARD
     # ========================================================================
 
-    def get_dashboard(self) -> Dict[str, Any]:
+    def get_dashboard(self) -> dict[str, Any]:
         """Dashboard abonnements."""
         today = date.today()
         month_start = today.replace(day=1)
@@ -1323,7 +1338,7 @@ class SubscriptionService:
             Subscription.tenant_id == self.tenant_id,
             Subscription.started_at < month_start,
             or_(
-                Subscription.ended_at == None,
+                Subscription.ended_at is None,
                 Subscription.ended_at >= month_start
             )
         ).count()
@@ -1356,7 +1371,7 @@ class SubscriptionService:
     # WEBHOOKS
     # ========================================================================
 
-    def process_webhook(self, event_type: str, source: str, payload: Dict[str, Any]) -> SubscriptionWebhook:
+    def process_webhook(self, event_type: str, source: str, payload: dict[str, Any]) -> SubscriptionWebhook:
         """Enregistrer et traiter webhook."""
         webhook = SubscriptionWebhook(
             tenant_id=self.tenant_id,

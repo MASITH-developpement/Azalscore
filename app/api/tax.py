@@ -4,9 +4,11 @@ Gestion des déclarations fiscales et échéances (TVA, IS, taxes diverses)
 Pays-agnostique : principes généraux applicables multi-juridictions
 """
 
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+
 from app.core.dependencies import get_db, get_tenant_id
 
 router = APIRouter(prefix="/tax", tags=["tax"])
@@ -19,12 +21,12 @@ async def get_tax_status(
 ):
     """
     Retourne le statut fiscal global
-    
+
     États:
     - 🟢 : Toutes déclarations à jour, prochaine échéance > 15j
     - 🟠 : Échéance proche (< 15j) ou information manquante
     - 🔴 : Retard de déclaration ou non-conformité
-    
+
     Retour:
     {
         "status": "🟢"|"🟠"|"🔴",
@@ -37,27 +39,27 @@ async def get_tax_status(
         "last_corporate_tax_declaration": "2025-03-15"
     }
     """
-    
+
     # Simulation réaliste basée sur date actuelle
     today = datetime.now().date()
-    
+
     # Échéance TVA mensuelle (15 du mois suivant)
     next_month = today.replace(day=1) + timedelta(days=32)
     vat_deadline = next_month.replace(day=15)
     days_until = (vat_deadline - today).days
-    
+
     # Dernière déclaration TVA (mois dernier)
     last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=20)
-    
+
     # IS : déclaration annuelle (15 mars + 4 mois après clôture)
     # Simplifié : 15 avril N pour exercice N-1
     current_year = today.year
     corporate_tax_deadline = datetime(current_year, 4, 15).date()
     if today > corporate_tax_deadline:
         corporate_tax_deadline = datetime(current_year + 1, 4, 15).date()
-    
+
     last_corporate_tax = datetime(current_year - 1, 3, 15).date()
-    
+
     # Déterminer le statut
     if days_until < 0:
         status = "🔴"  # Retard
@@ -68,7 +70,7 @@ async def get_tax_status(
     else:
         status = "🟢"  # À jour
         vat_status = "À jour"
-    
+
     # Vérifier IS
     days_until_corporate = (corporate_tax_deadline - today).days
     if days_until_corporate < 0:
@@ -80,7 +82,7 @@ async def get_tax_status(
         corporate_tax_status = "Échéance proche"
     else:
         corporate_tax_status = "À jour"
-    
+
     # Déterminer prochaine échéance prioritaire
     if days_until < days_until_corporate:
         next_deadline = vat_deadline
@@ -90,7 +92,7 @@ async def get_tax_status(
         next_deadline = corporate_tax_deadline
         next_deadline_type = "IS"
         days_until_next = days_until_corporate
-    
+
     return {
         "status": status,
         "next_deadline": next_deadline.isoformat(),

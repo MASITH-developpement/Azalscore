@@ -5,27 +5,47 @@ Logique métier pour la localisation française.
 """
 
 import uuid
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List
+
 from sqlalchemy.orm import Session
 
 from .models import (
-    PCGAccount, PCGClass,
-    FRVATRate, FRVATDeclaration, TVARate, TVARegime,
-    FECExport, FECEntry, FECStatus,
-    DSNDeclaration, DSNEmployee, DSNType, DSNStatus,
-    FREmploymentContract, ContractType,
-    RGPDConsent, RGPDRequest, RGPDDataProcessing, RGPDDataBreach,
-    RGPDConsentStatus, RGPDRequestType,
+    ContractType,
+    DSNDeclaration,
+    DSNEmployee,
+    DSNStatus,
+    DSNType,
+    FECEntry,
+    FECExport,
+    FECStatus,
+    FREmploymentContract,
+    FRVATDeclaration,
+    FRVATRate,
+    PCGAccount,
+    PCGClass,
+    RGPDConsent,
+    RGPDConsentStatus,
+    RGPDDataBreach,
+    RGPDDataProcessing,
+    RGPDRequest,
+    RGPDRequestType,
+    TVARate,
+    TVARegime,
 )
 from .schemas import (
-    PCGAccountCreate, VATDeclarationCreate,
-    FECGenerateRequest, FECValidationResult,
-    DSNGenerateRequest, DSNEmployeeData,
-    FRContractCreate,
-    RGPDConsentCreate, RGPDRequestCreate, RGPDProcessingCreate, RGPDBreachCreate,
+    DSNEmployeeData,
+    DSNGenerateRequest,
+    FECGenerateRequest,
+    FECValidationResult,
     FrancePackStats,
+    FRContractCreate,
+    PCGAccountCreate,
+    RGPDBreachCreate,
+    RGPDConsentCreate,
+    RGPDProcessingCreate,
+    RGPDRequestCreate,
+    VATDeclarationCreate,
 )
 
 
@@ -45,7 +65,7 @@ class FrancePackService:
         # Vérifier si déjà initialisé
         existing = self.db.query(PCGAccount).filter(
             PCGAccount.tenant_id == self.tenant_id,
-            PCGAccount.is_custom == False
+            not PCGAccount.is_custom
         ).first()
         if existing:
             return 0
@@ -154,7 +174,7 @@ class FrancePackService:
         self.db.commit()
         return count
 
-    def get_pcg_account(self, account_number: str) -> Optional[PCGAccount]:
+    def get_pcg_account(self, account_number: str) -> PCGAccount | None:
         """Récupérer un compte PCG."""
         return self.db.query(PCGAccount).filter(
             PCGAccount.tenant_id == self.tenant_id,
@@ -162,10 +182,10 @@ class FrancePackService:
         ).first()
 
     def list_pcg_accounts(
-        self, pcg_class: Optional[str] = None,
+        self, pcg_class: str | None = None,
         active_only: bool = True,
         skip: int = 0, limit: int = 100
-    ) -> List[PCGAccount]:
+    ) -> list[PCGAccount]:
         """Lister les comptes PCG."""
         query = self.db.query(PCGAccount).filter(
             PCGAccount.tenant_id == self.tenant_id
@@ -173,7 +193,7 @@ class FrancePackService:
         if pcg_class:
             query = query.filter(PCGAccount.pcg_class == pcg_class)
         if active_only:
-            query = query.filter(PCGAccount.is_active == True)
+            query = query.filter(PCGAccount.is_active)
 
         return query.order_by(
             PCGAccount.account_number
@@ -235,21 +255,21 @@ class FrancePackService:
         self.db.commit()
         return count
 
-    def get_vat_rate(self, code: str) -> Optional[FRVATRate]:
+    def get_vat_rate(self, code: str) -> FRVATRate | None:
         """Récupérer un taux de TVA."""
         return self.db.query(FRVATRate).filter(
             FRVATRate.tenant_id == self.tenant_id,
             FRVATRate.code == code,
-            FRVATRate.is_active == True
+            FRVATRate.is_active
         ).first()
 
-    def list_vat_rates(self, active_only: bool = True) -> List[FRVATRate]:
+    def list_vat_rates(self, active_only: bool = True) -> list[FRVATRate]:
         """Lister les taux de TVA."""
         query = self.db.query(FRVATRate).filter(
             FRVATRate.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(FRVATRate.is_active == True)
+            query = query.filter(FRVATRate.is_active)
         return query.order_by(FRVATRate.rate.desc()).all()
 
     def create_vat_declaration(
@@ -687,7 +707,7 @@ class FrancePackService:
         ).count()
         custom_pcg = self.db.query(PCGAccount).filter(
             PCGAccount.tenant_id == self.tenant_id,
-            PCGAccount.is_custom == True
+            PCGAccount.is_custom
         ).count()
 
         # TVA

@@ -5,10 +5,11 @@ Analyse transverse multi-module pour vision globale.
 Détection d'anomalies et recommendations intelligentes.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from enum import Enum
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 
@@ -38,11 +39,11 @@ class Anomaly:
     module: str
     title: str
     description: str
-    value: Optional[Any] = None
-    expected_value: Optional[Any] = None
-    deviation_percent: Optional[float] = None
+    value: Any | None = None
+    expected_value: Any | None = None
+    deviation_percent: float | None = None
     detected_at: datetime = field(default_factory=datetime.utcnow)
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -51,8 +52,8 @@ class ModuleHealth:
     module: str
     score: float  # 0-100
     status: str   # healthy, warning, critical
-    metrics: Dict[str, Any] = field(default_factory=dict)
-    anomalies: List[Anomaly] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
+    anomalies: list[Anomaly] = field(default_factory=list)
 
 
 @dataclass
@@ -62,10 +63,10 @@ class Analysis360Result:
     tenant_id: str
     overall_score: float
     overall_status: str
-    modules: List[ModuleHealth]
-    anomalies: List[Anomaly]
-    recommendations: List[str]
-    insights: List[str]
+    modules: list[ModuleHealth]
+    anomalies: list[Anomaly]
+    recommendations: list[str]
+    insights: list[str]
 
 
 class Analytics360Service:
@@ -85,7 +86,7 @@ class Analytics360Service:
 
     def perform_360_analysis(
         self,
-        modules: Optional[List[str]] = None,
+        modules: list[str] | None = None,
         period_days: int = 30
     ) -> Analysis360Result:
         """
@@ -394,9 +395,9 @@ class Analytics360Service:
 
     def _generate_cross_module_recommendations(
         self,
-        modules: List[ModuleHealth],
-        anomalies: List[Anomaly]
-    ) -> List[str]:
+        modules: list[ModuleHealth],
+        anomalies: list[Anomaly]
+    ) -> list[str]:
         """Génère des recommendations cross-module."""
         recommendations = []
 
@@ -406,11 +407,10 @@ class Analytics360Service:
         inventory_health = next((m for m in modules if m.module == "inventory"), None)
 
         # Corrélation Finance + Commercial
-        if finance_health and commercial_health:
-            if finance_health.score < 70 and commercial_health.score < 70:
-                recommendations.append(
-                    "Priorité: Aligner les objectifs commerciaux avec les contraintes de trésorerie"
-                )
+        if finance_health and commercial_health and finance_health.score < 70 and commercial_health.score < 70:
+            recommendations.append(
+                "Priorité: Aligner les objectifs commerciaux avec les contraintes de trésorerie"
+            )
 
         # Corrélation Inventory + Commercial
         if inventory_health and commercial_health:
@@ -428,9 +428,9 @@ class Analytics360Service:
 
     def _generate_insights(
         self,
-        modules: List[ModuleHealth],
-        anomalies: List[Anomaly]
-    ) -> List[str]:
+        modules: list[ModuleHealth],
+        anomalies: list[Anomaly]
+    ) -> list[str]:
         """Génère des insights business."""
         insights = []
 
@@ -458,9 +458,9 @@ class Analytics360Service:
 
     def detect_anomalies(
         self,
-        module: Optional[str] = None,
+        module: str | None = None,
         severity_threshold: SeverityLevel = SeverityLevel.LOW
-    ) -> List[Anomaly]:
+    ) -> list[Anomaly]:
         """
         Détecte les anomalies dans un ou tous les modules.
 
@@ -483,7 +483,7 @@ class Analytics360Service:
             if severity_order.index(a.severity) >= threshold_index
         ]
 
-    def get_module_kpis(self, module: str) -> Dict[str, Any]:
+    def get_module_kpis(self, module: str) -> dict[str, Any]:
         """Récupère les KPIs d'un module."""
         health = self._analyze_module(module, 30)
         return health.metrics

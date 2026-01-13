@@ -5,17 +5,17 @@ Authentification à deux facteurs avec TOTP.
 Compatible Google Authenticator, Authy, etc.
 """
 
-import pyotp
-import secrets
-import json
 import hashlib
-from datetime import datetime, timezone
-from typing import List, Tuple
+import json
+import secrets
 from dataclasses import dataclass
+from datetime import UTC, datetime
+
+import pyotp
 from sqlalchemy.orm import Session
 
-from app.core.models import User
 from app.core.config import get_settings
+from app.core.models import User
 
 
 @dataclass
@@ -24,7 +24,7 @@ class TOTPSetupResult:
     secret: str
     provisioning_uri: str
     qr_code_data: str  # URI pour générer QR code
-    backup_codes: List[str]
+    backup_codes: list[str]
 
 
 @dataclass
@@ -123,7 +123,7 @@ class TwoFactorService:
 
         # Activer le 2FA
         user.totp_enabled = 1
-        user.totp_verified_at = datetime.now(timezone.utc)
+        user.totp_verified_at = datetime.now(UTC)
         self.db.commit()
 
         return TOTPVerifyResult(
@@ -207,7 +207,7 @@ class TwoFactorService:
             message="2FA disabled successfully."
         )
 
-    def regenerate_backup_codes(self, user: User, code: str) -> Tuple[bool, List[str]]:
+    def regenerate_backup_codes(self, user: User, code: str) -> tuple[bool, list[str]]:
         """
         Régénère les codes de secours après vérification.
 
@@ -252,14 +252,14 @@ class TwoFactorService:
             "required": self.is_2fa_required(user)
         }
 
-    def _generate_backup_codes(self) -> List[str]:
+    def _generate_backup_codes(self) -> list[str]:
         """Génère des codes de secours."""
         return [
             secrets.token_hex(self.BACKUP_CODE_LENGTH // 2).upper()
             for _ in range(self.BACKUP_CODES_COUNT)
         ]
 
-    def _hash_backup_codes(self, codes: List[str]) -> List[str]:
+    def _hash_backup_codes(self, codes: list[str]) -> list[str]:
         """Hash les codes de secours pour stockage."""
         return [
             hashlib.sha256(code.encode()).hexdigest()

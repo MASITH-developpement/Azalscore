@@ -6,14 +6,11 @@ Schémas Pydantic pour validation et sérialisation.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, EmailStr
+from typing import Any
 
-from .models import (
-    StripeAccountStatus, PaymentIntentStatus, RefundStatus,
-    DisputeStatus, WebhookStatus
-)
+from pydantic import BaseModel, EmailStr, Field
 
+from .models import DisputeStatus, PaymentIntentStatus, RefundStatus, StripeAccountStatus, WebhookStatus
 
 # ============================================================================
 # CUSTOMER SCHEMAS
@@ -22,31 +19,31 @@ from .models import (
 class StripeCustomerCreate(BaseModel):
     """Création client Stripe."""
     customer_id: int
-    email: Optional[EmailStr] = None
-    name: Optional[str] = None
-    phone: Optional[str] = None
-    description: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    country: Optional[str] = None
+    email: EmailStr | None = None
+    name: str | None = None
+    phone: str | None = None
+    description: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
     tax_exempt: str = "none"
-    metadata: Optional[Dict[str, str]] = None
+    metadata: dict[str, str] | None = None
 
 
 class StripeCustomerUpdate(BaseModel):
     """Mise à jour client Stripe."""
-    email: Optional[EmailStr] = None
-    name: Optional[str] = None
-    phone: Optional[str] = None
-    description: Optional[str] = None
-    address_line1: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    country: Optional[str] = None
-    default_payment_method_id: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
+    email: EmailStr | None = None
+    name: str | None = None
+    phone: str | None = None
+    description: str | None = None
+    address_line1: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
+    default_payment_method_id: str | None = None
+    metadata: dict[str, str] | None = None
 
 
 class StripeCustomerResponse(BaseModel):
@@ -55,12 +52,12 @@ class StripeCustomerResponse(BaseModel):
     tenant_id: str
     stripe_customer_id: str
     customer_id: int
-    email: Optional[str] = None
-    name: Optional[str] = None
-    phone: Optional[str] = None
-    default_payment_method_id: Optional[str] = None
+    email: str | None = None
+    name: str | None = None
+    phone: str | None = None
+    default_payment_method_id: str | None = None
     balance: Decimal
-    currency: Optional[str] = None
+    currency: str | None = None
     delinquent: bool
     is_synced: bool
     created_at: datetime
@@ -76,7 +73,7 @@ class PaymentMethodCreate(BaseModel):
     """Création méthode de paiement."""
     stripe_customer_id: str
     method_type: str = "card"
-    token: Optional[str] = None  # Token Stripe.js
+    token: str | None = None  # Token Stripe.js
     set_as_default: bool = False
 
 
@@ -85,10 +82,10 @@ class PaymentMethodResponse(BaseModel):
     id: int
     stripe_payment_method_id: str
     method_type: str
-    card_brand: Optional[str] = None
-    card_last4: Optional[str] = None
-    card_exp_month: Optional[int] = None
-    card_exp_year: Optional[int] = None
+    card_brand: str | None = None
+    card_last4: str | None = None
+    card_exp_month: int | None = None
+    card_exp_year: int | None = None
     is_default: bool
     is_active: bool
     created_at: datetime
@@ -99,7 +96,7 @@ class PaymentMethodResponse(BaseModel):
 class SetupIntentCreate(BaseModel):
     """Création SetupIntent pour ajouter méthode."""
     customer_id: int
-    payment_method_types: List[str] = ["card"]
+    payment_method_types: list[str] = ["card"]
     usage: str = "off_session"  # on_session, off_session
 
 
@@ -108,7 +105,7 @@ class SetupIntentResponse(BaseModel):
     setup_intent_id: str
     client_secret: str
     status: str
-    payment_method_types: List[str]
+    payment_method_types: list[str]
 
 
 # ============================================================================
@@ -117,28 +114,28 @@ class SetupIntentResponse(BaseModel):
 
 class PaymentIntentCreate(BaseModel):
     """Création PaymentIntent."""
-    customer_id: Optional[int] = None
+    customer_id: int | None = None
     amount: Decimal = Field(..., gt=0)
     currency: str = "EUR"
-    payment_method_types: List[str] = ["card"]
+    payment_method_types: list[str] = ["card"]
     capture_method: str = "automatic"  # automatic, manual
     confirm: bool = False
-    payment_method_id: Optional[str] = None
-    receipt_email: Optional[EmailStr] = None
-    description: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
+    payment_method_id: str | None = None
+    receipt_email: EmailStr | None = None
+    description: str | None = None
+    metadata: dict[str, str] | None = None
     # Références
-    invoice_id: Optional[int] = None
-    order_id: Optional[int] = None
-    subscription_id: Optional[int] = None
+    invoice_id: int | None = None
+    order_id: int | None = None
+    subscription_id: int | None = None
 
 
 class PaymentIntentUpdate(BaseModel):
     """Mise à jour PaymentIntent."""
-    amount: Optional[Decimal] = None
-    description: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
-    receipt_email: Optional[EmailStr] = None
+    amount: Decimal | None = None
+    description: str | None = None
+    metadata: dict[str, str] | None = None
+    receipt_email: EmailStr | None = None
 
 
 class PaymentIntentResponse(BaseModel):
@@ -149,14 +146,14 @@ class PaymentIntentResponse(BaseModel):
     amount_received: Decimal
     currency: str
     status: PaymentIntentStatus
-    client_secret: Optional[str] = None
-    payment_method_id: Optional[str] = None
+    client_secret: str | None = None
+    payment_method_id: str | None = None
     capture_method: str
-    invoice_id: Optional[int] = None
-    order_id: Optional[int] = None
-    description: Optional[str] = None
-    stripe_fee: Optional[Decimal] = None
-    net_amount: Optional[Decimal] = None
+    invoice_id: int | None = None
+    order_id: int | None = None
+    description: str | None = None
+    stripe_fee: Decimal | None = None
+    net_amount: Decimal | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -164,13 +161,13 @@ class PaymentIntentResponse(BaseModel):
 
 class PaymentIntentConfirm(BaseModel):
     """Confirmation PaymentIntent."""
-    payment_method_id: Optional[str] = None
-    return_url: Optional[str] = None
+    payment_method_id: str | None = None
+    return_url: str | None = None
 
 
 class PaymentIntentCapture(BaseModel):
     """Capture PaymentIntent."""
-    amount_to_capture: Optional[Decimal] = None
+    amount_to_capture: Decimal | None = None
 
 
 # ============================================================================
@@ -180,34 +177,34 @@ class PaymentIntentCapture(BaseModel):
 class CheckoutLineItem(BaseModel):
     """Ligne de checkout."""
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     amount: Decimal  # Prix unitaire
     currency: str = "EUR"
     quantity: int = 1
-    images: Optional[List[str]] = None
+    images: list[str] | None = None
 
 
 class CheckoutSessionCreate(BaseModel):
     """Création session checkout."""
-    customer_id: Optional[int] = None
-    customer_email: Optional[EmailStr] = None
+    customer_id: int | None = None
+    customer_email: EmailStr | None = None
     mode: str = "payment"  # payment, subscription, setup
     success_url: str
     cancel_url: str
-    line_items: Optional[List[CheckoutLineItem]] = None
+    line_items: list[CheckoutLineItem] | None = None
     # Pour abonnements
-    price_id: Optional[str] = None  # Stripe Price ID
+    price_id: str | None = None  # Stripe Price ID
     quantity: int = 1
-    trial_period_days: Optional[int] = None
+    trial_period_days: int | None = None
     # Options
     allow_promotion_codes: bool = False
     collect_shipping_address: bool = False
-    payment_method_types: List[str] = ["card"]
+    payment_method_types: list[str] = ["card"]
     # Références
-    invoice_id: Optional[int] = None
-    order_id: Optional[int] = None
-    subscription_id: Optional[int] = None
-    metadata: Optional[Dict[str, str]] = None
+    invoice_id: int | None = None
+    order_id: int | None = None
+    subscription_id: int | None = None
+    metadata: dict[str, str] | None = None
 
 
 class CheckoutSessionResponse(BaseModel):
@@ -216,12 +213,12 @@ class CheckoutSessionResponse(BaseModel):
     stripe_session_id: str
     url: str
     mode: str
-    payment_status: Optional[str] = None
+    payment_status: str | None = None
     status: str
-    amount_total: Optional[Decimal] = None
+    amount_total: Decimal | None = None
     currency: str
-    customer_email: Optional[str] = None
-    expires_at: Optional[datetime] = None
+    customer_email: str | None = None
+    expires_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -234,10 +231,10 @@ class CheckoutSessionResponse(BaseModel):
 class RefundCreate(BaseModel):
     """Création remboursement."""
     payment_intent_id: int  # ID interne
-    amount: Optional[Decimal] = None  # None = remboursement total
-    reason: Optional[str] = None  # duplicate, fraudulent, requested_by_customer
-    description: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
+    amount: Decimal | None = None  # None = remboursement total
+    reason: str | None = None  # duplicate, fraudulent, requested_by_customer
+    description: str | None = None
+    metadata: dict[str, str] | None = None
 
 
 class RefundResponse(BaseModel):
@@ -248,8 +245,8 @@ class RefundResponse(BaseModel):
     amount: Decimal
     currency: str
     status: RefundStatus
-    reason: Optional[str] = None
-    description: Optional[str] = None
+    reason: str | None = None
+    description: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -263,12 +260,12 @@ class DisputeResponse(BaseModel):
     """Réponse litige."""
     id: int
     stripe_dispute_id: str
-    stripe_charge_id: Optional[str] = None
+    stripe_charge_id: str | None = None
     amount: Decimal
     currency: str
     status: DisputeStatus
-    reason: Optional[str] = None
-    evidence_due_by: Optional[datetime] = None
+    reason: str | None = None
+    evidence_due_by: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -276,12 +273,12 @@ class DisputeResponse(BaseModel):
 
 class DisputeEvidenceSubmit(BaseModel):
     """Soumission preuves litige."""
-    customer_name: Optional[str] = None
-    customer_email: Optional[str] = None
-    product_description: Optional[str] = None
-    shipping_documentation: Optional[str] = None  # File ID
-    receipt: Optional[str] = None  # File ID
-    uncategorized_text: Optional[str] = None
+    customer_name: str | None = None
+    customer_email: str | None = None
+    product_description: str | None = None
+    shipping_documentation: str | None = None  # File ID
+    receipt: str | None = None  # File ID
+    uncategorized_text: str | None = None
 
 
 # ============================================================================
@@ -291,11 +288,11 @@ class DisputeEvidenceSubmit(BaseModel):
 class StripeProductCreate(BaseModel):
     """Création produit Stripe."""
     name: str
-    description: Optional[str] = None
-    product_id: Optional[int] = None  # Lien produit AZALS
-    plan_id: Optional[int] = None  # Lien plan abonnement AZALS
-    images: Optional[List[str]] = None
-    metadata: Optional[Dict[str, str]] = None
+    description: str | None = None
+    product_id: int | None = None  # Lien produit AZALS
+    plan_id: int | None = None  # Lien plan abonnement AZALS
+    images: list[str] | None = None
+    metadata: dict[str, str] | None = None
 
 
 class StripeProductResponse(BaseModel):
@@ -303,9 +300,9 @@ class StripeProductResponse(BaseModel):
     id: int
     stripe_product_id: str
     name: str
-    description: Optional[str] = None
-    product_id: Optional[int] = None
-    plan_id: Optional[int] = None
+    description: str | None = None
+    product_id: int | None = None
+    plan_id: int | None = None
     active: bool
     created_at: datetime
 
@@ -317,10 +314,10 @@ class StripePriceCreate(BaseModel):
     product_id: int  # ID interne produit
     unit_amount: Decimal  # En centimes
     currency: str = "EUR"
-    recurring_interval: Optional[str] = None  # month, year
+    recurring_interval: str | None = None  # month, year
     recurring_interval_count: int = 1
-    nickname: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
+    nickname: str | None = None
+    metadata: dict[str, str] | None = None
 
 
 class StripePriceResponse(BaseModel):
@@ -329,10 +326,10 @@ class StripePriceResponse(BaseModel):
     stripe_price_id: str
     unit_amount: Decimal
     currency: str
-    recurring_interval: Optional[str] = None
+    recurring_interval: str | None = None
     recurring_interval_count: int
     active: bool
-    nickname: Optional[str] = None
+    nickname: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -357,14 +354,14 @@ class ConnectAccountResponse(BaseModel):
     """Réponse compte Connect."""
     id: int
     stripe_account_id: str
-    vendor_id: Optional[int] = None
-    email: Optional[str] = None
+    vendor_id: int | None = None
+    email: str | None = None
     account_type: str
     status: StripeAccountStatus
     charges_enabled: bool
     payouts_enabled: bool
     details_submitted: bool
-    onboarding_url: Optional[str] = None
+    onboarding_url: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -387,8 +384,8 @@ class PayoutResponse(BaseModel):
     amount: Decimal
     currency: str
     status: str
-    arrival_date: Optional[datetime] = None
-    description: Optional[str] = None
+    arrival_date: datetime | None = None
+    description: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -403,11 +400,11 @@ class WebhookEventResponse(BaseModel):
     id: int
     stripe_event_id: str
     event_type: str
-    object_type: Optional[str] = None
-    object_id: Optional[str] = None
+    object_type: str | None = None
+    object_id: str | None = None
     status: WebhookStatus
-    processed_at: Optional[datetime] = None
-    processing_error: Optional[str] = None
+    processed_at: datetime | None = None
+    processing_error: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -419,31 +416,31 @@ class WebhookEventResponse(BaseModel):
 
 class StripeConfigCreate(BaseModel):
     """Configuration Stripe."""
-    api_key_live: Optional[str] = None
-    api_key_test: Optional[str] = None
-    webhook_secret_live: Optional[str] = None
-    webhook_secret_test: Optional[str] = None
+    api_key_live: str | None = None
+    api_key_test: str | None = None
+    webhook_secret_live: str | None = None
+    webhook_secret_test: str | None = None
     is_live_mode: bool = False
     default_currency: str = "EUR"
-    default_payment_methods: List[str] = ["card"]
-    statement_descriptor: Optional[str] = None
+    default_payment_methods: list[str] = ["card"]
+    statement_descriptor: str | None = None
     auto_capture: bool = True
     send_receipts: bool = True
 
 
 class StripeConfigUpdate(BaseModel):
     """Mise à jour configuration."""
-    api_key_live: Optional[str] = None
-    api_key_test: Optional[str] = None
-    webhook_secret_live: Optional[str] = None
-    webhook_secret_test: Optional[str] = None
-    is_live_mode: Optional[bool] = None
-    default_currency: Optional[str] = None
-    statement_descriptor: Optional[str] = None
-    auto_capture: Optional[bool] = None
-    send_receipts: Optional[bool] = None
-    connect_enabled: Optional[bool] = None
-    platform_fee_percent: Optional[Decimal] = None
+    api_key_live: str | None = None
+    api_key_test: str | None = None
+    webhook_secret_live: str | None = None
+    webhook_secret_test: str | None = None
+    is_live_mode: bool | None = None
+    default_currency: str | None = None
+    statement_descriptor: str | None = None
+    auto_capture: bool | None = None
+    send_receipts: bool | None = None
+    connect_enabled: bool | None = None
+    platform_fee_percent: Decimal | None = None
 
 
 class StripeConfigResponse(BaseModel):
@@ -452,8 +449,8 @@ class StripeConfigResponse(BaseModel):
     tenant_id: str
     is_live_mode: bool
     default_currency: str
-    default_payment_methods: List[str]
-    statement_descriptor: Optional[str] = None
+    default_payment_methods: list[str]
+    statement_descriptor: str | None = None
     auto_capture: bool
     send_receipts: bool
     connect_enabled: bool
@@ -491,8 +488,8 @@ class StripeDashboard(BaseModel):
     pending_balance: Decimal
 
     # Récent
-    recent_payments: List[Dict[str, Any]]
-    recent_refunds: List[Dict[str, Any]]
+    recent_payments: list[dict[str, Any]]
+    recent_refunds: list[dict[str, Any]]
 
 
 class PaymentAnalytics(BaseModel):
@@ -503,10 +500,10 @@ class PaymentAnalytics(BaseModel):
     total_volume: Decimal
     total_count: int
     average_amount: Decimal
-    by_method: Dict[str, Decimal]
-    by_status: Dict[str, int]
-    by_currency: Dict[str, Decimal]
-    chart_data: List[Dict[str, Any]]
+    by_method: dict[str, Decimal]
+    by_status: dict[str, int]
+    by_currency: dict[str, Decimal]
+    chart_data: list[dict[str, Any]]
 
 
 # ============================================================================
@@ -518,9 +515,9 @@ class TransferCreate(BaseModel):
     destination_account_id: str
     amount: Decimal = Field(..., gt=0)
     currency: str = "EUR"
-    description: Optional[str] = None
-    source_transaction: Optional[str] = None  # Charge ID
-    metadata: Optional[Dict[str, str]] = None
+    description: str | None = None
+    source_transaction: str | None = None  # Charge ID
+    metadata: dict[str, str] | None = None
 
 
 class TransferResponse(BaseModel):

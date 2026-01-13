@@ -11,31 +11,46 @@ Trois vues distinctes:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from decimal import Decimal
-from typing import Optional, Dict, Any, List
-from uuid import UUID
 import uuid
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+from typing import Any
 
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
 
 from ..models import (
-    AccountingDocument, AccountingAlert, DashboardMetrics,
-    SyncedBankAccount, SyncedTransaction, AutoEntry,
-    AIClassification, ReconciliationHistory,
-    DocumentType, DocumentStatus, PaymentStatus,
-    ConfidenceLevel, AlertType, AlertSeverity, ViewType,
-    ReconciliationStatusAuto
+    AccountingAlert,
+    AccountingDocument,
+    AIClassification,
+    AlertSeverity,
+    AlertType,
+    AutoEntry,
+    ConfidenceLevel,
+    DashboardMetrics,
+    DocumentStatus,
+    DocumentType,
+    PaymentStatus,
+    ReconciliationHistory,
+    ReconciliationStatusAuto,
+    SyncedTransaction,
 )
 from ..schemas import (
-    DirigeantDashboard, AssistanteDashboard, ExpertComptableDashboard,
-    CashPositionResponse, CashForecastResponse, CashForecastItem,
-    InvoicesSummary, ResultSummary,
-    DocumentCountsByStatus, DocumentCountsByType,
-    ValidationQueueResponse, ValidationQueueItem,
-    AIPerformanceStats, ReconciliationStats,
-    AlertResponse
+    AIPerformanceStats,
+    AlertResponse,
+    AssistanteDashboard,
+    CashForecastItem,
+    CashForecastResponse,
+    CashPositionResponse,
+    DirigeantDashboard,
+    DocumentCountsByStatus,
+    DocumentCountsByType,
+    ExpertComptableDashboard,
+    InvoicesSummary,
+    ReconciliationStats,
+    ResultSummary,
+    ValidationQueueItem,
+    ValidationQueueResponse,
 )
 from .bank_pull_service import BankPullService
 
@@ -316,11 +331,11 @@ class DashboardService:
             period_end=end
         )
 
-    def _get_critical_alerts(self, limit: int = 5) -> List[AlertResponse]:
+    def _get_critical_alerts(self, limit: int = 5) -> list[AlertResponse]:
         """Récupère les alertes critiques pour le dirigeant."""
         alerts = self.db.query(AccountingAlert).filter(
             AccountingAlert.tenant_id == self.tenant_id,
-            AccountingAlert.is_resolved == False,
+            not AccountingAlert.is_resolved,
             AccountingAlert.severity.in_([
                 AlertSeverity.ERROR, AlertSeverity.CRITICAL
             ]),
@@ -434,11 +449,11 @@ class DashboardService:
             other=counts.get(DocumentType.OTHER, 0)
         )
 
-    def _get_documentary_alerts(self) -> List[AlertResponse]:
+    def _get_documentary_alerts(self) -> list[AlertResponse]:
         """Récupère les alertes documentaires pour l'assistante."""
         alerts = self.db.query(AccountingAlert).filter(
             AccountingAlert.tenant_id == self.tenant_id,
-            AccountingAlert.is_resolved == False,
+            not AccountingAlert.is_resolved,
             AccountingAlert.alert_type.in_([
                 AlertType.DOCUMENT_UNREADABLE,
                 AlertType.MISSING_INFO,
@@ -498,7 +513,7 @@ class DashboardService:
         # Documents en attente de validation
         documents = self.db.query(AccountingDocument).filter(
             AccountingDocument.tenant_id == self.tenant_id,
-            AccountingDocument.requires_validation == True,
+            AccountingDocument.requires_validation,
             AccountingDocument.status.in_([
                 DocumentStatus.PENDING_VALIDATION,
                 DocumentStatus.ANALYZED
@@ -526,7 +541,7 @@ class DashboardService:
             # Récupère les alertes du document
             doc_alerts = self.db.query(AccountingAlert).filter(
                 AccountingAlert.document_id == doc.id,
-                AccountingAlert.is_resolved == False
+                not AccountingAlert.is_resolved
             ).all()
 
             # Priorité basée sur la confiance
@@ -578,7 +593,7 @@ class DashboardService:
         # Corrections
         corrections = self.db.query(AIClassification).filter(
             AIClassification.tenant_id == self.tenant_id,
-            AIClassification.was_corrected == True
+            AIClassification.was_corrected
         ).count()
 
         # Confiance moyenne
@@ -607,13 +622,13 @@ class DashboardService:
         matched_auto = self.db.query(ReconciliationHistory).filter(
             ReconciliationHistory.tenant_id == self.tenant_id,
             ReconciliationHistory.reconciliation_type == "auto",
-            ReconciliationHistory.is_cancelled == False
+            not ReconciliationHistory.is_cancelled
         ).count()
 
         matched_manual = self.db.query(ReconciliationHistory).filter(
             ReconciliationHistory.tenant_id == self.tenant_id,
             ReconciliationHistory.reconciliation_type == "manual",
-            ReconciliationHistory.is_cancelled == False
+            not ReconciliationHistory.is_cancelled
         ).count()
 
         unmatched = self.db.query(SyncedTransaction).filter(
@@ -636,11 +651,11 @@ class DashboardService:
             match_rate=match_rate
         )
 
-    def _get_expert_alerts(self) -> List[AlertResponse]:
+    def _get_expert_alerts(self) -> list[AlertResponse]:
         """Récupère les alertes pour l'expert-comptable."""
         alerts = self.db.query(AccountingAlert).filter(
             AccountingAlert.tenant_id == self.tenant_id,
-            AccountingAlert.is_resolved == False,
+            not AccountingAlert.is_resolved,
             or_(
                 AccountingAlert.target_roles.contains(["EXPERT_COMPTABLE"]),
                 AccountingAlert.alert_type.in_([
@@ -657,7 +672,7 @@ class DashboardService:
 
         return [self._alert_to_response(a) for a in alerts]
 
-    def _get_periods_status(self) -> List[Dict[str, Any]]:
+    def _get_periods_status(self) -> list[dict[str, Any]]:
         """Récupère le statut des périodes comptables."""
         # Simplifié - à implémenter avec le module Finance
         today = date.today()
@@ -678,7 +693,7 @@ class DashboardService:
     # HELPERS
     # =========================================================================
 
-    def _doc_to_response(self, doc: AccountingDocument) -> Dict[str, Any]:
+    def _doc_to_response(self, doc: AccountingDocument) -> dict[str, Any]:
         """Convertit un document en réponse."""
         return {
             "id": str(doc.id),
@@ -712,7 +727,7 @@ class DashboardService:
             created_at=alert.created_at
         )
 
-    def _classification_to_response(self, classification: AIClassification) -> Dict[str, Any]:
+    def _classification_to_response(self, classification: AIClassification) -> dict[str, Any]:
         """Convertit une classification en réponse."""
         return {
             "id": str(classification.id),
@@ -724,7 +739,7 @@ class DashboardService:
             "was_corrected": classification.was_corrected,
         }
 
-    def _auto_entry_to_response(self, entry: AutoEntry) -> Dict[str, Any]:
+    def _auto_entry_to_response(self, entry: AutoEntry) -> dict[str, Any]:
         """Convertit une écriture auto en réponse."""
         return {
             "id": str(entry.id),
@@ -779,7 +794,7 @@ class DashboardService:
             result_period=result.result,
             documents_pending_count=self.db.query(AccountingDocument).filter(
                 AccountingDocument.tenant_id == self.tenant_id,
-                AccountingDocument.requires_validation == True
+                AccountingDocument.requires_validation
             ).count(),
             documents_error_count=self.db.query(AccountingDocument).filter(
                 AccountingDocument.tenant_id == self.tenant_id,

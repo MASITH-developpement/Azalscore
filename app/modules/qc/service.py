@@ -5,18 +5,29 @@ AZALS MODULE T4 - Service Contrôle Qualité Central
 Service principal pour le contrôle qualité.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
 import json
+from datetime import datetime, timedelta
+from typing import Any
 
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc
 
 from app.modules.qc.models import (
-    QCRule, ModuleRegistry, QCValidation, QCCheckResult,
-    TestRun, QCMetric, QCAlert, QCDashboard, QCTemplate,
-    QCRuleCategory, QCRuleSeverity, QCCheckStatus, ModuleStatus,
-    TestType, ValidationPhase
+    ModuleRegistry,
+    ModuleStatus,
+    QCAlert,
+    QCCheckResult,
+    QCCheckStatus,
+    QCDashboard,
+    QCMetric,
+    QCRule,
+    QCRuleCategory,
+    QCRuleSeverity,
+    QCTemplate,
+    QCValidation,
+    TestRun,
+    TestType,
+    ValidationPhase,
 )
 
 
@@ -39,9 +50,9 @@ class QCService:
         check_type: str,
         description: str = None,
         severity: QCRuleSeverity = QCRuleSeverity.WARNING,
-        applies_to_modules: List[str] = None,
-        applies_to_phases: List[str] = None,
-        check_config: Dict = None,
+        applies_to_modules: list[str] = None,
+        applies_to_phases: list[str] = None,
+        check_config: dict = None,
         threshold_value: float = None,
         threshold_operator: str = None,
         created_by: int = None
@@ -67,14 +78,14 @@ class QCService:
         self.db.refresh(rule)
         return rule
 
-    def get_rule(self, rule_id: int) -> Optional[QCRule]:
+    def get_rule(self, rule_id: int) -> QCRule | None:
         """Récupère une règle par ID."""
         return self.db.query(QCRule).filter(
             QCRule.id == rule_id,
             QCRule.tenant_id == self.tenant_id
         ).first()
 
-    def get_rule_by_code(self, code: str) -> Optional[QCRule]:
+    def get_rule_by_code(self, code: str) -> QCRule | None:
         """Récupère une règle par code."""
         return self.db.query(QCRule).filter(
             QCRule.code == code,
@@ -88,7 +99,7 @@ class QCService:
         is_active: bool = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[QCRule], int]:
+    ) -> tuple[list[QCRule], int]:
         """Liste les règles QC avec filtres."""
         query = self.db.query(QCRule).filter(QCRule.tenant_id == self.tenant_id)
 
@@ -104,7 +115,7 @@ class QCService:
 
         return rules, total
 
-    def update_rule(self, rule_id: int, **updates) -> Optional[QCRule]:
+    def update_rule(self, rule_id: int, **updates) -> QCRule | None:
         """Met à jour une règle."""
         rule = self.get_rule(rule_id)
         if not rule or rule.is_system:
@@ -130,11 +141,11 @@ class QCService:
         self.db.commit()
         return True
 
-    def get_rules_for_module(self, module_code: str, phase: ValidationPhase = None) -> List[QCRule]:
+    def get_rules_for_module(self, module_code: str, phase: ValidationPhase = None) -> list[QCRule]:
         """Récupère les règles applicables à un module."""
         rules = self.db.query(QCRule).filter(
             QCRule.tenant_id == self.tenant_id,
-            QCRule.is_active == True
+            QCRule.is_active
         ).all()
 
         applicable = []
@@ -173,7 +184,7 @@ class QCService:
         module_type: str,
         module_version: str = "1.0.0",
         description: str = None,
-        dependencies: List[str] = None
+        dependencies: list[str] = None
     ) -> ModuleRegistry:
         """Enregistre un nouveau module dans le registre."""
         # Vérifier si existe déjà
@@ -206,14 +217,14 @@ class QCService:
         self.db.refresh(module)
         return module
 
-    def get_module(self, module_id: int) -> Optional[ModuleRegistry]:
+    def get_module(self, module_id: int) -> ModuleRegistry | None:
         """Récupère un module par ID."""
         return self.db.query(ModuleRegistry).filter(
             ModuleRegistry.id == module_id,
             ModuleRegistry.tenant_id == self.tenant_id
         ).first()
 
-    def get_module_by_code(self, module_code: str) -> Optional[ModuleRegistry]:
+    def get_module_by_code(self, module_code: str) -> ModuleRegistry | None:
         """Récupère un module par code."""
         return self.db.query(ModuleRegistry).filter(
             ModuleRegistry.module_code == module_code,
@@ -226,7 +237,7 @@ class QCService:
         status: ModuleStatus = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[ModuleRegistry], int]:
+    ) -> tuple[list[ModuleRegistry], int]:
         """Liste les modules enregistrés."""
         query = self.db.query(ModuleRegistry).filter(
             ModuleRegistry.tenant_id == self.tenant_id
@@ -247,7 +258,7 @@ class QCService:
         module_id: int,
         status: ModuleStatus,
         validated_by: int = None
-    ) -> Optional[ModuleRegistry]:
+    ) -> ModuleRegistry | None:
         """Met à jour le statut d'un module."""
         module = self.get_module(module_id)
         if not module:
@@ -350,9 +361,7 @@ class QCService:
         validation.overall_score = round((total_passed / total_rules * 100), 2) if total_rules > 0 else 0
 
         # Statut final
-        if validation.blocked_rules > 0:
-            validation.status = QCCheckStatus.FAILED
-        elif validation.failed_rules > 0 and validation.overall_score < 80:
+        if validation.blocked_rules > 0 or validation.failed_rules > 0 and validation.overall_score < 80:
             validation.status = QCCheckStatus.FAILED
         else:
             validation.status = QCCheckStatus.PASSED
@@ -416,7 +425,7 @@ class QCService:
         self.db.add(result)
         return result
 
-    def _run_check(self, rule: QCRule, module: ModuleRegistry) -> Dict[str, Any]:
+    def _run_check(self, rule: QCRule, module: ModuleRegistry) -> dict[str, Any]:
         """Exécute le check spécifique d'une règle."""
         check_type = rule.check_type
         config = json.loads(rule.check_config) if rule.check_config else {}
@@ -446,7 +455,7 @@ class QCService:
                 "message": f"Check {check_type} passed"
             }
 
-    def _check_file_exists(self, config: Dict, module: ModuleRegistry) -> Dict:
+    def _check_file_exists(self, config: dict, module: ModuleRegistry) -> dict:
         """Vérifie l'existence de fichiers requis."""
         required_files = config.get("files", [])
         # Simulation - en production, vérifierait vraiment les fichiers
@@ -461,11 +470,11 @@ class QCService:
 
     def _check_test_coverage(
         self,
-        config: Dict,
+        config: dict,
         module: ModuleRegistry,
         threshold: float,
         operator: str
-    ) -> Dict:
+    ) -> dict:
         """Vérifie la couverture de tests."""
         # Simulation - récupérerait la vraie couverture
         coverage = 85.0  # Simulé
@@ -481,7 +490,7 @@ class QCService:
             "recommendation": "Increase test coverage" if not passed else None
         }
 
-    def _check_api_endpoints(self, config: Dict, module: ModuleRegistry) -> Dict:
+    def _check_api_endpoints(self, config: dict, module: ModuleRegistry) -> dict:
         """Vérifie les standards API."""
         min_endpoints = config.get("min_endpoints", 1)
         # Simulation
@@ -495,7 +504,7 @@ class QCService:
             "message": f"Module has {endpoints} API endpoints"
         }
 
-    def _check_documentation(self, config: Dict, module: ModuleRegistry) -> Dict:
+    def _check_documentation(self, config: dict, module: ModuleRegistry) -> dict:
         """Vérifie la documentation."""
         required_docs = config.get("required", ["README", "BENCHMARK", "QC_REPORT"])
         # Simulation
@@ -506,7 +515,7 @@ class QCService:
             "evidence": {"documents": required_docs}
         }
 
-    def _check_security(self, config: Dict, module: ModuleRegistry) -> Dict:
+    def _check_security(self, config: dict, module: ModuleRegistry) -> dict:
         """Vérifie les aspects sécurité."""
         checks = ["tenant_isolation", "auth_required", "input_validation", "sql_injection"]
         # Simulation - tous passent
@@ -519,11 +528,11 @@ class QCService:
 
     def _check_performance(
         self,
-        config: Dict,
+        config: dict,
         module: ModuleRegistry,
         threshold: float,
         operator: str
-    ) -> Dict:
+    ) -> dict:
         """Vérifie les performances."""
         response_time = config.get("max_response_ms", 200)
         actual = 45  # Simulé
@@ -538,7 +547,7 @@ class QCService:
             "message": f"Average response time: {actual}ms"
         }
 
-    def _check_database_schema(self, config: Dict, module: ModuleRegistry) -> Dict:
+    def _check_database_schema(self, config: dict, module: ModuleRegistry) -> dict:
         """Vérifie le schéma de base de données."""
         requirements = ["tenant_id_on_all_tables", "indexes_present", "foreign_keys"]
         # Simulation
@@ -549,7 +558,7 @@ class QCService:
             "evidence": {"requirements": requirements}
         }
 
-    def _check_dependencies(self, config: Dict, module: ModuleRegistry) -> Dict:
+    def _check_dependencies(self, config: dict, module: ModuleRegistry) -> dict:
         """Vérifie les dépendances du module."""
         if not module.dependencies:
             return {
@@ -595,7 +604,7 @@ class QCService:
         self,
         module: ModuleRegistry,
         validation: QCValidation,
-        category_scores: Dict
+        category_scores: dict
     ):
         """Met à jour les scores du module."""
         module.overall_score = validation.overall_score
@@ -636,7 +645,7 @@ class QCService:
         )
         self.db.add(alert)
 
-    def get_validation(self, validation_id: int) -> Optional[QCValidation]:
+    def get_validation(self, validation_id: int) -> QCValidation | None:
         """Récupère une validation par ID."""
         return self.db.query(QCValidation).filter(
             QCValidation.id == validation_id,
@@ -650,7 +659,7 @@ class QCService:
         phase: ValidationPhase = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[QCValidation], int]:
+    ) -> tuple[list[QCValidation], int]:
         """Liste les validations."""
         query = self.db.query(QCValidation).filter(
             QCValidation.tenant_id == self.tenant_id
@@ -675,7 +684,7 @@ class QCService:
         category: QCRuleCategory = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[QCCheckResult], int]:
+    ) -> tuple[list[QCCheckResult], int]:
         """Récupère les résultats de checks d'une validation."""
         query = self.db.query(QCCheckResult).filter(
             QCCheckResult.validation_id == validation_id,
@@ -708,7 +717,7 @@ class QCService:
         coverage_percent: float = None,
         test_suite: str = None,
         duration_seconds: float = None,
-        failed_test_details: Dict = None,
+        failed_test_details: dict = None,
         output_log: str = None,
         triggered_by: str = "manual",
         triggered_user: int = None,
@@ -746,7 +755,7 @@ class QCService:
         test_type: TestType = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[TestRun], int]:
+    ) -> tuple[list[TestRun], int]:
         """Récupère les exécutions de tests."""
         query = self.db.query(TestRun).filter(TestRun.tenant_id == self.tenant_id)
 
@@ -865,7 +874,7 @@ class QCService:
         date_from: datetime = None,
         date_to: datetime = None,
         limit: int = 30
-    ) -> List[QCMetric]:
+    ) -> list[QCMetric]:
         """Récupère l'historique des métriques."""
         query = self.db.query(QCMetric).filter(QCMetric.tenant_id == self.tenant_id)
 
@@ -891,7 +900,7 @@ class QCService:
         module_id: int = None,
         validation_id: int = None,
         check_result_id: int = None,
-        details: Dict = None
+        details: dict = None
     ) -> QCAlert:
         """Crée une alerte QC."""
         alert = QCAlert(
@@ -917,7 +926,7 @@ class QCService:
         module_id: int = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[QCAlert], int]:
+    ) -> tuple[list[QCAlert], int]:
         """Liste les alertes QC."""
         query = self.db.query(QCAlert).filter(QCAlert.tenant_id == self.tenant_id)
 
@@ -938,7 +947,7 @@ class QCService:
         alert_id: int,
         resolved_by: int,
         resolution_notes: str = None
-    ) -> Optional[QCAlert]:
+    ) -> QCAlert | None:
         """Résout une alerte."""
         alert = self.db.query(QCAlert).filter(
             QCAlert.id == alert_id,
@@ -966,9 +975,9 @@ class QCService:
         name: str,
         owner_id: int,
         description: str = None,
-        layout: Dict = None,
-        widgets: List[Dict] = None,
-        filters: Dict = None,
+        layout: dict = None,
+        widgets: list[dict] = None,
+        filters: dict = None,
         is_default: bool = False,
         is_public: bool = False
     ) -> QCDashboard:
@@ -989,14 +998,14 @@ class QCService:
         self.db.refresh(dashboard)
         return dashboard
 
-    def get_dashboard(self, dashboard_id: int) -> Optional[QCDashboard]:
+    def get_dashboard(self, dashboard_id: int) -> QCDashboard | None:
         """Récupère un dashboard."""
         return self.db.query(QCDashboard).filter(
             QCDashboard.id == dashboard_id,
             QCDashboard.tenant_id == self.tenant_id
         ).first()
 
-    def list_dashboards(self, owner_id: int = None) -> List[QCDashboard]:
+    def list_dashboards(self, owner_id: int = None) -> list[QCDashboard]:
         """Liste les dashboards accessibles."""
         query = self.db.query(QCDashboard).filter(
             QCDashboard.tenant_id == self.tenant_id
@@ -1006,13 +1015,13 @@ class QCService:
             query = query.filter(
                 or_(
                     QCDashboard.owner_id == owner_id,
-                    QCDashboard.is_public == True
+                    QCDashboard.is_public
                 )
             )
 
         return query.order_by(desc(QCDashboard.is_default), QCDashboard.name).all()
 
-    def get_dashboard_data(self, dashboard_id: int = None) -> Dict[str, Any]:
+    def get_dashboard_data(self, dashboard_id: int = None) -> dict[str, Any]:
         """Récupère les données pour un dashboard QC."""
         # Statistiques globales
         modules, _ = self.list_modules()
@@ -1090,7 +1099,7 @@ class QCService:
         self,
         code: str,
         name: str,
-        rules: List[Dict],
+        rules: list[dict],
         description: str = None,
         category: str = None,
         created_by: int = None
@@ -1110,18 +1119,18 @@ class QCService:
         self.db.refresh(template)
         return template
 
-    def get_template(self, template_id: int) -> Optional[QCTemplate]:
+    def get_template(self, template_id: int) -> QCTemplate | None:
         """Récupère un template."""
         return self.db.query(QCTemplate).filter(
             QCTemplate.id == template_id,
             QCTemplate.tenant_id == self.tenant_id
         ).first()
 
-    def list_templates(self, category: str = None) -> List[QCTemplate]:
+    def list_templates(self, category: str = None) -> list[QCTemplate]:
         """Liste les templates."""
         query = self.db.query(QCTemplate).filter(
             QCTemplate.tenant_id == self.tenant_id,
-            QCTemplate.is_active == True
+            QCTemplate.is_active
         )
 
         if category:
@@ -1129,7 +1138,7 @@ class QCService:
 
         return query.order_by(QCTemplate.name).all()
 
-    def apply_template(self, template_id: int, created_by: int = None) -> List[QCRule]:
+    def apply_template(self, template_id: int, created_by: int = None) -> list[QCRule]:
         """Applique un template pour créer des règles."""
         template = self.get_template(template_id)
         if not template:

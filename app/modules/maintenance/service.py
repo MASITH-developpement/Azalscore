@@ -5,27 +5,54 @@ AZALS MODULE M8 - Service Maintenance (GMAO)
 Service métier pour la gestion de la maintenance.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Tuple
 
-from sqlalchemy import func, or_, desc
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from .models import (
-    Asset, AssetMeter, MeterReading,
-    MaintenancePlan, MaintenancePlanTask, MaintenanceWorkOrder as WorkOrder, WorkOrderTask,
-    WorkOrderLabor, WorkOrderPart, Failure, SparePart,
-    PartRequest, MaintenanceContract, AssetCategory, AssetStatus, AssetCriticality, WorkOrderStatus, WorkOrderPriority, PartRequestStatus,
-    ContractStatus
+    Asset,
+    AssetCategory,
+    AssetCriticality,
+    AssetMeter,
+    AssetStatus,
+    ContractStatus,
+    Failure,
+    MaintenanceContract,
+    MaintenancePlan,
+    MaintenancePlanTask,
+    MeterReading,
+    PartRequest,
+    PartRequestStatus,
+    SparePart,
+    WorkOrderLabor,
+    WorkOrderPart,
+    WorkOrderPriority,
+    WorkOrderStatus,
+    WorkOrderTask,
 )
+from .models import MaintenanceWorkOrder as WorkOrder
 from .schemas import (
-    AssetCreate, AssetUpdate, MeterCreate, MeterReadingCreate,
-    MaintenancePlanCreate, MaintenancePlanUpdate, WorkOrderCreate, WorkOrderUpdate, WorkOrderComplete, WorkOrderLaborCreate, WorkOrderPartCreate,
-    FailureCreate, FailureUpdate,
-    SparePartCreate, SparePartUpdate, PartRequestCreate,
-    ContractCreate, ContractUpdate,
-    MaintenanceDashboard
+    AssetCreate,
+    AssetUpdate,
+    ContractCreate,
+    ContractUpdate,
+    FailureCreate,
+    FailureUpdate,
+    MaintenanceDashboard,
+    MaintenancePlanCreate,
+    MaintenancePlanUpdate,
+    MeterCreate,
+    MeterReadingCreate,
+    PartRequestCreate,
+    SparePartCreate,
+    SparePartUpdate,
+    WorkOrderComplete,
+    WorkOrderCreate,
+    WorkOrderLaborCreate,
+    WorkOrderPartCreate,
+    WorkOrderUpdate,
 )
 
 
@@ -81,7 +108,7 @@ class MaintenanceService:
         self.db.refresh(asset)
         return asset
 
-    def get_asset(self, asset_id: int) -> Optional[Asset]:
+    def get_asset(self, asset_id: int) -> Asset | None:
         """Récupérer un actif par ID."""
         return self.db.query(Asset).filter(
             Asset.id == asset_id,
@@ -92,11 +119,11 @@ class MaintenanceService:
         self,
         skip: int = 0,
         limit: int = 50,
-        category: Optional[AssetCategory] = None,
-        status: Optional[AssetStatus] = None,
-        criticality: Optional[AssetCriticality] = None,
-        search: Optional[str] = None
-    ) -> Tuple[List[Asset], int]:
+        category: AssetCategory | None = None,
+        status: AssetStatus | None = None,
+        criticality: AssetCriticality | None = None,
+        search: str | None = None
+    ) -> tuple[list[Asset], int]:
         """Lister les actifs avec filtres."""
         query = self.db.query(Asset).filter(Asset.tenant_id == self.tenant_id)
 
@@ -120,7 +147,7 @@ class MaintenanceService:
         assets = query.order_by(Asset.asset_code).offset(skip).limit(limit).all()
         return assets, total
 
-    def update_asset(self, asset_id: int, data: AssetUpdate) -> Optional[Asset]:
+    def update_asset(self, asset_id: int, data: AssetUpdate) -> Asset | None:
         """Mettre à jour un actif."""
         asset = self.get_asset(asset_id)
         if not asset:
@@ -148,7 +175,7 @@ class MaintenanceService:
     # COMPTEURS
     # ========================================================================
 
-    def create_meter(self, asset_id: int, data: MeterCreate) -> Optional[AssetMeter]:
+    def create_meter(self, asset_id: int, data: MeterCreate) -> AssetMeter | None:
         """Créer un compteur pour un actif."""
         asset = self.get_asset(asset_id)
         if not asset:
@@ -178,7 +205,7 @@ class MaintenanceService:
         self,
         meter_id: int,
         data: MeterReadingCreate
-    ) -> Optional[MeterReading]:
+    ) -> MeterReading | None:
         """Enregistrer un relevé de compteur."""
         meter = self.db.query(AssetMeter).filter(
             AssetMeter.id == meter_id,
@@ -266,7 +293,7 @@ class MaintenanceService:
         self.db.refresh(plan)
         return plan
 
-    def get_maintenance_plan(self, plan_id: int) -> Optional[MaintenancePlan]:
+    def get_maintenance_plan(self, plan_id: int) -> MaintenancePlan | None:
         """Récupérer un plan de maintenance."""
         return self.db.query(MaintenancePlan).options(
             joinedload(MaintenancePlan.tasks)
@@ -279,9 +306,9 @@ class MaintenanceService:
         self,
         skip: int = 0,
         limit: int = 50,
-        asset_id: Optional[int] = None,
-        is_active: Optional[bool] = None
-    ) -> Tuple[List[MaintenancePlan], int]:
+        asset_id: int | None = None,
+        is_active: bool | None = None
+    ) -> tuple[list[MaintenancePlan], int]:
         """Lister les plans de maintenance."""
         query = self.db.query(MaintenancePlan).filter(
             MaintenancePlan.tenant_id == self.tenant_id
@@ -300,7 +327,7 @@ class MaintenanceService:
         self,
         plan_id: int,
         data: MaintenancePlanUpdate
-    ) -> Optional[MaintenancePlan]:
+    ) -> MaintenancePlan | None:
         """Mettre à jour un plan de maintenance."""
         plan = self.get_maintenance_plan(plan_id)
         if not plan:
@@ -388,7 +415,7 @@ class MaintenanceService:
         self.db.refresh(wo)
         return wo
 
-    def get_work_order(self, wo_id: int) -> Optional[WorkOrder]:
+    def get_work_order(self, wo_id: int) -> WorkOrder | None:
         """Récupérer un ordre de travail."""
         return self.db.query(WorkOrder).options(
             joinedload(WorkOrder.tasks),
@@ -403,11 +430,11 @@ class MaintenanceService:
         self,
         skip: int = 0,
         limit: int = 50,
-        asset_id: Optional[int] = None,
-        status: Optional[WorkOrderStatus] = None,
-        priority: Optional[WorkOrderPriority] = None,
-        assigned_to_id: Optional[int] = None
-    ) -> Tuple[List[WorkOrder], int]:
+        asset_id: int | None = None,
+        status: WorkOrderStatus | None = None,
+        priority: WorkOrderPriority | None = None,
+        assigned_to_id: int | None = None
+    ) -> tuple[list[WorkOrder], int]:
         """Lister les ordres de travail."""
         query = self.db.query(WorkOrder).filter(
             WorkOrder.tenant_id == self.tenant_id
@@ -430,7 +457,7 @@ class MaintenanceService:
         self,
         wo_id: int,
         data: WorkOrderUpdate
-    ) -> Optional[WorkOrder]:
+    ) -> WorkOrder | None:
         """Mettre à jour un ordre de travail."""
         wo = self.get_work_order(wo_id)
         if not wo:
@@ -444,7 +471,7 @@ class MaintenanceService:
         self.db.refresh(wo)
         return wo
 
-    def start_work_order(self, wo_id: int) -> Optional[WorkOrder]:
+    def start_work_order(self, wo_id: int) -> WorkOrder | None:
         """Démarrer un ordre de travail."""
         wo = self.get_work_order(wo_id)
         if not wo or wo.status not in [WorkOrderStatus.APPROVED, WorkOrderStatus.PLANNED, WorkOrderStatus.ASSIGNED]:
@@ -465,7 +492,7 @@ class MaintenanceService:
         self,
         wo_id: int,
         data: WorkOrderComplete
-    ) -> Optional[WorkOrder]:
+    ) -> WorkOrder | None:
         """Terminer un ordre de travail."""
         wo = self.get_work_order(wo_id)
         if not wo or wo.status != WorkOrderStatus.IN_PROGRESS:
@@ -507,7 +534,7 @@ class MaintenanceService:
         self,
         wo_id: int,
         data: WorkOrderLaborCreate
-    ) -> Optional[WorkOrderLabor]:
+    ) -> WorkOrderLabor | None:
         """Ajouter une entrée de main d'œuvre."""
         wo = self.get_work_order(wo_id)
         if not wo:
@@ -544,7 +571,7 @@ class MaintenanceService:
         self,
         wo_id: int,
         data: WorkOrderPartCreate
-    ) -> Optional[WorkOrderPart]:
+    ) -> WorkOrderPart | None:
         """Ajouter une pièce utilisée."""
         wo = self.get_work_order(wo_id)
         if not wo:
@@ -626,7 +653,7 @@ class MaintenanceService:
         self.db.refresh(failure)
         return failure
 
-    def get_failure(self, failure_id: int) -> Optional[Failure]:
+    def get_failure(self, failure_id: int) -> Failure | None:
         """Récupérer une panne."""
         return self.db.query(Failure).filter(
             Failure.id == failure_id,
@@ -637,9 +664,9 @@ class MaintenanceService:
         self,
         skip: int = 0,
         limit: int = 50,
-        asset_id: Optional[int] = None,
-        status: Optional[str] = None
-    ) -> Tuple[List[Failure], int]:
+        asset_id: int | None = None,
+        status: str | None = None
+    ) -> tuple[list[Failure], int]:
         """Lister les pannes."""
         query = self.db.query(Failure).filter(
             Failure.tenant_id == self.tenant_id
@@ -658,7 +685,7 @@ class MaintenanceService:
         self,
         failure_id: int,
         data: FailureUpdate
-    ) -> Optional[Failure]:
+    ) -> Failure | None:
         """Mettre à jour une panne."""
         failure = self.get_failure(failure_id)
         if not failure:
@@ -710,7 +737,7 @@ class MaintenanceService:
         self.db.refresh(part)
         return part
 
-    def get_spare_part(self, part_id: int) -> Optional[SparePart]:
+    def get_spare_part(self, part_id: int) -> SparePart | None:
         """Récupérer une pièce de rechange."""
         return self.db.query(SparePart).filter(
             SparePart.id == part_id,
@@ -721,13 +748,13 @@ class MaintenanceService:
         self,
         skip: int = 0,
         limit: int = 50,
-        category: Optional[str] = None,
-        search: Optional[str] = None
-    ) -> Tuple[List[SparePart], int]:
+        category: str | None = None,
+        search: str | None = None
+    ) -> tuple[list[SparePart], int]:
         """Lister les pièces de rechange."""
         query = self.db.query(SparePart).filter(
             SparePart.tenant_id == self.tenant_id,
-            SparePart.is_active == True
+            SparePart.is_active
         )
 
         if category:
@@ -749,7 +776,7 @@ class MaintenanceService:
         self,
         part_id: int,
         data: SparePartUpdate
-    ) -> Optional[SparePart]:
+    ) -> SparePart | None:
         """Mettre à jour une pièce de rechange."""
         part = self.get_spare_part(part_id)
         if not part:
@@ -812,9 +839,9 @@ class MaintenanceService:
         self,
         skip: int = 0,
         limit: int = 50,
-        status: Optional[PartRequestStatus] = None,
-        work_order_id: Optional[int] = None
-    ) -> Tuple[List[PartRequest], int]:
+        status: PartRequestStatus | None = None,
+        work_order_id: int | None = None
+    ) -> tuple[list[PartRequest], int]:
         """Lister les demandes de pièces."""
         query = self.db.query(PartRequest).filter(
             PartRequest.tenant_id == self.tenant_id
@@ -873,7 +900,7 @@ class MaintenanceService:
         self.db.refresh(contract)
         return contract
 
-    def get_contract(self, contract_id: int) -> Optional[MaintenanceContract]:
+    def get_contract(self, contract_id: int) -> MaintenanceContract | None:
         """Récupérer un contrat."""
         return self.db.query(MaintenanceContract).filter(
             MaintenanceContract.id == contract_id,
@@ -884,8 +911,8 @@ class MaintenanceService:
         self,
         skip: int = 0,
         limit: int = 50,
-        status: Optional[ContractStatus] = None
-    ) -> Tuple[List[MaintenanceContract], int]:
+        status: ContractStatus | None = None
+    ) -> tuple[list[MaintenanceContract], int]:
         """Lister les contrats."""
         query = self.db.query(MaintenanceContract).filter(
             MaintenanceContract.tenant_id == self.tenant_id
@@ -902,7 +929,7 @@ class MaintenanceService:
         self,
         contract_id: int,
         data: ContractUpdate
-    ) -> Optional[MaintenanceContract]:
+    ) -> MaintenanceContract | None:
         """Mettre à jour un contrat."""
         contract = self.get_contract(contract_id)
         if not contract:
@@ -975,13 +1002,13 @@ class MaintenanceService:
         # Plans actifs
         plans_active = self.db.query(func.count(MaintenancePlan.id)).filter(
             MaintenancePlan.tenant_id == self.tenant_id,
-            MaintenancePlan.is_active == True
+            MaintenancePlan.is_active
         ).scalar() or 0
 
         # Plans bientôt dus
         plans_due_soon = self.db.query(func.count(MaintenancePlan.id)).filter(
             MaintenancePlan.tenant_id == self.tenant_id,
-            MaintenancePlan.is_active == True,
+            MaintenancePlan.is_active,
             MaintenancePlan.next_due_date.between(today, today + timedelta(days=7))
         ).scalar() or 0
 
@@ -1001,7 +1028,7 @@ class MaintenanceService:
         # Pièces sous stock minimum
         parts_below_min = self.db.query(func.count(SparePart.id)).filter(
             SparePart.tenant_id == self.tenant_id,
-            SparePart.is_active == True
+            SparePart.is_active
         ).scalar() or 0  # Simplified - would need stock calculation
 
         # Demandes en attente

@@ -20,27 +20,26 @@ Intégrations AZALS:
 """
 
 from .models import (
-    TicketCategory,
-    HelpdeskTeam,
-    HelpdeskAgent,
-    HelpdeskSLA,
-    Ticket,
-    TicketReply,
-    TicketAttachment,
-    TicketHistory,
+    AgentStatus,
     CannedResponse,
-    KBCategory,
-    KBArticle,
-    SatisfactionSurvey,
+    HelpdeskAgent,
     HelpdeskAutomation,
-    TicketStatus,
+    HelpdeskSLA,
+    HelpdeskTeam,
+    KBArticle,
+    KBCategory,
+    SatisfactionSurvey,
+    Ticket,
+    TicketAttachment,
+    TicketCategory,
+    TicketHistory,
     TicketPriority,
+    TicketReply,
     TicketSource,
-    AgentStatus
+    TicketStatus,
 )
-
-from .service import HelpdeskService
 from .router import router
+from .service import HelpdeskService
 
 __all__ = [
     # Models

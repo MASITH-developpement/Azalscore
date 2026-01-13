@@ -7,12 +7,11 @@ Schémas de validation pour les API du module Packs Pays.
 
 from __future__ import annotations
 
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import date, datetime
 from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # ============================================================================
 # ENUMS
@@ -81,9 +80,9 @@ class CountryPackBase(BaseModel):
     country_code: str = Field(..., min_length=2, max_length=2)
     country_name: str = Field(..., min_length=2, max_length=100)
     default_currency: str = Field(..., min_length=3, max_length=3)
-    country_name_local: Optional[str] = None
+    country_name_local: str | None = None
     default_language: str = "fr"
-    currency_symbol: Optional[str] = None
+    currency_symbol: str | None = None
     currency_position: str = "after"
     date_format: DateFormatStyleEnum = DateFormatStyleEnum.DMY
     number_format: NumberFormatStyleEnum = NumberFormatStyleEnum.EU
@@ -96,10 +95,10 @@ class CountryPackBase(BaseModel):
     default_vat_rate: float = 20.0
     has_regional_taxes: bool = False
     company_id_label: str = "SIRET"
-    company_id_format: Optional[str] = None
+    company_id_format: str | None = None
     vat_id_label: str = "TVA"
-    vat_id_format: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
+    vat_id_format: str | None = None
+    config: dict[str, Any] | None = None
     is_default: bool = False
 
 
@@ -108,28 +107,28 @@ class CountryPackCreate(CountryPackBase):
 
 
 class CountryPackUpdate(BaseModel):
-    country_name: Optional[str] = Field(None, min_length=2, max_length=100)
-    country_name_local: Optional[str] = None
-    default_language: Optional[str] = None
-    currency_symbol: Optional[str] = None
-    currency_position: Optional[str] = None
-    date_format: Optional[DateFormatStyleEnum] = None
-    number_format: Optional[NumberFormatStyleEnum] = None
-    timezone: Optional[str] = None
-    default_vat_rate: Optional[float] = None
-    company_id_label: Optional[str] = None
-    vat_id_label: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
-    is_default: Optional[bool] = None
-    status: Optional[PackStatusEnum] = None
+    country_name: str | None = Field(None, min_length=2, max_length=100)
+    country_name_local: str | None = None
+    default_language: str | None = None
+    currency_symbol: str | None = None
+    currency_position: str | None = None
+    date_format: DateFormatStyleEnum | None = None
+    number_format: NumberFormatStyleEnum | None = None
+    timezone: str | None = None
+    default_vat_rate: float | None = None
+    company_id_label: str | None = None
+    vat_id_label: str | None = None
+    config: dict[str, Any] | None = None
+    is_default: bool | None = None
+    status: PackStatusEnum | None = None
 
 
 class CountryPackResponse(CountryPackBase):
     id: int
     status: PackStatusEnum
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    created_by: Optional[int] = None
+    updated_at: datetime | None = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -143,16 +142,16 @@ class TaxRateBase(BaseModel):
     tax_type: TaxTypeEnum
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=2, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     rate: float = Field(..., ge=0, le=100)
     is_percentage: bool = True
-    applies_to: Optional[str] = "both"
-    region: Optional[str] = None
-    account_collected: Optional[str] = None
-    account_deductible: Optional[str] = None
-    account_payable: Optional[str] = None
-    valid_from: Optional[date] = None
-    valid_to: Optional[date] = None
+    applies_to: str | None = "both"
+    region: str | None = None
+    account_collected: str | None = None
+    account_deductible: str | None = None
+    account_payable: str | None = None
+    valid_from: date | None = None
+    valid_to: date | None = None
     is_default: bool = False
 
 
@@ -161,25 +160,25 @@ class TaxRateCreate(TaxRateBase):
 
 
 class TaxRateUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    description: Optional[str] = None
-    rate: Optional[float] = Field(None, ge=0, le=100)
-    applies_to: Optional[str] = None
-    region: Optional[str] = None
-    account_collected: Optional[str] = None
-    account_deductible: Optional[str] = None
-    account_payable: Optional[str] = None
-    valid_from: Optional[date] = None
-    valid_to: Optional[date] = None
-    is_active: Optional[bool] = None
-    is_default: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=100)
+    description: str | None = None
+    rate: float | None = Field(None, ge=0, le=100)
+    applies_to: str | None = None
+    region: str | None = None
+    account_collected: str | None = None
+    account_deductible: str | None = None
+    account_payable: str | None = None
+    valid_from: date | None = None
+    valid_to: date | None = None
+    is_active: bool | None = None
+    is_default: bool | None = None
 
 
 class TaxRateResponse(TaxRateBase):
     id: int
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -193,14 +192,14 @@ class DocumentTemplateBase(BaseModel):
     document_type: DocumentTypeEnum
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     template_format: str = "html"
-    template_content: Optional[str] = None
-    template_path: Optional[str] = None
-    mandatory_fields: Optional[List[str]] = None
-    legal_mentions: Optional[str] = None
-    numbering_prefix: Optional[str] = None
-    numbering_pattern: Optional[str] = None
+    template_content: str | None = None
+    template_path: str | None = None
+    mandatory_fields: list[str] | None = None
+    legal_mentions: str | None = None
+    numbering_prefix: str | None = None
+    numbering_pattern: str | None = None
     numbering_reset: str = "yearly"
     language: str = "fr"
     is_default: bool = False
@@ -211,24 +210,24 @@ class DocumentTemplateCreate(DocumentTemplateBase):
 
 
 class DocumentTemplateUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    template_content: Optional[str] = None
-    template_path: Optional[str] = None
-    mandatory_fields: Optional[List[str]] = None
-    legal_mentions: Optional[str] = None
-    numbering_prefix: Optional[str] = None
-    numbering_pattern: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_default: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    template_content: str | None = None
+    template_path: str | None = None
+    mandatory_fields: list[str] | None = None
+    legal_mentions: str | None = None
+    numbering_prefix: str | None = None
+    numbering_pattern: str | None = None
+    is_active: bool | None = None
+    is_default: bool | None = None
 
 
 class DocumentTemplateResponse(DocumentTemplateBase):
     id: int
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    created_by: Optional[int] = None
+    updated_at: datetime | None = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -242,14 +241,14 @@ class BankConfigBase(BaseModel):
     bank_format: BankFormatEnum
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
-    iban_prefix: Optional[str] = None
-    iban_length: Optional[int] = None
+    description: str | None = None
+    iban_prefix: str | None = None
+    iban_length: int | None = None
     bic_required: bool = True
     export_format: str = "xml"
     export_encoding: str = "utf-8"
-    export_template: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
+    export_template: str | None = None
+    config: dict[str, Any] | None = None
     is_default: bool = False
 
 
@@ -258,23 +257,23 @@ class BankConfigCreate(BankConfigBase):
 
 
 class BankConfigUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    iban_prefix: Optional[str] = None
-    iban_length: Optional[int] = None
-    bic_required: Optional[bool] = None
-    export_format: Optional[str] = None
-    export_template: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
-    is_active: Optional[bool] = None
-    is_default: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    iban_prefix: str | None = None
+    iban_length: int | None = None
+    bic_required: bool | None = None
+    export_format: str | None = None
+    export_template: str | None = None
+    config: dict[str, Any] | None = None
+    is_active: bool | None = None
+    is_default: bool | None = None
 
 
 class BankConfigResponse(BankConfigBase):
     id: int
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -286,14 +285,14 @@ class BankConfigResponse(BankConfigBase):
 class PublicHolidayBase(BaseModel):
     country_pack_id: int
     name: str = Field(..., min_length=2, max_length=200)
-    name_local: Optional[str] = None
-    holiday_date: Optional[date] = None
-    month: Optional[int] = Field(None, ge=1, le=12)
-    day: Optional[int] = Field(None, ge=1, le=31)
+    name_local: str | None = None
+    holiday_date: date | None = None
+    month: int | None = Field(None, ge=1, le=12)
+    day: int | None = Field(None, ge=1, le=31)
     is_fixed: bool = True
-    calculation_rule: Optional[str] = None
-    year: Optional[int] = None
-    region: Optional[str] = None
+    calculation_rule: str | None = None
+    year: int | None = None
+    region: str | None = None
     is_national: bool = True
     is_work_day: bool = False
     affects_banks: bool = True
@@ -305,20 +304,20 @@ class PublicHolidayCreate(PublicHolidayBase):
 
 
 class PublicHolidayUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    name_local: Optional[str] = None
-    holiday_date: Optional[date] = None
-    month: Optional[int] = Field(None, ge=1, le=12)
-    day: Optional[int] = Field(None, ge=1, le=31)
-    is_work_day: Optional[bool] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    name_local: str | None = None
+    holiday_date: date | None = None
+    month: int | None = Field(None, ge=1, le=12)
+    day: int | None = Field(None, ge=1, le=31)
+    is_work_day: bool | None = None
+    is_active: bool | None = None
 
 
 class PublicHolidayResponse(PublicHolidayBase):
     id: int
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -326,11 +325,11 @@ class PublicHolidayResponse(PublicHolidayBase):
 class HolidayWithDate(BaseModel):
     id: int
     name: str
-    name_local: Optional[str] = None
+    name_local: str | None = None
     date: str
     is_work_day: bool
     affects_banks: bool
-    region: Optional[str] = None
+    region: str | None = None
 
 
 # ============================================================================
@@ -342,14 +341,14 @@ class LegalRequirementBase(BaseModel):
     category: str = Field(..., min_length=2, max_length=50)
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
-    requirement_type: Optional[str] = None
-    frequency: Optional[str] = None
-    deadline_rule: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
-    legal_reference: Optional[str] = None
-    effective_date: Optional[date] = None
-    end_date: Optional[date] = None
+    description: str | None = None
+    requirement_type: str | None = None
+    frequency: str | None = None
+    deadline_rule: str | None = None
+    config: dict[str, Any] | None = None
+    legal_reference: str | None = None
+    effective_date: date | None = None
+    end_date: date | None = None
     is_mandatory: bool = True
 
 
@@ -358,21 +357,21 @@ class LegalRequirementCreate(LegalRequirementBase):
 
 
 class LegalRequirementUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    requirement_type: Optional[str] = None
-    frequency: Optional[str] = None
-    deadline_rule: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
-    is_mandatory: Optional[bool] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    requirement_type: str | None = None
+    frequency: str | None = None
+    deadline_rule: str | None = None
+    config: dict[str, Any] | None = None
+    is_mandatory: bool | None = None
+    is_active: bool | None = None
 
 
 class LegalRequirementResponse(LegalRequirementBase):
     id: int
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -384,10 +383,10 @@ class LegalRequirementResponse(LegalRequirementBase):
 class TenantCountryActivate(BaseModel):
     country_pack_id: int
     is_primary: bool = False
-    custom_currency: Optional[str] = None
-    custom_language: Optional[str] = None
-    custom_timezone: Optional[str] = None
-    custom_config: Optional[Dict[str, Any]] = None
+    custom_currency: str | None = None
+    custom_language: str | None = None
+    custom_timezone: str | None = None
+    custom_config: dict[str, Any] | None = None
 
 
 class TenantCountrySettingsResponse(BaseModel):
@@ -395,12 +394,12 @@ class TenantCountrySettingsResponse(BaseModel):
     country_pack_id: int
     is_primary: bool
     is_active: bool
-    custom_currency: Optional[str] = None
-    custom_language: Optional[str] = None
-    custom_timezone: Optional[str] = None
-    custom_config: Optional[Dict[str, Any]] = None
+    custom_currency: str | None = None
+    custom_language: str | None = None
+    custom_timezone: str | None = None
+    custom_config: dict[str, Any] | None = None
     activated_at: datetime
-    activated_by: Optional[int] = None
+    activated_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -416,8 +415,8 @@ class IBANValidationRequest(BaseModel):
 
 class IBANValidationResponse(BaseModel):
     valid: bool
-    formatted_iban: Optional[str] = None
-    error: Optional[str] = None
+    formatted_iban: str | None = None
+    error: str | None = None
 
 
 class CurrencyFormatRequest(BaseModel):
@@ -428,7 +427,7 @@ class CurrencyFormatRequest(BaseModel):
 class CurrencyFormatResponse(BaseModel):
     formatted: str
     currency: str
-    symbol: Optional[str] = None
+    symbol: str | None = None
 
 
 class DateFormatRequest(BaseModel):
@@ -463,17 +462,17 @@ class CountrySummary(BaseModel):
 # ============================================================================
 
 class PaginatedCountryPacksResponse(BaseModel):
-    items: List[CountryPackResponse]
+    items: list[CountryPackResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedTaxRatesResponse(BaseModel):
-    items: List[TaxRateResponse]
+    items: list[TaxRateResponse]
     total: int
 
 
 class PaginatedTemplatesResponse(BaseModel):
-    items: List[DocumentTemplateResponse]
+    items: list[DocumentTemplateResponse]
     total: int

@@ -5,18 +5,31 @@ AZALS MODULE T3 - Service Audit & Benchmark
 Logique métier pour l'audit et les benchmarks.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
 import json
+from datetime import datetime, timedelta
+from typing import Any
+
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
 
 from .models import (
-    AuditLog, AuditSession, MetricDefinition, MetricValue,
-    Benchmark, BenchmarkResult, ComplianceCheck, DataRetentionRule,
-    AuditExport, AuditDashboard,
-    AuditAction, AuditLevel, AuditCategory, MetricType,
-    BenchmarkStatus, RetentionPolicy, ComplianceFramework
+    AuditAction,
+    AuditCategory,
+    AuditDashboard,
+    AuditExport,
+    AuditLevel,
+    AuditLog,
+    AuditSession,
+    Benchmark,
+    BenchmarkResult,
+    BenchmarkStatus,
+    ComplianceCheck,
+    ComplianceFramework,
+    DataRetentionRule,
+    MetricDefinition,
+    MetricType,
+    MetricValue,
+    RetentionPolicy,
 )
 
 
@@ -49,7 +62,7 @@ class AuditService:
         user_agent: str = None,
         old_value: Any = None,
         new_value: Any = None,
-        extra_data: Dict = None,
+        extra_data: dict = None,
         success: bool = True,
         error_message: str = None,
         error_code: str = None,
@@ -97,7 +110,7 @@ class AuditService:
         self.db.flush()
         return log_entry
 
-    def _calculate_diff(self, old_value: Any, new_value: Any) -> Dict[str, Any]:
+    def _calculate_diff(self, old_value: Any, new_value: Any) -> dict[str, Any]:
         """Calcule les différences entre deux valeurs."""
         if not isinstance(old_value, dict) or not isinstance(new_value, dict):
             return {"old": old_value, "new": new_value}
@@ -118,7 +131,7 @@ class AuditService:
 
         return diff
 
-    def _calculate_expiration(self, policy: RetentionPolicy) -> Optional[datetime]:
+    def _calculate_expiration(self, policy: RetentionPolicy) -> datetime | None:
         """Calcule la date d'expiration selon la politique."""
         now = datetime.utcnow()
 
@@ -151,7 +164,7 @@ class AuditService:
         search_text: str = None,
         limit: int = 100,
         offset: int = 0
-    ) -> Tuple[List[AuditLog], int]:
+    ) -> tuple[list[AuditLog], int]:
         """Recherche dans les logs d'audit."""
         query = self.db.query(AuditLog).filter(
             AuditLog.tenant_id == self.tenant_id
@@ -194,7 +207,7 @@ class AuditService:
 
         return logs, total
 
-    def get_log(self, log_id: int) -> Optional[AuditLog]:
+    def get_log(self, log_id: int) -> AuditLog | None:
         """Récupère un log par ID."""
         return self.db.query(AuditLog).filter(
             AuditLog.tenant_id == self.tenant_id,
@@ -206,7 +219,7 @@ class AuditService:
         entity_type: str,
         entity_id: str,
         limit: int = 50
-    ) -> List[AuditLog]:
+    ) -> list[AuditLog]:
         """Récupère l'historique d'une entité."""
         return self.db.query(AuditLog).filter(
             AuditLog.tenant_id == self.tenant_id,
@@ -220,7 +233,7 @@ class AuditService:
         from_date: datetime = None,
         to_date: datetime = None,
         limit: int = 100
-    ) -> List[AuditLog]:
+    ) -> list[AuditLog]:
         """Récupère l'activité d'un utilisateur."""
         query = self.db.query(AuditLog).filter(
             AuditLog.tenant_id == self.tenant_id,
@@ -280,7 +293,7 @@ class AuditService:
 
         return session
 
-    def _parse_user_agent(self, user_agent: str) -> Tuple[str, str, str]:
+    def _parse_user_agent(self, user_agent: str) -> tuple[str, str, str]:
         """Parse le user agent pour extraire device, browser, os."""
         if not user_agent:
             return None, None, None
@@ -315,7 +328,7 @@ class AuditService:
 
         return device_type, browser, os
 
-    def end_session(self, session_id: str, reason: str = None) -> Optional[AuditSession]:
+    def end_session(self, session_id: str, reason: str = None) -> AuditSession | None:
         """Termine une session."""
         session = self.db.query(AuditSession).filter(
             AuditSession.session_id == session_id,
@@ -346,7 +359,7 @@ class AuditService:
         session = self.db.query(AuditSession).filter(
             AuditSession.session_id == session_id,
             AuditSession.tenant_id == self.tenant_id,
-            AuditSession.is_active == True
+            AuditSession.is_active
         ).first()
 
         if session:
@@ -357,11 +370,11 @@ class AuditService:
             elif action_type == "write":
                 session.writes_count += 1
 
-    def get_active_sessions(self, user_id: int = None) -> List[AuditSession]:
+    def get_active_sessions(self, user_id: int = None) -> list[AuditSession]:
         """Liste les sessions actives."""
         query = self.db.query(AuditSession).filter(
             AuditSession.tenant_id == self.tenant_id,
-            AuditSession.is_active == True
+            AuditSession.is_active
         )
 
         if user_id:
@@ -407,13 +420,13 @@ class AuditService:
         self,
         metric_code: str,
         value: float,
-        dimensions: Dict[str, Any] = None
+        dimensions: dict[str, Any] = None
     ) -> MetricValue:
         """Enregistre une valeur de métrique."""
         metric = self.db.query(MetricDefinition).filter(
             MetricDefinition.tenant_id == self.tenant_id,
             MetricDefinition.code == metric_code,
-            MetricDefinition.is_active == True
+            MetricDefinition.is_active
         ).first()
 
         if not metric:
@@ -471,7 +484,7 @@ class AuditService:
         from_date: datetime = None,
         to_date: datetime = None,
         limit: int = 1000
-    ) -> List[MetricValue]:
+    ) -> list[MetricValue]:
         """Récupère les valeurs d'une métrique."""
         query = self.db.query(MetricValue).filter(
             MetricValue.tenant_id == self.tenant_id,
@@ -485,11 +498,11 @@ class AuditService:
 
         return query.order_by(MetricValue.period_start.desc()).limit(limit).all()
 
-    def list_metrics(self, module: str = None) -> List[MetricDefinition]:
+    def list_metrics(self, module: str = None) -> list[MetricDefinition]:
         """Liste les métriques définies."""
         query = self.db.query(MetricDefinition).filter(
             MetricDefinition.tenant_id == self.tenant_id,
-            MetricDefinition.is_active == True
+            MetricDefinition.is_active
         )
 
         if module:
@@ -508,8 +521,8 @@ class AuditService:
         benchmark_type: str,
         description: str = None,
         module: str = None,
-        config: Dict = None,
-        baseline: Dict = None,
+        config: dict = None,
+        baseline: dict = None,
         created_by: int = None
     ) -> Benchmark:
         """Crée un benchmark."""
@@ -600,7 +613,7 @@ class AuditService:
         self.db.commit()
         return result
 
-    def _execute_benchmark(self, benchmark: Benchmark) -> Tuple[float, Dict, List]:
+    def _execute_benchmark(self, benchmark: Benchmark) -> tuple[float, dict, list]:
         """Exécute le benchmark et retourne (score, détails, warnings)."""
         config = json.loads(benchmark.config) if benchmark.config else {}
         baseline = json.loads(benchmark.baseline) if benchmark.baseline else {}
@@ -614,7 +627,7 @@ class AuditService:
         else:
             return self._run_feature_benchmark(benchmark, config, baseline)
 
-    def _run_performance_benchmark(self, benchmark: Benchmark, config: Dict, baseline: Dict) -> Tuple[float, Dict, List]:
+    def _run_performance_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
         """Benchmark de performance."""
         details = {}
         warnings = []
@@ -643,7 +656,7 @@ class AuditService:
         score = (checks_passed / total_checks) * 100 if total_checks > 0 else 0
         return score, details, warnings
 
-    def _run_security_benchmark(self, benchmark: Benchmark, config: Dict, baseline: Dict) -> Tuple[float, Dict, List]:
+    def _run_security_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
         """Benchmark de sécurité."""
         details = {}
         warnings = []
@@ -669,12 +682,12 @@ class AuditService:
         score = (checks_passed / total_checks) * 100
         return score, details, warnings
 
-    def _run_compliance_benchmark(self, benchmark: Benchmark, config: Dict, baseline: Dict) -> Tuple[float, Dict, List]:
+    def _run_compliance_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
         """Benchmark de conformité."""
         # Récupérer les checks de conformité
         checks = self.db.query(ComplianceCheck).filter(
             ComplianceCheck.tenant_id == self.tenant_id,
-            ComplianceCheck.is_active == True
+            ComplianceCheck.is_active
         ).all()
 
         if not checks:
@@ -697,15 +710,15 @@ class AuditService:
         score = (compliant / total) * 100 if total > 0 else 100
         return score, details, warnings
 
-    def _run_feature_benchmark(self, benchmark: Benchmark, config: Dict, baseline: Dict) -> Tuple[float, Dict, List]:
+    def _run_feature_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
         """Benchmark fonctionnel."""
         return 100, {"message": "Feature benchmark completed"}, []
 
-    def list_benchmarks(self, benchmark_type: str = None) -> List[Benchmark]:
+    def list_benchmarks(self, benchmark_type: str = None) -> list[Benchmark]:
         """Liste les benchmarks."""
         query = self.db.query(Benchmark).filter(
             Benchmark.tenant_id == self.tenant_id,
-            Benchmark.is_active == True
+            Benchmark.is_active
         )
 
         if benchmark_type:
@@ -713,7 +726,7 @@ class AuditService:
 
         return query.all()
 
-    def get_benchmark_results(self, benchmark_id: int, limit: int = 10) -> List[BenchmarkResult]:
+    def get_benchmark_results(self, benchmark_id: int, limit: int = 10) -> list[BenchmarkResult]:
         """Récupère les résultats d'un benchmark."""
         return self.db.query(BenchmarkResult).filter(
             BenchmarkResult.benchmark_id == benchmark_id,
@@ -757,7 +770,7 @@ class AuditService:
         check_id: int,
         status: str,
         actual_result: str = None,
-        evidence: Dict = None,
+        evidence: dict = None,
         checked_by: int = None
     ) -> ComplianceCheck:
         """Met à jour le statut d'un contrôle."""
@@ -776,11 +789,11 @@ class AuditService:
 
         return check
 
-    def get_compliance_summary(self, framework: ComplianceFramework = None) -> Dict[str, Any]:
+    def get_compliance_summary(self, framework: ComplianceFramework = None) -> dict[str, Any]:
         """Récupère un résumé de conformité."""
         query = self.db.query(ComplianceCheck).filter(
             ComplianceCheck.tenant_id == self.tenant_id,
-            ComplianceCheck.is_active == True
+            ComplianceCheck.is_active
         )
 
         if framework:
@@ -846,11 +859,11 @@ class AuditService:
         self.db.commit()
         return rule
 
-    def apply_retention_rules(self) -> Dict[str, int]:
+    def apply_retention_rules(self) -> dict[str, int]:
         """Applique les règles de rétention."""
         rules = self.db.query(DataRetentionRule).filter(
             DataRetentionRule.tenant_id == self.tenant_id,
-            DataRetentionRule.is_active == True
+            DataRetentionRule.is_active
         ).all()
 
         results = {}
@@ -872,10 +885,7 @@ class AuditService:
                 AuditLog.created_at < cutoff_date
             )
 
-            if rule.action == "DELETE":
-                count = query.delete(synchronize_session=False)
-            else:
-                count = query.count()
+            count = query.delete(synchronize_session=False) if rule.action == "DELETE" else query.count()
                 # TODO: Implémenter archivage/anonymisation
 
             rule.last_run_at = datetime.utcnow()
@@ -895,7 +905,7 @@ class AuditService:
         requested_by: int,
         date_from: datetime = None,
         date_to: datetime = None,
-        filters: Dict = None
+        filters: dict = None
     ) -> AuditExport:
         """Crée une demande d'export."""
         export = AuditExport(
@@ -953,7 +963,7 @@ class AuditService:
         self.db.commit()
         return export
 
-    def _export_audit_logs(self, export: AuditExport) -> Tuple[List[Dict], int]:
+    def _export_audit_logs(self, export: AuditExport) -> tuple[list[dict], int]:
         """Exporte les logs d'audit."""
         logs, total = self.search_logs(
             from_date=export.date_from,
@@ -979,7 +989,7 @@ class AuditService:
 
         return data, total
 
-    def _export_metrics(self, export: AuditExport) -> Tuple[List[Dict], int]:
+    def _export_metrics(self, export: AuditExport) -> tuple[list[dict], int]:
         """Exporte les métriques."""
         values = self.db.query(MetricValue).filter(
             MetricValue.tenant_id == self.tenant_id
@@ -1007,7 +1017,7 @@ class AuditService:
 
         return data, len(data)
 
-    def _generate_export_file(self, data: List[Dict], format: str) -> bytes:
+    def _generate_export_file(self, data: list[dict], format: str) -> bytes:
         """Génère le contenu du fichier d'export."""
         if format == "JSON":
             return json.dumps(data, indent=2).encode()
@@ -1032,10 +1042,10 @@ class AuditService:
         self,
         code: str,
         name: str,
-        widgets: List[Dict],
+        widgets: list[dict],
         owner_id: int,
         description: str = None,
-        layout: Dict = None,
+        layout: dict = None,
         refresh_interval: int = 60
     ) -> AuditDashboard:
         """Crée un tableau de bord."""
@@ -1054,7 +1064,7 @@ class AuditService:
         self.db.commit()
         return dashboard
 
-    def get_dashboard_data(self, dashboard_id: int) -> Dict[str, Any]:
+    def get_dashboard_data(self, dashboard_id: int) -> dict[str, Any]:
         """Récupère les données d'un tableau de bord."""
         dashboard = self.db.query(AuditDashboard).filter(
             AuditDashboard.id == dashboard_id,
@@ -1092,7 +1102,7 @@ class AuditService:
             "data": data
         }
 
-    def _get_audit_stats(self) -> Dict[str, Any]:
+    def _get_audit_stats(self) -> dict[str, Any]:
         """Récupère les statistiques d'audit."""
         now = datetime.utcnow()
         yesterday = now - timedelta(hours=24)
@@ -1106,12 +1116,12 @@ class AuditService:
         failed_24h = self.db.query(AuditLog).filter(
             AuditLog.tenant_id == self.tenant_id,
             AuditLog.created_at >= yesterday,
-            AuditLog.success == False
+            not AuditLog.success
         ).count()
 
         active_sessions = self.db.query(AuditSession).filter(
             AuditSession.tenant_id == self.tenant_id,
-            AuditSession.is_active == True
+            AuditSession.is_active
         ).count()
 
         unique_users_24h = self.db.query(func.count(func.distinct(AuditLog.user_id))).filter(

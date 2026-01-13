@@ -5,79 +5,78 @@ AZALS MODULE M7 - Service Qualité
 Logique métier pour le module de gestion de la qualité.
 """
 
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Tuple
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, func, desc
 
 from app.modules.quality.models import (
-    NonConformance,
-    NonConformanceAction,
-    NonConformanceType,
-    NonConformanceStatus,
-    NonConformanceSeverity,
-    QualityControlTemplate,
-    QualityControlTemplateItem,
-    QualityControl,
-    QualityControlLine,
-    ControlType,
-    ControlStatus,
-    ControlResult,
-    QualityAudit,
-    AuditFinding,
-    AuditType,
-    AuditStatus,
-    FindingSeverity,
     CAPA,
+    AuditFinding,
+    AuditStatus,
+    AuditType,
     CAPAAction,
-    CAPAType,
     CAPAStatus,
-    CustomerClaim,
-    ClaimAction,
-    ClaimStatus,
-    QualityIndicator,
-    IndicatorMeasurement,
+    CAPAType,
     Certification,
     CertificationAudit,
     CertificationStatus,
+    ClaimAction,
+    ClaimStatus,
+    ControlResult,
+    ControlStatus,
+    ControlType,
+    CustomerClaim,
+    FindingSeverity,
+    IndicatorMeasurement,
+    NonConformance,
+    NonConformanceAction,
+    NonConformanceSeverity,
+    NonConformanceStatus,
+    NonConformanceType,
+    QualityAudit,
+    QualityControl,
+    QualityControlLine,
+    QualityControlTemplate,
+    QualityControlTemplateItem,
+    QualityIndicator,
 )
 from app.modules.quality.schemas import (
-    NonConformanceCreate,
-    NonConformanceUpdate,
-    NonConformanceClose,
-    NonConformanceActionCreate,
-    NonConformanceActionUpdate,
-    ControlTemplateCreate,
-    ControlTemplateUpdate,
-    ControlTemplateItemCreate,
-    ControlCreate,
-    ControlUpdate,
-    ControlLineUpdate,
-    AuditCreate,
-    AuditUpdate,
     AuditClose,
+    AuditCreate,
     AuditFindingCreate,
     AuditFindingUpdate,
-    CAPACreate,
-    CAPAUpdate,
-    CAPAClose,
+    AuditUpdate,
     CAPAActionCreate,
     CAPAActionUpdate,
-    ClaimCreate,
-    ClaimUpdate,
-    ClaimRespond,
-    ClaimResolve,
-    ClaimClose,
-    ClaimActionCreate,
-    IndicatorCreate,
-    IndicatorUpdate,
-    IndicatorMeasurementCreate,
-    CertificationCreate,
-    CertificationUpdate,
+    CAPAClose,
+    CAPACreate,
+    CAPAUpdate,
     CertificationAuditCreate,
     CertificationAuditUpdate,
+    CertificationCreate,
+    CertificationUpdate,
+    ClaimActionCreate,
+    ClaimClose,
+    ClaimCreate,
+    ClaimResolve,
+    ClaimRespond,
+    ClaimUpdate,
+    ControlCreate,
+    ControlLineUpdate,
+    ControlTemplateCreate,
+    ControlTemplateItemCreate,
+    ControlTemplateUpdate,
+    ControlUpdate,
+    IndicatorCreate,
+    IndicatorMeasurementCreate,
+    IndicatorUpdate,
+    NonConformanceActionCreate,
+    NonConformanceActionUpdate,
+    NonConformanceClose,
+    NonConformanceCreate,
+    NonConformanceUpdate,
     QualityDashboard,
 )
 
@@ -138,7 +137,7 @@ class QualityService:
         self.db.refresh(nc)
         return nc
 
-    def get_non_conformance(self, nc_id: int) -> Optional[NonConformance]:
+    def get_non_conformance(self, nc_id: int) -> NonConformance | None:
         """Récupère une non-conformité par ID"""
         return self.db.query(NonConformance).options(
             joinedload(NonConformance.actions)
@@ -147,7 +146,7 @@ class QualityService:
             NonConformance.tenant_id == self.tenant_id
         ).first()
 
-    def get_non_conformance_by_number(self, nc_number: str) -> Optional[NonConformance]:
+    def get_non_conformance_by_number(self, nc_number: str) -> NonConformance | None:
         """Récupère une non-conformité par numéro"""
         return self.db.query(NonConformance).options(
             joinedload(NonConformance.actions)
@@ -160,13 +159,13 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        nc_type: Optional[NonConformanceType] = None,
-        status: Optional[NonConformanceStatus] = None,
-        severity: Optional[NonConformanceSeverity] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[NonConformance], int]:
+        nc_type: NonConformanceType | None = None,
+        status: NonConformanceStatus | None = None,
+        severity: NonConformanceSeverity | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        search: str | None = None,
+    ) -> tuple[list[NonConformance], int]:
         """Liste les non-conformités avec filtres"""
         query = self.db.query(NonConformance).filter(
             NonConformance.tenant_id == self.tenant_id
@@ -201,7 +200,7 @@ class QualityService:
 
     def update_non_conformance(
         self, nc_id: int, data: NonConformanceUpdate
-    ) -> Optional[NonConformance]:
+    ) -> NonConformance | None:
         """Met à jour une non-conformité"""
         nc = self.get_non_conformance(nc_id)
         if not nc:
@@ -216,7 +215,7 @@ class QualityService:
         self.db.refresh(nc)
         return nc
 
-    def open_non_conformance(self, nc_id: int) -> Optional[NonConformance]:
+    def open_non_conformance(self, nc_id: int) -> NonConformance | None:
         """Ouvre une non-conformité"""
         nc = self.get_non_conformance(nc_id)
         if not nc or nc.status != NonConformanceStatus.DRAFT:
@@ -230,7 +229,7 @@ class QualityService:
 
     def close_non_conformance(
         self, nc_id: int, data: NonConformanceClose
-    ) -> Optional[NonConformance]:
+    ) -> NonConformance | None:
         """Clôture une non-conformité"""
         nc = self.get_non_conformance(nc_id)
         if not nc:
@@ -251,7 +250,7 @@ class QualityService:
 
     def add_nc_action(
         self, nc_id: int, data: NonConformanceActionCreate
-    ) -> Optional[NonConformanceAction]:
+    ) -> NonConformanceAction | None:
         """Ajoute une action à une non-conformité"""
         nc = self.get_non_conformance(nc_id)
         if not nc:
@@ -288,7 +287,7 @@ class QualityService:
 
     def update_nc_action(
         self, action_id: int, data: NonConformanceActionUpdate
-    ) -> Optional[NonConformanceAction]:
+    ) -> NonConformanceAction | None:
         """Met à jour une action de non-conformité"""
         action = self.db.query(NonConformanceAction).filter(
             NonConformanceAction.id == action_id,
@@ -360,7 +359,7 @@ class QualityService:
         self.db.refresh(template)
         return template
 
-    def get_control_template(self, template_id: int) -> Optional[QualityControlTemplate]:
+    def get_control_template(self, template_id: int) -> QualityControlTemplate | None:
         """Récupère un template par ID"""
         return self.db.query(QualityControlTemplate).options(
             joinedload(QualityControlTemplate.items)
@@ -373,10 +372,10 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        control_type: Optional[ControlType] = None,
+        control_type: ControlType | None = None,
         active_only: bool = True,
-        search: Optional[str] = None,
-    ) -> Tuple[List[QualityControlTemplate], int]:
+        search: str | None = None,
+    ) -> tuple[list[QualityControlTemplate], int]:
         """Liste les templates de contrôle"""
         query = self.db.query(QualityControlTemplate).filter(
             QualityControlTemplate.tenant_id == self.tenant_id
@@ -385,7 +384,7 @@ class QualityService:
         if control_type:
             query = query.filter(QualityControlTemplate.control_type == control_type)
         if active_only:
-            query = query.filter(QualityControlTemplate.is_active == True)
+            query = query.filter(QualityControlTemplate.is_active)
         if search:
             search_filter = f"%{search}%"
             query = query.filter(
@@ -404,7 +403,7 @@ class QualityService:
 
     def update_control_template(
         self, template_id: int, data: ControlTemplateUpdate
-    ) -> Optional[QualityControlTemplate]:
+    ) -> QualityControlTemplate | None:
         """Met à jour un template"""
         template = self.get_control_template(template_id)
         if not template:
@@ -420,7 +419,7 @@ class QualityService:
 
     def add_template_item(
         self, template_id: int, data: ControlTemplateItemCreate
-    ) -> Optional[QualityControlTemplateItem]:
+    ) -> QualityControlTemplateItem | None:
         """Ajoute un item à un template"""
         template = self.get_control_template(template_id)
         if not template:
@@ -537,7 +536,7 @@ class QualityService:
         self.db.refresh(control)
         return control
 
-    def get_control(self, control_id: int) -> Optional[QualityControl]:
+    def get_control(self, control_id: int) -> QualityControl | None:
         """Récupère un contrôle par ID"""
         return self.db.query(QualityControl).options(
             joinedload(QualityControl.lines)
@@ -550,13 +549,13 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        control_type: Optional[ControlType] = None,
-        status: Optional[ControlStatus] = None,
-        result: Optional[ControlResult] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[QualityControl], int]:
+        control_type: ControlType | None = None,
+        status: ControlStatus | None = None,
+        result: ControlResult | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        search: str | None = None,
+    ) -> tuple[list[QualityControl], int]:
         """Liste les contrôles qualité"""
         query = self.db.query(QualityControl).filter(
             QualityControl.tenant_id == self.tenant_id
@@ -590,7 +589,7 @@ class QualityService:
 
     def update_control(
         self, control_id: int, data: ControlUpdate
-    ) -> Optional[QualityControl]:
+    ) -> QualityControl | None:
         """Met à jour un contrôle"""
         control = self.get_control(control_id)
         if not control:
@@ -604,7 +603,7 @@ class QualityService:
         self.db.refresh(control)
         return control
 
-    def start_control(self, control_id: int) -> Optional[QualityControl]:
+    def start_control(self, control_id: int) -> QualityControl | None:
         """Démarre un contrôle"""
         control = self.get_control(control_id)
         if not control:
@@ -619,7 +618,7 @@ class QualityService:
 
     def update_control_line(
         self, line_id: int, data: ControlLineUpdate
-    ) -> Optional[QualityControlLine]:
+    ) -> QualityControlLine | None:
         """Met à jour une ligne de contrôle"""
         line = self.db.query(QualityControlLine).filter(
             QualityControlLine.id == line_id,
@@ -650,8 +649,8 @@ class QualityService:
         return line
 
     def complete_control(
-        self, control_id: int, decision: str, comments: Optional[str] = None
-    ) -> Optional[QualityControl]:
+        self, control_id: int, decision: str, comments: str | None = None
+    ) -> QualityControl | None:
         """Termine un contrôle qualité"""
         control = self.get_control(control_id)
         if not control:
@@ -722,7 +721,7 @@ class QualityService:
         self.db.refresh(audit)
         return audit
 
-    def get_audit(self, audit_id: int) -> Optional[QualityAudit]:
+    def get_audit(self, audit_id: int) -> QualityAudit | None:
         """Récupère un audit par ID"""
         return self.db.query(QualityAudit).options(
             joinedload(QualityAudit.findings)
@@ -735,12 +734,12 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        audit_type: Optional[AuditType] = None,
-        status: Optional[AuditStatus] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[QualityAudit], int]:
+        audit_type: AuditType | None = None,
+        status: AuditStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        search: str | None = None,
+    ) -> tuple[list[QualityAudit], int]:
         """Liste les audits"""
         query = self.db.query(QualityAudit).filter(
             QualityAudit.tenant_id == self.tenant_id
@@ -770,7 +769,7 @@ class QualityService:
 
         return items, total
 
-    def update_audit(self, audit_id: int, data: AuditUpdate) -> Optional[QualityAudit]:
+    def update_audit(self, audit_id: int, data: AuditUpdate) -> QualityAudit | None:
         """Met à jour un audit"""
         audit = self.get_audit(audit_id)
         if not audit:
@@ -784,7 +783,7 @@ class QualityService:
         self.db.refresh(audit)
         return audit
 
-    def start_audit(self, audit_id: int) -> Optional[QualityAudit]:
+    def start_audit(self, audit_id: int) -> QualityAudit | None:
         """Démarre un audit"""
         audit = self.get_audit(audit_id)
         if not audit:
@@ -798,7 +797,7 @@ class QualityService:
 
     def add_finding(
         self, audit_id: int, data: AuditFindingCreate
-    ) -> Optional[AuditFinding]:
+    ) -> AuditFinding | None:
         """Ajoute un constat à un audit"""
         audit = self.get_audit(audit_id)
         if not audit:
@@ -844,7 +843,7 @@ class QualityService:
 
     def update_finding(
         self, finding_id: int, data: AuditFindingUpdate
-    ) -> Optional[AuditFinding]:
+    ) -> AuditFinding | None:
         """Met à jour un constat"""
         finding = self.db.query(AuditFinding).filter(
             AuditFinding.id == finding_id,
@@ -861,7 +860,7 @@ class QualityService:
         self.db.refresh(finding)
         return finding
 
-    def close_audit(self, audit_id: int, data: AuditClose) -> Optional[QualityAudit]:
+    def close_audit(self, audit_id: int, data: AuditClose) -> QualityAudit | None:
         """Clôture un audit"""
         audit = self.get_audit(audit_id)
         if not audit:
@@ -919,7 +918,7 @@ class QualityService:
         self.db.refresh(capa)
         return capa
 
-    def get_capa(self, capa_id: int) -> Optional[CAPA]:
+    def get_capa(self, capa_id: int) -> CAPA | None:
         """Récupère un CAPA par ID"""
         return self.db.query(CAPA).options(
             joinedload(CAPA.actions)
@@ -932,12 +931,12 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        capa_type: Optional[CAPAType] = None,
-        status: Optional[CAPAStatus] = None,
-        priority: Optional[str] = None,
-        owner_id: Optional[int] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[CAPA], int]:
+        capa_type: CAPAType | None = None,
+        status: CAPAStatus | None = None,
+        priority: str | None = None,
+        owner_id: int | None = None,
+        search: str | None = None,
+    ) -> tuple[list[CAPA], int]:
         """Liste les CAPA"""
         query = self.db.query(CAPA).filter(CAPA.tenant_id == self.tenant_id)
 
@@ -965,7 +964,7 @@ class QualityService:
 
         return items, total
 
-    def update_capa(self, capa_id: int, data: CAPAUpdate) -> Optional[CAPA]:
+    def update_capa(self, capa_id: int, data: CAPAUpdate) -> CAPA | None:
         """Met à jour un CAPA"""
         capa = self.get_capa(capa_id)
         if not capa:
@@ -981,7 +980,7 @@ class QualityService:
 
     def add_capa_action(
         self, capa_id: int, data: CAPAActionCreate
-    ) -> Optional[CAPAAction]:
+    ) -> CAPAAction | None:
         """Ajoute une action à un CAPA"""
         capa = self.get_capa(capa_id)
         if not capa:
@@ -1017,7 +1016,7 @@ class QualityService:
 
     def update_capa_action(
         self, action_id: int, data: CAPAActionUpdate
-    ) -> Optional[CAPAAction]:
+    ) -> CAPAAction | None:
         """Met à jour une action CAPA"""
         action = self.db.query(CAPAAction).filter(
             CAPAAction.id == action_id,
@@ -1034,7 +1033,7 @@ class QualityService:
         self.db.refresh(action)
         return action
 
-    def close_capa(self, capa_id: int, data: CAPAClose) -> Optional[CAPA]:
+    def close_capa(self, capa_id: int, data: CAPAClose) -> CAPA | None:
         """Clôture un CAPA"""
         capa = self.get_capa(capa_id)
         if not capa:
@@ -1102,7 +1101,7 @@ class QualityService:
         self.db.refresh(claim)
         return claim
 
-    def get_claim(self, claim_id: int) -> Optional[CustomerClaim]:
+    def get_claim(self, claim_id: int) -> CustomerClaim | None:
         """Récupère une réclamation par ID"""
         return self.db.query(CustomerClaim).options(
             joinedload(CustomerClaim.actions)
@@ -1115,12 +1114,12 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        status: Optional[ClaimStatus] = None,
-        customer_id: Optional[int] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[CustomerClaim], int]:
+        status: ClaimStatus | None = None,
+        customer_id: int | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        search: str | None = None,
+    ) -> tuple[list[CustomerClaim], int]:
         """Liste les réclamations"""
         query = self.db.query(CustomerClaim).filter(
             CustomerClaim.tenant_id == self.tenant_id
@@ -1152,7 +1151,7 @@ class QualityService:
 
     def update_claim(
         self, claim_id: int, data: ClaimUpdate
-    ) -> Optional[CustomerClaim]:
+    ) -> CustomerClaim | None:
         """Met à jour une réclamation"""
         claim = self.get_claim(claim_id)
         if not claim:
@@ -1166,7 +1165,7 @@ class QualityService:
         self.db.refresh(claim)
         return claim
 
-    def acknowledge_claim(self, claim_id: int) -> Optional[CustomerClaim]:
+    def acknowledge_claim(self, claim_id: int) -> CustomerClaim | None:
         """Accuse réception d'une réclamation"""
         claim = self.get_claim(claim_id)
         if not claim:
@@ -1179,7 +1178,7 @@ class QualityService:
 
     def respond_claim(
         self, claim_id: int, data: ClaimRespond
-    ) -> Optional[CustomerClaim]:
+    ) -> CustomerClaim | None:
         """Répond à une réclamation"""
         claim = self.get_claim(claim_id)
         if not claim:
@@ -1196,7 +1195,7 @@ class QualityService:
 
     def resolve_claim(
         self, claim_id: int, data: ClaimResolve
-    ) -> Optional[CustomerClaim]:
+    ) -> CustomerClaim | None:
         """Résout une réclamation"""
         claim = self.get_claim(claim_id)
         if not claim:
@@ -1212,7 +1211,7 @@ class QualityService:
         self.db.refresh(claim)
         return claim
 
-    def close_claim(self, claim_id: int, data: ClaimClose) -> Optional[CustomerClaim]:
+    def close_claim(self, claim_id: int, data: ClaimClose) -> CustomerClaim | None:
         """Clôture une réclamation"""
         claim = self.get_claim(claim_id)
         if not claim:
@@ -1230,7 +1229,7 @@ class QualityService:
 
     def add_claim_action(
         self, claim_id: int, data: ClaimActionCreate
-    ) -> Optional[ClaimAction]:
+    ) -> ClaimAction | None:
         """Ajoute une action à une réclamation"""
         claim = self.get_claim(claim_id)
         if not claim:
@@ -1287,7 +1286,7 @@ class QualityService:
         self.db.refresh(indicator)
         return indicator
 
-    def get_indicator(self, indicator_id: int) -> Optional[QualityIndicator]:
+    def get_indicator(self, indicator_id: int) -> QualityIndicator | None:
         """Récupère un indicateur par ID"""
         return self.db.query(QualityIndicator).options(
             joinedload(QualityIndicator.measurements)
@@ -1300,10 +1299,10 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        category: Optional[str] = None,
+        category: str | None = None,
         active_only: bool = True,
-        search: Optional[str] = None,
-    ) -> Tuple[List[QualityIndicator], int]:
+        search: str | None = None,
+    ) -> tuple[list[QualityIndicator], int]:
         """Liste les indicateurs"""
         query = self.db.query(QualityIndicator).filter(
             QualityIndicator.tenant_id == self.tenant_id
@@ -1312,7 +1311,7 @@ class QualityService:
         if category:
             query = query.filter(QualityIndicator.category == category)
         if active_only:
-            query = query.filter(QualityIndicator.is_active == True)
+            query = query.filter(QualityIndicator.is_active)
         if search:
             search_filter = f"%{search}%"
             query = query.filter(
@@ -1329,7 +1328,7 @@ class QualityService:
 
     def update_indicator(
         self, indicator_id: int, data: IndicatorUpdate
-    ) -> Optional[QualityIndicator]:
+    ) -> QualityIndicator | None:
         """Met à jour un indicateur"""
         indicator = self.get_indicator(indicator_id)
         if not indicator:
@@ -1345,7 +1344,7 @@ class QualityService:
 
     def add_measurement(
         self, indicator_id: int, data: IndicatorMeasurementCreate
-    ) -> Optional[IndicatorMeasurement]:
+    ) -> IndicatorMeasurement | None:
         """Ajoute une mesure à un indicateur"""
         indicator = self.get_indicator(indicator_id)
         if not indicator:
@@ -1434,7 +1433,7 @@ class QualityService:
         self.db.refresh(certification)
         return certification
 
-    def get_certification(self, cert_id: int) -> Optional[Certification]:
+    def get_certification(self, cert_id: int) -> Certification | None:
         """Récupère une certification par ID"""
         return self.db.query(Certification).options(
             joinedload(Certification.audits)
@@ -1447,9 +1446,9 @@ class QualityService:
         self,
         skip: int = 0,
         limit: int = 50,
-        status: Optional[CertificationStatus] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[Certification], int]:
+        status: CertificationStatus | None = None,
+        search: str | None = None,
+    ) -> tuple[list[Certification], int]:
         """Liste les certifications"""
         query = self.db.query(Certification).filter(
             Certification.tenant_id == self.tenant_id
@@ -1476,7 +1475,7 @@ class QualityService:
 
     def update_certification(
         self, cert_id: int, data: CertificationUpdate
-    ) -> Optional[Certification]:
+    ) -> Certification | None:
         """Met à jour une certification"""
         certification = self.get_certification(cert_id)
         if not certification:
@@ -1492,7 +1491,7 @@ class QualityService:
 
     def add_certification_audit(
         self, cert_id: int, data: CertificationAuditCreate
-    ) -> Optional[CertificationAudit]:
+    ) -> CertificationAudit | None:
         """Ajoute un audit à une certification"""
         certification = self.get_certification(cert_id)
         if not certification:
@@ -1516,7 +1515,7 @@ class QualityService:
 
     def update_certification_audit(
         self, audit_id: int, data: CertificationAuditUpdate
-    ) -> Optional[CertificationAudit]:
+    ) -> CertificationAudit | None:
         """Met à jour un audit de certification"""
         audit = self.db.query(CertificationAudit).filter(
             CertificationAudit.id == audit_id,
@@ -1671,7 +1670,7 @@ class QualityService:
             func.count(IndicatorMeasurement.id)
         ).join(QualityIndicator).filter(
             QualityIndicator.tenant_id == self.tenant_id,
-            QualityIndicator.is_active == True
+            QualityIndicator.is_active
         ).group_by(IndicatorMeasurement.status).all()
 
         indicators_on_target = 0

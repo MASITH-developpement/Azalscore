@@ -7,16 +7,21 @@ Schémas Pydantic pour validation et sérialisation.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
 import json
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from .models import (
-    AuditAction, AuditLevel, AuditCategory, MetricType,
-    BenchmarkStatus, RetentionPolicy, ComplianceFramework
+    AuditAction,
+    AuditCategory,
+    AuditLevel,
+    BenchmarkStatus,
+    ComplianceFramework,
+    MetricType,
+    RetentionPolicy,
 )
-
 
 # ============================================================================
 # AUDIT LOGS
@@ -26,23 +31,23 @@ class AuditLogCreateSchema(BaseModel):
     """Création d'un log d'audit."""
     action: AuditAction
     module: str = Field(..., min_length=2, max_length=50)
-    description: Optional[str] = Field(None, max_length=1000)
+    description: str | None = Field(None, max_length=1000)
 
     level: AuditLevel = Field(default=AuditLevel.INFO)
     category: AuditCategory = Field(default=AuditCategory.BUSINESS)
 
-    entity_type: Optional[str] = Field(None, max_length=100)
-    entity_id: Optional[str] = Field(None, max_length=255)
+    entity_type: str | None = Field(None, max_length=100)
+    entity_id: str | None = Field(None, max_length=255)
 
-    old_value: Optional[Dict[str, Any]] = None
-    new_value: Optional[Dict[str, Any]] = None
-    extra_data: Optional[Dict[str, Any]] = None
+    old_value: dict[str, Any] | None = None
+    new_value: dict[str, Any] | None = None
+    extra_data: dict[str, Any] | None = None
 
     success: bool = Field(default=True)
-    error_message: Optional[str] = None
-    error_code: Optional[str] = Field(None, max_length=50)
+    error_message: str | None = None
+    error_code: str | None = Field(None, max_length=50)
 
-    duration_ms: Optional[float] = None
+    duration_ms: float | None = None
     retention_policy: RetentionPolicy = Field(default=RetentionPolicy.MEDIUM)
 
 
@@ -56,31 +61,31 @@ class AuditLogResponseSchema(BaseModel):
     category: AuditCategory
 
     module: str
-    entity_type: Optional[str]
-    entity_id: Optional[str]
+    entity_type: str | None
+    entity_id: str | None
 
-    user_id: Optional[int]
-    user_email: Optional[str]
-    user_role: Optional[str]
+    user_id: int | None
+    user_email: str | None
+    user_role: str | None
 
-    session_id: Optional[str]
-    request_id: Optional[str]
-    ip_address: Optional[str]
+    session_id: str | None
+    request_id: str | None
+    ip_address: str | None
 
-    description: Optional[str]
-    old_value: Optional[Dict[str, Any]]
-    new_value: Optional[Dict[str, Any]]
-    diff: Optional[Dict[str, Any]]
-    extra_data: Optional[Dict[str, Any]]
+    description: str | None
+    old_value: dict[str, Any] | None
+    new_value: dict[str, Any] | None
+    diff: dict[str, Any] | None
+    extra_data: dict[str, Any] | None
 
     success: bool
-    error_message: Optional[str]
-    error_code: Optional[str]
+    error_message: str | None
+    error_code: str | None
 
-    duration_ms: Optional[float]
+    duration_ms: float | None
 
     retention_policy: RetentionPolicy
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
 
     created_at: datetime
 
@@ -121,7 +126,7 @@ class AuditLogResponseSchema(BaseModel):
 
 class AuditLogListResponseSchema(BaseModel):
     """Liste de logs d'audit."""
-    logs: List[AuditLogResponseSchema]
+    logs: list[AuditLogResponseSchema]
     total: int
     page: int
     page_size: int
@@ -129,18 +134,18 @@ class AuditLogListResponseSchema(BaseModel):
 
 class AuditSearchSchema(BaseModel):
     """Critères de recherche audit."""
-    action: Optional[AuditAction] = None
-    level: Optional[AuditLevel] = None
-    category: Optional[AuditCategory] = None
-    module: Optional[str] = None
-    entity_type: Optional[str] = None
-    entity_id: Optional[str] = None
-    user_id: Optional[int] = None
-    session_id: Optional[str] = None
-    success: Optional[bool] = None
-    from_date: Optional[datetime] = None
-    to_date: Optional[datetime] = None
-    search_text: Optional[str] = None
+    action: AuditAction | None = None
+    level: AuditLevel | None = None
+    category: AuditCategory | None = None
+    module: str | None = None
+    entity_type: str | None = None
+    entity_id: str | None = None
+    user_id: int | None = None
+    session_id: str | None = None
+    success: bool | None = None
+    from_date: datetime | None = None
+    to_date: datetime | None = None
+    search_text: str | None = None
 
 
 # ============================================================================
@@ -153,25 +158,25 @@ class AuditSessionResponseSchema(BaseModel):
     tenant_id: str
     session_id: str
     user_id: int
-    user_email: Optional[str]
+    user_email: str | None
 
     login_at: datetime
-    logout_at: Optional[datetime]
+    logout_at: datetime | None
     last_activity_at: datetime
 
-    ip_address: Optional[str]
-    device_type: Optional[str]
-    browser: Optional[str]
-    os: Optional[str]
-    country: Optional[str]
-    city: Optional[str]
+    ip_address: str | None
+    device_type: str | None
+    browser: str | None
+    os: str | None
+    country: str | None
+    city: str | None
 
     actions_count: int
     reads_count: int
     writes_count: int
 
     is_active: bool
-    terminated_reason: Optional[str]
+    terminated_reason: str | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -184,17 +189,17 @@ class MetricCreateSchema(BaseModel):
     """Création d'une métrique."""
     code: str = Field(..., min_length=2, max_length=100, pattern=r'^[A-Z0-9_]+$')
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
     metric_type: MetricType
-    unit: Optional[str] = Field(None, max_length=50)
-    module: Optional[str] = Field(None, max_length=50)
+    unit: str | None = Field(None, max_length=50)
+    module: str | None = Field(None, max_length=50)
 
     aggregation_period: str = Field(default="HOUR", pattern=r'^(MINUTE|HOUR|DAY)$')
     retention_days: int = Field(default=90, ge=1, le=3650)
 
-    warning_threshold: Optional[float] = None
-    critical_threshold: Optional[float] = None
+    warning_threshold: float | None = None
+    critical_threshold: float | None = None
 
 
 class MetricResponseSchema(BaseModel):
@@ -203,17 +208,17 @@ class MetricResponseSchema(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     metric_type: MetricType
-    unit: Optional[str]
-    module: Optional[str]
+    unit: str | None
+    module: str | None
 
     aggregation_period: str
     retention_days: int
 
-    warning_threshold: Optional[float]
-    critical_threshold: Optional[float]
+    warning_threshold: float | None
+    critical_threshold: float | None
 
     is_active: bool
     is_system: bool
@@ -227,7 +232,7 @@ class MetricValueSchema(BaseModel):
     """Valeur de métrique à enregistrer."""
     metric_code: str
     value: float
-    dimensions: Optional[Dict[str, Any]] = None
+    dimensions: dict[str, Any] | None = None
 
 
 class MetricValueResponseSchema(BaseModel):
@@ -235,13 +240,13 @@ class MetricValueResponseSchema(BaseModel):
     id: int
     metric_code: str
     value: float
-    min_value: Optional[float]
-    max_value: Optional[float]
-    avg_value: Optional[float]
+    min_value: float | None
+    max_value: float | None
+    avg_value: float | None
     count: int
     period_start: datetime
     period_end: datetime
-    dimensions: Optional[Dict[str, Any]]
+    dimensions: dict[str, Any] | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -269,17 +274,17 @@ class BenchmarkCreateSchema(BaseModel):
     """Création d'un benchmark."""
     code: str = Field(..., min_length=2, max_length=100, pattern=r'^[A-Z0-9_]+$')
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     version: str = Field(default="1.0", max_length=20)
 
     benchmark_type: str = Field(..., pattern=r'^(PERFORMANCE|SECURITY|COMPLIANCE|FEATURE)$')
-    module: Optional[str] = Field(None, max_length=50)
+    module: str | None = Field(None, max_length=50)
 
-    config: Optional[Dict[str, Any]] = None
-    baseline: Optional[Dict[str, Any]] = None
+    config: dict[str, Any] | None = None
+    baseline: dict[str, Any] | None = None
 
     is_scheduled: bool = Field(default=False)
-    schedule_cron: Optional[str] = Field(None, max_length=100)
+    schedule_cron: str | None = Field(None, max_length=100)
 
 
 class BenchmarkResponseSchema(BaseModel):
@@ -288,26 +293,26 @@ class BenchmarkResponseSchema(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     version: str
 
     benchmark_type: str
-    module: Optional[str]
+    module: str | None
 
-    config: Optional[Dict[str, Any]]
-    baseline: Optional[Dict[str, Any]]
+    config: dict[str, Any] | None
+    baseline: dict[str, Any] | None
 
     is_scheduled: bool
-    schedule_cron: Optional[str]
-    last_run_at: Optional[datetime]
-    next_run_at: Optional[datetime]
+    schedule_cron: str | None
+    last_run_at: datetime | None
+    next_run_at: datetime | None
 
     status: BenchmarkStatus
     is_active: bool
 
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int]
+    created_by: int | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -343,23 +348,23 @@ class BenchmarkResultResponseSchema(BaseModel):
     benchmark_id: int
 
     started_at: datetime
-    completed_at: Optional[datetime]
-    duration_ms: Optional[float]
+    completed_at: datetime | None
+    duration_ms: float | None
 
     status: BenchmarkStatus
-    score: Optional[float]
-    passed: Optional[bool]
-    results: Optional[Dict[str, Any]]
-    summary: Optional[str]
+    score: float | None
+    passed: bool | None
+    results: dict[str, Any] | None
+    summary: str | None
 
-    previous_score: Optional[float]
-    score_delta: Optional[float]
-    trend: Optional[str]
+    previous_score: float | None
+    score_delta: float | None
+    trend: str | None
 
-    error_message: Optional[str]
-    warnings: Optional[List[str]]
+    error_message: str | None
+    warnings: list[str] | None
 
-    executed_by: Optional[int]
+    executed_by: int | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -395,17 +400,17 @@ class ComplianceCheckCreateSchema(BaseModel):
     framework: ComplianceFramework
     control_id: str = Field(..., min_length=1, max_length=50)
     control_name: str = Field(..., min_length=2, max_length=200)
-    control_description: Optional[str] = None
+    control_description: str | None = None
 
-    category: Optional[str] = Field(None, max_length=100)
-    subcategory: Optional[str] = Field(None, max_length=100)
+    category: str | None = Field(None, max_length=100)
+    subcategory: str | None = Field(None, max_length=100)
 
     check_type: str = Field(..., pattern=r'^(AUTOMATED|MANUAL|HYBRID)$')
-    check_query: Optional[str] = None
-    expected_result: Optional[str] = None
+    check_query: str | None = None
+    expected_result: str | None = None
 
     severity: str = Field(default="MEDIUM", pattern=r'^(LOW|MEDIUM|HIGH|CRITICAL)$')
-    due_date: Optional[datetime] = None
+    due_date: datetime | None = None
 
 
 class ComplianceCheckResponseSchema(BaseModel):
@@ -416,22 +421,22 @@ class ComplianceCheckResponseSchema(BaseModel):
     framework: ComplianceFramework
     control_id: str
     control_name: str
-    control_description: Optional[str]
+    control_description: str | None
 
-    category: Optional[str]
-    subcategory: Optional[str]
+    category: str | None
+    subcategory: str | None
 
     check_type: str
     status: str
-    last_checked_at: Optional[datetime]
-    checked_by: Optional[int]
+    last_checked_at: datetime | None
+    checked_by: int | None
 
-    actual_result: Optional[str]
-    evidence: Optional[Dict[str, Any]]
-    remediation: Optional[str]
+    actual_result: str | None
+    evidence: dict[str, Any] | None
+    remediation: str | None
 
     severity: str
-    due_date: Optional[datetime]
+    due_date: datetime | None
 
     is_active: bool
 
@@ -469,9 +474,9 @@ class ComplianceCheckResponseSchema(BaseModel):
 class ComplianceUpdateSchema(BaseModel):
     """Mise à jour d'un contrôle de conformité."""
     status: str = Field(..., pattern=r'^(PENDING|COMPLIANT|NON_COMPLIANT|N/A)$')
-    actual_result: Optional[str] = None
-    evidence: Optional[Dict[str, Any]] = None
-    remediation: Optional[str] = None
+    actual_result: str | None = None
+    evidence: dict[str, Any] | None = None
+    remediation: str | None = None
 
 
 class ComplianceSummarySchema(BaseModel):
@@ -482,8 +487,8 @@ class ComplianceSummarySchema(BaseModel):
     pending: int
     not_applicable: int
     compliance_rate: float
-    by_severity: Dict[str, Dict[str, int]]
-    by_category: Dict[str, Dict[str, int]]
+    by_severity: dict[str, dict[str, int]]
+    by_category: dict[str, dict[str, int]]
 
 
 # ============================================================================
@@ -493,18 +498,18 @@ class ComplianceSummarySchema(BaseModel):
 class RetentionRuleCreateSchema(BaseModel):
     """Création d'une règle de rétention."""
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
     target_table: str = Field(..., min_length=2, max_length=100)
-    target_module: Optional[str] = Field(None, max_length=50)
+    target_module: str | None = Field(None, max_length=50)
 
     policy: RetentionPolicy
     retention_days: int = Field(..., ge=1, le=3650)
 
-    condition: Optional[str] = None
+    condition: str | None = None
     action: str = Field(default="DELETE", pattern=r'^(DELETE|ARCHIVE|ANONYMIZE)$')
 
-    schedule_cron: Optional[str] = Field(None, max_length=100)
+    schedule_cron: str | None = Field(None, max_length=100)
 
 
 class RetentionRuleResponseSchema(BaseModel):
@@ -512,20 +517,20 @@ class RetentionRuleResponseSchema(BaseModel):
     id: int
     tenant_id: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     target_table: str
-    target_module: Optional[str]
+    target_module: str | None
 
     policy: RetentionPolicy
     retention_days: int
 
-    condition: Optional[str]
+    condition: str | None
     action: str
 
-    schedule_cron: Optional[str]
-    last_run_at: Optional[datetime]
-    next_run_at: Optional[datetime]
+    schedule_cron: str | None
+    last_run_at: datetime | None
+    next_run_at: datetime | None
     last_affected_count: int
 
     is_active: bool
@@ -545,9 +550,9 @@ class ExportCreateSchema(BaseModel):
     export_type: str = Field(..., pattern=r'^(AUDIT_LOGS|METRICS|COMPLIANCE)$')
     format: str = Field(default="CSV", pattern=r'^(CSV|JSON|PDF|EXCEL)$')
 
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
-    filters: Optional[Dict[str, Any]] = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+    filters: dict[str, Any] | None = None
 
 
 class ExportResponseSchema(BaseModel):
@@ -558,24 +563,24 @@ class ExportResponseSchema(BaseModel):
     export_type: str
     format: str
 
-    date_from: Optional[datetime]
-    date_to: Optional[datetime]
-    filters: Optional[Dict[str, Any]]
+    date_from: datetime | None
+    date_to: datetime | None
+    filters: dict[str, Any] | None
 
     status: str
     progress: int
 
-    file_path: Optional[str]
-    file_size: Optional[int]
-    records_count: Optional[int]
+    file_path: str | None
+    file_size: int | None
+    records_count: int | None
 
-    error_message: Optional[str]
+    error_message: str | None
 
     requested_by: int
     requested_at: datetime
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
 
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -613,7 +618,7 @@ class DashboardWidgetSchema(BaseModel):
     id: str
     type: str  # audit_stats, recent_activity, compliance_summary, metric_chart
     title: str
-    config: Optional[Dict[str, Any]] = None
+    config: dict[str, Any] | None = None
     size: str = Field(default="medium", pattern=r'^(small|medium|large)$')
 
 
@@ -621,10 +626,10 @@ class DashboardCreateSchema(BaseModel):
     """Création d'un tableau de bord."""
     code: str = Field(..., min_length=2, max_length=50, pattern=r'^[A-Z0-9_]+$')
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
-    widgets: List[DashboardWidgetSchema]
-    layout: Optional[Dict[str, Any]] = None
+    widgets: list[DashboardWidgetSchema]
+    layout: dict[str, Any] | None = None
     refresh_interval: int = Field(default=60, ge=10, le=3600)
 
     is_public: bool = Field(default=False)
@@ -637,15 +642,15 @@ class DashboardResponseSchema(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
 
-    widgets: List[DashboardWidgetSchema]
-    layout: Optional[Dict[str, Any]]
+    widgets: list[DashboardWidgetSchema]
+    layout: dict[str, Any] | None
     refresh_interval: int
 
     is_public: bool
     owner_id: int
-    shared_with: Optional[List[str]]
+    shared_with: list[str] | None
 
     is_default: bool
     is_active: bool
@@ -678,8 +683,8 @@ class DashboardResponseSchema(BaseModel):
 
 class DashboardDataResponseSchema(BaseModel):
     """Données d'un tableau de bord."""
-    dashboard: Dict[str, Any]
-    data: Dict[str, Any]
+    dashboard: dict[str, Any]
+    data: dict[str, Any]
 
 
 # ============================================================================
@@ -693,15 +698,15 @@ class AuditStatsSchema(BaseModel):
     active_sessions: int
     unique_users_24h: int
 
-    logs_by_action: Optional[Dict[str, int]] = None
-    logs_by_module: Optional[Dict[str, int]] = None
-    logs_by_level: Optional[Dict[str, int]] = None
+    logs_by_action: dict[str, int] | None = None
+    logs_by_module: dict[str, int] | None = None
+    logs_by_level: dict[str, int] | None = None
 
 
 class AuditDashboardResponseSchema(BaseModel):
     """Dashboard d'audit complet."""
     stats: AuditStatsSchema
-    recent_logs: List[AuditLogResponseSchema]
-    active_sessions: List[AuditSessionResponseSchema]
-    compliance_summary: Optional[ComplianceSummarySchema]
-    latest_benchmarks: Optional[List[BenchmarkResultResponseSchema]]
+    recent_logs: list[AuditLogResponseSchema]
+    active_sessions: list[AuditSessionResponseSchema]
+    compliance_summary: ComplianceSummarySchema | None
+    latest_benchmarks: list[BenchmarkResultResponseSchema] | None

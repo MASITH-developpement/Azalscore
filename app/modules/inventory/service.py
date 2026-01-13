@@ -5,34 +5,58 @@ AZALS MODULE M5 - Service Inventaire
 Logique métier pour la gestion des stocks et logistique.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+from typing import Any
 from uuid import UUID
 
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
+
 from .models import (
-    ProductCategory, Warehouse, Location, Product, StockLevel,
-    Lot, SerialNumber, StockMovement, StockMovementLine,
-    InventoryCount, InventoryCountLine, Picking, PickingLine,
-    ProductStatus, MovementType, MovementStatus, InventoryStatus,
-    LotStatus, PickingStatus
+    InventoryCount,
+    InventoryCountLine,
+    InventoryStatus,
+    Location,
+    Lot,
+    LotStatus,
+    MovementStatus,
+    MovementType,
+    Picking,
+    PickingLine,
+    PickingStatus,
+    Product,
+    ProductCategory,
+    ProductStatus,
+    SerialNumber,
+    StockLevel,
+    StockMovement,
+    StockMovementLine,
+    Warehouse,
 )
 from .schemas import (
-    CategoryCreate, CategoryUpdate,
-    WarehouseCreate, WarehouseUpdate,
-    LocationCreate, ProductCreate, ProductUpdate,
-    LotCreate, SerialCreate, MovementCreate, MovementLineCreate,
-    InventoryCountCreate, CountLineUpdate,
-    PickingCreate, PickingLineUpdate
+    CategoryCreate,
+    CategoryUpdate,
+    CountLineUpdate,
+    InventoryCountCreate,
+    LocationCreate,
+    LotCreate,
+    MovementCreate,
+    MovementLineCreate,
+    PickingCreate,
+    PickingLineUpdate,
+    ProductCreate,
+    ProductUpdate,
+    SerialCreate,
+    WarehouseCreate,
+    WarehouseUpdate,
 )
 
 
 class InventoryService:
     """Service de gestion des stocks."""
 
-    def __init__(self, db: Session, tenant_id: str, user_id: Optional[UUID] = None):
+    def __init__(self, db: Session, tenant_id: str, user_id: UUID | None = None):
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
@@ -57,7 +81,7 @@ class InventoryService:
         self.db.refresh(category)
         return category
 
-    def get_category(self, category_id: UUID) -> Optional[ProductCategory]:
+    def get_category(self, category_id: UUID) -> ProductCategory | None:
         """Récupérer une catégorie."""
         return self.db.query(ProductCategory).filter(
             ProductCategory.tenant_id == self.tenant_id,
@@ -66,11 +90,11 @@ class InventoryService:
 
     def list_categories(
         self,
-        parent_id: Optional[UUID] = None,
+        parent_id: UUID | None = None,
         active_only: bool = True,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[ProductCategory], int]:
+    ) -> tuple[list[ProductCategory], int]:
         """Lister les catégories."""
         query = self.db.query(ProductCategory).filter(
             ProductCategory.tenant_id == self.tenant_id
@@ -78,13 +102,13 @@ class InventoryService:
         if parent_id:
             query = query.filter(ProductCategory.parent_id == parent_id)
         if active_only:
-            query = query.filter(ProductCategory.is_active == True)
+            query = query.filter(ProductCategory.is_active)
 
         total = query.count()
         items = query.order_by(ProductCategory.sort_order).offset(skip).limit(limit).all()
         return items, total
 
-    def update_category(self, category_id: UUID, data: CategoryUpdate) -> Optional[ProductCategory]:
+    def update_category(self, category_id: UUID, data: CategoryUpdate) -> ProductCategory | None:
         """Mettre à jour une catégorie."""
         category = self.get_category(category_id)
         if not category:
@@ -136,7 +160,7 @@ class InventoryService:
         self.db.add(location)
         self.db.commit()
 
-    def get_warehouse(self, warehouse_id: UUID) -> Optional[Warehouse]:
+    def get_warehouse(self, warehouse_id: UUID) -> Warehouse | None:
         """Récupérer un entrepôt."""
         return self.db.query(Warehouse).filter(
             Warehouse.tenant_id == self.tenant_id,
@@ -148,19 +172,19 @@ class InventoryService:
         active_only: bool = True,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Warehouse], int]:
+    ) -> tuple[list[Warehouse], int]:
         """Lister les entrepôts."""
         query = self.db.query(Warehouse).filter(
             Warehouse.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(Warehouse.is_active == True)
+            query = query.filter(Warehouse.is_active)
 
         total = query.count()
         items = query.order_by(Warehouse.name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_warehouse(self, warehouse_id: UUID, data: WarehouseUpdate) -> Optional[Warehouse]:
+    def update_warehouse(self, warehouse_id: UUID, data: WarehouseUpdate) -> Warehouse | None:
         """Mettre à jour un entrepôt."""
         warehouse = self.get_warehouse(warehouse_id)
         if not warehouse:
@@ -197,7 +221,7 @@ class InventoryService:
         self.db.refresh(location)
         return location
 
-    def get_location(self, location_id: UUID) -> Optional[Location]:
+    def get_location(self, location_id: UUID) -> Location | None:
         """Récupérer un emplacement."""
         return self.db.query(Location).filter(
             Location.tenant_id == self.tenant_id,
@@ -206,11 +230,11 @@ class InventoryService:
 
     def list_locations(
         self,
-        warehouse_id: Optional[UUID] = None,
+        warehouse_id: UUID | None = None,
         active_only: bool = True,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Location], int]:
+    ) -> tuple[list[Location], int]:
         """Lister les emplacements."""
         query = self.db.query(Location).filter(
             Location.tenant_id == self.tenant_id
@@ -218,7 +242,7 @@ class InventoryService:
         if warehouse_id:
             query = query.filter(Location.warehouse_id == warehouse_id)
         if active_only:
-            query = query.filter(Location.is_active == True)
+            query = query.filter(Location.is_active)
 
         total = query.count()
         items = query.order_by(Location.code).offset(skip).limit(limit).all()
@@ -240,14 +264,14 @@ class InventoryService:
         self.db.refresh(product)
         return product
 
-    def get_product(self, product_id: UUID) -> Optional[Product]:
+    def get_product(self, product_id: UUID) -> Product | None:
         """Récupérer un produit."""
         return self.db.query(Product).filter(
             Product.tenant_id == self.tenant_id,
             Product.id == product_id
         ).first()
 
-    def get_product_by_code(self, code: str) -> Optional[Product]:
+    def get_product_by_code(self, code: str) -> Product | None:
         """Récupérer un produit par code."""
         return self.db.query(Product).filter(
             Product.tenant_id == self.tenant_id,
@@ -256,13 +280,13 @@ class InventoryService:
 
     def list_products(
         self,
-        category_id: Optional[UUID] = None,
-        status: Optional[ProductStatus] = None,
-        search: Optional[str] = None,
+        category_id: UUID | None = None,
+        status: ProductStatus | None = None,
+        search: str | None = None,
         active_only: bool = True,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Product], int]:
+    ) -> tuple[list[Product], int]:
         """Lister les produits."""
         query = self.db.query(Product).filter(
             Product.tenant_id == self.tenant_id
@@ -273,7 +297,7 @@ class InventoryService:
         if status:
             query = query.filter(Product.status == status)
         if active_only:
-            query = query.filter(Product.is_active == True)
+            query = query.filter(Product.is_active)
         if search:
             search_term = f"%{search}%"
             query = query.filter(
@@ -289,7 +313,7 @@ class InventoryService:
         items = query.order_by(Product.name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_product(self, product_id: UUID, data: ProductUpdate) -> Optional[Product]:
+    def update_product(self, product_id: UUID, data: ProductUpdate) -> Product | None:
         """Mettre à jour un produit."""
         product = self.get_product(product_id)
         if not product:
@@ -302,7 +326,7 @@ class InventoryService:
         self.db.refresh(product)
         return product
 
-    def activate_product(self, product_id: UUID) -> Optional[Product]:
+    def activate_product(self, product_id: UUID) -> Product | None:
         """Activer un produit."""
         product = self.get_product(product_id)
         if product:
@@ -319,8 +343,8 @@ class InventoryService:
         self,
         product_id: UUID,
         warehouse_id: UUID,
-        location_id: Optional[UUID] = None
-    ) -> Optional[StockLevel]:
+        location_id: UUID | None = None
+    ) -> StockLevel | None:
         """Récupérer le niveau de stock."""
         query = self.db.query(StockLevel).filter(
             StockLevel.tenant_id == self.tenant_id,
@@ -338,7 +362,7 @@ class InventoryService:
         self,
         product_id: UUID,
         warehouse_id: UUID,
-        location_id: Optional[UUID] = None
+        location_id: UUID | None = None
     ) -> StockLevel:
         """Récupérer ou créer un niveau de stock."""
         stock = self.get_stock_level(product_id, warehouse_id, location_id)
@@ -354,7 +378,7 @@ class InventoryService:
             self.db.refresh(stock)
         return stock
 
-    def get_product_stock(self, product_id: UUID) -> List[StockLevel]:
+    def get_product_stock(self, product_id: UUID) -> list[StockLevel]:
         """Récupérer tout le stock d'un produit."""
         return self.db.query(StockLevel).filter(
             StockLevel.tenant_id == self.tenant_id,
@@ -367,7 +391,7 @@ class InventoryService:
         warehouse_id: UUID,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[StockLevel], int]:
+    ) -> tuple[list[StockLevel], int]:
         """Récupérer le stock d'un entrepôt."""
         query = self.db.query(StockLevel).filter(
             StockLevel.tenant_id == self.tenant_id,
@@ -381,10 +405,10 @@ class InventoryService:
         self,
         product_id: UUID,
         warehouse_id: UUID,
-        location_id: Optional[UUID],
+        location_id: UUID | None,
         quantity_change: Decimal,
         movement_type: MovementType,
-        unit_cost: Optional[Decimal] = None
+        unit_cost: Decimal | None = None
     ):
         """Mettre à jour le niveau de stock."""
         stock = self.get_or_create_stock_level(product_id, warehouse_id, location_id)
@@ -437,7 +461,7 @@ class InventoryService:
         self.db.refresh(lot)
         return lot
 
-    def get_lot(self, lot_id: UUID) -> Optional[Lot]:
+    def get_lot(self, lot_id: UUID) -> Lot | None:
         """Récupérer un lot."""
         return self.db.query(Lot).filter(
             Lot.tenant_id == self.tenant_id,
@@ -446,12 +470,12 @@ class InventoryService:
 
     def list_lots(
         self,
-        product_id: Optional[UUID] = None,
-        status: Optional[LotStatus] = None,
-        expiring_before: Optional[date] = None,
+        product_id: UUID | None = None,
+        status: LotStatus | None = None,
+        expiring_before: date | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Lot], int]:
+    ) -> tuple[list[Lot], int]:
         """Lister les lots."""
         query = self.db.query(Lot).filter(
             Lot.tenant_id == self.tenant_id
@@ -483,14 +507,14 @@ class InventoryService:
         self.db.refresh(serial)
         return serial
 
-    def get_serial(self, serial_id: UUID) -> Optional[SerialNumber]:
+    def get_serial(self, serial_id: UUID) -> SerialNumber | None:
         """Récupérer un numéro de série."""
         return self.db.query(SerialNumber).filter(
             SerialNumber.tenant_id == self.tenant_id,
             SerialNumber.id == serial_id
         ).first()
 
-    def get_serial_by_number(self, product_id: UUID, number: str) -> Optional[SerialNumber]:
+    def get_serial_by_number(self, product_id: UUID, number: str) -> SerialNumber | None:
         """Récupérer un numéro de série par son numéro."""
         return self.db.query(SerialNumber).filter(
             SerialNumber.tenant_id == self.tenant_id,
@@ -573,7 +597,7 @@ class InventoryService:
         self.db.refresh(movement)
         return movement
 
-    def get_movement(self, movement_id: UUID) -> Optional[StockMovement]:
+    def get_movement(self, movement_id: UUID) -> StockMovement | None:
         """Récupérer un mouvement."""
         return self.db.query(StockMovement).filter(
             StockMovement.tenant_id == self.tenant_id,
@@ -582,14 +606,14 @@ class InventoryService:
 
     def list_movements(
         self,
-        type: Optional[MovementType] = None,
-        status: Optional[MovementStatus] = None,
-        warehouse_id: Optional[UUID] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
+        type: MovementType | None = None,
+        status: MovementStatus | None = None,
+        warehouse_id: UUID | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[StockMovement], int]:
+    ) -> tuple[list[StockMovement], int]:
         """Lister les mouvements."""
         query = self.db.query(StockMovement).filter(
             StockMovement.tenant_id == self.tenant_id
@@ -615,7 +639,7 @@ class InventoryService:
         items = query.order_by(StockMovement.movement_date.desc()).offset(skip).limit(limit).all()
         return items, total
 
-    def confirm_movement(self, movement_id: UUID) -> Optional[StockMovement]:
+    def confirm_movement(self, movement_id: UUID) -> StockMovement | None:
         """Confirmer un mouvement (impacter les stocks)."""
         movement = self.get_movement(movement_id)
         if not movement or movement.status != MovementStatus.DRAFT:
@@ -669,7 +693,7 @@ class InventoryService:
         self.db.refresh(movement)
         return movement
 
-    def cancel_movement(self, movement_id: UUID) -> Optional[StockMovement]:
+    def cancel_movement(self, movement_id: UUID) -> StockMovement | None:
         """Annuler un mouvement brouillon."""
         movement = self.get_movement(movement_id)
         if not movement or movement.status != MovementStatus.DRAFT:
@@ -709,7 +733,7 @@ class InventoryService:
         self.db.refresh(count)
         return count
 
-    def get_inventory_count(self, count_id: UUID) -> Optional[InventoryCount]:
+    def get_inventory_count(self, count_id: UUID) -> InventoryCount | None:
         """Récupérer un inventaire."""
         return self.db.query(InventoryCount).filter(
             InventoryCount.tenant_id == self.tenant_id,
@@ -718,11 +742,11 @@ class InventoryService:
 
     def list_inventory_counts(
         self,
-        status: Optional[InventoryStatus] = None,
-        warehouse_id: Optional[UUID] = None,
+        status: InventoryStatus | None = None,
+        warehouse_id: UUID | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[InventoryCount], int]:
+    ) -> tuple[list[InventoryCount], int]:
         """Lister les inventaires."""
         query = self.db.query(InventoryCount).filter(
             InventoryCount.tenant_id == self.tenant_id
@@ -737,7 +761,7 @@ class InventoryService:
         items = query.order_by(InventoryCount.planned_date.desc()).offset(skip).limit(limit).all()
         return items, total
 
-    def start_inventory_count(self, count_id: UUID) -> Optional[InventoryCount]:
+    def start_inventory_count(self, count_id: UUID) -> InventoryCount | None:
         """Démarrer un inventaire (générer les lignes)."""
         count = self.get_inventory_count(count_id)
         if not count or count.status != InventoryStatus.DRAFT:
@@ -784,7 +808,7 @@ class InventoryService:
         count_id: UUID,
         line_id: UUID,
         data: CountLineUpdate
-    ) -> Optional[InventoryCountLine]:
+    ) -> InventoryCountLine | None:
         """Mettre à jour une ligne d'inventaire."""
         line = self.db.query(InventoryCountLine).filter(
             InventoryCountLine.tenant_id == self.tenant_id,
@@ -828,7 +852,7 @@ class InventoryService:
         self.db.refresh(line)
         return line
 
-    def validate_inventory_count(self, count_id: UUID) -> Optional[InventoryCount]:
+    def validate_inventory_count(self, count_id: UUID) -> InventoryCount | None:
         """Valider un inventaire (ajuster les stocks)."""
         count = self.get_inventory_count(count_id)
         if not count or count.status != InventoryStatus.IN_PROGRESS:
@@ -936,7 +960,7 @@ class InventoryService:
         self.db.refresh(picking)
         return picking
 
-    def get_picking(self, picking_id: UUID) -> Optional[Picking]:
+    def get_picking(self, picking_id: UUID) -> Picking | None:
         """Récupérer une préparation."""
         return self.db.query(Picking).filter(
             Picking.tenant_id == self.tenant_id,
@@ -945,12 +969,12 @@ class InventoryService:
 
     def list_pickings(
         self,
-        status: Optional[PickingStatus] = None,
-        warehouse_id: Optional[UUID] = None,
-        assigned_to: Optional[UUID] = None,
+        status: PickingStatus | None = None,
+        warehouse_id: UUID | None = None,
+        assigned_to: UUID | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Picking], int]:
+    ) -> tuple[list[Picking], int]:
         """Lister les préparations."""
         query = self.db.query(Picking).filter(
             Picking.tenant_id == self.tenant_id
@@ -967,7 +991,7 @@ class InventoryService:
         items = query.order_by(Picking.scheduled_date).offset(skip).limit(limit).all()
         return items, total
 
-    def assign_picking(self, picking_id: UUID, user_id: UUID) -> Optional[Picking]:
+    def assign_picking(self, picking_id: UUID, user_id: UUID) -> Picking | None:
         """Assigner une préparation à un utilisateur."""
         picking = self.get_picking(picking_id)
         if not picking:
@@ -980,7 +1004,7 @@ class InventoryService:
         self.db.refresh(picking)
         return picking
 
-    def start_picking(self, picking_id: UUID) -> Optional[Picking]:
+    def start_picking(self, picking_id: UUID) -> Picking | None:
         """Démarrer une préparation."""
         picking = self.get_picking(picking_id)
         if not picking:
@@ -998,7 +1022,7 @@ class InventoryService:
         picking_id: UUID,
         line_id: UUID,
         data: PickingLineUpdate
-    ) -> Optional[PickingLine]:
+    ) -> PickingLine | None:
         """Valider une ligne de préparation."""
         line = self.db.query(PickingLine).filter(
             PickingLine.tenant_id == self.tenant_id,
@@ -1023,7 +1047,7 @@ class InventoryService:
         if picking:
             picked = self.db.query(PickingLine).filter(
                 PickingLine.picking_id == picking_id,
-                PickingLine.is_picked == True
+                PickingLine.is_picked
             ).count()
             picking.picked_lines = picked
 
@@ -1031,7 +1055,7 @@ class InventoryService:
         self.db.refresh(line)
         return line
 
-    def complete_picking(self, picking_id: UUID) -> Optional[Picking]:
+    def complete_picking(self, picking_id: UUID) -> Picking | None:
         """Terminer une préparation et créer le mouvement de sortie."""
         picking = self.get_picking(picking_id)
         if not picking or picking.status not in [PickingStatus.IN_PROGRESS, PickingStatus.ASSIGNED]:
@@ -1040,7 +1064,7 @@ class InventoryService:
         # Récupérer les lignes préparées
         lines = self.db.query(PickingLine).filter(
             PickingLine.picking_id == picking_id,
-            PickingLine.is_picked == True
+            PickingLine.is_picked
         ).all()
 
         if not lines:
@@ -1081,7 +1105,7 @@ class InventoryService:
     # DASHBOARD
     # ========================================================================
 
-    def get_dashboard(self) -> Dict[str, Any]:
+    def get_dashboard(self) -> dict[str, Any]:
         """Récupérer les données du dashboard inventaire."""
         today = date.today()
         week_ago = today - timedelta(days=7)
@@ -1100,12 +1124,12 @@ class InventoryService:
         # Entrepôts et emplacements
         total_warehouses = self.db.query(Warehouse).filter(
             Warehouse.tenant_id == self.tenant_id,
-            Warehouse.is_active == True
+            Warehouse.is_active
         ).count()
 
         total_locations = self.db.query(Location).filter(
             Location.tenant_id == self.tenant_id,
-            Location.is_active == True
+            Location.is_active
         ).count()
 
         # Valorisation totale
@@ -1201,6 +1225,6 @@ class InventoryService:
         }
 
 
-def get_inventory_service(db: Session, tenant_id: str, user_id: Optional[UUID] = None) -> InventoryService:
+def get_inventory_service(db: Session, tenant_id: str, user_id: UUID | None = None) -> InventoryService:
     """Factory pour créer un service inventaire."""
     return InventoryService(db, tenant_id, user_id)

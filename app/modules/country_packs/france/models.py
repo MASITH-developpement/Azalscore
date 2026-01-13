@@ -19,12 +19,10 @@ from decimal import Decimal
 from enum import Enum as PyEnum
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
-
-from app.db import Base
-from app.core.types import UniversalUUID
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from typing import Optional
+
+from app.core.types import UniversalUUID
+from app.db import Base
 
 # ============================================================================
 # ENUMS
@@ -125,34 +123,34 @@ class PCGAccount(Base):
     __tablename__ = "fr_pcg_accounts"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    account_number: Mapped[Optional[str]] = mapped_column(String(10), nullable=False)  # Ex: 411000
-    account_label: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    account_number: Mapped[str | None] = mapped_column(String(10), nullable=False)  # Ex: 411000
+    account_label: Mapped[str | None] = mapped_column(String(255), nullable=False)
 
     # Classification PCG
-    pcg_class: Mapped[Optional[str]] = mapped_column(Enum(PCGClass), nullable=False)
-    parent_account: Mapped[Optional[str]] = mapped_column(String(10))  # Compte parent
+    pcg_class: Mapped[str | None] = mapped_column(Enum(PCGClass), nullable=False)
+    parent_account: Mapped[str | None] = mapped_column(String(10))  # Compte parent
 
     # Type
-    is_summary: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # Compte de regroupement
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    is_custom: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # Créé par le tenant
+    is_summary: Mapped[bool | None] = mapped_column(Boolean, default=False)  # Compte de regroupement
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_custom: Mapped[bool | None] = mapped_column(Boolean, default=False)  # Créé par le tenant
 
     # Soldes
-    normal_balance: Mapped[Optional[str]] = mapped_column(String(1), default="D")  # D=Débit, C=Crédit
+    normal_balance: Mapped[str | None] = mapped_column(String(1), default="D")  # D=Débit, C=Crédit
 
     # TVA associée
-    default_vat_code: Mapped[Optional[str]] = mapped_column(String(20))
+    default_vat_code: Mapped[str | None] = mapped_column(String(20))
 
     # Notes
-    description: Mapped[Optional[str]] = mapped_column(Text)
-    notes: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     __table_args__ = (
@@ -171,36 +169,36 @@ class FRVATRate(Base):
     __tablename__ = "fr_vat_rates"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code: Mapped[Optional[str]] = mapped_column(String(20), nullable=False)  # TVA_20, TVA_10, etc.
-    name: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
-    rate_type: Mapped[Optional[str]] = mapped_column(Enum(TVARate), nullable=False)
-    rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=False)  # 20.00, 10.00, etc.
+    code: Mapped[str | None] = mapped_column(String(20), nullable=False)  # TVA_20, TVA_10, etc.
+    name: Mapped[str | None] = mapped_column(String(100), nullable=False)
+    rate_type: Mapped[str | None] = mapped_column(Enum(TVARate), nullable=False)
+    rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=False)  # 20.00, 10.00, etc.
 
     # Comptes comptables associés
-    account_collected: Mapped[Optional[str]] = mapped_column(String(10))   # 44571
-    account_deductible: Mapped[Optional[str]] = mapped_column(String(10))  # 44566
-    account_intra_eu: Mapped[Optional[str]] = mapped_column(String(10))    # 4452
-    account_payable: Mapped[Optional[str]] = mapped_column(String(10))     # 44551
+    account_collected: Mapped[str | None] = mapped_column(String(10))   # 44571
+    account_deductible: Mapped[str | None] = mapped_column(String(10))  # 44566
+    account_intra_eu: Mapped[str | None] = mapped_column(String(10))    # 4452
+    account_payable: Mapped[str | None] = mapped_column(String(10))     # 44551
 
     # Applicabilité
-    applies_to_goods: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    applies_to_services: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    is_intra_eu: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    is_import: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    applies_to_goods: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    applies_to_services: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_intra_eu: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    is_import: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
     # Mentions légales
-    legal_mention: Mapped[Optional[str]] = mapped_column(Text)  # Mention sur facture si exonéré
+    legal_mention: Mapped[str | None] = mapped_column(Text)  # Mention sur facture si exonéré
 
     # Validité
-    valid_from: Mapped[Optional[date]] = mapped_column(Date, default=date.today)
-    valid_to: Mapped[Optional[date]] = mapped_column(Date)
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    valid_from: Mapped[date | None] = mapped_column(Date, default=date.today)
+    valid_to: Mapped[date | None] = mapped_column(Date)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fr_vat_tenant', 'tenant_id'),
@@ -213,44 +211,44 @@ class FRVATDeclaration(Base):
     __tablename__ = "fr_vat_declarations"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    declaration_number: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=False)
-    declaration_type: Mapped[Optional[str]] = mapped_column(String(10), nullable=False)  # CA3, CA12
-    regime: Mapped[Optional[str]] = mapped_column(Enum(TVARegime), nullable=False)
+    declaration_number: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    declaration_type: Mapped[str | None] = mapped_column(String(10), nullable=False)  # CA3, CA12
+    regime: Mapped[str | None] = mapped_column(Enum(TVARegime), nullable=False)
 
     # Période
     period_start: Mapped[date] = mapped_column(Date)
     period_end: Mapped[date] = mapped_column(Date)
-    due_date: Mapped[Optional[date]] = mapped_column(Date)
+    due_date: Mapped[date | None] = mapped_column(Date)
 
     # Montants
-    total_ht: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    total_tva_collectee: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    total_tva_deductible: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    tva_nette: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)  # Collectée - Déductible
-    credit_tva: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    total_ht: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    total_tva_collectee: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    total_tva_deductible: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    tva_nette: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)  # Collectée - Déductible
+    credit_tva: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
 
     # Détails par taux
-    details: Mapped[Optional[dict]] = mapped_column(JSON)  # {rate: {base, tva_collectee, tva_deduc}}
+    details: Mapped[dict | None] = mapped_column(JSON)  # {rate: {base, tva_collectee, tva_deduc}}
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(String(20), default="draft")  # draft, submitted, paid
-    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    submission_reference: Mapped[Optional[str]] = mapped_column(String(100))
+    status: Mapped[str | None] = mapped_column(String(20), default="draft")  # draft, submitted, paid
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    submission_reference: Mapped[str | None] = mapped_column(String(100))
 
     # Paiement
-    payment_date: Mapped[Optional[date]] = mapped_column(Date)
-    payment_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    payment_reference: Mapped[Optional[str]] = mapped_column(String(100))
+    payment_date: Mapped[date | None] = mapped_column(Date)
+    payment_amount: Mapped[Decimal | None] = mapped_column(Numeric(15, 2))
+    payment_reference: Mapped[str | None] = mapped_column(String(100))
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
     validated_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    validated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     __table_args__ = (
         Index('idx_fr_vat_decl_tenant', 'tenant_id'),
@@ -267,11 +265,11 @@ class FECExport(Base):
     __tablename__ = "fr_fec_exports"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    fec_code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=False)
-    siren: Mapped[Optional[str]] = mapped_column(String(9), nullable=False)  # SIREN de l'entreprise
+    fec_code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    siren: Mapped[str | None] = mapped_column(String(9), nullable=False)  # SIREN de l'entreprise
 
     # Période
     fiscal_year: Mapped[int] = mapped_column(Integer)
@@ -279,33 +277,33 @@ class FECExport(Base):
     period_end: Mapped[date] = mapped_column(Date)
 
     # Fichier
-    filename: Mapped[Optional[str]] = mapped_column(String(255))  # Format: SIRENFECaaaammjj.txt
-    file_path: Mapped[Optional[str]] = mapped_column(String(500))
-    file_size: Mapped[Optional[int]] = mapped_column(Integer)
-    file_hash: Mapped[Optional[str]] = mapped_column(String(64))  # SHA-256 pour intégrité
+    filename: Mapped[str | None] = mapped_column(String(255))  # Format: SIRENFECaaaammjj.txt
+    file_path: Mapped[str | None] = mapped_column(String(500))
+    file_size: Mapped[int | None] = mapped_column(Integer)
+    file_hash: Mapped[str | None] = mapped_column(String(64))  # SHA-256 pour intégrité
 
     # Statistiques
-    total_entries: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    total_debit: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    total_credit: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    is_balanced: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    total_entries: Mapped[int | None] = mapped_column(Integer, default=0)
+    total_debit: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    total_credit: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    is_balanced: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
     # Validation
-    validation_errors: Mapped[Optional[dict]] = mapped_column(JSON)  # Liste des erreurs
-    is_valid: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    validation_errors: Mapped[dict | None] = mapped_column(JSON)  # Liste des erreurs
+    is_valid: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(Enum(FECStatus), default=FECStatus.DRAFT)
+    status: Mapped[str | None] = mapped_column(Enum(FECStatus), default=FECStatus.DRAFT)
 
     # Audit
-    generated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    generated_at: Mapped[datetime | None] = mapped_column(DateTime)
     generated_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    validated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime)
     validated_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    exported_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    exported_at: Mapped[datetime | None] = mapped_column(DateTime)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fr_fec_tenant', 'tenant_id'),
@@ -318,31 +316,31 @@ class FECEntry(Base):
     __tablename__ = "fr_fec_entries"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     fec_export_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fr_fec_exports.id"), nullable=False)
 
     # Champs FEC obligatoires (norme DGFIP)
-    journal_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=False)      # JournalCode
-    journal_lib: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)      # JournalLib
-    ecriture_num: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)      # EcritureNum
+    journal_code: Mapped[str | None] = mapped_column(String(10), nullable=False)      # JournalCode
+    journal_lib: Mapped[str | None] = mapped_column(String(255), nullable=False)      # JournalLib
+    ecriture_num: Mapped[str | None] = mapped_column(String(50), nullable=False)      # EcritureNum
     ecriture_date: Mapped[date] = mapped_column(Date)           # EcritureDate
-    compte_num: Mapped[Optional[str]] = mapped_column(String(10), nullable=False)        # CompteNum
-    compte_lib: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)       # CompteLib
-    comp_aux_num: Mapped[Optional[str]] = mapped_column(String(17))                      # CompAuxNum (client/fournisseur)
-    comp_aux_lib: Mapped[Optional[str]] = mapped_column(String(255))                     # CompAuxLib
-    piece_ref: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)         # PieceRef
+    compte_num: Mapped[str | None] = mapped_column(String(10), nullable=False)        # CompteNum
+    compte_lib: Mapped[str | None] = mapped_column(String(255), nullable=False)       # CompteLib
+    comp_aux_num: Mapped[str | None] = mapped_column(String(17))                      # CompAuxNum (client/fournisseur)
+    comp_aux_lib: Mapped[str | None] = mapped_column(String(255))                     # CompAuxLib
+    piece_ref: Mapped[str | None] = mapped_column(String(50), nullable=False)         # PieceRef
     piece_date: Mapped[date] = mapped_column(Date)              # PieceDate
-    ecriture_lib: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)     # EcritureLib
-    debit: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)              # Debit
-    credit: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)             # Credit
-    ecriture_let: Mapped[Optional[str]] = mapped_column(String(20))                      # EcritureLet (lettrage)
-    date_let: Mapped[Optional[date]] = mapped_column(Date)                                # DateLet
-    valid_date: Mapped[Optional[date]] = mapped_column(Date)                              # ValidDate
-    montant_devise: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))                # Montantdevise
-    idevise: Mapped[Optional[str]] = mapped_column(String(3))                            # Idevise (code devise)
+    ecriture_lib: Mapped[str | None] = mapped_column(String(255), nullable=False)     # EcritureLib
+    debit: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)              # Debit
+    credit: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)             # Credit
+    ecriture_let: Mapped[str | None] = mapped_column(String(20))                      # EcritureLet (lettrage)
+    date_let: Mapped[date | None] = mapped_column(Date)                                # DateLet
+    valid_date: Mapped[date | None] = mapped_column(Date)                              # ValidDate
+    montant_devise: Mapped[Decimal | None] = mapped_column(Numeric(15, 2))                # Montantdevise
+    idevise: Mapped[str | None] = mapped_column(String(3))                            # Idevise (code devise)
 
     # Métadonnées
-    line_number: Mapped[Optional[int]] = mapped_column(Integer)  # Numéro de ligne dans le FEC
+    line_number: Mapped[int | None] = mapped_column(Integer)  # Numéro de ligne dans le FEC
 
     __table_args__ = (
         Index('idx_fr_fec_entry_export', 'fec_export_id'),
@@ -359,39 +357,39 @@ class DSNDeclaration(Base):
     __tablename__ = "fr_dsn_declarations"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    dsn_code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=False)
-    dsn_type: Mapped[Optional[str]] = mapped_column(Enum(DSNType), nullable=False)
-    siret: Mapped[Optional[str]] = mapped_column(String(14), nullable=False)
+    dsn_code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    dsn_type: Mapped[str | None] = mapped_column(Enum(DSNType), nullable=False)
+    siret: Mapped[str | None] = mapped_column(String(14), nullable=False)
 
     # Période
     period_month: Mapped[int] = mapped_column(Integer)  # 1-12
     period_year: Mapped[int] = mapped_column(Integer)
 
     # Fichier
-    filename: Mapped[Optional[str]] = mapped_column(String(255))
-    file_path: Mapped[Optional[str]] = mapped_column(String(500))
+    filename: Mapped[str | None] = mapped_column(String(255))
+    file_path: Mapped[str | None] = mapped_column(String(500))
 
     # Statistiques
-    total_employees: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    total_brut: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    total_cotisations: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
+    total_employees: Mapped[int | None] = mapped_column(Integer, default=0)
+    total_brut: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    total_cotisations: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(Enum(DSNStatus), default=DSNStatus.DRAFT)
+    status: Mapped[str | None] = mapped_column(Enum(DSNStatus), default=DSNStatus.DRAFT)
 
     # Transmission
-    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    submission_id: Mapped[Optional[str]] = mapped_column(String(100))  # ID retourné par Net-Entreprises
-    ack_received_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    ack_status: Mapped[Optional[str]] = mapped_column(String(50))
-    rejection_reason: Mapped[Optional[str]] = mapped_column(Text)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime)
+    submission_id: Mapped[str | None] = mapped_column(String(100))  # ID retourné par Net-Entreprises
+    ack_received_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ack_status: Mapped[str | None] = mapped_column(String(50))
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
     validated_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
@@ -406,34 +404,34 @@ class DSNEmployee(Base):
     __tablename__ = "fr_dsn_employees"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     dsn_declaration_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("fr_dsn_declarations.id"), nullable=False)
     employee_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)  # Référence vers HR
 
     # Identification salarié
-    nir: Mapped[Optional[str]] = mapped_column(String(15), nullable=False)  # NIR (sécurité sociale)
-    nom: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
-    prenoms: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    nir: Mapped[str | None] = mapped_column(String(15), nullable=False)  # NIR (sécurité sociale)
+    nom: Mapped[str | None] = mapped_column(String(100), nullable=False)
+    prenoms: Mapped[str | None] = mapped_column(String(100), nullable=False)
     date_naissance: Mapped[date] = mapped_column(Date)
-    lieu_naissance: Mapped[Optional[str]] = mapped_column(String(100))
-    code_pays_naissance: Mapped[Optional[str]] = mapped_column(String(2))
+    lieu_naissance: Mapped[str | None] = mapped_column(String(100))
+    code_pays_naissance: Mapped[str | None] = mapped_column(String(2))
 
     # Contrat
-    contract_type: Mapped[Optional[str]] = mapped_column(Enum(ContractType))
-    date_debut_contrat: Mapped[Optional[date]] = mapped_column(Date)
-    date_fin_contrat: Mapped[Optional[date]] = mapped_column(Date)
-    motif_rupture: Mapped[Optional[str]] = mapped_column(String(3))  # Code motif
+    contract_type: Mapped[str | None] = mapped_column(Enum(ContractType))
+    date_debut_contrat: Mapped[date | None] = mapped_column(Date)
+    date_fin_contrat: Mapped[date | None] = mapped_column(Date)
+    motif_rupture: Mapped[str | None] = mapped_column(String(3))  # Code motif
 
     # Rémunération période
-    brut_periode: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    net_imposable: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), default=0)
-    heures_travaillees: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    brut_periode: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    net_imposable: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), default=0)
+    heures_travaillees: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
 
     # Cotisations
-    cotisations_details: Mapped[Optional[dict]] = mapped_column(JSON)  # Détail par code cotisation
+    cotisations_details: Mapped[dict | None] = mapped_column(JSON)  # Détail par code cotisation
 
     # Absences/Arrêts
-    absences: Mapped[Optional[dict]] = mapped_column(JSON)  # Liste des absences
+    absences: Mapped[dict | None] = mapped_column(JSON)  # Liste des absences
 
     __table_args__ = (
         Index('idx_fr_dsn_emp_dsn', 'dsn_declaration_id'),
@@ -450,50 +448,50 @@ class FREmploymentContract(Base):
     __tablename__ = "fr_employment_contracts"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     employee_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)
 
     # Type de contrat
-    contract_type: Mapped[Optional[str]] = mapped_column(Enum(ContractType), nullable=False)
-    contract_number: Mapped[Optional[str]] = mapped_column(String(50))
+    contract_type: Mapped[str | None] = mapped_column(Enum(ContractType), nullable=False)
+    contract_number: Mapped[str | None] = mapped_column(String(50))
 
     # Dates
     start_date: Mapped[date] = mapped_column(Date)
-    end_date: Mapped[Optional[date]] = mapped_column(Date)  # Null pour CDI
-    trial_period_end: Mapped[Optional[date]] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)  # Null pour CDI
+    trial_period_end: Mapped[date | None] = mapped_column(Date)
 
     # Classification
-    convention_collective: Mapped[Optional[str]] = mapped_column(String(20))  # IDCC
-    niveau: Mapped[Optional[str]] = mapped_column(String(10))
-    coefficient: Mapped[Optional[str]] = mapped_column(String(10))
-    echelon: Mapped[Optional[str]] = mapped_column(String(10))
-    position: Mapped[Optional[str]] = mapped_column(String(10))
+    convention_collective: Mapped[str | None] = mapped_column(String(20))  # IDCC
+    niveau: Mapped[str | None] = mapped_column(String(10))
+    coefficient: Mapped[str | None] = mapped_column(String(10))
+    echelon: Mapped[str | None] = mapped_column(String(10))
+    position: Mapped[str | None] = mapped_column(String(10))
 
     # Temps de travail
-    is_full_time: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    work_hours_weekly: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), default=35)
-    work_hours_monthly: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
-    is_forfait_jours: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    forfait_jours_annual: Mapped[Optional[int]] = mapped_column(Integer)  # 218 jours max
+    is_full_time: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    work_hours_weekly: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), default=35)
+    work_hours_monthly: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    is_forfait_jours: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    forfait_jours_annual: Mapped[int | None] = mapped_column(Integer)  # 218 jours max
 
     # Rémunération
-    base_salary: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    salary_type: Mapped[Optional[str]] = mapped_column(String(20))  # mensuel, horaire, annuel
-    variable_component: Mapped[Optional[dict]] = mapped_column(JSON)  # Primes, commissions
+    base_salary: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    salary_type: Mapped[str | None] = mapped_column(String(20))  # mensuel, horaire, annuel
+    variable_component: Mapped[dict | None] = mapped_column(JSON)  # Primes, commissions
 
     # Avantages
-    avantages_nature: Mapped[Optional[dict]] = mapped_column(JSON)  # Voiture, logement, etc.
-    tickets_restaurant: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    mutuelle_obligatoire: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    avantages_nature: Mapped[dict | None] = mapped_column(JSON)  # Voiture, logement, etc.
+    tickets_restaurant: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    mutuelle_obligatoire: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
     # Statut
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    termination_date: Mapped[Optional[date]] = mapped_column(Date)
-    termination_reason: Mapped[Optional[str]] = mapped_column(String(10))  # Code motif rupture
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    termination_date: Mapped[date | None] = mapped_column(Date)
+    termination_reason: Mapped[str | None] = mapped_column(String(10))  # Code motif rupture
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     __table_args__ = (
@@ -511,35 +509,35 @@ class RGPDConsent(Base):
     __tablename__ = "fr_rgpd_consents"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Personne concernée
-    data_subject_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # customer, employee, contact
+    data_subject_type: Mapped[str | None] = mapped_column(String(50), nullable=False)  # customer, employee, contact
     data_subject_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)
-    data_subject_email: Mapped[Optional[str]] = mapped_column(String(255))
+    data_subject_email: Mapped[str | None] = mapped_column(String(255))
 
     # Consentement
-    purpose: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)  # marketing, analytics, etc.
-    purpose_description: Mapped[Optional[str]] = mapped_column(Text)
-    legal_basis: Mapped[Optional[str]] = mapped_column(String(50))  # consent, contract, legal_obligation, vital_interest, public_interest, legitimate_interest
+    purpose: Mapped[str | None] = mapped_column(String(100), nullable=False)  # marketing, analytics, etc.
+    purpose_description: Mapped[str | None] = mapped_column(Text)
+    legal_basis: Mapped[str | None] = mapped_column(String(50))  # consent, contract, legal_obligation, vital_interest, public_interest, legitimate_interest
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(Enum(RGPDConsentStatus), default=RGPDConsentStatus.PENDING)
+    status: Mapped[str | None] = mapped_column(Enum(RGPDConsentStatus), default=RGPDConsentStatus.PENDING)
 
     # Historique
-    consent_given_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    consent_method: Mapped[Optional[str]] = mapped_column(String(50))  # form, email, verbal
-    consent_proof: Mapped[Optional[str]] = mapped_column(Text)  # IP, référence, etc.
-    withdrawn_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    withdrawn_reason: Mapped[Optional[str]] = mapped_column(Text)
+    consent_given_at: Mapped[datetime | None] = mapped_column(DateTime)
+    consent_method: Mapped[str | None] = mapped_column(String(50))  # form, email, verbal
+    consent_proof: Mapped[str | None] = mapped_column(Text)  # IP, référence, etc.
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime)
+    withdrawn_reason: Mapped[str | None] = mapped_column(Text)
 
     # Validité
-    valid_until: Mapped[Optional[date]] = mapped_column(Date)
-    requires_renewal: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    valid_until: Mapped[date | None] = mapped_column(Date)
+    requires_renewal: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_fr_rgpd_consent_tenant', 'tenant_id'),
@@ -552,43 +550,43 @@ class RGPDRequest(Base):
     __tablename__ = "fr_rgpd_requests"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    request_code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=False)
-    request_type: Mapped[Optional[str]] = mapped_column(Enum(RGPDRequestType), nullable=False)
+    request_code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    request_type: Mapped[str | None] = mapped_column(Enum(RGPDRequestType), nullable=False)
 
     # Demandeur
-    data_subject_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
+    data_subject_type: Mapped[str | None] = mapped_column(String(50), nullable=False)
     data_subject_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    requester_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
-    requester_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
-    requester_phone: Mapped[Optional[str]] = mapped_column(String(50))
+    requester_name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    requester_email: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    requester_phone: Mapped[str | None] = mapped_column(String(50))
 
     # Demande
-    request_details: Mapped[Optional[str]] = mapped_column(Text)
-    identity_verified: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    identity_verification_method: Mapped[Optional[str]] = mapped_column(String(100))
+    request_details: Mapped[str | None] = mapped_column(Text)
+    identity_verified: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    identity_verification_method: Mapped[str | None] = mapped_column(String(100))
 
     # Traitement
-    status: Mapped[Optional[str]] = mapped_column(String(30), default="pending")  # pending, processing, completed, rejected
+    status: Mapped[str | None] = mapped_column(String(30), default="pending")  # pending, processing, completed, rejected
     assigned_to: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    received_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    due_date: Mapped[Optional[date]] = mapped_column(Date)  # 1 mois max légal
-    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    received_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    due_date: Mapped[date | None] = mapped_column(Date)  # 1 mois max légal
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Réponse
-    response_details: Mapped[Optional[str]] = mapped_column(Text)
-    data_exported: Mapped[Optional[bool]] = mapped_column(Boolean)
-    data_deleted: Mapped[Optional[bool]] = mapped_column(Boolean)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(Text)
+    response_details: Mapped[str | None] = mapped_column(Text)
+    data_exported: Mapped[bool | None] = mapped_column(Boolean)
+    data_deleted: Mapped[bool | None] = mapped_column(Boolean)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
 
     # Documents
-    attachments: Mapped[Optional[dict]] = mapped_column(JSON)
+    attachments: Mapped[dict | None] = mapped_column(JSON)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     processed_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     __table_args__ = (
@@ -602,56 +600,56 @@ class RGPDDataProcessing(Base):
     __tablename__ = "fr_rgpd_data_processing"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification du traitement
-    processing_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    processing_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
-    processing_description: Mapped[Optional[str]] = mapped_column(Text)
+    processing_code: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    processing_name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    processing_description: Mapped[str | None] = mapped_column(Text)
 
     # Finalités
-    purposes: Mapped[Optional[dict]] = mapped_column(JSON)  # Liste des finalités
-    legal_basis: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    legal_basis_details: Mapped[Optional[str]] = mapped_column(Text)
+    purposes: Mapped[dict | None] = mapped_column(JSON)  # Liste des finalités
+    legal_basis: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    legal_basis_details: Mapped[str | None] = mapped_column(Text)
 
     # Données traitées
-    data_categories: Mapped[Optional[dict]] = mapped_column(JSON)  # Types de données personnelles
-    special_categories: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # Données sensibles
-    special_categories_details: Mapped[Optional[str]] = mapped_column(Text)
+    data_categories: Mapped[dict | None] = mapped_column(JSON)  # Types de données personnelles
+    special_categories: Mapped[bool | None] = mapped_column(Boolean, default=False)  # Données sensibles
+    special_categories_details: Mapped[str | None] = mapped_column(Text)
 
     # Personnes concernées
-    data_subjects: Mapped[Optional[dict]] = mapped_column(JSON)  # Catégories de personnes
+    data_subjects: Mapped[dict | None] = mapped_column(JSON)  # Catégories de personnes
 
     # Destinataires
-    recipients: Mapped[Optional[dict]] = mapped_column(JSON)  # Catégories de destinataires
-    third_country_transfers: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    transfer_safeguards: Mapped[Optional[str]] = mapped_column(Text)
+    recipients: Mapped[dict | None] = mapped_column(JSON)  # Catégories de destinataires
+    third_country_transfers: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    transfer_safeguards: Mapped[str | None] = mapped_column(Text)
 
     # Durées de conservation
-    retention_period: Mapped[Optional[str]] = mapped_column(String(100))
-    retention_criteria: Mapped[Optional[str]] = mapped_column(Text)
+    retention_period: Mapped[str | None] = mapped_column(String(100))
+    retention_criteria: Mapped[str | None] = mapped_column(Text)
 
     # Sécurité
-    security_measures: Mapped[Optional[dict]] = mapped_column(JSON)
+    security_measures: Mapped[dict | None] = mapped_column(JSON)
 
     # DPO
-    dpo_consulted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    dpo_opinion: Mapped[Optional[str]] = mapped_column(Text)
+    dpo_consulted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    dpo_opinion: Mapped[str | None] = mapped_column(Text)
 
     # AIPD (Analyse d'Impact)
-    aipd_required: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    aipd_reference: Mapped[Optional[str]] = mapped_column(String(100))
+    aipd_required: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    aipd_reference: Mapped[str | None] = mapped_column(String(100))
 
     # Statut
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    start_date: Mapped[Optional[date]] = mapped_column(Date)
-    end_date: Mapped[Optional[date]] = mapped_column(Date)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    last_review_date: Mapped[Optional[date]] = mapped_column(Date)
+    last_review_date: Mapped[date | None] = mapped_column(Date)
     last_review_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     __table_args__ = (
@@ -665,52 +663,52 @@ class RGPDDataBreach(Base):
     __tablename__ = "fr_rgpd_data_breaches"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    breach_code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=False)
-    breach_title: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    breach_code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False)
+    breach_title: Mapped[str | None] = mapped_column(String(255), nullable=False)
 
     # Détection
     detected_at: Mapped[datetime] = mapped_column(DateTime)
     detected_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    detection_method: Mapped[Optional[str]] = mapped_column(String(100))
+    detection_method: Mapped[str | None] = mapped_column(String(100))
 
     # Description
     breach_description: Mapped[str] = mapped_column(Text)
-    breach_nature: Mapped[Optional[str]] = mapped_column(String(50))  # confidentiality, integrity, availability
-    breach_cause: Mapped[Optional[str]] = mapped_column(Text)
+    breach_nature: Mapped[str | None] = mapped_column(String(50))  # confidentiality, integrity, availability
+    breach_cause: Mapped[str | None] = mapped_column(Text)
 
     # Impact
-    data_categories_affected: Mapped[Optional[dict]] = mapped_column(JSON)
-    estimated_subjects_affected: Mapped[Optional[int]] = mapped_column(Integer)
-    potential_consequences: Mapped[Optional[str]] = mapped_column(Text)
-    severity_level: Mapped[Optional[str]] = mapped_column(String(20))  # low, medium, high, critical
+    data_categories_affected: Mapped[dict | None] = mapped_column(JSON)
+    estimated_subjects_affected: Mapped[int | None] = mapped_column(Integer)
+    potential_consequences: Mapped[str | None] = mapped_column(Text)
+    severity_level: Mapped[str | None] = mapped_column(String(20))  # low, medium, high, critical
 
     # Mesures prises
-    containment_measures: Mapped[Optional[dict]] = mapped_column(JSON)
-    remediation_measures: Mapped[Optional[dict]] = mapped_column(JSON)
-    prevention_measures: Mapped[Optional[dict]] = mapped_column(JSON)
+    containment_measures: Mapped[dict | None] = mapped_column(JSON)
+    remediation_measures: Mapped[dict | None] = mapped_column(JSON)
+    prevention_measures: Mapped[dict | None] = mapped_column(JSON)
 
     # Notification CNIL (obligatoire si risque)
-    cnil_notification_required: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    cnil_notified_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    cnil_reference: Mapped[Optional[str]] = mapped_column(String(100))
-    notification_delay_reason: Mapped[Optional[str]] = mapped_column(Text)  # Si > 72h
+    cnil_notification_required: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    cnil_notified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    cnil_reference: Mapped[str | None] = mapped_column(String(100))
+    notification_delay_reason: Mapped[str | None] = mapped_column(Text)  # Si > 72h
 
     # Notification personnes concernées
-    subjects_notification_required: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    subjects_notified_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    notification_content: Mapped[Optional[str]] = mapped_column(Text)
+    subjects_notification_required: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    subjects_notified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    notification_content: Mapped[str | None] = mapped_column(Text)
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(String(30), default="detected")  # detected, investigating, contained, resolved
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    lessons_learned: Mapped[Optional[str]] = mapped_column(Text)
+    status: Mapped[str | None] = mapped_column(String(30), default="detected")  # detected, investigating, contained, resolved
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    lessons_learned: Mapped[str | None] = mapped_column(Text)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     managed_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     __table_args__ = (

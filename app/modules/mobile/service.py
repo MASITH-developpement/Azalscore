@@ -7,20 +7,33 @@ Logique métier pour le backend mobile.
 import secrets
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
+from typing import Any
+
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from .models import (
-    MobileDevice, MobileSession, PushNotification, SyncQueue,
-    SyncCheckpoint, MobilePreferences, MobileActivityLog,
-    MobileAppConfig, MobileCrashReport
+    MobileActivityLog,
+    MobileAppConfig,
+    MobileCrashReport,
+    MobileDevice,
+    MobilePreferences,
+    MobileSession,
+    PushNotification,
+    SyncCheckpoint,
+    SyncQueue,
 )
 from .schemas import (
-    DeviceRegister, DeviceUpdate,
-    NotificationCreate, NotificationBulk,
-    SyncBatch, SyncConflict,
-    PreferencesUpdate, ActivityLog, ActivityBatch, CrashReport
+    ActivityBatch,
+    ActivityLog,
+    CrashReport,
+    DeviceRegister,
+    DeviceUpdate,
+    NotificationBulk,
+    NotificationCreate,
+    PreferencesUpdate,
+    SyncBatch,
+    SyncConflict,
 )
 
 
@@ -79,28 +92,28 @@ class MobileService:
         self.db.refresh(device)
         return device
 
-    def get_device(self, device_id: int) -> Optional[MobileDevice]:
+    def get_device(self, device_id: int) -> MobileDevice | None:
         """Récupérer un appareil par ID."""
         return self.db.query(MobileDevice).filter(
             MobileDevice.tenant_id == self.tenant_id,
             MobileDevice.id == device_id
         ).first()
 
-    def get_device_by_uuid(self, device_uuid: str) -> Optional[MobileDevice]:
+    def get_device_by_uuid(self, device_uuid: str) -> MobileDevice | None:
         """Récupérer un appareil par UUID."""
         return self.db.query(MobileDevice).filter(
             MobileDevice.device_id == device_uuid
         ).first()
 
-    def list_user_devices(self, user_id: int) -> List[MobileDevice]:
+    def list_user_devices(self, user_id: int) -> list[MobileDevice]:
         """Lister les appareils d'un utilisateur."""
         return self.db.query(MobileDevice).filter(
             MobileDevice.tenant_id == self.tenant_id,
             MobileDevice.user_id == user_id,
-            MobileDevice.is_active == True
+            MobileDevice.is_active
         ).order_by(MobileDevice.last_active.desc()).all()
 
-    def update_device(self, device_id: int, data: DeviceUpdate) -> Optional[MobileDevice]:
+    def update_device(self, device_id: int, data: DeviceUpdate) -> MobileDevice | None:
         """Mettre à jour un appareil."""
         device = self.get_device(device_id)
         if not device:
@@ -127,7 +140,7 @@ class MobileService:
         # Révoquer toutes les sessions
         self.db.query(MobileSession).filter(
             MobileSession.device_id == device_id,
-            MobileSession.is_active == True
+            MobileSession.is_active
         ).update({
             "is_active": False,
             "revoked": True,
@@ -139,7 +152,7 @@ class MobileService:
         return True
 
     def update_device_activity(
-        self, device_id: int, ip: Optional[str] = None, location: Optional[Dict] = None
+        self, device_id: int, ip: str | None = None, location: dict | None = None
     ) -> None:
         """Mettre à jour l'activité d'un appareil."""
         device = self.get_device(device_id)
@@ -187,19 +200,19 @@ class MobileService:
         self.db.refresh(session)
         return session
 
-    def get_session_by_token(self, token: str) -> Optional[MobileSession]:
+    def get_session_by_token(self, token: str) -> MobileSession | None:
         """Récupérer session par token."""
         return self.db.query(MobileSession).filter(
             MobileSession.session_token == token,
-            MobileSession.is_active == True,
-            MobileSession.revoked == False
+            MobileSession.is_active,
+            not MobileSession.revoked
         ).first()
 
-    def refresh_session(self, refresh_token: str) -> Optional[MobileSession]:
+    def refresh_session(self, refresh_token: str) -> MobileSession | None:
         """Renouveler une session."""
         session = self.db.query(MobileSession).filter(
             MobileSession.refresh_token == refresh_token,
-            MobileSession.revoked == False
+            not MobileSession.revoked
         ).first()
 
         if not session:
@@ -254,7 +267,7 @@ class MobileService:
         result = self.db.query(MobileSession).filter(
             MobileSession.tenant_id == self.tenant_id,
             MobileSession.user_id == user_id,
-            MobileSession.is_active == True
+            MobileSession.is_active
         ).update({
             "is_active": False,
             "revoked": True,
@@ -264,7 +277,7 @@ class MobileService:
         self.db.commit()
         return result
 
-    def update_session_activity(self, session: MobileSession, ip: Optional[str] = None) -> None:
+    def update_session_activity(self, session: MobileSession, ip: str | None = None) -> None:
         """Mettre à jour l'activité d'une session."""
         session.last_activity = datetime.utcnow()
         if ip:
@@ -299,7 +312,7 @@ class MobileService:
         # TODO: Intégrer avec FCM/APNS pour envoi réel
         return notification
 
-    def send_bulk_notifications(self, data: NotificationBulk) -> List[PushNotification]:
+    def send_bulk_notifications(self, data: NotificationBulk) -> list[PushNotification]:
         """Envoyer notifications en masse."""
         notifications = []
         for user_id in data.user_ids:
@@ -322,7 +335,7 @@ class MobileService:
     def get_user_notifications(
         self, user_id: int, unread_only: bool = False,
         skip: int = 0, limit: int = 50
-    ) -> List[PushNotification]:
+    ) -> list[PushNotification]:
         """Récupérer notifications d'un utilisateur."""
         query = self.db.query(PushNotification).filter(
             PushNotification.tenant_id == self.tenant_id,
@@ -330,7 +343,7 @@ class MobileService:
         )
 
         if unread_only:
-            query = query.filter(PushNotification.read_at == None)
+            query = query.filter(PushNotification.read_at is None)
 
         return query.order_by(
             PushNotification.created_at.desc()
@@ -357,7 +370,7 @@ class MobileService:
         result = self.db.query(PushNotification).filter(
             PushNotification.tenant_id == self.tenant_id,
             PushNotification.user_id == user_id,
-            PushNotification.read_at == None
+            PushNotification.read_at is None
         ).update({
             "read_at": datetime.utcnow(),
             "status": "read"
@@ -370,7 +383,7 @@ class MobileService:
         return self.db.query(PushNotification).filter(
             PushNotification.tenant_id == self.tenant_id,
             PushNotification.user_id == user_id,
-            PushNotification.read_at == None
+            PushNotification.read_at is None
         ).count()
 
     # ========================================================================
@@ -380,7 +393,7 @@ class MobileService:
     def get_sync_data(
         self, user_id: int, entity_type: str,
         since_version: int = 0, limit: int = 100
-    ) -> Tuple[List[Dict], int, bool]:
+    ) -> tuple[list[dict], int, bool]:
         """Récupérer données à synchroniser."""
         # Récupérer checkpoint
         self.db.query(SyncCheckpoint).filter(
@@ -399,7 +412,7 @@ class MobileService:
 
     def process_sync_batch(
         self, user_id: int, batch: SyncBatch
-    ) -> Tuple[int, int, List[SyncConflict]]:
+    ) -> tuple[int, int, list[SyncConflict]]:
         """Traiter un batch de synchronisation."""
         success_count = 0
         error_count = 0
@@ -497,8 +510,8 @@ class MobileService:
 
     def log_activity(
         self, user_id: int, activity: ActivityLog,
-        device_id: Optional[int] = None, session_id: Optional[int] = None,
-        ip: Optional[str] = None
+        device_id: int | None = None, session_id: int | None = None,
+        ip: str | None = None
     ) -> MobileActivityLog:
         """Enregistrer une activité."""
         log = MobileActivityLog(
@@ -523,7 +536,7 @@ class MobileService:
 
     def log_activity_batch(
         self, user_id: int, batch: ActivityBatch,
-        device_id: Optional[int] = None, session_id: Optional[int] = None
+        device_id: int | None = None, session_id: int | None = None
     ) -> int:
         """Enregistrer batch d'activités."""
         count = 0
@@ -553,14 +566,14 @@ class MobileService:
     # APP CONFIG
     # ========================================================================
 
-    def get_app_config(self) -> Optional[MobileAppConfig]:
+    def get_app_config(self) -> MobileAppConfig | None:
         """Récupérer configuration app."""
         return self.db.query(MobileAppConfig).filter(
             MobileAppConfig.tenant_id == self.tenant_id,
-            MobileAppConfig.is_active == True
+            MobileAppConfig.is_active
         ).first()
 
-    def check_app_version(self, platform: str, version: str) -> Dict[str, Any]:
+    def check_app_version(self, platform: str, version: str) -> dict[str, Any]:
         """Vérifier version app."""
         config = self.get_app_config()
         if not config:
@@ -592,7 +605,7 @@ class MobileService:
     # ========================================================================
 
     def report_crash(
-        self, user_id: Optional[int], device_id: Optional[int], data: CrashReport
+        self, user_id: int | None, device_id: int | None, data: CrashReport
     ) -> MobileCrashReport:
         """Enregistrer un crash."""
         crash = MobileCrashReport(
@@ -620,11 +633,11 @@ class MobileService:
         return crash
 
     def list_crashes(
-        self, app_version: Optional[str] = None,
-        error_type: Optional[str] = None,
-        resolved: Optional[bool] = None,
+        self, app_version: str | None = None,
+        error_type: str | None = None,
+        resolved: bool | None = None,
         skip: int = 0, limit: int = 50
-    ) -> List[MobileCrashReport]:
+    ) -> list[MobileCrashReport]:
         """Lister les crashes."""
         query = self.db.query(MobileCrashReport).filter(
             MobileCrashReport.tenant_id == self.tenant_id
@@ -645,7 +658,7 @@ class MobileService:
     # STATS & DASHBOARD
     # ========================================================================
 
-    def get_mobile_stats(self) -> Dict[str, Any]:
+    def get_mobile_stats(self) -> dict[str, Any]:
         """Statistiques mobile."""
         now = datetime.utcnow()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -657,7 +670,7 @@ class MobileService:
 
         active_devices = self.db.query(MobileDevice).filter(
             MobileDevice.tenant_id == self.tenant_id,
-            MobileDevice.is_active == True,
+            MobileDevice.is_active,
             MobileDevice.last_active >= now - timedelta(days=30)
         ).count()
 
@@ -668,7 +681,7 @@ class MobileService:
 
         active_sessions = self.db.query(MobileSession).filter(
             MobileSession.tenant_id == self.tenant_id,
-            MobileSession.is_active == True,
+            MobileSession.is_active,
             MobileSession.expires_at > now
         ).count()
 
@@ -681,7 +694,7 @@ class MobileService:
         notifications_read = self.db.query(PushNotification).filter(
             PushNotification.tenant_id == self.tenant_id,
             PushNotification.sent_at >= today_start,
-            PushNotification.read_at != None
+            PushNotification.read_at is not None
         ).count()
 
         read_rate = (notifications_read / notifications_sent * 100) if notifications_sent > 0 else 0
@@ -705,7 +718,7 @@ class MobileService:
             func.count(MobileDevice.id)
         ).filter(
             MobileDevice.tenant_id == self.tenant_id,
-            MobileDevice.is_active == True
+            MobileDevice.is_active
         ).group_by(MobileDevice.platform).all()
 
         for platform, count in platform_counts:
@@ -718,8 +731,8 @@ class MobileService:
             func.count(MobileDevice.id)
         ).filter(
             MobileDevice.tenant_id == self.tenant_id,
-            MobileDevice.is_active == True,
-            MobileDevice.app_version != None
+            MobileDevice.is_active,
+            MobileDevice.app_version is not None
         ).group_by(MobileDevice.app_version).all()
 
         for version, count in version_counts:

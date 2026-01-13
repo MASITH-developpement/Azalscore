@@ -5,13 +5,13 @@ AZALS MODULE T1 - Profils Métier Prédéfinis
 Définitions des profils métier standard pour l'auto-configuration.
 """
 
-from typing import Dict, List, Any
+from typing import Any
 
 # ============================================================================
 # PROFILS MÉTIER PRÉDÉFINIS
 # ============================================================================
 
-PREDEFINED_PROFILES: Dict[str, Dict[str, Any]] = {
+PREDEFINED_PROFILES: dict[str, dict[str, Any]] = {
     # ========================================================================
     # DIRECTION (Niveau 0-2)
     # ========================================================================
@@ -538,17 +538,17 @@ PREDEFINED_PROFILES: Dict[str, Dict[str, Any]] = {
 # FONCTIONS UTILITAIRES
 # ============================================================================
 
-def get_profile_by_code(code: str) -> Dict[str, Any]:
+def get_profile_by_code(code: str) -> dict[str, Any]:
     """Retourne un profil par son code."""
     return PREDEFINED_PROFILES.get(code)
 
 
-def get_all_profiles() -> Dict[str, Dict[str, Any]]:
+def get_all_profiles() -> dict[str, dict[str, Any]]:
     """Retourne tous les profils."""
     return PREDEFINED_PROFILES
 
 
-def get_profiles_by_level(level: str) -> Dict[str, Dict[str, Any]]:
+def get_profiles_by_level(level: str) -> dict[str, dict[str, Any]]:
     """Retourne les profils d'un niveau donné."""
     return {
         code: profile for code, profile in PREDEFINED_PROFILES.items()
@@ -556,7 +556,7 @@ def get_profiles_by_level(level: str) -> Dict[str, Dict[str, Any]]:
     }
 
 
-def match_profile_by_title(title: str) -> List[Dict[str, Any]]:
+def match_profile_by_title(title: str) -> list[dict[str, Any]]:
     """
     Trouve les profils correspondant à un titre.
     Retourne les profils triés par priorité (plus bas = plus prioritaire).
@@ -578,7 +578,7 @@ def match_profile_by_title(title: str) -> List[Dict[str, Any]]:
     return sorted(matches, key=lambda x: x["priority"])
 
 
-def match_profile_by_department(department: str) -> List[Dict[str, Any]]:
+def match_profile_by_department(department: str) -> list[dict[str, Any]]:
     """
     Trouve les profils correspondant à un département.
     """
@@ -594,7 +594,7 @@ def match_profile_by_department(department: str) -> List[Dict[str, Any]]:
     return sorted(matches, key=lambda x: x["priority"])
 
 
-def get_best_profile_match(title: str, department: str = None) -> Dict[str, Any]:
+def get_best_profile_match(title: str, department: str = None) -> dict[str, Any]:
     """
     Trouve le meilleur profil correspondant à un titre et département.
     """

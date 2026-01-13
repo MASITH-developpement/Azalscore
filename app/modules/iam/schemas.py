@@ -7,11 +7,10 @@ Schémas de validation pour les endpoints IAM.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field, field_validator
 import re
+from datetime import datetime
 
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # ============================================================================
 # SCHÉMAS UTILISATEUR
@@ -20,11 +19,11 @@ import re
 class UserBase(BaseModel):
     """Base utilisateur."""
     email: EmailStr
-    first_name: Optional[str] = Field(None, max_length=100)
-    last_name: Optional[str] = Field(None, max_length=100)
-    phone: Optional[str] = Field(None, max_length=50)
-    job_title: Optional[str] = Field(None, max_length=200)
-    department: Optional[str] = Field(None, max_length=200)
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=50)
+    job_title: str | None = Field(None, max_length=200)
+    department: str | None = Field(None, max_length=200)
     locale: str = Field(default="fr", max_length=10)
     timezone: str = Field(default="Europe/Paris", max_length=50)
 
@@ -32,9 +31,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Création utilisateur."""
     password: str = Field(..., min_length=12, max_length=128)
-    username: Optional[str] = Field(None, max_length=100)
-    role_codes: Optional[List[str]] = None
-    group_codes: Optional[List[str]] = None
+    username: str | None = Field(None, max_length=100)
+    role_codes: list[str] | None = None
+    group_codes: list[str] | None = None
 
     @field_validator('password')
     @classmethod
@@ -55,14 +54,14 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """Mise à jour utilisateur."""
-    first_name: Optional[str] = Field(None, max_length=100)
-    last_name: Optional[str] = Field(None, max_length=100)
-    phone: Optional[str] = Field(None, max_length=50)
-    job_title: Optional[str] = Field(None, max_length=200)
-    department: Optional[str] = Field(None, max_length=200)
-    locale: Optional[str] = Field(None, max_length=10)
-    timezone: Optional[str] = Field(None, max_length=50)
-    is_active: Optional[bool] = None
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=50)
+    job_title: str | None = Field(None, max_length=200)
+    department: str | None = Field(None, max_length=200)
+    locale: str | None = Field(None, max_length=10)
+    timezone: str | None = Field(None, max_length=50)
+    is_active: bool | None = None
 
 
 class UserResponse(BaseModel):
@@ -70,13 +69,13 @@ class UserResponse(BaseModel):
     id: int
     tenant_id: str
     email: str
-    username: Optional[str]
-    first_name: Optional[str]
-    last_name: Optional[str]
-    display_name: Optional[str]
-    phone: Optional[str]
-    job_title: Optional[str]
-    department: Optional[str]
+    username: str | None
+    first_name: str | None
+    last_name: str | None
+    display_name: str | None
+    phone: str | None
+    job_title: str | None
+    department: str | None
     locale: str
     timezone: str
     is_active: bool
@@ -84,16 +83,16 @@ class UserResponse(BaseModel):
     is_locked: bool
     mfa_enabled: bool
     created_at: datetime
-    last_login_at: Optional[datetime]
-    roles: List[str] = []  # Codes des rôles
-    groups: List[str] = []  # Codes des groupes
+    last_login_at: datetime | None
+    roles: list[str] = []  # Codes des rôles
+    groups: list[str] = []  # Codes des groupes
 
     model_config = {"from_attributes": True}
 
 
 class UserListResponse(BaseModel):
     """Liste paginée d'utilisateurs."""
-    items: List[UserResponse]
+    items: list[UserResponse]
     total: int
     page: int
     page_size: int
@@ -140,27 +139,27 @@ class RoleBase(BaseModel):
     """Base rôle."""
     code: str = Field(..., max_length=50, pattern=r'^[A-Z][A-Z0-9_]*$')
     name: str = Field(..., max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     level: int = Field(default=5, ge=0, le=10)
 
 
 class RoleCreate(RoleBase):
     """Création rôle."""
-    parent_code: Optional[str] = None
-    permission_codes: Optional[List[str]] = None
-    incompatible_role_codes: Optional[List[str]] = None
+    parent_code: str | None = None
+    permission_codes: list[str] | None = None
+    incompatible_role_codes: list[str] | None = None
     requires_approval: bool = False
-    max_users: Optional[int] = None
+    max_users: int | None = None
 
 
 class RoleUpdate(BaseModel):
     """Mise à jour rôle."""
-    name: Optional[str] = Field(None, max_length=200)
-    description: Optional[str] = None
-    level: Optional[int] = Field(None, ge=0, le=10)
-    is_active: Optional[bool] = None
-    requires_approval: Optional[bool] = None
-    max_users: Optional[int] = None
+    name: str | None = Field(None, max_length=200)
+    description: str | None = None
+    level: int | None = Field(None, ge=0, le=10)
+    is_active: bool | None = None
+    requires_approval: bool | None = None
+    max_users: int | None = None
 
 
 class RoleResponse(BaseModel):
@@ -169,17 +168,17 @@ class RoleResponse(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     level: int
-    parent_id: Optional[int]
+    parent_id: int | None
     is_system: bool
     is_active: bool
     is_assignable: bool
     requires_approval: bool
-    max_users: Optional[int]
+    max_users: int | None
     user_count: int = 0
-    permissions: List[str] = []  # Codes des permissions
-    incompatible_roles: List[str] = []
+    permissions: list[str] = []  # Codes des permissions
+    incompatible_roles: list[str] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -187,7 +186,7 @@ class RoleResponse(BaseModel):
 
 class RoleListResponse(BaseModel):
     """Liste des rôles."""
-    items: List[RoleResponse]
+    items: list[RoleResponse]
     total: int
 
 
@@ -195,14 +194,14 @@ class RoleAssignment(BaseModel):
     """Attribution de rôle."""
     user_id: int
     role_code: str
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
 
 class RoleBulkAssignment(BaseModel):
     """Attribution de rôles en masse."""
-    user_ids: List[int]
-    role_codes: List[str]
-    expires_at: Optional[datetime] = None
+    user_ids: list[int]
+    role_codes: list[str]
+    expires_at: datetime | None = None
 
 
 # ============================================================================
@@ -216,7 +215,7 @@ class PermissionBase(BaseModel):
     resource: str = Field(..., max_length=100)
     action: str  # PermissionAction
     name: str = Field(..., max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class PermissionCreate(PermissionBase):
@@ -233,7 +232,7 @@ class PermissionResponse(BaseModel):
     resource: str
     action: str
     name: str
-    description: Optional[str]
+    description: str | None
     is_system: bool
     is_active: bool
     is_dangerous: bool
@@ -244,21 +243,21 @@ class PermissionResponse(BaseModel):
 
 class PermissionListResponse(BaseModel):
     """Liste des permissions."""
-    items: List[PermissionResponse]
+    items: list[PermissionResponse]
     total: int
 
 
 class PermissionCheck(BaseModel):
     """Vérification de permission."""
     permission_code: str
-    user_id: Optional[int] = None  # Si absent, utilisateur courant
+    user_id: int | None = None  # Si absent, utilisateur courant
 
 
 class PermissionCheckResult(BaseModel):
     """Résultat vérification permission."""
     permission_code: str
     granted: bool
-    source: Optional[str] = None  # "role:ADMIN" ou "group:MANAGERS"
+    source: str | None = None  # "role:ADMIN" ou "group:MANAGERS"
 
 
 # ============================================================================
@@ -269,19 +268,19 @@ class GroupBase(BaseModel):
     """Base groupe."""
     code: str = Field(..., max_length=50, pattern=r'^[A-Z][A-Z0-9_]*$')
     name: str = Field(..., max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class GroupCreate(GroupBase):
     """Création groupe."""
-    role_codes: Optional[List[str]] = None
+    role_codes: list[str] | None = None
 
 
 class GroupUpdate(BaseModel):
     """Mise à jour groupe."""
-    name: Optional[str] = Field(None, max_length=200)
-    description: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, max_length=200)
+    description: str | None = None
+    is_active: bool | None = None
 
 
 class GroupResponse(BaseModel):
@@ -290,10 +289,10 @@ class GroupResponse(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     is_active: bool
     user_count: int = 0
-    roles: List[str] = []
+    roles: list[str] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -301,13 +300,13 @@ class GroupResponse(BaseModel):
 
 class GroupListResponse(BaseModel):
     """Liste des groupes."""
-    items: List[GroupResponse]
+    items: list[GroupResponse]
     total: int
 
 
 class GroupMembership(BaseModel):
     """Gestion membres groupe."""
-    user_ids: List[int]
+    user_ids: list[int]
 
 
 # ============================================================================
@@ -318,8 +317,8 @@ class SessionResponse(BaseModel):
     """Réponse session."""
     id: int
     token_jti: str
-    ip_address: Optional[str]
-    user_agent: Optional[str]
+    ip_address: str | None
+    user_agent: str | None
     status: str
     created_at: datetime
     expires_at: datetime
@@ -331,14 +330,14 @@ class SessionResponse(BaseModel):
 
 class SessionListResponse(BaseModel):
     """Liste des sessions."""
-    items: List[SessionResponse]
+    items: list[SessionResponse]
     total: int
 
 
 class SessionRevoke(BaseModel):
     """Révocation de session."""
-    session_ids: Optional[List[int]] = None  # Si absent, toutes sauf courante
-    reason: Optional[str] = None
+    session_ids: list[int] | None = None  # Si absent, toutes sauf courante
+    reason: str | None = None
 
 
 # ============================================================================
@@ -348,8 +347,8 @@ class SessionRevoke(BaseModel):
 class InvitationCreate(BaseModel):
     """Création invitation."""
     email: EmailStr
-    role_codes: Optional[List[str]] = None
-    group_codes: Optional[List[str]] = None
+    role_codes: list[str] | None = None
+    group_codes: list[str] | None = None
     expires_in_hours: int = Field(default=72, ge=1, le=720)  # Max 30 jours
 
 
@@ -359,12 +358,12 @@ class InvitationResponse(BaseModel):
     tenant_id: str
     email: str
     status: str
-    roles_to_assign: List[str] = []
-    groups_to_assign: List[str] = []
+    roles_to_assign: list[str] = []
+    groups_to_assign: list[str] = []
     created_at: datetime
     expires_at: datetime
     invited_by: int
-    accepted_at: Optional[datetime]
+    accepted_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -373,8 +372,8 @@ class InvitationAccept(BaseModel):
     """Acceptation invitation."""
     token: str
     password: str = Field(..., min_length=12, max_length=128)
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
 
 
 # ============================================================================
@@ -385,7 +384,7 @@ class MFASetupResponse(BaseModel):
     """Réponse configuration MFA."""
     secret: str
     qr_code_uri: str
-    backup_codes: List[str]
+    backup_codes: list[str]
 
 
 class MFAVerify(BaseModel):
@@ -407,7 +406,7 @@ class LoginRequest(BaseModel):
     """Requête de connexion."""
     email: EmailStr
     password: str
-    mfa_code: Optional[str] = None
+    mfa_code: str | None = None
     remember_me: bool = False
 
 
@@ -444,15 +443,15 @@ class LogoutRequest(BaseModel):
 
 class PasswordPolicyUpdate(BaseModel):
     """Mise à jour politique mot de passe."""
-    min_length: Optional[int] = Field(None, ge=8, le=128)
-    require_uppercase: Optional[bool] = None
-    require_lowercase: Optional[bool] = None
-    require_numbers: Optional[bool] = None
-    require_special: Optional[bool] = None
-    password_history_count: Optional[int] = Field(None, ge=0, le=24)
-    password_expires_days: Optional[int] = Field(None, ge=0, le=365)
-    max_failed_attempts: Optional[int] = Field(None, ge=3, le=10)
-    lockout_duration_minutes: Optional[int] = Field(None, ge=5, le=1440)
+    min_length: int | None = Field(None, ge=8, le=128)
+    require_uppercase: bool | None = None
+    require_lowercase: bool | None = None
+    require_numbers: bool | None = None
+    require_special: bool | None = None
+    password_history_count: int | None = Field(None, ge=0, le=24)
+    password_expires_days: int | None = Field(None, ge=0, le=365)
+    max_failed_attempts: int | None = Field(None, ge=3, le=10)
+    lockout_duration_minutes: int | None = Field(None, ge=5, le=1440)
 
 
 class PasswordPolicyResponse(BaseModel):
@@ -481,12 +480,12 @@ class AuditLogResponse(BaseModel):
     tenant_id: str
     action: str
     entity_type: str
-    entity_id: Optional[int]
-    actor_id: Optional[int]
-    actor_ip: Optional[str]
+    entity_id: int | None
+    actor_id: int | None
+    actor_ip: str | None
     success: bool
-    error_message: Optional[str]
-    details: Optional[str]
+    error_message: str | None
+    details: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -494,7 +493,7 @@ class AuditLogResponse(BaseModel):
 
 class AuditLogListResponse(BaseModel):
     """Liste des logs audit."""
-    items: List[AuditLogResponse]
+    items: list[AuditLogResponse]
     total: int
     page: int
     page_size: int
@@ -503,10 +502,10 @@ class AuditLogListResponse(BaseModel):
 
 class AuditLogFilter(BaseModel):
     """Filtres pour logs audit."""
-    action: Optional[str] = None
-    entity_type: Optional[str] = None
-    entity_id: Optional[int] = None
-    actor_id: Optional[int] = None
-    success: Optional[bool] = None
-    from_date: Optional[datetime] = None
-    to_date: Optional[datetime] = None
+    action: str | None = None
+    entity_type: str | None = None
+    entity_id: int | None = None
+    actor_id: int | None = None
+    success: bool | None = None
+    from_date: datetime | None = None
+    to_date: datetime | None = None

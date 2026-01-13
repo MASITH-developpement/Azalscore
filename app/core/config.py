@@ -7,7 +7,7 @@ AUCUN SECRET PAR DÉFAUT - Erreur fatale si absent.
 
 import os
 from functools import lru_cache
-from typing import Optional
+
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     )
 
     # BOOTSTRAP_SECRET - OBLIGATOIRE EN PRODUCTION
-    bootstrap_secret: Optional[str] = Field(
+    bootstrap_secret: str | None = Field(
         default=None,
         description="Secret pour bootstrap initial - OBLIGATOIRE en production"
     )
@@ -60,17 +60,17 @@ class Settings(BaseSettings):
     db_max_overflow: int = Field(default=10, ge=0, le=100)
 
     # CORS (optionnel)
-    cors_origins: Optional[str] = Field(default=None, description="Origins CORS séparées par des virgules")
+    cors_origins: str | None = Field(default=None, description="Origins CORS séparées par des virgules")
 
     # Rate Limiting
     rate_limit_per_minute: int = Field(default=100, ge=10, le=1000)
     auth_rate_limit_per_minute: int = Field(default=5, ge=1, le=20, description="Rate limit strict pour auth")
 
     # Redis (pour rate limiting distribué)
-    redis_url: Optional[str] = Field(default=None, description="URL Redis pour cache et rate limiting")
+    redis_url: str | None = Field(default=None, description="URL Redis pour cache et rate limiting")
 
     # ENCRYPTION_KEY - OBLIGATOIRE EN PRODUCTION pour chiffrement AES-256 au repos
-    encryption_key: Optional[str] = Field(
+    encryption_key: str | None = Field(
         default=None,
         description="Clé Fernet pour chiffrement AES-256 - OBLIGATOIRE en production"
     )

@@ -15,46 +15,44 @@ Fonctionnalités:
 """
 
 from .models import (
-    MobileDevice,
-    MobileSession,
-    PushNotification,
-    SyncQueue,
-    SyncCheckpoint,
-    MobilePreferences,
+    DevicePlatform,
     MobileActivityLog,
     MobileAppConfig,
     MobileCrashReport,
-    DevicePlatform,
+    MobileDevice,
+    MobilePreferences,
+    MobileSession,
     NotificationStatus,
-    SyncStatus
+    PushNotification,
+    SyncCheckpoint,
+    SyncQueue,
+    SyncStatus,
 )
-
+from .router import router
 from .schemas import (
-    DeviceRegister,
-    DeviceUpdate,
-    DeviceResponse,
-    SessionCreate,
-    SessionResponse,
-    SessionRefresh,
-    NotificationCreate,
-    NotificationBulk,
-    NotificationResponse,
-    SyncRequest,
-    SyncItem,
-    SyncBatch,
-    SyncResponse,
-    SyncConflict,
-    PreferencesUpdate,
-    PreferencesResponse,
-    ActivityLog,
     ActivityBatch,
+    ActivityLog,
     AppConfigResponse,
     CrashReport,
-    MobileStats
+    DeviceRegister,
+    DeviceResponse,
+    DeviceUpdate,
+    MobileStats,
+    NotificationBulk,
+    NotificationCreate,
+    NotificationResponse,
+    PreferencesResponse,
+    PreferencesUpdate,
+    SessionCreate,
+    SessionRefresh,
+    SessionResponse,
+    SyncBatch,
+    SyncConflict,
+    SyncItem,
+    SyncRequest,
+    SyncResponse,
 )
-
 from .service import MobileService
-from .router import router
 
 __all__ = [
     # Models

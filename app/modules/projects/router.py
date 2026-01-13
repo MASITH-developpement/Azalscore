@@ -6,33 +6,66 @@ API REST pour la gestion de projets.
 """
 
 from datetime import date
-from typing import Optional, List
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 
-from .service import get_projects_service
 from .models import (
-    ProjectStatus, ProjectPriority, TaskStatus, TaskPriority,
-    RiskStatus, IssueStatus, IssuePriority, TimeEntryStatus, ExpenseStatus
+    ExpenseStatus,
+    IssuePriority,
+    IssueStatus,
+    ProjectPriority,
+    ProjectStatus,
+    RiskStatus,
+    TaskPriority,
+    TaskStatus,
+    TimeEntryStatus,
 )
 from .schemas import (
-    ProjectCreate, ProjectUpdate, ProjectResponse, ProjectList, PhaseCreate, PhaseUpdate, PhaseResponse,
-    TaskCreate, TaskUpdate, TaskResponse, TaskList,
-    MilestoneCreate, MilestoneUpdate, MilestoneResponse,
-    TeamMemberCreate, TeamMemberUpdate, TeamMemberResponse,
-    RiskCreate, RiskUpdate, RiskResponse, IssueCreate, IssueUpdate, IssueResponse, TimeEntryCreate, TimeEntryResponse, TimeEntryList,
-    ExpenseCreate, ExpenseResponse,
-    DocumentCreate, DocumentResponse,
-    BudgetCreate, BudgetResponse,
-    TemplateCreate, TemplateResponse,
-    CommentCreate, CommentResponse,
-    ProjectDashboard, ProjectStats
+    BudgetCreate,
+    BudgetResponse,
+    CommentCreate,
+    CommentResponse,
+    DocumentCreate,
+    DocumentResponse,
+    ExpenseCreate,
+    ExpenseResponse,
+    IssueCreate,
+    IssueResponse,
+    IssueUpdate,
+    MilestoneCreate,
+    MilestoneResponse,
+    MilestoneUpdate,
+    PhaseCreate,
+    PhaseResponse,
+    PhaseUpdate,
+    ProjectCreate,
+    ProjectDashboard,
+    ProjectList,
+    ProjectResponse,
+    ProjectStats,
+    ProjectUpdate,
+    RiskCreate,
+    RiskResponse,
+    RiskUpdate,
+    TaskCreate,
+    TaskList,
+    TaskResponse,
+    TaskUpdate,
+    TeamMemberCreate,
+    TeamMemberResponse,
+    TeamMemberUpdate,
+    TemplateCreate,
+    TemplateResponse,
+    TimeEntryCreate,
+    TimeEntryList,
+    TimeEntryResponse,
 )
-
+from .service import get_projects_service
 
 router = APIRouter(prefix="/api/v1/projects", tags=["Projets (Project Management)"])
 
@@ -54,13 +87,13 @@ def create_project(
 
 @router.get("", response_model=ProjectList)
 def list_projects(
-    status: Optional[ProjectStatus] = None,
-    priority: Optional[ProjectPriority] = None,
-    project_manager_id: Optional[UUID] = None,
-    customer_id: Optional[UUID] = None,
-    category: Optional[str] = None,
+    status: ProjectStatus | None = None,
+    priority: ProjectPriority | None = None,
+    project_manager_id: UUID | None = None,
+    customer_id: UUID | None = None,
+    category: str | None = None,
     is_active: bool = True,
-    search: Optional[str] = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -176,7 +209,7 @@ def create_phase(
     return service.create_phase(project_id, data)
 
 
-@router.get("/{project_id}/phases", response_model=List[PhaseResponse])
+@router.get("/{project_id}/phases", response_model=list[PhaseResponse])
 def get_phases(
     project_id: UUID,
     db: Session = Depends(get_db),
@@ -235,12 +268,12 @@ def create_task(
 @router.get("/{project_id}/tasks", response_model=TaskList)
 def list_project_tasks(
     project_id: UUID,
-    phase_id: Optional[UUID] = None,
-    assignee_id: Optional[UUID] = None,
-    status: Optional[TaskStatus] = None,
-    priority: Optional[TaskPriority] = None,
+    phase_id: UUID | None = None,
+    assignee_id: UUID | None = None,
+    status: TaskStatus | None = None,
+    priority: TaskPriority | None = None,
     is_overdue: bool = False,
-    search: Optional[str] = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -254,9 +287,9 @@ def list_project_tasks(
     return {"items": tasks, "total": total, "page": skip // limit + 1, "page_size": limit}
 
 
-@router.get("/tasks/my", response_model=List[TaskResponse])
+@router.get("/tasks/my", response_model=list[TaskResponse])
 def get_my_tasks(
-    status: Optional[TaskStatus] = None,
+    status: TaskStatus | None = None,
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
@@ -325,7 +358,7 @@ def create_milestone(
     return service.create_milestone(project_id, data)
 
 
-@router.get("/{project_id}/milestones", response_model=List[MilestoneResponse])
+@router.get("/{project_id}/milestones", response_model=list[MilestoneResponse])
 def get_milestones(
     project_id: UUID,
     db: Session = Depends(get_db),
@@ -369,7 +402,7 @@ def add_team_member(
     return service.add_team_member(project_id, data)
 
 
-@router.get("/{project_id}/team", response_model=List[TeamMemberResponse])
+@router.get("/{project_id}/team", response_model=list[TeamMemberResponse])
 def get_team_members(
     project_id: UUID,
     db: Session = Depends(get_db),
@@ -425,10 +458,10 @@ def create_risk(
     return service.create_risk(project_id, data)
 
 
-@router.get("/{project_id}/risks", response_model=List[RiskResponse])
+@router.get("/{project_id}/risks", response_model=list[RiskResponse])
 def get_risks(
     project_id: UUID,
-    status: Optional[RiskStatus] = None,
+    status: RiskStatus | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -470,11 +503,11 @@ def create_issue(
     return service.create_issue(project_id, data)
 
 
-@router.get("/{project_id}/issues", response_model=List[IssueResponse])
+@router.get("/{project_id}/issues", response_model=list[IssueResponse])
 def get_issues(
     project_id: UUID,
-    status: Optional[IssueStatus] = None,
-    priority: Optional[IssuePriority] = None,
+    status: IssueStatus | None = None,
+    priority: IssuePriority | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -519,11 +552,11 @@ def create_time_entry(
 @router.get("/{project_id}/time", response_model=TimeEntryList)
 def get_time_entries(
     project_id: UUID,
-    task_id: Optional[UUID] = None,
-    user_id: Optional[UUID] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    status: Optional[TimeEntryStatus] = None,
+    task_id: UUID | None = None,
+    user_id: UUID | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    status: TimeEntryStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -603,10 +636,10 @@ def create_expense(
     return service.create_expense(project_id, data)
 
 
-@router.get("/{project_id}/expenses", response_model=List[ExpenseResponse])
+@router.get("/{project_id}/expenses", response_model=list[ExpenseResponse])
 def get_expenses(
     project_id: UUID,
-    status: Optional[ExpenseStatus] = None,
+    status: ExpenseStatus | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -647,10 +680,10 @@ def create_document(
     return service.create_document(project_id, data)
 
 
-@router.get("/{project_id}/documents", response_model=List[DocumentResponse])
+@router.get("/{project_id}/documents", response_model=list[DocumentResponse])
 def get_documents(
     project_id: UUID,
-    category: Optional[str] = None,
+    category: str | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -677,7 +710,7 @@ def create_budget(
     return service.create_budget(project_id, data)
 
 
-@router.get("/{project_id}/budgets", response_model=List[BudgetResponse])
+@router.get("/{project_id}/budgets", response_model=list[BudgetResponse])
 def get_budgets(
     project_id: UUID,
     db: Session = Depends(get_db),
@@ -717,7 +750,7 @@ def create_template(
     return service.create_template(data)
 
 
-@router.get("/templates", response_model=List[TemplateResponse])
+@router.get("/templates", response_model=list[TemplateResponse])
 def get_templates(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
@@ -732,7 +765,7 @@ def create_project_from_template(
     template_id: UUID,
     code: str = Query(..., min_length=1),
     name: str = Query(..., min_length=1),
-    start_date: Optional[date] = None,
+    start_date: date | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -762,10 +795,10 @@ def create_comment(
     return service.create_comment(project_id, data)
 
 
-@router.get("/{project_id}/comments", response_model=List[CommentResponse])
+@router.get("/{project_id}/comments", response_model=list[CommentResponse])
 def get_comments(
     project_id: UUID,
-    task_id: Optional[UUID] = None,
+    task_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):

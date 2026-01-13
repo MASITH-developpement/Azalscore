@@ -5,27 +5,45 @@ AZALS MODULE M1 - Service Commercial
 Service pour le CRM et la gestion commerciale.
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import func, or_
 from uuid import UUID
 
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session, selectinload
+
 from .models import (
-    Customer, Contact, Opportunity, CommercialDocument, DocumentLine,
-    Payment, CustomerActivity, PipelineStage, CatalogProduct,
-    CustomerType, OpportunityStatus, DocumentType, DocumentStatus
+    CatalogProduct,
+    CommercialDocument,
+    Contact,
+    Customer,
+    CustomerActivity,
+    CustomerType,
+    DocumentLine,
+    DocumentStatus,
+    DocumentType,
+    Opportunity,
+    OpportunityStatus,
+    Payment,
+    PipelineStage,
 )
 from .schemas import (
-    CustomerCreate, CustomerUpdate,
-    ContactCreate, ContactUpdate,
-    OpportunityCreate, OpportunityUpdate,
-    DocumentCreate, DocumentUpdate, DocumentLineCreate,
+    ActivityCreate,
+    ContactCreate,
+    ContactUpdate,
+    CustomerCreate,
+    CustomerUpdate,
+    DocumentCreate,
+    DocumentLineCreate,
+    DocumentUpdate,
+    OpportunityCreate,
+    OpportunityUpdate,
     PaymentCreate,
-    ActivityCreate, PipelineStageCreate,
-    ProductCreate, ProductUpdate,
-    SalesDashboard, PipelineStats
+    PipelineStageCreate,
+    PipelineStats,
+    ProductCreate,
+    ProductUpdate,
+    SalesDashboard,
 )
 
 
@@ -52,14 +70,14 @@ class CommercialService:
         self.db.refresh(customer)
         return customer
 
-    def get_customer(self, customer_id: UUID) -> Optional[Customer]:
+    def get_customer(self, customer_id: UUID) -> Customer | None:
         """Récupérer un client par ID."""
         return self.db.query(Customer).filter(
             Customer.tenant_id == self.tenant_id,
             Customer.id == customer_id
         ).first()
 
-    def get_customer_by_code(self, code: str) -> Optional[Customer]:
+    def get_customer_by_code(self, code: str) -> Customer | None:
         """Récupérer un client par code."""
         return self.db.query(Customer).filter(
             Customer.tenant_id == self.tenant_id,
@@ -89,13 +107,13 @@ class CommercialService:
 
     def list_customers(
         self,
-        type: Optional[CustomerType] = None,
-        assigned_to: Optional[UUID] = None,
-        is_active: Optional[bool] = None,
-        search: Optional[str] = None,
+        type: CustomerType | None = None,
+        assigned_to: UUID | None = None,
+        is_active: bool | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[Customer], int]:
+    ) -> tuple[list[Customer], int]:
         """Lister les clients avec filtres et eager loading."""
         # Utiliser eager loading pour éviter N+1 queries
         query = self.db.query(Customer).options(
@@ -123,13 +141,13 @@ class CommercialService:
 
     def list_customers_excluding_suppliers(
         self,
-        customer_type: Optional[CustomerType] = None,
-        assigned_to: Optional[UUID] = None,
-        is_active: Optional[bool] = None,
-        search: Optional[str] = None,
+        customer_type: CustomerType | None = None,
+        assigned_to: UUID | None = None,
+        is_active: bool | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[Customer], int]:
+    ) -> tuple[list[Customer], int]:
         """Lister les clients en excluant les fournisseurs."""
         query = self.db.query(Customer).options(
             selectinload(Customer.contacts),
@@ -157,7 +175,7 @@ class CommercialService:
         items = query.order_by(Customer.name).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_customer(self, customer_id: UUID, data: CustomerUpdate) -> Optional[Customer]:
+    def update_customer(self, customer_id: UUID, data: CustomerUpdate) -> Customer | None:
         """Mettre à jour un client."""
         customer = self.get_customer(customer_id)
         if not customer:
@@ -181,7 +199,7 @@ class CommercialService:
         self.db.commit()
         return True
 
-    def convert_prospect(self, customer_id: UUID) -> Optional[Customer]:
+    def convert_prospect(self, customer_id: UUID) -> Customer | None:
         """Convertir un prospect en client."""
         customer = self.get_customer(customer_id)
         if not customer:
@@ -210,27 +228,27 @@ class CommercialService:
         print(f"[DEBUG] Contact créé: id={contact.id}, tenant_id={contact.tenant_id}, is_active={contact.is_active}")
         return contact
 
-    def get_contact(self, contact_id: UUID) -> Optional[Contact]:
+    def get_contact(self, contact_id: UUID) -> Contact | None:
         """Récupérer un contact."""
         return self.db.query(Contact).filter(
             Contact.tenant_id == self.tenant_id,
             Contact.id == contact_id
         ).first()
 
-    def list_contacts(self, customer_id: UUID) -> List[Contact]:
+    def list_contacts(self, customer_id: UUID) -> list[Contact]:
         """Lister les contacts d'un client."""
         return self.db.query(Contact).filter(
             Contact.tenant_id == self.tenant_id,
             Contact.customer_id == customer_id,
-            Contact.is_active == True
+            Contact.is_active
         ).order_by(Contact.is_primary.desc(), Contact.last_name).all()
 
     def list_all_contacts(
         self,
-        search: Optional[str] = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[Contact], int]:
+    ) -> tuple[list[Contact], int]:
         """Lister tous les contacts avec pagination."""
         print(f"[DEBUG] list_all_contacts appelé: tenant_id={self.tenant_id}, search={search}")
 
@@ -242,7 +260,7 @@ class CommercialService:
 
         query = self.db.query(Contact).filter(
             Contact.tenant_id == self.tenant_id,
-            Contact.is_active == True
+            Contact.is_active
         )
 
         if search:
@@ -258,7 +276,7 @@ class CommercialService:
         print(f"[DEBUG] Contacts retournés: total={total}, items={len(items)}")
         return items, total
 
-    def update_contact(self, contact_id: UUID, data: ContactUpdate) -> Optional[Contact]:
+    def update_contact(self, contact_id: UUID, data: ContactUpdate) -> Contact | None:
         """Mettre à jour un contact."""
         contact = self.get_contact(contact_id)
         if not contact:
@@ -302,7 +320,7 @@ class CommercialService:
         self.db.refresh(opportunity)
         return opportunity
 
-    def get_opportunity(self, opportunity_id: UUID) -> Optional[Opportunity]:
+    def get_opportunity(self, opportunity_id: UUID) -> Opportunity | None:
         """Récupérer une opportunité."""
         return self.db.query(Opportunity).filter(
             Opportunity.tenant_id == self.tenant_id,
@@ -311,12 +329,12 @@ class CommercialService:
 
     def list_opportunities(
         self,
-        status: Optional[OpportunityStatus] = None,
-        customer_id: Optional[UUID] = None,
-        assigned_to: Optional[UUID] = None,
+        status: OpportunityStatus | None = None,
+        customer_id: UUID | None = None,
+        assigned_to: UUID | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[Opportunity], int]:
+    ) -> tuple[list[Opportunity], int]:
         """Lister les opportunités."""
         query = self.db.query(Opportunity).filter(Opportunity.tenant_id == self.tenant_id)
 
@@ -331,7 +349,7 @@ class CommercialService:
         items = query.order_by(Opportunity.expected_close_date).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_opportunity(self, opportunity_id: UUID, data: OpportunityUpdate) -> Optional[Opportunity]:
+    def update_opportunity(self, opportunity_id: UUID, data: OpportunityUpdate) -> Opportunity | None:
         """Mettre à jour une opportunité."""
         opportunity = self.get_opportunity(opportunity_id)
         if not opportunity:
@@ -353,7 +371,7 @@ class CommercialService:
         self.db.refresh(opportunity)
         return opportunity
 
-    def win_opportunity(self, opportunity_id: UUID, win_reason: str = None) -> Optional[Opportunity]:
+    def win_opportunity(self, opportunity_id: UUID, win_reason: str = None) -> Opportunity | None:
         """Marquer une opportunité comme gagnée."""
         opportunity = self.get_opportunity(opportunity_id)
         if not opportunity:
@@ -374,7 +392,7 @@ class CommercialService:
         self.db.refresh(opportunity)
         return opportunity
 
-    def lose_opportunity(self, opportunity_id: UUID, loss_reason: str = None) -> Optional[Opportunity]:
+    def lose_opportunity(self, opportunity_id: UUID, loss_reason: str = None) -> Opportunity | None:
         """Marquer une opportunité comme perdue."""
         opportunity = self.get_opportunity(opportunity_id)
         if not opportunity:
@@ -473,14 +491,14 @@ class CommercialService:
         self.db.refresh(document)
         return document
 
-    def get_document(self, document_id: UUID) -> Optional[CommercialDocument]:
+    def get_document(self, document_id: UUID) -> CommercialDocument | None:
         """Récupérer un document."""
         return self.db.query(CommercialDocument).filter(
             CommercialDocument.tenant_id == self.tenant_id,
             CommercialDocument.id == document_id
         ).first()
 
-    def get_document_by_number(self, doc_type: DocumentType, number: str) -> Optional[CommercialDocument]:
+    def get_document_by_number(self, doc_type: DocumentType, number: str) -> CommercialDocument | None:
         """Récupérer un document par numéro."""
         return self.db.query(CommercialDocument).filter(
             CommercialDocument.tenant_id == self.tenant_id,
@@ -490,15 +508,15 @@ class CommercialService:
 
     def list_documents(
         self,
-        doc_type: Optional[DocumentType] = None,
-        status: Optional[DocumentStatus] = None,
-        customer_id: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        search: Optional[str] = None,
+        doc_type: DocumentType | None = None,
+        status: DocumentStatus | None = None,
+        customer_id: UUID | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[CommercialDocument], int]:
+    ) -> tuple[list[CommercialDocument], int]:
         """Lister les documents."""
         query = self.db.query(CommercialDocument).filter(
             CommercialDocument.tenant_id == self.tenant_id
@@ -526,7 +544,7 @@ class CommercialService:
         items = query.order_by(CommercialDocument.date.desc()).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_document(self, document_id: UUID, data: DocumentUpdate) -> Optional[CommercialDocument]:
+    def update_document(self, document_id: UUID, data: DocumentUpdate) -> CommercialDocument | None:
         """Mettre à jour un document."""
         document = self.get_document(document_id)
         if not document:
@@ -546,7 +564,7 @@ class CommercialService:
         self.db.refresh(document)
         return document
 
-    def validate_document(self, document_id: UUID, user_id: UUID) -> Optional[CommercialDocument]:
+    def validate_document(self, document_id: UUID, user_id: UUID) -> CommercialDocument | None:
         """Valider un document."""
         document = self.get_document(document_id)
         if not document or document.status != DocumentStatus.DRAFT:
@@ -560,7 +578,7 @@ class CommercialService:
         self.db.refresh(document)
         return document
 
-    def send_document(self, document_id: UUID) -> Optional[CommercialDocument]:
+    def send_document(self, document_id: UUID) -> CommercialDocument | None:
         """Marquer un document comme envoyé."""
         document = self.get_document(document_id)
         if not document or document.status not in [DocumentStatus.VALIDATED, DocumentStatus.PENDING]:
@@ -572,7 +590,7 @@ class CommercialService:
         self.db.refresh(document)
         return document
 
-    def convert_quote_to_order(self, quote_id: UUID, user_id: UUID) -> Optional[CommercialDocument]:
+    def convert_quote_to_order(self, quote_id: UUID, user_id: UUID) -> CommercialDocument | None:
         """Convertir un devis en commande."""
         quote = self.get_document(quote_id)
         if not quote or quote.type != DocumentType.QUOTE:
@@ -639,7 +657,7 @@ class CommercialService:
         self.db.refresh(order)
         return order
 
-    def create_invoice_from_order(self, order_id: UUID, user_id: UUID) -> Optional[CommercialDocument]:
+    def create_invoice_from_order(self, order_id: UUID, user_id: UUID) -> CommercialDocument | None:
         """Créer une facture à partir d'une commande."""
         order = self.get_document(order_id)
         if not order or order.type != DocumentType.ORDER:
@@ -715,7 +733,7 @@ class CommercialService:
         self.db.refresh(invoice)
         return invoice
 
-    def add_document_line(self, document_id: UUID, data: DocumentLineCreate) -> Optional[DocumentLine]:
+    def add_document_line(self, document_id: UUID, data: DocumentLineCreate) -> DocumentLine | None:
         """Ajouter une ligne à un document."""
         document = self.get_document(document_id)
         if not document or document.status != DocumentStatus.DRAFT:
@@ -768,7 +786,7 @@ class CommercialService:
     # GESTION DES PAIEMENTS
     # ========================================================================
 
-    def create_payment(self, data: PaymentCreate, user_id: UUID) -> Optional[Payment]:
+    def create_payment(self, data: PaymentCreate, user_id: UUID) -> Payment | None:
         """Enregistrer un paiement."""
         document = self.get_document(data.document_id)
         if not document or document.type != DocumentType.INVOICE:
@@ -792,7 +810,7 @@ class CommercialService:
         self.db.refresh(payment)
         return payment
 
-    def list_payments(self, document_id: UUID) -> List[Payment]:
+    def list_payments(self, document_id: UUID) -> list[Payment]:
         """Lister les paiements d'un document."""
         return self.db.query(Payment).filter(
             Payment.tenant_id == self.tenant_id,
@@ -817,12 +835,12 @@ class CommercialService:
 
     def list_activities(
         self,
-        customer_id: Optional[UUID] = None,
-        opportunity_id: Optional[UUID] = None,
-        assigned_to: Optional[UUID] = None,
-        is_completed: Optional[bool] = None,
+        customer_id: UUID | None = None,
+        opportunity_id: UUID | None = None,
+        assigned_to: UUID | None = None,
+        is_completed: bool | None = None,
         limit: int = 50
-    ) -> List[CustomerActivity]:
+    ) -> list[CustomerActivity]:
         """Lister les activités."""
         query = self.db.query(CustomerActivity).filter(
             CustomerActivity.tenant_id == self.tenant_id
@@ -839,7 +857,7 @@ class CommercialService:
 
         return query.order_by(CustomerActivity.date.desc()).limit(limit).all()
 
-    def complete_activity(self, activity_id: UUID) -> Optional[CustomerActivity]:
+    def complete_activity(self, activity_id: UUID) -> CustomerActivity | None:
         """Marquer une activité comme terminée."""
         activity = self.db.query(CustomerActivity).filter(
             CustomerActivity.tenant_id == self.tenant_id,
@@ -871,11 +889,11 @@ class CommercialService:
         self.db.refresh(stage)
         return stage
 
-    def list_pipeline_stages(self) -> List[PipelineStage]:
+    def list_pipeline_stages(self) -> list[PipelineStage]:
         """Lister les étapes du pipeline."""
         return self.db.query(PipelineStage).filter(
             PipelineStage.tenant_id == self.tenant_id,
-            PipelineStage.is_active == True
+            PipelineStage.is_active
         ).order_by(PipelineStage.order).all()
 
     def get_pipeline_stats(self) -> PipelineStats:
@@ -936,7 +954,7 @@ class CommercialService:
         self.db.refresh(product)
         return product
 
-    def get_product(self, product_id: UUID) -> Optional[CatalogProduct]:
+    def get_product(self, product_id: UUID) -> CatalogProduct | None:
         """Récupérer un produit."""
         return self.db.query(CatalogProduct).filter(
             CatalogProduct.tenant_id == self.tenant_id,
@@ -945,13 +963,13 @@ class CommercialService:
 
     def list_products(
         self,
-        category: Optional[str] = None,
-        is_service: Optional[bool] = None,
-        is_active: Optional[bool] = True,
-        search: Optional[str] = None,
+        category: str | None = None,
+        is_service: bool | None = None,
+        is_active: bool | None = True,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[CatalogProduct], int]:
+    ) -> tuple[list[CatalogProduct], int]:
         """Lister les produits."""
         query = self.db.query(CatalogProduct).filter(CatalogProduct.tenant_id == self.tenant_id)
 
@@ -972,7 +990,7 @@ class CommercialService:
         items = query.order_by(CatalogProduct.name).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_product(self, product_id: UUID, data: ProductUpdate) -> Optional[CatalogProduct]:
+    def update_product(self, product_id: UUID, data: ProductUpdate) -> CatalogProduct | None:
         """Mettre à jour un produit."""
         product = self.get_product(product_id)
         if not product:
@@ -1040,13 +1058,13 @@ class CommercialService:
         # Clients
         total_customers = self.db.query(Customer).filter(
             Customer.tenant_id == self.tenant_id,
-            Customer.is_active == True
+            Customer.is_active
         ).count()
 
         active_customers = self.db.query(Customer).filter(
             Customer.tenant_id == self.tenant_id,
             Customer.type == CustomerType.CUSTOMER,
-            Customer.is_active == True
+            Customer.is_active
         ).count()
 
         new_customers = self.db.query(Customer).filter(
@@ -1089,8 +1107,8 @@ class CommercialService:
 
     def export_customers_csv(
         self,
-        type: Optional[CustomerType] = None,
-        is_active: Optional[bool] = None
+        type: CustomerType | None = None,
+        is_active: bool | None = None
     ) -> str:
         """
         Exporter les clients au format CSV.
@@ -1143,7 +1161,7 @@ class CommercialService:
 
         return output.getvalue()
 
-    def export_contacts_csv(self, customer_id: Optional[UUID] = None) -> str:
+    def export_contacts_csv(self, customer_id: UUID | None = None) -> str:
         """
         Exporter les contacts au format CSV.
         SÉCURITÉ: Filtrage strict par tenant_id.
@@ -1187,8 +1205,8 @@ class CommercialService:
 
     def export_opportunities_csv(
         self,
-        status: Optional[OpportunityStatus] = None,
-        customer_id: Optional[UUID] = None
+        status: OpportunityStatus | None = None,
+        customer_id: UUID | None = None
     ) -> str:
         """
         Exporter les opportunités au format CSV.

@@ -8,9 +8,11 @@ declarative_base() ici.
 """
 
 import logging
+
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError, OperationalError
+
 from app.core.config import get_settings
 
 # Configuration du logger
@@ -32,7 +34,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Cette Base inclut UUIDMixin et garantit que TOUS les modeles
 # sont enregistres dans le MEME registre de metadonnees.
 # NE PAS utiliser declarative_base() ici - cela creerait un registre separe.
-from app.db import Base  # noqa: E402
 
 
 def get_db():

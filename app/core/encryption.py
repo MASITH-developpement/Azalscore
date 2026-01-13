@@ -10,14 +10,15 @@ RÈGLES DE SÉCURITÉ:
 - Chiffrement transparent pour les colonnes sensibles
 """
 
-import os
 import base64
 import hashlib
-from typing import Optional, Any
+import os
+from typing import Optional
+
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from sqlalchemy import TypeDecorator, String, Text
+from sqlalchemy import String, Text, TypeDecorator
 
 
 class EncryptionError(Exception):
@@ -42,7 +43,7 @@ class FieldEncryption:
 
     _instance: Optional['FieldEncryption'] = None
 
-    def __init__(self, encryption_key: Optional[str] = None):
+    def __init__(self, encryption_key: str | None = None):
         """
         Initialise le service de chiffrement.
 
@@ -176,7 +177,7 @@ class EncryptedString(TypeDecorator):
         # Prévoir de la marge
         super().__init__(length=length * 2, **kwargs)
 
-    def process_bind_param(self, value: Optional[str], dialect) -> Optional[str]:
+    def process_bind_param(self, value: str | None, dialect) -> str | None:
         """Chiffre avant stockage en DB."""
         if value is None:
             return None
@@ -190,7 +191,7 @@ class EncryptedString(TypeDecorator):
             logging.warning("Encryption failed, storing plaintext (DEV ONLY)")
             return value
 
-    def process_result_value(self, value: Optional[str], dialect) -> Optional[str]:
+    def process_result_value(self, value: str | None, dialect) -> str | None:
         """Déchiffre après lecture de la DB."""
         if value is None:
             return None
@@ -213,7 +214,7 @@ class EncryptedText(TypeDecorator):
     impl = Text
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[str], dialect) -> Optional[str]:
+    def process_bind_param(self, value: str | None, dialect) -> str | None:
         """Chiffre avant stockage."""
         if value is None:
             return None
@@ -223,7 +224,7 @@ class EncryptedText(TypeDecorator):
         except EncryptionError:
             return value
 
-    def process_result_value(self, value: Optional[str], dialect) -> Optional[str]:
+    def process_result_value(self, value: str | None, dialect) -> str | None:
         """Déchiffre après lecture."""
         if value is None:
             return None
@@ -248,7 +249,7 @@ def generate_encryption_key() -> str:
     return Fernet.generate_key().decode()
 
 
-def derive_key_from_password(password: str, salt: Optional[bytes] = None) -> tuple:
+def derive_key_from_password(password: str, salt: bytes | None = None) -> tuple:
     """
     Dérive une clé Fernet depuis un mot de passe.
 

@@ -5,13 +5,13 @@ Prédictions ML pour ERP: trésorerie, ventes, risques.
 Utilise des modèles simples mais efficaces.
 """
 
-import numpy as np
-from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass
-from enum import Enum
 from collections import deque
-import json
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
+
+import numpy as np
 
 from app.core.logging_config import get_logger
 
@@ -43,9 +43,9 @@ class PredictionResult:
     confidence: float  # 0-100%
     horizon_days: int
     trend: str  # "up", "down", "stable"
-    risk_level: Optional[RiskLevel] = None
-    explanation: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    risk_level: RiskLevel | None = None
+    explanation: str | None = None
+    details: dict[str, Any] | None = None
 
 
 @dataclass
@@ -57,7 +57,7 @@ class TreasuryPrediction:
     max_balance: float
     confidence: float
     risk_level: RiskLevel
-    warning: Optional[str] = None
+    warning: str | None = None
 
 
 class SimpleMovingAverageModel:
@@ -70,11 +70,11 @@ class SimpleMovingAverageModel:
         self.window_size = window_size
         self.history: deque = deque(maxlen=window_size * 4)
 
-    def fit(self, values: List[float]) -> None:
+    def fit(self, values: list[float]) -> None:
         """Entraîne le modèle sur les données historiques."""
         self.history.extend(values)
 
-    def predict(self, horizon: int = 7) -> List[float]:
+    def predict(self, horizon: int = 7) -> list[float]:
         """Prédit les prochaines valeurs."""
         if len(self.history) < self.window_size:
             # Pas assez de données, retourne la moyenne
@@ -101,10 +101,10 @@ class ExponentialSmoothingModel:
 
     def __init__(self, alpha: float = 0.3):
         self.alpha = alpha
-        self.last_value: Optional[float] = None
+        self.last_value: float | None = None
         self.trend: float = 0
 
-    def fit(self, values: List[float]) -> None:
+    def fit(self, values: list[float]) -> None:
         """Entraîne le modèle."""
         if not values:
             return
@@ -118,14 +118,14 @@ class ExponentialSmoothingModel:
             recent_trend = (values[-1] - values[-len(values)//2]) / (len(values)//2)
             self.trend = self.alpha * recent_trend
 
-    def predict(self, horizon: int = 7) -> List[float]:
+    def predict(self, horizon: int = 7) -> list[float]:
         """Prédit les prochaines valeurs."""
         if self.last_value is None:
             return [0] * horizon
 
         predictions = []
         current = self.last_value
-        for i in range(horizon):
+        for _i in range(horizon):
             current = current + self.trend
             predictions.append(current)
 
@@ -137,9 +137,9 @@ class SeasonalityDetector:
 
     def __init__(self, period: int = 7):
         self.period = period
-        self.seasonal_factors: List[float] = []
+        self.seasonal_factors: list[float] = []
 
-    def fit(self, values: List[float]) -> None:
+    def fit(self, values: list[float]) -> None:
         """Analyse les patterns saisonniers."""
         if len(values) < self.period * 2:
             self.seasonal_factors = [1.0] * self.period
@@ -187,11 +187,11 @@ class MLPredictionService:
 
     def predict_treasury(
         self,
-        historical_balances: List[Dict[str, Any]],
-        planned_inflows: List[Dict[str, Any]] = None,
-        planned_outflows: List[Dict[str, Any]] = None,
+        historical_balances: list[dict[str, Any]],
+        planned_inflows: list[dict[str, Any]] = None,
+        planned_outflows: list[dict[str, Any]] = None,
         horizon_days: int = 30
-    ) -> List[TreasuryPrediction]:
+    ) -> list[TreasuryPrediction]:
         """
         Prédit la trésorerie future.
 
@@ -222,7 +222,7 @@ class MLPredictionService:
         # Combiner les prédictions (ensemble)
         combined = [
             0.4 * sma + 0.6 * exp
-            for sma, exp in zip(sma_predictions, exp_predictions)
+            for sma, exp in zip(sma_predictions, exp_predictions, strict=False)
         ]
 
         # Appliquer la saisonnalité
@@ -288,7 +288,7 @@ class MLPredictionService:
 
     def predict_sales(
         self,
-        historical_sales: List[Dict[str, Any]],
+        historical_sales: list[dict[str, Any]],
         horizon_days: int = 30
     ) -> PredictionResult:
         """
@@ -350,8 +350,8 @@ class MLPredictionService:
 
     def analyze_risk(
         self,
-        treasury_predictions: List[TreasuryPrediction],
-        sales_prediction: Optional[PredictionResult] = None
+        treasury_predictions: list[TreasuryPrediction],
+        sales_prediction: PredictionResult | None = None
     ) -> PredictionResult:
         """
         Analyse le risque global.
@@ -438,9 +438,9 @@ class MLPredictionService:
 
     def detect_anomalies(
         self,
-        values: List[float],
+        values: list[float],
         threshold_sigma: float = 2.5
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Détecte les anomalies dans une série de données.
 

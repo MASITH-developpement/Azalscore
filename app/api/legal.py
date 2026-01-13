@@ -4,9 +4,11 @@ Gestion conformité statutaire, contrats, risques juridiques
 Responsabilité dirigeant - Indicateurs gouvernance
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+
 from app.core.dependencies import get_db, get_tenant_id
 
 router = APIRouter(prefix="/legal", tags=["legal"])
@@ -19,12 +21,12 @@ async def get_legal_status(
 ):
     """
     Retourne le statut juridique/structurel global
-    
+
     États:
     - 🟢 : Conformité à jour, pas de risque identifié
     - 🟠 : Élément à surveiller (statuts à revoir, contrat à renouveler)
     - 🔴 : Non-conformité avérée ou risque juridique critique
-    
+
     Retour:
     {
         "status": "🟢"|"🟠"|"🔴",
@@ -37,15 +39,15 @@ async def get_legal_status(
         "registration_status": "Valide"
     }
     """
-    
+
     # Simulation réaliste basée sur date actuelle
     today = datetime.now().date()
-    
+
     # Dernière révision statutaire (obligatoire annuellement en bonne pratique)
     last_review = datetime(2025, 6, 15).date()
     days_since_review = (today - last_review).days
     months_since_review = days_since_review // 30  # Approximation mois
-    
+
     # Statuts : À revoir si > 18 mois, non conforme si > 36 mois
     if days_since_review > 1095:  # 36 mois
         statutory_compliance = "Non conforme"
@@ -53,22 +55,22 @@ async def get_legal_status(
         statutory_compliance = "À revoir"
     else:
         statutory_compliance = "À jour"
-    
+
     # Contrats sensibles (baux, fournisseurs critiques, financements)
     sensitive_contracts_count = 3
-    
+
     # Contrats expirant dans les 90 jours
     expiring_soon = 1
-    
+
     # Risques identifiés (litiges, contentieux, non-conformité réglementaire)
     identified_risks = 0
-    
+
     # Forme juridique
     legal_form = "SAS"  # Simulation
-    
+
     # Immatriculation RCS
     registration_status = "Valide"
-    
+
     # Déterminer le statut global
     if statutory_compliance == "Non conforme" or identified_risks > 0:
         status = "🔴"  # Critique : responsabilité dirigeant engagée
@@ -76,7 +78,7 @@ async def get_legal_status(
         status = "🟠"  # Attention : éléments à traiter
     else:
         status = "🟢"  # Normal
-    
+
     return {
         "status": status,
         "statutory_compliance": statutory_compliance,

@@ -5,20 +5,19 @@ Endpoints de santé détaillés pour monitoring.
 Support Kubernetes liveness/readiness probes.
 """
 
-import time
 import asyncio
-from typing import Dict, Any, Optional, List
+import time
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel
+from typing import Any
 
 from fastapi import APIRouter, Response, status
+from pydantic import BaseModel
 from sqlalchemy import text
 
-from app.core.database import engine
 from app.core.config import get_settings
+from app.core.database import engine
 from app.core.metrics import update_health_status
-
 
 router = APIRouter(tags=["health"])
 
@@ -34,9 +33,9 @@ class ComponentHealth(BaseModel):
     """Santé d'un composant."""
     name: str
     status: HealthStatus
-    latency_ms: Optional[float] = None
-    message: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    latency_ms: float | None = None
+    message: str | None = None
+    details: dict[str, Any] | None = None
 
 
 class HealthResponse(BaseModel):
@@ -46,7 +45,7 @@ class HealthResponse(BaseModel):
     version: str
     environment: str
     uptime_seconds: float
-    components: List[ComponentHealth]
+    components: list[ComponentHealth]
 
 
 # Timestamp de démarrage
@@ -199,7 +198,7 @@ async def check_memory() -> ComponentHealth:
         )
 
 
-def aggregate_status(components: List[ComponentHealth]) -> HealthStatus:
+def aggregate_status(components: list[ComponentHealth]) -> HealthStatus:
     """Calcule le statut global à partir des composants."""
     statuses = [c.status for c in components]
 

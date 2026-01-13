@@ -5,22 +5,13 @@ Endpoints pour les prédictions ML.
 """
 
 from datetime import datetime, timedelta
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
 
-from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.dependencies import get_current_user, get_tenant_id
+from app.core.ml_predictions import get_ml_service
 from app.core.models import User
-from app.core.ml_predictions import (
-    get_ml_service,
-    PredictionResult,
-    TreasuryPrediction,
-    PredictionType,
-    RiskLevel
-)
-
 
 router = APIRouter(prefix="/api/v1/predictions", tags=["predictions"])
 
@@ -39,17 +30,17 @@ class PlannedFlow(BaseModel):
     """Flux planifié (entrée ou sortie)."""
     date: str
     amount: float
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class TreasuryPredictionRequest(BaseModel):
     """Requête de prédiction de trésorerie."""
-    historical_balances: List[HistoricalDataPoint] = Field(
+    historical_balances: list[HistoricalDataPoint] = Field(
         ...,
         description="Historique des soldes (minimum 7 jours recommandé)"
     )
-    planned_inflows: Optional[List[PlannedFlow]] = None
-    planned_outflows: Optional[List[PlannedFlow]] = None
+    planned_inflows: list[PlannedFlow] | None = None
+    planned_outflows: list[PlannedFlow] | None = None
     horizon_days: int = Field(default=30, ge=1, le=90)
 
 
@@ -61,12 +52,12 @@ class TreasuryPredictionResponse(BaseModel):
     max_balance: float
     confidence: float
     risk_level: str
-    warning: Optional[str] = None
+    warning: str | None = None
 
 
 class SalesPredictionRequest(BaseModel):
     """Requête de prédiction de ventes."""
-    historical_sales: List[HistoricalDataPoint] = Field(
+    historical_sales: list[HistoricalDataPoint] = Field(
         ...,
         description="Historique des ventes"
     )
@@ -80,21 +71,21 @@ class PredictionResultResponse(BaseModel):
     confidence: float
     horizon_days: int
     trend: str
-    risk_level: Optional[str] = None
-    explanation: Optional[str] = None
-    details: Optional[dict] = None
+    risk_level: str | None = None
+    explanation: str | None = None
+    details: dict | None = None
 
 
 class RiskAnalysisRequest(BaseModel):
     """Requête d'analyse de risque."""
-    historical_balances: List[HistoricalDataPoint]
-    historical_sales: Optional[List[HistoricalDataPoint]] = None
+    historical_balances: list[HistoricalDataPoint]
+    historical_sales: list[HistoricalDataPoint] | None = None
     horizon_days: int = Field(default=30, ge=1, le=90)
 
 
 class AnomalyDetectionRequest(BaseModel):
     """Requête de détection d'anomalies."""
-    values: List[float]
+    values: list[float]
     threshold_sigma: float = Field(default=2.5, ge=1.0, le=5.0)
 
 
@@ -111,7 +102,7 @@ class AnomalyResponse(BaseModel):
 # ENDPOINTS
 # ============================================================================
 
-@router.post("/treasury", response_model=List[TreasuryPredictionResponse])
+@router.post("/treasury", response_model=list[TreasuryPredictionResponse])
 def predict_treasury(
     request: TreasuryPredictionRequest,
     current_user: User = Depends(get_current_user),
@@ -235,7 +226,7 @@ def analyze_risk(
     )
 
 
-@router.post("/anomalies", response_model=List[AnomalyResponse])
+@router.post("/anomalies", response_model=list[AnomalyResponse])
 def detect_anomalies(
     request: AnomalyDetectionRequest,
     current_user: User = Depends(get_current_user),

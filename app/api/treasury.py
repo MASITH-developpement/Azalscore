@@ -4,14 +4,14 @@ Calcul de trésorerie prévisionnelle avec déclenchement RED automatique
 """
 
 from typing import Optional
+
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_and_tenant
 from app.services.treasury import TreasuryService
-
 
 router = APIRouter(prefix="/treasury", tags=["treasury"])
 
@@ -44,7 +44,7 @@ def create_treasury_forecast(
 ):
     """
     Calcule une prévision de trésorerie.
-    
+
     Règle : Si forecast_balance < 0, déclenche automatiquement une décision RED.
     """
     service = TreasuryService(db)
@@ -55,9 +55,9 @@ def create_treasury_forecast(
         tenant_id=context["tenant_id"],
         user_id=context["user_id"]
     )
-    
+
     red_triggered = forecast.forecast_balance < 0
-    
+
     return ForecastResponse(
         id=str(forecast.id),
         opening_balance=float(forecast.opening_balance),
@@ -79,12 +79,12 @@ def get_latest_treasury_forecast(
     """
     service = TreasuryService(db)
     forecast = service.get_latest_forecast(context["tenant_id"])
-    
+
     if not forecast:
         return None
-    
+
     red_triggered = forecast.forecast_balance < 0
-    
+
     return ForecastResponse(
         id=str(forecast.id),
         opening_balance=float(forecast.opening_balance),

@@ -5,25 +5,23 @@ Logs JSON pour production, colorés pour développement.
 Correlation ID pour traçabilité.
 """
 
+import json
 import logging
 import sys
-import json
 import time
 import uuid
-from datetime import datetime
-from typing import Optional
 from contextvars import ContextVar
+from datetime import datetime
 from functools import wraps
 
 from app.core.config import get_settings
 
-
 # Context variable pour correlation ID (thread-safe)
-correlation_id_var: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
-tenant_id_var: ContextVar[Optional[str]] = ContextVar('tenant_id', default=None)
+correlation_id_var: ContextVar[str | None] = ContextVar('correlation_id', default=None)
+tenant_id_var: ContextVar[str | None] = ContextVar('tenant_id', default=None)
 
 
-def get_correlation_id() -> Optional[str]:
+def get_correlation_id() -> str | None:
     """Récupère le correlation ID du contexte actuel."""
     return correlation_id_var.get()
 
@@ -38,7 +36,7 @@ def generate_correlation_id() -> str:
     return str(uuid.uuid4())[:8]
 
 
-def get_tenant_context() -> Optional[str]:
+def get_tenant_context() -> str | None:
     """Récupère le tenant ID du contexte."""
     return tenant_id_var.get()
 
@@ -134,7 +132,7 @@ class ColoredFormatter(logging.Formatter):
 def setup_logging(
     level: str = "INFO",
     json_format: bool = False,
-    log_file: Optional[str] = None
+    log_file: str | None = None
 ) -> None:
     """
     Configure le logging pour l'application.
@@ -147,10 +145,7 @@ def setup_logging(
     settings = get_settings()
 
     # Déterminer le format selon l'environnement
-    if json_format or settings.is_production:
-        formatter = JSONFormatter()
-    else:
-        formatter = ColoredFormatter()
+    formatter = JSONFormatter() if json_format or settings.is_production else ColoredFormatter()
 
     # Handler console
     console_handler = logging.StreamHandler(sys.stdout)
@@ -183,7 +178,7 @@ def get_logger(name: str) -> logging.Logger:
 
 
 # Décorateur pour logger les performances
-def log_performance(logger: Optional[logging.Logger] = None, level: str = "INFO"):
+def log_performance(logger: logging.Logger | None = None, level: str = "INFO"):
     """
     Décorateur pour mesurer et logger le temps d'exécution.
 
@@ -231,7 +226,7 @@ def log_performance(logger: Optional[logging.Logger] = None, level: str = "INFO"
 
 
 # Décorateur async
-def log_performance_async(logger: Optional[logging.Logger] = None, level: str = "INFO"):
+def log_performance_async(logger: logging.Logger | None = None, level: str = "INFO"):
     """Version async du décorateur log_performance."""
     def decorator(func):
         @wraps(func)

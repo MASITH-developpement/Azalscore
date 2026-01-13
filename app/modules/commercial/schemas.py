@@ -7,18 +7,23 @@ Schémas Pydantic pour le CRM et la gestion commerciale.
 
 from __future__ import annotations
 
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, List, Any
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from uuid import UUID
 import json
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import (
-    CustomerType, OpportunityStatus, DocumentType, DocumentStatus,
-    PaymentMethod, PaymentTerms, ActivityType
+    ActivityType,
+    CustomerType,
+    DocumentStatus,
+    DocumentType,
+    OpportunityStatus,
+    PaymentMethod,
+    PaymentTerms,
 )
-
 
 # ============================================================================
 # SCHÉMAS CLIENTS
@@ -30,50 +35,50 @@ class CustomerBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    legal_name: Optional[str] = None
+    legal_name: str | None = None
     customer_type: CustomerType = Field(default=CustomerType.PROSPECT, alias="type")
 
     # Contact
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    website: Optional[str] = None
+    email: str | None = None
+    phone: str | None = None
+    mobile: str | None = None
+    website: str | None = None
 
     # Adresse
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    state: Optional[str] = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    state: str | None = None
     country_code: str = "FR"
 
     # Légal
-    tax_id: Optional[str] = None
-    registration_number: Optional[str] = None
-    legal_form: Optional[str] = None
+    tax_id: str | None = None
+    registration_number: str | None = None
+    legal_form: str | None = None
 
     # Commercial
-    assigned_to: Optional[UUID] = None
-    industry: Optional[str] = None
-    size: Optional[str] = None
-    annual_revenue: Optional[Decimal] = None
-    employee_count: Optional[int] = None
+    assigned_to: UUID | None = None
+    industry: str | None = None
+    size: str | None = None
+    annual_revenue: Decimal | None = None
+    employee_count: int | None = None
 
     # Conditions
     payment_terms: PaymentTerms = PaymentTerms.NET_30
-    payment_method: Optional[PaymentMethod] = None
-    credit_limit: Optional[Decimal] = None
+    payment_method: PaymentMethod | None = None
+    credit_limit: Decimal | None = None
     currency: str = "EUR"
     discount_rate: float = 0.0
 
     # Classification
-    tags: List[str] = Field(default_factory=list)
-    segment: Optional[str] = None
-    source: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    segment: str | None = None
+    source: str | None = None
 
     # Notes
-    notes: Optional[str] = None
-    internal_notes: Optional[str] = None
+    notes: str | None = None
+    internal_notes: str | None = None
 
     @field_validator('tags', mode='before')
     @classmethod
@@ -93,52 +98,52 @@ class CustomerCreateAuto(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     # Code est optionnel - sera auto-généré si non fourni
-    code: Optional[str] = Field(default=None, max_length=50)
+    code: str | None = Field(default=None, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    legal_name: Optional[str] = None
+    legal_name: str | None = None
     customer_type: CustomerType = Field(default=CustomerType.CUSTOMER, alias="type")
 
     # Contact
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    website: Optional[str] = None
+    email: str | None = None
+    phone: str | None = None
+    mobile: str | None = None
+    website: str | None = None
 
     # Adresse
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    state: Optional[str] = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    state: str | None = None
     country_code: str = "FR"
 
     # Légal
-    tax_id: Optional[str] = None
-    registration_number: Optional[str] = None
-    legal_form: Optional[str] = None
+    tax_id: str | None = None
+    registration_number: str | None = None
+    legal_form: str | None = None
 
     # Commercial
-    assigned_to: Optional[UUID] = None
-    industry: Optional[str] = None
-    size: Optional[str] = None
-    annual_revenue: Optional[Decimal] = None
-    employee_count: Optional[int] = None
+    assigned_to: UUID | None = None
+    industry: str | None = None
+    size: str | None = None
+    annual_revenue: Decimal | None = None
+    employee_count: int | None = None
 
     # Conditions
     payment_terms: PaymentTerms = PaymentTerms.NET_30
-    payment_method: Optional[PaymentMethod] = None
-    credit_limit: Optional[Decimal] = None
+    payment_method: PaymentMethod | None = None
+    credit_limit: Decimal | None = None
     currency: str = "EUR"
     discount_rate: float = 0.0
 
     # Classification
-    tags: List[str] = Field(default_factory=list)
-    segment: Optional[str] = None
-    source: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    segment: str | None = None
+    source: str | None = None
 
     # Notes
-    notes: Optional[str] = None
-    internal_notes: Optional[str] = None
+    notes: str | None = None
+    internal_notes: str | None = None
 
     @field_validator('tags', mode='before')
     @classmethod
@@ -152,40 +157,40 @@ class CustomerUpdate(BaseModel):
     """Mise à jour d'un client."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    name: Optional[str] = None
-    legal_name: Optional[str] = None
-    customer_type: Optional[CustomerType] = Field(default=None, alias="type")
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    website: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    state: Optional[str] = None
-    country_code: Optional[str] = None
-    tax_id: Optional[str] = None
-    registration_number: Optional[str] = None
-    legal_form: Optional[str] = None
-    assigned_to: Optional[UUID] = None
-    industry: Optional[str] = None
-    size: Optional[str] = None
-    annual_revenue: Optional[Decimal] = None
-    employee_count: Optional[int] = None
-    payment_terms: Optional[PaymentTerms] = None
-    payment_method: Optional[PaymentMethod] = None
-    credit_limit: Optional[Decimal] = None
-    currency: Optional[str] = None
-    discount_rate: Optional[float] = None
-    tags: Optional[List[str]] = None
-    segment: Optional[str] = None
-    source: Optional[str] = None
-    lead_score: Optional[int] = None
-    health_score: Optional[int] = None
-    notes: Optional[str] = None
-    internal_notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    legal_name: str | None = None
+    customer_type: CustomerType | None = Field(default=None, alias="type")
+    email: str | None = None
+    phone: str | None = None
+    mobile: str | None = None
+    website: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    state: str | None = None
+    country_code: str | None = None
+    tax_id: str | None = None
+    registration_number: str | None = None
+    legal_form: str | None = None
+    assigned_to: UUID | None = None
+    industry: str | None = None
+    size: str | None = None
+    annual_revenue: Decimal | None = None
+    employee_count: int | None = None
+    payment_terms: PaymentTerms | None = None
+    payment_method: PaymentMethod | None = None
+    credit_limit: Decimal | None = None
+    currency: str | None = None
+    discount_rate: float | None = None
+    tags: list[str] | None = None
+    segment: str | None = None
+    source: str | None = None
+    lead_score: int | None = None
+    health_score: int | None = None
+    notes: str | None = None
+    internal_notes: str | None = None
+    is_active: bool | None = None
 
 
 class CustomerResponse(CustomerBase):
@@ -195,10 +200,10 @@ class CustomerResponse(CustomerBase):
     health_score: int = 100
     total_revenue: Decimal = Decimal("0")
     order_count: int = 0
-    last_order_date: Optional[date] = None
-    first_order_date: Optional[date] = None
+    last_order_date: date | None = None
+    first_order_date: date | None = None
     is_active: bool = True
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -207,7 +212,7 @@ class CustomerResponse(CustomerBase):
 
 class CustomerList(BaseModel):
     """Liste de clients."""
-    items: List[CustomerResponse]
+    items: list[CustomerResponse]
     total: int
     page: int = 1
     page_size: int = 20
@@ -221,22 +226,22 @@ class ContactBase(BaseModel):
     """Base pour les contacts."""
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    title: Optional[str] = None
-    job_title: Optional[str] = None
-    department: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    linkedin: Optional[str] = None
+    title: str | None = None
+    job_title: str | None = None
+    department: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    mobile: str | None = None
+    linkedin: str | None = None
     is_primary: bool = False
     is_billing: bool = False
     is_shipping: bool = False
     is_decision_maker: bool = False
     preferred_language: str = "fr"
-    preferred_contact_method: Optional[str] = None
+    preferred_contact_method: str | None = None
     do_not_call: bool = False
     do_not_email: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ContactCreate(ContactBase):
@@ -246,25 +251,25 @@ class ContactCreate(ContactBase):
 
 class ContactUpdate(BaseModel):
     """Mise à jour d'un contact."""
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    title: Optional[str] = None
-    job_title: Optional[str] = None
-    department: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    linkedin: Optional[str] = None
-    is_primary: Optional[bool] = None
-    is_billing: Optional[bool] = None
-    is_shipping: Optional[bool] = None
-    is_decision_maker: Optional[bool] = None
-    preferred_language: Optional[str] = None
-    preferred_contact_method: Optional[str] = None
-    do_not_call: Optional[bool] = None
-    do_not_email: Optional[bool] = None
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    title: str | None = None
+    job_title: str | None = None
+    department: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    mobile: str | None = None
+    linkedin: str | None = None
+    is_primary: bool | None = None
+    is_billing: bool | None = None
+    is_shipping: bool | None = None
+    is_decision_maker: bool | None = None
+    preferred_language: str | None = None
+    preferred_contact_method: str | None = None
+    do_not_call: bool | None = None
+    do_not_email: bool | None = None
+    notes: str | None = None
+    is_active: bool | None = None
 
 
 class ContactResponse(ContactBase):
@@ -280,7 +285,7 @@ class ContactResponse(ContactBase):
 
 class ContactList(BaseModel):
     """Liste de contacts."""
-    items: List[ContactResponse]
+    items: list[ContactResponse]
     total: int
     page: int = 1
     page_size: int = 20
@@ -294,21 +299,21 @@ class OpportunityBase(BaseModel):
     """Base pour les opportunités."""
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     status: OpportunityStatus = OpportunityStatus.NEW
-    stage: Optional[str] = None
+    stage: str | None = None
     probability: int = Field(default=10, ge=0, le=100)
     amount: Decimal = Decimal("0")
     currency: str = "EUR"
-    expected_close_date: Optional[date] = None
-    assigned_to: Optional[UUID] = None
-    team: Optional[str] = None
-    source: Optional[str] = None
-    campaign: Optional[str] = None
-    competitors: List[str] = Field(default_factory=list)
-    products: List[Any] = Field(default_factory=list)
-    notes: Optional[str] = None
-    next_steps: Optional[str] = None
+    expected_close_date: date | None = None
+    assigned_to: UUID | None = None
+    team: str | None = None
+    source: str | None = None
+    campaign: str | None = None
+    competitors: list[str] = Field(default_factory=list)
+    products: list[Any] = Field(default_factory=list)
+    notes: str | None = None
+    next_steps: str | None = None
 
     @field_validator('competitors', 'products', mode='before')
     @classmethod
@@ -325,36 +330,36 @@ class OpportunityCreate(OpportunityBase):
 
 class OpportunityUpdate(BaseModel):
     """Mise à jour d'une opportunité."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[OpportunityStatus] = None
-    stage: Optional[str] = None
-    probability: Optional[int] = None
-    amount: Optional[Decimal] = None
-    currency: Optional[str] = None
-    expected_close_date: Optional[date] = None
-    actual_close_date: Optional[date] = None
-    assigned_to: Optional[UUID] = None
-    team: Optional[str] = None
-    source: Optional[str] = None
-    campaign: Optional[str] = None
-    competitors: Optional[List[str]] = None
-    products: Optional[List[Any]] = None
-    win_reason: Optional[str] = None
-    loss_reason: Optional[str] = None
-    notes: Optional[str] = None
-    next_steps: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
+    status: OpportunityStatus | None = None
+    stage: str | None = None
+    probability: int | None = None
+    amount: Decimal | None = None
+    currency: str | None = None
+    expected_close_date: date | None = None
+    actual_close_date: date | None = None
+    assigned_to: UUID | None = None
+    team: str | None = None
+    source: str | None = None
+    campaign: str | None = None
+    competitors: list[str] | None = None
+    products: list[Any] | None = None
+    win_reason: str | None = None
+    loss_reason: str | None = None
+    notes: str | None = None
+    next_steps: str | None = None
 
 
 class OpportunityResponse(OpportunityBase):
     """Réponse opportunité."""
     id: UUID
     customer_id: UUID
-    weighted_amount: Optional[Decimal] = None
-    actual_close_date: Optional[date] = None
-    win_reason: Optional[str] = None
-    loss_reason: Optional[str] = None
-    created_by: Optional[UUID] = None
+    weighted_amount: Decimal | None = None
+    actual_close_date: date | None = None
+    win_reason: str | None = None
+    loss_reason: str | None = None
+    created_by: UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -363,7 +368,7 @@ class OpportunityResponse(OpportunityBase):
 
 class OpportunityList(BaseModel):
     """Liste d'opportunités."""
-    items: List[OpportunityResponse]
+    items: list[OpportunityResponse]
     total: int
     page: int = 1
     page_size: int = 20
@@ -375,15 +380,15 @@ class OpportunityList(BaseModel):
 
 class DocumentLineBase(BaseModel):
     """Base pour les lignes de document."""
-    product_id: Optional[UUID] = None
-    product_code: Optional[str] = None
+    product_id: UUID | None = None
+    product_code: str | None = None
     description: str
     quantity: Decimal = Decimal("1")
-    unit: Optional[str] = None
+    unit: str | None = None
     unit_price: Decimal = Decimal("0")
     discount_percent: float = 0.0
     tax_rate: float = 20.0
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class DocumentLineCreate(DocumentLineBase):
@@ -410,54 +415,54 @@ class DocumentBase(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     document_type: DocumentType = Field(..., alias="type")
-    reference: Optional[str] = None
+    reference: str | None = None
     doc_date: date = Field(default_factory=date.today, alias="date")
-    due_date: Optional[date] = None
-    validity_date: Optional[date] = None
-    delivery_date: Optional[date] = None
-    billing_address: Optional[dict] = None
-    shipping_address: Optional[dict] = None
-    payment_terms: Optional[PaymentTerms] = None
-    payment_method: Optional[PaymentMethod] = None
-    shipping_method: Optional[str] = None
+    due_date: date | None = None
+    validity_date: date | None = None
+    delivery_date: date | None = None
+    billing_address: dict | None = None
+    shipping_address: dict | None = None
+    payment_terms: PaymentTerms | None = None
+    payment_method: PaymentMethod | None = None
+    shipping_method: str | None = None
     shipping_cost: Decimal = Decimal("0")
-    notes: Optional[str] = None
-    internal_notes: Optional[str] = None
-    terms: Optional[str] = None
+    notes: str | None = None
+    internal_notes: str | None = None
+    terms: str | None = None
 
 
 class DocumentCreate(DocumentBase):
     """Création d'un document."""
     customer_id: UUID
-    opportunity_id: Optional[UUID] = None
-    lines: List[DocumentLineCreate] = Field(default_factory=list)
+    opportunity_id: UUID | None = None
+    lines: list[DocumentLineCreate] = Field(default_factory=list)
 
 
 class DocumentUpdate(BaseModel):
     """Mise à jour d'un document."""
-    reference: Optional[str] = None
-    status: Optional[DocumentStatus] = None
-    date: Optional[date] = None
-    due_date: Optional[date] = None
-    validity_date: Optional[date] = None
-    delivery_date: Optional[date] = None
-    billing_address: Optional[dict] = None
-    shipping_address: Optional[dict] = None
-    payment_terms: Optional[PaymentTerms] = None
-    payment_method: Optional[PaymentMethod] = None
-    shipping_method: Optional[str] = None
-    shipping_cost: Optional[Decimal] = None
-    tracking_number: Optional[str] = None
-    notes: Optional[str] = None
-    internal_notes: Optional[str] = None
-    terms: Optional[str] = None
+    reference: str | None = None
+    status: DocumentStatus | None = None
+    date: date | None = None
+    due_date: date | None = None
+    validity_date: date | None = None
+    delivery_date: date | None = None
+    billing_address: dict | None = None
+    shipping_address: dict | None = None
+    payment_terms: PaymentTerms | None = None
+    payment_method: PaymentMethod | None = None
+    shipping_method: str | None = None
+    shipping_cost: Decimal | None = None
+    tracking_number: str | None = None
+    notes: str | None = None
+    internal_notes: str | None = None
+    terms: str | None = None
 
 
 class DocumentResponse(DocumentBase):
     """Réponse document."""
     id: UUID
     customer_id: UUID
-    opportunity_id: Optional[UUID] = None
+    opportunity_id: UUID | None = None
     number: str
     status: DocumentStatus
     subtotal: Decimal = Decimal("0")
@@ -467,16 +472,16 @@ class DocumentResponse(DocumentBase):
     total: Decimal = Decimal("0")
     currency: str = "EUR"
     paid_amount: Decimal = Decimal("0")
-    remaining_amount: Optional[Decimal] = None
-    tracking_number: Optional[str] = None
-    parent_id: Optional[UUID] = None
-    invoice_id: Optional[UUID] = None
-    pdf_url: Optional[str] = None
-    assigned_to: Optional[UUID] = None
-    validated_by: Optional[UUID] = None
-    validated_at: Optional[datetime] = None
-    lines: List[DocumentLineResponse] = Field(default_factory=list)
-    created_by: Optional[UUID] = None
+    remaining_amount: Decimal | None = None
+    tracking_number: str | None = None
+    parent_id: UUID | None = None
+    invoice_id: UUID | None = None
+    pdf_url: str | None = None
+    assigned_to: UUID | None = None
+    validated_by: UUID | None = None
+    validated_at: datetime | None = None
+    lines: list[DocumentLineResponse] = Field(default_factory=list)
+    created_by: UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -485,7 +490,7 @@ class DocumentResponse(DocumentBase):
 
 class DocumentList(BaseModel):
     """Liste de documents."""
-    items: List[DocumentResponse]
+    items: list[DocumentResponse]
     total: int
     page: int = 1
     page_size: int = 20
@@ -503,10 +508,10 @@ class PaymentBase(BaseModel):
     amount: Decimal
     currency: str = "EUR"
     payment_date: date = Field(default_factory=date.today, alias="date")
-    reference: Optional[str] = None
-    bank_account: Optional[str] = None
-    transaction_id: Optional[str] = None
-    notes: Optional[str] = None
+    reference: str | None = None
+    bank_account: str | None = None
+    transaction_id: str | None = None
+    notes: str | None = None
 
 
 class PaymentCreate(PaymentBase):
@@ -518,8 +523,8 @@ class PaymentResponse(PaymentBase):
     """Réponse paiement."""
     id: UUID
     document_id: UUID
-    received_date: Optional[date] = None
-    created_by: Optional[UUID] = None
+    received_date: date | None = None
+    created_by: UUID | None = None
     created_at: datetime
 
 
@@ -534,40 +539,40 @@ class ActivityBase(BaseModel):
 
     activity_type: ActivityType = Field(..., alias="type")
     subject: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     activity_date: datetime = Field(default_factory=datetime.utcnow, alias="date")
-    due_date: Optional[datetime] = None
-    duration_minutes: Optional[int] = None
-    assigned_to: Optional[UUID] = None
+    due_date: datetime | None = None
+    duration_minutes: int | None = None
+    assigned_to: UUID | None = None
 
 
 class ActivityCreate(ActivityBase):
     """Création d'une activité."""
     customer_id: UUID
-    opportunity_id: Optional[UUID] = None
-    contact_id: Optional[UUID] = None
+    opportunity_id: UUID | None = None
+    contact_id: UUID | None = None
 
 
 class ActivityUpdate(BaseModel):
     """Mise à jour d'une activité."""
-    subject: Optional[str] = None
-    description: Optional[str] = None
-    date: Optional[datetime] = None
-    due_date: Optional[datetime] = None
-    duration_minutes: Optional[int] = None
-    is_completed: Optional[bool] = None
-    assigned_to: Optional[UUID] = None
+    subject: str | None = None
+    description: str | None = None
+    date: datetime | None = None
+    due_date: datetime | None = None
+    duration_minutes: int | None = None
+    is_completed: bool | None = None
+    assigned_to: UUID | None = None
 
 
 class ActivityResponse(ActivityBase):
     """Réponse activité."""
     id: UUID
     customer_id: UUID
-    opportunity_id: Optional[UUID] = None
-    contact_id: Optional[UUID] = None
+    opportunity_id: UUID | None = None
+    contact_id: UUID | None = None
     is_completed: bool = False
-    completed_at: Optional[datetime] = None
-    created_by: Optional[UUID] = None
+    completed_at: datetime | None = None
+    created_by: UUID | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -580,8 +585,8 @@ class ActivityResponse(ActivityBase):
 class PipelineStageBase(BaseModel):
     """Base pour les étapes du pipeline."""
     name: str = Field(..., min_length=1, max_length=100)
-    code: Optional[str] = None
-    description: Optional[str] = None
+    code: str | None = None
+    description: str | None = None
     order: int = Field(..., ge=1)
     probability: int = Field(default=50, ge=0, le=100)
     color: str = "#3B82F6"
@@ -612,8 +617,8 @@ class ProductBase(BaseModel):
     """Base pour les produits."""
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
     is_service: bool = False
     unit_price: Decimal = Decimal("0")
     currency: str = "EUR"
@@ -622,8 +627,8 @@ class ProductBase(BaseModel):
     track_stock: bool = False
     stock_quantity: Decimal = Decimal("0")
     min_stock: Decimal = Decimal("0")
-    image_url: Optional[str] = None
-    gallery: List[str] = Field(default_factory=list)
+    image_url: str | None = None
+    gallery: list[str] = Field(default_factory=list)
 
     @field_validator('gallery', mode='before')
     @classmethod
@@ -640,20 +645,20 @@ class ProductCreate(ProductBase):
 
 class ProductUpdate(BaseModel):
     """Mise à jour d'un produit."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[str] = None
-    is_service: Optional[bool] = None
-    unit_price: Optional[Decimal] = None
-    currency: Optional[str] = None
-    unit: Optional[str] = None
-    tax_rate: Optional[float] = None
-    track_stock: Optional[bool] = None
-    stock_quantity: Optional[Decimal] = None
-    min_stock: Optional[Decimal] = None
-    image_url: Optional[str] = None
-    gallery: Optional[List[str]] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    category: str | None = None
+    is_service: bool | None = None
+    unit_price: Decimal | None = None
+    currency: str | None = None
+    unit: str | None = None
+    tax_rate: float | None = None
+    track_stock: bool | None = None
+    stock_quantity: Decimal | None = None
+    min_stock: Decimal | None = None
+    image_url: str | None = None
+    gallery: list[str] | None = None
+    is_active: bool | None = None
 
 
 class ProductResponse(ProductBase):
@@ -668,7 +673,7 @@ class ProductResponse(ProductBase):
 
 class ProductList(BaseModel):
     """Liste de produits."""
-    items: List[ProductResponse]
+    items: list[ProductResponse]
     total: int
     page: int = 1
     page_size: int = 20
@@ -709,7 +714,7 @@ class SalesDashboard(BaseModel):
 
 class PipelineStats(BaseModel):
     """Statistiques pipeline."""
-    stages: List[dict]
+    stages: list[dict]
     total_value: Decimal = Decimal("0")
     weighted_value: Decimal = Decimal("0")
     opportunities_count: int = 0

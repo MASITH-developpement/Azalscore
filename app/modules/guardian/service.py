@@ -15,40 +15,36 @@ GUARDIAN agit. GUARDIAN explique. GUARDIAN assume.
 """
 
 import hashlib
-import json
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+
+from sqlalchemy import and_, desc, func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc
-import logging
 
 from app.core.logging_config import get_logger
 
 from .models import (
-    ErrorDetection,
+    CorrectionAction,
     CorrectionRegistry,
     CorrectionRule,
+    CorrectionStatus,
     CorrectionTest,
-    GuardianAlert,
-    GuardianConfig,
+    Environment,
+    ErrorDetection,
     ErrorSeverity,
     ErrorSource,
     ErrorType,
-    CorrectionStatus,
-    CorrectionAction,
+    GuardianAlert,
+    GuardianConfig,
     TestResult,
-    Environment,
 )
 from .schemas import (
-    ErrorDetectionCreate,
     CorrectionRegistryCreate,
     CorrectionRuleCreate,
     CorrectionRuleUpdate,
-    CorrectionTestCreate,
-    GuardianAlertCreate,
+    ErrorDetectionCreate,
+    FrontendErrorReport,
     GuardianConfigUpdate,
     GuardianStatistics,
-    FrontendErrorReport,
 )
 
 logger = get_logger(__name__)
@@ -65,7 +61,7 @@ class GuardianService:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
-        self._config: Optional[GuardianConfig] = None
+        self._config: GuardianConfig | None = None
 
     # =========================================================================
     # CONFIGURATION
@@ -141,7 +137,7 @@ class GuardianService:
             self.db.refresh(existing_error)
 
             logger.info(
-                f"GUARDIAN: Error occurrence incremented",
+                "GUARDIAN: Error occurrence incremented",
                 extra={
                     "error_uid": existing_error.error_uid,
                     "occurrence_count": existing_error.occurrence_count,
@@ -181,7 +177,7 @@ class GuardianService:
         self.db.refresh(error)
 
         logger.info(
-            f"GUARDIAN: New error detected",
+            "GUARDIAN: New error detected",
             extra={
                 "error_uid": error.error_uid,
                 "severity": error.severity.value,
@@ -200,7 +196,7 @@ class GuardianService:
 
         return error
 
-    def _find_similar_error(self, data: ErrorDetectionCreate) -> Optional[ErrorDetection]:
+    def _find_similar_error(self, data: ErrorDetectionCreate) -> ErrorDetection | None:
         """Recherche une erreur similaire existante (déduplication)."""
         # Fenêtre de déduplication: 1 heure
         window = datetime.utcnow() - timedelta(hours=1)
@@ -219,7 +215,7 @@ class GuardianService:
         ).first()
 
     def report_frontend_error(self, data: FrontendErrorReport,
-                              user_id: Optional[int] = None) -> ErrorDetection:
+                              user_id: int | None = None) -> ErrorDetection:
         """
         Traite un rapport d'erreur frontend.
         Les données utilisateur sont pseudonymisées.
@@ -341,7 +337,7 @@ class GuardianService:
                 self.db.commit()
 
         logger.info(
-            f"GUARDIAN: Correction registry entry created",
+            "GUARDIAN: Correction registry entry created",
             extra={
                 "correction_uid": registry_entry.correction_uid,
                 "action": registry_entry.correction_action.value,
@@ -437,11 +433,11 @@ class GuardianService:
         # Appliquer la correction
         self._apply_correction(registry_entry, rule)
 
-    def _find_applicable_rule(self, error: ErrorDetection) -> Optional[CorrectionRule]:
+    def _find_applicable_rule(self, error: ErrorDetection) -> CorrectionRule | None:
         """Recherche une règle applicable pour l'erreur."""
         query = self.db.query(CorrectionRule).filter(
             CorrectionRule.tenant_id == self.tenant_id,
-            CorrectionRule.is_active == True
+            CorrectionRule.is_active
         )
 
         # Filtrer par type d'erreur si spécifié
@@ -484,20 +480,15 @@ class GuardianService:
                 return False
 
         # Vérifier les conditions avancées
-        if rule.trigger_conditions:
-            if not self._evaluate_conditions(rule.trigger_conditions, error):
-                return False
+        return not (rule.trigger_conditions and not self._evaluate_conditions(rule.trigger_conditions, error))
 
-        return True
-
-    def _evaluate_conditions(self, conditions: Dict, error: ErrorDetection) -> bool:
+    def _evaluate_conditions(self, conditions: dict, error: ErrorDetection) -> bool:
         """Évalue les conditions avancées d'une règle."""
         # Implémentation simple: vérifier que tous les champs correspondent
         for field, expected_value in conditions.items():
             actual_value = getattr(error, field, None)
-            if actual_value is None:
-                if error.context_data:
-                    actual_value = error.context_data.get(field)
+            if actual_value is None and error.context_data:
+                actual_value = error.context_data.get(field)
 
             if actual_value != expected_value:
                 return False
@@ -674,29 +665,29 @@ class GuardianService:
 
         return False
 
-    def _action_cache_clear(self, registry: CorrectionRegistry, config: Dict) -> bool:
+    def _action_cache_clear(self, registry: CorrectionRegistry, config: dict) -> bool:
         """Action: vider le cache."""
         # Dans un vrai système, on viderait le cache Redis ici
         logger.info("GUARDIAN: Cache clear action executed (simulated)")
         return True
 
-    def _action_config_update(self, registry: CorrectionRegistry, config: Dict) -> bool:
+    def _action_config_update(self, registry: CorrectionRegistry, config: dict) -> bool:
         """Action: mise à jour de configuration."""
         # Implémenter la mise à jour de config spécifique
         logger.info("GUARDIAN: Config update action executed (simulated)")
         return True
 
-    def _action_monitoring_only(self, registry: CorrectionRegistry, config: Dict) -> bool:
+    def _action_monitoring_only(self, registry: CorrectionRegistry, config: dict) -> bool:
         """Action: surveillance uniquement."""
         logger.info("GUARDIAN: Monitoring only - no action taken")
         return True
 
-    def _action_workaround(self, registry: CorrectionRegistry, config: Dict) -> bool:
+    def _action_workaround(self, registry: CorrectionRegistry, config: dict) -> bool:
         """Action: contournement temporaire."""
         logger.info("GUARDIAN: Workaround action executed (simulated)")
         return True
 
-    def _action_escalation(self, registry: CorrectionRegistry, config: Dict) -> bool:
+    def _action_escalation(self, registry: CorrectionRegistry, config: dict) -> bool:
         """Action: escalade vers un humain."""
         self._create_alert(
             alert_type="ESCALATION",
@@ -777,7 +768,7 @@ class GuardianService:
 
         return test
 
-    def _execute_test(self, test_type: str, registry: CorrectionRegistry) -> Tuple[TestResult, Dict]:
+    def _execute_test(self, test_type: str, registry: CorrectionRegistry) -> tuple[TestResult, dict]:
         """Exécute un test spécifique."""
         # Dans une implémentation réelle, ces tests seraient plus élaborés
         test_handlers = {
@@ -791,28 +782,28 @@ class GuardianService:
         handler = test_handlers.get(test_type, self._test_default)
         return handler(registry)
 
-    def _test_scenario(self, registry: CorrectionRegistry) -> Tuple[TestResult, Dict]:
+    def _test_scenario(self, registry: CorrectionRegistry) -> tuple[TestResult, dict]:
         """Test du scénario ayant provoqué l'erreur."""
         # Simulation - en production, rejouer le scénario
         return TestResult.PASSED, {"message": "Scenario test passed"}
 
-    def _test_regression(self, registry: CorrectionRegistry) -> Tuple[TestResult, Dict]:
+    def _test_regression(self, registry: CorrectionRegistry) -> tuple[TestResult, dict]:
         """Test de non-régression."""
         return TestResult.PASSED, {"message": "Regression test passed"}
 
-    def _test_persistence(self, registry: CorrectionRegistry) -> Tuple[TestResult, Dict]:
+    def _test_persistence(self, registry: CorrectionRegistry) -> tuple[TestResult, dict]:
         """Test de persistance des données."""
         return TestResult.PASSED, {"message": "Persistence test passed"}
 
-    def _test_permissions(self, registry: CorrectionRegistry) -> Tuple[TestResult, Dict]:
+    def _test_permissions(self, registry: CorrectionRegistry) -> tuple[TestResult, dict]:
         """Test des permissions et rôles."""
         return TestResult.PASSED, {"message": "Permission test passed"}
 
-    def _test_access_control(self, registry: CorrectionRegistry) -> Tuple[TestResult, Dict]:
+    def _test_access_control(self, registry: CorrectionRegistry) -> tuple[TestResult, dict]:
         """Test d'accès non autorisé."""
         return TestResult.PASSED, {"message": "Access control test passed"}
 
-    def _test_default(self, registry: CorrectionRegistry) -> Tuple[TestResult, Dict]:
+    def _test_default(self, registry: CorrectionRegistry) -> tuple[TestResult, dict]:
         """Test par défaut."""
         return TestResult.PASSED, {"message": "Default test passed"}
 
@@ -882,7 +873,7 @@ class GuardianService:
     # =========================================================================
 
     def validate_correction(self, correction_id: int, approved: bool,
-                           user_id: int, comment: Optional[str] = None) -> CorrectionRegistry:
+                           user_id: int, comment: str | None = None) -> CorrectionRegistry:
         """Validation ou rejet d'une correction par un humain."""
         registry = self.db.query(CorrectionRegistry).filter(
             CorrectionRegistry.id == correction_id,
@@ -933,9 +924,7 @@ class GuardianService:
         config = self.get_config()
 
         should_alert = False
-        if error.severity == ErrorSeverity.CRITICAL and config.alert_on_critical:
-            should_alert = True
-        elif error.severity == ErrorSeverity.MAJOR and config.alert_on_major:
+        if error.severity == ErrorSeverity.CRITICAL and config.alert_on_critical or error.severity == ErrorSeverity.MAJOR and config.alert_on_major:
             should_alert = True
 
         if should_alert:
@@ -950,11 +939,11 @@ class GuardianService:
 
     def _create_alert(self, alert_type: str, severity: ErrorSeverity,
                      title: str, message: str,
-                     error_detection_id: Optional[int] = None,
-                     correction_id: Optional[int] = None,
-                     target_roles: Optional[List[str]] = None,
-                     target_users: Optional[List[int]] = None,
-                     details: Optional[Dict] = None) -> GuardianAlert:
+                     error_detection_id: int | None = None,
+                     correction_id: int | None = None,
+                     target_roles: list[str] | None = None,
+                     target_users: list[int] | None = None,
+                     details: dict | None = None) -> GuardianAlert:
         """Crée une alerte GUARDIAN."""
         alert = GuardianAlert(
             tenant_id=self.tenant_id,
@@ -974,7 +963,7 @@ class GuardianService:
         self.db.refresh(alert)
 
         logger.info(
-            f"GUARDIAN: Alert created",
+            "GUARDIAN: Alert created",
             extra={
                 "alert_uid": alert.alert_uid,
                 "type": alert_type,
@@ -1007,7 +996,7 @@ class GuardianService:
         return alert
 
     def resolve_alert(self, alert_id: int, user_id: int,
-                     comment: Optional[str] = None) -> GuardianAlert:
+                     comment: str | None = None) -> GuardianAlert:
         """Résout une alerte."""
         alert = self.db.query(GuardianAlert).filter(
             GuardianAlert.id == alert_id,
@@ -1065,7 +1054,7 @@ class GuardianService:
         self.db.refresh(rule)
 
         logger.info(
-            f"GUARDIAN: Correction rule created",
+            "GUARDIAN: Correction rule created",
             extra={
                 "rule_uid": rule.rule_uid,
                 "name": rule.name,
@@ -1082,7 +1071,7 @@ class GuardianService:
         rule = self.db.query(CorrectionRule).filter(
             CorrectionRule.id == rule_id,
             CorrectionRule.tenant_id == self.tenant_id,
-            CorrectionRule.is_system_rule == False
+            not CorrectionRule.is_system_rule
         ).first()
 
         if not rule:
@@ -1109,7 +1098,7 @@ class GuardianService:
         rule = self.db.query(CorrectionRule).filter(
             CorrectionRule.id == rule_id,
             CorrectionRule.tenant_id == self.tenant_id,
-            CorrectionRule.is_system_rule == False
+            not CorrectionRule.is_system_rule
         ).first()
 
         if not rule:
@@ -1124,13 +1113,13 @@ class GuardianService:
     # =========================================================================
 
     def list_errors(self, page: int = 1, page_size: int = 20,
-                   severity: Optional[ErrorSeverity] = None,
-                   error_type: Optional[ErrorType] = None,
-                   module: Optional[str] = None,
-                   is_processed: Optional[bool] = None,
-                   environment: Optional[Environment] = None,
-                   date_from: Optional[datetime] = None,
-                   date_to: Optional[datetime] = None) -> Tuple[List[ErrorDetection], int]:
+                   severity: ErrorSeverity | None = None,
+                   error_type: ErrorType | None = None,
+                   module: str | None = None,
+                   is_processed: bool | None = None,
+                   environment: Environment | None = None,
+                   date_from: datetime | None = None,
+                   date_to: datetime | None = None) -> tuple[list[ErrorDetection], int]:
         """Liste les erreurs détectées avec filtres et pagination."""
         query = self.db.query(ErrorDetection).filter(
             ErrorDetection.tenant_id == self.tenant_id
@@ -1160,13 +1149,13 @@ class GuardianService:
         return items, total
 
     def list_corrections(self, page: int = 1, page_size: int = 20,
-                        status: Optional[CorrectionStatus] = None,
-                        environment: Optional[Environment] = None,
-                        severity: Optional[ErrorSeverity] = None,
-                        module: Optional[str] = None,
-                        requires_validation: Optional[bool] = None,
-                        date_from: Optional[datetime] = None,
-                        date_to: Optional[datetime] = None) -> Tuple[List[CorrectionRegistry], int]:
+                        status: CorrectionStatus | None = None,
+                        environment: Environment | None = None,
+                        severity: ErrorSeverity | None = None,
+                        module: str | None = None,
+                        requires_validation: bool | None = None,
+                        date_from: datetime | None = None,
+                        date_to: datetime | None = None) -> tuple[list[CorrectionRegistry], int]:
         """Liste les corrections avec filtres et pagination."""
         query = self.db.query(CorrectionRegistry).filter(
             CorrectionRegistry.tenant_id == self.tenant_id
@@ -1196,7 +1185,7 @@ class GuardianService:
         return items, total
 
     def list_rules(self, page: int = 1, page_size: int = 20,
-                  is_active: Optional[bool] = True) -> Tuple[List[CorrectionRule], int]:
+                  is_active: bool | None = True) -> tuple[list[CorrectionRule], int]:
         """Liste les règles de correction."""
         query = self.db.query(CorrectionRule).filter(
             CorrectionRule.tenant_id == self.tenant_id
@@ -1214,8 +1203,8 @@ class GuardianService:
         return items, total
 
     def list_alerts(self, page: int = 1, page_size: int = 20,
-                   is_resolved: Optional[bool] = None,
-                   severity: Optional[ErrorSeverity] = None) -> Tuple[List[GuardianAlert], int, int]:
+                   is_resolved: bool | None = None,
+                   severity: ErrorSeverity | None = None) -> tuple[list[GuardianAlert], int, int]:
         """Liste les alertes avec compteur non lues."""
         query = self.db.query(GuardianAlert).filter(
             GuardianAlert.tenant_id == self.tenant_id
@@ -1231,7 +1220,7 @@ class GuardianService:
         # Compteur non lues
         unread_count = self.db.query(func.count(GuardianAlert.id)).filter(
             GuardianAlert.tenant_id == self.tenant_id,
-            GuardianAlert.is_read == False
+            not GuardianAlert.is_read
         ).scalar()
 
         items = query.order_by(desc(GuardianAlert.created_at))\
@@ -1241,7 +1230,7 @@ class GuardianService:
 
         return items, total, unread_count
 
-    def get_correction_tests(self, correction_id: int) -> List[CorrectionTest]:
+    def get_correction_tests(self, correction_id: int) -> list[CorrectionTest]:
         """Récupère les tests d'une correction."""
         return self.db.query(CorrectionTest).filter(
             CorrectionTest.correction_id == correction_id,
@@ -1374,7 +1363,7 @@ class GuardianService:
     # =========================================================================
 
     def _update_decision_trail(self, registry: CorrectionRegistry,
-                               action: str, by: str, detail: Optional[str] = None):
+                               action: str, by: str, detail: str | None = None):
         """Met à jour le trail de décision (append-only)."""
         if registry.decision_trail is None:
             registry.decision_trail = []

@@ -9,8 +9,9 @@ SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
 
 import time
 from collections import defaultdict
-from typing import Callable, Dict, Optional, Set
-from fastapi import FastAPI, Request, HTTPException, status
+from collections.abc import Callable
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -20,11 +21,9 @@ from app.core.config import get_settings
 # Import de la fonction SAFE de gestion des erreurs
 # Note: Utilise error_response.py au lieu de middleware.py pour éviter les imports circulaires
 from app.modules.guardian.error_response import (
-    build_error_response,
-    build_safe_error_response,
     ErrorType,
+    build_error_response,
 )
-
 
 # ============================================================================
 # CONFIGURATION CORS
@@ -95,7 +94,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         requests_per_minute: int = 100,
         requests_per_minute_per_tenant: int = 500,
         burst_multiplier: float = 1.5,
-        excluded_paths: Optional[Set[str]] = None
+        excluded_paths: set[str] | None = None
     ):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
@@ -103,8 +102,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.burst_limit = int(requests_per_minute * burst_multiplier)
 
         # Stockage des compteurs (en mémoire - utiliser Redis en production distribuée)
-        self._ip_requests: Dict[str, list] = defaultdict(list)
-        self._tenant_requests: Dict[str, list] = defaultdict(list)
+        self._ip_requests: dict[str, list] = defaultdict(list)
+        self._tenant_requests: dict[str, list] = defaultdict(list)
 
         # Paths exclus du rate limiting
         self.excluded_paths = excluded_paths or {
@@ -346,10 +345,10 @@ class IPBlocklistMiddleware(BaseHTTPMiddleware):
     Configurable via fichier ou API admin.
     """
 
-    def __init__(self, app, blocked_ips: Optional[Set[str]] = None):
+    def __init__(self, app, blocked_ips: set[str] | None = None):
         super().__init__(app)
-        self.blocked_ips: Set[str] = blocked_ips or set()
-        self._violation_counts: Dict[str, int] = defaultdict(int)
+        self.blocked_ips: set[str] = blocked_ips or set()
+        self._violation_counts: dict[str, int] = defaultdict(int)
         self._auto_block_threshold = 10  # Bloque après 10 violations
 
     async def dispatch(self, request: Request, call_next: Callable):

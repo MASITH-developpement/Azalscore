@@ -45,21 +45,23 @@ __module_name__ = "IAM - Gestion Utilisateurs & Rôles"
 
 # Exports RBAC Matrix (sans dépendances externes)
 from .rbac_matrix import (
-    StandardRole,
-    Module,
-    Action,
-    Restriction,
-    Permission,
-    SecurityRules,
     RBAC_MATRIX,
     ROLE_HIERARCHY,
+    STANDARD_ROLES_CONFIG,
+    Action,
+    Module,
+    Permission,
+    Restriction,
+    SecurityRules,
+    StandardRole,
     check_permission,
-    has_permission,
     get_all_permissions,
     get_allowed_actions,
+    has_permission,
     map_legacy_role_to_standard,
+)
+from .rbac_matrix import (
     require_permission as require_rbac_permission,
-    STANDARD_ROLES_CONFIG,
 )
 
 # Exports RBAC Service et Middleware (avec dépendances)
@@ -67,8 +69,8 @@ from .rbac_matrix import (
 try:
     from .rbac_service import (
         RBACService,
-        get_rbac_service,
         get_rbac_dependency,
+        get_rbac_service,
     )
     _RBAC_SERVICE_AVAILABLE = True
 except ImportError:
@@ -79,12 +81,12 @@ except ImportError:
 
 try:
     from .rbac_middleware import (
-        RBACMiddleware,
-        setup_rbac_middleware,
-        register_route_permission,
-        register_public_route,
-        ROUTE_PERMISSIONS,
         PUBLIC_ROUTES,
+        ROUTE_PERMISSIONS,
+        RBACMiddleware,
+        register_public_route,
+        register_route_permission,
+        setup_rbac_middleware,
     )
     _RBAC_MIDDLEWARE_AVAILABLE = True
 except ImportError:

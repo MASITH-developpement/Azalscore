@@ -6,11 +6,11 @@ Schémas Pydantic pour le système de support client.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
 
-from .models import TicketStatus, TicketPriority, TicketSource, AgentStatus
+from pydantic import BaseModel, ConfigDict, Field
 
+from .models import AgentStatus, TicketPriority, TicketSource, TicketStatus
 
 # ============================================================================
 # CATEGORY SCHEMAS
@@ -20,11 +20,11 @@ class CategoryBase(BaseModel):
     """Base catégorie."""
     code: str = Field(..., max_length=50)
     name: str = Field(..., max_length=255)
-    description: Optional[str] = None
-    parent_id: Optional[int] = None
+    description: str | None = None
+    parent_id: int | None = None
     default_priority: TicketPriority = TicketPriority.MEDIUM
-    default_team_id: Optional[int] = None
-    sla_id: Optional[int] = None
+    default_team_id: int | None = None
+    sla_id: int | None = None
     is_public: bool = True
     require_approval: bool = False
     auto_assign: bool = True
@@ -38,18 +38,18 @@ class CategoryCreate(CategoryBase):
 
 class CategoryUpdate(BaseModel):
     """Mise à jour catégorie."""
-    code: Optional[str] = Field(None, max_length=50)
-    name: Optional[str] = Field(None, max_length=255)
-    description: Optional[str] = None
-    parent_id: Optional[int] = None
-    default_priority: Optional[TicketPriority] = None
-    default_team_id: Optional[int] = None
-    sla_id: Optional[int] = None
-    is_public: Optional[bool] = None
-    require_approval: Optional[bool] = None
-    auto_assign: Optional[bool] = None
-    sort_order: Optional[int] = None
-    is_active: Optional[bool] = None
+    code: str | None = Field(None, max_length=50)
+    name: str | None = Field(None, max_length=255)
+    description: str | None = None
+    parent_id: int | None = None
+    default_priority: TicketPriority | None = None
+    default_team_id: int | None = None
+    sla_id: int | None = None
+    is_public: bool | None = None
+    require_approval: bool | None = None
+    auto_assign: bool | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
 
 
 class CategoryResponse(CategoryBase):
@@ -69,13 +69,13 @@ class CategoryResponse(CategoryBase):
 class TeamBase(BaseModel):
     """Base équipe."""
     name: str = Field(..., max_length=100)
-    description: Optional[str] = None
-    email: Optional[str] = None
-    manager_id: Optional[int] = None
-    default_sla_id: Optional[int] = None
+    description: str | None = None
+    email: str | None = None
+    manager_id: int | None = None
+    default_sla_id: int | None = None
     auto_assign_method: str = "round_robin"
     max_tickets_per_agent: int = 20
-    working_hours: Optional[Dict[str, Any]] = None
+    working_hours: dict[str, Any] | None = None
     timezone: str = "Europe/Paris"
 
 
@@ -86,16 +86,16 @@ class TeamCreate(TeamBase):
 
 class TeamUpdate(BaseModel):
     """Mise à jour équipe."""
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    email: Optional[str] = None
-    manager_id: Optional[int] = None
-    default_sla_id: Optional[int] = None
-    auto_assign_method: Optional[str] = None
-    max_tickets_per_agent: Optional[int] = None
-    working_hours: Optional[Dict[str, Any]] = None
-    timezone: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, max_length=100)
+    description: str | None = None
+    email: str | None = None
+    manager_id: int | None = None
+    default_sla_id: int | None = None
+    auto_assign_method: str | None = None
+    max_tickets_per_agent: int | None = None
+    working_hours: dict[str, Any] | None = None
+    timezone: str | None = None
+    is_active: bool | None = None
 
 
 class TeamResponse(TeamBase):
@@ -115,13 +115,13 @@ class TeamResponse(TeamBase):
 class AgentBase(BaseModel):
     """Base agent."""
     user_id: int
-    team_id: Optional[int] = None
+    team_id: int | None = None
     display_name: str = Field(..., max_length=255)
-    email: Optional[str] = None
-    avatar_url: Optional[str] = None
-    signature: Optional[str] = None
-    skills: Optional[List[str]] = None
-    languages: List[str] = ["fr"]
+    email: str | None = None
+    avatar_url: str | None = None
+    signature: str | None = None
+    skills: list[str] | None = None
+    languages: list[str] = ["fr"]
     can_assign: bool = True
     can_merge: bool = False
     can_delete: bool = False
@@ -136,20 +136,20 @@ class AgentCreate(AgentBase):
 
 class AgentUpdate(BaseModel):
     """Mise à jour agent."""
-    team_id: Optional[int] = None
-    display_name: Optional[str] = Field(None, max_length=255)
-    email: Optional[str] = None
-    avatar_url: Optional[str] = None
-    signature: Optional[str] = None
-    status: Optional[AgentStatus] = None
-    skills: Optional[List[str]] = None
-    languages: Optional[List[str]] = None
-    can_assign: Optional[bool] = None
-    can_merge: Optional[bool] = None
-    can_delete: Optional[bool] = None
-    can_view_all: Optional[bool] = None
-    is_supervisor: Optional[bool] = None
-    is_active: Optional[bool] = None
+    team_id: int | None = None
+    display_name: str | None = Field(None, max_length=255)
+    email: str | None = None
+    avatar_url: str | None = None
+    signature: str | None = None
+    status: AgentStatus | None = None
+    skills: list[str] | None = None
+    languages: list[str] | None = None
+    can_assign: bool | None = None
+    can_merge: bool | None = None
+    can_delete: bool | None = None
+    can_view_all: bool | None = None
+    is_supervisor: bool | None = None
+    is_active: bool | None = None
 
 
 class AgentResponse(AgentBase):
@@ -157,7 +157,7 @@ class AgentResponse(AgentBase):
     id: int
     tenant_id: str
     status: AgentStatus
-    last_seen: Optional[datetime] = None
+    last_seen: datetime | None = None
     tickets_assigned: int
     tickets_resolved: int
     avg_resolution_time: int
@@ -180,7 +180,7 @@ class AgentStatusUpdate(BaseModel):
 class SLABase(BaseModel):
     """Base SLA."""
     name: str = Field(..., max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     first_response_low: int = 1440
     first_response_medium: int = 480
     first_response_high: int = 120
@@ -192,11 +192,11 @@ class SLABase(BaseModel):
     resolution_urgent: int = 480
     resolution_critical: int = 120
     business_hours_only: bool = True
-    working_hours: Optional[Dict[str, Any]] = None
+    working_hours: dict[str, Any] | None = None
     timezone: str = "Europe/Paris"
-    holidays: Optional[List[str]] = None
+    holidays: list[str] | None = None
     escalation_enabled: bool = True
-    escalation_rules: Optional[List[Dict[str, Any]]] = None
+    escalation_rules: list[dict[str, Any]] | None = None
     is_default: bool = False
 
 
@@ -207,26 +207,26 @@ class SLACreate(SLABase):
 
 class SLAUpdate(BaseModel):
     """Mise à jour SLA."""
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    first_response_low: Optional[int] = None
-    first_response_medium: Optional[int] = None
-    first_response_high: Optional[int] = None
-    first_response_urgent: Optional[int] = None
-    first_response_critical: Optional[int] = None
-    resolution_low: Optional[int] = None
-    resolution_medium: Optional[int] = None
-    resolution_high: Optional[int] = None
-    resolution_urgent: Optional[int] = None
-    resolution_critical: Optional[int] = None
-    business_hours_only: Optional[bool] = None
-    working_hours: Optional[Dict[str, Any]] = None
-    timezone: Optional[str] = None
-    holidays: Optional[List[str]] = None
-    escalation_enabled: Optional[bool] = None
-    escalation_rules: Optional[List[Dict[str, Any]]] = None
-    is_default: Optional[bool] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, max_length=100)
+    description: str | None = None
+    first_response_low: int | None = None
+    first_response_medium: int | None = None
+    first_response_high: int | None = None
+    first_response_urgent: int | None = None
+    first_response_critical: int | None = None
+    resolution_low: int | None = None
+    resolution_medium: int | None = None
+    resolution_high: int | None = None
+    resolution_urgent: int | None = None
+    resolution_critical: int | None = None
+    business_hours_only: bool | None = None
+    working_hours: dict[str, Any] | None = None
+    timezone: str | None = None
+    holidays: list[str] | None = None
+    escalation_enabled: bool | None = None
+    escalation_rules: list[dict[str, Any]] | None = None
+    is_default: bool | None = None
+    is_active: bool | None = None
 
 
 class SLAResponse(SLABase):
@@ -246,36 +246,36 @@ class SLAResponse(SLABase):
 class TicketBase(BaseModel):
     """Base ticket."""
     subject: str = Field(..., max_length=500)
-    description: Optional[str] = None
-    category_id: Optional[int] = None
+    description: str | None = None
+    category_id: int | None = None
     priority: TicketPriority = TicketPriority.MEDIUM
     source: TicketSource = TicketSource.WEB
-    requester_name: Optional[str] = None
-    requester_email: Optional[str] = None
-    requester_phone: Optional[str] = None
-    requester_id: Optional[int] = None
-    company_id: Optional[int] = None
-    tags: Optional[List[str]] = None
-    custom_fields: Optional[Dict[str, Any]] = None
+    requester_name: str | None = None
+    requester_email: str | None = None
+    requester_phone: str | None = None
+    requester_id: int | None = None
+    company_id: int | None = None
+    tags: list[str] | None = None
+    custom_fields: dict[str, Any] | None = None
 
 
 class TicketCreate(TicketBase):
     """Création ticket."""
-    team_id: Optional[int] = None
-    assigned_to_id: Optional[int] = None
+    team_id: int | None = None
+    assigned_to_id: int | None = None
 
 
 class TicketUpdate(BaseModel):
     """Mise à jour ticket."""
-    subject: Optional[str] = Field(None, max_length=500)
-    description: Optional[str] = None
-    category_id: Optional[int] = None
-    team_id: Optional[int] = None
-    priority: Optional[TicketPriority] = None
-    status: Optional[TicketStatus] = None
-    assigned_to_id: Optional[int] = None
-    tags: Optional[List[str]] = None
-    custom_fields: Optional[Dict[str, Any]] = None
+    subject: str | None = Field(None, max_length=500)
+    description: str | None = None
+    category_id: int | None = None
+    team_id: int | None = None
+    priority: TicketPriority | None = None
+    status: TicketStatus | None = None
+    assigned_to_id: int | None = None
+    tags: list[str] | None = None
+    custom_fields: dict[str, Any] | None = None
 
 
 class TicketAssign(BaseModel):
@@ -286,7 +286,7 @@ class TicketAssign(BaseModel):
 class TicketStatusChange(BaseModel):
     """Changement statut."""
     status: TicketStatus
-    comment: Optional[str] = None
+    comment: str | None = None
 
 
 class TicketResponse(TicketBase):
@@ -294,33 +294,33 @@ class TicketResponse(TicketBase):
     id: int
     tenant_id: str
     ticket_number: str
-    team_id: Optional[int] = None
-    sla_id: Optional[int] = None
+    team_id: int | None = None
+    sla_id: int | None = None
     status: TicketStatus
-    assigned_to_id: Optional[int] = None
-    first_response_due: Optional[datetime] = None
-    first_responded_at: Optional[datetime] = None
-    resolution_due: Optional[datetime] = None
-    resolved_at: Optional[datetime] = None
+    assigned_to_id: int | None = None
+    first_response_due: datetime | None = None
+    first_responded_at: datetime | None = None
+    resolution_due: datetime | None = None
+    resolved_at: datetime | None = None
     sla_breached: bool
-    parent_ticket_id: Optional[int] = None
-    merged_into_id: Optional[int] = None
+    parent_ticket_id: int | None = None
+    merged_into_id: int | None = None
     reply_count: int
     internal_note_count: int
-    satisfaction_rating: Optional[int] = None
+    satisfaction_rating: int | None = None
     created_at: datetime
     updated_at: datetime
-    closed_at: Optional[datetime] = None
+    closed_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class TicketDetail(TicketResponse):
     """Détail ticket avec relations."""
-    category: Optional[CategoryResponse] = None
-    team: Optional[TeamResponse] = None
-    assigned_agent: Optional[AgentResponse] = None
-    replies: List["ReplyResponse"] = []
+    category: CategoryResponse | None = None
+    team: TeamResponse | None = None
+    assigned_agent: AgentResponse | None = None
+    replies: list["ReplyResponse"] = []
 
 
 # ============================================================================
@@ -330,10 +330,10 @@ class TicketDetail(TicketResponse):
 class ReplyBase(BaseModel):
     """Base réponse."""
     body: str
-    body_html: Optional[str] = None
+    body_html: str | None = None
     is_internal: bool = False
-    cc_emails: Optional[List[str]] = None
-    bcc_emails: Optional[List[str]] = None
+    cc_emails: list[str] | None = None
+    bcc_emails: list[str] | None = None
 
 
 class ReplyCreate(ReplyBase):
@@ -347,9 +347,9 @@ class ReplyResponse(ReplyBase):
     tenant_id: str
     ticket_id: int
     author_type: str
-    author_id: Optional[int] = None
-    author_name: Optional[str] = None
-    author_email: Optional[str] = None
+    author_id: int | None = None
+    author_name: str | None = None
+    author_email: str | None = None
     is_first_response: bool
     created_at: datetime
 
@@ -363,11 +363,11 @@ class ReplyResponse(ReplyBase):
 class AttachmentCreate(BaseModel):
     """Création pièce jointe."""
     filename: str = Field(..., max_length=255)
-    file_path: Optional[str] = None
-    file_url: Optional[str] = None
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-    reply_id: Optional[int] = None
+    file_path: str | None = None
+    file_url: str | None = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    reply_id: int | None = None
 
 
 class AttachmentResponse(BaseModel):
@@ -375,13 +375,13 @@ class AttachmentResponse(BaseModel):
     id: int
     tenant_id: str
     ticket_id: int
-    reply_id: Optional[int] = None
+    reply_id: int | None = None
     filename: str
-    file_path: Optional[str] = None
-    file_url: Optional[str] = None
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-    uploaded_by_id: Optional[int] = None
+    file_path: str | None = None
+    file_url: str | None = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    uploaded_by_id: int | None = None
     uploaded_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -397,12 +397,12 @@ class HistoryResponse(BaseModel):
     tenant_id: str
     ticket_id: int
     action: str
-    field_name: Optional[str] = None
-    old_value: Optional[str] = None
-    new_value: Optional[str] = None
-    actor_type: Optional[str] = None
-    actor_id: Optional[int] = None
-    actor_name: Optional[str] = None
+    field_name: str | None = None
+    old_value: str | None = None
+    new_value: str | None = None
+    actor_type: str | None = None
+    actor_id: int | None = None
+    actor_name: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -415,13 +415,13 @@ class HistoryResponse(BaseModel):
 class CannedResponseBase(BaseModel):
     """Base réponse pré-enregistrée."""
     title: str = Field(..., max_length=255)
-    shortcut: Optional[str] = Field(None, max_length=50)
+    shortcut: str | None = Field(None, max_length=50)
     body: str
-    body_html: Optional[str] = None
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
+    body_html: str | None = None
+    category: str | None = None
+    tags: list[str] | None = None
     scope: str = "team"
-    team_id: Optional[int] = None
+    team_id: int | None = None
 
 
 class CannedResponseCreate(CannedResponseBase):
@@ -431,22 +431,22 @@ class CannedResponseCreate(CannedResponseBase):
 
 class CannedResponseUpdate(BaseModel):
     """Mise à jour réponse pré-enregistrée."""
-    title: Optional[str] = Field(None, max_length=255)
-    shortcut: Optional[str] = Field(None, max_length=50)
-    body: Optional[str] = None
-    body_html: Optional[str] = None
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
-    scope: Optional[str] = None
-    team_id: Optional[int] = None
-    is_active: Optional[bool] = None
+    title: str | None = Field(None, max_length=255)
+    shortcut: str | None = Field(None, max_length=50)
+    body: str | None = None
+    body_html: str | None = None
+    category: str | None = None
+    tags: list[str] | None = None
+    scope: str | None = None
+    team_id: int | None = None
+    is_active: bool | None = None
 
 
 class CannedResponseResponse(CannedResponseBase):
     """Réponse."""
     id: int
     tenant_id: str
-    agent_id: Optional[int] = None
+    agent_id: int | None = None
     usage_count: int
     is_active: bool
     created_at: datetime
@@ -463,9 +463,9 @@ class KBCategoryBase(BaseModel):
     """Base catégorie KB."""
     name: str = Field(..., max_length=255)
     slug: str = Field(..., max_length=255)
-    description: Optional[str] = None
-    icon: Optional[str] = None
-    parent_id: Optional[int] = None
+    description: str | None = None
+    icon: str | None = None
+    parent_id: int | None = None
     sort_order: int = 0
     is_public: bool = True
 
@@ -477,14 +477,14 @@ class KBCategoryCreate(KBCategoryBase):
 
 class KBCategoryUpdate(BaseModel):
     """Mise à jour catégorie KB."""
-    name: Optional[str] = Field(None, max_length=255)
-    slug: Optional[str] = Field(None, max_length=255)
-    description: Optional[str] = None
-    icon: Optional[str] = None
-    parent_id: Optional[int] = None
-    sort_order: Optional[int] = None
-    is_public: Optional[bool] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, max_length=255)
+    slug: str | None = Field(None, max_length=255)
+    description: str | None = None
+    icon: str | None = None
+    parent_id: int | None = None
+    sort_order: int | None = None
+    is_public: bool | None = None
+    is_active: bool | None = None
 
 
 class KBCategoryResponse(KBCategoryBase):
@@ -501,13 +501,13 @@ class KBArticleBase(BaseModel):
     """Base article KB."""
     title: str = Field(..., max_length=500)
     slug: str = Field(..., max_length=500)
-    excerpt: Optional[str] = None
+    excerpt: str | None = None
     body: str
-    body_html: Optional[str] = None
-    category_id: Optional[int] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    keywords: Optional[List[str]] = None
+    body_html: str | None = None
+    category_id: int | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    keywords: list[str] | None = None
     status: str = "draft"
     is_featured: bool = False
     is_public: bool = True
@@ -520,30 +520,30 @@ class KBArticleCreate(KBArticleBase):
 
 class KBArticleUpdate(BaseModel):
     """Mise à jour article KB."""
-    title: Optional[str] = Field(None, max_length=500)
-    slug: Optional[str] = Field(None, max_length=500)
-    excerpt: Optional[str] = None
-    body: Optional[str] = None
-    body_html: Optional[str] = None
-    category_id: Optional[int] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    keywords: Optional[List[str]] = None
-    status: Optional[str] = None
-    is_featured: Optional[bool] = None
-    is_public: Optional[bool] = None
+    title: str | None = Field(None, max_length=500)
+    slug: str | None = Field(None, max_length=500)
+    excerpt: str | None = None
+    body: str | None = None
+    body_html: str | None = None
+    category_id: int | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    keywords: list[str] | None = None
+    status: str | None = None
+    is_featured: bool | None = None
+    is_public: bool | None = None
 
 
 class KBArticleResponse(KBArticleBase):
     """Réponse article KB."""
     id: int
     tenant_id: str
-    author_id: Optional[int] = None
-    author_name: Optional[str] = None
+    author_id: int | None = None
+    author_name: str | None = None
     view_count: int
     helpful_count: int
     not_helpful_count: int
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -558,8 +558,8 @@ class SatisfactionCreate(BaseModel):
     """Création enquête satisfaction."""
     ticket_id: int
     rating: int = Field(..., ge=1, le=5)
-    feedback: Optional[str] = None
-    customer_email: Optional[str] = None
+    feedback: str | None = None
+    customer_email: str | None = None
 
 
 class SatisfactionResponse(BaseModel):
@@ -568,10 +568,10 @@ class SatisfactionResponse(BaseModel):
     tenant_id: str
     ticket_id: int
     rating: int
-    feedback: Optional[str] = None
-    customer_id: Optional[int] = None
-    customer_email: Optional[str] = None
-    agent_id: Optional[int] = None
+    feedback: str | None = None
+    customer_id: int | None = None
+    customer_email: str | None = None
+    agent_id: int | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -584,10 +584,10 @@ class SatisfactionResponse(BaseModel):
 class AutomationBase(BaseModel):
     """Base automatisation."""
     name: str = Field(..., max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     trigger_type: str = Field(..., max_length=50)
-    trigger_conditions: Optional[List[Dict[str, Any]]] = None
-    actions: Optional[List[Dict[str, Any]]] = None
+    trigger_conditions: list[dict[str, Any]] | None = None
+    actions: list[dict[str, Any]] | None = None
     priority: int = 0
 
 
@@ -598,13 +598,13 @@ class AutomationCreate(AutomationBase):
 
 class AutomationUpdate(BaseModel):
     """Mise à jour automatisation."""
-    name: Optional[str] = Field(None, max_length=255)
-    description: Optional[str] = None
-    trigger_type: Optional[str] = None
-    trigger_conditions: Optional[List[Dict[str, Any]]] = None
-    actions: Optional[List[Dict[str, Any]]] = None
-    priority: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, max_length=255)
+    description: str | None = None
+    trigger_type: str | None = None
+    trigger_conditions: list[dict[str, Any]] | None = None
+    actions: list[dict[str, Any]] | None = None
+    priority: int | None = None
+    is_active: bool | None = None
 
 
 class AutomationResponse(AutomationBase):
@@ -612,7 +612,7 @@ class AutomationResponse(AutomationBase):
     id: int
     tenant_id: str
     execution_count: int
-    last_executed_at: Optional[datetime] = None
+    last_executed_at: datetime | None = None
     is_active: bool
     created_at: datetime
 
@@ -652,12 +652,12 @@ class AgentStats(BaseModel):
 class HelpdeskDashboard(BaseModel):
     """Dashboard Helpdesk."""
     ticket_stats: TicketStats
-    agent_stats: List[AgentStats] = []
-    tickets_by_priority: Dict[str, int] = {}
-    tickets_by_category: Dict[str, int] = {}
-    tickets_by_source: Dict[str, int] = {}
-    recent_tickets: List[TicketResponse] = []
-    sla_performance: Dict[str, float] = {}
+    agent_stats: list[AgentStats] = []
+    tickets_by_priority: dict[str, int] = {}
+    tickets_by_category: dict[str, int] = {}
+    tickets_by_source: dict[str, int] = {}
+    recent_tickets: list[TicketResponse] = []
+    sla_performance: dict[str, float] = {}
 
 
 # Update forward references

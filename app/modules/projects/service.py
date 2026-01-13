@@ -5,31 +5,67 @@ AZALS MODULE M9 - Service Projets
 Logique métier pour la gestion de projets.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
+
+from sqlalchemy import and_, desc, func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, desc
 
 from .models import (
-    Project, ProjectPhase, ProjectTask, TaskDependency,
-    ProjectMilestone, ProjectTeamMember, ProjectRisk,
-    ProjectIssue, ProjectTimeEntry, ProjectExpense,
-    ProjectDocument, ProjectBudget, BudgetLine,
-    ProjectTemplate, ProjectComment, ProjectKPI,
-    ProjectStatus, ProjectPriority, TaskStatus, TaskPriority,
-    MilestoneStatus, RiskStatus, RiskImpact, RiskProbability,
-    IssueStatus, IssuePriority, TimeEntryStatus,
-    ExpenseStatus
+    BudgetLine,
+    ExpenseStatus,
+    IssuePriority,
+    IssueStatus,
+    MilestoneStatus,
+    Project,
+    ProjectBudget,
+    ProjectComment,
+    ProjectDocument,
+    ProjectExpense,
+    ProjectIssue,
+    ProjectKPI,
+    ProjectMilestone,
+    ProjectPhase,
+    ProjectPriority,
+    ProjectRisk,
+    ProjectStatus,
+    ProjectTask,
+    ProjectTeamMember,
+    ProjectTemplate,
+    ProjectTimeEntry,
+    RiskImpact,
+    RiskProbability,
+    RiskStatus,
+    TaskDependency,
+    TaskPriority,
+    TaskStatus,
+    TimeEntryStatus,
 )
 from .schemas import (
-    ProjectCreate, ProjectUpdate, TaskCreate, TaskUpdate,
-    PhaseCreate, PhaseUpdate, MilestoneCreate, MilestoneUpdate,
-    TeamMemberCreate, TeamMemberUpdate, RiskCreate, RiskUpdate,
-    IssueCreate, IssueUpdate, TimeEntryCreate, ExpenseCreate, DocumentCreate, BudgetCreate,
-    TemplateCreate, CommentCreate,
-    TaskDependencyCreate, ProjectStats
+    BudgetCreate,
+    CommentCreate,
+    DocumentCreate,
+    ExpenseCreate,
+    IssueCreate,
+    IssueUpdate,
+    MilestoneCreate,
+    MilestoneUpdate,
+    PhaseCreate,
+    PhaseUpdate,
+    ProjectCreate,
+    ProjectStats,
+    ProjectUpdate,
+    RiskCreate,
+    RiskUpdate,
+    TaskCreate,
+    TaskDependencyCreate,
+    TaskUpdate,
+    TeamMemberCreate,
+    TeamMemberUpdate,
+    TemplateCreate,
+    TimeEntryCreate,
 )
 
 
@@ -76,7 +112,7 @@ class ProjectsService:
         self.db.refresh(project)
         return project
 
-    def get_project(self, project_id: UUID) -> Optional[Project]:
+    def get_project(self, project_id: UUID) -> Project | None:
         """Récupérer un projet."""
         return self.db.query(Project).filter(
             and_(
@@ -87,16 +123,16 @@ class ProjectsService:
 
     def list_projects(
         self,
-        status: Optional[ProjectStatus] = None,
-        priority: Optional[ProjectPriority] = None,
-        project_manager_id: Optional[UUID] = None,
-        customer_id: Optional[UUID] = None,
-        category: Optional[str] = None,
+        status: ProjectStatus | None = None,
+        priority: ProjectPriority | None = None,
+        project_manager_id: UUID | None = None,
+        customer_id: UUID | None = None,
+        category: str | None = None,
         is_active: bool = True,
-        search: Optional[str] = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> tuple[List[Project], int]:
+    ) -> tuple[list[Project], int]:
         """Lister les projets."""
         query = self.db.query(Project).filter(
             Project.tenant_id == self.tenant_id
@@ -126,7 +162,7 @@ class ProjectsService:
         projects = query.order_by(desc(Project.created_at)).offset(skip).limit(limit).all()
         return projects, total
 
-    def update_project(self, project_id: UUID, data: ProjectUpdate) -> Optional[Project]:
+    def update_project(self, project_id: UUID, data: ProjectUpdate) -> Project | None:
         """Mettre à jour un projet."""
         project = self.get_project(project_id)
         if not project:
@@ -256,7 +292,7 @@ class ProjectsService:
         self.db.refresh(phase)
         return phase
 
-    def get_phases(self, project_id: UUID) -> List[ProjectPhase]:
+    def get_phases(self, project_id: UUID) -> list[ProjectPhase]:
         """Récupérer les phases d'un projet."""
         return self.db.query(ProjectPhase).filter(
             and_(
@@ -265,7 +301,7 @@ class ProjectsService:
             )
         ).order_by(ProjectPhase.order).all()
 
-    def update_phase(self, phase_id: UUID, data: PhaseUpdate) -> Optional[ProjectPhase]:
+    def update_phase(self, phase_id: UUID, data: PhaseUpdate) -> ProjectPhase | None:
         """Mettre à jour une phase."""
         phase = self.db.query(ProjectPhase).filter(
             and_(
@@ -352,7 +388,7 @@ class ProjectsService:
         self.db.commit()
         return dep
 
-    def get_task(self, task_id: UUID) -> Optional[ProjectTask]:
+    def get_task(self, task_id: UUID) -> ProjectTask | None:
         """Récupérer une tâche."""
         return self.db.query(ProjectTask).filter(
             and_(
@@ -363,16 +399,16 @@ class ProjectsService:
 
     def list_tasks(
         self,
-        project_id: Optional[UUID] = None,
-        phase_id: Optional[UUID] = None,
-        assignee_id: Optional[UUID] = None,
-        status: Optional[TaskStatus] = None,
-        priority: Optional[TaskPriority] = None,
+        project_id: UUID | None = None,
+        phase_id: UUID | None = None,
+        assignee_id: UUID | None = None,
+        status: TaskStatus | None = None,
+        priority: TaskPriority | None = None,
         is_overdue: bool = False,
-        search: Optional[str] = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> tuple[List[ProjectTask], int]:
+    ) -> tuple[list[ProjectTask], int]:
         """Lister les tâches."""
         query = self.db.query(ProjectTask).filter(
             ProjectTask.tenant_id == self.tenant_id
@@ -407,7 +443,7 @@ class ProjectsService:
         tasks = query.order_by(ProjectTask.order).offset(skip).limit(limit).all()
         return tasks, total
 
-    def update_task(self, task_id: UUID, data: TaskUpdate) -> Optional[ProjectTask]:
+    def update_task(self, task_id: UUID, data: TaskUpdate) -> ProjectTask | None:
         """Mettre à jour une tâche."""
         task = self.get_task(task_id)
         if not task:
@@ -445,9 +481,9 @@ class ProjectsService:
 
     def get_my_tasks(
         self,
-        status: Optional[TaskStatus] = None,
+        status: TaskStatus | None = None,
         limit: int = 50
-    ) -> List[ProjectTask]:
+    ) -> list[ProjectTask]:
         """Récupérer mes tâches."""
         query = self.db.query(ProjectTask).filter(
             and_(
@@ -487,7 +523,7 @@ class ProjectsService:
         self.db.refresh(milestone)
         return milestone
 
-    def get_milestones(self, project_id: UUID) -> List[ProjectMilestone]:
+    def get_milestones(self, project_id: UUID) -> list[ProjectMilestone]:
         """Récupérer les jalons d'un projet."""
         return self.db.query(ProjectMilestone).filter(
             and_(
@@ -496,7 +532,7 @@ class ProjectsService:
             )
         ).order_by(ProjectMilestone.target_date).all()
 
-    def update_milestone(self, milestone_id: UUID, data: MilestoneUpdate) -> Optional[ProjectMilestone]:
+    def update_milestone(self, milestone_id: UUID, data: MilestoneUpdate) -> ProjectMilestone | None:
         """Mettre à jour un jalon."""
         milestone = self.db.query(ProjectMilestone).filter(
             and_(
@@ -550,17 +586,17 @@ class ProjectsService:
         self.db.refresh(member)
         return member
 
-    def get_team_members(self, project_id: UUID) -> List[ProjectTeamMember]:
+    def get_team_members(self, project_id: UUID) -> list[ProjectTeamMember]:
         """Récupérer l'équipe d'un projet."""
         return self.db.query(ProjectTeamMember).filter(
             and_(
                 ProjectTeamMember.project_id == project_id,
                 ProjectTeamMember.tenant_id == self.tenant_id,
-                ProjectTeamMember.is_active == True
+                ProjectTeamMember.is_active
             )
         ).all()
 
-    def update_team_member(self, member_id: UUID, data: TeamMemberUpdate) -> Optional[ProjectTeamMember]:
+    def update_team_member(self, member_id: UUID, data: TeamMemberUpdate) -> ProjectTeamMember | None:
         """Mettre à jour un membre."""
         member = self.db.query(ProjectTeamMember).filter(
             and_(
@@ -645,8 +681,8 @@ class ProjectsService:
     def get_risks(
         self,
         project_id: UUID,
-        status: Optional[RiskStatus] = None
-    ) -> List[ProjectRisk]:
+        status: RiskStatus | None = None
+    ) -> list[ProjectRisk]:
         """Récupérer les risques d'un projet."""
         query = self.db.query(ProjectRisk).filter(
             and_(
@@ -658,7 +694,7 @@ class ProjectsService:
             query = query.filter(ProjectRisk.status == status)
         return query.order_by(desc(ProjectRisk.risk_score)).all()
 
-    def update_risk(self, risk_id: UUID, data: RiskUpdate) -> Optional[ProjectRisk]:
+    def update_risk(self, risk_id: UUID, data: RiskUpdate) -> ProjectRisk | None:
         """Mettre à jour un risque."""
         risk = self.db.query(ProjectRisk).filter(
             and_(
@@ -735,9 +771,9 @@ class ProjectsService:
     def get_issues(
         self,
         project_id: UUID,
-        status: Optional[IssueStatus] = None,
-        priority: Optional[IssuePriority] = None
-    ) -> List[ProjectIssue]:
+        status: IssueStatus | None = None,
+        priority: IssuePriority | None = None
+    ) -> list[ProjectIssue]:
         """Récupérer les issues d'un projet."""
         query = self.db.query(ProjectIssue).filter(
             and_(
@@ -751,7 +787,7 @@ class ProjectsService:
             query = query.filter(ProjectIssue.priority == priority)
         return query.order_by(desc(ProjectIssue.created_at)).all()
 
-    def update_issue(self, issue_id: UUID, data: IssueUpdate) -> Optional[ProjectIssue]:
+    def update_issue(self, issue_id: UUID, data: IssueUpdate) -> ProjectIssue | None:
         """Mettre à jour une issue."""
         issue = self.db.query(ProjectIssue).filter(
             and_(
@@ -833,15 +869,15 @@ class ProjectsService:
 
     def get_time_entries(
         self,
-        project_id: Optional[UUID] = None,
-        task_id: Optional[UUID] = None,
-        user_id: Optional[UUID] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-        status: Optional[TimeEntryStatus] = None,
+        project_id: UUID | None = None,
+        task_id: UUID | None = None,
+        user_id: UUID | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        status: TimeEntryStatus | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> tuple[List[ProjectTimeEntry], int, float, float]:
+    ) -> tuple[list[ProjectTimeEntry], int, float, float]:
         """Récupérer les saisies de temps."""
         query = self.db.query(ProjectTimeEntry).filter(
             ProjectTimeEntry.tenant_id == self.tenant_id
@@ -863,13 +899,13 @@ class ProjectsService:
         total = query.count()
         total_hours = query.with_entities(func.sum(ProjectTimeEntry.hours)).scalar() or 0
         billable_hours = query.filter(
-            ProjectTimeEntry.is_billable == True
+            ProjectTimeEntry.is_billable
         ).with_entities(func.sum(ProjectTimeEntry.hours)).scalar() or 0
 
         entries = query.order_by(desc(ProjectTimeEntry.date)).offset(skip).limit(limit).all()
         return entries, total, float(total_hours), float(billable_hours)
 
-    def submit_time_entry(self, entry_id: UUID) -> Optional[ProjectTimeEntry]:
+    def submit_time_entry(self, entry_id: UUID) -> ProjectTimeEntry | None:
         """Soumettre une saisie pour approbation."""
         entry = self.db.query(ProjectTimeEntry).filter(
             and_(
@@ -885,7 +921,7 @@ class ProjectsService:
         self.db.refresh(entry)
         return entry
 
-    def approve_time_entry(self, entry_id: UUID) -> Optional[ProjectTimeEntry]:
+    def approve_time_entry(self, entry_id: UUID) -> ProjectTimeEntry | None:
         """Approuver une saisie de temps."""
         entry = self.db.query(ProjectTimeEntry).filter(
             and_(
@@ -902,7 +938,7 @@ class ProjectsService:
         self.db.refresh(entry)
         return entry
 
-    def reject_time_entry(self, entry_id: UUID, reason: str) -> Optional[ProjectTimeEntry]:
+    def reject_time_entry(self, entry_id: UUID, reason: str) -> ProjectTimeEntry | None:
         """Rejeter une saisie de temps."""
         entry = self.db.query(ProjectTimeEntry).filter(
             and_(
@@ -951,8 +987,8 @@ class ProjectsService:
     def get_expenses(
         self,
         project_id: UUID,
-        status: Optional[ExpenseStatus] = None
-    ) -> List[ProjectExpense]:
+        status: ExpenseStatus | None = None
+    ) -> list[ProjectExpense]:
         """Récupérer les dépenses d'un projet."""
         query = self.db.query(ProjectExpense).filter(
             and_(
@@ -964,7 +1000,7 @@ class ProjectsService:
             query = query.filter(ProjectExpense.status == status)
         return query.order_by(desc(ProjectExpense.expense_date)).all()
 
-    def approve_expense(self, expense_id: UUID) -> Optional[ProjectExpense]:
+    def approve_expense(self, expense_id: UUID) -> ProjectExpense | None:
         """Approuver une dépense."""
         expense = self.db.query(ProjectExpense).filter(
             and_(
@@ -1011,13 +1047,13 @@ class ProjectsService:
         self.db.refresh(doc)
         return doc
 
-    def get_documents(self, project_id: UUID, category: Optional[str] = None) -> List[ProjectDocument]:
+    def get_documents(self, project_id: UUID, category: str | None = None) -> list[ProjectDocument]:
         """Récupérer les documents d'un projet."""
         query = self.db.query(ProjectDocument).filter(
             and_(
                 ProjectDocument.project_id == project_id,
                 ProjectDocument.tenant_id == self.tenant_id,
-                ProjectDocument.is_latest == True
+                ProjectDocument.is_latest
             )
         )
         if category:
@@ -1071,17 +1107,17 @@ class ProjectsService:
         self.db.refresh(budget)
         return budget
 
-    def get_budgets(self, project_id: UUID) -> List[ProjectBudget]:
+    def get_budgets(self, project_id: UUID) -> list[ProjectBudget]:
         """Récupérer les budgets d'un projet."""
         return self.db.query(ProjectBudget).filter(
             and_(
                 ProjectBudget.project_id == project_id,
                 ProjectBudget.tenant_id == self.tenant_id,
-                ProjectBudget.is_active == True
+                ProjectBudget.is_active
             )
         ).all()
 
-    def approve_budget(self, budget_id: UUID) -> Optional[ProjectBudget]:
+    def approve_budget(self, budget_id: UUID) -> ProjectBudget | None:
         """Approuver un budget."""
         budget = self.db.query(ProjectBudget).filter(
             and_(
@@ -1128,15 +1164,15 @@ class ProjectsService:
         self.db.refresh(template)
         return template
 
-    def get_templates(self) -> List[ProjectTemplate]:
+    def get_templates(self) -> list[ProjectTemplate]:
         """Récupérer les templates."""
         return self.db.query(ProjectTemplate).filter(
             and_(
                 or_(
                     ProjectTemplate.tenant_id == self.tenant_id,
-                    ProjectTemplate.is_public == True
+                    ProjectTemplate.is_public
                 ),
-                ProjectTemplate.is_active == True
+                ProjectTemplate.is_active
             )
         ).all()
 
@@ -1145,7 +1181,7 @@ class ProjectsService:
         template_id: UUID,
         code: str,
         name: str,
-        start_date: Optional[date] = None
+        start_date: date | None = None
     ) -> Project:
         """Créer un projet depuis un template."""
         template = self.db.query(ProjectTemplate).filter(
@@ -1263,8 +1299,8 @@ class ProjectsService:
     def get_comments(
         self,
         project_id: UUID,
-        task_id: Optional[UUID] = None
-    ) -> List[ProjectComment]:
+        task_id: UUID | None = None
+    ) -> list[ProjectComment]:
         """Récupérer les commentaires."""
         query = self.db.query(ProjectComment).filter(
             and_(
@@ -1388,7 +1424,7 @@ class ProjectsService:
             budget_remaining=(project.planned_budget or Decimal("0")) - (project.actual_cost or Decimal("0"))
         )
 
-    def get_dashboard(self, project_id: UUID) -> Dict[str, Any]:
+    def get_dashboard(self, project_id: UUID) -> dict[str, Any]:
         """Obtenir le dashboard complet d'un projet."""
         project = self.get_project(project_id)
         if not project:

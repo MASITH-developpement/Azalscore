@@ -5,9 +5,9 @@ Schémas pour validation et sérialisation.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field
 
 # ============================================================================
 # CONVERSATION SCHEMAS
@@ -15,17 +15,17 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class ConversationCreate(BaseModel):
     """Création conversation."""
-    title: Optional[str] = None
-    context: Optional[Dict[str, Any]] = None
-    module_source: Optional[str] = None
+    title: str | None = None
+    context: dict[str, Any] | None = None
+    module_source: str | None = None
 
 
 class ConversationResponse(BaseModel):
     """Réponse conversation."""
     id: int
-    title: Optional[str]
-    context: Optional[Dict[str, Any]]
-    module_source: Optional[str]
+    title: str | None
+    context: dict[str, Any] | None
+    module_source: str | None
     is_active: bool
     message_count: int
     created_at: datetime
@@ -38,16 +38,16 @@ class MessageCreate(BaseModel):
     """Création message."""
     content: str = Field(..., min_length=1, max_length=10000)
     request_type: str = "question"
-    context: Optional[Dict[str, Any]] = None
+    context: dict[str, Any] | None = None
 
 
 class MessageResponse(BaseModel):
     """Réponse message."""
     id: int
     role: str
-    request_type: Optional[str]
+    request_type: str | None
     content: str
-    message_metadata: Optional[Dict[str, Any]] = None
+    message_metadata: dict[str, Any] | None = None
     status: str
     created_at: datetime
 
@@ -57,18 +57,18 @@ class MessageResponse(BaseModel):
 class AIQuestionRequest(BaseModel):
     """Requête question à l'IA."""
     question: str = Field(..., min_length=1, max_length=5000)
-    context: Optional[Dict[str, Any]] = None
-    module_source: Optional[str] = None
-    include_data: Optional[bool] = False
+    context: dict[str, Any] | None = None
+    module_source: str | None = None
+    include_data: bool | None = False
 
 
 class AIQuestionResponse(BaseModel):
     """Réponse de l'IA."""
     answer: str
     confidence: float
-    sources: Optional[List[str]] = None
-    related_topics: Optional[List[str]] = None
-    follow_up_suggestions: Optional[List[str]] = None
+    sources: list[str] | None = None
+    related_topics: list[str] | None = None
+    follow_up_suggestions: list[str] | None = None
 
 
 # ============================================================================
@@ -79,13 +79,13 @@ class AnalysisRequest(BaseModel):
     """Requête d'analyse."""
     title: str = Field(..., min_length=1, max_length=255)
     analysis_type: str = Field(..., description="Type: 360, financial, operational, risk, etc.")
-    description: Optional[str] = None
-    module_source: Optional[str] = None
-    entity_type: Optional[str] = None
-    entity_id: Optional[str] = None
-    data_period_start: Optional[datetime] = None
-    data_period_end: Optional[datetime] = None
-    parameters: Optional[Dict[str, Any]] = None
+    description: str | None = None
+    module_source: str | None = None
+    entity_type: str | None = None
+    entity_id: str | None = None
+    data_period_start: datetime | None = None
+    data_period_end: datetime | None = None
+    parameters: dict[str, Any] | None = None
 
 
 class AnalysisFinding(BaseModel):
@@ -94,7 +94,7 @@ class AnalysisFinding(BaseModel):
     title: str
     description: str
     severity: str  # info, warning, critical
-    data: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
 
 
 class AnalysisRecommendation(BaseModel):
@@ -103,9 +103,9 @@ class AnalysisRecommendation(BaseModel):
     title: str
     description: str
     rationale: str
-    expected_impact: Optional[str] = None
-    implementation_effort: Optional[str] = None
-    actions: Optional[List[str]] = None
+    expected_impact: str | None = None
+    implementation_effort: str | None = None
+    actions: list[str] | None = None
 
 
 class AnalysisResponse(BaseModel):
@@ -115,13 +115,13 @@ class AnalysisResponse(BaseModel):
     title: str
     analysis_type: str
     status: str
-    summary: Optional[str]
-    findings: Optional[List[Dict[str, Any]]]
-    metrics: Optional[Dict[str, Any]]
-    confidence_score: Optional[float]
-    risks_identified: Optional[List[Dict[str, Any]]]
-    overall_risk_level: Optional[str]
-    recommendations: Optional[List[Dict[str, Any]]]
+    summary: str | None
+    findings: list[dict[str, Any]] | None
+    metrics: dict[str, Any] | None
+    confidence_score: float | None
+    risks_identified: list[dict[str, Any]] | None
+    overall_risk_level: str | None
+    recommendations: list[dict[str, Any]] | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -135,24 +135,24 @@ class DecisionOption(BaseModel):
     """Option de décision."""
     title: str
     description: str
-    pros: List[str]
-    cons: List[str]
-    estimated_cost: Optional[float] = None
-    estimated_benefit: Optional[float] = None
-    risk_level: Optional[str] = None
-    implementation_time: Optional[str] = None
+    pros: list[str]
+    cons: list[str]
+    estimated_cost: float | None = None
+    estimated_benefit: float | None = None
+    risk_level: str | None = None
+    implementation_time: str | None = None
 
 
 class DecisionSupportCreate(BaseModel):
     """Création support de décision."""
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     decision_type: str
-    module_source: Optional[str] = None
+    module_source: str | None = None
     priority: str = "normal"
-    deadline: Optional[datetime] = None
-    context: Optional[Dict[str, Any]] = None
-    analysis_id: Optional[int] = None
+    deadline: datetime | None = None
+    context: dict[str, Any] | None = None
+    analysis_id: int | None = None
 
 
 class DecisionSupportResponse(BaseModel):
@@ -160,15 +160,15 @@ class DecisionSupportResponse(BaseModel):
     id: int
     decision_code: str
     title: str
-    description: Optional[str]
+    description: str | None
     decision_type: str
     priority: str
-    deadline: Optional[datetime]
-    options: Optional[List[Dict[str, Any]]]
-    recommended_option: Optional[int]
-    recommendation_rationale: Optional[str]
-    risk_level: Optional[str]
-    risks: Optional[List[Dict[str, Any]]]
+    deadline: datetime | None
+    options: list[dict[str, Any]] | None
+    recommended_option: int | None
+    recommendation_rationale: str | None
+    risk_level: str | None
+    risks: list[dict[str, Any]] | None
     is_red_point: bool
     requires_double_confirmation: bool
     status: str
@@ -180,7 +180,7 @@ class DecisionSupportResponse(BaseModel):
 class DecisionConfirmation(BaseModel):
     """Confirmation de décision."""
     decision_made: int  # Index de l'option choisie
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 # ============================================================================
@@ -190,16 +190,16 @@ class DecisionConfirmation(BaseModel):
 class RiskAlertCreate(BaseModel):
     """Création alerte risque."""
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     category: str
-    subcategory: Optional[str] = None
+    subcategory: str | None = None
     risk_level: str
-    probability: Optional[float] = None
-    impact_score: Optional[float] = None
-    detection_source: Optional[str] = None
-    trigger_data: Optional[Dict[str, Any]] = None
-    affected_entities: Optional[List[Dict[str, Any]]] = None
-    recommended_actions: Optional[List[str]] = None
+    probability: float | None = None
+    impact_score: float | None = None
+    detection_source: str | None = None
+    trigger_data: dict[str, Any] | None = None
+    affected_entities: list[dict[str, Any]] | None = None
+    recommended_actions: list[str] | None = None
 
 
 class RiskAlertResponse(BaseModel):
@@ -207,14 +207,14 @@ class RiskAlertResponse(BaseModel):
     id: int
     alert_code: str
     title: str
-    description: Optional[str]
+    description: str | None
     category: str
     risk_level: str
-    probability: Optional[float]
-    impact_score: Optional[float]
+    probability: float | None
+    impact_score: float | None
     status: str
-    affected_entities: Optional[List[Dict[str, Any]]]
-    recommended_actions: Optional[List[str]]
+    affected_entities: list[dict[str, Any]] | None
+    recommended_actions: list[str] | None
     detected_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -222,13 +222,13 @@ class RiskAlertResponse(BaseModel):
 
 class RiskAcknowledge(BaseModel):
     """Accusé de réception risque."""
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class RiskResolve(BaseModel):
     """Résolution risque."""
     resolution_notes: str
-    actions_taken: Optional[List[str]] = None
+    actions_taken: list[str] | None = None
 
 
 # ============================================================================
@@ -239,12 +239,12 @@ class PredictionRequest(BaseModel):
     """Requête de prédiction."""
     title: str
     prediction_type: str  # sales, cashflow, demand, etc.
-    target_metric: Optional[str] = None
-    module_source: Optional[str] = None
+    target_metric: str | None = None
+    module_source: str | None = None
     prediction_start: datetime
     prediction_end: datetime
     granularity: str = "daily"  # daily, weekly, monthly
-    parameters: Optional[Dict[str, Any]] = None
+    parameters: dict[str, Any] | None = None
 
 
 class PredictionValue(BaseModel):
@@ -252,8 +252,8 @@ class PredictionValue(BaseModel):
     date: datetime
     value: float
     confidence: float
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
+    lower_bound: float | None = None
+    upper_bound: float | None = None
 
 
 class PredictionResponse(BaseModel):
@@ -265,8 +265,8 @@ class PredictionResponse(BaseModel):
     prediction_start: datetime
     prediction_end: datetime
     granularity: str
-    predicted_values: Optional[List[Dict[str, Any]]]
-    confidence_score: Optional[float]
+    predicted_values: list[dict[str, Any]] | None
+    confidence_score: float | None
     status: str
     created_at: datetime
 
@@ -281,12 +281,12 @@ class FeedbackCreate(BaseModel):
     """Création feedback."""
     reference_type: str
     reference_id: int
-    rating: Optional[int] = Field(None, ge=1, le=5)
-    is_helpful: Optional[bool] = None
-    is_accurate: Optional[bool] = None
-    feedback_text: Optional[str] = None
-    improvement_suggestion: Optional[str] = None
-    feedback_category: Optional[str] = None
+    rating: int | None = Field(None, ge=1, le=5)
+    is_helpful: bool | None = None
+    is_accurate: bool | None = None
+    feedback_text: str | None = None
+    improvement_suggestion: str | None = None
+    feedback_category: str | None = None
 
 
 # ============================================================================
@@ -295,22 +295,22 @@ class FeedbackCreate(BaseModel):
 
 class AIConfigUpdate(BaseModel):
     """Mise à jour configuration IA."""
-    is_enabled: Optional[bool] = None
-    enabled_features: Optional[List[str]] = None
-    daily_request_limit: Optional[int] = None
-    response_language: Optional[str] = None
-    formality_level: Optional[str] = None
-    detail_level: Optional[str] = None
-    require_confirmation_threshold: Optional[str] = None
-    auto_escalation_enabled: Optional[bool] = None
-    notify_on_risk: Optional[bool] = None
-    notify_on_anomaly: Optional[bool] = None
+    is_enabled: bool | None = None
+    enabled_features: list[str] | None = None
+    daily_request_limit: int | None = None
+    response_language: str | None = None
+    formality_level: str | None = None
+    detail_level: str | None = None
+    require_confirmation_threshold: str | None = None
+    auto_escalation_enabled: bool | None = None
+    notify_on_risk: bool | None = None
+    notify_on_anomaly: bool | None = None
 
 
 class AIConfigResponse(BaseModel):
     """Réponse configuration."""
     is_enabled: bool
-    enabled_features: Optional[List[str]]
+    enabled_features: list[str] | None
     daily_request_limit: int
     response_language: str
     formality_level: str
@@ -345,8 +345,8 @@ class AIHealthCheck(BaseModel):
     """État de santé IA."""
     status: str  # healthy, degraded, unhealthy
     response_time_ms: int
-    features_status: Dict[str, str]
-    last_error: Optional[str] = None
+    features_status: dict[str, str]
+    last_error: str | None = None
     uptime_percent: float = 100.0
 
 
@@ -358,10 +358,10 @@ class SynthesisRequest(BaseModel):
     """Requête de synthèse."""
     title: str
     synthesis_type: str  # daily, weekly, monthly, custom
-    modules: Optional[List[str]] = None
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
-    focus_areas: Optional[List[str]] = None
+    modules: list[str] | None = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
+    focus_areas: list[str] | None = None
 
 
 class SynthesisResponse(BaseModel):
@@ -369,8 +369,8 @@ class SynthesisResponse(BaseModel):
     title: str
     period: str
     executive_summary: str
-    key_metrics: Dict[str, Any]
-    highlights: List[str]
-    concerns: List[str]
-    action_items: List[str]
+    key_metrics: dict[str, Any]
+    highlights: list[str]
+    concerns: list[str]
+    action_items: list[str]
     generated_at: datetime

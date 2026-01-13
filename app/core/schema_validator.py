@@ -12,11 +12,10 @@ RÈGLE NON NÉGOCIABLE:
 """
 
 import logging
-from typing import List, Set
-from sqlalchemy import text
+
+from sqlalchemy import TypeDecorator, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import TypeDecorator
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +48,7 @@ def _is_uuid_type(col_type) -> bool:
 
     # Vérifier dans la représentation string
     type_str = str(col_type).lower()
-    if 'uuid' in type_str:
-        return True
-
-    return False
+    return 'uuid' in type_str
 
 
 def _is_integer_type(col_type) -> bool:
@@ -112,9 +108,9 @@ class SchemaValidator:
     def __init__(self, engine: Engine, base: DeclarativeBase):
         self.engine = engine
         self.base = base
-        self.critical_errors: List[str] = []
-        self.warnings: List[str] = []
-        self.tables_with_bigint: Set[str] = set()
+        self.critical_errors: list[str] = []
+        self.warnings: list[str] = []
+        self.tables_with_bigint: set[str] = set()
 
     def _is_allowed_integer_column(self, column_name: str) -> bool:
         """Vérifie si une colonne est autorisée à utiliser Integer."""
@@ -326,7 +322,7 @@ class SchemaValidator:
 
         return "\n".join(lines)
 
-    def get_dependency_order(self) -> List[str]:
+    def get_dependency_order(self) -> list[str]:
         """Calcule l'ordre de création des tables basé sur les FK."""
         return [table.name for table in self.base.metadata.sorted_tables]
 
@@ -404,10 +400,10 @@ class SchemaValidator:
         logger.info("[SCHEMA] ========================================")
 
         # Valider le schéma DB en premier (plus important)
-        db_valid = self.validate_database_schema()
+        self.validate_database_schema()
 
         # Valider les modèles ORM
-        orm_valid = self.validate_orm_models()
+        self.validate_orm_models()
 
         # Générer et afficher le rapport
         report = self.generate_report()
@@ -466,7 +462,7 @@ def validate_schema_on_startup(engine: Engine, base: DeclarativeBase, strict: bo
     return validator.validate_and_enforce(strict=strict)
 
 
-def get_bigint_tables(engine: Engine) -> Set[str]:
+def get_bigint_tables(engine: Engine) -> set[str]:
     """
     Retourne l'ensemble des tables avec PK BIGINT.
     Utilitaire pour les scripts de maintenance.

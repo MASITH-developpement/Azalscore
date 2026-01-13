@@ -4,23 +4,36 @@ AZALS MODULE 18 - Mobile App Router
 Endpoints API pour le backend mobile.
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Header, Request
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 
-from .service import MobileService
 from .schemas import (
-    DeviceRegister, DeviceUpdate, DeviceResponse,
-    SessionCreate, SessionResponse, SessionRefresh,
-    NotificationCreate, NotificationBulk, NotificationResponse,
-    SyncRequest, SyncBatch, SyncResponse, PreferencesUpdate, PreferencesResponse,
-    ActivityLog, ActivityBatch,
-    AppConfigResponse, CrashReport, MobileStats
+    ActivityBatch,
+    ActivityLog,
+    AppConfigResponse,
+    CrashReport,
+    DeviceRegister,
+    DeviceResponse,
+    DeviceUpdate,
+    MobileStats,
+    NotificationBulk,
+    NotificationCreate,
+    NotificationResponse,
+    PreferencesResponse,
+    PreferencesUpdate,
+    SessionCreate,
+    SessionRefresh,
+    SessionResponse,
+    SyncBatch,
+    SyncRequest,
+    SyncResponse,
 )
+from .service import MobileService
 
 router = APIRouter(prefix="/mobile", tags=["Mobile"])
 
@@ -35,7 +48,7 @@ def get_mobile_service(
 
 def get_validated_user_id(
     current_user: User = Depends(get_current_user),
-    x_user_id: Optional[str] = Header(None)
+    x_user_id: str | None = Header(None)
 ) -> int:
     """
     SECURITY FIX: Valider user_id depuis header contre l'utilisateur authentifié.
@@ -82,7 +95,7 @@ def register_device(
     return device
 
 
-@router.get("/devices", response_model=List[DeviceResponse])
+@router.get("/devices", response_model=list[DeviceResponse])
 def list_devices(
     user_id: int = Depends(get_validated_user_id),
     service: MobileService = Depends(get_mobile_service)
@@ -215,7 +228,7 @@ def send_bulk_notifications(
     return {"sent": len(notifications)}
 
 
-@router.get("/notifications", response_model=List[NotificationResponse])
+@router.get("/notifications", response_model=list[NotificationResponse])
 def get_notifications(
     unread_only: bool = False,
     skip: int = 0,
@@ -408,7 +421,7 @@ def check_version(
 def report_crash(
     data: CrashReport,
     user_id: int = Depends(get_validated_user_id),
-    device_id: Optional[int] = None,
+    device_id: int | None = None,
     service: MobileService = Depends(get_mobile_service)
 ):
     """Rapporter un crash."""
@@ -419,9 +432,9 @@ def report_crash(
 
 @router.get("/crashes")
 def list_crashes(
-    app_version: Optional[str] = None,
-    error_type: Optional[str] = None,
-    resolved: Optional[bool] = None,
+    app_version: str | None = None,
+    error_type: str | None = None,
+    resolved: bool | None = None,
     skip: int = 0,
     limit: int = 50,
     current_user: User = Depends(get_current_user),

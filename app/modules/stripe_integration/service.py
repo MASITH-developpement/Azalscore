@@ -6,23 +6,42 @@ Logique métier pour l'intégration Stripe.
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
+from typing import Any
+
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from .models import (
-    StripeCustomer, StripePaymentMethod, StripePaymentIntent,
-    StripeCheckoutSession, StripeRefund, StripeDispute,
-    StripeWebhook, StripeProduct, StripePrice,
-    StripeConnectAccount, StripeConfig,
-    PaymentIntentStatus, RefundStatus, DisputeStatus, WebhookStatus
+    DisputeStatus,
+    PaymentIntentStatus,
+    RefundStatus,
+    StripeCheckoutSession,
+    StripeConfig,
+    StripeConnectAccount,
+    StripeCustomer,
+    StripeDispute,
+    StripePaymentIntent,
+    StripePaymentMethod,
+    StripePrice,
+    StripeProduct,
+    StripeRefund,
+    StripeWebhook,
+    WebhookStatus,
 )
 from .schemas import (
-    StripeCustomerCreate, StripeCustomerUpdate,
-    PaymentMethodCreate, SetupIntentCreate,
-    PaymentIntentCreate, PaymentIntentConfirm,
-    CheckoutSessionCreate, RefundCreate, StripeProductCreate, StripePriceCreate,
-    ConnectAccountCreate, StripeConfigCreate, StripeConfigUpdate
+    CheckoutSessionCreate,
+    ConnectAccountCreate,
+    PaymentIntentConfirm,
+    PaymentIntentCreate,
+    PaymentMethodCreate,
+    RefundCreate,
+    SetupIntentCreate,
+    StripeConfigCreate,
+    StripeConfigUpdate,
+    StripeCustomerCreate,
+    StripeCustomerUpdate,
+    StripePriceCreate,
+    StripeProductCreate,
 )
 
 
@@ -35,7 +54,7 @@ class StripeService:
         self._stripe = None
         self._config = None
 
-    def _get_config(self) -> Optional[StripeConfig]:
+    def _get_config(self) -> StripeConfig | None:
         """Récupérer configuration Stripe."""
         if self._config is None:
             self._config = self.db.query(StripeConfig).filter(
@@ -94,7 +113,7 @@ class StripeService:
         self._config = config
         return config
 
-    def get_config(self) -> Optional[StripeConfig]:
+    def get_config(self) -> StripeConfig | None:
         """Récupérer configuration."""
         return self._get_config()
 
@@ -151,14 +170,14 @@ class StripeService:
         self.db.refresh(customer)
         return customer
 
-    def get_customer(self, customer_id: int) -> Optional[StripeCustomer]:
+    def get_customer(self, customer_id: int) -> StripeCustomer | None:
         """Récupérer client Stripe par ID interne."""
         return self.db.query(StripeCustomer).filter(
             StripeCustomer.tenant_id == self.tenant_id,
             StripeCustomer.id == customer_id
         ).first()
 
-    def get_customer_by_crm_id(self, crm_customer_id: int) -> Optional[StripeCustomer]:
+    def get_customer_by_crm_id(self, crm_customer_id: int) -> StripeCustomer | None:
         """Récupérer client Stripe par ID CRM."""
         return self.db.query(StripeCustomer).filter(
             StripeCustomer.tenant_id == self.tenant_id,
@@ -184,7 +203,7 @@ class StripeService:
         self,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[StripeCustomer], int]:
+    ) -> tuple[list[StripeCustomer], int]:
         """Lister les clients Stripe."""
         query = self.db.query(StripeCustomer).filter(
             StripeCustomer.tenant_id == self.tenant_id
@@ -195,7 +214,7 @@ class StripeService:
 
     def update_customer(
         self, customer_id: int, data: StripeCustomerUpdate
-    ) -> Optional[StripeCustomer]:
+    ) -> StripeCustomer | None:
         """Mettre à jour client Stripe."""
         customer = self.get_customer(customer_id)
         if not customer:
@@ -284,7 +303,7 @@ class StripeService:
 
     def list_payment_methods(
         self, customer_id: int
-    ) -> List[StripePaymentMethod]:
+    ) -> list[StripePaymentMethod]:
         """Lister méthodes de paiement d'un client."""
         customer = self.get_customer(customer_id)
         if not customer:
@@ -292,7 +311,7 @@ class StripeService:
 
         return self.db.query(StripePaymentMethod).filter(
             StripePaymentMethod.stripe_customer_id == customer.id,
-            StripePaymentMethod.is_active == True
+            StripePaymentMethod.is_active
         ).all()
 
     def delete_payment_method(self, payment_method_id: int) -> bool:
@@ -315,7 +334,7 @@ class StripeService:
 
     def create_setup_intent(
         self, data: SetupIntentCreate
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Créer SetupIntent pour ajouter méthode paiement."""
         customer = self.get_customer_by_crm_id(data.customer_id)
         if not customer:
@@ -393,7 +412,7 @@ class StripeService:
 
     def get_payment_intent(
         self, payment_intent_id: int
-    ) -> Optional[StripePaymentIntent]:
+    ) -> StripePaymentIntent | None:
         """Récupérer PaymentIntent."""
         return self.db.query(StripePaymentIntent).filter(
             StripePaymentIntent.tenant_id == self.tenant_id,
@@ -402,11 +421,11 @@ class StripeService:
 
     def list_payment_intents(
         self,
-        customer_id: Optional[int] = None,
-        status: Optional[PaymentIntentStatus] = None,
+        customer_id: int | None = None,
+        status: PaymentIntentStatus | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[StripePaymentIntent], int]:
+    ) -> tuple[list[StripePaymentIntent], int]:
         """Lister PaymentIntents."""
         query = self.db.query(StripePaymentIntent).filter(
             StripePaymentIntent.tenant_id == self.tenant_id
@@ -461,7 +480,7 @@ class StripeService:
         return pi
 
     def capture_payment_intent(
-        self, payment_intent_id: int, amount: Optional[Decimal] = None
+        self, payment_intent_id: int, amount: Decimal | None = None
     ) -> StripePaymentIntent:
         """Capturer PaymentIntent (pour capture manuelle)."""
         pi = self.get_payment_intent(payment_intent_id)
@@ -585,7 +604,7 @@ class StripeService:
 
     def get_checkout_session(
         self, session_id: int
-    ) -> Optional[StripeCheckoutSession]:
+    ) -> StripeCheckoutSession | None:
         """Récupérer session checkout."""
         return self.db.query(StripeCheckoutSession).filter(
             StripeCheckoutSession.tenant_id == self.tenant_id,
@@ -644,10 +663,10 @@ class StripeService:
 
     def list_refunds(
         self,
-        payment_intent_id: Optional[int] = None,
+        payment_intent_id: int | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> List[StripeRefund]:
+    ) -> list[StripeRefund]:
         """Lister remboursements."""
         query = self.db.query(StripeRefund).filter(
             StripeRefund.tenant_id == self.tenant_id
@@ -754,6 +773,7 @@ class StripeService:
         # )
 
         import uuid
+
         from .models import StripeAccountStatus
 
         account = StripeConnectAccount(
@@ -778,7 +798,7 @@ class StripeService:
 
     def get_connect_account(
         self, account_id: int
-    ) -> Optional[StripeConnectAccount]:
+    ) -> StripeConnectAccount | None:
         """Récupérer compte Connect."""
         return self.db.query(StripeConnectAccount).filter(
             StripeConnectAccount.tenant_id == self.tenant_id,
@@ -790,7 +810,7 @@ class StripeService:
     # ========================================================================
 
     def process_webhook(
-        self, event_id: str, event_type: str, payload: Dict[str, Any],
+        self, event_id: str, event_type: str, payload: dict[str, Any],
         signature: str = None
     ) -> StripeWebhook:
         """Traiter webhook Stripe."""
@@ -851,7 +871,7 @@ class StripeService:
         elif event_type == "charge.dispute.created":
             self._handle_dispute_created(data)
 
-    def _handle_payment_succeeded(self, data: Dict):
+    def _handle_payment_succeeded(self, data: dict):
         """Gérer paiement réussi."""
         pi_id = data.get("id")
         pi = self.db.query(StripePaymentIntent).filter(
@@ -863,7 +883,7 @@ class StripeService:
             pi.amount_received = Decimal(str(data.get("amount_received", 0))) / 100
             pi.updated_at = datetime.utcnow()
 
-    def _handle_payment_failed(self, data: Dict):
+    def _handle_payment_failed(self, data: dict):
         """Gérer paiement échoué."""
         pi_id = data.get("id")
         pi = self.db.query(StripePaymentIntent).filter(
@@ -874,27 +894,27 @@ class StripeService:
             pi.status = PaymentIntentStatus.REQUIRES_PAYMENT_METHOD
             pi.updated_at = datetime.utcnow()
 
-    def _handle_subscription_created(self, data: Dict):
+    def _handle_subscription_created(self, data: dict):
         """Gérer création abonnement Stripe."""
         pass  # À implémenter selon besoins
 
-    def _handle_subscription_updated(self, data: Dict):
+    def _handle_subscription_updated(self, data: dict):
         """Gérer mise à jour abonnement Stripe."""
         pass
 
-    def _handle_subscription_deleted(self, data: Dict):
+    def _handle_subscription_deleted(self, data: dict):
         """Gérer suppression abonnement Stripe."""
         pass
 
-    def _handle_invoice_paid(self, data: Dict):
+    def _handle_invoice_paid(self, data: dict):
         """Gérer facture payée."""
         pass
 
-    def _handle_invoice_payment_failed(self, data: Dict):
+    def _handle_invoice_payment_failed(self, data: dict):
         """Gérer échec paiement facture."""
         pass
 
-    def _handle_dispute_created(self, data: Dict):
+    def _handle_dispute_created(self, data: dict):
         """Gérer création litige."""
         dispute = StripeDispute(
             tenant_id=self.tenant_id,
@@ -912,7 +932,7 @@ class StripeService:
     # DASHBOARD
     # ========================================================================
 
-    def get_dashboard(self) -> Dict[str, Any]:
+    def get_dashboard(self) -> dict[str, Any]:
         """Dashboard Stripe."""
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
 

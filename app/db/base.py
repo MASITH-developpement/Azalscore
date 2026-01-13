@@ -25,9 +25,9 @@ Usage INTERDIT:
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)  # INTERDIT
 """
 
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column
+from sqlalchemy.orm import declarative_base
+
 from app.db.uuid_base import UUIDMixin
-from typing import Optional
 
 
 class _UUIDDeclarativeBase:

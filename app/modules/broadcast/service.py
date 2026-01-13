@@ -5,20 +5,29 @@ AZALS MODULE T6 - Service Diffusion Périodique
 Service métier pour la gestion des diffusions automatiques.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-import uuid
 import json
+import uuid
+from datetime import datetime, timedelta
+from typing import Any
 
+from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc
 
 from .models import (
-    BroadcastTemplate, RecipientList, RecipientMember,
-    ScheduledBroadcast, BroadcastExecution, DeliveryDetail,
-    BroadcastPreference, BroadcastMetric,
-    DeliveryChannel, BroadcastFrequency, ContentType,
-    BroadcastStatus, DeliveryStatus, RecipientType
+    BroadcastExecution,
+    BroadcastFrequency,
+    BroadcastMetric,
+    BroadcastPreference,
+    BroadcastStatus,
+    BroadcastTemplate,
+    ContentType,
+    DeliveryChannel,
+    DeliveryDetail,
+    DeliveryStatus,
+    RecipientList,
+    RecipientMember,
+    RecipientType,
+    ScheduledBroadcast,
 )
 
 
@@ -38,16 +47,16 @@ class BroadcastService:
         code: str,
         name: str,
         content_type: ContentType,
-        subject_template: Optional[str] = None,
-        body_template: Optional[str] = None,
-        html_template: Optional[str] = None,
+        subject_template: str | None = None,
+        body_template: str | None = None,
+        html_template: str | None = None,
         default_channel: DeliveryChannel = DeliveryChannel.EMAIL,
-        available_channels: Optional[List[str]] = None,
-        variables: Optional[Dict] = None,
-        styling: Optional[Dict] = None,
-        data_sources: Optional[List[Dict]] = None,
+        available_channels: list[str] | None = None,
+        variables: dict | None = None,
+        styling: dict | None = None,
+        data_sources: list[dict] | None = None,
         language: str = "fr",
-        created_by: Optional[int] = None,
+        created_by: int | None = None,
         **kwargs
     ) -> BroadcastTemplate:
         """Créer un template de diffusion."""
@@ -72,7 +81,7 @@ class BroadcastService:
         self.db.refresh(template)
         return template
 
-    def get_template(self, template_id: int) -> Optional[BroadcastTemplate]:
+    def get_template(self, template_id: int) -> BroadcastTemplate | None:
         """Récupérer un template par ID."""
         return self.db.query(BroadcastTemplate).filter(
             and_(
@@ -81,7 +90,7 @@ class BroadcastService:
             )
         ).first()
 
-    def get_template_by_code(self, code: str) -> Optional[BroadcastTemplate]:
+    def get_template_by_code(self, code: str) -> BroadcastTemplate | None:
         """Récupérer un template par code."""
         return self.db.query(BroadcastTemplate).filter(
             and_(
@@ -92,11 +101,11 @@ class BroadcastService:
 
     def list_templates(
         self,
-        content_type: Optional[ContentType] = None,
-        is_active: Optional[bool] = True,
+        content_type: ContentType | None = None,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[BroadcastTemplate], int]:
+    ) -> tuple[list[BroadcastTemplate], int]:
         """Lister les templates avec filtres."""
         query = self.db.query(BroadcastTemplate).filter(
             BroadcastTemplate.tenant_id == self.tenant_id
@@ -111,7 +120,7 @@ class BroadcastService:
         items = query.order_by(desc(BroadcastTemplate.created_at)).offset(skip).limit(limit).all()
         return items, total
 
-    def update_template(self, template_id: int, **updates) -> Optional[BroadcastTemplate]:
+    def update_template(self, template_id: int, **updates) -> BroadcastTemplate | None:
         """Mettre à jour un template."""
         template = self.get_template(template_id)
         if not template:
@@ -148,10 +157,10 @@ class BroadcastService:
         self,
         code: str,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         is_dynamic: bool = False,
-        query_config: Optional[Dict] = None,
-        created_by: Optional[int] = None
+        query_config: dict | None = None,
+        created_by: int | None = None
     ) -> RecipientList:
         """Créer une liste de destinataires."""
         recipient_list = RecipientList(
@@ -168,7 +177,7 @@ class BroadcastService:
         self.db.refresh(recipient_list)
         return recipient_list
 
-    def get_recipient_list(self, list_id: int) -> Optional[RecipientList]:
+    def get_recipient_list(self, list_id: int) -> RecipientList | None:
         """Récupérer une liste par ID."""
         return self.db.query(RecipientList).filter(
             and_(
@@ -179,10 +188,10 @@ class BroadcastService:
 
     def list_recipient_lists(
         self,
-        is_active: Optional[bool] = True,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[RecipientList], int]:
+    ) -> tuple[list[RecipientList], int]:
         """Lister les listes de destinataires."""
         query = self.db.query(RecipientList).filter(
             RecipientList.tenant_id == self.tenant_id
@@ -199,13 +208,13 @@ class BroadcastService:
         self,
         list_id: int,
         recipient_type: RecipientType,
-        user_id: Optional[int] = None,
-        group_id: Optional[int] = None,
-        role_code: Optional[str] = None,
-        external_email: Optional[str] = None,
-        external_name: Optional[str] = None,
-        preferred_channel: Optional[DeliveryChannel] = None,
-        added_by: Optional[int] = None
+        user_id: int | None = None,
+        group_id: int | None = None,
+        role_code: str | None = None,
+        external_email: str | None = None,
+        external_name: str | None = None,
+        preferred_channel: DeliveryChannel | None = None,
+        added_by: int | None = None
     ) -> RecipientMember:
         """Ajouter un membre à une liste."""
         member = RecipientMember(
@@ -258,10 +267,10 @@ class BroadcastService:
     def get_list_members(
         self,
         list_id: int,
-        is_active: Optional[bool] = True,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[RecipientMember], int]:
+    ) -> tuple[list[RecipientMember], int]:
         """Récupérer les membres d'une liste."""
         query = self.db.query(RecipientMember).filter(
             and_(
@@ -288,20 +297,20 @@ class BroadcastService:
         content_type: ContentType,
         frequency: BroadcastFrequency,
         delivery_channel: DeliveryChannel = DeliveryChannel.EMAIL,
-        template_id: Optional[int] = None,
-        recipient_list_id: Optional[int] = None,
-        subject: Optional[str] = None,
-        body_content: Optional[str] = None,
-        html_content: Optional[str] = None,
-        cron_expression: Optional[str] = None,
+        template_id: int | None = None,
+        recipient_list_id: int | None = None,
+        subject: str | None = None,
+        body_content: str | None = None,
+        html_content: str | None = None,
+        cron_expression: str | None = None,
         timezone: str = "Europe/Paris",
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        send_time: Optional[str] = None,
-        day_of_week: Optional[int] = None,
-        day_of_month: Optional[int] = None,
-        data_query: Optional[Dict] = None,
-        created_by: Optional[int] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        send_time: str | None = None,
+        day_of_week: int | None = None,
+        day_of_month: int | None = None,
+        data_query: dict | None = None,
+        created_by: int | None = None,
         **kwargs
     ) -> ScheduledBroadcast:
         """Créer une diffusion programmée."""
@@ -337,7 +346,7 @@ class BroadcastService:
         self.db.refresh(broadcast)
         return broadcast
 
-    def get_scheduled_broadcast(self, broadcast_id: int) -> Optional[ScheduledBroadcast]:
+    def get_scheduled_broadcast(self, broadcast_id: int) -> ScheduledBroadcast | None:
         """Récupérer une diffusion programmée par ID."""
         return self.db.query(ScheduledBroadcast).filter(
             and_(
@@ -348,12 +357,12 @@ class BroadcastService:
 
     def list_scheduled_broadcasts(
         self,
-        status: Optional[BroadcastStatus] = None,
-        content_type: Optional[ContentType] = None,
-        is_active: Optional[bool] = True,
+        status: BroadcastStatus | None = None,
+        content_type: ContentType | None = None,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[ScheduledBroadcast], int]:
+    ) -> tuple[list[ScheduledBroadcast], int]:
         """Lister les diffusions programmées."""
         query = self.db.query(ScheduledBroadcast).filter(
             ScheduledBroadcast.tenant_id == self.tenant_id
@@ -370,7 +379,7 @@ class BroadcastService:
         items = query.order_by(desc(ScheduledBroadcast.created_at)).offset(skip).limit(limit).all()
         return items, total
 
-    def update_scheduled_broadcast(self, broadcast_id: int, **updates) -> Optional[ScheduledBroadcast]:
+    def update_scheduled_broadcast(self, broadcast_id: int, **updates) -> ScheduledBroadcast | None:
         """Mettre à jour une diffusion programmée."""
         broadcast = self.get_scheduled_broadcast(broadcast_id)
         if not broadcast:
@@ -394,7 +403,7 @@ class BroadcastService:
         self.db.refresh(broadcast)
         return broadcast
 
-    def activate_broadcast(self, broadcast_id: int) -> Optional[ScheduledBroadcast]:
+    def activate_broadcast(self, broadcast_id: int) -> ScheduledBroadcast | None:
         """Activer une diffusion (passer en SCHEDULED ou ACTIVE)."""
         broadcast = self.get_scheduled_broadcast(broadcast_id)
         if not broadcast:
@@ -413,7 +422,7 @@ class BroadcastService:
         self.db.refresh(broadcast)
         return broadcast
 
-    def pause_broadcast(self, broadcast_id: int) -> Optional[ScheduledBroadcast]:
+    def pause_broadcast(self, broadcast_id: int) -> ScheduledBroadcast | None:
         """Mettre en pause une diffusion."""
         broadcast = self.get_scheduled_broadcast(broadcast_id)
         if not broadcast:
@@ -426,7 +435,7 @@ class BroadcastService:
         self.db.refresh(broadcast)
         return broadcast
 
-    def cancel_broadcast(self, broadcast_id: int) -> Optional[ScheduledBroadcast]:
+    def cancel_broadcast(self, broadcast_id: int) -> ScheduledBroadcast | None:
         """Annuler une diffusion."""
         broadcast = self.get_scheduled_broadcast(broadcast_id)
         if not broadcast:
@@ -440,21 +449,21 @@ class BroadcastService:
         self.db.refresh(broadcast)
         return broadcast
 
-    def get_broadcasts_due(self) -> List[ScheduledBroadcast]:
+    def get_broadcasts_due(self) -> list[ScheduledBroadcast]:
         """Récupérer les diffusions à exécuter maintenant."""
         now = datetime.utcnow()
         return self.db.query(ScheduledBroadcast).filter(
             and_(
                 ScheduledBroadcast.tenant_id == self.tenant_id,
-                ScheduledBroadcast.is_active == True,
+                ScheduledBroadcast.is_active,
                 ScheduledBroadcast.status.in_([BroadcastStatus.ACTIVE, BroadcastStatus.SCHEDULED]),
                 ScheduledBroadcast.next_run_at <= now,
                 or_(
-                    ScheduledBroadcast.start_date == None,
+                    ScheduledBroadcast.start_date is None,
                     ScheduledBroadcast.start_date <= now
                 ),
                 or_(
-                    ScheduledBroadcast.end_date == None,
+                    ScheduledBroadcast.end_date is None,
                     ScheduledBroadcast.end_date >= now
                 )
             )
@@ -468,7 +477,7 @@ class BroadcastService:
         self,
         broadcast_id: int,
         triggered_by: str = "scheduler",
-        triggered_user: Optional[int] = None
+        triggered_user: int | None = None
     ) -> BroadcastExecution:
         """Exécuter une diffusion."""
         broadcast = self.get_scheduled_broadcast(broadcast_id)
@@ -544,7 +553,7 @@ class BroadcastService:
 
         return execution
 
-    def get_execution(self, execution_id: int) -> Optional[BroadcastExecution]:
+    def get_execution(self, execution_id: int) -> BroadcastExecution | None:
         """Récupérer une exécution par ID."""
         return self.db.query(BroadcastExecution).filter(
             and_(
@@ -555,11 +564,11 @@ class BroadcastService:
 
     def list_executions(
         self,
-        broadcast_id: Optional[int] = None,
-        status: Optional[DeliveryStatus] = None,
+        broadcast_id: int | None = None,
+        status: DeliveryStatus | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[BroadcastExecution], int]:
+    ) -> tuple[list[BroadcastExecution], int]:
         """Lister les exécutions."""
         query = self.db.query(BroadcastExecution).filter(
             BroadcastExecution.tenant_id == self.tenant_id
@@ -577,10 +586,10 @@ class BroadcastService:
     def get_delivery_details(
         self,
         execution_id: int,
-        status: Optional[DeliveryStatus] = None,
+        status: DeliveryStatus | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[DeliveryDetail], int]:
+    ) -> tuple[list[DeliveryDetail], int]:
         """Récupérer les détails de livraison d'une exécution."""
         query = self.db.query(DeliveryDetail).filter(
             and_(
@@ -600,7 +609,7 @@ class BroadcastService:
     # PRÉFÉRENCES UTILISATEUR
     # ========================================================================
 
-    def get_user_preferences(self, user_id: int) -> Optional[BroadcastPreference]:
+    def get_user_preferences(self, user_id: int) -> BroadcastPreference | None:
         """Récupérer les préférences d'un utilisateur."""
         return self.db.query(BroadcastPreference).filter(
             and_(
@@ -637,7 +646,7 @@ class BroadcastService:
         self.db.refresh(pref)
         return pref
 
-    def unsubscribe_user(self, user_id: int, broadcast_id: Optional[int] = None) -> bool:
+    def unsubscribe_user(self, user_id: int, broadcast_id: int | None = None) -> bool:
         """Désabonner un utilisateur."""
         pref = self.get_user_preferences(user_id)
 
@@ -668,7 +677,7 @@ class BroadcastService:
 
     def record_metrics(
         self,
-        metric_date: Optional[datetime] = None,
+        metric_date: datetime | None = None,
         period_type: str = "DAILY"
     ) -> BroadcastMetric:
         """Enregistrer les métriques de diffusion."""
@@ -724,11 +733,11 @@ class BroadcastService:
 
     def get_metrics(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         period_type: str = "DAILY",
         limit: int = 30
-    ) -> List[BroadcastMetric]:
+    ) -> list[BroadcastMetric]:
         """Récupérer les métriques."""
         query = self.db.query(BroadcastMetric).filter(
             and_(
@@ -744,7 +753,7 @@ class BroadcastService:
 
         return query.order_by(desc(BroadcastMetric.metric_date)).limit(limit).all()
 
-    def get_dashboard_stats(self) -> Dict[str, Any]:
+    def get_dashboard_stats(self) -> dict[str, Any]:
         """Récupérer les statistiques pour le dashboard."""
         now = datetime.utcnow()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -778,7 +787,7 @@ class BroadcastService:
         upcoming = self.db.query(ScheduledBroadcast).filter(
             and_(
                 ScheduledBroadcast.tenant_id == self.tenant_id,
-                ScheduledBroadcast.is_active == True,
+                ScheduledBroadcast.is_active,
                 ScheduledBroadcast.next_run_at >= now
             )
         ).order_by(ScheduledBroadcast.next_run_at).limit(5).all()
@@ -804,7 +813,7 @@ class BroadcastService:
     # HELPERS INTERNES
     # ========================================================================
 
-    def _calculate_next_run(self, broadcast: ScheduledBroadcast) -> Optional[datetime]:
+    def _calculate_next_run(self, broadcast: ScheduledBroadcast) -> datetime | None:
         """Calculer la prochaine date d'exécution."""
         now = datetime.utcnow()
         base_date = broadcast.last_run_at or now
@@ -866,7 +875,7 @@ class BroadcastService:
 
         return next_run
 
-    def _get_recipients(self, broadcast: ScheduledBroadcast) -> List[Dict]:
+    def _get_recipients(self, broadcast: ScheduledBroadcast) -> list[dict]:
         """Récupérer les destinataires d'une diffusion."""
         recipients = []
 
@@ -892,7 +901,7 @@ class BroadcastService:
 
         return recipients
 
-    def _generate_content(self, broadcast: ScheduledBroadcast) -> Dict[str, str]:
+    def _generate_content(self, broadcast: ScheduledBroadcast) -> dict[str, str]:
         """Générer le contenu d'une diffusion."""
         content = {
             "subject": broadcast.subject or "",

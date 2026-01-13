@@ -5,18 +5,28 @@ AZALS MODULE M6 - Modèles Production
 Modèles SQLAlchemy pour la gestion de production.
 """
 
-from datetime import datetime
-from sqlalchemy import (
-    Column, String, DateTime, Text, Boolean, ForeignKey,
-    Integer, Numeric, Date, Enum as SQLEnum, Index, UniqueConstraint
-)
-from app.core.types import UniversalUUID, JSONB
-from sqlalchemy.orm import relationship
-import uuid
 import enum
+import uuid
+from datetime import datetime
 
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.orm import relationship
+
+from app.core.types import JSONB, UniversalUUID
 from app.db import Base
-
 
 # ============================================================================
 # ENUMS

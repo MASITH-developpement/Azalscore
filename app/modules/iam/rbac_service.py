@@ -12,28 +12,23 @@ PRINCIPE FONDAMENTAL: Deny by default
 """
 
 import logging
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, Request
+from typing import Any
 
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from .models import IAMAuditLog, IAMUser
 from .rbac_matrix import (
-    StandardRole,
-    Module,
+    ROLE_HIERARCHY,
     Action,
+    Module,
     Restriction,
-    Permission,
     SecurityRules,
-    RBAC_MATRIX,
+    StandardRole,
     check_permission,
-    has_permission,
     get_all_permissions,
     map_legacy_role_to_standard,
-    ROLE_HIERARCHY,
-    DENY,
 )
-from .models import IAMUser, IAMRole, IAMAuditLog
-
 
 logger = logging.getLogger("rbac.service")
 
@@ -70,9 +65,9 @@ class RBACService:
         user: IAMUser,
         module: Module,
         action: Action,
-        target_resource_id: Optional[int] = None,
-        target_owner_id: Optional[int] = None,
-    ) -> Tuple[bool, Restriction, str]:
+        target_resource_id: int | None = None,
+        target_owner_id: int | None = None,
+    ) -> tuple[bool, Restriction, str]:
         """
         Vérifie si un utilisateur a accès à une action sur un module.
 
@@ -106,20 +101,19 @@ class RBACService:
                 user_id=user.id,
                 module=module,
                 action=action,
-                reason=f"Permission refusée par matrice RBAC"
+                reason="Permission refusée par matrice RBAC"
             )
             return False, Restriction.NONE, f"Accès refusé à {module.value}.{action.value}"
 
         # Vérifier les restrictions
-        if permission.restriction == Restriction.OWN_DATA:
-            if target_owner_id and target_owner_id != user.id:
-                self._log_access_denied(
-                    user_id=user.id,
-                    module=module,
-                    action=action,
-                    reason="Restriction OWN_DATA - Pas propriétaire"
-                )
-                return False, Restriction.NONE, "Vous ne pouvez accéder qu'à vos propres données"
+        if permission.restriction == Restriction.OWN_DATA and target_owner_id and target_owner_id != user.id:
+            self._log_access_denied(
+                user_id=user.id,
+                module=module,
+                action=action,
+                reason="Restriction OWN_DATA - Pas propriétaire"
+            )
+            return False, Restriction.NONE, "Vous ne pouvez accéder qu'à vos propres données"
 
         return True, permission.restriction, "Accès autorisé"
 
@@ -128,8 +122,8 @@ class RBACService:
         user: IAMUser,
         module: Module,
         action: Action,
-        target_resource_id: Optional[int] = None,
-        target_owner_id: Optional[int] = None,
+        target_resource_id: int | None = None,
+        target_owner_id: int | None = None,
     ) -> Restriction:
         """
         Exige l'accès ou lève une HTTPException 403.
@@ -172,7 +166,7 @@ class RBACService:
         self,
         actor: IAMUser,
         target_user: IAMUser
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Vérifie si un utilisateur peut supprimer un autre utilisateur.
 
@@ -239,10 +233,10 @@ class RBACService:
         self,
         user: IAMUser,
         restriction: Restriction,
-        data: List[Dict[str, Any]],
+        data: list[dict[str, Any]],
         owner_field: str = "owner_id",
         team_field: str = "team_id"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Filtre les données selon la restriction de permission.
 
@@ -273,7 +267,7 @@ class RBACService:
         # NONE - aucune donnée
         return []
 
-    def _get_user_teams(self, user: IAMUser) -> List[int]:
+    def _get_user_teams(self, user: IAMUser) -> list[int]:
         """Récupère les IDs des équipes de l'utilisateur."""
         # TODO: Implémenter selon la structure des équipes
         return []
@@ -281,8 +275,8 @@ class RBACService:
     def _apply_limited_filter(
         self,
         user: IAMUser,
-        data: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        data: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Applique un filtre limité selon la logique métier."""
         # Par défaut, renvoie les données publiques ou celles de l'utilisateur
         return [
@@ -294,7 +288,7 @@ class RBACService:
     # UTILITAIRES
     # =========================================================================
 
-    def _get_standard_role(self, user: IAMUser) -> Optional[StandardRole]:
+    def _get_standard_role(self, user: IAMUser) -> StandardRole | None:
         """
         Récupère le rôle standard d'un utilisateur.
         Gère le mapping depuis les rôles legacy.
@@ -355,7 +349,7 @@ class RBACService:
     # API PERMISSIONS
     # =========================================================================
 
-    def get_user_permissions(self, user: IAMUser) -> Dict[str, Dict[str, bool]]:
+    def get_user_permissions(self, user: IAMUser) -> dict[str, dict[str, bool]]:
         """
         Retourne toutes les permissions de l'utilisateur.
         Format: {module: {action: allowed}}
@@ -365,7 +359,7 @@ class RBACService:
             return {}
         return get_all_permissions(user_role)
 
-    def get_user_role_info(self, user: IAMUser) -> Dict[str, Any]:
+    def get_user_role_info(self, user: IAMUser) -> dict[str, Any]:
         """
         Retourne les informations sur le rôle de l'utilisateur.
         """
@@ -407,8 +401,9 @@ def get_rbac_dependency():
             rbac.require_access(user, Module.CLIENTS, Action.READ)
     """
     from fastapi import Depends
+
     from app.core.database import get_db
-    from app.core.dependencies import get_current_user, get_tenant_id
+    from app.core.dependencies import get_tenant_id
 
     def _get_rbac(
         db: Session = Depends(get_db),

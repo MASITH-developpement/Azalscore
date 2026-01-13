@@ -10,25 +10,26 @@ import enum
 import uuid
 
 from sqlalchemy import (
+    Boolean,
     Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
     Integer,
+    Numeric,
     String,
     Text,
-    Boolean,
-    DateTime,
-    Date,
-    Numeric,
-    ForeignKey,
-    Enum as SQLEnum,
-    Index,
     UniqueConstraint,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+from app.core.types import JSONB, UniversalUUID
 from app.db import Base
-from app.core.types import UniversalUUID, JSONB
-
 
 # ============================================================================
 # ENUMS

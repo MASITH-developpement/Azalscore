@@ -7,14 +7,14 @@ Endpoints de santé pour orchestration et monitoring.
 import time
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel
+from typing import Any
+
 from fastapi import APIRouter
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.database import engine
-
 
 # ============================================================================
 # MODÈLES
@@ -31,9 +31,9 @@ class ComponentHealth(BaseModel):
     """Santé d'un composant."""
     name: str
     status: HealthStatus
-    latency_ms: Optional[float] = None
-    message: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    latency_ms: float | None = None
+    message: str | None = None
+    details: dict[str, Any] | None = None
 
 
 class DetailedHealthCheck(BaseModel):
@@ -42,7 +42,7 @@ class DetailedHealthCheck(BaseModel):
     version: str
     timestamp: str
     uptime_seconds: float
-    components: List[ComponentHealth]
+    components: list[ComponentHealth]
     checks_passed: int
     checks_failed: int
 

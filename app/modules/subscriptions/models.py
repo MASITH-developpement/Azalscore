@@ -10,12 +10,10 @@ from decimal import Decimal
 from enum import Enum as PyEnum
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
 from app.core.types import UniversalUUID
-from sqlalchemy.dialects.postgresql import UUID
-from typing import Optional
+from app.db import Base
 
 # ============================================================================
 # ENUMS
@@ -77,51 +75,51 @@ class SubscriptionPlan(Base):
     __tablename__ = "subscription_plans"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    code: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Tarification
-    base_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=False, default=0)
-    currency: Mapped[Optional[str]] = mapped_column(String(3), nullable=False, default="EUR")
-    interval: Mapped[Optional[str]] = mapped_column(Enum(PlanInterval), nullable=False, default=PlanInterval.MONTHLY)
+    base_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=False, default="EUR")
+    interval: Mapped[str | None] = mapped_column(Enum(PlanInterval), nullable=False, default=PlanInterval.MONTHLY)
     interval_count: Mapped[int] = mapped_column(Integer, default=1)
 
     # Période d'essai
-    trial_days: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    trial_once: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)  # Une seule période d'essai par client
+    trial_days: Mapped[int | None] = mapped_column(Integer, default=0)
+    trial_once: Mapped[bool | None] = mapped_column(Boolean, default=True)  # Une seule période d'essai par client
 
     # Limites
-    max_users: Mapped[Optional[int]] = mapped_column(Integer)  # None = illimité
-    max_storage_gb: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    max_api_calls: Mapped[Optional[int]] = mapped_column(Integer)
+    max_users: Mapped[int | None] = mapped_column(Integer)  # None = illimité
+    max_storage_gb: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    max_api_calls: Mapped[int | None] = mapped_column(Integer)
 
     # Fonctionnalités incluses
-    features: Mapped[Optional[dict]] = mapped_column(JSON)  # {"feature_code": true/false ou limite}
-    modules_included: Mapped[Optional[dict]] = mapped_column(JSON)  # ["module1", "module2"]
+    features: Mapped[dict | None] = mapped_column(JSON)  # {"feature_code": true/false ou limite}
+    modules_included: Mapped[dict | None] = mapped_column(JSON)  # ["module1", "module2"]
 
     # Prix par utilisateur additionnel
-    per_user_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
-    included_users: Mapped[Optional[int]] = mapped_column(Integer, default=1)
+    per_user_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
+    included_users: Mapped[int | None] = mapped_column(Integer, default=1)
 
     # Configuration facturation
-    billing_scheme: Mapped[Optional[str]] = mapped_column(String(20), default="per_unit")  # per_unit, tiered, volume
-    tiers: Mapped[Optional[dict]] = mapped_column(JSON)  # Pour pricing par paliers
+    billing_scheme: Mapped[str | None] = mapped_column(String(20), default="per_unit")  # per_unit, tiered, volume
+    tiers: Mapped[dict | None] = mapped_column(JSON)  # Pour pricing par paliers
 
     # Setup fees
-    setup_fee: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
-    setup_fee_behavior: Mapped[Optional[str]] = mapped_column(String(20), default="once")  # once, recurring
+    setup_fee: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
+    setup_fee_behavior: Mapped[str | None] = mapped_column(String(20), default="once")  # once, recurring
 
     # Metadata
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    is_public: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)  # Visible dans le catalogue
-    sort_order: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_public: Mapped[bool | None] = mapped_column(Boolean, default=True)  # Visible dans le catalogue
+    sort_order: Mapped[int | None] = mapped_column(Integer, default=0)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
     subscriptions = relationship("Subscription", back_populates="plan")
@@ -139,25 +137,25 @@ class PlanAddOn(Base):
     __tablename__ = "subscription_plan_addons"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     plan_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscription_plans.id"), nullable=False)
 
     # Identification
-    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    code: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Tarification
-    price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=False, default=0)
-    usage_type: Mapped[Optional[str]] = mapped_column(Enum(UsageType), default=UsageType.LICENSED)
-    unit_name: Mapped[Optional[str]] = mapped_column(String(50))  # "utilisateur", "Go", "appel API"
+    price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    usage_type: Mapped[str | None] = mapped_column(Enum(UsageType), default=UsageType.LICENSED)
+    unit_name: Mapped[str | None] = mapped_column(String(50))  # "utilisateur", "Go", "appel API"
 
     # Quantités
-    min_quantity: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    max_quantity: Mapped[Optional[int]] = mapped_column(Integer)
+    min_quantity: Mapped[int | None] = mapped_column(Integer, default=0)
+    max_quantity: Mapped[int | None] = mapped_column(Integer)
 
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     plan = relationship("SubscriptionPlan", back_populates="add_ons")
@@ -177,64 +175,64 @@ class Subscription(Base):
     __tablename__ = "subscriptions"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    subscription_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, unique=True)
-    external_id: Mapped[Optional[str]] = mapped_column(String(100))  # ID Stripe/autre
+    subscription_number: Mapped[str | None] = mapped_column(String(50), nullable=False, unique=True)
+    external_id: Mapped[str | None] = mapped_column(String(100))  # ID Stripe/autre
 
     # Relation plan et client
     plan_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscription_plans.id"), nullable=False)
     customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False, index=True)  # Référence CRM
-    customer_name: Mapped[Optional[str]] = mapped_column(String(255))
-    customer_email: Mapped[Optional[str]] = mapped_column(String(255))
+    customer_name: Mapped[str | None] = mapped_column(String(255))
+    customer_email: Mapped[str | None] = mapped_column(String(255))
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(Enum(SubscriptionStatus), nullable=False, default=SubscriptionStatus.TRIALING)
+    status: Mapped[str | None] = mapped_column(Enum(SubscriptionStatus), nullable=False, default=SubscriptionStatus.TRIALING)
 
     # Quantités
-    quantity: Mapped[Optional[int]] = mapped_column(Integer, default=1)  # Nombre d'utilisateurs/seats
-    current_users: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    quantity: Mapped[int | None] = mapped_column(Integer, default=1)  # Nombre d'utilisateurs/seats
+    current_users: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # Période d'essai
-    trial_start: Mapped[Optional[date]] = mapped_column(Date)
-    trial_end: Mapped[Optional[date]] = mapped_column(Date)
+    trial_start: Mapped[date | None] = mapped_column(Date)
+    trial_end: Mapped[date | None] = mapped_column(Date)
 
     # Période d'abonnement
     current_period_start: Mapped[date] = mapped_column(Date)
     current_period_end: Mapped[date] = mapped_column(Date)
     started_at: Mapped[date] = mapped_column(Date)
-    ended_at: Mapped[Optional[date]] = mapped_column(Date)
+    ended_at: Mapped[date | None] = mapped_column(Date)
 
     # Annulation
-    cancel_at_period_end: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    canceled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    cancellation_reason: Mapped[Optional[str]] = mapped_column(Text)
+    cancel_at_period_end: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    canceled_at: Mapped[datetime | None] = mapped_column(DateTime)
+    cancellation_reason: Mapped[str | None] = mapped_column(Text)
 
     # Pause
-    paused_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    resume_at: Mapped[Optional[date]] = mapped_column(Date)
+    paused_at: Mapped[datetime | None] = mapped_column(DateTime)
+    resume_at: Mapped[date | None] = mapped_column(Date)
 
     # Facturation
-    billing_cycle_anchor: Mapped[Optional[int]] = mapped_column(Integer, default=1)  # Jour du mois
-    collection_method: Mapped[Optional[str]] = mapped_column(String(20), default="charge_automatically")
-    default_payment_method_id: Mapped[Optional[str]] = mapped_column(String(100))
+    billing_cycle_anchor: Mapped[int | None] = mapped_column(Integer, default=1)  # Jour du mois
+    collection_method: Mapped[str | None] = mapped_column(String(20), default="charge_automatically")
+    default_payment_method_id: Mapped[str | None] = mapped_column(String(100))
 
     # Remises
-    discount_percent: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), default=0)
-    discount_end_date: Mapped[Optional[date]] = mapped_column(Date)
+    discount_percent: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), default=0)
+    discount_end_date: Mapped[date | None] = mapped_column(Date)
     coupon_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscription_coupons.id"))
 
     # Métriques
-    mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)  # Monthly Recurring Revenue
-    arr: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2), default=0)  # Annual Recurring Revenue
+    mrr: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)  # Monthly Recurring Revenue
+    arr: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), default=0)  # Annual Recurring Revenue
 
     # Metadata
-    extra_data: Mapped[Optional[dict]] = mapped_column(JSON)
-    notes: Mapped[Optional[str]] = mapped_column(Text)
+    extra_data: Mapped[dict | None] = mapped_column(JSON)
+    notes: Mapped[str | None] = mapped_column(Text)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
     plan = relationship("SubscriptionPlan", back_populates="subscriptions")
@@ -256,25 +254,25 @@ class SubscriptionItem(Base):
     __tablename__ = "subscription_items"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     subscription_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
 
     # Identification
-    add_on_code: Mapped[Optional[str]] = mapped_column(String(50))
-    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    add_on_code: Mapped[str | None] = mapped_column(String(50))
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Tarification
-    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=False)
-    quantity: Mapped[Optional[int]] = mapped_column(Integer, default=1)
-    usage_type: Mapped[Optional[str]] = mapped_column(Enum(UsageType), default=UsageType.LICENSED)
+    unit_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=False)
+    quantity: Mapped[int | None] = mapped_column(Integer, default=1)
+    usage_type: Mapped[str | None] = mapped_column(Enum(UsageType), default=UsageType.LICENSED)
 
     # Pour usage metered
-    metered_usage: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 4), default=0)
-    billing_threshold: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    metered_usage: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), default=0)
+    billing_threshold: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
 
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     subscription = relationship("Subscription", back_populates="items")
@@ -289,28 +287,28 @@ class SubscriptionChange(Base):
     __tablename__ = "subscription_changes"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     subscription_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
 
     # Type de changement
-    change_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # upgrade, downgrade, quantity_change, cancel, pause, resume
-    change_reason: Mapped[Optional[str]] = mapped_column(Text)
+    change_type: Mapped[str | None] = mapped_column(String(50), nullable=False)  # upgrade, downgrade, quantity_change, cancel, pause, resume
+    change_reason: Mapped[str | None] = mapped_column(Text)
 
     # Avant/Après
     previous_plan_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
     new_plan_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    previous_quantity: Mapped[Optional[int]] = mapped_column(Integer)
-    new_quantity: Mapped[Optional[int]] = mapped_column(Integer)
-    previous_mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-    new_mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
+    previous_quantity: Mapped[int | None] = mapped_column(Integer)
+    new_quantity: Mapped[int | None] = mapped_column(Integer)
+    previous_mrr: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    new_mrr: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
 
     # Proratisation
-    proration_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    proration_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
     effective_date: Mapped[date] = mapped_column(Date)
 
     # Metadata
     changed_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())  # User ID
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_sub_changes_subscription', 'subscription_id'),
@@ -327,57 +325,57 @@ class SubscriptionInvoice(Base):
     __tablename__ = "subscription_invoices"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     subscription_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
 
     # Identification
-    invoice_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, unique=True)
-    external_id: Mapped[Optional[str]] = mapped_column(String(100))  # ID Stripe/autre
+    invoice_number: Mapped[str | None] = mapped_column(String(50), nullable=False, unique=True)
+    external_id: Mapped[str | None] = mapped_column(String(100))  # ID Stripe/autre
 
     # Client
     customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)
-    customer_name: Mapped[Optional[str]] = mapped_column(String(255))
-    customer_email: Mapped[Optional[str]] = mapped_column(String(255))
-    billing_address: Mapped[Optional[dict]] = mapped_column(JSON)
+    customer_name: Mapped[str | None] = mapped_column(String(255))
+    customer_email: Mapped[str | None] = mapped_column(String(255))
+    billing_address: Mapped[dict | None] = mapped_column(JSON)
 
     # Statut et dates
-    status: Mapped[Optional[str]] = mapped_column(Enum(InvoiceStatus), nullable=False, default=InvoiceStatus.DRAFT)
+    status: Mapped[str | None] = mapped_column(Enum(InvoiceStatus), nullable=False, default=InvoiceStatus.DRAFT)
     period_start: Mapped[date] = mapped_column(Date)
     period_end: Mapped[date] = mapped_column(Date)
-    due_date: Mapped[Optional[date]] = mapped_column(Date)
-    finalized_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    voided_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    due_date: Mapped[date | None] = mapped_column(Date)
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime)
+    voided_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Montants
-    subtotal: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=False, default=0)
-    discount_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
-    tax_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), default=0)
-    tax_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
-    total: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=False, default=0)
-    amount_paid: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)
-    amount_remaining: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)
+    subtotal: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    discount_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
+    tax_rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), default=0)
+    tax_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
+    total: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    amount_paid: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)
+    amount_remaining: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)
 
     # Devise
-    currency: Mapped[Optional[str]] = mapped_column(String(3), nullable=False, default="EUR")
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=False, default="EUR")
 
     # Paiement
-    payment_intent_id: Mapped[Optional[str]] = mapped_column(String(100))
-    default_payment_method: Mapped[Optional[str]] = mapped_column(String(100))
-    collection_method: Mapped[Optional[str]] = mapped_column(String(20), default="charge_automatically")
+    payment_intent_id: Mapped[str | None] = mapped_column(String(100))
+    default_payment_method: Mapped[str | None] = mapped_column(String(100))
+    collection_method: Mapped[str | None] = mapped_column(String(20), default="charge_automatically")
 
     # Tentatives de recouvrement
-    attempt_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    next_payment_attempt: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    attempt_count: Mapped[int | None] = mapped_column(Integer, default=0)
+    next_payment_attempt: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Métadonnées
-    hosted_invoice_url: Mapped[Optional[str]] = mapped_column(String(500))
-    pdf_url: Mapped[Optional[str]] = mapped_column(String(500))
-    notes: Mapped[Optional[str]] = mapped_column(Text)
-    footer: Mapped[Optional[str]] = mapped_column(Text)
+    hosted_invoice_url: Mapped[str | None] = mapped_column(String(500))
+    pdf_url: Mapped[str | None] = mapped_column(String(500))
+    notes: Mapped[str | None] = mapped_column(Text)
+    footer: Mapped[str | None] = mapped_column(Text)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
     subscription = relationship("Subscription", back_populates="invoices")
@@ -398,32 +396,32 @@ class InvoiceLine(Base):
     __tablename__ = "subscription_invoice_lines"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     invoice_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscription_invoices.id"), nullable=False)
 
     # Description
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=False)
-    item_type: Mapped[Optional[str]] = mapped_column(String(50))  # subscription, add_on, usage, proration, setup_fee
+    description: Mapped[str | None] = mapped_column(String(500), nullable=False)
+    item_type: Mapped[str | None] = mapped_column(String(50))  # subscription, add_on, usage, proration, setup_fee
 
     # Période
-    period_start: Mapped[Optional[date]] = mapped_column(Date)
-    period_end: Mapped[Optional[date]] = mapped_column(Date)
+    period_start: Mapped[date | None] = mapped_column(Date)
+    period_end: Mapped[date | None] = mapped_column(Date)
 
     # Quantités et prix
-    quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 4), default=1)
-    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=False)
-    discount_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
-    amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=False)
+    quantity: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), default=1)
+    unit_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=False)
+    discount_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=False)
 
     # Taxes
-    tax_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), default=0)
-    tax_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    tax_rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), default=0)
+    tax_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
 
     # Référence
     subscription_item_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    proration: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    proration: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     invoice = relationship("SubscriptionInvoice", back_populates="lines")
@@ -442,40 +440,40 @@ class SubscriptionPayment(Base):
     __tablename__ = "subscription_payments"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     invoice_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscription_invoices.id"))
 
     # Identification
-    payment_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    external_id: Mapped[Optional[str]] = mapped_column(String(100))  # ID Stripe/autre
+    payment_number: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    external_id: Mapped[str | None] = mapped_column(String(100))  # ID Stripe/autre
 
     # Client
     customer_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), nullable=False)
 
     # Montant
-    amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=False)
-    currency: Mapped[Optional[str]] = mapped_column(String(3), nullable=False, default="EUR")
-    fee_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)  # Frais de transaction
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=False)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=False, default="EUR")
+    fee_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)  # Frais de transaction
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(Enum(PaymentStatus), nullable=False, default=PaymentStatus.PENDING)
+    status: Mapped[str | None] = mapped_column(Enum(PaymentStatus), nullable=False, default=PaymentStatus.PENDING)
 
     # Mode de paiement
-    payment_method_type: Mapped[Optional[str]] = mapped_column(String(30))  # card, bank_transfer, sepa
-    payment_method_id: Mapped[Optional[str]] = mapped_column(String(100))
-    payment_method_details: Mapped[Optional[dict]] = mapped_column(JSON)  # Derniers chiffres carte, etc.
+    payment_method_type: Mapped[str | None] = mapped_column(String(30))  # card, bank_transfer, sepa
+    payment_method_id: Mapped[str | None] = mapped_column(String(100))
+    payment_method_details: Mapped[dict | None] = mapped_column(JSON)  # Derniers chiffres carte, etc.
 
     # Dates
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # En cas d'échec
-    failure_code: Mapped[Optional[str]] = mapped_column(String(50))
-    failure_message: Mapped[Optional[str]] = mapped_column(Text)
+    failure_code: Mapped[str | None] = mapped_column(String(50))
+    failure_message: Mapped[str | None] = mapped_column(Text)
 
     # Remboursement
-    refunded_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)
-    refund_reason: Mapped[Optional[str]] = mapped_column(Text)
+    refunded_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)
+    refund_reason: Mapped[str | None] = mapped_column(Text)
 
     # Relations
     invoice = relationship("SubscriptionInvoice", back_populates="payments")
@@ -497,26 +495,26 @@ class UsageRecord(Base):
     __tablename__ = "subscription_usage_records"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
     subscription_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscriptions.id"), nullable=False)
     subscription_item_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("subscription_items.id"))
 
     # Usage
-    quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 4), nullable=False)
-    unit: Mapped[Optional[str]] = mapped_column(String(50))  # API calls, GB, users, etc.
-    action: Mapped[Optional[str]] = mapped_column(String(20), nullable=False, default="increment")  # set, increment
+    quantity: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), nullable=False)
+    unit: Mapped[str | None] = mapped_column(String(50))  # API calls, GB, users, etc.
+    action: Mapped[str | None] = mapped_column(String(20), nullable=False, default="increment")  # set, increment
 
     # Période
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    period_start: Mapped[Optional[date]] = mapped_column(Date)
-    period_end: Mapped[Optional[date]] = mapped_column(Date)
+    period_start: Mapped[date | None] = mapped_column(Date)
+    period_end: Mapped[date | None] = mapped_column(Date)
 
     # Identification
-    idempotency_key: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(100), unique=True)
 
     # Metadata
-    extra_data: Mapped[Optional[dict]] = mapped_column(JSON)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    extra_data: Mapped[dict | None] = mapped_column(JSON)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
     subscription = relationship("Subscription", back_populates="usage_records")
@@ -537,37 +535,37 @@ class SubscriptionCoupon(Base):
     __tablename__ = "subscription_coupons"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    code: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Réduction
-    discount_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=False)  # percent, fixed_amount
-    discount_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=False)
-    currency: Mapped[Optional[str]] = mapped_column(String(3))  # Pour fixed_amount
+    discount_type: Mapped[str | None] = mapped_column(String(20), nullable=False)  # percent, fixed_amount
+    discount_value: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=False)
+    currency: Mapped[str | None] = mapped_column(String(3))  # Pour fixed_amount
 
     # Durée
-    duration: Mapped[Optional[str]] = mapped_column(String(20), nullable=False, default="once")  # once, repeating, forever
-    duration_months: Mapped[Optional[int]] = mapped_column(Integer)  # Pour repeating
+    duration: Mapped[str | None] = mapped_column(String(20), nullable=False, default="once")  # once, repeating, forever
+    duration_months: Mapped[int | None] = mapped_column(Integer)  # Pour repeating
 
     # Limites
-    max_redemptions: Mapped[Optional[int]] = mapped_column(Integer)
-    times_redeemed: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    max_redemptions: Mapped[int | None] = mapped_column(Integer)
+    times_redeemed: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # Restrictions
-    applies_to_plans: Mapped[Optional[dict]] = mapped_column(JSON)  # Liste des plan_ids concernés
-    min_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    first_time_only: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    applies_to_plans: Mapped[dict | None] = mapped_column(JSON)  # Liste des plan_ids concernés
+    min_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    first_time_only: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
     # Validité
-    valid_from: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    valid_until: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime)
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_sub_coupons_tenant', 'tenant_id'),
@@ -585,43 +583,43 @@ class SubscriptionMetrics(Base):
     __tablename__ = "subscription_metrics"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Date du snapshot
     metric_date: Mapped[date] = mapped_column(Date)
 
     # Revenus
-    mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2), default=0)  # Monthly Recurring Revenue
-    arr: Mapped[Optional[Decimal]] = mapped_column(Numeric(16, 2), default=0)  # Annual Recurring Revenue
-    new_mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)  # Nouveaux abonnements
-    expansion_mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)  # Upgrades
-    contraction_mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)  # Downgrades
-    churned_mrr: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)  # Annulations
+    mrr: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), default=0)  # Monthly Recurring Revenue
+    arr: Mapped[Decimal | None] = mapped_column(Numeric(16, 2), default=0)  # Annual Recurring Revenue
+    new_mrr: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)  # Nouveaux abonnements
+    expansion_mrr: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)  # Upgrades
+    contraction_mrr: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)  # Downgrades
+    churned_mrr: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)  # Annulations
 
     # Compteurs
-    total_subscriptions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    active_subscriptions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    trialing_subscriptions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    canceled_subscriptions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    new_subscriptions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    churned_subscriptions: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_subscriptions: Mapped[int | None] = mapped_column(Integer, default=0)
+    active_subscriptions: Mapped[int | None] = mapped_column(Integer, default=0)
+    trialing_subscriptions: Mapped[int | None] = mapped_column(Integer, default=0)
+    canceled_subscriptions: Mapped[int | None] = mapped_column(Integer, default=0)
+    new_subscriptions: Mapped[int | None] = mapped_column(Integer, default=0)
+    churned_subscriptions: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # Clients
-    total_customers: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    new_customers: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    churned_customers: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    total_customers: Mapped[int | None] = mapped_column(Integer, default=0)
+    new_customers: Mapped[int | None] = mapped_column(Integer, default=0)
+    churned_customers: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # Taux
-    churn_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), default=0)  # % mensuel
-    trial_conversion_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), default=0)
+    churn_rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), default=0)  # % mensuel
+    trial_conversion_rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), default=0)
 
     # ARPU (Average Revenue Per User)
-    arpu: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), default=0)
+    arpu: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), default=0)
 
     # LTV (Lifetime Value)
-    average_ltv: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=0)
+    average_ltv: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), default=0)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_sub_metrics_tenant_date', 'tenant_id', 'metric_date', unique=True),
@@ -637,27 +635,27 @@ class SubscriptionWebhook(Base):
     __tablename__ = "subscription_webhooks"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification
-    event_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
-    event_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
+    event_id: Mapped[str | None] = mapped_column(String(100), unique=True)
+    event_type: Mapped[str | None] = mapped_column(String(100), nullable=False)
 
     # Source
-    source: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # stripe, paypal, internal
+    source: Mapped[str | None] = mapped_column(String(50), nullable=False)  # stripe, paypal, internal
 
     # Données
     payload: Mapped[dict] = mapped_column(JSON)
-    related_object_type: Mapped[Optional[str]] = mapped_column(String(50))  # subscription, invoice, payment
-    related_object_id: Mapped[Optional[str]] = mapped_column(String(100))
+    related_object_type: Mapped[str | None] = mapped_column(String(50))  # subscription, invoice, payment
+    related_object_id: Mapped[str | None] = mapped_column(String(100))
 
     # Traitement
-    is_processed: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    processing_error: Mapped[Optional[str]] = mapped_column(Text)
-    retry_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    is_processed: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    processing_error: Mapped[str | None] = mapped_column(Text)
+    retry_count: Mapped[int | None] = mapped_column(Integer, default=0)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
         Index('idx_sub_webhooks_tenant', 'tenant_id'),

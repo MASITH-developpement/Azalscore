@@ -6,13 +6,13 @@ Endpoint simple pour enregistrer les événements UI du frontend.
 Route: /v1/audit/ui-events
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, BackgroundTasks
+
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
 router = APIRouter(prefix="/audit", tags=["Audit"])
@@ -21,16 +21,16 @@ router = APIRouter(prefix="/audit", tags=["Audit"])
 class UIEventSchema(BaseModel):
     """Schema pour un événement UI."""
     event_type: str
-    component: Optional[str] = None
-    action: Optional[str] = None
-    target: Optional[str] = None
-    metadata: Optional[dict] = None
-    timestamp: Optional[str] = None
+    component: str | None = None
+    action: str | None = None
+    target: str | None = None
+    metadata: dict | None = None
+    timestamp: str | None = None
 
 
 class UIEventsRequest(BaseModel):
     """Schema pour batch d'événements UI."""
-    events: List[UIEventSchema]
+    events: list[UIEventSchema]
 
 
 @router.post("/ui-events")

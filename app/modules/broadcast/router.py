@@ -5,39 +5,50 @@ AZALS MODULE T6 - Router API Diffusion Périodique
 Points d'entrée REST pour la gestion des diffusions automatiques.
 """
 
-from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 
-from .service import get_broadcast_service
-from .models import (
-    DeliveryChannel, BroadcastFrequency, ContentType,
-    BroadcastStatus, DeliveryStatus, RecipientType
-)
+from .models import BroadcastFrequency, BroadcastStatus, ContentType, DeliveryChannel, DeliveryStatus, RecipientType
 from .schemas import (
+    # Exécutions
+    BroadcastExecutionResponse,
+    # Métriques
+    BroadcastMetricResponse,
+    # Préférences
+    BroadcastPreferenceCreate,
+    BroadcastPreferenceResponse,
+    BroadcastStatusEnum,
     # Templates
-    BroadcastTemplateCreate, BroadcastTemplateUpdate, BroadcastTemplateResponse,
+    BroadcastTemplateCreate,
+    BroadcastTemplateResponse,
+    BroadcastTemplateUpdate,
+    # Enums
+    ContentTypeEnum,
+    DashboardStatsResponse,
+    DeliveryStatusEnum,
+    ExecuteRequest,
+    PaginatedBroadcastsResponse,
+    PaginatedDeliveryDetailsResponse,
+    PaginatedExecutionsResponse,
+    PaginatedMembersResponse,
+    PaginatedRecipientListsResponse,
     PaginatedTemplatesResponse,
     # Listes
-    RecipientListCreate, RecipientListResponse,
-    PaginatedRecipientListsResponse,
-    RecipientMemberCreate, RecipientMemberResponse, PaginatedMembersResponse,
+    RecipientListCreate,
+    RecipientListResponse,
+    RecipientMemberCreate,
+    RecipientMemberResponse,
     # Broadcasts
-    ScheduledBroadcastCreate, ScheduledBroadcastUpdate, ScheduledBroadcastResponse,
-    PaginatedBroadcastsResponse,
-    # Exécutions
-    BroadcastExecutionResponse, PaginatedExecutionsResponse, ExecuteRequest,
-    PaginatedDeliveryDetailsResponse,
-    # Préférences
-    BroadcastPreferenceCreate, BroadcastPreferenceResponse, UnsubscribeRequest,
-    # Métriques
-    BroadcastMetricResponse, DashboardStatsResponse,
-    # Enums
-    ContentTypeEnum, BroadcastStatusEnum, DeliveryStatusEnum
+    ScheduledBroadcastCreate,
+    ScheduledBroadcastResponse,
+    ScheduledBroadcastUpdate,
+    UnsubscribeRequest,
 )
+from .service import get_broadcast_service
 
 router = APIRouter(prefix="/api/v1/broadcast", tags=["Broadcast"])
 
@@ -71,8 +82,8 @@ async def create_template(
 
 @router.get("/templates", response_model=PaginatedTemplatesResponse)
 async def list_templates(
-    content_type: Optional[ContentTypeEnum] = None,
-    is_active: Optional[bool] = True,
+    content_type: ContentTypeEnum | None = None,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -150,7 +161,7 @@ async def create_recipient_list(
 
 @router.get("/recipient-lists", response_model=PaginatedRecipientListsResponse)
 async def list_recipient_lists(
-    is_active: Optional[bool] = True,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -207,7 +218,7 @@ async def add_member_to_list(
 @router.get("/recipient-lists/{list_id}/members", response_model=PaginatedMembersResponse)
 async def get_list_members(
     list_id: int,
-    is_active: Optional[bool] = True,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -269,9 +280,9 @@ async def create_scheduled_broadcast(
 
 @router.get("/scheduled", response_model=PaginatedBroadcastsResponse)
 async def list_scheduled_broadcasts(
-    status: Optional[BroadcastStatusEnum] = None,
-    content_type: Optional[ContentTypeEnum] = None,
-    is_active: Optional[bool] = True,
+    status: BroadcastStatusEnum | None = None,
+    content_type: ContentTypeEnum | None = None,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -394,8 +405,8 @@ async def execute_broadcast_now(
 
 @router.get("/executions", response_model=PaginatedExecutionsResponse)
 async def list_executions(
-    broadcast_id: Optional[int] = None,
-    status: Optional[DeliveryStatusEnum] = None,
+    broadcast_id: int | None = None,
+    status: DeliveryStatusEnum | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -429,7 +440,7 @@ async def get_execution(
 @router.get("/executions/{execution_id}/details", response_model=PaginatedDeliveryDetailsResponse)
 async def get_execution_details(
     execution_id: int,
-    status: Optional[DeliveryStatusEnum] = None,
+    status: DeliveryStatusEnum | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),

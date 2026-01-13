@@ -4,14 +4,11 @@ AZALS - Webhook Stripe Router
 Endpoint sécurisé pour recevoir les webhooks Stripe.
 """
 
-from fastapi import APIRouter, Request, HTTPException, Header
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Header, HTTPException, Request
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
-from app.services.stripe_service import (
-    StripeServiceLive, StripeWebhookHandler
-)
+from app.services.stripe_service import StripeServiceLive, StripeWebhookHandler
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 logger = get_logger(__name__)
@@ -24,12 +21,12 @@ async def stripe_webhook(
 ):
     """
     Endpoint webhook Stripe.
-    
+
     Stripe envoie les événements ici après chaque action:
     - checkout.session.completed
     - customer.subscription.created/updated/deleted
     - invoice.paid/payment_failed
-    
+
     IMPORTANT: Cet endpoint est PUBLIC (pas d'auth) mais vérifie la signature Stripe.
     """
     if not stripe_signature:
@@ -41,14 +38,14 @@ async def stripe_webhook(
 
     # Vérifier la signature et parser l'événement
     event = StripeServiceLive.verify_webhook(payload, stripe_signature)
-    
+
     if not event:
         logger.warning("[WEBHOOK] Invalid signature or payload")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     event_type = event.get("type", "unknown")
     event_id = event.get("id", "unknown")
-    
+
     logger.info(f"[WEBHOOK] Received: {event_type} ({event_id})")
 
     # Traiter l'événement
@@ -69,7 +66,7 @@ async def stripe_webhook(
         logger.error(f"[WEBHOOK] Error processing {event_type}: {e}")
         # Retourner 200 pour éviter les retries Stripe
         return {"status": "error", "event_type": event_type, "message": str(e)}
-    
+
     finally:
         db.close()
 

@@ -19,11 +19,10 @@ RÈGLES FONDAMENTALES:
 - admin ne peut jamais modifier ses propres droits
 """
 
-from enum import Enum
-from typing import Dict, List, Set, Optional, Callable
-from dataclasses import dataclass
 import functools
-
+from collections.abc import Callable
+from dataclasses import dataclass
+from enum import Enum
 
 # ============================================================================
 # DÉFINITION DES RÔLES STANDARDS
@@ -39,7 +38,7 @@ class StandardRole(str, Enum):
 
 
 # Niveau hiérarchique des rôles (0 = plus élevé)
-ROLE_HIERARCHY: Dict[StandardRole, int] = {
+ROLE_HIERARCHY: dict[StandardRole, int] = {
     StandardRole.SUPER_ADMIN: 0,
     StandardRole.ADMIN: 1,
     StandardRole.MANAGER: 2,
@@ -119,7 +118,7 @@ DENY = Permission(False, Restriction.NONE)
 
 
 # Matrice complète: ROLE -> MODULE -> ACTION -> Permission
-RBAC_MATRIX: Dict[StandardRole, Dict[Module, Dict[Action, Permission]]] = {
+RBAC_MATRIX: dict[StandardRole, dict[Module, dict[Action, Permission]]] = {
 
     # =========================================================================
     # SUPER_ADMIN - Accès total (invisible en bêta)
@@ -502,7 +501,7 @@ def has_permission(
     return check_permission(role, module, action).allowed
 
 
-def get_all_permissions(role: StandardRole) -> Dict[str, Dict[str, bool]]:
+def get_all_permissions(role: StandardRole) -> dict[str, dict[str, bool]]:
     """
     Retourne toutes les permissions d'un rôle sous forme de dict.
     Format: {module: {action: allowed}}
@@ -519,7 +518,7 @@ def get_all_permissions(role: StandardRole) -> Dict[str, Dict[str, bool]]:
     return result
 
 
-def get_allowed_actions(role: StandardRole, module: Module) -> List[Action]:
+def get_allowed_actions(role: StandardRole, module: Module) -> list[Action]:
     """Retourne la liste des actions autorisées pour un rôle sur un module."""
     allowed = []
     if role not in RBAC_MATRIX:
@@ -545,7 +544,7 @@ def generate_permission_code(module: Module, action: Action) -> str:
 
 
 # Mapping des permissions standards vers codes existants
-PERMISSION_CODE_MAPPING: Dict[str, str] = {
+PERMISSION_CODE_MAPPING: dict[str, str] = {
     # Users & Roles
     "users.read": "iam.user.read",
     "users.create": "iam.user.create",
@@ -596,7 +595,7 @@ PERMISSION_CODE_MAPPING: Dict[str, str] = {
 }
 
 
-def get_legacy_permission_code(module: Module, action: Action) -> Optional[str]:
+def get_legacy_permission_code(module: Module, action: Action) -> str | None:
     """Convertit une permission standard en code legacy."""
     key = f"{module.value}.{action.value}"
     return PERMISSION_CODE_MAPPING.get(key)
@@ -606,7 +605,7 @@ def get_legacy_permission_code(module: Module, action: Action) -> Optional[str]:
 # RÔLE → PERMISSIONS LEGACY (pour seeding)
 # ============================================================================
 
-def get_legacy_permissions_for_role(role: StandardRole) -> List[str]:
+def get_legacy_permissions_for_role(role: StandardRole) -> list[str]:
     """
     Génère la liste des codes de permission legacy pour un rôle.
     Utilisé pour initialiser la base de données.
@@ -776,7 +775,7 @@ LEGACY_ROLE_MAPPING = {
 }
 
 
-def map_legacy_role_to_standard(legacy_role) -> Optional[StandardRole]:
+def map_legacy_role_to_standard(legacy_role) -> StandardRole | None:
     """Convertit un rôle legacy en rôle standard."""
     if legacy_role is None:
         return None
@@ -809,7 +808,7 @@ def validate_matrix_completeness():
                 errors.append(f"Module {module.value} manquant pour rôle {role.value}")
 
     if errors:
-        raise ValueError(f"Matrice RBAC incomplète:\n" + "\n".join(errors))
+        raise ValueError("Matrice RBAC incomplète:\n" + "\n".join(errors))
 
     return True
 

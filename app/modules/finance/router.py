@@ -6,27 +6,48 @@ Endpoints API pour la comptabilité et la trésorerie.
 """
 
 from datetime import date
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.core.database import get_db
-from app.core.auth import get_current_user, get_tenant_id
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
-from .models import AccountType, JournalType, EntryStatus, BankTransactionType, ForecastPeriod
+from app.core.auth import get_current_user, get_tenant_id
+from app.core.database import get_db
+
+from .models import AccountType, BankTransactionType, EntryStatus, ForecastPeriod, JournalType
 from .schemas import (
-    AccountCreate, AccountUpdate, AccountResponse, AccountList,
-    JournalCreate, JournalUpdate, JournalResponse,
-    FiscalYearCreate, FiscalYearResponse, FiscalPeriodResponse,
-    EntryCreate, EntryUpdate, EntryResponse, EntryList, EntryLineResponse,
-    BankAccountCreate, BankAccountUpdate, BankAccountResponse,
-    BankStatementCreate, BankStatementResponse,
-    BankTransactionCreate, BankTransactionResponse,
-    CashForecastCreate, CashForecastUpdate, CashForecastResponse,
-    CashFlowCategoryCreate, CashFlowCategoryResponse,
-    FinancialReportCreate, FinancialReportResponse,
-    TrialBalance, IncomeStatement, FinanceDashboard
+    AccountCreate,
+    AccountList,
+    AccountResponse,
+    AccountUpdate,
+    BankAccountCreate,
+    BankAccountResponse,
+    BankAccountUpdate,
+    BankStatementCreate,
+    BankStatementResponse,
+    BankTransactionCreate,
+    BankTransactionResponse,
+    CashFlowCategoryCreate,
+    CashFlowCategoryResponse,
+    CashForecastCreate,
+    CashForecastResponse,
+    CashForecastUpdate,
+    EntryCreate,
+    EntryLineResponse,
+    EntryList,
+    EntryResponse,
+    EntryUpdate,
+    FinanceDashboard,
+    FinancialReportCreate,
+    FinancialReportResponse,
+    FiscalPeriodResponse,
+    FiscalYearCreate,
+    FiscalYearResponse,
+    IncomeStatement,
+    JournalCreate,
+    JournalResponse,
+    JournalUpdate,
+    TrialBalance,
 )
 from .service import get_finance_service
 
@@ -60,10 +81,10 @@ def create_account(
 
 @router.get("/accounts", response_model=AccountList)
 def list_accounts(
-    account_type: Optional[AccountType] = None,
-    parent_id: Optional[UUID] = None,
+    account_type: AccountType | None = None,
+    parent_id: UUID | None = None,
     is_active: bool = True,
-    search: Optional[str] = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -117,8 +138,8 @@ def update_account(
 @router.get("/accounts/{account_id}/balance")
 def get_account_balance(
     account_id: UUID,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -147,9 +168,9 @@ def create_journal(
     return service.create_journal(data)
 
 
-@router.get("/journals", response_model=List[JournalResponse])
+@router.get("/journals", response_model=list[JournalResponse])
 def list_journals(
-    journal_type: Optional[JournalType] = None,
+    journal_type: JournalType | None = None,
     is_active: bool = True,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
@@ -207,7 +228,7 @@ def create_fiscal_year(
     return service.create_fiscal_year(data)
 
 
-@router.get("/fiscal-years", response_model=List[FiscalYearResponse])
+@router.get("/fiscal-years", response_model=list[FiscalYearResponse])
 def list_fiscal_years(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
@@ -247,7 +268,7 @@ def get_fiscal_year(
     return fiscal_year
 
 
-@router.get("/fiscal-years/{fiscal_year_id}/periods", response_model=List[FiscalPeriodResponse])
+@router.get("/fiscal-years/{fiscal_year_id}/periods", response_model=list[FiscalPeriodResponse])
 def get_fiscal_periods(
     fiscal_year_id: UUID,
     db: Session = Depends(get_db),
@@ -313,11 +334,11 @@ def create_entry(
 
 @router.get("/entries", response_model=EntryList)
 def list_entries(
-    journal_id: Optional[UUID] = None,
-    fiscal_year_id: Optional[UUID] = None,
-    entry_status: Optional[EntryStatus] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    journal_id: UUID | None = None,
+    fiscal_year_id: UUID | None = None,
+    entry_status: EntryStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -372,7 +393,7 @@ def update_entry(
     return entry
 
 
-@router.get("/entries/{entry_id}/lines", response_model=List[EntryLineResponse])
+@router.get("/entries/{entry_id}/lines", response_model=list[EntryLineResponse])
 def get_entry_lines(
     entry_id: UUID,
     db: Session = Depends(get_db),
@@ -454,7 +475,7 @@ def create_bank_account(
     return service.create_bank_account(data)
 
 
-@router.get("/bank-accounts", response_model=List[BankAccountResponse])
+@router.get("/bank-accounts", response_model=list[BankAccountResponse])
 def list_bank_accounts(
     is_active: bool = True,
     db: Session = Depends(get_db),
@@ -515,7 +536,7 @@ def create_bank_statement(
 
 @router.get("/bank-statements")
 def list_bank_statements(
-    bank_account_id: Optional[UUID] = None,
+    bank_account_id: UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -580,10 +601,10 @@ def create_bank_transaction(
 
 @router.get("/bank-transactions")
 def list_bank_transactions(
-    bank_account_id: Optional[UUID] = None,
-    transaction_type: Optional[BankTransactionType] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    bank_account_id: UUID | None = None,
+    transaction_type: BankTransactionType | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -619,11 +640,11 @@ def create_cash_forecast(
     return service.create_cash_forecast(data, current_user.id)
 
 
-@router.get("/cash-forecasts", response_model=List[CashForecastResponse])
+@router.get("/cash-forecasts", response_model=list[CashForecastResponse])
 def list_cash_forecasts(
-    period: Optional[ForecastPeriod] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    period: ForecastPeriod | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -680,9 +701,9 @@ def create_cash_flow_category(
     return service.create_cash_flow_category(data)
 
 
-@router.get("/cash-flow-categories", response_model=List[CashFlowCategoryResponse])
+@router.get("/cash-flow-categories", response_model=list[CashFlowCategoryResponse])
 def list_cash_flow_categories(
-    is_receipt: Optional[bool] = None,
+    is_receipt: bool | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -700,7 +721,7 @@ def list_cash_flow_categories(
 def get_trial_balance(
     start_date: date,
     end_date: date,
-    fiscal_year_id: Optional[UUID] = None,
+    fiscal_year_id: UUID | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -737,8 +758,8 @@ def create_financial_report(
 
 @router.get("/reports")
 def list_financial_reports(
-    report_type: Optional[str] = None,
-    fiscal_year_id: Optional[UUID] = None,
+    report_type: str | None = None,
+    fiscal_year_id: UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),

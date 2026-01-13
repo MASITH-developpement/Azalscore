@@ -5,14 +5,13 @@ AZALS MODULE M2A - Schemas Comptabilité Automatisée
 Schemas Pydantic pour la validation et sérialisation des données.
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from uuid import UUID
 from enum import Enum
+from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel, Field, validator, root_validator
-
+from pydantic import BaseModel, Field
 
 # ============================================================================
 # ENUMS (pour Pydantic)
@@ -147,45 +146,45 @@ class DocumentBase(BaseSchema):
     """Base pour les documents."""
     document_type: DocumentTypeEnum
     source: DocumentSourceEnum
-    reference: Optional[str] = None
-    document_date: Optional[date] = None
-    due_date: Optional[date] = None
-    partner_name: Optional[str] = None
-    partner_tax_id: Optional[str] = None
-    amount_untaxed: Optional[Decimal] = None
-    amount_tax: Optional[Decimal] = None
-    amount_total: Optional[Decimal] = None
+    reference: str | None = None
+    document_date: date | None = None
+    due_date: date | None = None
+    partner_name: str | None = None
+    partner_tax_id: str | None = None
+    amount_untaxed: Decimal | None = None
+    amount_tax: Decimal | None = None
+    amount_total: Decimal | None = None
     currency: str = "EUR"
-    notes: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    notes: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
 
 class DocumentCreate(DocumentBase):
     """Création d'un document (upload)."""
-    original_filename: Optional[str] = None
-    email_from: Optional[str] = None
-    email_subject: Optional[str] = None
+    original_filename: str | None = None
+    email_from: str | None = None
+    email_subject: str | None = None
 
 
 class DocumentUpdate(BaseSchema):
     """Mise à jour d'un document."""
-    reference: Optional[str] = None
-    document_date: Optional[date] = None
-    due_date: Optional[date] = None
-    partner_name: Optional[str] = None
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
-    custom_fields: Optional[Dict[str, Any]] = None
+    reference: str | None = None
+    document_date: date | None = None
+    due_date: date | None = None
+    partner_name: str | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
+    custom_fields: dict[str, Any] | None = None
 
 
 class DocumentValidate(BaseSchema):
     """Validation d'un document par l'expert."""
-    validation_notes: Optional[str] = None
+    validation_notes: str | None = None
     # Corrections manuelles optionnelles
-    corrected_amount_untaxed: Optional[Decimal] = None
-    corrected_amount_tax: Optional[Decimal] = None
-    corrected_amount_total: Optional[Decimal] = None
-    corrected_account_code: Optional[str] = None
+    corrected_amount_untaxed: Decimal | None = None
+    corrected_amount_tax: Decimal | None = None
+    corrected_amount_total: Decimal | None = None
+    corrected_account_code: str | None = None
 
 
 class DocumentReject(BaseSchema):
@@ -199,28 +198,28 @@ class DocumentResponse(DocumentBase):
     tenant_id: str
     status: DocumentStatusEnum
     payment_status: PaymentStatusEnum
-    original_filename: Optional[str] = None
-    file_path: Optional[str] = None
+    original_filename: str | None = None
+    file_path: str | None = None
     received_at: datetime
-    processed_at: Optional[datetime] = None
+    processed_at: datetime | None = None
 
     # OCR & IA
-    ocr_confidence: Optional[Decimal] = None
-    ai_confidence: Optional[ConfidenceLevelEnum] = None
-    ai_confidence_score: Optional[Decimal] = None
-    ai_suggested_account: Optional[str] = None
+    ocr_confidence: Decimal | None = None
+    ai_confidence: ConfidenceLevelEnum | None = None
+    ai_confidence_score: Decimal | None = None
+    ai_suggested_account: str | None = None
 
     # Paiement
     amount_paid: Decimal = Decimal("0")
-    amount_remaining: Optional[Decimal] = None
+    amount_remaining: Decimal | None = None
 
     # Validation
     requires_validation: bool = False
-    validated_by: Optional[UUID] = None
-    validated_at: Optional[datetime] = None
+    validated_by: UUID | None = None
+    validated_at: datetime | None = None
 
     # Écriture comptable
-    journal_entry_id: Optional[UUID] = None
+    journal_entry_id: UUID | None = None
 
     # Timestamps
     created_at: datetime
@@ -229,7 +228,7 @@ class DocumentResponse(DocumentBase):
 
 class DocumentListResponse(BaseSchema):
     """Liste de documents avec pagination."""
-    items: List[DocumentResponse]
+    items: list[DocumentResponse]
     total: int
     page: int
     page_size: int
@@ -238,15 +237,15 @@ class DocumentListResponse(BaseSchema):
 
 class DocumentDetailResponse(DocumentResponse):
     """Détail complet d'un document."""
-    ocr_raw_text: Optional[str] = None
-    ai_analysis: Optional[Dict[str, Any]] = None
-    custom_fields: Dict[str, Any] = Field(default_factory=dict)
-    validation_notes: Optional[str] = None
+    ocr_raw_text: str | None = None
+    ai_analysis: dict[str, Any] | None = None
+    custom_fields: dict[str, Any] = Field(default_factory=dict)
+    validation_notes: str | None = None
 
     # Relations
-    ocr_results: List["OCRResultResponse"] = Field(default_factory=list)
-    ai_classifications: List["AIClassificationResponse"] = Field(default_factory=list)
-    auto_entries: List["AutoEntryResponse"] = Field(default_factory=list)
+    ocr_results: list["OCRResultResponse"] = Field(default_factory=list)
+    ai_classifications: list["AIClassificationResponse"] = Field(default_factory=list)
+    auto_entries: list["AutoEntryResponse"] = Field(default_factory=list)
 
 
 # ============================================================================
@@ -257,20 +256,20 @@ class ExtractedField(BaseSchema):
     """Champ extrait par OCR."""
     value: Any
     confidence: Decimal
-    bounding_box: Optional[Dict[str, float]] = None
+    bounding_box: dict[str, float] | None = None
 
 
 class OCRResultCreate(BaseSchema):
     """Création d'un résultat OCR."""
     document_id: UUID
     ocr_engine: str
-    ocr_version: Optional[str] = None
-    raw_text: Optional[str] = None
-    structured_data: Optional[Dict[str, Any]] = None
-    extracted_fields: Dict[str, ExtractedField]
-    overall_confidence: Optional[Decimal] = None
-    processing_time_ms: Optional[int] = None
-    image_quality_score: Optional[Decimal] = None
+    ocr_version: str | None = None
+    raw_text: str | None = None
+    structured_data: dict[str, Any] | None = None
+    extracted_fields: dict[str, ExtractedField]
+    overall_confidence: Decimal | None = None
+    processing_time_ms: int | None = None
+    image_quality_score: Decimal | None = None
     page_count: int = 1
 
 
@@ -279,13 +278,13 @@ class OCRResultResponse(BaseSchema):
     id: UUID
     document_id: UUID
     ocr_engine: str
-    overall_confidence: Optional[Decimal] = None
-    extracted_fields: Dict[str, Any]
-    processing_time_ms: Optional[int] = None
-    image_quality_score: Optional[Decimal] = None
+    overall_confidence: Decimal | None = None
+    extracted_fields: dict[str, Any]
+    processing_time_ms: int | None = None
+    image_quality_score: Decimal | None = None
     page_count: int
-    errors: List[str] = Field(default_factory=list)
-    warnings: List[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
     created_at: datetime
 
 
@@ -304,33 +303,33 @@ class AIClassificationCreate(BaseSchema):
     """Création d'une classification IA."""
     document_id: UUID
     model_name: str
-    model_version: Optional[str] = None
-    document_type_predicted: Optional[DocumentTypeEnum] = None
-    document_type_confidence: Optional[Decimal] = None
-    vendor_name: Optional[str] = None
-    vendor_confidence: Optional[Decimal] = None
-    invoice_number: Optional[str] = None
-    invoice_number_confidence: Optional[Decimal] = None
-    invoice_date: Optional[date] = None
-    invoice_date_confidence: Optional[Decimal] = None
-    due_date: Optional[date] = None
-    due_date_confidence: Optional[Decimal] = None
-    amount_untaxed: Optional[Decimal] = None
-    amount_untaxed_confidence: Optional[Decimal] = None
-    amount_tax: Optional[Decimal] = None
-    amount_tax_confidence: Optional[Decimal] = None
-    amount_total: Optional[Decimal] = None
-    amount_total_confidence: Optional[Decimal] = None
-    tax_rates: Optional[List[TaxRateDetail]] = None
-    suggested_account_code: Optional[str] = None
-    suggested_account_confidence: Optional[Decimal] = None
-    suggested_journal_code: Optional[str] = None
-    suggested_journal_confidence: Optional[Decimal] = None
-    expense_category: Optional[str] = None
-    expense_category_confidence: Optional[Decimal] = None
+    model_version: str | None = None
+    document_type_predicted: DocumentTypeEnum | None = None
+    document_type_confidence: Decimal | None = None
+    vendor_name: str | None = None
+    vendor_confidence: Decimal | None = None
+    invoice_number: str | None = None
+    invoice_number_confidence: Decimal | None = None
+    invoice_date: date | None = None
+    invoice_date_confidence: Decimal | None = None
+    due_date: date | None = None
+    due_date_confidence: Decimal | None = None
+    amount_untaxed: Decimal | None = None
+    amount_untaxed_confidence: Decimal | None = None
+    amount_tax: Decimal | None = None
+    amount_tax_confidence: Decimal | None = None
+    amount_total: Decimal | None = None
+    amount_total_confidence: Decimal | None = None
+    tax_rates: list[TaxRateDetail] | None = None
+    suggested_account_code: str | None = None
+    suggested_account_confidence: Decimal | None = None
+    suggested_journal_code: str | None = None
+    suggested_journal_confidence: Decimal | None = None
+    expense_category: str | None = None
+    expense_category_confidence: Decimal | None = None
     overall_confidence: ConfidenceLevelEnum
     overall_confidence_score: Decimal
-    classification_reasons: Optional[List[str]] = None
+    classification_reasons: list[str] | None = None
 
 
 class AIClassificationResponse(BaseSchema):
@@ -342,15 +341,15 @@ class AIClassificationResponse(BaseSchema):
     overall_confidence_score: Decimal
 
     # Extractions principales
-    vendor_name: Optional[str] = None
-    invoice_number: Optional[str] = None
-    invoice_date: Optional[date] = None
-    amount_total: Optional[Decimal] = None
+    vendor_name: str | None = None
+    invoice_number: str | None = None
+    invoice_date: date | None = None
+    amount_total: Decimal | None = None
 
     # Suggestions comptables
-    suggested_account_code: Optional[str] = None
-    suggested_journal_code: Optional[str] = None
-    expense_category: Optional[str] = None
+    suggested_account_code: str | None = None
+    suggested_journal_code: str | None = None
+    expense_category: str | None = None
 
     # Apprentissage
     was_corrected: bool = False
@@ -359,10 +358,10 @@ class AIClassificationResponse(BaseSchema):
 
 class AIClassificationCorrection(BaseSchema):
     """Correction d'une classification IA (apprentissage)."""
-    corrected_account_code: Optional[str] = None
-    corrected_journal_code: Optional[str] = None
-    corrected_expense_category: Optional[str] = None
-    correction_feedback: Optional[str] = None
+    corrected_account_code: str | None = None
+    corrected_journal_code: str | None = None
+    corrected_expense_category: str | None = None
+    correction_feedback: str | None = None
 
 
 # ============================================================================
@@ -372,10 +371,10 @@ class AIClassificationCorrection(BaseSchema):
 class ProposedEntryLine(BaseSchema):
     """Ligne d'écriture proposée."""
     account_code: str
-    account_name: Optional[str] = None
+    account_name: str | None = None
     debit: Decimal = Decimal("0")
     credit: Decimal = Decimal("0")
-    label: Optional[str] = None
+    label: str | None = None
 
 
 class AutoEntryCreate(BaseSchema):
@@ -383,19 +382,19 @@ class AutoEntryCreate(BaseSchema):
     document_id: UUID
     confidence_level: ConfidenceLevelEnum
     confidence_score: Decimal
-    entry_template: Optional[str] = None
-    accounting_rules_applied: Optional[List[str]] = None
-    proposed_lines: List[ProposedEntryLine]
+    entry_template: str | None = None
+    accounting_rules_applied: list[str] | None = None
+    proposed_lines: list[ProposedEntryLine]
 
 
 class AutoEntryResponse(BaseSchema):
     """Réponse écriture automatique."""
     id: UUID
     document_id: UUID
-    journal_entry_id: Optional[UUID] = None
+    journal_entry_id: UUID | None = None
     confidence_level: ConfidenceLevelEnum
     confidence_score: Decimal
-    proposed_lines: List[ProposedEntryLine]
+    proposed_lines: list[ProposedEntryLine]
     auto_validated: bool
     requires_review: bool
     is_posted: bool
@@ -405,8 +404,8 @@ class AutoEntryResponse(BaseSchema):
 class AutoEntryValidate(BaseSchema):
     """Validation d'une écriture automatique."""
     approved: bool
-    modified_lines: Optional[List[ProposedEntryLine]] = None
-    modification_reason: Optional[str] = None
+    modified_lines: list[ProposedEntryLine] | None = None
+    modification_reason: str | None = None
 
 
 # ============================================================================
@@ -418,7 +417,7 @@ class BankConnectionCreate(BaseSchema):
     provider: str
     institution_id: str
     institution_name: str
-    institution_logo_url: Optional[str] = None
+    institution_logo_url: str | None = None
 
 
 class BankConnectionResponse(BaseSchema):
@@ -426,19 +425,19 @@ class BankConnectionResponse(BaseSchema):
     id: UUID
     institution_id: str
     institution_name: str
-    institution_logo_url: Optional[str] = None
+    institution_logo_url: str | None = None
     provider: str
     status: BankConnectionStatusEnum
-    last_sync_at: Optional[datetime] = None
-    last_sync_status: Optional[str] = None
-    consent_expires_at: Optional[datetime] = None
-    linked_accounts: List[Dict[str, Any]] = Field(default_factory=list)
+    last_sync_at: datetime | None = None
+    last_sync_status: str | None = None
+    consent_expires_at: datetime | None = None
+    linked_accounts: list[dict[str, Any]] = Field(default_factory=list)
     created_at: datetime
 
 
 class BankConnectionListResponse(BaseSchema):
     """Liste des connexions bancaires."""
-    items: List[BankConnectionResponse]
+    items: list[BankConnectionResponse]
     total: int
 
 
@@ -452,15 +451,15 @@ class SyncedAccountResponse(BaseSchema):
     connection_id: UUID
     external_account_id: str
     account_name: str
-    account_number_masked: Optional[str] = None
-    iban_masked: Optional[str] = None
-    account_type: Optional[str] = None
-    balance_current: Optional[Decimal] = None
-    balance_available: Optional[Decimal] = None
+    account_number_masked: str | None = None
+    iban_masked: str | None = None
+    account_type: str | None = None
+    balance_current: Decimal | None = None
+    balance_available: Decimal | None = None
     balance_currency: str = "EUR"
-    balance_updated_at: Optional[datetime] = None
+    balance_updated_at: datetime | None = None
     is_sync_enabled: bool = True
-    bank_account_id: Optional[UUID] = None  # Lien vers compte interne
+    bank_account_id: UUID | None = None  # Lien vers compte interne
     created_at: datetime
 
 
@@ -478,22 +477,22 @@ class SyncedTransactionResponse(BaseSchema):
     id: UUID
     synced_account_id: UUID
     transaction_date: date
-    value_date: Optional[date] = None
+    value_date: date | None = None
     amount: Decimal
     currency: str = "EUR"
-    description: Optional[str] = None
-    merchant_name: Optional[str] = None
-    merchant_category: Optional[str] = None
-    ai_category: Optional[str] = None
+    description: str | None = None
+    merchant_name: str | None = None
+    merchant_category: str | None = None
+    ai_category: str | None = None
     reconciliation_status: ReconciliationStatusEnum
-    matched_document_id: Optional[UUID] = None
-    match_confidence: Optional[Decimal] = None
+    matched_document_id: UUID | None = None
+    match_confidence: Decimal | None = None
     created_at: datetime
 
 
 class SyncedTransactionListResponse(BaseSchema):
     """Liste de transactions synchronisées."""
-    items: List[SyncedTransactionResponse]
+    items: list[SyncedTransactionResponse]
     total: int
     page: int
     page_size: int
@@ -510,10 +509,10 @@ class SyncedTransactionListResponse(BaseSchema):
 
 class BankSyncTrigger(BaseSchema):
     """Déclenchement d'une synchronisation bancaire."""
-    connection_id: Optional[UUID] = None  # Si None, sync toutes les connexions
+    connection_id: UUID | None = None  # Si None, sync toutes les connexions
     sync_type: SyncTypeEnum = SyncTypeEnum.MANUAL
-    sync_from_date: Optional[date] = None
-    sync_to_date: Optional[date] = None
+    sync_from_date: date | None = None
+    sync_to_date: date | None = None
 
 
 class BankSyncSessionResponse(BaseSchema):
@@ -522,16 +521,16 @@ class BankSyncSessionResponse(BaseSchema):
     connection_id: UUID
     sync_type: SyncTypeEnum
     status: SyncStatusEnum
-    sync_from_date: Optional[date] = None
-    sync_to_date: Optional[date] = None
+    sync_from_date: date | None = None
+    sync_to_date: date | None = None
     accounts_synced: int = 0
     transactions_fetched: int = 0
     transactions_new: int = 0
     reconciliations_auto: int = 0
-    error_message: Optional[str] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
+    error_message: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    duration_ms: int | None = None
     created_at: datetime
 
 
@@ -542,58 +541,58 @@ class BankSyncSessionResponse(BaseSchema):
 class ReconciliationRuleCreate(BaseSchema):
     """Création d'une règle de rapprochement."""
     name: str = Field(..., min_length=3, max_length=255)
-    description: Optional[str] = None
-    match_criteria: Dict[str, Any]
+    description: str | None = None
+    match_criteria: dict[str, Any]
     auto_reconcile: bool = False
     min_confidence: Decimal = Decimal("90")
-    default_account_code: Optional[str] = None
-    default_tax_code: Optional[str] = None
+    default_account_code: str | None = None
+    default_tax_code: str | None = None
     priority: int = 0
 
 
 class ReconciliationRuleUpdate(BaseSchema):
     """Mise à jour d'une règle de rapprochement."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    match_criteria: Optional[Dict[str, Any]] = None
-    auto_reconcile: Optional[bool] = None
-    min_confidence: Optional[Decimal] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    match_criteria: dict[str, Any] | None = None
+    auto_reconcile: bool | None = None
+    min_confidence: Decimal | None = None
+    is_active: bool | None = None
 
 
 class ReconciliationRuleResponse(BaseSchema):
     """Réponse règle de rapprochement."""
     id: UUID
     name: str
-    description: Optional[str] = None
-    match_criteria: Dict[str, Any]
+    description: str | None = None
+    match_criteria: dict[str, Any]
     auto_reconcile: bool
     min_confidence: Decimal
-    default_account_code: Optional[str] = None
+    default_account_code: str | None = None
     priority: int
     is_active: bool
     times_matched: int
-    last_matched_at: Optional[datetime] = None
+    last_matched_at: datetime | None = None
     created_at: datetime
 
 
 class ManualReconciliation(BaseSchema):
     """Rapprochement manuel."""
     transaction_id: UUID
-    document_id: Optional[UUID] = None
-    entry_line_id: Optional[UUID] = None
+    document_id: UUID | None = None
+    entry_line_id: UUID | None = None
 
 
 class ReconciliationHistoryResponse(BaseSchema):
     """Réponse historique rapprochement."""
     id: UUID
-    transaction_id: Optional[UUID] = None
-    document_id: Optional[UUID] = None
+    transaction_id: UUID | None = None
+    document_id: UUID | None = None
     reconciliation_type: str
-    confidence_score: Optional[Decimal] = None
-    transaction_amount: Optional[Decimal] = None
-    document_amount: Optional[Decimal] = None
-    difference: Optional[Decimal] = None
+    confidence_score: Decimal | None = None
+    transaction_amount: Decimal | None = None
+    document_amount: Decimal | None = None
+    difference: Decimal | None = None
     is_cancelled: bool = False
     created_at: datetime
 
@@ -608,11 +607,11 @@ class AlertCreate(BaseSchema):
     severity: AlertSeverityEnum = AlertSeverityEnum.WARNING
     title: str = Field(..., min_length=5, max_length=255)
     message: str = Field(..., min_length=10)
-    entity_type: Optional[str] = None
-    entity_id: Optional[UUID] = None
-    document_id: Optional[UUID] = None
-    target_roles: List[str] = Field(default_factory=lambda: ["EXPERT_COMPTABLE"])
-    expires_at: Optional[datetime] = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
+    document_id: UUID | None = None
+    target_roles: list[str] = Field(default_factory=lambda: ["EXPERT_COMPTABLE"])
+    expires_at: datetime | None = None
 
 
 class AlertResponse(BaseSchema):
@@ -622,24 +621,24 @@ class AlertResponse(BaseSchema):
     severity: AlertSeverityEnum
     title: str
     message: str
-    entity_type: Optional[str] = None
-    entity_id: Optional[UUID] = None
-    document_id: Optional[UUID] = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
+    document_id: UUID | None = None
     is_read: bool = False
     is_resolved: bool = False
-    resolved_at: Optional[datetime] = None
-    resolution_notes: Optional[str] = None
+    resolved_at: datetime | None = None
+    resolution_notes: str | None = None
     created_at: datetime
 
 
 class AlertResolve(BaseSchema):
     """Résolution d'une alerte."""
-    resolution_notes: Optional[str] = None
+    resolution_notes: str | None = None
 
 
 class AlertListResponse(BaseSchema):
     """Liste d'alertes."""
-    items: List[AlertResponse]
+    items: list[AlertResponse]
     total: int
     unread_count: int
     critical_count: int
@@ -654,8 +653,8 @@ class CashPositionResponse(BaseSchema):
     total_balance: Decimal
     available_balance: Decimal
     currency: str = "EUR"
-    accounts: List[Dict[str, Any]]
-    last_sync_at: Optional[datetime] = None
+    accounts: list[dict[str, Any]]
+    last_sync_at: datetime | None = None
     freshness_score: Decimal  # 0-100
 
 
@@ -671,11 +670,11 @@ class CashForecastItem(BaseSchema):
 class CashForecastResponse(BaseSchema):
     """Prévision de trésorerie."""
     current_balance: Decimal
-    forecast_items: List[CashForecastItem]
+    forecast_items: list[CashForecastItem]
     period_start: date
     period_end: date
-    warning_threshold: Optional[Decimal] = None
-    alert_threshold: Optional[Decimal] = None
+    warning_threshold: Decimal | None = None
+    alert_threshold: Decimal | None = None
 
 
 class InvoicesSummary(BaseSchema):
@@ -709,7 +708,7 @@ class DirigeantDashboard(BaseSchema):
     cash_forecast: CashForecastResponse
     invoices_summary: InvoicesSummary
     result_summary: ResultSummary
-    alerts: List[AlertResponse]  # Alertes critiques uniquement
+    alerts: list[AlertResponse]  # Alertes critiques uniquement
     data_freshness: Decimal  # Score global 0-100
     last_updated: datetime
 
@@ -747,8 +746,8 @@ class AssistanteDashboard(BaseSchema):
     total_documents: int
     documents_by_status: DocumentCountsByStatus
     documents_by_type: DocumentCountsByType
-    recent_documents: List[DocumentResponse]
-    alerts: List[AlertResponse]  # Alertes "pièce illisible", "info manquante"
+    recent_documents: list[DocumentResponse]
+    alerts: list[AlertResponse]  # Alertes "pièce illisible", "info manquante"
     last_updated: datetime
 
 
@@ -759,14 +758,14 @@ class AssistanteDashboard(BaseSchema):
 class ValidationQueueItem(BaseSchema):
     """Élément de la file de validation."""
     document: DocumentResponse
-    ai_classification: Optional[AIClassificationResponse] = None
-    auto_entry: Optional[AutoEntryResponse] = None
-    alerts: List[AlertResponse] = Field(default_factory=list)
+    ai_classification: AIClassificationResponse | None = None
+    auto_entry: AutoEntryResponse | None = None
+    alerts: list[AlertResponse] = Field(default_factory=list)
 
 
 class ValidationQueueResponse(BaseSchema):
     """File de validation expert-comptable."""
-    items: List[ValidationQueueItem]
+    items: list[ValidationQueueItem]
     total: int
     high_priority_count: int  # Confiance faible
     medium_priority_count: int
@@ -781,7 +780,7 @@ class AIPerformanceStats(BaseSchema):
     corrections_count: int
     corrections_rate: Decimal  # %
     average_confidence: Decimal
-    by_document_type: Dict[str, Dict[str, Any]]
+    by_document_type: dict[str, dict[str, Any]]
 
 
 class ReconciliationStats(BaseSchema):
@@ -798,8 +797,8 @@ class ExpertComptableDashboard(BaseSchema):
     validation_queue: ValidationQueueResponse
     ai_performance: AIPerformanceStats
     reconciliation_stats: ReconciliationStats
-    unresolved_alerts: List[AlertResponse]
-    periods_status: List[Dict[str, Any]]  # Statut des périodes comptables
+    unresolved_alerts: list[AlertResponse]
+    periods_status: list[dict[str, Any]]  # Statut des périodes comptables
     last_updated: datetime
 
 
@@ -812,26 +811,26 @@ class WidgetConfig(BaseSchema):
     widget_id: str
     position: int
     enabled: bool = True
-    settings: Dict[str, Any] = Field(default_factory=dict)
+    settings: dict[str, Any] = Field(default_factory=dict)
 
 
 class UserPreferencesCreate(BaseSchema):
     """Création préférences utilisateur."""
     view_type: ViewTypeEnum
-    dashboard_widgets: List[WidgetConfig] = Field(default_factory=list)
+    dashboard_widgets: list[WidgetConfig] = Field(default_factory=list)
     default_period: str = "MONTH"
-    list_columns: List[str] = Field(default_factory=list)
-    default_filters: Dict[str, Any] = Field(default_factory=dict)
-    alert_preferences: Dict[str, bool] = Field(default_factory=dict)
+    list_columns: list[str] = Field(default_factory=list)
+    default_filters: dict[str, Any] = Field(default_factory=dict)
+    alert_preferences: dict[str, bool] = Field(default_factory=dict)
 
 
 class UserPreferencesUpdate(BaseSchema):
     """Mise à jour préférences."""
-    dashboard_widgets: Optional[List[WidgetConfig]] = None
-    default_period: Optional[str] = None
-    list_columns: Optional[List[str]] = None
-    default_filters: Optional[Dict[str, Any]] = None
-    alert_preferences: Optional[Dict[str, bool]] = None
+    dashboard_widgets: list[WidgetConfig] | None = None
+    default_period: str | None = None
+    list_columns: list[str] | None = None
+    default_filters: dict[str, Any] | None = None
+    alert_preferences: dict[str, bool] | None = None
 
 
 class UserPreferencesResponse(BaseSchema):
@@ -839,12 +838,12 @@ class UserPreferencesResponse(BaseSchema):
     id: UUID
     user_id: UUID
     view_type: ViewTypeEnum
-    dashboard_widgets: List[WidgetConfig]
+    dashboard_widgets: list[WidgetConfig]
     default_period: str
-    list_columns: List[str]
-    default_filters: Dict[str, Any]
-    alert_preferences: Dict[str, bool]
-    last_accessed_at: Optional[datetime] = None
+    list_columns: list[str]
+    default_filters: dict[str, Any]
+    alert_preferences: dict[str, bool]
+    last_accessed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -858,8 +857,8 @@ class EmailInboxCreate(BaseSchema):
     email_address: str
     email_type: EmailInboxTypeEnum
     auto_process: bool = True
-    provider: Optional[str] = None
-    provider_config: Optional[Dict[str, Any]] = None
+    provider: str | None = None
+    provider_config: dict[str, Any] | None = None
 
 
 class EmailInboxResponse(BaseSchema):
@@ -871,7 +870,7 @@ class EmailInboxResponse(BaseSchema):
     auto_process: bool
     emails_received: int
     emails_processed: int
-    last_email_at: Optional[datetime] = None
+    last_email_at: datetime | None = None
     created_at: datetime
 
 
@@ -880,15 +879,15 @@ class EmailProcessingLogResponse(BaseSchema):
     id: UUID
     inbox_id: UUID
     email_id: str
-    email_from: Optional[str] = None
-    email_subject: Optional[str] = None
-    email_received_at: Optional[datetime] = None
+    email_from: str | None = None
+    email_subject: str | None = None
+    email_received_at: datetime | None = None
     status: str
     attachments_count: int
     attachments_processed: int
-    documents_created: List[UUID]
-    error_message: Optional[str] = None
-    processed_at: Optional[datetime] = None
+    documents_created: list[UUID]
+    error_message: str | None = None
+    processed_at: datetime | None = None
     created_at: datetime
 
 
@@ -903,9 +902,9 @@ class UniversalChartAccountResponse(BaseSchema):
     name_en: str
     name_fr: str
     account_type: str
-    parent_code: Optional[str] = None
+    parent_code: str | None = None
     level: int
-    country_mappings: Dict[str, str]
+    country_mappings: dict[str, str]
     is_active: bool
 
 
@@ -914,15 +913,15 @@ class ChartMappingCreate(BaseSchema):
     universal_code: str
     local_account_code: str
     priority: int = 0
-    conditions: Dict[str, Any] = Field(default_factory=dict)
+    conditions: dict[str, Any] = Field(default_factory=dict)
 
 
 class ChartMappingResponse(BaseSchema):
     """Réponse mapping."""
     id: UUID
     universal_code: str
-    local_account_id: Optional[UUID] = None
-    local_account_code: Optional[str] = None
+    local_account_id: UUID | None = None
+    local_account_code: str | None = None
     priority: int
     is_active: bool
     created_at: datetime
@@ -946,10 +945,10 @@ class TaxConfigurationResponse(BaseSchema):
     country_code: str
     country_name: str
     tax_type: str
-    tax_rates: List[TaxRate]
+    tax_rates: list[TaxRate]
     is_active: bool
-    valid_from: Optional[date] = None
-    valid_to: Optional[date] = None
+    valid_from: date | None = None
+    valid_to: date | None = None
 
 
 # ============================================================================
@@ -961,7 +960,7 @@ class ReportRequest(BaseSchema):
     report_type: str  # balance, trial_balance, income_statement, balance_sheet
     start_date: date
     end_date: date
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
 
 
 class ReportResponse(BaseSchema):
@@ -970,9 +969,9 @@ class ReportResponse(BaseSchema):
     name: str
     start_date: date
     end_date: date
-    data: Dict[str, Any]
+    data: dict[str, Any]
     generated_at: datetime
-    generated_by: Optional[UUID] = None
+    generated_by: UUID | None = None
 
 
 # ============================================================================
@@ -993,8 +992,8 @@ class ExportResponse(BaseSchema):
     id: UUID
     export_type: str
     status: str
-    file_url: Optional[str] = None
-    file_size: Optional[int] = None
+    file_url: str | None = None
+    file_size: int | None = None
     legal_requirement: str
     generated_at: datetime
     expires_at: datetime  # Exports auto-supprimés
@@ -1006,16 +1005,16 @@ class ExportResponse(BaseSchema):
 
 class BulkValidationRequest(BaseSchema):
     """Validation en masse de documents."""
-    document_ids: List[UUID] = Field(..., min_length=1, max_length=100)
-    validation_notes: Optional[str] = None
+    document_ids: list[UUID] = Field(..., min_length=1, max_length=100)
+    validation_notes: str | None = None
 
 
 class BulkValidationResponse(BaseSchema):
     """Réponse validation en masse."""
     validated_count: int
     failed_count: int
-    failed_ids: List[UUID]
-    errors: Dict[str, str]  # {document_id: error_message}
+    failed_ids: list[UUID]
+    errors: dict[str, str]  # {document_id: error_message}
 
 
 # Mise à jour des forward references

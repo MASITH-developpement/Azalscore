@@ -7,16 +7,14 @@ Chaque entreprise = 1 Tenant isolé
 Nom entreprise → tenant_id (slug unique)
 """
 
-from datetime import datetime
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
-from app.services.signup_service import SignupService, SignupError
+from app.services.signup_service import SignupError, SignupService
 
 router = APIRouter(prefix="/signup", tags=["Signup"])
 logger = get_logger(__name__)
@@ -28,23 +26,23 @@ logger = get_logger(__name__)
 
 class SignupRequest(BaseModel):
     """Requête d'inscription d'une nouvelle entreprise."""
-    
+
     # Entreprise
     company_name: str = Field(..., min_length=2, max_length=100, description="Nom de l'entreprise")
     company_email: EmailStr = Field(..., description="Email principal de l'entreprise")
     country: str = Field(default="FR", min_length=2, max_length=2, description="Code pays ISO")
-    siret: Optional[str] = Field(default=None, max_length=20, description="SIRET (France)")
-    
+    siret: str | None = Field(default=None, max_length=20, description="SIRET (France)")
+
     # Admin
     admin_email: EmailStr = Field(..., description="Email de l'administrateur")
     admin_password: str = Field(..., min_length=8, description="Mot de passe (8 caractères min)")
     admin_first_name: str = Field(..., min_length=1, max_length=50, description="Prénom")
     admin_last_name: str = Field(..., min_length=1, max_length=50, description="Nom")
-    admin_phone: Optional[str] = Field(default=None, max_length=20, description="Téléphone")
-    
+    admin_phone: str | None = Field(default=None, max_length=20, description="Téléphone")
+
     # Options
     plan: str = Field(default="PROFESSIONAL", description="Plan choisi pour l'essai")
-    referral_code: Optional[str] = Field(default=None, description="Code de parrainage")
+    referral_code: str | None = Field(default=None, description="Code de parrainage")
     accept_terms: bool = Field(..., description="Acceptation des CGV")
     accept_privacy: bool = Field(..., description="Acceptation politique de confidentialité")
 
@@ -89,7 +87,7 @@ class SignupResponse(BaseModel):
 class CheckAvailabilityResponse(BaseModel):
     """Réponse de vérification de disponibilité."""
     available: bool
-    suggestion: Optional[str] = None
+    suggestion: str | None = None
 
 
 # ============================================================================
@@ -104,21 +102,21 @@ async def signup(
 ):
     """
     Inscrire une nouvelle entreprise.
-    
+
     Crée automatiquement:
     - Le tenant (espace isolé pour l'entreprise)
     - L'utilisateur administrateur
     - L'abonnement d'essai (14 jours)
     - Les modules selon le plan choisi
-    
+
     **Aucune carte bancaire requise pour l'essai.**
     """
     # Log de la tentative
     client_ip = request.client.host if request.client else "unknown"
     logger.info(f"[SIGNUP] Tentative: {data.company_name} / {data.admin_email} depuis {client_ip}")
-    
+
     service = SignupService(db)
-    
+
     try:
         result = service.signup(
             company_name=data.company_name,
@@ -133,7 +131,7 @@ async def signup(
             plan=data.plan,
             referral_code=data.referral_code,
         )
-        
+
         # Envoyer email de bienvenue
         try:
             from app.services.email_service import get_email_service
@@ -147,9 +145,9 @@ async def signup(
         except Exception as e:
             # Ne pas bloquer le signup si l'email échoue
             logger.error(f"[SIGNUP] Erreur envoi email: {e}")
-        
+
         logger.info(f"[SIGNUP] Succès: {result['tenant_id']} créé")
-        
+
         return SignupResponse(
             success=True,
             tenant_id=result["tenant_id"],
@@ -159,7 +157,7 @@ async def signup(
             login_url=result["login_url"],
             message=f"Bienvenue ! Votre espace {data.company_name} est prêt. Essai gratuit de 14 jours activé.",
         )
-        
+
     except SignupError as e:
         logger.warning(f"[SIGNUP] Erreur: {e.code} - {e.message}")
         raise HTTPException(
@@ -181,12 +179,12 @@ async def check_email_availability(
 ):
     """
     Vérifier si un email est disponible pour l'inscription.
-    
+
     Utilisé pour la validation en temps réel dans le formulaire.
     """
     service = SignupService(db)
     available = service.check_email_available(email)
-    
+
     return CheckAvailabilityResponse(
         available=available,
         suggestion="Cet email est déjà utilisé. Connectez-vous ou utilisez un autre email." if not available else None
@@ -200,7 +198,7 @@ async def check_company_availability(
 ):
     """
     Vérifier si un nom d'entreprise est disponible.
-    
+
     Utilisé pour la validation en temps réel dans le formulaire.
     """
     if len(name.strip()) < 2:
@@ -208,16 +206,16 @@ async def check_company_availability(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Le nom doit contenir au moins 2 caractères"
         )
-    
+
     service = SignupService(db)
     available = service.check_company_available(name)
-    
+
     # Générer une suggestion si non disponible
     suggestion = None
     if not available:
         import secrets
         suggestion = f"{name} - {secrets.token_hex(2).upper()}"
-    
+
     return CheckAvailabilityResponse(
         available=available,
         suggestion=suggestion
@@ -228,7 +226,7 @@ async def check_company_availability(
 async def get_available_plans():
     """
     Retourner les plans disponibles avec leurs caractéristiques.
-    
+
     Utilisé pour afficher les options dans le formulaire d'inscription.
     """
     return {

@@ -4,18 +4,17 @@ AZALS MODULE 12 - E-Commerce Router
 Endpoints API REST pour la plateforme e-commerce.
 """
 
-from typing import Optional, List
-from decimal import Decimal
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from decimal import Decimal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 
-from .models import ProductStatus, OrderStatus
-
+from .models import OrderStatus, ProductStatus
 
 # ============================================================================
 # SÉCURITÉ: Fonctions de vérification des rôles
@@ -31,35 +30,60 @@ def require_ecommerce_admin(current_user: User) -> None:
             detail="Accès refusé. Rôle ADMIN, DIRIGEANT ou COMMERCIAL requis pour cette opération."
         )
 from .schemas import (
-    # Categories
-    CategoryCreate, CategoryUpdate, CategoryResponse,
-    # Products
-    ProductCreate, ProductUpdate, ProductResponse, ProductListResponse,
-    # Variants
-    VariantCreate, VariantUpdate, VariantResponse,
+    ApplyCouponRequest,
     # Cart
-    CartItemAdd, CartItemUpdate, CartResponse, ApplyCouponRequest,
+    CartItemAdd,
+    CartItemUpdate,
+    CartResponse,
+    # Categories
+    CategoryCreate,
+    CategoryResponse,
+    CategoryUpdate,
     # Orders
-    CheckoutRequest, OrderResponse, OrderListResponse, OrderStatusUpdate,
-    # Payments
-    PaymentIntentRequest, PaymentResponse,
-    # Shipping
-    ShippingMethodCreate, ShippingMethodResponse, ShippingRateRequest, ShippingRateResponse,
-    ShipmentCreate, ShipmentResponse,
+    CheckoutRequest,
     # Coupons
-    CouponCreate, CouponUpdate, CouponResponse, CouponValidateResponse,
+    CouponCreate,
+    CouponResponse,
+    CouponUpdate,
+    CouponValidateResponse,
+    CustomerAddressCreate,
+    CustomerAddressResponse,
+    CustomerLoginRequest,
     # Customers
-    CustomerRegisterRequest, CustomerLoginRequest, CustomerResponse,
-    CustomerAddressCreate, CustomerAddressResponse,
-    # Reviews
-    ReviewCreate, ReviewResponse,
-    # Wishlist
-    WishlistItemAdd, WishlistResponse,
+    CustomerRegisterRequest,
+    CustomerResponse,
     # Dashboard
-    EcommerceDashboard
+    EcommerceDashboard,
+    OrderListResponse,
+    OrderResponse,
+    OrderStatusUpdate,
+    # Payments
+    PaymentIntentRequest,
+    PaymentResponse,
+    # Products
+    ProductCreate,
+    ProductListResponse,
+    ProductResponse,
+    ProductUpdate,
+    # Reviews
+    ReviewCreate,
+    ReviewResponse,
+    ShipmentCreate,
+    ShipmentResponse,
+    # Shipping
+    ShippingMethodCreate,
+    ShippingMethodResponse,
+    ShippingRateRequest,
+    ShippingRateResponse,
+    # Variants
+    VariantCreate,
+    VariantResponse,
+    VariantUpdate,
+    # Wishlist
+    WishlistItemAdd,
+    WishlistResponse,
 )
 from .service import EcommerceService
-
 
 router = APIRouter(prefix="/ecommerce", tags=["E-Commerce"])
 
@@ -88,9 +112,9 @@ def create_category(
     return service.create_category(data)
 
 
-@router.get("/categories", response_model=List[CategoryResponse])
+@router.get("/categories", response_model=list[CategoryResponse])
 def list_categories(
-    parent_id: Optional[int] = None,
+    parent_id: int | None = None,
     visible_only: bool = True,
     service: EcommerceService = Depends(get_service)
 ):
@@ -159,11 +183,11 @@ def create_product(
 def list_products(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    category_id: Optional[int] = None,
-    status: Optional[ProductStatus] = None,
-    search: Optional[str] = None,
-    min_price: Optional[Decimal] = None,
-    max_price: Optional[Decimal] = None,
+    category_id: int | None = None,
+    status: ProductStatus | None = None,
+    search: str | None = None,
+    min_price: Decimal | None = None,
+    max_price: Decimal | None = None,
     in_stock_only: bool = False,
     featured_only: bool = False,
     sort_by: str = "created_at",
@@ -266,7 +290,7 @@ def publish_product(
 def update_stock(
     product_id: int,
     quantity_change: int,
-    variant_id: Optional[int] = None,
+    variant_id: int | None = None,
     current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
@@ -294,7 +318,7 @@ def create_variant(
     return service.create_variant(data)
 
 
-@router.get("/products/{product_id}/variants", response_model=List[VariantResponse])
+@router.get("/products/{product_id}/variants", response_model=list[VariantResponse])
 def list_variants(
     product_id: int,
     service: EcommerceService = Depends(get_service)
@@ -338,8 +362,8 @@ def delete_variant(
 
 @router.post("/cart", response_model=CartResponse)
 def get_or_create_cart(
-    session_id: Optional[str] = None,
-    customer_id: Optional[int] = None,
+    session_id: str | None = None,
+    customer_id: int | None = None,
     service: EcommerceService = Depends(get_service)
 ):
     """Créer ou récupérer un panier."""
@@ -475,10 +499,10 @@ def checkout(
 def list_orders(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    status: Optional[OrderStatus] = None,
-    customer_email: Optional[str] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    status: OrderStatus | None = None,
+    customer_email: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
@@ -596,8 +620,8 @@ def create_payment(
 def confirm_payment(
     payment_id: int,
     external_id: str,
-    card_brand: Optional[str] = None,
-    card_last4: Optional[str] = None,
+    card_brand: str | None = None,
+    card_last4: str | None = None,
     service: EcommerceService = Depends(get_service)
 ):
     """Confirmer un paiement."""
@@ -644,17 +668,17 @@ def create_shipping_method(
     return service.create_shipping_method(data)
 
 
-@router.get("/shipping-methods", response_model=List[ShippingMethodResponse])
+@router.get("/shipping-methods", response_model=list[ShippingMethodResponse])
 def list_shipping_methods(
-    country: Optional[str] = None,
-    cart_subtotal: Optional[Decimal] = None,
+    country: str | None = None,
+    cart_subtotal: Decimal | None = None,
     service: EcommerceService = Depends(get_service)
 ):
     """Lister les méthodes de livraison disponibles."""
     return service.get_shipping_methods(country=country, cart_subtotal=cart_subtotal)
 
 
-@router.post("/shipping-rates", response_model=List[ShippingRateResponse])
+@router.post("/shipping-rates", response_model=list[ShippingRateResponse])
 def get_shipping_rates(
     data: ShippingRateRequest,
     service: EcommerceService = Depends(get_service)
@@ -706,7 +730,7 @@ def create_shipment(
 @router.post("/shipments/{shipment_id}/ship", response_model=ShipmentResponse)
 def mark_shipped(
     shipment_id: int,
-    tracking_number: Optional[str] = None,
+    tracking_number: str | None = None,
     current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):
@@ -735,7 +759,7 @@ def create_coupon(
     return service.create_coupon(data)
 
 
-@router.get("/coupons", response_model=List[CouponResponse])
+@router.get("/coupons", response_model=list[CouponResponse])
 def list_coupons(
     active_only: bool = True,
     current_user: User = Depends(get_current_user),
@@ -877,7 +901,7 @@ def add_customer_address(
     return service.add_customer_address(customer_id, data)
 
 
-@router.get("/customers/{customer_id}/addresses", response_model=List[CustomerAddressResponse])
+@router.get("/customers/{customer_id}/addresses", response_model=list[CustomerAddressResponse])
 def list_customer_addresses(
     customer_id: int,
     service: EcommerceService = Depends(get_service)
@@ -886,7 +910,7 @@ def list_customer_addresses(
     return service.get_customer_addresses(customer_id)
 
 
-@router.get("/customers/{customer_id}/orders", response_model=List[OrderResponse])
+@router.get("/customers/{customer_id}/orders", response_model=list[OrderResponse])
 def list_customer_orders(
     customer_id: int,
     service: EcommerceService = Depends(get_service)
@@ -913,14 +937,14 @@ def list_customer_orders(
 @router.post("/reviews", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 def create_review(
     data: ReviewCreate,
-    customer_id: Optional[int] = None,
+    customer_id: int | None = None,
     service: EcommerceService = Depends(get_service)
 ):
     """Créer un avis produit."""
     return service.create_review(data, customer_id=customer_id)
 
 
-@router.get("/products/{product_id}/reviews", response_model=List[ReviewResponse])
+@router.get("/products/{product_id}/reviews", response_model=list[ReviewResponse])
 def list_product_reviews(
     product_id: int,
     approved_only: bool = True,
@@ -1019,8 +1043,8 @@ def get_dashboard(
 @router.get("/analytics/sales")
 def get_sales_analytics(
     period: str = "month",  # day, week, month, year
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     current_user: User = Depends(get_current_user),
     service: EcommerceService = Depends(get_service)
 ):

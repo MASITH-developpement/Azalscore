@@ -7,13 +7,12 @@ Schémas de validation pour les API du module QC.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
-from enum import Enum
-
-from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ============================================================================
 # ENUMS
@@ -87,15 +86,15 @@ class ValidationPhaseEnum(str, Enum):
 class QCRuleBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     category: QCRuleCategoryEnum
     severity: QCRuleSeverityEnum = QCRuleSeverityEnum.WARNING
     check_type: str = Field(..., min_length=2, max_length=50)
-    applies_to_modules: Optional[List[str]] = None
-    applies_to_phases: Optional[List[str]] = None
-    check_config: Optional[Dict[str, Any]] = None
-    threshold_value: Optional[float] = None
-    threshold_operator: Optional[str] = None
+    applies_to_modules: list[str] | None = None
+    applies_to_phases: list[str] | None = None
+    check_config: dict[str, Any] | None = None
+    threshold_value: float | None = None
+    threshold_operator: str | None = None
 
 
 class QCRuleCreate(QCRuleBase):
@@ -103,15 +102,15 @@ class QCRuleCreate(QCRuleBase):
 
 
 class QCRuleUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    severity: Optional[QCRuleSeverityEnum] = None
-    applies_to_modules: Optional[List[str]] = None
-    applies_to_phases: Optional[List[str]] = None
-    check_config: Optional[Dict[str, Any]] = None
-    threshold_value: Optional[float] = None
-    threshold_operator: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    severity: QCRuleSeverityEnum | None = None
+    applies_to_modules: list[str] | None = None
+    applies_to_phases: list[str] | None = None
+    check_config: dict[str, Any] | None = None
+    threshold_value: float | None = None
+    threshold_operator: str | None = None
+    is_active: bool | None = None
 
 
 class QCRuleResponse(QCRuleBase):
@@ -120,7 +119,7 @@ class QCRuleResponse(QCRuleBase):
     is_system: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -144,8 +143,8 @@ class ModuleRegistryBase(BaseModel):
     module_name: str = Field(..., min_length=2, max_length=200)
     module_type: str = Field(..., description="TRANSVERSE ou METIER")
     module_version: str = "1.0.0"
-    description: Optional[str] = None
-    dependencies: Optional[List[str]] = None
+    description: str | None = None
+    dependencies: list[str] | None = None
 
 
 class ModuleRegisterCreate(ModuleRegistryBase):
@@ -166,10 +165,10 @@ class ModuleRegistryResponse(ModuleRegistryBase):
     passed_checks: int
     failed_checks: int
     blocked_checks: int
-    last_qc_run: Optional[datetime] = None
-    validated_at: Optional[datetime] = None
-    validated_by: Optional[int] = None
-    production_at: Optional[datetime] = None
+    last_qc_run: datetime | None = None
+    validated_at: datetime | None = None
+    validated_by: int | None = None
+    production_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -209,17 +208,17 @@ class ValidationResponse(BaseModel):
     module_id: int
     validation_phase: ValidationPhaseEnum
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    started_by: Optional[int] = None
+    completed_at: datetime | None = None
+    started_by: int | None = None
     status: QCCheckStatusEnum
-    overall_score: Optional[float] = None
+    overall_score: float | None = None
     total_rules: int
     passed_rules: int
     failed_rules: int
     skipped_rules: int
     blocked_rules: int
-    category_scores: Optional[Dict[str, Any]] = None
-    report_summary: Optional[str] = None
+    category_scores: dict[str, Any] | None = None
+    report_summary: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -237,21 +236,21 @@ class ValidationResponse(BaseModel):
 class CheckResultResponse(BaseModel):
     id: int
     validation_id: int
-    rule_id: Optional[int] = None
+    rule_id: int | None = None
     rule_code: str
-    rule_name: Optional[str] = None
+    rule_name: str | None = None
     category: QCRuleCategoryEnum
     severity: QCRuleSeverityEnum
     status: QCCheckStatusEnum
-    executed_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
-    expected_value: Optional[str] = None
-    actual_value: Optional[str] = None
-    score: Optional[float] = None
-    message: Optional[str] = None
-    error_details: Optional[str] = None
-    recommendation: Optional[str] = None
-    evidence: Optional[Dict[str, Any]] = None
+    executed_at: datetime | None = None
+    duration_ms: int | None = None
+    expected_value: str | None = None
+    actual_value: str | None = None
+    score: float | None = None
+    message: str | None = None
+    error_details: str | None = None
+    recommendation: str | None = None
+    evidence: dict[str, Any] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -278,13 +277,13 @@ class QCTestRunCreate(BaseModel):
     failed_tests: int
     skipped_tests: int = 0
     error_tests: int = 0
-    coverage_percent: Optional[float] = None
-    test_suite: Optional[str] = None
-    duration_seconds: Optional[float] = None
-    failed_test_details: Optional[Dict[str, Any]] = None
-    output_log: Optional[str] = None
+    coverage_percent: float | None = None
+    test_suite: str | None = None
+    duration_seconds: float | None = None
+    failed_test_details: dict[str, Any] | None = None
+    output_log: str | None = None
     triggered_by: str = "manual"
-    validation_id: Optional[int] = None
+    validation_id: int | None = None
 
 
 # Alias pour compatibilité
@@ -294,21 +293,21 @@ TestRunCreate = QCTestRunCreate
 class QCTestRunResponse(BaseModel):
     id: int
     module_id: int
-    validation_id: Optional[int] = None
+    validation_id: int | None = None
     test_type: TestTypeEnum
-    test_suite: Optional[str] = None
+    test_suite: str | None = None
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    duration_seconds: Optional[float] = None
+    completed_at: datetime | None = None
+    duration_seconds: float | None = None
     status: QCCheckStatusEnum
     total_tests: int
     passed_tests: int
     failed_tests: int
     skipped_tests: int
     error_tests: int
-    coverage_percent: Optional[float] = None
-    triggered_by: Optional[str] = None
-    triggered_user: Optional[int] = None
+    coverage_percent: float | None = None
+    triggered_by: str | None = None
+    triggered_user: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -323,28 +322,28 @@ TestRunResponse = QCTestRunResponse
 
 class QCMetricResponse(BaseModel):
     id: int
-    module_id: Optional[int] = None
+    module_id: int | None = None
     metric_date: datetime
     modules_total: int
     modules_validated: int
     modules_production: int
     modules_failed: int
-    avg_overall_score: Optional[float] = None
-    avg_architecture_score: Optional[float] = None
-    avg_security_score: Optional[float] = None
-    avg_performance_score: Optional[float] = None
-    avg_code_quality_score: Optional[float] = None
-    avg_testing_score: Optional[float] = None
-    avg_documentation_score: Optional[float] = None
+    avg_overall_score: float | None = None
+    avg_architecture_score: float | None = None
+    avg_security_score: float | None = None
+    avg_performance_score: float | None = None
+    avg_code_quality_score: float | None = None
+    avg_testing_score: float | None = None
+    avg_documentation_score: float | None = None
     total_tests_run: int
     total_tests_passed: int
-    avg_coverage: Optional[float] = None
+    avg_coverage: float | None = None
     total_checks_run: int
     total_checks_passed: int
     critical_issues: int
     blocker_issues: int
-    score_trend: Optional[str] = None
-    score_delta: Optional[float] = None
+    score_trend: str | None = None
+    score_delta: float | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -359,27 +358,27 @@ class QCAlertCreate(BaseModel):
     title: str = Field(..., min_length=2, max_length=200)
     message: str
     severity: QCRuleSeverityEnum = QCRuleSeverityEnum.WARNING
-    module_id: Optional[int] = None
-    validation_id: Optional[int] = None
-    check_result_id: Optional[int] = None
-    details: Optional[Dict[str, Any]] = None
+    module_id: int | None = None
+    validation_id: int | None = None
+    check_result_id: int | None = None
+    details: dict[str, Any] | None = None
 
 
 class QCAlertResponse(BaseModel):
     id: int
-    module_id: Optional[int] = None
-    validation_id: Optional[int] = None
-    check_result_id: Optional[int] = None
+    module_id: int | None = None
+    validation_id: int | None = None
+    check_result_id: int | None = None
     alert_type: str
     severity: QCRuleSeverityEnum
     title: str
     message: str
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
     is_read: bool
     is_resolved: bool
-    resolved_at: Optional[datetime] = None
-    resolved_by: Optional[int] = None
-    resolution_notes: Optional[str] = None
+    resolved_at: datetime | None = None
+    resolved_by: int | None = None
+    resolution_notes: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -396,7 +395,7 @@ class QCAlertResponse(BaseModel):
 
 
 class AlertResolveRequest(BaseModel):
-    resolution_notes: Optional[str] = None
+    resolution_notes: str | None = None
 
 
 # ============================================================================
@@ -405,36 +404,36 @@ class AlertResolveRequest(BaseModel):
 
 class QCDashboardCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
-    layout: Optional[Dict[str, Any]] = None
-    widgets: Optional[List[Dict[str, Any]]] = None
-    filters: Optional[Dict[str, Any]] = None
+    description: str | None = None
+    layout: dict[str, Any] | None = None
+    widgets: list[dict[str, Any]] | None = None
+    filters: dict[str, Any] | None = None
     is_default: bool = False
     is_public: bool = False
 
 
 class QCDashboardUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    layout: Optional[Dict[str, Any]] = None
-    widgets: Optional[List[Dict[str, Any]]] = None
-    filters: Optional[Dict[str, Any]] = None
-    is_default: Optional[bool] = None
-    is_public: Optional[bool] = None
-    auto_refresh: Optional[bool] = None
-    refresh_interval: Optional[int] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    layout: dict[str, Any] | None = None
+    widgets: list[dict[str, Any]] | None = None
+    filters: dict[str, Any] | None = None
+    is_default: bool | None = None
+    is_public: bool | None = None
+    auto_refresh: bool | None = None
+    refresh_interval: int | None = None
 
 
 class QCDashboardResponse(BaseModel):
     id: int
     name: str
-    description: Optional[str] = None
-    layout: Optional[Dict[str, Any]] = None
-    widgets: Optional[List[Dict[str, Any]]] = None
-    filters: Optional[Dict[str, Any]] = None
+    description: str | None = None
+    layout: dict[str, Any] | None = None
+    widgets: list[dict[str, Any]] | None = None
+    filters: dict[str, Any] | None = None
     is_default: bool
     is_public: bool
-    owner_id: Optional[int] = None
+    owner_id: int | None = None
     auto_refresh: bool
     refresh_interval: int
     created_at: datetime
@@ -464,11 +463,11 @@ class QCDashboardResponse(BaseModel):
 
 
 class DashboardDataResponse(BaseModel):
-    summary: Dict[str, Any]
-    status_distribution: Dict[str, int]
-    recent_validations: List[Dict[str, Any]]
-    recent_tests: List[Dict[str, Any]]
-    critical_alerts: List[Dict[str, Any]]
+    summary: dict[str, Any]
+    status_distribution: dict[str, int]
+    recent_validations: list[dict[str, Any]]
+    recent_tests: list[dict[str, Any]]
+    critical_alerts: list[dict[str, Any]]
 
 
 # ============================================================================
@@ -478,23 +477,23 @@ class DashboardDataResponse(BaseModel):
 class QCTemplateCreate(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
-    rules: List[Dict[str, Any]]
-    category: Optional[str] = None
+    description: str | None = None
+    rules: list[dict[str, Any]]
+    category: str | None = None
 
 
 class QCTemplateResponse(BaseModel):
     id: int
     code: str
     name: str
-    description: Optional[str] = None
-    rules: List[Dict[str, Any]]
-    category: Optional[str] = None
+    description: str | None = None
+    rules: list[dict[str, Any]]
+    category: str | None = None
     is_active: bool
     is_system: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -514,42 +513,42 @@ class QCTemplateResponse(BaseModel):
 # ============================================================================
 
 class PaginatedRulesResponse(BaseModel):
-    items: List[QCRuleResponse]
+    items: list[QCRuleResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedModulesResponse(BaseModel):
-    items: List[ModuleRegistryResponse]
+    items: list[ModuleRegistryResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedValidationsResponse(BaseModel):
-    items: List[ValidationResponse]
+    items: list[ValidationResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedCheckResultsResponse(BaseModel):
-    items: List[CheckResultResponse]
+    items: list[CheckResultResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedTestRunsResponse(BaseModel):
-    items: List[TestRunResponse]
+    items: list[TestRunResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedAlertsResponse(BaseModel):
-    items: List[QCAlertResponse]
+    items: list[QCAlertResponse]
     total: int
     skip: int
     limit: int

@@ -6,7 +6,6 @@ pip install resend
 """
 
 import os
-from typing import Optional
 from datetime import datetime
 
 try:
@@ -35,7 +34,7 @@ class EmailService:
         to: str,
         subject: str,
         html: str,
-        text: Optional[str] = None
+        text: str | None = None
     ) -> bool:
         """Envoyer un email."""
         if not RESEND_AVAILABLE:
@@ -65,49 +64,49 @@ class EmailService:
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body {{ 
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                    background: #f8f9fa; 
-                    margin: 0; 
-                    padding: 40px 20px; 
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background: #f8f9fa;
+                    margin: 0;
+                    padding: 40px 20px;
                 }}
-                .container {{ 
-                    max-width: 600px; 
-                    margin: 0 auto; 
-                    background: white; 
-                    border-radius: 16px; 
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
                     padding: 40px;
                     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
                 }}
-                .logo {{ 
-                    font-size: 24px; 
-                    font-weight: bold; 
-                    color: #6366f1; 
+                .logo {{
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #6366f1;
                     margin-bottom: 32px;
                     display: flex;
                     align-items: center;
                     gap: 8px;
                 }}
                 .logo span {{ color: #6366f1; }}
-                h1 {{ 
-                    color: #1a1a2e; 
-                    font-size: 28px; 
+                h1 {{
+                    color: #1a1a2e;
+                    font-size: 28px;
                     margin: 0 0 16px 0;
                     line-height: 1.3;
                 }}
-                p {{ 
-                    color: #4a4a4a; 
-                    line-height: 1.7; 
+                p {{
+                    color: #4a4a4a;
+                    line-height: 1.7;
                     margin: 0 0 16px 0;
                 }}
-                .btn {{ 
-                    display: inline-block; 
-                    padding: 14px 28px; 
-                    background: linear-gradient(135deg, #6366f1, #8b5cf6); 
-                    color: white !important; 
-                    text-decoration: none; 
-                    border-radius: 10px; 
-                    font-weight: 600; 
+                .btn {{
+                    display: inline-block;
+                    padding: 14px 28px;
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                    color: white !important;
+                    text-decoration: none;
+                    border-radius: 10px;
+                    font-weight: 600;
                     margin: 24px 0;
                 }}
                 .btn:hover {{ opacity: 0.9; }}
@@ -118,12 +117,12 @@ class EmailService:
                     margin: 20px 0;
                 }}
                 .box p {{ margin: 8px 0; }}
-                .footer {{ 
-                    margin-top: 40px; 
-                    padding-top: 24px; 
-                    border-top: 1px solid #eee; 
-                    color: #888; 
-                    font-size: 14px; 
+                .footer {{
+                    margin-top: 40px;
+                    padding-top: 24px;
+                    border-top: 1px solid #eee;
+                    color: #888;
+                    font-size: 14px;
                 }}
                 .footer a {{ color: #6366f1; text-decoration: none; }}
                 ul {{ color: #4a4a4a; line-height: 2; }}
@@ -204,10 +203,10 @@ class EmailService:
         )
 
     def send_payment_success(
-        self, 
-        email: str, 
-        name: str, 
-        plan: str, 
+        self,
+        email: str,
+        name: str,
+        plan: str,
         amount: float
     ) -> bool:
         """Email de confirmation de paiement."""
@@ -270,9 +269,9 @@ class EmailService:
         )
 
     def send_invitation(
-        self, 
-        email: str, 
-        inviter_name: str, 
+        self,
+        email: str,
+        inviter_name: str,
         tenant_name: str,
         invite_url: str
     ) -> bool:

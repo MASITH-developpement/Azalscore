@@ -5,19 +5,29 @@ AZALS MODULE T7 - Service Web Transverse
 Service métier pour la gestion des composants web.
 """
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
 import json
+from datetime import datetime
+from typing import Any
 
-from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
 
 from .models import (
-    Theme, Widget, WebDashboard as Dashboard, MenuItem, UIComponent,
-    UserUIPreference, Shortcut, CustomPage,
-    ThemeMode, WidgetType, WidgetSize, ComponentCategory,
-    MenuType, PageType
+    ComponentCategory,
+    CustomPage,
+    MenuItem,
+    MenuType,
+    PageType,
+    Shortcut,
+    Theme,
+    ThemeMode,
+    UIComponent,
+    UserUIPreference,
+    Widget,
+    WidgetSize,
+    WidgetType,
 )
+from .models import WebDashboard as Dashboard
 
 
 class WebService:
@@ -39,7 +49,7 @@ class WebService:
         primary_color: str = "#1976D2",
         secondary_color: str = "#424242",
         is_default: bool = False,
-        created_by: Optional[int] = None,
+        created_by: int | None = None,
         **kwargs
     ) -> Theme:
         """Créer un thème."""
@@ -63,7 +73,7 @@ class WebService:
         self.db.refresh(theme)
         return theme
 
-    def get_theme(self, theme_id: int) -> Optional[Theme]:
+    def get_theme(self, theme_id: int) -> Theme | None:
         """Récupérer un thème par ID."""
         return self.db.query(Theme).filter(
             and_(
@@ -72,7 +82,7 @@ class WebService:
             )
         ).first()
 
-    def get_theme_by_code(self, code: str) -> Optional[Theme]:
+    def get_theme_by_code(self, code: str) -> Theme | None:
         """Récupérer un thème par code."""
         return self.db.query(Theme).filter(
             and_(
@@ -81,22 +91,22 @@ class WebService:
             )
         ).first()
 
-    def get_default_theme(self) -> Optional[Theme]:
+    def get_default_theme(self) -> Theme | None:
         """Récupérer le thème par défaut."""
         return self.db.query(Theme).filter(
             and_(
                 Theme.tenant_id == self.tenant_id,
-                Theme.is_default == True
+                Theme.is_default
             )
         ).first()
 
     def list_themes(
         self,
-        mode: Optional[ThemeMode] = None,
-        is_active: Optional[bool] = True,
+        mode: ThemeMode | None = None,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Theme], int]:
+    ) -> tuple[list[Theme], int]:
         """Lister les thèmes."""
         query = self.db.query(Theme).filter(Theme.tenant_id == self.tenant_id)
 
@@ -109,7 +119,7 @@ class WebService:
         items = query.order_by(Theme.name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_theme(self, theme_id: int, **updates) -> Optional[Theme]:
+    def update_theme(self, theme_id: int, **updates) -> Theme | None:
         """Mettre à jour un thème."""
         theme = self.get_theme(theme_id)
         if not theme:
@@ -142,7 +152,7 @@ class WebService:
         self.db.query(Theme).filter(
             and_(
                 Theme.tenant_id == self.tenant_id,
-                Theme.is_default == True
+                Theme.is_default
             )
         ).update({"is_default": False})
 
@@ -156,10 +166,10 @@ class WebService:
         name: str,
         widget_type: WidgetType,
         default_size: WidgetSize = WidgetSize.MEDIUM,
-        data_source: Optional[str] = None,
-        data_query: Optional[Dict] = None,
-        display_config: Optional[Dict] = None,
-        created_by: Optional[int] = None,
+        data_source: str | None = None,
+        data_query: dict | None = None,
+        display_config: dict | None = None,
+        created_by: int | None = None,
         **kwargs
     ) -> Widget:
         """Créer un widget."""
@@ -179,7 +189,7 @@ class WebService:
         self.db.refresh(widget)
         return widget
 
-    def get_widget(self, widget_id: int) -> Optional[Widget]:
+    def get_widget(self, widget_id: int) -> Widget | None:
         """Récupérer un widget par ID."""
         return self.db.query(Widget).filter(
             and_(
@@ -190,11 +200,11 @@ class WebService:
 
     def list_widgets(
         self,
-        widget_type: Optional[WidgetType] = None,
-        is_active: Optional[bool] = True,
+        widget_type: WidgetType | None = None,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Widget], int]:
+    ) -> tuple[list[Widget], int]:
         """Lister les widgets."""
         query = self.db.query(Widget).filter(Widget.tenant_id == self.tenant_id)
 
@@ -207,7 +217,7 @@ class WebService:
         items = query.order_by(Widget.name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_widget(self, widget_id: int, **updates) -> Optional[Widget]:
+    def update_widget(self, widget_id: int, **updates) -> Widget | None:
         """Mettre à jour un widget."""
         widget = self.get_widget(widget_id)
         if not widget:
@@ -247,10 +257,10 @@ class WebService:
         page_type: PageType = PageType.DASHBOARD,
         layout_type: str = "grid",
         columns: int = 4,
-        widgets_config: Optional[List[Dict]] = None,
+        widgets_config: list[dict] | None = None,
         is_default: bool = False,
-        owner_id: Optional[int] = None,
-        created_by: Optional[int] = None,
+        owner_id: int | None = None,
+        created_by: int | None = None,
         **kwargs
     ) -> Dashboard:
         """Créer un dashboard."""
@@ -274,7 +284,7 @@ class WebService:
         self.db.refresh(dashboard)
         return dashboard
 
-    def get_dashboard(self, dashboard_id: int) -> Optional[Dashboard]:
+    def get_dashboard(self, dashboard_id: int) -> Dashboard | None:
         """Récupérer un dashboard par ID."""
         return self.db.query(Dashboard).filter(
             and_(
@@ -283,29 +293,29 @@ class WebService:
             )
         ).first()
 
-    def get_default_dashboard(self) -> Optional[Dashboard]:
+    def get_default_dashboard(self) -> Dashboard | None:
         """Récupérer le dashboard par défaut."""
         return self.db.query(Dashboard).filter(
             and_(
                 Dashboard.tenant_id == self.tenant_id,
-                Dashboard.is_default == True
+                Dashboard.is_default
             )
         ).first()
 
     def list_dashboards(
         self,
-        owner_id: Optional[int] = None,
-        is_public: Optional[bool] = None,
-        is_active: Optional[bool] = True,
+        owner_id: int | None = None,
+        is_public: bool | None = None,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Dashboard], int]:
+    ) -> tuple[list[Dashboard], int]:
         """Lister les dashboards."""
         query = self.db.query(Dashboard).filter(Dashboard.tenant_id == self.tenant_id)
 
         if owner_id is not None:
             query = query.filter(
-                or_(Dashboard.owner_id == owner_id, Dashboard.is_public == True)
+                or_(Dashboard.owner_id == owner_id, Dashboard.is_public)
             )
         if is_public is not None:
             query = query.filter(Dashboard.is_public == is_public)
@@ -316,7 +326,7 @@ class WebService:
         items = query.order_by(Dashboard.name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_dashboard(self, dashboard_id: int, **updates) -> Optional[Dashboard]:
+    def update_dashboard(self, dashboard_id: int, **updates) -> Dashboard | None:
         """Mettre à jour un dashboard."""
         dashboard = self.get_dashboard(dashboard_id)
         if not dashboard:
@@ -353,7 +363,7 @@ class WebService:
         self.db.query(Dashboard).filter(
             and_(
                 Dashboard.tenant_id == self.tenant_id,
-                Dashboard.is_default == True
+                Dashboard.is_default
             )
         ).update({"is_default": False})
 
@@ -366,9 +376,9 @@ class WebService:
         code: str,
         label: str,
         menu_type: MenuType = MenuType.MAIN,
-        icon: Optional[str] = None,
-        route: Optional[str] = None,
-        parent_id: Optional[int] = None,
+        icon: str | None = None,
+        route: str | None = None,
+        parent_id: int | None = None,
         sort_order: int = 0,
         **kwargs
     ) -> MenuItem:
@@ -389,7 +399,7 @@ class WebService:
         self.db.refresh(item)
         return item
 
-    def get_menu_item(self, item_id: int) -> Optional[MenuItem]:
+    def get_menu_item(self, item_id: int) -> MenuItem | None:
         """Récupérer un élément de menu."""
         return self.db.query(MenuItem).filter(
             and_(
@@ -401,9 +411,9 @@ class WebService:
     def list_menu_items(
         self,
         menu_type: MenuType = MenuType.MAIN,
-        parent_id: Optional[int] = None,
-        is_active: Optional[bool] = True
-    ) -> List[MenuItem]:
+        parent_id: int | None = None,
+        is_active: bool | None = True
+    ) -> list[MenuItem]:
         """Lister les éléments de menu."""
         query = self.db.query(MenuItem).filter(
             and_(
@@ -415,26 +425,26 @@ class WebService:
         if parent_id is not None:
             query = query.filter(MenuItem.parent_id == parent_id)
         else:
-            query = query.filter(MenuItem.parent_id == None)
+            query = query.filter(MenuItem.parent_id is None)
 
         if is_active is not None:
             query = query.filter(MenuItem.is_active == is_active)
 
         return query.order_by(MenuItem.sort_order).all()
 
-    def get_menu_tree(self, menu_type: MenuType = MenuType.MAIN) -> List[Dict]:
+    def get_menu_tree(self, menu_type: MenuType = MenuType.MAIN) -> list[dict]:
         """Récupérer l'arbre de menu complet."""
         items = self.db.query(MenuItem).filter(
             and_(
                 MenuItem.tenant_id == self.tenant_id,
                 MenuItem.menu_type == menu_type,
-                MenuItem.is_active == True
+                MenuItem.is_active
             )
         ).order_by(MenuItem.sort_order).all()
 
         return self._build_menu_tree(items)
 
-    def _build_menu_tree(self, items: List[MenuItem], parent_id: Optional[int] = None) -> List[Dict]:
+    def _build_menu_tree(self, items: list[MenuItem], parent_id: int | None = None) -> list[dict]:
         """Construire l'arbre de menu récursivement."""
         tree = []
         for item in items:
@@ -451,7 +461,7 @@ class WebService:
                 tree.append(node)
         return tree
 
-    def update_menu_item(self, item_id: int, **updates) -> Optional[MenuItem]:
+    def update_menu_item(self, item_id: int, **updates) -> MenuItem | None:
         """Mettre à jour un élément de menu."""
         item = self.get_menu_item(item_id)
         if not item:
@@ -488,7 +498,7 @@ class WebService:
     # PRÉFÉRENCES UTILISATEUR
     # ========================================================================
 
-    def get_user_preferences(self, user_id: int) -> Optional[UserUIPreference]:
+    def get_user_preferences(self, user_id: int) -> UserUIPreference | None:
         """Récupérer les préférences d'un utilisateur."""
         return self.db.query(UserUIPreference).filter(
             and_(
@@ -535,7 +545,7 @@ class WebService:
         name: str,
         key_combination: str,
         action_type: str,
-        action_value: Optional[str] = None,
+        action_value: str | None = None,
         context: str = "global",
         **kwargs
     ) -> Shortcut:
@@ -556,9 +566,9 @@ class WebService:
 
     def list_shortcuts(
         self,
-        context: Optional[str] = None,
-        is_active: Optional[bool] = True
-    ) -> List[Shortcut]:
+        context: str | None = None,
+        is_active: bool | None = True
+    ) -> list[Shortcut]:
         """Lister les raccourcis."""
         query = self.db.query(Shortcut).filter(Shortcut.tenant_id == self.tenant_id)
 
@@ -577,9 +587,9 @@ class WebService:
         self,
         slug: str,
         title: str,
-        content: Optional[str] = None,
+        content: str | None = None,
         page_type: PageType = PageType.CUSTOM,
-        created_by: Optional[int] = None,
+        created_by: int | None = None,
         **kwargs
     ) -> CustomPage:
         """Créer une page personnalisée."""
@@ -597,7 +607,7 @@ class WebService:
         self.db.refresh(page)
         return page
 
-    def get_custom_page(self, page_id: int) -> Optional[CustomPage]:
+    def get_custom_page(self, page_id: int) -> CustomPage | None:
         """Récupérer une page par ID."""
         return self.db.query(CustomPage).filter(
             and_(
@@ -606,7 +616,7 @@ class WebService:
             )
         ).first()
 
-    def get_custom_page_by_slug(self, slug: str) -> Optional[CustomPage]:
+    def get_custom_page_by_slug(self, slug: str) -> CustomPage | None:
         """Récupérer une page par slug."""
         return self.db.query(CustomPage).filter(
             and_(
@@ -617,11 +627,11 @@ class WebService:
 
     def list_custom_pages(
         self,
-        page_type: Optional[PageType] = None,
-        is_published: Optional[bool] = None,
+        page_type: PageType | None = None,
+        is_published: bool | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[CustomPage], int]:
+    ) -> tuple[list[CustomPage], int]:
         """Lister les pages personnalisées."""
         query = self.db.query(CustomPage).filter(CustomPage.tenant_id == self.tenant_id)
 
@@ -634,7 +644,7 @@ class WebService:
         items = query.order_by(CustomPage.title).offset(skip).limit(limit).all()
         return items, total
 
-    def publish_page(self, page_id: int) -> Optional[CustomPage]:
+    def publish_page(self, page_id: int) -> CustomPage | None:
         """Publier une page."""
         page = self.get_custom_page(page_id)
         if not page:
@@ -655,10 +665,10 @@ class WebService:
         code: str,
         name: str,
         category: ComponentCategory,
-        props_schema: Optional[Dict] = None,
-        default_props: Optional[Dict] = None,
-        template: Optional[str] = None,
-        created_by: Optional[int] = None,
+        props_schema: dict | None = None,
+        default_props: dict | None = None,
+        template: str | None = None,
+        created_by: int | None = None,
         **kwargs
     ) -> UIComponent:
         """Créer un composant UI."""
@@ -679,11 +689,11 @@ class WebService:
 
     def list_components(
         self,
-        category: Optional[ComponentCategory] = None,
-        is_active: Optional[bool] = True,
+        category: ComponentCategory | None = None,
+        is_active: bool | None = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[UIComponent], int]:
+    ) -> tuple[list[UIComponent], int]:
         """Lister les composants UI."""
         query = self.db.query(UIComponent).filter(UIComponent.tenant_id == self.tenant_id)
 
@@ -700,7 +710,7 @@ class WebService:
     # UTILITAIRES
     # ========================================================================
 
-    def get_ui_config(self, user_id: int) -> Dict[str, Any]:
+    def get_ui_config(self, user_id: int) -> dict[str, Any]:
         """Récupérer la configuration UI complète pour un utilisateur."""
         prefs = self.get_user_preferences(user_id)
         theme = None

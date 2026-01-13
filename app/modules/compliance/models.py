@@ -6,18 +6,28 @@ Modèles SQLAlchemy pour la gestion de la conformité réglementaire.
 """
 
 import enum
-from datetime import datetime, date
+from datetime import date, datetime
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column, String, Text, Boolean, Integer, Date, DateTime,
-    ForeignKey, Enum, Numeric, JSON, UniqueConstraint, Index
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
 )
-from app.core.types import UniversalUUID
 from sqlalchemy.orm import relationship
 
+from app.core.types import UniversalUUID
 from app.db import Base
-
 
 # =============================================================================
 # ENUMS

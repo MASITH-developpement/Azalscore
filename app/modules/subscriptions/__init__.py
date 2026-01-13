@@ -23,27 +23,26 @@ Intégrations AZALS:
 """
 
 from .models import (
-    SubscriptionPlan,
-    PlanAddOn,
-    Subscription,
-    SubscriptionItem,
-    SubscriptionChange,
-    SubscriptionInvoice,
     InvoiceLine,
-    SubscriptionPayment,
-    UsageRecord,
-    SubscriptionCoupon,
-    SubscriptionMetrics,
-    SubscriptionWebhook,
-    PlanInterval,
-    SubscriptionStatus,
     InvoiceStatus,
     PaymentStatus,
-    UsageType
+    PlanAddOn,
+    PlanInterval,
+    Subscription,
+    SubscriptionChange,
+    SubscriptionCoupon,
+    SubscriptionInvoice,
+    SubscriptionItem,
+    SubscriptionMetrics,
+    SubscriptionPayment,
+    SubscriptionPlan,
+    SubscriptionStatus,
+    SubscriptionWebhook,
+    UsageRecord,
+    UsageType,
 )
-
-from .service import SubscriptionService
 from .router import router
+from .service import SubscriptionService
 
 __all__ = [
     # Models

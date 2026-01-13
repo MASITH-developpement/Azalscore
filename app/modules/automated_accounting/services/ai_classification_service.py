@@ -6,23 +6,28 @@ Service d'intelligence artificielle pour la classification automatique
 des documents comptables et la suggestion de comptes.
 """
 
-import re
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, Dict, Any, List, Tuple
-from uuid import UUID
+import re
 import uuid
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any
+from uuid import UUID
 
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from ..models import (
-    AccountingDocument, AIClassification, UniversalChartAccount,
-    ChartMapping, TaxConfiguration,
-    DocumentType, DocumentStatus, ConfidenceLevel
+    AccountingDocument,
+    AIClassification,
+    ChartMapping,
+    ConfidenceLevel,
+    DocumentStatus,
+    DocumentType,
+    TaxConfiguration,
+    UniversalChartAccount,
 )
-from ..schemas import AIClassificationCreate, TaxRateDetail
+from ..schemas import TaxRateDetail
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +89,8 @@ class AIClassificationEngine:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
-        self._universal_chart_cache: Optional[Dict[str, UniversalChartAccount]] = None
-        self._tax_config_cache: Optional[Dict[str, TaxConfiguration]] = None
+        self._universal_chart_cache: dict[str, UniversalChartAccount] | None = None
+        self._tax_config_cache: dict[str, TaxConfiguration] | None = None
 
     @property
     def model_name(self) -> str:
@@ -187,7 +192,7 @@ class AIClassificationEngine:
         self,
         document: AccountingDocument,
         text: str
-    ) -> Tuple[DocumentType, float]:
+    ) -> tuple[DocumentType, float]:
         """Détecte le type de document."""
         # Si déjà défini, on fait confiance
         if document.document_type:
@@ -216,7 +221,7 @@ class AIClassificationEngine:
         self,
         document: AccountingDocument,
         text: str
-    ) -> Tuple[Optional[str], float]:
+    ) -> tuple[str | None, float]:
         """Extrait le nom du fournisseur."""
         # Si déjà défini
         if document.partner_name:
@@ -238,7 +243,7 @@ class AIClassificationEngine:
         self,
         document: AccountingDocument,
         text: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Extrait les montants du document."""
         amounts = {}
 
@@ -266,7 +271,7 @@ class AIClassificationEngine:
 
         return amounts
 
-    def _detect_expense_category(self, text: str) -> Tuple[Optional[str], float]:
+    def _detect_expense_category(self, text: str) -> tuple[str | None, float]:
         """Détecte la catégorie de dépense."""
         best_category = None
         best_score = 0
@@ -285,9 +290,9 @@ class AIClassificationEngine:
     def _suggest_account(
         self,
         doc_type: DocumentType,
-        expense_category: Optional[str],
+        expense_category: str | None,
         text: str
-    ) -> Tuple[Optional[str], float]:
+    ) -> tuple[str | None, float]:
         """Suggère le compte comptable."""
         # Recherche dans le plan comptable universel
         if expense_category and expense_category in self.CATEGORY_TO_ACCOUNT:
@@ -314,7 +319,7 @@ class AIClassificationEngine:
 
         return None, 0.0
 
-    def _suggest_journal(self, doc_type: DocumentType) -> Tuple[Optional[str], float]:
+    def _suggest_journal(self, doc_type: DocumentType) -> tuple[str | None, float]:
         """Suggère le journal comptable."""
         if doc_type in self.DOCTYPE_TO_JOURNAL:
             return self.DOCTYPE_TO_JOURNAL[doc_type], 95.0
@@ -323,9 +328,9 @@ class AIClassificationEngine:
     def _analyze_tax(
         self,
         document: AccountingDocument,
-        amounts: Dict[str, Any],
+        amounts: dict[str, Any],
         text: str
-    ) -> List[TaxRateDetail]:
+    ) -> list[TaxRateDetail]:
         """Analyse les taux de TVA."""
         tax_rates = []
 
@@ -365,12 +370,12 @@ class AIClassificationEngine:
 
         return tax_rates
 
-    def _get_local_account_code(self, universal_code: str) -> Optional[str]:
+    def _get_local_account_code(self, universal_code: str) -> str | None:
         """Obtient le code compte local depuis le mapping."""
         mapping = self.db.query(ChartMapping).filter(
             ChartMapping.tenant_id == self.tenant_id,
             ChartMapping.universal_code == universal_code,
-            ChartMapping.is_active == True
+            ChartMapping.is_active
         ).first()
 
         if mapping:
@@ -383,7 +388,7 @@ class AIClassificationEngine:
         vendor_conf: float,
         account_conf: float,
         amount_conf: float
-    ) -> Tuple[float, ConfidenceLevel]:
+    ) -> tuple[float, ConfidenceLevel]:
         """Calcule la confiance globale."""
         # Pondération des différents scores
         weights = {
@@ -415,10 +420,10 @@ class AIClassificationEngine:
     def _generate_classification_reasons(
         self,
         doc_type: DocumentType,
-        expense_category: Optional[str],
-        account_code: Optional[str],
-        vendor_name: Optional[str]
-    ) -> List[str]:
+        expense_category: str | None,
+        account_code: str | None,
+        vendor_name: str | None
+    ) -> list[str]:
         """Génère les raisons de la classification."""
         reasons = []
 
@@ -506,14 +511,14 @@ class AIClassificationService:
 
         return classification
 
-    def get_classifications(self, document_id: UUID) -> List[AIClassification]:
+    def get_classifications(self, document_id: UUID) -> list[AIClassification]:
         """Récupère les classifications d'un document."""
         return self.db.query(AIClassification).filter(
             AIClassification.tenant_id == self.tenant_id,
             AIClassification.document_id == document_id
         ).order_by(AIClassification.created_at.desc()).all()
 
-    def get_latest_classification(self, document_id: UUID) -> Optional[AIClassification]:
+    def get_latest_classification(self, document_id: UUID) -> AIClassification | None:
         """Récupère la dernière classification d'un document."""
         return self.db.query(AIClassification).filter(
             AIClassification.tenant_id == self.tenant_id,
@@ -524,10 +529,10 @@ class AIClassificationService:
         self,
         classification_id: UUID,
         corrected_by: UUID,
-        corrected_account_code: Optional[str] = None,
-        corrected_journal_code: Optional[str] = None,
-        corrected_expense_category: Optional[str] = None,
-        feedback: Optional[str] = None
+        corrected_account_code: str | None = None,
+        corrected_journal_code: str | None = None,
+        corrected_expense_category: str | None = None,
+        feedback: str | None = None
     ):
         """Enregistre une correction pour l'apprentissage.
 
@@ -579,9 +584,9 @@ class AIClassificationService:
 
     def get_ai_performance_stats(
         self,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
-    ) -> Dict[str, Any]:
+        start_date: date | None = None,
+        end_date: date | None = None
+    ) -> dict[str, Any]:
         """Calcule les statistiques de performance de l'IA.
 
         Returns:
@@ -620,7 +625,7 @@ class AIClassificationService:
         ).count()
 
         # Corrections
-        corrections = query.filter(AIClassification.was_corrected == True).count()
+        corrections = query.filter(AIClassification.was_corrected).count()
 
         # Confiance moyenne
         avg_conf = self.db.query(

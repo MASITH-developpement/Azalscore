@@ -6,23 +6,20 @@ Service d'extraction OCR pour les documents comptables.
 Supporte plusieurs moteurs: Tesseract, AWS Textract, Azure Cognitive Services.
 """
 
-import re
 import hashlib
 import logging
-from abc import ABC, abstractmethod
-from datetime import datetime, date
-from decimal import Decimal, InvalidOperation
-from typing import Optional, Dict, Any, List, Tuple
-from uuid import UUID
+import re
 import uuid
+from abc import ABC, abstractmethod
+from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from ..models import (
-    AccountingDocument, OCRResult, DocumentStatus,
-    DocumentType, ConfidenceLevel
-)
-from ..schemas import OCRResultCreate, ExtractedField
+from ..models import AccountingDocument, DocumentStatus, OCRResult
+from ..schemas import ExtractedField
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +32,7 @@ class OCREngine(ABC):
     """Interface abstraite pour les moteurs OCR."""
 
     @abstractmethod
-    def extract_text(self, file_path: str) -> Tuple[str, float]:
+    def extract_text(self, file_path: str) -> tuple[str, float]:
         """Extrait le texte brut d'un document.
 
         Returns:
@@ -44,7 +41,7 @@ class OCREngine(ABC):
         pass
 
     @abstractmethod
-    def extract_structured_data(self, file_path: str) -> Dict[str, Any]:
+    def extract_structured_data(self, file_path: str) -> dict[str, Any]:
         """Extrait des données structurées d'un document.
 
         Returns:
@@ -89,7 +86,7 @@ class TesseractEngine(OCREngine):
     def engine_name(self) -> str:
         return "tesseract"
 
-    def extract_text(self, file_path: str) -> Tuple[str, float]:
+    def extract_text(self, file_path: str) -> tuple[str, float]:
         if not self._tesseract_available:
             return "", 0.0
 
@@ -152,7 +149,7 @@ class TesseractEngine(OCREngine):
         confidence = (valid_ratio * 50 + word_ratio * 50)
         return min(100.0, max(0.0, confidence))
 
-    def extract_structured_data(self, file_path: str) -> Dict[str, Any]:
+    def extract_structured_data(self, file_path: str) -> dict[str, Any]:
         if not self._tesseract_available:
             return {}
 
@@ -183,7 +180,7 @@ class MockOCREngine(OCREngine):
     def engine_name(self) -> str:
         return "mock"
 
-    def extract_text(self, file_path: str) -> Tuple[str, float]:
+    def extract_text(self, file_path: str) -> tuple[str, float]:
         # Simule une extraction réussie
         mock_text = """
         FACTURE N° FAC-2026-001234
@@ -208,7 +205,7 @@ class MockOCREngine(OCREngine):
         """
         return mock_text, 92.5
 
-    def extract_structured_data(self, file_path: str) -> Dict[str, Any]:
+    def extract_structured_data(self, file_path: str) -> dict[str, Any]:
         return {
             "boxes": {},
             "page_count": 1
@@ -265,7 +262,7 @@ class FieldExtractor:
     }
 
     @classmethod
-    def extract_all(cls, text: str) -> Dict[str, ExtractedField]:
+    def extract_all(cls, text: str) -> dict[str, ExtractedField]:
         """Extrait tous les champs d'un texte OCR."""
         results = {}
 
@@ -280,7 +277,7 @@ class FieldExtractor:
         return results
 
     @classmethod
-    def _extract_field(cls, text: str, patterns: List[str], field_name: str) -> Tuple[Any, float]:
+    def _extract_field(cls, text: str, patterns: list[str], field_name: str) -> tuple[Any, float]:
         """Extrait un champ spécifique."""
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
@@ -315,7 +312,7 @@ class FieldExtractor:
         return value
 
     @classmethod
-    def _parse_date(cls, value: str) -> Optional[date]:
+    def _parse_date(cls, value: str) -> date | None:
         """Parse une date depuis différents formats."""
         # Formats numériques
         for fmt in ["%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y", "%d-%m-%y"]:
@@ -375,7 +372,7 @@ class OCRService:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
-        self._engines: Dict[str, OCREngine] = {}
+        self._engines: dict[str, OCREngine] = {}
         self._init_engines()
 
     def _init_engines(self):
@@ -389,7 +386,7 @@ class OCRService:
             self._engines["tesseract"] = tesseract
 
     @property
-    def available_engines(self) -> List[str]:
+    def available_engines(self) -> list[str]:
         """Liste des moteurs disponibles."""
         return list(self._engines.keys())
 
@@ -508,7 +505,7 @@ class OCRService:
     def _update_document_from_ocr(
         self,
         document: AccountingDocument,
-        extracted_fields: Dict[str, ExtractedField],
+        extracted_fields: dict[str, ExtractedField],
         raw_text: str,
         overall_confidence: Decimal
     ):
@@ -561,14 +558,14 @@ class OCRService:
                 sha256.update(chunk)
         return sha256.hexdigest()
 
-    def check_duplicate(self, file_hash: str) -> Optional[AccountingDocument]:
+    def check_duplicate(self, file_hash: str) -> AccountingDocument | None:
         """Vérifie si un document avec le même hash existe déjà."""
         return self.db.query(AccountingDocument).filter(
             AccountingDocument.tenant_id == self.tenant_id,
             AccountingDocument.file_hash == file_hash
         ).first()
 
-    def get_ocr_results(self, document_id: UUID) -> List[OCRResult]:
+    def get_ocr_results(self, document_id: UUID) -> list[OCRResult]:
         """Récupère les résultats OCR d'un document."""
         return self.db.query(OCRResult).filter(
             OCRResult.tenant_id == self.tenant_id,

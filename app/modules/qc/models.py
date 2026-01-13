@@ -11,15 +11,10 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime,
-    Float, Enum, Index
-)
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Index, Integer, String, Text
 
+from app.core.types import UniversalUUID
 from app.db import Base
-from app.core.types import UniversalUUID, JSONB
-
 
 # ============================================================================
 # ENUMS

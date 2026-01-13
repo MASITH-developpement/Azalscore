@@ -14,16 +14,24 @@ import re
 import secrets
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
-from sqlalchemy.orm import Session
+from typing import Any
+
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
 
 from app.core.logging_config import get_logger
-from app.core.security import get_password_hash as hash_password
 from app.core.models import User
+from app.core.security import get_password_hash as hash_password
 from app.modules.tenants.models import (
-    Tenant, TenantSubscription, TenantModule, TenantSettings, TenantOnboarding,
-    TenantStatus, SubscriptionPlan, BillingCycle, ModuleStatus
+    BillingCycle,
+    ModuleStatus,
+    SubscriptionPlan,
+    Tenant,
+    TenantModule,
+    TenantOnboarding,
+    TenantSettings,
+    TenantStatus,
+    TenantSubscription,
 )
 
 logger = get_logger(__name__)
@@ -114,21 +122,21 @@ class SignupService:
         admin_last_name: str,
         # Options avec valeurs par défaut
         country: str = "FR",
-        siret: Optional[str] = None,
-        admin_phone: Optional[str] = None,
+        siret: str | None = None,
+        admin_phone: str | None = None,
         plan: str = "PROFESSIONAL",  # Plan par défaut pour le trial
-        referral_code: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        referral_code: str | None = None,
+    ) -> dict[str, Any]:
         """
         Inscrire une nouvelle entreprise.
-        
+
         Crée:
         - Le tenant (entreprise)
         - L'utilisateur admin
         - L'abonnement trial
         - Les modules selon le plan
         - L'onboarding
-        
+
         Returns:
             {
                 "tenant_id": "acme-corp",
@@ -140,14 +148,14 @@ class SignupService:
         """
         # 1. Générer le tenant_id depuis le nom de l'entreprise
         tenant_id = self._generate_tenant_id(company_name)
-        
+
         # 2. Vérifier que l'email n'existe pas déjà
         existing_user = self.db.query(User).filter(
             User.email == admin_email
         ).first()
         if existing_user:
             raise SignupError("EMAIL_EXISTS", f"L'email {admin_email} est déjà utilisé")
-        
+
         # 3. Vérifier que le tenant n'existe pas
         existing_tenant = self.db.query(Tenant).filter(
             or_(
@@ -156,18 +164,18 @@ class SignupService:
             )
         ).first()
         if existing_tenant:
-            raise SignupError("COMPANY_EXISTS", f"Une entreprise avec ce nom ou email existe déjà")
-        
+            raise SignupError("COMPANY_EXISTS", "Une entreprise avec ce nom ou email existe déjà")
+
         # 4. Valider le plan
         plan_upper = plan.upper()
         if plan_upper not in PLAN_CONFIG:
             plan_upper = "PROFESSIONAL"
-        
+
         plan_config = PLAN_CONFIG[plan_upper]
-        
+
         # 5. Créer le tenant
         trial_ends_at = datetime.utcnow() + timedelta(days=14)
-        
+
         tenant = Tenant(
             tenant_id=tenant_id,
             name=company_name,
@@ -191,9 +199,9 @@ class SignupService:
         )
         self.db.add(tenant)
         self.db.flush()  # Pour avoir l'ID
-        
+
         logger.info(f"[SIGNUP] Tenant créé: {tenant_id} ({company_name})")
-        
+
         # 6. Créer l'utilisateur admin
         # Note: Le modèle User n'a pas first_name/last_name, on utilise les champs existants
         admin_user = User(
@@ -206,9 +214,9 @@ class SignupService:
             created_at=datetime.utcnow(),
         )
         self.db.add(admin_user)
-        
+
         logger.info(f"[SIGNUP] Admin créé: {admin_email} pour {tenant_id}")
-        
+
         # 7. Créer l'abonnement trial
         subscription = TenantSubscription(
             tenant_id=tenant_id,
@@ -223,12 +231,12 @@ class SignupService:
             auto_renew=False,
         )
         self.db.add(subscription)
-        
+
         # 8. Activer les modules selon le plan
         modules_to_activate = plan_config["modules"]
         if modules_to_activate == "ALL":
             modules_to_activate = ALL_MODULES
-        
+
         for module_code in modules_to_activate:
             module = TenantModule(
                 tenant_id=tenant_id,
@@ -238,7 +246,7 @@ class SignupService:
                 activated_at=datetime.utcnow(),
             )
             self.db.add(module)
-        
+
         # 9. Créer les settings par défaut
         settings = TenantSettings(
             tenant_id=tenant_id,
@@ -248,7 +256,7 @@ class SignupService:
             auto_backup_enabled=True,
         )
         self.db.add(settings)
-        
+
         # 10. Créer l'onboarding
         onboarding = TenantOnboarding(
             tenant_id=tenant_id,
@@ -258,14 +266,14 @@ class SignupService:
             current_step="users",
         )
         self.db.add(onboarding)
-        
+
         # 11. Commit tout
         self.db.commit()
         self.db.refresh(tenant)
         self.db.refresh(admin_user)
-        
+
         logger.info(f"[SIGNUP] Signup complet: {tenant_id} - Trial jusqu'au {trial_ends_at}")
-        
+
         return {
             "tenant_id": tenant_id,
             "tenant": tenant,
@@ -273,46 +281,46 @@ class SignupService:
             "trial_ends_at": trial_ends_at,
             "modules_activated": modules_to_activate,
             "login_url": f"/login?tenant={tenant_id}",
-            "onboarding_url": f"/onboarding",
+            "onboarding_url": "/onboarding",
         }
 
     def _generate_tenant_id(self, company_name: str) -> str:
         """
         Générer un tenant_id unique depuis le nom de l'entreprise.
-        
+
         "Acme Corporation SAS" → "acme-corporation"
         "L'Épicerie du Coin" → "lepicerie-du-coin"
-        
+
         Si déjà pris, ajoute un suffixe: "acme-corporation-2"
         """
         # Normaliser : minuscules, enlever accents
         import unicodedata
         normalized = unicodedata.normalize('NFKD', company_name.lower())
         normalized = normalized.encode('ascii', 'ignore').decode('ascii')
-        
+
         # Garder seulement lettres, chiffres, espaces
         normalized = re.sub(r'[^a-z0-9\s]', '', normalized)
-        
+
         # Remplacer espaces par tirets
         slug = re.sub(r'\s+', '-', normalized.strip())
-        
+
         # Limiter la longueur
         slug = slug[:40]
-        
+
         # Enlever tirets en début/fin
         slug = slug.strip('-')
-        
+
         # Si vide, générer un ID aléatoire
         if not slug:
             slug = f"tenant-{secrets.token_hex(4)}"
-        
+
         # Vérifier unicité
         base_slug = slug
         counter = 1
         while self.db.query(Tenant).filter(Tenant.tenant_id == slug).first():
             counter += 1
             slug = f"{base_slug}-{counter}"
-        
+
         return slug
 
     def _get_module_name(self, code: str) -> str:
@@ -406,7 +414,7 @@ def signup(data: SignupRequest, db: Session = Depends(get_db)):
             country=data.country,
             plan=data.plan,
         )
-        
+
         # Envoyer email de bienvenue
         from app.services.email_service import get_email_service
         email_service = get_email_service()
@@ -415,14 +423,14 @@ def signup(data: SignupRequest, db: Session = Depends(get_db)):
             name=data.admin_first_name,
             tenant_name=data.company_name,
         )
-        
+
         return {
             "success": True,
             "tenant_id": result["tenant_id"],
             "trial_ends_at": result["trial_ends_at"].isoformat(),
             "login_url": result["login_url"],
         }
-        
+
     except SignupError as e:
         raise HTTPException(status_code=400, detail={"code": e.code, "message": e.message})
 
