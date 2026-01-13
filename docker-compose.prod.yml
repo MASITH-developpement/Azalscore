@@ -92,6 +92,8 @@ services:
       ENVIRONMENT: production
     ports:
       - "8000:8000"
+    volumes:
+      - backups_data:/app/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -314,6 +316,8 @@ volumes:
   loki_data:
     driver: local
   nginx_logs:
+    driver: local
+  backups_data:
     driver: local
 
 # ============================================================
