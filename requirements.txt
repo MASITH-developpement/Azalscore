@@ -14,6 +14,7 @@ alembic==1.13.1
 # Configuration
 pydantic[email]==2.10.4
 pydantic-settings==2.7.1
+email-validator>=2.0.0  # Required for pydantic EmailStr
 
 # Authentification & Sécurité
 python-jose[cryptography]==3.3.0
