@@ -48,8 +48,5 @@ stripe==7.10.0
 # Cryptographie (backups chiffrés)
 cryptography==42.0.2
 
-# HTTP Client
-httpx==0.26.0
-
 # SMTP
 aiosmtplib==3.0.1
