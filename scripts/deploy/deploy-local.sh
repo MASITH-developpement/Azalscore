@@ -1,198 +1,378 @@
 #!/bin/bash
-# AZALS - Déploiement Serveur Local
-# ==================================
+# AZALS - Déploiement Serveur Local avec GitHub
+# ==============================================
 # Déploie AZALSCORE sur un serveur local via SSH
+# avec mise à jour automatique depuis GitHub branche develop
 #
-# Usage: ./scripts/deploy/deploy-local.sh [USER@HOST]
-# Exemple: ./scripts/deploy/deploy-local.sh root@192.168.1.185
+# Usage:
+#   ./scripts/deploy/deploy-local.sh [USER@HOST] [COMMANDE]
+#
+# Commandes:
+#   install   - Installation complète (défaut)
+#   update    - Mise à jour depuis GitHub develop
+#   restart   - Redémarrer les services
+#   logs      - Voir les logs
+#   status    - État des services
+#
+# Exemples:
+#   ./scripts/deploy/deploy-local.sh root@192.168.1.185
+#   ./scripts/deploy/deploy-local.sh root@192.168.1.185 update
+#   ./scripts/deploy/deploy-local.sh root@192.168.1.185 logs
 
 set -e
 
-# Configuration par défaut
+# Configuration
 DEFAULT_HOST="root@192.168.1.185"
 REMOTE_HOST="${1:-$DEFAULT_HOST}"
+COMMAND="${2:-install}"
 REMOTE_DIR="/opt/azalscore"
+GITHUB_REPO="https://github.com/MASITH-developpement/Azalscore.git"
+GITHUB_BRANCH="develop"
 
 # Couleurs
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_step() { echo -e "${CYAN}[STEP]${NC} $1"; }
 
-# Répertoire du projet
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
-echo "========================================"
-echo "  AZALSCORE - Déploiement Local"
-echo "  Cible: $REMOTE_HOST"
-echo "========================================"
+header() {
+    echo ""
+    echo "========================================"
+    echo "  AZALSCORE - $1"
+    echo "  Serveur: $REMOTE_HOST"
+    echo "  Branche: $GITHUB_BRANCH"
+    echo "========================================"
+    echo ""
+}
 
 # Vérifier la connexion SSH
-log_info "Test de connexion SSH..."
-if ! ssh -o ConnectTimeout=5 "$REMOTE_HOST" "echo 'SSH OK'" &>/dev/null; then
-    log_error "Impossible de se connecter à $REMOTE_HOST"
-    log_info "Vérifiez:"
-    log_info "  1. Le serveur est allumé"
-    log_info "  2. SSH est activé"
-    log_info "  3. Vos clés SSH sont configurées"
-    exit 1
-fi
-log_success "Connexion SSH établie"
+check_ssh() {
+    log_info "Test de connexion SSH..."
+    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "$REMOTE_HOST" "echo 'OK'" &>/dev/null; then
+        log_error "Impossible de se connecter à $REMOTE_HOST"
+        echo ""
+        echo "Vérifiez:"
+        echo "  1. Le serveur est allumé"
+        echo "  2. SSH est activé"
+        echo "  3. Clé SSH configurée: ssh-copy-id $REMOTE_HOST"
+        exit 1
+    fi
+    log_success "Connexion SSH établie"
+}
 
-# Installer Docker sur le serveur distant si nécessaire
-log_info "Vérification de Docker sur le serveur..."
-ssh "$REMOTE_HOST" << 'ENDSSH'
+# Installer Docker sur le serveur
+install_docker() {
+    log_step "Installation de Docker..."
+    ssh "$REMOTE_HOST" << 'ENDSSH'
+set -e
+
+# Installer Docker si absent
 if ! command -v docker &> /dev/null; then
     echo "[INFO] Installation de Docker..."
-    curl -fsSL https://get.docker.com | sh
+    apt-get update
+    apt-get install -y ca-certificates curl gnupg
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    chmod a+r /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     systemctl enable docker
     systemctl start docker
+    echo "[OK] Docker installé"
+else
+    echo "[OK] Docker déjà installé"
 fi
 
-if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null 2>&1; then
-    echo "[INFO] Installation de Docker Compose..."
-    apt-get update && apt-get install -y docker-compose-plugin || {
-        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-    }
+# Installer git si absent
+if ! command -v git &> /dev/null; then
+    apt-get install -y git
 fi
 
-echo "[OK] Docker est prêt"
+docker --version
+docker compose version
 ENDSSH
-log_success "Docker configuré"
+    log_success "Docker prêt"
+}
 
-# Créer le répertoire distant
-log_info "Préparation du répertoire distant..."
-ssh "$REMOTE_HOST" "mkdir -p $REMOTE_DIR"
+# Cloner ou mettre à jour depuis GitHub
+setup_github() {
+    log_step "Configuration GitHub (branche $GITHUB_BRANCH)..."
+    ssh "$REMOTE_HOST" << ENDSSH
+set -e
+cd /opt
 
-# Synchroniser les fichiers
-log_info "Synchronisation des fichiers (peut prendre quelques minutes)..."
-rsync -avz --progress \
-    --exclude '.git' \
-    --exclude 'node_modules' \
-    --exclude '__pycache__' \
-    --exclude '*.pyc' \
-    --exclude '.env' \
-    --exclude '.env.local' \
-    --exclude 'venv' \
-    --exclude '.venv' \
-    --exclude 'dist' \
-    --exclude 'build' \
-    --exclude '.pytest_cache' \
-    --exclude 'test.db' \
-    "$PROJECT_ROOT/" "$REMOTE_HOST:$REMOTE_DIR/"
-log_success "Fichiers synchronisés"
+if [ -d "$REMOTE_DIR/.git" ]; then
+    echo "[INFO] Repository existant, mise à jour..."
+    cd $REMOTE_DIR
+    git fetch origin
+    git checkout $GITHUB_BRANCH
+    git pull origin $GITHUB_BRANCH
+    echo "[OK] Code mis à jour depuis GitHub"
+else
+    echo "[INFO] Clonage du repository..."
+    rm -rf $REMOTE_DIR
+    git clone -b $GITHUB_BRANCH $GITHUB_REPO $REMOTE_DIR
+    echo "[OK] Repository cloné"
+fi
 
-# Créer le fichier .env.production sur le serveur
-log_info "Configuration de l'environnement production..."
-ssh "$REMOTE_HOST" << ENDSSH
 cd $REMOTE_DIR
+echo "Commit actuel: \$(git log -1 --oneline)"
+ENDSSH
+    log_success "Code synchronisé avec GitHub"
+}
 
-# Générer les secrets si .env.production n'existe pas
+# Configurer l'environnement
+setup_env() {
+    log_step "Configuration de l'environnement..."
+    ssh "$REMOTE_HOST" << 'ENDSSH'
+set -e
+cd /opt/azalscore
+
 if [ ! -f .env.production ]; then
-    echo "[INFO] Génération du fichier .env.production..."
+    echo "[INFO] Création de .env.production..."
 
-    SECRET_KEY=\$(python3 -c "import secrets; print(secrets.token_urlsafe(64))" 2>/dev/null || openssl rand -base64 48)
-    BOOTSTRAP_SECRET=\$(python3 -c "import secrets; print(secrets.token_urlsafe(64))" 2>/dev/null || openssl rand -base64 48)
+    # Générer des secrets sécurisés
+    POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')
+    SECRET_KEY=$(openssl rand -base64 48 | tr -d '/+=')
+    BOOTSTRAP_SECRET=$(openssl rand -base64 48 | tr -d '/+=')
+    GRAFANA_PASSWORD=$(openssl rand -base64 16 | tr -d '/+=')
 
     cat > .env.production << EOF
-# AZALS Production - Généré automatiquement
-# Serveur: 192.168.1.185
+# AZALS Production - Serveur Local
+# Généré le $(date)
+# GitHub: develop
 
 # Database
 POSTGRES_DB=azals
 POSTGRES_USER=azals_user
-POSTGRES_PASSWORD=\$(openssl rand -base64 24 | tr -d '/+=')
-DATABASE_URL=postgresql://azals_user:\${POSTGRES_PASSWORD}@postgres:5432/azals
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+DATABASE_URL=postgresql://azals_user:${POSTGRES_PASSWORD}@postgres:5432/azals
 
 # Security
-SECRET_KEY=\${SECRET_KEY}
-BOOTSTRAP_SECRET=\${BOOTSTRAP_SECRET}
+SECRET_KEY=${SECRET_KEY}
+BOOTSTRAP_SECRET=${BOOTSTRAP_SECRET}
 
 # Application
 AZALS_ENV=production
 DEBUG=false
-CORS_ORIGINS=http://192.168.1.185,http://localhost
+CORS_ORIGINS=http://192.168.1.185,http://localhost,http://127.0.0.1
 
 # Redis
 REDIS_URL=redis://redis:6379/0
 
-# MASITH Tenant
+# MASITH Tenant (admin initial)
 MASITH_TENANT_ID=masith
 MASITH_ADMIN_EMAIL=contact@masith.fr
 MASITH_ADMIN_PASSWORD=Gobelet2026!
 
-# Monitoring (optionnel)
+# Monitoring
 GRAFANA_USER=admin
-GRAFANA_PASSWORD=\$(openssl rand -base64 12 | tr -d '/+=')
+GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
+
+# Stripe (à configurer si paiements activés)
+# STRIPE_SECRET_KEY=sk_live_...
+# STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Email SMTP (à configurer)
+# SMTP_HOST=smtp.example.com
+# SMTP_PORT=587
+# SMTP_USER=
+# SMTP_PASSWORD=
+# SMTP_FROM=noreply@azalscore.com
 EOF
 
-    echo "[OK] Fichier .env.production créé"
+    echo "[OK] .env.production créé"
+    echo ""
+    echo "IMPORTANT: Notez le mot de passe Grafana: ${GRAFANA_PASSWORD}"
 else
-    echo "[INFO] .env.production existe déjà"
+    echo "[OK] .env.production existe déjà"
 fi
 ENDSSH
-log_success "Environnement configuré"
+    log_success "Environnement configuré"
+}
 
-# Construire et démarrer les conteneurs
-log_info "Construction et démarrage des conteneurs Docker..."
-ssh "$REMOTE_HOST" << ENDSSH
+# Construire et démarrer
+build_and_start() {
+    log_step "Construction et démarrage des services..."
+    ssh "$REMOTE_HOST" << 'ENDSSH'
+set -e
+cd /opt/azalscore
+
+echo "[INFO] Arrêt des anciens conteneurs..."
+docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+
+echo "[INFO] Construction des images Docker (5-10 min)..."
+docker compose -f docker-compose.prod.yml build
+
+echo "[INFO] Démarrage des services..."
+docker compose -f docker-compose.prod.yml up -d
+
+echo "[INFO] Attente du démarrage..."
+sleep 20
+
+echo ""
+echo "[STATUS] État des services:"
+docker compose -f docker-compose.prod.yml ps
+ENDSSH
+    log_success "Services démarrés"
+}
+
+# Mise à jour depuis GitHub
+do_update() {
+    header "Mise à jour"
+    check_ssh
+
+    log_step "Mise à jour depuis GitHub ($GITHUB_BRANCH)..."
+    ssh "$REMOTE_HOST" << ENDSSH
+set -e
 cd $REMOTE_DIR
 
-# Arrêter les anciens conteneurs si existants
-docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
+echo "[INFO] Pull des dernières modifications..."
+git fetch origin
+git checkout $GITHUB_BRANCH
+git pull origin $GITHUB_BRANCH
 
-# Construire les images
-echo "[INFO] Construction des images (peut prendre 5-10 minutes)..."
-docker-compose -f docker-compose.prod.yml build --no-cache
+echo ""
+echo "Commit actuel: \$(git log -1 --oneline)"
+echo ""
 
-# Démarrer les services
-echo "[INFO] Démarrage des services..."
-docker-compose -f docker-compose.prod.yml up -d
+echo "[INFO] Reconstruction des images..."
+docker compose -f docker-compose.prod.yml build
 
-# Attendre que tout soit prêt
-echo "[INFO] Attente du démarrage des services..."
-sleep 30
+echo "[INFO] Redémarrage des services..."
+docker compose -f docker-compose.prod.yml up -d
 
-# Vérifier l'état
-docker-compose -f docker-compose.prod.yml ps
-ENDSSH
-log_success "Conteneurs démarrés"
-
-# Vérifier que l'API répond
-log_info "Vérification de l'API..."
 sleep 10
-if ssh "$REMOTE_HOST" "curl -sf http://localhost:8000/health/live" &>/dev/null; then
-    log_success "API opérationnelle"
-else
-    log_warning "L'API n'est pas encore prête (normal au premier démarrage)"
-    log_info "Vérifiez les logs: ssh $REMOTE_HOST 'docker-compose -f $REMOTE_DIR/docker-compose.prod.yml logs -f api'"
-fi
+echo ""
+docker compose -f docker-compose.prod.yml ps
+ENDSSH
 
+    log_success "Mise à jour terminée"
+    show_urls
+}
+
+# Redémarrer les services
+do_restart() {
+    header "Redémarrage"
+    check_ssh
+    ssh "$REMOTE_HOST" "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml restart"
+    log_success "Services redémarrés"
+}
+
+# Voir les logs
+do_logs() {
+    header "Logs"
+    check_ssh
+    ssh "$REMOTE_HOST" "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml logs -f --tail=100"
+}
+
+# État des services
+do_status() {
+    header "Status"
+    check_ssh
+    ssh "$REMOTE_HOST" << ENDSSH
+cd $REMOTE_DIR
+echo "=== Services Docker ==="
+docker compose -f docker-compose.prod.yml ps
 echo ""
-echo "========================================"
-echo "  DÉPLOIEMENT TERMINÉ"
-echo "========================================"
+echo "=== Version Git ==="
+git log -1 --oneline
+echo "Branche: \$(git branch --show-current)"
 echo ""
-echo "URLs d'accès:"
-echo "  - Frontend: http://192.168.1.185"
-echo "  - API:      http://192.168.1.185:8000"
-echo "  - API Docs: http://192.168.1.185:8000/docs"
-echo "  - Grafana:  http://192.168.1.185:3000"
-echo ""
-echo "Connexion admin:"
-echo "  - Email:    contact@masith.fr"
-echo "  - Password: Gobelet2026!"
-echo ""
-echo "Commandes utiles:"
-echo "  - Logs:     ssh $REMOTE_HOST 'cd $REMOTE_DIR && docker-compose -f docker-compose.prod.yml logs -f'"
-echo "  - Status:   ssh $REMOTE_HOST 'cd $REMOTE_DIR && docker-compose -f docker-compose.prod.yml ps'"
-echo "  - Restart:  ssh $REMOTE_HOST 'cd $REMOTE_DIR && docker-compose -f docker-compose.prod.yml restart'"
-echo ""
+echo "=== Santé API ==="
+curl -s http://localhost:8000/health/live || echo "API non disponible"
+ENDSSH
+}
+
+# Installation complète
+do_install() {
+    header "Installation"
+    check_ssh
+    install_docker
+    setup_github
+    setup_env
+    build_and_start
+    show_urls
+}
+
+# Afficher les URLs
+show_urls() {
+    echo ""
+    echo "========================================"
+    echo "  DÉPLOIEMENT RÉUSSI"
+    echo "========================================"
+    echo ""
+    echo "URLs d'accès:"
+    echo "  - Frontend:  http://192.168.1.185"
+    echo "  - API:       http://192.168.1.185:8000"
+    echo "  - API Docs:  http://192.168.1.185:8000/docs"
+    echo "  - Grafana:   http://192.168.1.185:3000"
+    echo ""
+    echo "Connexion admin AZALSCORE:"
+    echo "  - Email:     contact@masith.fr"
+    echo "  - Password:  Gobelet2026!"
+    echo ""
+    echo "Commandes utiles:"
+    echo "  - Mise à jour:  $0 $REMOTE_HOST update"
+    echo "  - Logs:         $0 $REMOTE_HOST logs"
+    echo "  - Status:       $0 $REMOTE_HOST status"
+    echo "  - Restart:      $0 $REMOTE_HOST restart"
+    echo ""
+}
+
+# Aide
+show_help() {
+    echo "AZALSCORE - Script de déploiement local"
+    echo ""
+    echo "Usage: $0 [USER@HOST] [COMMANDE]"
+    echo ""
+    echo "Commandes:"
+    echo "  install   Installation complète (défaut)"
+    echo "  update    Mise à jour depuis GitHub develop"
+    echo "  restart   Redémarrer les services"
+    echo "  logs      Voir les logs en temps réel"
+    echo "  status    État des services"
+    echo "  help      Afficher cette aide"
+    echo ""
+    echo "Exemples:"
+    echo "  $0 root@192.168.1.185"
+    echo "  $0 root@192.168.1.185 update"
+    echo "  $0 ubuntu@192.168.1.185 logs"
+    echo ""
+}
+
+# Point d'entrée
+case "$COMMAND" in
+    install)
+        do_install
+        ;;
+    update)
+        do_update
+        ;;
+    restart)
+        do_restart
+        ;;
+    logs)
+        do_logs
+        ;;
+    status)
+        do_status
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        log_error "Commande inconnue: $COMMAND"
+        show_help
+        exit 1
+        ;;
+esac
