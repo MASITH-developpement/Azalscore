@@ -5,40 +5,59 @@ AZALS MODULE M6 - Routes Production
 API REST pour la gestion de production.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from typing import List, Optional
 from datetime import date
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.core.models import User
 
-from .service import get_production_service
-from .models import MOStatus, MOPriority, WorkCenterStatus, BOMStatus
+from .models import BOMStatus, MOPriority, MOStatus, WorkCenterStatus
 from .schemas import (
-    # Work Centers
-    WorkCenterCreate, WorkCenterUpdate, WorkCenterResponse,
-    BOMCreate, BOMUpdate, BOMResponse, BOMList, BOMLineCreate, BOMLineResponse,
-    # Routing
-    RoutingCreate, RoutingResponse,
-    # Manufacturing Orders
-    MOCreate, MOUpdate, MOResponse, MOList,
-    # Work Orders
-    WorkOrderResponse, StartWorkOrderRequest, CompleteWorkOrderRequest,
-    ConsumeRequest, ReturnRequest, ConsumptionResponse,
-    # Production
-    ProduceRequest, OutputResponse,
-    # Scrap
-    ScrapCreate, ScrapResponse,
-    # Planning
-    PlanCreate, PlanResponse,
+    BOMCreate,
+    BOMLineCreate,
+    BOMLineResponse,
+    BOMList,
+    BOMResponse,
+    BOMUpdate,
+    CompleteWorkOrderRequest,
+    ConsumeRequest,
+    ConsumptionResponse,
     # Maintenance
-    MaintenanceScheduleCreate, MaintenanceScheduleResponse,
+    MaintenanceScheduleCreate,
+    MaintenanceScheduleResponse,
+    # Manufacturing Orders
+    MOCreate,
+    MOList,
+    MOResponse,
+    MOUpdate,
+    OutputResponse,
+    # Planning
+    PlanCreate,
+    PlanResponse,
+    # Production
+    ProduceRequest,
     # Dashboard
-    ProductionDashboard
+    ProductionDashboard,
+    ReturnRequest,
+    # Routing
+    RoutingCreate,
+    RoutingResponse,
+    # Scrap
+    ScrapCreate,
+    ScrapResponse,
+    StartWorkOrderRequest,
+    # Work Centers
+    WorkCenterCreate,
+    WorkCenterResponse,
+    WorkCenterUpdate,
+    # Work Orders
+    WorkOrderResponse,
 )
+from .service import get_production_service
 
 router = APIRouter(prefix="/api/v1/production", tags=["Production (M6)"])
 
@@ -58,10 +77,10 @@ async def create_work_center(
     return service.create_work_center(data)
 
 
-@router.get("/work-centers", response_model=List[WorkCenterResponse])
+@router.get("/work-centers", response_model=list[WorkCenterResponse])
 async def list_work_centers(
-    status: Optional[WorkCenterStatus] = None,
-    type: Optional[str] = Query(None, alias="type"),
+    status: WorkCenterStatus | None = None,
+    type: str | None = Query(None, alias="type"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -117,10 +136,10 @@ async def set_work_center_status(
     return wc
 
 
-@router.get("/work-centers/{wc_id}/work-orders", response_model=List[WorkOrderResponse])
+@router.get("/work-centers/{wc_id}/work-orders", response_model=list[WorkOrderResponse])
 async def list_work_orders_for_work_center(
     wc_id: UUID,
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -148,8 +167,8 @@ async def create_bom(
 
 @router.get("/bom", response_model=BOMList)
 async def list_boms(
-    product_id: Optional[UUID] = None,
-    status: Optional[BOMStatus] = None,
+    product_id: UUID | None = None,
+    status: BOMStatus | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -248,9 +267,9 @@ async def create_routing(
     return service.create_routing(data)
 
 
-@router.get("/routings", response_model=List[RoutingResponse])
+@router.get("/routings", response_model=list[RoutingResponse])
 async def list_routings(
-    product_id: Optional[UUID] = None,
+    product_id: UUID | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -293,11 +312,11 @@ async def create_manufacturing_order(
 
 @router.get("/orders", response_model=MOList)
 async def list_manufacturing_orders(
-    status: Optional[MOStatus] = None,
-    priority: Optional[MOPriority] = None,
-    product_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    status: MOStatus | None = None,
+    priority: MOPriority | None = None,
+    product_id: UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -540,12 +559,12 @@ async def create_scrap(
     return service.create_scrap(data)
 
 
-@router.get("/scraps", response_model=List[ScrapResponse])
+@router.get("/scraps", response_model=list[ScrapResponse])
 async def list_scraps(
-    mo_id: Optional[UUID] = None,
-    product_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    mo_id: UUID | None = None,
+    product_id: UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -605,9 +624,9 @@ async def create_maintenance_schedule(
     return service.create_maintenance_schedule(data)
 
 
-@router.get("/maintenance", response_model=List[MaintenanceScheduleResponse])
+@router.get("/maintenance", response_model=list[MaintenanceScheduleResponse])
 async def list_maintenance_schedules(
-    work_center_id: Optional[UUID] = None,
+    work_center_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -616,7 +635,7 @@ async def list_maintenance_schedules(
     return service.list_maintenance_schedules(work_center_id=work_center_id)
 
 
-@router.get("/maintenance/due", response_model=List[MaintenanceScheduleResponse])
+@router.get("/maintenance/due", response_model=list[MaintenanceScheduleResponse])
 async def get_due_maintenance(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)

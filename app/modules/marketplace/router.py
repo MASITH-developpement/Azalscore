@@ -4,25 +4,28 @@ AZALS - Module Marketplace - Router
 Endpoints API pour le site marchand.
 """
 
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
 from .models import OrderStatus
 from .schemas import (
-    CommercialPlanResponse, PlanComparison,
-    CheckoutRequest, CheckoutResponse,
-    OrderResponse, OrderDetail,
-    DiscountCodeValidate, DiscountCodeResponse,
-    TenantProvisionRequest, TenantProvisionResponse,
-    MarketplaceDashboard
+    CheckoutRequest,
+    CheckoutResponse,
+    CommercialPlanResponse,
+    DiscountCodeResponse,
+    DiscountCodeValidate,
+    MarketplaceDashboard,
+    OrderDetail,
+    OrderResponse,
+    TenantProvisionRequest,
+    TenantProvisionResponse,
 )
 from .service import get_marketplace_service
-
 
 router = APIRouter(prefix="/marketplace", tags=["Site Marchand"])
 
@@ -35,7 +38,7 @@ def get_service(db: Session = Depends(get_db)):
 # PLANS (PUBLIC)
 # ============================================================================
 
-@router.get("/plans", response_model=List[CommercialPlanResponse])
+@router.get("/plans", response_model=list[CommercialPlanResponse])
 def list_plans(service = Depends(get_service)):
     """Liste les plans commerciaux disponibles."""
     return service.get_plans()
@@ -93,9 +96,9 @@ def validate_discount(data: DiscountCodeValidate, service = Depends(get_service)
 # COMMANDES
 # ============================================================================
 
-@router.get("/orders", response_model=List[OrderResponse])
+@router.get("/orders", response_model=list[OrderResponse])
 def list_orders(
-    status: Optional[OrderStatus] = None,
+    status: OrderStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service = Depends(get_service),

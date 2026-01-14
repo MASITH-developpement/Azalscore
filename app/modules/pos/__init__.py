@@ -26,27 +26,26 @@ Intégrations AZALS:
 """
 
 from .models import (
-    POSStore,
-    POSTerminal,
-    POSUser,
-    POSSession,
     CashMovement,
-    POSTransaction,
-    POSTransactionLine,
-    POSPayment,
+    DiscountType,
+    PaymentMethodType,
     POSDailyReport,
-    POSProductQuickKey,
     POSHoldTransaction,
     POSOfflineQueue,
-    POSTerminalStatus,
+    POSPayment,
+    POSProductQuickKey,
+    POSSession,
     POSSessionStatus,
+    POSStore,
+    POSTerminal,
+    POSTerminalStatus,
+    POSTransaction,
+    POSTransactionLine,
     POSTransactionStatus,
-    PaymentMethodType,
-    DiscountType
+    POSUser,
 )
-
-from .service import POSService
 from .router import router
+from .service import POSService
 
 __all__ = [
     # Models

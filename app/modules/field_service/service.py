@@ -4,28 +4,52 @@ AZALS MODULE 17 - Field Service Service
 Logique métier pour la gestion des interventions terrain.
 """
 
-from datetime import datetime, date, timedelta
-from decimal import Decimal
-from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
 import uuid
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
 
 from .models import (
-    ServiceZone, Technician, Vehicle, InterventionTemplate,
-    Intervention, InterventionHistory, FSTimeEntry, Route, Expense, ServiceContract,
-    TechnicianStatus, InterventionStatus, InterventionPriority, InterventionType
+    Expense,
+    FSTimeEntry,
+    Intervention,
+    InterventionHistory,
+    InterventionPriority,
+    InterventionStatus,
+    InterventionTemplate,
+    InterventionType,
+    Route,
+    ServiceContract,
+    ServiceZone,
+    Technician,
+    TechnicianStatus,
+    Vehicle,
 )
 from .schemas import (
-    ZoneCreate, ZoneUpdate,
-    TechnicianCreate, TechnicianUpdate, VehicleCreate, VehicleUpdate,
-    TemplateCreate, TemplateUpdate,
-    InterventionCreate, InterventionUpdate, InterventionAssign,
+    ContractCreate,
+    ContractUpdate,
+    ExpenseCreate,
+    FieldServiceDashboard,
+    InterventionAssign,
     InterventionComplete,
-    TimeEntryCreate, TimeEntryUpdate,
-    RouteCreate, RouteUpdate,
-    ExpenseCreate, ContractCreate, ContractUpdate,
-    TechnicianStats, InterventionStats, FieldServiceDashboard
+    InterventionCreate,
+    InterventionStats,
+    InterventionUpdate,
+    RouteCreate,
+    RouteUpdate,
+    TechnicianCreate,
+    TechnicianStats,
+    TechnicianUpdate,
+    TemplateCreate,
+    TemplateUpdate,
+    TimeEntryCreate,
+    TimeEntryUpdate,
+    VehicleCreate,
+    VehicleUpdate,
+    ZoneCreate,
+    ZoneUpdate,
 )
 
 
@@ -40,16 +64,16 @@ class FieldServiceService:
     # ZONES
     # ========================================================================
 
-    def list_zones(self, active_only: bool = True) -> List[ServiceZone]:
+    def list_zones(self, active_only: bool = True) -> list[ServiceZone]:
         """Liste des zones."""
         query = self.db.query(ServiceZone).filter(
             ServiceZone.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(ServiceZone.is_active == True)
+            query = query.filter(ServiceZone.is_active)
         return query.all()
 
-    def get_zone(self, zone_id: int) -> Optional[ServiceZone]:
+    def get_zone(self, zone_id: int) -> ServiceZone | None:
         """Récupère une zone."""
         return self.db.query(ServiceZone).filter(
             ServiceZone.id == zone_id,
@@ -67,7 +91,7 @@ class FieldServiceService:
         self.db.refresh(zone)
         return zone
 
-    def update_zone(self, zone_id: int, data: ZoneUpdate) -> Optional[ServiceZone]:
+    def update_zone(self, zone_id: int, data: ZoneUpdate) -> ServiceZone | None:
         """Met à jour une zone."""
         zone = self.get_zone(zone_id)
         if not zone:
@@ -94,16 +118,16 @@ class FieldServiceService:
     def list_technicians(
         self,
         active_only: bool = True,
-        zone_id: Optional[int] = None,
-        status: Optional[TechnicianStatus] = None,
+        zone_id: int | None = None,
+        status: TechnicianStatus | None = None,
         available_only: bool = False
-    ) -> List[Technician]:
+    ) -> list[Technician]:
         """Liste des techniciens."""
         query = self.db.query(Technician).filter(
             Technician.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(Technician.is_active == True)
+            query = query.filter(Technician.is_active)
         if zone_id:
             query = query.filter(Technician.zone_id == zone_id)
         if status:
@@ -112,14 +136,14 @@ class FieldServiceService:
             query = query.filter(Technician.status == TechnicianStatus.AVAILABLE)
         return query.all()
 
-    def get_technician(self, tech_id: int) -> Optional[Technician]:
+    def get_technician(self, tech_id: int) -> Technician | None:
         """Récupère un technicien."""
         return self.db.query(Technician).filter(
             Technician.id == tech_id,
             Technician.tenant_id == self.tenant_id
         ).first()
 
-    def get_technician_by_user(self, user_id: int) -> Optional[Technician]:
+    def get_technician_by_user(self, user_id: int) -> Technician | None:
         """Récupère technicien par user_id."""
         return self.db.query(Technician).filter(
             Technician.user_id == user_id,
@@ -137,7 +161,7 @@ class FieldServiceService:
         self.db.refresh(technician)
         return technician
 
-    def update_technician(self, tech_id: int, data: TechnicianUpdate) -> Optional[Technician]:
+    def update_technician(self, tech_id: int, data: TechnicianUpdate) -> Technician | None:
         """Met à jour un technicien."""
         tech = self.get_technician(tech_id)
         if not tech:
@@ -152,9 +176,9 @@ class FieldServiceService:
         self,
         tech_id: int,
         status: TechnicianStatus,
-        latitude: Optional[Decimal] = None,
-        longitude: Optional[Decimal] = None
-    ) -> Optional[Technician]:
+        latitude: Decimal | None = None,
+        longitude: Decimal | None = None
+    ) -> Technician | None:
         """Met à jour le statut d'un technicien."""
         tech = self.get_technician(tech_id)
         if not tech:
@@ -173,7 +197,7 @@ class FieldServiceService:
         tech_id: int,
         latitude: Decimal,
         longitude: Decimal
-    ) -> Optional[Technician]:
+    ) -> Technician | None:
         """Met à jour la position d'un technicien."""
         tech = self.get_technician(tech_id)
         if not tech:
@@ -198,16 +222,16 @@ class FieldServiceService:
     # VEHICLES
     # ========================================================================
 
-    def list_vehicles(self, active_only: bool = True) -> List[Vehicle]:
+    def list_vehicles(self, active_only: bool = True) -> list[Vehicle]:
         """Liste des véhicules."""
         query = self.db.query(Vehicle).filter(
             Vehicle.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(Vehicle.is_active == True)
+            query = query.filter(Vehicle.is_active)
         return query.all()
 
-    def get_vehicle(self, vehicle_id: int) -> Optional[Vehicle]:
+    def get_vehicle(self, vehicle_id: int) -> Vehicle | None:
         """Récupère un véhicule."""
         return self.db.query(Vehicle).filter(
             Vehicle.id == vehicle_id,
@@ -225,7 +249,7 @@ class FieldServiceService:
         self.db.refresh(vehicle)
         return vehicle
 
-    def update_vehicle(self, vehicle_id: int, data: VehicleUpdate) -> Optional[Vehicle]:
+    def update_vehicle(self, vehicle_id: int, data: VehicleUpdate) -> Vehicle | None:
         """Met à jour un véhicule."""
         vehicle = self.get_vehicle(vehicle_id)
         if not vehicle:
@@ -249,16 +273,16 @@ class FieldServiceService:
     # TEMPLATES
     # ========================================================================
 
-    def list_templates(self, active_only: bool = True) -> List[InterventionTemplate]:
+    def list_templates(self, active_only: bool = True) -> list[InterventionTemplate]:
         """Liste des templates."""
         query = self.db.query(InterventionTemplate).filter(
             InterventionTemplate.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(InterventionTemplate.is_active == True)
+            query = query.filter(InterventionTemplate.is_active)
         return query.all()
 
-    def get_template(self, template_id: int) -> Optional[InterventionTemplate]:
+    def get_template(self, template_id: int) -> InterventionTemplate | None:
         """Récupère un template."""
         return self.db.query(InterventionTemplate).filter(
             InterventionTemplate.id == template_id,
@@ -276,7 +300,7 @@ class FieldServiceService:
         self.db.refresh(template)
         return template
 
-    def update_template(self, template_id: int, data: TemplateUpdate) -> Optional[InterventionTemplate]:
+    def update_template(self, template_id: int, data: TemplateUpdate) -> InterventionTemplate | None:
         """Met à jour un template."""
         template = self.get_template(template_id)
         if not template:
@@ -308,19 +332,19 @@ class FieldServiceService:
 
     def list_interventions(
         self,
-        status: Optional[InterventionStatus] = None,
-        priority: Optional[InterventionPriority] = None,
-        intervention_type: Optional[InterventionType] = None,
-        technician_id: Optional[int] = None,
-        zone_id: Optional[int] = None,
-        customer_id: Optional[int] = None,
-        scheduled_date: Optional[date] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        search: Optional[str] = None,
+        status: InterventionStatus | None = None,
+        priority: InterventionPriority | None = None,
+        intervention_type: InterventionType | None = None,
+        technician_id: int | None = None,
+        zone_id: int | None = None,
+        customer_id: int | None = None,
+        scheduled_date: date | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Intervention], int]:
+    ) -> tuple[list[Intervention], int]:
         """Liste des interventions avec filtres."""
         query = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id
@@ -361,14 +385,14 @@ class FieldServiceService:
 
         return interventions, total
 
-    def get_intervention(self, intervention_id: int) -> Optional[Intervention]:
+    def get_intervention(self, intervention_id: int) -> Intervention | None:
         """Récupère une intervention."""
         return self.db.query(Intervention).filter(
             Intervention.id == intervention_id,
             Intervention.tenant_id == self.tenant_id
         ).first()
 
-    def get_intervention_by_reference(self, reference: str) -> Optional[Intervention]:
+    def get_intervention_by_reference(self, reference: str) -> Intervention | None:
         """Récupère une intervention par référence."""
         return self.db.query(Intervention).filter(
             Intervention.reference == reference,
@@ -378,8 +402,8 @@ class FieldServiceService:
     def create_intervention(
         self,
         data: InterventionCreate,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None
+        actor_id: int | None = None,
+        actor_name: str | None = None
     ) -> Intervention:
         """Crée une intervention."""
         # Appliquer le template si fourni
@@ -432,9 +456,9 @@ class FieldServiceService:
         self,
         intervention_id: int,
         data: InterventionUpdate,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None
-    ) -> Optional[Intervention]:
+        actor_id: int | None = None,
+        actor_name: str | None = None
+    ) -> Intervention | None:
         """Met à jour une intervention."""
         intervention = self.get_intervention(intervention_id)
         if not intervention:
@@ -471,9 +495,9 @@ class FieldServiceService:
         self,
         intervention_id: int,
         data: InterventionAssign,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None
-    ) -> Optional[Intervention]:
+        actor_id: int | None = None,
+        actor_name: str | None = None
+    ) -> Intervention | None:
         """Assigne une intervention à un technicien."""
         intervention = self.get_intervention(intervention_id)
         if not intervention:
@@ -519,9 +543,9 @@ class FieldServiceService:
         self,
         intervention_id: int,
         tech_id: int,
-        latitude: Optional[Decimal] = None,
-        longitude: Optional[Decimal] = None
-    ) -> Optional[Intervention]:
+        latitude: Decimal | None = None,
+        longitude: Decimal | None = None
+    ) -> Intervention | None:
         """Démarre le trajet vers l'intervention."""
         intervention = self.get_intervention(intervention_id)
         if not intervention or intervention.technician_id != tech_id:
@@ -568,9 +592,9 @@ class FieldServiceService:
         self,
         intervention_id: int,
         tech_id: int,
-        latitude: Optional[Decimal] = None,
-        longitude: Optional[Decimal] = None
-    ) -> Optional[Intervention]:
+        latitude: Decimal | None = None,
+        longitude: Decimal | None = None
+    ) -> Intervention | None:
         """Arrive sur site."""
         intervention = self.get_intervention(intervention_id)
         if not intervention or intervention.technician_id != tech_id:
@@ -584,7 +608,7 @@ class FieldServiceService:
         travel_entry = self.db.query(FSTimeEntry).filter(
             FSTimeEntry.intervention_id == intervention_id,
             FSTimeEntry.entry_type == "travel",
-            FSTimeEntry.end_time == None
+            FSTimeEntry.end_time is None
         ).first()
         if travel_entry:
             travel_entry.end_time = datetime.utcnow()
@@ -615,9 +639,9 @@ class FieldServiceService:
         self,
         intervention_id: int,
         tech_id: int,
-        latitude: Optional[Decimal] = None,
-        longitude: Optional[Decimal] = None
-    ) -> Optional[Intervention]:
+        latitude: Decimal | None = None,
+        longitude: Decimal | None = None
+    ) -> Intervention | None:
         """Démarre l'intervention."""
         intervention = self.get_intervention(intervention_id)
         if not intervention or intervention.technician_id != tech_id:
@@ -666,9 +690,9 @@ class FieldServiceService:
         intervention_id: int,
         tech_id: int,
         data: InterventionComplete,
-        latitude: Optional[Decimal] = None,
-        longitude: Optional[Decimal] = None
-    ) -> Optional[Intervention]:
+        latitude: Decimal | None = None,
+        longitude: Decimal | None = None
+    ) -> Intervention | None:
         """Complète l'intervention."""
         intervention = self.get_intervention(intervention_id)
         if not intervention or intervention.technician_id != tech_id:
@@ -703,7 +727,7 @@ class FieldServiceService:
         work_entry = self.db.query(FSTimeEntry).filter(
             FSTimeEntry.intervention_id == intervention_id,
             FSTimeEntry.entry_type == "work",
-            FSTimeEntry.end_time == None
+            FSTimeEntry.end_time is None
         ).first()
         if work_entry:
             work_entry.end_time = now
@@ -741,9 +765,9 @@ class FieldServiceService:
         self,
         intervention_id: int,
         reason: str,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None
-    ) -> Optional[Intervention]:
+        actor_id: int | None = None,
+        actor_name: str | None = None
+    ) -> Intervention | None:
         """Annule une intervention."""
         intervention = self.get_intervention(intervention_id)
         if not intervention:
@@ -813,8 +837,8 @@ class FieldServiceService:
         self,
         intervention_id: int,
         rating: int,
-        feedback: Optional[str] = None
-    ) -> Optional[Intervention]:
+        feedback: str | None = None
+    ) -> Intervention | None:
         """Note une intervention (satisfaction client)."""
         intervention = self.get_intervention(intervention_id)
         if not intervention:
@@ -830,7 +854,7 @@ class FieldServiceService:
                 # Recalculer la moyenne
                 rated = self.db.query(Intervention).filter(
                     Intervention.technician_id == tech.id,
-                    Intervention.customer_rating != None
+                    Intervention.customer_rating is not None
                 ).all()
                 if rated:
                     avg = sum(i.customer_rating for i in rated) / len(rated)
@@ -841,7 +865,7 @@ class FieldServiceService:
 
         return intervention
 
-    def get_intervention_history(self, intervention_id: int) -> List[InterventionHistory]:
+    def get_intervention_history(self, intervention_id: int) -> list[InterventionHistory]:
         """Récupère l'historique d'une intervention."""
         return self.db.query(InterventionHistory).filter(
             InterventionHistory.intervention_id == intervention_id,
@@ -854,12 +878,12 @@ class FieldServiceService:
 
     def list_time_entries(
         self,
-        technician_id: Optional[int] = None,
-        intervention_id: Optional[int] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
-        entry_type: Optional[str] = None
-    ) -> List[FSTimeEntry]:
+        technician_id: int | None = None,
+        intervention_id: int | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        entry_type: str | None = None
+    ) -> list[FSTimeEntry]:
         """Liste les entrées de temps."""
         query = self.db.query(FSTimeEntry).filter(
             FSTimeEntry.tenant_id == self.tenant_id
@@ -887,7 +911,7 @@ class FieldServiceService:
         self.db.refresh(entry)
         return entry
 
-    def update_time_entry(self, entry_id: int, data: TimeEntryUpdate) -> Optional[FSTimeEntry]:
+    def update_time_entry(self, entry_id: int, data: TimeEntryUpdate) -> FSTimeEntry | None:
         """Met à jour une entrée de temps."""
         entry = self.db.query(FSTimeEntry).filter(
             FSTimeEntry.id == entry_id,
@@ -918,7 +942,7 @@ class FieldServiceService:
         self,
         technician_id: int,
         route_date: date
-    ) -> Optional[Route]:
+    ) -> Route | None:
         """Récupère la tournée d'un technicien pour une date."""
         return self.db.query(Route).filter(
             Route.technician_id == technician_id,
@@ -937,7 +961,7 @@ class FieldServiceService:
         self.db.refresh(route)
         return route
 
-    def update_route(self, route_id: int, data: RouteUpdate) -> Optional[Route]:
+    def update_route(self, route_id: int, data: RouteUpdate) -> Route | None:
         """Met à jour une tournée."""
         route = self.db.query(Route).filter(
             Route.id == route_id,
@@ -956,7 +980,7 @@ class FieldServiceService:
         technician_id: int,
         date_from: date,
         date_to: date
-    ) -> List[Intervention]:
+    ) -> list[Intervention]:
         """Récupère le planning d'un technicien."""
         return self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id,
@@ -978,11 +1002,11 @@ class FieldServiceService:
 
     def list_expenses(
         self,
-        technician_id: Optional[int] = None,
-        status: Optional[str] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None
-    ) -> List[Expense]:
+        technician_id: int | None = None,
+        status: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None
+    ) -> list[Expense]:
         """Liste les frais."""
         query = self.db.query(Expense).filter(
             Expense.tenant_id == self.tenant_id
@@ -1012,7 +1036,7 @@ class FieldServiceService:
         self,
         expense_id: int,
         approved_by: int
-    ) -> Optional[Expense]:
+    ) -> Expense | None:
         """Approuve un frais."""
         expense = self.db.query(Expense).filter(
             Expense.id == expense_id,
@@ -1027,7 +1051,7 @@ class FieldServiceService:
         self.db.refresh(expense)
         return expense
 
-    def reject_expense(self, expense_id: int, reason: str) -> Optional[Expense]:
+    def reject_expense(self, expense_id: int, reason: str) -> Expense | None:
         """Rejette un frais."""
         expense = self.db.query(Expense).filter(
             Expense.id == expense_id,
@@ -1047,9 +1071,9 @@ class FieldServiceService:
 
     def list_contracts(
         self,
-        customer_id: Optional[int] = None,
-        status: Optional[str] = None
-    ) -> List[ServiceContract]:
+        customer_id: int | None = None,
+        status: str | None = None
+    ) -> list[ServiceContract]:
         """Liste les contrats."""
         query = self.db.query(ServiceContract).filter(
             ServiceContract.tenant_id == self.tenant_id
@@ -1060,7 +1084,7 @@ class FieldServiceService:
             query = query.filter(ServiceContract.status == status)
         return query.all()
 
-    def get_contract(self, contract_id: int) -> Optional[ServiceContract]:
+    def get_contract(self, contract_id: int) -> ServiceContract | None:
         """Récupère un contrat."""
         return self.db.query(ServiceContract).filter(
             ServiceContract.id == contract_id,
@@ -1078,7 +1102,7 @@ class FieldServiceService:
         self.db.refresh(contract)
         return contract
 
-    def update_contract(self, contract_id: int, data: ContractUpdate) -> Optional[ServiceContract]:
+    def update_contract(self, contract_id: int, data: ContractUpdate) -> ServiceContract | None:
         """Met à jour un contrat."""
         contract = self.get_contract(contract_id)
         if not contract:
@@ -1126,8 +1150,8 @@ class FieldServiceService:
         # Temps moyen de complétion
         completed = base_query.filter(
             Intervention.status == InterventionStatus.COMPLETED,
-            Intervention.actual_start != None,
-            Intervention.actual_end != None
+            Intervention.actual_start is not None,
+            Intervention.actual_end is not None
         ).all()
 
         avg_time = 0
@@ -1149,7 +1173,7 @@ class FieldServiceService:
             avg_completion_time=round(avg_time, 2)
         )
 
-    def get_technician_stats(self, days: int = 30) -> List[TechnicianStats]:
+    def get_technician_stats(self, days: int = 30) -> list[TechnicianStats]:
         """Statistiques par technicien."""
         technicians = self.list_technicians(active_only=True)
         since = datetime.utcnow() - timedelta(days=days)
@@ -1207,7 +1231,7 @@ class FieldServiceService:
         # Techniciens actifs
         active_techs = self.db.query(Technician).filter(
             Technician.tenant_id == self.tenant_id,
-            Technician.is_active == True,
+            Technician.is_active,
             Technician.status.in_([
                 TechnicianStatus.AVAILABLE,
                 TechnicianStatus.ON_MISSION,
@@ -1218,7 +1242,7 @@ class FieldServiceService:
         # En attente d'assignation
         pending = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id,
-            Intervention.technician_id == None,
+            Intervention.technician_id is None,
             Intervention.status == InterventionStatus.SCHEDULED
         ).count()
 
@@ -1244,7 +1268,7 @@ class FieldServiceService:
         # Satisfaction moyenne
         avg_sat = self.db.query(func.avg(Intervention.customer_rating)).filter(
             Intervention.tenant_id == self.tenant_id,
-            Intervention.customer_rating != None,
+            Intervention.customer_rating is not None,
             Intervention.created_at >= since
         ).scalar() or 0
 

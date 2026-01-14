@@ -12,39 +12,29 @@ IMPORTANT: Ce module utilise les fonctions SAFE de error_response.py qui:
 """
 
 import traceback
-import hashlib
+from collections.abc import Callable
 from datetime import datetime
-from typing import Optional, Callable
+
+from fastapi import HTTPException
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from app.core.database import SessionLocal
-from app.core.logging_config import get_logger, get_correlation_id
-
-from .models import (
-    ErrorDetection,
-    ErrorSeverity,
-    ErrorSource,
-    ErrorType,
-    Environment,
-    GuardianConfig,
-)
-from .service import GuardianService
-from .schemas import ErrorDetectionCreate
+from app.core.logging_config import get_correlation_id, get_logger
 
 # Import des fonctions SAFE de gestion des erreurs
 # Ces fonctions sont dans un module séparé pour éviter les imports circulaires
-from .error_response import (
-    build_error_response,
-    build_safe_error_response,
-    get_error_type_for_status,
-    get_error_severity_for_status,
-    DEFAULT_ERROR_MESSAGES,
+from .models import (
+    Environment,
+    ErrorSeverity,
+    ErrorSource,
+    ErrorType,
+    GuardianConfig,
 )
+from .schemas import ErrorDetectionCreate
+from .service import GuardianService
 
 logger = get_logger(__name__)
 
@@ -134,7 +124,6 @@ class GuardianMiddleware(BaseHTTPMiddleware):
         # Exécuter la requête
         start_time = datetime.utcnow()
         response = None
-        error_captured = None
 
         try:
             response = await call_next(request)
@@ -152,7 +141,6 @@ class GuardianMiddleware(BaseHTTPMiddleware):
 
         except HTTPException as e:
             # Erreur HTTP FastAPI
-            error_captured = e
             await self._record_exception(
                 request=request,
                 exception=e,
@@ -164,7 +152,6 @@ class GuardianMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             # Erreur non gérée
-            error_captured = e
             await self._record_exception(
                 request=request,
                 exception=e,
@@ -178,7 +165,7 @@ class GuardianMiddleware(BaseHTTPMiddleware):
         self,
         request: Request,
         response: Response,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
         start_time: datetime
     ):
         """Enregistre une erreur HTTP."""
@@ -245,7 +232,7 @@ class GuardianMiddleware(BaseHTTPMiddleware):
         self,
         request: Request,
         exception: Exception,
-        tenant_id: Optional[str],
+        tenant_id: str | None,
         start_time: datetime,
         http_status: int = 500
     ):
@@ -362,7 +349,7 @@ class GuardianMiddleware(BaseHTTPMiddleware):
 
         return ErrorType.EXCEPTION
 
-    def _extract_module(self, path: str) -> Optional[str]:
+    def _extract_module(self, path: str) -> str | None:
         """Extrait le nom du module depuis le chemin."""
         # /api/v1/commercial/... -> commercial
         parts = path.strip("/").split("/")

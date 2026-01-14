@@ -9,47 +9,48 @@ Principes de gouvernance:
 - Traçabilité complète de toutes les actions
 """
 
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from .service import AIAssistantService
+
 from .schemas import (
-    # Conversation
-    ConversationCreate,
-    ConversationResponse,
-    MessageCreate,
-    MessageResponse,
+    AIConfigResponse,
+    # Config
+    AIConfigUpdate,
+    AIHealthCheck,
     AIQuestionRequest,
     AIQuestionResponse,
+    # Dashboard
+    AIStats,
     # Analysis
     AnalysisRequest,
     AnalysisResponse,
+    # Conversation
+    ConversationCreate,
+    ConversationResponse,
+    DecisionConfirmation,
     # Decision Support
     DecisionSupportCreate,
     DecisionSupportResponse,
-    DecisionConfirmation,
-    # Risk
-    RiskAlertCreate,
-    RiskAlertResponse,
-    RiskAcknowledge,
-    RiskResolve,
+    # Feedback
+    FeedbackCreate,
+    MessageCreate,
+    MessageResponse,
     # Prediction
     PredictionRequest,
     PredictionResponse,
-    # Feedback
-    FeedbackCreate,
-    # Config
-    AIConfigUpdate,
-    AIConfigResponse,
-    # Dashboard
-    AIStats,
-    AIHealthCheck,
+    RiskAcknowledge,
+    # Risk
+    RiskAlertCreate,
+    RiskAlertResponse,
+    RiskResolve,
     # Synthesis
     SynthesisRequest,
     SynthesisResponse,
 )
+from .service import AIAssistantService
 
 router = APIRouter(prefix="/ai", tags=["AI Assistant"])
 
@@ -82,12 +83,12 @@ def create_conversation(
     return service.create_conversation(user_id, data)
 
 
-@router.get("/conversations", response_model=List[ConversationResponse])
+@router.get("/conversations", response_model=list[ConversationResponse])
 def list_conversations(
     tenant_id: str = Query(...),
     user_id: int = Query(...),
-    is_active: Optional[bool] = None,
-    module_source: Optional[str] = None,
+    is_active: bool | None = None,
+    module_source: str | None = None,
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db)
@@ -113,7 +114,7 @@ def get_conversation(
     return conversation
 
 
-@router.get("/conversations/{conversation_id}/messages", response_model=List[MessageResponse])
+@router.get("/conversations/{conversation_id}/messages", response_model=list[MessageResponse])
 def get_conversation_messages(
     conversation_id: int,
     tenant_id: str = Query(...),
@@ -189,12 +190,12 @@ def create_analysis(
     return service.create_analysis(user_id, data, context)
 
 
-@router.get("/analyses", response_model=List[AnalysisResponse])
+@router.get("/analyses", response_model=list[AnalysisResponse])
 def list_analyses(
     tenant_id: str = Query(...),
-    user_id: Optional[int] = None,
-    analysis_type: Optional[str] = None,
-    status: Optional[str] = None,
+    user_id: int | None = None,
+    analysis_type: str | None = None,
+    status: str | None = None,
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db)
@@ -236,12 +237,12 @@ def create_decision_support(
     return service.create_decision_support(user_id, data, context)
 
 
-@router.get("/decisions", response_model=List[DecisionSupportResponse])
+@router.get("/decisions", response_model=list[DecisionSupportResponse])
 def list_decisions(
     tenant_id: str = Query(...),
-    status: Optional[str] = None,
-    is_red_point: Optional[bool] = None,
-    priority: Optional[str] = None,
+    status: str | None = None,
+    is_red_point: bool | None = None,
+    priority: str | None = None,
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db)
@@ -291,7 +292,7 @@ def confirm_decision(
 @router.post("/decisions/{decision_id}/reject", response_model=DecisionSupportResponse)
 def reject_decision(
     decision_id: int,
-    notes: Optional[str] = None,
+    notes: str | None = None,
     tenant_id: str = Query(...),
     user_id: int = Query(...),
     request: Request = None,
@@ -320,12 +321,12 @@ def create_risk_alert(
     return service.create_risk_alert(data, context)
 
 
-@router.get("/risks", response_model=List[RiskAlertResponse])
+@router.get("/risks", response_model=list[RiskAlertResponse])
 def list_risk_alerts(
     tenant_id: str = Query(...),
-    status: Optional[str] = None,
-    risk_level: Optional[str] = None,
-    category: Optional[str] = None,
+    status: str | None = None,
+    risk_level: str | None = None,
+    category: str | None = None,
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db)
@@ -397,11 +398,11 @@ def create_prediction(
     return service.create_prediction(user_id, data, context)
 
 
-@router.get("/predictions", response_model=List[PredictionResponse])
+@router.get("/predictions", response_model=list[PredictionResponse])
 def list_predictions(
     tenant_id: str = Query(...),
-    prediction_type: Optional[str] = None,
-    status: Optional[str] = None,
+    prediction_type: str | None = None,
+    status: str | None = None,
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db)

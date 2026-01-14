@@ -4,24 +4,28 @@ AZALS - Module Backup - Router
 Endpoints API pour les sauvegardes chiffrées.
 """
 
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
 
 from .models import BackupStatus
 from .schemas import (
-    BackupConfigCreate, BackupConfigUpdate, BackupConfigResponse,
-    BackupCreate, BackupResponse, BackupDetail,
-    RestoreRequest, RestoreResponse,
-    BackupDashboard
+    BackupConfigCreate,
+    BackupConfigResponse,
+    BackupConfigUpdate,
+    BackupCreate,
+    BackupDashboard,
+    BackupDetail,
+    BackupResponse,
+    RestoreRequest,
+    RestoreResponse,
 )
 from .service import get_backup_service
-
 
 router = APIRouter(prefix="/backup", tags=["Sauvegardes Chiffrées"])
 
@@ -92,9 +96,9 @@ def create_backup(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("", response_model=List[BackupResponse])
+@router.get("", response_model=list[BackupResponse])
 def list_backups(
-    status: Optional[BackupStatus] = None,
+    status: BackupStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service = Depends(get_service),

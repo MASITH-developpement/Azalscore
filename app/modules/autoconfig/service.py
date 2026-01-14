@@ -5,16 +5,25 @@ AZALS MODULE T1 - Service Configuration Automatique
 Logique métier pour la configuration automatique par fonction.
 """
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
 import json
-from sqlalchemy.orm import Session
+from datetime import datetime
+from typing import Any
+
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
 
 from .models import (
-    JobProfile, ProfileAssignment, PermissionOverride,
-    OnboardingProcess, OffboardingProcess, AutoConfigLog,
-    ProfileLevel, OverrideType, OverrideStatus, OnboardingStatus, OffboardingStatus
+    AutoConfigLog,
+    JobProfile,
+    OffboardingProcess,
+    OffboardingStatus,
+    OnboardingProcess,
+    OnboardingStatus,
+    OverrideStatus,
+    OverrideType,
+    PermissionOverride,
+    ProfileAssignment,
+    ProfileLevel,
 )
 from .profiles import PREDEFINED_PROFILES, get_best_profile_match
 
@@ -30,7 +39,7 @@ class AutoConfigService:
     # GESTION DES PROFILS
     # ========================================================================
 
-    def initialize_predefined_profiles(self, created_by: Optional[int] = None) -> int:
+    def initialize_predefined_profiles(self, created_by: int | None = None) -> int:
         """
         Initialise les profils prédéfinis pour le tenant.
         Retourne le nombre de profils créés.
@@ -72,32 +81,32 @@ class AutoConfigService:
 
         return count
 
-    def get_profile_by_code(self, code: str) -> Optional[JobProfile]:
+    def get_profile_by_code(self, code: str) -> JobProfile | None:
         """Récupère un profil par code."""
         return self.db.query(JobProfile).filter(
             JobProfile.tenant_id == self.tenant_id,
             JobProfile.code == code
         ).first()
 
-    def get_profile(self, profile_id: int) -> Optional[JobProfile]:
+    def get_profile(self, profile_id: int) -> JobProfile | None:
         """Récupère un profil par ID."""
         return self.db.query(JobProfile).filter(
             JobProfile.tenant_id == self.tenant_id,
             JobProfile.id == profile_id
         ).first()
 
-    def list_profiles(self, include_inactive: bool = False) -> List[JobProfile]:
+    def list_profiles(self, include_inactive: bool = False) -> list[JobProfile]:
         """Liste tous les profils."""
         query = self.db.query(JobProfile).filter(
             JobProfile.tenant_id == self.tenant_id
         )
 
         if not include_inactive:
-            query = query.filter(JobProfile.is_active == True)
+            query = query.filter(JobProfile.is_active)
 
         return query.order_by(JobProfile.priority, JobProfile.hierarchy_order).all()
 
-    def detect_profile(self, job_title: str, department: Optional[str] = None) -> Optional[JobProfile]:
+    def detect_profile(self, job_title: str, department: str | None = None) -> JobProfile | None:
         """
         Détecte le profil le plus approprié pour un titre/département.
         """
@@ -145,10 +154,10 @@ class AutoConfigService:
         self,
         user_id: int,
         job_title: str,
-        department: Optional[str] = None,
-        manager_id: Optional[int] = None,
-        assigned_by: Optional[int] = None
-    ) -> Optional[ProfileAssignment]:
+        department: str | None = None,
+        manager_id: int | None = None,
+        assigned_by: int | None = None
+    ) -> ProfileAssignment | None:
         """
         Attribue automatiquement un profil à un utilisateur.
         Retourne l'attribution créée ou None si aucun profil trouvé.
@@ -165,7 +174,7 @@ class AutoConfigService:
         self.db.query(ProfileAssignment).filter(
             ProfileAssignment.tenant_id == self.tenant_id,
             ProfileAssignment.user_id == user_id,
-            ProfileAssignment.is_active == True
+            ProfileAssignment.is_active
         ).update({"is_active": False, "revoked_at": datetime.utcnow()})
 
         # Créer la nouvelle attribution
@@ -199,8 +208,8 @@ class AutoConfigService:
         user_id: int,
         profile_code: str,
         assigned_by: int,
-        job_title: Optional[str] = None,
-        department: Optional[str] = None
+        job_title: str | None = None,
+        department: str | None = None
     ) -> ProfileAssignment:
         """Attribue manuellement un profil à un utilisateur."""
         profile = self.get_profile_by_code(profile_code)
@@ -211,7 +220,7 @@ class AutoConfigService:
         self.db.query(ProfileAssignment).filter(
             ProfileAssignment.tenant_id == self.tenant_id,
             ProfileAssignment.user_id == user_id,
-            ProfileAssignment.is_active == True
+            ProfileAssignment.is_active
         ).update({"is_active": False, "revoked_at": datetime.utcnow()})
 
         # Créer la nouvelle attribution
@@ -235,15 +244,15 @@ class AutoConfigService:
         self.db.commit()
         return assignment
 
-    def get_user_profile(self, user_id: int) -> Optional[ProfileAssignment]:
+    def get_user_profile(self, user_id: int) -> ProfileAssignment | None:
         """Récupère l'attribution de profil active d'un utilisateur."""
         return self.db.query(ProfileAssignment).filter(
             ProfileAssignment.tenant_id == self.tenant_id,
             ProfileAssignment.user_id == user_id,
-            ProfileAssignment.is_active == True
+            ProfileAssignment.is_active
         ).first()
 
-    def get_user_effective_config(self, user_id: int) -> Dict[str, Any]:
+    def get_user_effective_config(self, user_id: int) -> dict[str, Any]:
         """
         Calcule la configuration effective d'un utilisateur.
         Combine profil + overrides.
@@ -323,14 +332,14 @@ class AutoConfigService:
         override_type: OverrideType,
         reason: str,
         requested_by: int,
-        added_roles: Optional[List[str]] = None,
-        removed_roles: Optional[List[str]] = None,
-        added_permissions: Optional[List[str]] = None,
-        removed_permissions: Optional[List[str]] = None,
-        added_modules: Optional[List[str]] = None,
-        removed_modules: Optional[List[str]] = None,
-        expires_at: Optional[datetime] = None,
-        business_justification: Optional[str] = None
+        added_roles: list[str] | None = None,
+        removed_roles: list[str] | None = None,
+        added_permissions: list[str] | None = None,
+        removed_permissions: list[str] | None = None,
+        added_modules: list[str] | None = None,
+        removed_modules: list[str] | None = None,
+        expires_at: datetime | None = None,
+        business_justification: str | None = None
     ) -> PermissionOverride:
         """Demande un override de permissions."""
         override = PermissionOverride(
@@ -474,7 +483,7 @@ class AutoConfigService:
 
         return count
 
-    def list_user_overrides(self, user_id: int, include_inactive: bool = False) -> List[PermissionOverride]:
+    def list_user_overrides(self, user_id: int, include_inactive: bool = False) -> list[PermissionOverride]:
         """Liste les overrides d'un utilisateur."""
         query = self.db.query(PermissionOverride).filter(
             PermissionOverride.tenant_id == self.tenant_id,
@@ -498,11 +507,11 @@ class AutoConfigService:
         email: str,
         job_title: str,
         start_date: datetime,
-        created_by: Optional[int] = None,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        department: Optional[str] = None,
-        manager_id: Optional[int] = None
+        created_by: int | None = None,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        department: str | None = None,
+        manager_id: int | None = None
     ) -> OnboardingProcess:
         """Crée un processus d'onboarding."""
         # Détecter le profil
@@ -537,7 +546,7 @@ class AutoConfigService:
         self.db.commit()
         return onboarding
 
-    def execute_onboarding(self, onboarding_id: int, executed_by: Optional[int] = None) -> Dict[str, Any]:
+    def execute_onboarding(self, onboarding_id: int, executed_by: int | None = None) -> dict[str, Any]:
         """
         Exécute le processus d'onboarding.
         Crée le compte utilisateur et attribue les droits.
@@ -633,7 +642,7 @@ class AutoConfigService:
         self.db.commit()
         return result
 
-    def list_pending_onboardings(self) -> List[OnboardingProcess]:
+    def list_pending_onboardings(self) -> list[OnboardingProcess]:
         """Liste les onboardings en attente."""
         return self.db.query(OnboardingProcess).filter(
             OnboardingProcess.tenant_id == self.tenant_id,
@@ -650,8 +659,8 @@ class AutoConfigService:
         departure_date: datetime,
         departure_type: str,
         created_by: int,
-        transfer_to_user_id: Optional[int] = None,
-        transfer_notes: Optional[str] = None
+        transfer_to_user_id: int | None = None,
+        transfer_notes: str | None = None
     ) -> OffboardingProcess:
         """Crée un processus d'offboarding."""
         offboarding = OffboardingProcess(
@@ -678,7 +687,7 @@ class AutoConfigService:
         self.db.commit()
         return offboarding
 
-    def execute_offboarding(self, offboarding_id: int, executed_by: Optional[int] = None) -> Dict[str, Any]:
+    def execute_offboarding(self, offboarding_id: int, executed_by: int | None = None) -> dict[str, Any]:
         """
         Exécute le processus d'offboarding.
         Désactive le compte et révoque les accès.
@@ -776,7 +785,7 @@ class AutoConfigService:
         self.db.commit()
         return result
 
-    def list_scheduled_offboardings(self) -> List[OffboardingProcess]:
+    def list_scheduled_offboardings(self) -> list[OffboardingProcess]:
         """Liste les offboardings planifiés."""
         return self.db.query(OffboardingProcess).filter(
             OffboardingProcess.tenant_id == self.tenant_id,
@@ -814,13 +823,13 @@ class AutoConfigService:
         self,
         action: str,
         entity_type: str,
-        entity_id: Optional[int],
-        user_id: Optional[int],
-        old_values: Dict = None,
-        new_values: Dict = None,
-        details: Dict = None,
+        entity_id: int | None,
+        user_id: int | None,
+        old_values: dict = None,
+        new_values: dict = None,
+        details: dict = None,
         source: str = "AUTO",
-        triggered_by: Optional[int] = None,
+        triggered_by: int | None = None,
         success: bool = True,
         error_message: str = None
     ) -> None:

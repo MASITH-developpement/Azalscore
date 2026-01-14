@@ -7,21 +7,26 @@ Modèles SQLAlchemy pour l'automatisation comptable complète.
 
 import enum
 import uuid
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, List, Dict, Any
+from datetime import datetime
 
 from sqlalchemy import (
-    Column, String, Integer, Boolean, DateTime, Date,
-    Text, ForeignKey, Enum, Numeric, Index, CheckConstraint,
-    UniqueConstraint
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
 
+from app.core.types import JSON, UniversalUUID
 from app.db import Base
-from app.core.types import UniversalUUID, JSON
-
 
 # ============================================================================
 # ENUMS

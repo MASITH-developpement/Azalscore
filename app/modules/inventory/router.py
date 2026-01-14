@@ -5,40 +5,57 @@ AZALS MODULE M5 - Router Inventaire
 API REST pour la gestion des stocks et logistique.
 """
 
-from datetime import datetime, date
-from typing import Optional, List
+from datetime import date, datetime
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.core.models import User
 
-from .service import get_inventory_service
-from .models import ProductStatus, MovementType, MovementStatus, InventoryStatus, PickingStatus, LotStatus
+from .models import InventoryStatus, LotStatus, MovementStatus, MovementType, PickingStatus, ProductStatus
 from .schemas import (
     # Catégories
-    CategoryCreate, CategoryUpdate, CategoryResponse,
-    # Entrepôts
-    WarehouseCreate, WarehouseUpdate, WarehouseResponse,
-    # Emplacements
-    LocationCreate, LocationResponse,
-    # Produits
-    ProductCreate, ProductUpdate, ProductResponse, ProductList,
-    # Stock
-    StockLevelResponse, LotCreate, LotResponse,
-    # Numéros de série
-    SerialCreate, SerialResponse,
-    # Mouvements
-    MovementCreate, MovementResponse, MovementList,
+    CategoryCreate,
+    CategoryResponse,
+    CategoryUpdate,
+    CountLineUpdate,
     # Inventaires
-    InventoryCountCreate, InventoryCountResponse, CountLineUpdate,
-    # Préparations
-    PickingCreate, PickingResponse, PickingLineUpdate,
+    InventoryCountCreate,
+    InventoryCountResponse,
     # Valorisation
     InventoryDashboard,
+    # Emplacements
+    LocationCreate,
+    LocationResponse,
+    LotCreate,
+    LotResponse,
+    # Mouvements
+    MovementCreate,
+    MovementList,
+    MovementResponse,
+    # Préparations
+    PickingCreate,
+    PickingLineUpdate,
+    PickingResponse,
+    # Produits
+    ProductCreate,
+    ProductList,
+    ProductResponse,
+    ProductUpdate,
+    # Numéros de série
+    SerialCreate,
+    SerialResponse,
+    # Stock
+    StockLevelResponse,
+    # Entrepôts
+    WarehouseCreate,
+    WarehouseResponse,
+    WarehouseUpdate,
 )
+from .service import get_inventory_service
 
 router = APIRouter(prefix="/api/v1/inventory", tags=["M5 - Inventaire"])
 
@@ -58,9 +75,9 @@ async def create_category(
     return service.create_category(data)
 
 
-@router.get("/categories", response_model=List[CategoryResponse])
+@router.get("/categories", response_model=list[CategoryResponse])
 async def list_categories(
-    parent_id: Optional[UUID] = None,
+    parent_id: UUID | None = None,
     active_only: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -117,7 +134,7 @@ async def create_warehouse(
     return service.create_warehouse(data)
 
 
-@router.get("/warehouses", response_model=List[WarehouseResponse])
+@router.get("/warehouses", response_model=list[WarehouseResponse])
 async def list_warehouses(
     active_only: bool = True,
     skip: int = Query(0, ge=0),
@@ -160,7 +177,7 @@ async def update_warehouse(
     return warehouse
 
 
-@router.get("/warehouses/{warehouse_id}/stock", response_model=List[StockLevelResponse])
+@router.get("/warehouses/{warehouse_id}/stock", response_model=list[StockLevelResponse])
 async def get_warehouse_stock(
     warehouse_id: UUID,
     skip: int = Query(0, ge=0),
@@ -190,9 +207,9 @@ async def create_location(
     return service.create_location(warehouse_id, data)
 
 
-@router.get("/locations", response_model=List[LocationResponse])
+@router.get("/locations", response_model=list[LocationResponse])
 async def list_locations(
-    warehouse_id: Optional[UUID] = None,
+    warehouse_id: UUID | None = None,
     active_only: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -236,9 +253,9 @@ async def create_product(
 
 @router.get("/products", response_model=ProductList)
 async def list_products(
-    category_id: Optional[UUID] = None,
-    status: Optional[ProductStatus] = None,
-    search: Optional[str] = None,
+    category_id: UUID | None = None,
+    status: ProductStatus | None = None,
+    search: str | None = None,
     active_only: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -294,7 +311,7 @@ async def activate_product(
     return product
 
 
-@router.get("/products/{product_id}/stock", response_model=List[StockLevelResponse])
+@router.get("/products/{product_id}/stock", response_model=list[StockLevelResponse])
 async def get_product_stock(
     product_id: UUID,
     db: Session = Depends(get_db),
@@ -320,11 +337,11 @@ async def create_lot(
     return service.create_lot(data)
 
 
-@router.get("/lots", response_model=List[LotResponse])
+@router.get("/lots", response_model=list[LotResponse])
 async def list_lots(
-    product_id: Optional[UUID] = None,
-    status: Optional[LotStatus] = None,
-    expiring_before: Optional[date] = None,
+    product_id: UUID | None = None,
+    status: LotStatus | None = None,
+    expiring_before: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -396,11 +413,11 @@ async def create_movement(
 
 @router.get("/movements", response_model=MovementList)
 async def list_movements(
-    type: Optional[MovementType] = None,
-    status: Optional[MovementStatus] = None,
-    warehouse_id: Optional[UUID] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    type: MovementType | None = None,
+    status: MovementStatus | None = None,
+    warehouse_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -469,10 +486,10 @@ async def create_inventory_count(
     return service.create_inventory_count(data)
 
 
-@router.get("/counts", response_model=List[InventoryCountResponse])
+@router.get("/counts", response_model=list[InventoryCountResponse])
 async def list_inventory_counts(
-    status: Optional[InventoryStatus] = None,
-    warehouse_id: Optional[UUID] = None,
+    status: InventoryStatus | None = None,
+    warehouse_id: UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -557,11 +574,11 @@ async def create_picking(
     return service.create_picking(data)
 
 
-@router.get("/pickings", response_model=List[PickingResponse])
+@router.get("/pickings", response_model=list[PickingResponse])
 async def list_pickings(
-    status: Optional[PickingStatus] = None,
-    warehouse_id: Optional[UUID] = None,
-    assigned_to: Optional[UUID] = None,
+    status: PickingStatus | None = None,
+    warehouse_id: UUID | None = None,
+    assigned_to: UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),

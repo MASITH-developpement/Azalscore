@@ -12,49 +12,45 @@ RBAC appliqué:
 """
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 
-from .models import InterventionStatut, InterventionPriorite
+from .models import InterventionPriorite, InterventionStatut
 from .schemas import (
-    # Donneur d'ordre
-    DonneurOrdreCreate,
-    DonneurOrdreUpdate,
-    DonneurOrdreResponse,
-    # Intervention
-    InterventionCreate,
-    InterventionUpdate,
-    InterventionPlanifier,
-    InterventionResponse,
-    InterventionListResponse,
     # Actions terrain
     ArriveeRequest,
-    DemarrageRequest,
+    DonneurOrdreCreate,
+    DonneurOrdreResponse,
+    DonneurOrdreUpdate,
     FinInterventionRequest,
-    SignatureRapportRequest,
-    PhotoRequest,
-    # Rapports
-    RapportInterventionUpdate,
-    RapportInterventionResponse,
-    RapportFinalResponse,
-    RapportFinalGenerateRequest,
+    # Intervention
+    InterventionCreate,
+    InterventionListResponse,
+    InterventionPlanifier,
+    InterventionResponse,
     # Stats
     InterventionStats,
+    InterventionUpdate,
+    PhotoRequest,
+    RapportFinalGenerateRequest,
+    RapportFinalResponse,
+    RapportInterventionResponse,
+    # Rapports
+    RapportInterventionUpdate,
+    SignatureRapportRequest,
 )
 from .service import (
+    InterventionNotFoundError,
     InterventionsService,
     InterventionWorkflowError,
-    InterventionNotFoundError,
     RapportLockedError,
 )
-
 
 router = APIRouter(prefix="/api/v1/interventions", tags=["M-INT - Interventions"])
 
@@ -108,7 +104,7 @@ def get_service(
 
 @router.get(
     "/donneurs-ordre",
-    response_model=List[DonneurOrdreResponse],
+    response_model=list[DonneurOrdreResponse],
     summary="Lister les donneurs d'ordre",
     description="Liste tous les donneurs d'ordre du tenant."
 )
@@ -187,15 +183,15 @@ async def update_donneur_ordre(
     summary="Lister les interventions"
 )
 async def list_interventions(
-    statut: Optional[InterventionStatut] = None,
-    priorite: Optional[InterventionPriorite] = None,
-    client_id: Optional[UUID] = None,
-    donneur_ordre_id: Optional[UUID] = None,
-    projet_id: Optional[UUID] = None,
-    intervenant_id: Optional[UUID] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
-    search: Optional[str] = None,
+    statut: InterventionStatut | None = None,
+    priorite: InterventionPriorite | None = None,
+    client_id: UUID | None = None,
+    donneur_ordre_id: UUID | None = None,
+    projet_id: UUID | None = None,
+    intervenant_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: InterventionsService = Depends(get_service),
@@ -655,12 +651,12 @@ async def signer_rapport(
 
 @router.get(
     "/rapports-finaux",
-    response_model=List[RapportFinalResponse],
+    response_model=list[RapportFinalResponse],
     summary="Lister les rapports finaux"
 )
 async def list_rapports_final(
-    projet_id: Optional[UUID] = None,
-    donneur_ordre_id: Optional[UUID] = None,
+    projet_id: UUID | None = None,
+    donneur_ordre_id: UUID | None = None,
     service: InterventionsService = Depends(get_service),
     _user: User = Depends(get_current_user)
 ):

@@ -5,42 +5,58 @@ AZALS MODULE T7 - Router API Web Transverse
 Points d'entrée REST pour la gestion des composants web.
 """
 
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
-from .service import get_web_service
-from .models import (
-    ThemeMode, WidgetType, WidgetSize, ComponentCategory,
-    MenuType, PageType
-)
+from .models import ComponentCategory, MenuType, PageType, ThemeMode, WidgetSize, WidgetType
 from .schemas import (
-    # Thèmes
-    ThemeCreate, ThemeUpdate, ThemeResponse, PaginatedThemesResponse,
-    ThemeModeEnum,
-    # Widgets
-    WidgetCreate, WidgetUpdate, WidgetResponse, PaginatedWidgetsResponse,
-    WidgetTypeEnum, DashboardCreate, DashboardUpdate, DashboardResponse, PaginatedDashboardsResponse,
-    # Menus
-    MenuItemCreate, MenuItemUpdate, MenuItemResponse, MenuTreeNode,
-    MenuTypeEnum,
-    # Préférences
-    UserPreferenceCreate, UserPreferenceResponse,
-    # Raccourcis
-    ShortcutCreate, ShortcutResponse,
-    # Pages
-    CustomPageCreate, CustomPageResponse, PaginatedPagesResponse,
-    PageTypeEnum,
-    # Composants
-    ComponentCreate, ComponentResponse, PaginatedComponentsResponse,
     ComponentCategoryEnum,
+    # Composants
+    ComponentCreate,
+    ComponentResponse,
+    # Pages
+    CustomPageCreate,
+    CustomPageResponse,
+    DashboardCreate,
+    DashboardResponse,
+    DashboardUpdate,
+    # Menus
+    MenuItemCreate,
+    MenuItemResponse,
+    MenuItemUpdate,
+    MenuTreeNode,
+    MenuTypeEnum,
+    PageTypeEnum,
+    PaginatedComponentsResponse,
+    PaginatedDashboardsResponse,
+    PaginatedPagesResponse,
+    PaginatedThemesResponse,
+    PaginatedWidgetsResponse,
+    # Raccourcis
+    ShortcutCreate,
+    ShortcutResponse,
+    # Thèmes
+    ThemeCreate,
+    ThemeModeEnum,
+    ThemeResponse,
+    ThemeUpdate,
     # Config
-    UIConfigResponse
+    UIConfigResponse,
+    # Préférences
+    UserPreferenceCreate,
+    UserPreferenceResponse,
+    # Widgets
+    WidgetCreate,
+    WidgetResponse,
+    WidgetTypeEnum,
+    WidgetUpdate,
 )
+from .service import get_web_service
 
 router = APIRouter(prefix="/api/v1/web", tags=["Web"])
 
@@ -73,8 +89,8 @@ async def create_theme(
 
 @router.get("/themes", response_model=PaginatedThemesResponse)
 async def list_themes(
-    mode: Optional[ThemeModeEnum] = None,
-    is_active: Optional[bool] = True,
+    mode: ThemeModeEnum | None = None,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -171,8 +187,8 @@ async def create_widget(
 
 @router.get("/widgets", response_model=PaginatedWidgetsResponse)
 async def list_widgets(
-    widget_type: Optional[WidgetTypeEnum] = None,
-    is_active: Optional[bool] = True,
+    widget_type: WidgetTypeEnum | None = None,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -263,8 +279,8 @@ async def create_dashboard(
 
 @router.get("/dashboards", response_model=PaginatedDashboardsResponse)
 async def list_dashboards(
-    is_public: Optional[bool] = None,
-    is_active: Optional[bool] = True,
+    is_public: bool | None = None,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -368,11 +384,11 @@ async def create_menu_item(
     )
 
 
-@router.get("/menu-items", response_model=List[MenuItemResponse])
+@router.get("/menu-items", response_model=list[MenuItemResponse])
 async def list_menu_items(
     menu_type: MenuTypeEnum = MenuTypeEnum.MAIN,
-    parent_id: Optional[int] = None,
-    is_active: Optional[bool] = True,
+    parent_id: int | None = None,
+    is_active: bool | None = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -385,7 +401,7 @@ async def list_menu_items(
     )
 
 
-@router.get("/menu-tree", response_model=List[MenuTreeNode])
+@router.get("/menu-tree", response_model=list[MenuTreeNode])
 async def get_menu_tree(
     menu_type: MenuTypeEnum = MenuTypeEnum.MAIN,
     db: Session = Depends(get_db),
@@ -481,10 +497,10 @@ async def create_shortcut(
     return service.create_shortcut(**shortcut.model_dump())
 
 
-@router.get("/shortcuts", response_model=List[ShortcutResponse])
+@router.get("/shortcuts", response_model=list[ShortcutResponse])
 async def list_shortcuts(
-    context: Optional[str] = None,
-    is_active: Optional[bool] = True,
+    context: str | None = None,
+    is_active: bool | None = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -521,8 +537,8 @@ async def create_custom_page(
 
 @router.get("/pages", response_model=PaginatedPagesResponse)
 async def list_custom_pages(
-    page_type: Optional[PageTypeEnum] = None,
-    is_published: Optional[bool] = None,
+    page_type: PageTypeEnum | None = None,
+    is_published: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -606,8 +622,8 @@ async def create_component(
 
 @router.get("/components", response_model=PaginatedComponentsResponse)
 async def list_components(
-    category: Optional[ComponentCategoryEnum] = None,
-    is_active: Optional[bool] = True,
+    category: ComponentCategoryEnum | None = None,
+    is_active: bool | None = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),

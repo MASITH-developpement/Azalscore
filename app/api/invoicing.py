@@ -1,22 +1,23 @@
 """
 AZALS API - Invoicing (Devis, Factures, Avoirs)
 """
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
-from uuid import UUID
-from pydantic import BaseModel, Field
 from datetime import date, datetime
 from decimal import Decimal
+from uuid import UUID
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
-
-from app.modules.commercial.models import DocumentType, DocumentStatus
+from app.modules.commercial.models import DocumentStatus, DocumentType
 from app.modules.commercial.schemas import (
-    DocumentCreate, DocumentUpdate, DocumentResponse, DocumentList,
-    DocumentLineCreate, DocumentLineResponse, PaymentCreate, PaymentResponse
+    DocumentCreate,
+    DocumentLineCreate,
+    DocumentLineResponse,
+    DocumentUpdate,
 )
 from app.modules.commercial.service import get_commercial_service
 
@@ -33,17 +34,17 @@ class InvoiceLineInput(BaseModel):
     quantity: Decimal = Field(default=Decimal("1"))
     unit_price: Decimal
     vat_rate: Decimal = Field(default=Decimal("20"))
-    discount_percent: Optional[Decimal] = None
+    discount_percent: Decimal | None = None
 
 
 class InvoiceCreate(BaseModel):
     """Schema de creation de document facturation."""
     client_id: UUID
-    date: Optional[date] = None
-    due_date: Optional[date] = None
-    notes: Optional[str] = None
-    payment_terms: Optional[str] = None
-    lines: List[InvoiceLineInput] = []
+    date: date | None = None
+    due_date: date | None = None
+    notes: str | None = None
+    payment_terms: str | None = None
+    lines: list[InvoiceLineInput] = []
 
 
 class InvoiceResponse(BaseModel):
@@ -55,7 +56,7 @@ class InvoiceResponse(BaseModel):
     client_id: UUID
     client_name: str
     date: date
-    due_date: Optional[date] = None
+    due_date: date | None = None
     total_ht: Decimal
     total_ttc: Decimal
     currency: str = "EUR"
@@ -66,14 +67,14 @@ class InvoiceResponse(BaseModel):
 
 class InvoiceDetailResponse(InvoiceResponse):
     """Response avec lignes."""
-    lines: List[DocumentLineResponse] = []
-    notes: Optional[str] = None
-    payment_terms: Optional[str] = None
+    lines: list[DocumentLineResponse] = []
+    notes: str | None = None
+    payment_terms: str | None = None
 
 
 class InvoiceListResponse(BaseModel):
     """Liste paginee."""
-    items: List[InvoiceResponse]
+    items: list[InvoiceResponse]
     total: int
     page: int
     page_size: int
@@ -103,9 +104,9 @@ def get_document_type(type_name: str) -> DocumentType:
 
 @router.get("/quotes", response_model=InvoiceListResponse)
 async def list_quotes(
-    status: Optional[str] = None,
-    client_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    client_id: UUID | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -314,9 +315,9 @@ async def send_quote(
 
 @router.get("/invoices", response_model=InvoiceListResponse)
 async def list_invoices(
-    status: Optional[str] = None,
-    client_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    client_id: UUID | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -467,9 +468,9 @@ async def send_invoice(
 
 @router.get("/credits", response_model=InvoiceListResponse)
 async def list_credits(
-    status: Optional[str] = None,
-    client_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    client_id: UUID | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),

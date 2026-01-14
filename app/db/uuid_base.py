@@ -26,10 +26,10 @@ Pour les FK:
 """
 
 import uuid as uuid_module
+
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import declared_attr, Mapped, mapped_column
-from typing import Optional
+from sqlalchemy.orm import declared_attr
 
 
 def uuid_column(primary_key: bool = False,

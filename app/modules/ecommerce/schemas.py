@@ -6,14 +6,10 @@ Schémas Pydantic pour validation et sérialisation.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
+
 from pydantic import BaseModel, EmailStr, Field
 
-from .models import (
-    ProductStatus, ProductType, OrderStatus, PaymentStatus,
-    ShippingStatus, DiscountType, CartStatus
-)
-
+from .models import CartStatus, DiscountType, OrderStatus, PaymentStatus, ProductStatus, ProductType, ShippingStatus
 
 # ============================================================================
 # CATEGORY SCHEMAS
@@ -23,11 +19,11 @@ class CategoryBase(BaseModel):
     """Base catégorie."""
     name: str = Field(..., min_length=1, max_length=255)
     slug: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    parent_id: Optional[int] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    image_url: Optional[str] = None
+    description: str | None = None
+    parent_id: int | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    image_url: str | None = None
     sort_order: int = 0
     is_visible: bool = True
     is_featured: bool = False
@@ -40,16 +36,16 @@ class CategoryCreate(CategoryBase):
 
 class CategoryUpdate(BaseModel):
     """Mise à jour catégorie."""
-    name: Optional[str] = None
-    slug: Optional[str] = None
-    description: Optional[str] = None
-    parent_id: Optional[int] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    image_url: Optional[str] = None
-    sort_order: Optional[int] = None
-    is_visible: Optional[bool] = None
-    is_featured: Optional[bool] = None
+    name: str | None = None
+    slug: str | None = None
+    description: str | None = None
+    parent_id: int | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    image_url: str | None = None
+    sort_order: int | None = None
+    is_visible: bool | None = None
+    is_featured: bool | None = None
 
 
 class CategoryResponse(CategoryBase):
@@ -69,7 +65,7 @@ class CategoryResponse(CategoryBase):
 class ProductImageSchema(BaseModel):
     """Image produit."""
     url: str
-    alt: Optional[str] = None
+    alt: str | None = None
     position: int = 0
 
 
@@ -78,13 +74,13 @@ class ProductBase(BaseModel):
     sku: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=255)
     slug: str = Field(..., min_length=1, max_length=255)
-    barcode: Optional[str] = None
-    short_description: Optional[str] = None
-    description: Optional[str] = None
+    barcode: str | None = None
+    short_description: str | None = None
+    description: str | None = None
     product_type: ProductType = ProductType.PHYSICAL
     price: Decimal = Field(..., ge=0)
-    compare_at_price: Optional[Decimal] = None
-    cost_price: Optional[Decimal] = None
+    compare_at_price: Decimal | None = None
+    cost_price: Decimal | None = None
     currency: str = "EUR"
     tax_class: str = "standard"
     is_taxable: bool = True
@@ -92,16 +88,16 @@ class ProductBase(BaseModel):
     stock_quantity: int = 0
     low_stock_threshold: int = 5
     allow_backorder: bool = False
-    weight: Optional[float] = None
-    length: Optional[float] = None
-    width: Optional[float] = None
-    height: Optional[float] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    images: Optional[List[ProductImageSchema]] = None
-    attributes: Optional[dict] = None
-    category_ids: Optional[List[int]] = None
-    tags: Optional[List[str]] = None
+    weight: float | None = None
+    length: float | None = None
+    width: float | None = None
+    height: float | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    images: list[ProductImageSchema] | None = None
+    attributes: dict | None = None
+    category_ids: list[int] | None = None
+    tags: list[str] | None = None
     is_visible: bool = True
     is_featured: bool = False
 
@@ -113,35 +109,35 @@ class ProductCreate(ProductBase):
 
 class ProductUpdate(BaseModel):
     """Mise à jour produit."""
-    sku: Optional[str] = None
-    name: Optional[str] = None
-    slug: Optional[str] = None
-    barcode: Optional[str] = None
-    short_description: Optional[str] = None
-    description: Optional[str] = None
-    product_type: Optional[ProductType] = None
-    status: Optional[ProductStatus] = None
-    price: Optional[Decimal] = None
-    compare_at_price: Optional[Decimal] = None
-    cost_price: Optional[Decimal] = None
-    tax_class: Optional[str] = None
-    is_taxable: Optional[bool] = None
-    track_inventory: Optional[bool] = None
-    stock_quantity: Optional[int] = None
-    low_stock_threshold: Optional[int] = None
-    allow_backorder: Optional[bool] = None
-    weight: Optional[float] = None
-    length: Optional[float] = None
-    width: Optional[float] = None
-    height: Optional[float] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    images: Optional[List[ProductImageSchema]] = None
-    attributes: Optional[dict] = None
-    category_ids: Optional[List[int]] = None
-    tags: Optional[List[str]] = None
-    is_visible: Optional[bool] = None
-    is_featured: Optional[bool] = None
+    sku: str | None = None
+    name: str | None = None
+    slug: str | None = None
+    barcode: str | None = None
+    short_description: str | None = None
+    description: str | None = None
+    product_type: ProductType | None = None
+    status: ProductStatus | None = None
+    price: Decimal | None = None
+    compare_at_price: Decimal | None = None
+    cost_price: Decimal | None = None
+    tax_class: str | None = None
+    is_taxable: bool | None = None
+    track_inventory: bool | None = None
+    stock_quantity: int | None = None
+    low_stock_threshold: int | None = None
+    allow_backorder: bool | None = None
+    weight: float | None = None
+    length: float | None = None
+    width: float | None = None
+    height: float | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    images: list[ProductImageSchema] | None = None
+    attributes: dict | None = None
+    category_ids: list[int] | None = None
+    tags: list[str] | None = None
+    is_visible: bool | None = None
+    is_featured: bool | None = None
 
 
 class ProductResponse(ProductBase):
@@ -159,7 +155,7 @@ class ProductResponse(ProductBase):
 
 class ProductListResponse(BaseModel):
     """Liste de produits paginée."""
-    items: List[ProductResponse]
+    items: list[ProductResponse]
     total: int
     page: int
     page_size: int
@@ -173,13 +169,13 @@ class ProductListResponse(BaseModel):
 class VariantBase(BaseModel):
     """Base variante."""
     sku: str = Field(..., min_length=1, max_length=100)
-    name: Optional[str] = None
+    name: str | None = None
     options: dict = {}  # {"color": "red", "size": "XL"}
-    price: Optional[Decimal] = None
-    compare_at_price: Optional[Decimal] = None
+    price: Decimal | None = None
+    compare_at_price: Decimal | None = None
     stock_quantity: int = 0
-    weight: Optional[float] = None
-    image_url: Optional[str] = None
+    weight: float | None = None
+    image_url: str | None = None
     position: int = 0
     is_default: bool = False
 
@@ -191,16 +187,16 @@ class VariantCreate(VariantBase):
 
 class VariantUpdate(BaseModel):
     """Mise à jour variante."""
-    sku: Optional[str] = None
-    name: Optional[str] = None
-    options: Optional[dict] = None
-    price: Optional[Decimal] = None
-    compare_at_price: Optional[Decimal] = None
-    stock_quantity: Optional[int] = None
-    weight: Optional[float] = None
-    image_url: Optional[str] = None
-    position: Optional[int] = None
-    is_default: Optional[bool] = None
+    sku: str | None = None
+    name: str | None = None
+    options: dict | None = None
+    price: Decimal | None = None
+    compare_at_price: Decimal | None = None
+    stock_quantity: int | None = None
+    weight: float | None = None
+    image_url: str | None = None
+    position: int | None = None
+    is_default: bool | None = None
 
 
 class VariantResponse(VariantBase):
@@ -221,9 +217,9 @@ class VariantResponse(VariantBase):
 class CartItemAdd(BaseModel):
     """Ajout article au panier."""
     product_id: int
-    variant_id: Optional[int] = None
+    variant_id: int | None = None
     quantity: int = Field(1, ge=1)
-    custom_options: Optional[dict] = None
+    custom_options: dict | None = None
 
 
 class CartItemUpdate(BaseModel):
@@ -235,14 +231,14 @@ class CartItemResponse(BaseModel):
     """Réponse article panier."""
     id: int
     product_id: int
-    variant_id: Optional[int] = None
+    variant_id: int | None = None
     quantity: int
     unit_price: Decimal
     total_price: Decimal
     discount_amount: Decimal
-    product_name: Optional[str] = None
-    product_image: Optional[str] = None
-    sku: Optional[str] = None
+    product_name: str | None = None
+    product_image: str | None = None
+    sku: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -251,8 +247,8 @@ class CartResponse(BaseModel):
     """Réponse panier."""
     id: int
     tenant_id: str
-    session_id: Optional[str] = None
-    customer_id: Optional[int] = None
+    session_id: str | None = None
+    customer_id: int | None = None
     status: CartStatus
     currency: str
     subtotal: Decimal
@@ -260,8 +256,8 @@ class CartResponse(BaseModel):
     tax_total: Decimal
     shipping_total: Decimal
     total: Decimal
-    coupon_codes: Optional[List[str]] = None
-    items: List[CartItemResponse] = []
+    coupon_codes: list[str] | None = None
+    items: list[CartItemResponse] = []
     item_count: int = 0
     created_at: datetime
     updated_at: datetime
@@ -282,33 +278,33 @@ class AddressSchema(BaseModel):
     """Adresse."""
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    company: Optional[str] = None
+    company: str | None = None
     address1: str = Field(..., min_length=1, max_length=255)
-    address2: Optional[str] = None
+    address2: str | None = None
     city: str = Field(..., min_length=1, max_length=100)
     postal_code: str = Field(..., min_length=1, max_length=20)
     country: str = Field(..., min_length=2, max_length=2)
-    phone: Optional[str] = None
+    phone: str | None = None
 
 
 class CheckoutRequest(BaseModel):
     """Demande de checkout."""
     cart_id: int
     customer_email: EmailStr
-    customer_phone: Optional[str] = None
+    customer_phone: str | None = None
     billing_address: AddressSchema
-    shipping_address: Optional[AddressSchema] = None
+    shipping_address: AddressSchema | None = None
     shipping_method_id: int
     payment_method: str = "card"  # card, paypal, bank_transfer
-    customer_notes: Optional[str] = None
+    customer_notes: str | None = None
 
 
 class OrderItemResponse(BaseModel):
     """Réponse ligne de commande."""
     id: int
-    product_id: Optional[int] = None
-    variant_id: Optional[int] = None
-    sku: Optional[str] = None
+    product_id: int | None = None
+    variant_id: int | None = None
+    sku: str | None = None
     name: str
     quantity: int
     unit_price: Decimal
@@ -326,7 +322,7 @@ class OrderResponse(BaseModel):
     tenant_id: str
     order_number: str
     channel: str
-    customer_id: Optional[int] = None
+    customer_id: int | None = None
     customer_email: str
     status: OrderStatus
     payment_status: PaymentStatus
@@ -337,25 +333,25 @@ class OrderResponse(BaseModel):
     shipping_total: Decimal
     tax_total: Decimal
     total: Decimal
-    coupon_codes: Optional[List[str]] = None
-    billing_first_name: Optional[str] = None
-    billing_last_name: Optional[str] = None
-    billing_address1: Optional[str] = None
-    billing_city: Optional[str] = None
-    billing_postal_code: Optional[str] = None
-    billing_country: Optional[str] = None
-    shipping_first_name: Optional[str] = None
-    shipping_last_name: Optional[str] = None
-    shipping_address1: Optional[str] = None
-    shipping_city: Optional[str] = None
-    shipping_postal_code: Optional[str] = None
-    shipping_country: Optional[str] = None
-    shipping_method: Optional[str] = None
-    tracking_number: Optional[str] = None
-    items: List[OrderItemResponse] = []
-    paid_at: Optional[datetime] = None
-    shipped_at: Optional[datetime] = None
-    delivered_at: Optional[datetime] = None
+    coupon_codes: list[str] | None = None
+    billing_first_name: str | None = None
+    billing_last_name: str | None = None
+    billing_address1: str | None = None
+    billing_city: str | None = None
+    billing_postal_code: str | None = None
+    billing_country: str | None = None
+    shipping_first_name: str | None = None
+    shipping_last_name: str | None = None
+    shipping_address1: str | None = None
+    shipping_city: str | None = None
+    shipping_postal_code: str | None = None
+    shipping_country: str | None = None
+    shipping_method: str | None = None
+    tracking_number: str | None = None
+    items: list[OrderItemResponse] = []
+    paid_at: datetime | None = None
+    shipped_at: datetime | None = None
+    delivered_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -364,7 +360,7 @@ class OrderResponse(BaseModel):
 
 class OrderListResponse(BaseModel):
     """Liste de commandes paginée."""
-    items: List[OrderResponse]
+    items: list[OrderResponse]
     total: int
     page: int
     page_size: int
@@ -373,11 +369,11 @@ class OrderListResponse(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     """Mise à jour statut commande."""
-    status: Optional[OrderStatus] = None
-    shipping_status: Optional[ShippingStatus] = None
-    tracking_number: Optional[str] = None
-    tracking_url: Optional[str] = None
-    internal_notes: Optional[str] = None
+    status: OrderStatus | None = None
+    shipping_status: ShippingStatus | None = None
+    tracking_number: str | None = None
+    tracking_url: str | None = None
+    internal_notes: str | None = None
 
 
 # ============================================================================
@@ -388,7 +384,7 @@ class PaymentIntentRequest(BaseModel):
     """Création intention de paiement."""
     order_id: int
     payment_method: str = "card"
-    return_url: Optional[str] = None
+    return_url: str | None = None
 
 
 class PaymentIntentResponse(BaseModel):
@@ -405,22 +401,22 @@ class PaymentIntentResponse(BaseModel):
 class PaymentConfirmRequest(BaseModel):
     """Confirmation de paiement."""
     payment_id: int
-    payment_method_id: Optional[str] = None  # From Stripe
+    payment_method_id: str | None = None  # From Stripe
 
 
 class PaymentResponse(BaseModel):
     """Réponse paiement."""
     id: int
     order_id: int
-    external_id: Optional[str] = None
-    provider: Optional[str] = None
+    external_id: str | None = None
+    provider: str | None = None
     amount: Decimal
     currency: str
     status: PaymentStatus
-    payment_method: Optional[str] = None
-    card_brand: Optional[str] = None
-    card_last4: Optional[str] = None
-    captured_at: Optional[datetime] = None
+    payment_method: str | None = None
+    card_brand: str | None = None
+    card_last4: str | None = None
+    captured_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -434,13 +430,13 @@ class ShippingMethodBase(BaseModel):
     """Base méthode de livraison."""
     name: str = Field(..., min_length=1, max_length=255)
     code: str = Field(..., min_length=1, max_length=50)
-    description: Optional[str] = None
-    carrier: Optional[str] = None
+    description: str | None = None
+    carrier: str | None = None
     price: Decimal = Field(0, ge=0)
-    free_shipping_threshold: Optional[Decimal] = None
-    min_delivery_days: Optional[int] = None
-    max_delivery_days: Optional[int] = None
-    countries: Optional[List[str]] = None
+    free_shipping_threshold: Decimal | None = None
+    min_delivery_days: int | None = None
+    max_delivery_days: int | None = None
+    countries: list[str] | None = None
     is_active: bool = True
 
 
@@ -463,26 +459,26 @@ class ShippingRateRequest(BaseModel):
     """Demande de calcul de frais de port."""
     cart_id: int
     country: str = Field(..., min_length=2, max_length=2)
-    postal_code: Optional[str] = None
+    postal_code: str | None = None
 
 
 class ShippingRateResponse(BaseModel):
     """Réponse calcul frais de port."""
     method_id: int
     method_name: str
-    carrier: Optional[str] = None
+    carrier: str | None = None
     price: Decimal
     is_free: bool
-    min_delivery_days: Optional[int] = None
-    max_delivery_days: Optional[int] = None
+    min_delivery_days: int | None = None
+    max_delivery_days: int | None = None
 
 
 class ShipmentCreate(BaseModel):
     """Création expédition."""
     order_id: int
-    carrier: Optional[str] = None
-    tracking_number: Optional[str] = None
-    items: Optional[List[dict]] = None  # [{"order_item_id": 1, "quantity": 2}]
+    carrier: str | None = None
+    tracking_number: str | None = None
+    items: list[dict] | None = None  # [{"order_item_id": 1, "quantity": 2}]
 
 
 class ShipmentResponse(BaseModel):
@@ -491,12 +487,12 @@ class ShipmentResponse(BaseModel):
     tenant_id: str
     order_id: int
     shipment_number: str
-    carrier: Optional[str] = None
-    tracking_number: Optional[str] = None
-    tracking_url: Optional[str] = None
+    carrier: str | None = None
+    tracking_number: str | None = None
+    tracking_url: str | None = None
     status: ShippingStatus
-    shipped_at: Optional[datetime] = None
-    delivered_at: Optional[datetime] = None
+    shipped_at: datetime | None = None
+    delivered_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -509,18 +505,18 @@ class ShipmentResponse(BaseModel):
 class CouponBase(BaseModel):
     """Base coupon."""
     code: str = Field(..., min_length=1, max_length=50)
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     discount_type: DiscountType
     discount_value: Decimal = Field(..., gt=0)
-    min_order_amount: Optional[Decimal] = None
-    max_discount_amount: Optional[Decimal] = None
-    usage_limit: Optional[int] = None
-    usage_limit_per_customer: Optional[int] = None
-    starts_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    product_ids: Optional[List[int]] = None
-    category_ids: Optional[List[int]] = None
+    min_order_amount: Decimal | None = None
+    max_discount_amount: Decimal | None = None
+    usage_limit: int | None = None
+    usage_limit_per_customer: int | None = None
+    starts_at: datetime | None = None
+    expires_at: datetime | None = None
+    product_ids: list[int] | None = None
+    category_ids: list[int] | None = None
     is_active: bool = True
     is_first_order_only: bool = False
     is_combinable: bool = False
@@ -533,16 +529,16 @@ class CouponCreate(CouponBase):
 
 class CouponUpdate(BaseModel):
     """Mise à jour coupon."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    discount_type: Optional[DiscountType] = None
-    discount_value: Optional[Decimal] = None
-    min_order_amount: Optional[Decimal] = None
-    max_discount_amount: Optional[Decimal] = None
-    usage_limit: Optional[int] = None
-    starts_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    discount_type: DiscountType | None = None
+    discount_value: Decimal | None = None
+    min_order_amount: Decimal | None = None
+    max_discount_amount: Decimal | None = None
+    usage_limit: int | None = None
+    starts_at: datetime | None = None
+    expires_at: datetime | None = None
+    is_active: bool | None = None
 
 
 class CouponResponse(CouponBase):
@@ -559,10 +555,10 @@ class CouponResponse(CouponBase):
 class CouponValidateResponse(BaseModel):
     """Validation coupon."""
     valid: bool
-    message: Optional[str] = None
-    discount_type: Optional[DiscountType] = None
-    discount_value: Optional[Decimal] = None
-    discount_amount: Optional[Decimal] = None
+    message: str | None = None
+    discount_type: DiscountType | None = None
+    discount_value: Decimal | None = None
+    discount_amount: Decimal | None = None
 
 
 # ============================================================================
@@ -575,7 +571,7 @@ class CustomerRegisterRequest(BaseModel):
     password: str = Field(..., min_length=8)
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    phone: Optional[str] = None
+    phone: str | None = None
     accepts_marketing: bool = False
 
 
@@ -590,9 +586,9 @@ class CustomerResponse(BaseModel):
     id: int
     tenant_id: str
     email: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    phone: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
     accepts_marketing: bool
     total_orders: int
     total_spent: Decimal
@@ -607,14 +603,14 @@ class CustomerAddressCreate(BaseModel):
     address_type: str = "both"
     first_name: str
     last_name: str
-    company: Optional[str] = None
+    company: str | None = None
     address1: str
-    address2: Optional[str] = None
+    address2: str | None = None
     city: str
     postal_code: str
     country: str
-    province: Optional[str] = None
-    phone: Optional[str] = None
+    province: str | None = None
+    phone: str | None = None
     is_default: bool = False
 
 
@@ -633,23 +629,23 @@ class ReviewCreate(BaseModel):
     """Création avis."""
     product_id: int
     rating: int = Field(..., ge=1, le=5)
-    title: Optional[str] = None
-    content: Optional[str] = None
-    author_name: Optional[str] = None
+    title: str | None = None
+    content: str | None = None
+    author_name: str | None = None
 
 
 class ReviewResponse(BaseModel):
     """Réponse avis."""
     id: int
     product_id: int
-    customer_id: Optional[int] = None
-    author_name: Optional[str] = None
+    customer_id: int | None = None
+    author_name: str | None = None
     rating: int
-    title: Optional[str] = None
-    content: Optional[str] = None
+    title: str | None = None
+    content: str | None = None
     is_verified_purchase: bool
     is_approved: bool
-    vendor_response: Optional[str] = None
+    vendor_response: str | None = None
     helpful_votes: int
     created_at: datetime
 
@@ -663,7 +659,7 @@ class ReviewResponse(BaseModel):
 class WishlistItemAdd(BaseModel):
     """Ajout article wishlist."""
     product_id: int
-    variant_id: Optional[int] = None
+    variant_id: int | None = None
 
 
 class WishlistResponse(BaseModel):
@@ -671,7 +667,7 @@ class WishlistResponse(BaseModel):
     id: int
     name: str
     is_public: bool
-    items: List[dict] = []
+    items: list[dict] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -710,10 +706,10 @@ class EcommerceDashboard(BaseModel):
     cart_abandonment_rate: float
 
     # Top produits
-    top_selling_products: List[dict]
+    top_selling_products: list[dict]
 
     # Commandes récentes
-    recent_orders: List[dict]
+    recent_orders: list[dict]
 
 
 class SalesReport(BaseModel):
@@ -727,7 +723,7 @@ class SalesReport(BaseModel):
     average_order_value: Decimal
     refunds: Decimal
     net_revenue: Decimal
-    by_date: List[dict]
-    by_product: List[dict]
-    by_category: List[dict]
-    by_country: List[dict]
+    by_date: list[dict]
+    by_product: list[dict]
+    by_category: list[dict]
+    by_country: list[dict]

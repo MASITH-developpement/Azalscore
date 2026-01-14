@@ -4,25 +4,33 @@ AZALS - Module Email - Router
 Endpoints API pour les emails transactionnels.
 """
 
-from typing import Optional, List
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
 
-from .models import EmailType, EmailStatus
+from .models import EmailStatus, EmailType
 from .schemas import (
-    EmailConfigCreate, EmailConfigUpdate, EmailConfigResponse,
-    EmailTemplateCreate, EmailTemplateUpdate, EmailTemplateResponse,
-    SendEmailRequest, SendEmailResponse, BulkSendRequest, BulkSendResponse,
-    EmailLogResponse, EmailLogDetail, EmailDashboard
+    BulkSendRequest,
+    BulkSendResponse,
+    EmailConfigCreate,
+    EmailConfigResponse,
+    EmailConfigUpdate,
+    EmailDashboard,
+    EmailLogDetail,
+    EmailLogResponse,
+    EmailTemplateCreate,
+    EmailTemplateResponse,
+    EmailTemplateUpdate,
+    SendEmailRequest,
+    SendEmailResponse,
 )
 from .service import get_email_service
-
 
 router = APIRouter(prefix="/email", tags=["Email Transactionnel"])
 
@@ -100,9 +108,9 @@ def create_template(
     return service.create_template(data)
 
 
-@router.get("/templates", response_model=List[EmailTemplateResponse])
+@router.get("/templates", response_model=list[EmailTemplateResponse])
 def list_templates(
-    email_type: Optional[EmailType] = None,
+    email_type: EmailType | None = None,
     service = Depends(get_service),
     current_user: User = Depends(get_current_user)
 ):
@@ -179,12 +187,12 @@ def process_queue(
 # LOGS
 # ============================================================================
 
-@router.get("/logs", response_model=List[EmailLogResponse])
+@router.get("/logs", response_model=list[EmailLogResponse])
 def list_logs(
-    email_type: Optional[EmailType] = None,
-    status: Optional[EmailStatus] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    email_type: EmailType | None = None,
+    status: EmailStatus | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service = Depends(get_service),

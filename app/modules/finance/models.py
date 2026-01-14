@@ -6,17 +6,27 @@ Modèles SQLAlchemy pour la comptabilité et la trésorerie.
 """
 
 import enum
-from datetime import datetime
-from sqlalchemy import (
-    Column, String, Integer, Boolean, DateTime, Date,
-    Text, ForeignKey, Enum, Numeric, Index, CheckConstraint
-)
-from app.core.types import UniversalUUID, JSON
-from sqlalchemy.orm import relationship
 import uuid
+from datetime import datetime
 
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
+
+from app.core.types import JSON, UniversalUUID
 from app.db import Base
-
 
 # ============================================================================
 # ENUMS

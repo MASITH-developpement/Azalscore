@@ -6,26 +6,46 @@ API REST pour le CRM et la gestion commerciale.
 """
 
 from datetime import date
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
-from .models import CustomerType, OpportunityStatus, DocumentType, DocumentStatus
+from .models import CustomerType, DocumentStatus, DocumentType, OpportunityStatus
 from .schemas import (
-    CustomerCreate, CustomerUpdate, CustomerResponse, CustomerList,
-    ContactCreate, ContactUpdate, ContactResponse,
-    OpportunityCreate, OpportunityUpdate, OpportunityResponse, OpportunityList,
-    DocumentCreate, DocumentUpdate, DocumentResponse, DocumentList, DocumentLineCreate, DocumentLineResponse,
-    PaymentCreate, PaymentResponse,
-    ActivityCreate, ActivityResponse,
-    PipelineStageCreate, PipelineStageResponse,
-    ProductCreate, ProductUpdate, ProductResponse, ProductList,
-    SalesDashboard, PipelineStats
+    ActivityCreate,
+    ActivityResponse,
+    ContactCreate,
+    ContactResponse,
+    ContactUpdate,
+    CustomerCreate,
+    CustomerList,
+    CustomerResponse,
+    CustomerUpdate,
+    DocumentCreate,
+    DocumentLineCreate,
+    DocumentLineResponse,
+    DocumentList,
+    DocumentResponse,
+    DocumentUpdate,
+    OpportunityCreate,
+    OpportunityList,
+    OpportunityResponse,
+    OpportunityUpdate,
+    PaymentCreate,
+    PaymentResponse,
+    PipelineStageCreate,
+    PipelineStageResponse,
+    PipelineStats,
+    ProductCreate,
+    ProductList,
+    ProductResponse,
+    ProductUpdate,
+    SalesDashboard,
 )
 from .service import get_commercial_service
 
@@ -55,10 +75,10 @@ async def create_customer(
 
 @router.get("/customers", response_model=CustomerList)
 async def list_customers(
-    type: Optional[CustomerType] = None,
-    assigned_to: Optional[UUID] = None,
-    is_active: Optional[bool] = None,
-    search: Optional[str] = None,
+    type: CustomerType | None = None,
+    assigned_to: UUID | None = None,
+    is_active: bool | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -149,7 +169,7 @@ async def create_contact(
     return contact
 
 
-@router.get("/customers/{customer_id}/contacts", response_model=List[ContactResponse])
+@router.get("/customers/{customer_id}/contacts", response_model=list[ContactResponse])
 async def list_contacts(
     customer_id: UUID,
     db: Session = Depends(get_db),
@@ -210,9 +230,9 @@ async def create_opportunity(
 
 @router.get("/opportunities", response_model=OpportunityList)
 async def list_opportunities(
-    status: Optional[OpportunityStatus] = None,
-    customer_id: Optional[UUID] = None,
-    assigned_to: Optional[UUID] = None,
+    status: OpportunityStatus | None = None,
+    customer_id: UUID | None = None,
+    assigned_to: UUID | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -256,7 +276,7 @@ async def update_opportunity(
 @router.post("/opportunities/{opportunity_id}/win", response_model=OpportunityResponse)
 async def win_opportunity(
     opportunity_id: UUID,
-    win_reason: Optional[str] = None,
+    win_reason: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -271,7 +291,7 @@ async def win_opportunity(
 @router.post("/opportunities/{opportunity_id}/lose", response_model=OpportunityResponse)
 async def lose_opportunity(
     opportunity_id: UUID,
-    loss_reason: Optional[str] = None,
+    loss_reason: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -306,11 +326,11 @@ async def create_document(
 
 @router.get("/documents", response_model=DocumentList)
 async def list_documents(
-    type: Optional[DocumentType] = None,
-    status: Optional[DocumentStatus] = None,
-    customer_id: Optional[UUID] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    type: DocumentType | None = None,
+    status: DocumentStatus | None = None,
+    customer_id: UUID | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -452,7 +472,7 @@ async def create_payment(
     return payment
 
 
-@router.get("/documents/{document_id}/payments", response_model=List[PaymentResponse])
+@router.get("/documents/{document_id}/payments", response_model=list[PaymentResponse])
 async def list_payments(
     document_id: UUID,
     db: Session = Depends(get_db),
@@ -484,12 +504,12 @@ async def create_activity(
     return service.create_activity(data, current_user.id)
 
 
-@router.get("/activities", response_model=List[ActivityResponse])
+@router.get("/activities", response_model=list[ActivityResponse])
 async def list_activities(
-    customer_id: Optional[UUID] = None,
-    opportunity_id: Optional[UUID] = None,
-    assigned_to: Optional[UUID] = None,
-    is_completed: Optional[bool] = None,
+    customer_id: UUID | None = None,
+    opportunity_id: UUID | None = None,
+    assigned_to: UUID | None = None,
+    is_completed: bool | None = None,
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -528,7 +548,7 @@ async def create_pipeline_stage(
     return service.create_pipeline_stage(data)
 
 
-@router.get("/pipeline/stages", response_model=List[PipelineStageResponse])
+@router.get("/pipeline/stages", response_model=list[PipelineStageResponse])
 async def list_pipeline_stages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -571,10 +591,10 @@ async def create_product(
 
 @router.get("/products", response_model=ProductList)
 async def list_products(
-    category: Optional[str] = None,
-    is_service: Optional[bool] = None,
-    is_active: Optional[bool] = True,
-    search: Optional[str] = None,
+    category: str | None = None,
+    is_service: bool | None = None,
+    is_active: bool | None = True,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -633,13 +653,15 @@ async def get_dashboard(
 # ENDPOINTS EXPORT CSV (CRM T0)
 # ============================================================================
 
-from fastapi.responses import StreamingResponse
 from datetime import datetime as dt
+
+from fastapi.responses import StreamingResponse
+
 
 @router.get("/export/customers")
 async def export_customers_csv(
-    type: Optional[CustomerType] = None,
-    is_active: Optional[bool] = None,
+    type: CustomerType | None = None,
+    is_active: bool | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -664,7 +686,7 @@ async def export_customers_csv(
 
 @router.get("/export/contacts")
 async def export_contacts_csv(
-    customer_id: Optional[UUID] = None,
+    customer_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -689,8 +711,8 @@ async def export_contacts_csv(
 
 @router.get("/export/opportunities")
 async def export_opportunities_csv(
-    status: Optional[OpportunityStatus] = None,
-    customer_id: Optional[UUID] = None,
+    status: OpportunityStatus | None = None,
+    customer_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

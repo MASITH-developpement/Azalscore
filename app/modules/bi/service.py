@@ -3,26 +3,61 @@ AZALS - Module M10: BI & Reporting
 Service métier pour Business Intelligence
 """
 
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc
-from sqlalchemy.exc import IntegrityError
+from datetime import date, datetime, timedelta
+from typing import Any
+
 from fastapi import HTTPException, status
+from sqlalchemy import desc, or_
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from .models import (
-    Dashboard, DashboardWidget, WidgetFilter, Report, ReportSchedule, ReportExecution,
-    KPIDefinition, KPIValue, KPITarget, Alert, AlertRule, DataSource, DataQuery,
-    Bookmark, ExportHistory,
-    DashboardType, ReportType, ReportStatus,
-    KPICategory, KPITrend, AlertSeverity, AlertStatus, DataSourceType, RefreshFrequency
+    Alert,
+    AlertRule,
+    AlertSeverity,
+    AlertStatus,
+    Bookmark,
+    Dashboard,
+    DashboardType,
+    DashboardWidget,
+    DataQuery,
+    DataSource,
+    DataSourceType,
+    ExportHistory,
+    KPICategory,
+    KPIDefinition,
+    KPITarget,
+    KPITrend,
+    KPIValue,
+    RefreshFrequency,
+    Report,
+    ReportExecution,
+    ReportSchedule,
+    ReportStatus,
+    ReportType,
+    WidgetFilter,
 )
 from .schemas import (
-    DashboardCreate, DashboardUpdate, WidgetCreate, WidgetUpdate,
-    ReportCreate, ReportUpdate, ReportScheduleCreate, ReportExecuteRequest,
-    KPICreate, KPIUpdate, KPIValueCreate, KPITargetCreate,
-    AlertCreate, AlertRuleCreate, AlertRuleUpdate,
-    DataSourceCreate, DataSourceUpdate, DataQueryCreate, BookmarkCreate, ExportRequest
+    AlertCreate,
+    AlertRuleCreate,
+    AlertRuleUpdate,
+    BookmarkCreate,
+    DashboardCreate,
+    DashboardUpdate,
+    DataQueryCreate,
+    DataSourceCreate,
+    DataSourceUpdate,
+    ExportRequest,
+    KPICreate,
+    KPITargetCreate,
+    KPIUpdate,
+    KPIValueCreate,
+    ReportCreate,
+    ReportExecuteRequest,
+    ReportScheduleCreate,
+    ReportUpdate,
+    WidgetCreate,
+    WidgetUpdate,
 )
 
 
@@ -72,7 +107,7 @@ class BIService:
                 detail=f"Dashboard avec code '{data.code}' existe déjà"
             )
 
-    def get_dashboard(self, dashboard_id: int) -> Optional[Dashboard]:
+    def get_dashboard(self, dashboard_id: int) -> Dashboard | None:
         """Récupérer un tableau de bord."""
         dashboard = self.db.query(Dashboard).filter(
             Dashboard.id == dashboard_id,
@@ -87,7 +122,7 @@ class BIService:
 
         return dashboard
 
-    def get_dashboard_by_code(self, code: str) -> Optional[Dashboard]:
+    def get_dashboard_by_code(self, code: str) -> Dashboard | None:
         """Récupérer un tableau de bord par code."""
         return self.db.query(Dashboard).filter(
             Dashboard.code == code,
@@ -96,16 +131,16 @@ class BIService:
 
     def list_dashboards(
         self,
-        dashboard_type: Optional[DashboardType] = None,
+        dashboard_type: DashboardType | None = None,
         owner_only: bool = False,
         include_shared: bool = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Dashboard], int]:
+    ) -> tuple[list[Dashboard], int]:
         """Lister les tableaux de bord."""
         query = self.db.query(Dashboard).filter(
             Dashboard.tenant_id == self.tenant_id,
-            Dashboard.is_active == True
+            Dashboard.is_active
         )
 
         if dashboard_type:
@@ -117,8 +152,8 @@ class BIService:
             query = query.filter(
                 or_(
                     Dashboard.owner_id == self.user_id,
-                    Dashboard.is_public == True,
-                    Dashboard.is_shared == True
+                    Dashboard.is_public,
+                    Dashboard.is_shared
                 )
             )
 
@@ -312,7 +347,7 @@ class BIService:
         self.db.commit()
         return True
 
-    def update_widget_positions(self, dashboard_id: int, positions: List[Dict[str, int]]) -> bool:
+    def update_widget_positions(self, dashboard_id: int, positions: list[dict[str, int]]) -> bool:
         """Mettre à jour les positions de plusieurs widgets."""
         for pos in positions:
             widget = self.db.query(DashboardWidget).filter(
@@ -369,7 +404,7 @@ class BIService:
                 detail=f"Rapport avec code '{data.code}' existe déjà"
             )
 
-    def get_report(self, report_id: int) -> Optional[Report]:
+    def get_report(self, report_id: int) -> Report | None:
         """Récupérer un rapport."""
         return self.db.query(Report).filter(
             Report.id == report_id,
@@ -378,14 +413,14 @@ class BIService:
 
     def list_reports(
         self,
-        report_type: Optional[ReportType] = None,
+        report_type: ReportType | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Report], int]:
+    ) -> tuple[list[Report], int]:
         """Lister les rapports."""
         query = self.db.query(Report).filter(
             Report.tenant_id == self.tenant_id,
-            Report.is_active == True
+            Report.is_active
         )
 
         if report_type:
@@ -487,7 +522,7 @@ class BIService:
         report_id: int,
         skip: int = 0,
         limit: int = 20
-    ) -> List[ReportExecution]:
+    ) -> list[ReportExecution]:
         """Récupérer les exécutions d'un rapport."""
         return self.db.query(ReportExecution).filter(
             ReportExecution.report_id == report_id,
@@ -530,7 +565,7 @@ class BIService:
         self.db.refresh(schedule)
         return schedule
 
-    def _calculate_next_run(self, schedule: ReportSchedule) -> Optional[datetime]:
+    def _calculate_next_run(self, schedule: ReportSchedule) -> datetime | None:
         """Calculer la prochaine exécution."""
         # TODO: Implémenter le calcul basé sur cron_expression ou frequency
         if schedule.frequency == RefreshFrequency.DAILY:
@@ -582,14 +617,14 @@ class BIService:
                 detail=f"KPI avec code '{data.code}' existe déjà"
             )
 
-    def get_kpi(self, kpi_id: int) -> Optional[KPIDefinition]:
+    def get_kpi(self, kpi_id: int) -> KPIDefinition | None:
         """Récupérer un KPI."""
         return self.db.query(KPIDefinition).filter(
             KPIDefinition.id == kpi_id,
             KPIDefinition.tenant_id == self.tenant_id
         ).first()
 
-    def get_kpi_by_code(self, code: str) -> Optional[KPIDefinition]:
+    def get_kpi_by_code(self, code: str) -> KPIDefinition | None:
         """Récupérer un KPI par code."""
         return self.db.query(KPIDefinition).filter(
             KPIDefinition.code == code,
@@ -598,14 +633,14 @@ class BIService:
 
     def list_kpis(
         self,
-        category: Optional[KPICategory] = None,
+        category: KPICategory | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[KPIDefinition], int]:
+    ) -> tuple[list[KPIDefinition], int]:
         """Lister les KPIs."""
         query = self.db.query(KPIDefinition).filter(
             KPIDefinition.tenant_id == self.tenant_id,
-            KPIDefinition.is_active == True
+            KPIDefinition.is_active
         )
 
         if category:
@@ -693,11 +728,11 @@ class BIService:
     def get_kpi_values(
         self,
         kpi_id: int,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         period_type: str = "daily",
         limit: int = 100
-    ) -> List[KPIValue]:
+    ) -> list[KPIValue]:
         """Récupérer les valeurs d'un KPI."""
         query = self.db.query(KPIValue).filter(
             KPIValue.kpi_id == kpi_id,
@@ -712,7 +747,7 @@ class BIService:
 
         return query.order_by(desc(KPIValue.period_date)).limit(limit).all()
 
-    def get_kpi_current_value(self, kpi_id: int) -> Optional[KPIValue]:
+    def get_kpi_current_value(self, kpi_id: int) -> KPIValue | None:
         """Récupérer la valeur actuelle d'un KPI."""
         return self.db.query(KPIValue).filter(
             KPIValue.kpi_id == kpi_id,
@@ -801,14 +836,14 @@ class BIService:
                 detail=f"Règle avec code '{data.code}' existe déjà"
             )
 
-    def get_alert_rule(self, rule_id: int) -> Optional[AlertRule]:
+    def get_alert_rule(self, rule_id: int) -> AlertRule | None:
         """Récupérer une règle d'alerte."""
         return self.db.query(AlertRule).filter(
             AlertRule.id == rule_id,
             AlertRule.tenant_id == self.tenant_id
         ).first()
 
-    def list_alert_rules(self, skip: int = 0, limit: int = 50) -> Tuple[List[AlertRule], int]:
+    def list_alert_rules(self, skip: int = 0, limit: int = 50) -> tuple[list[AlertRule], int]:
         """Lister les règles d'alerte."""
         query = self.db.query(AlertRule).filter(
             AlertRule.tenant_id == self.tenant_id
@@ -858,7 +893,7 @@ class BIService:
         # TODO: Envoyer les notifications
         return alert
 
-    def get_alert(self, alert_id: int) -> Optional[Alert]:
+    def get_alert(self, alert_id: int) -> Alert | None:
         """Récupérer une alerte."""
         return self.db.query(Alert).filter(
             Alert.id == alert_id,
@@ -867,11 +902,11 @@ class BIService:
 
     def list_alerts(
         self,
-        status_filter: Optional[AlertStatus] = None,
-        severity: Optional[AlertSeverity] = None,
+        status_filter: AlertStatus | None = None,
+        severity: AlertSeverity | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Alert], int]:
+    ) -> tuple[list[Alert], int]:
         """Lister les alertes."""
         query = self.db.query(Alert).filter(
             Alert.tenant_id == self.tenant_id
@@ -887,7 +922,7 @@ class BIService:
 
         return alerts, total
 
-    def acknowledge_alert(self, alert_id: int, notes: Optional[str] = None) -> Alert:
+    def acknowledge_alert(self, alert_id: int, notes: str | None = None) -> Alert:
         """Acquitter une alerte."""
         alert = self.get_alert(alert_id)
         if not alert:
@@ -972,7 +1007,7 @@ class BIService:
                 detail=f"Source avec code '{data.code}' existe déjà"
             )
 
-    def get_data_source(self, source_id: int) -> Optional[DataSource]:
+    def get_data_source(self, source_id: int) -> DataSource | None:
         """Récupérer une source de données."""
         return self.db.query(DataSource).filter(
             DataSource.id == source_id,
@@ -981,14 +1016,14 @@ class BIService:
 
     def list_data_sources(
         self,
-        source_type: Optional[DataSourceType] = None,
+        source_type: DataSourceType | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[DataSource], int]:
+    ) -> tuple[list[DataSource], int]:
         """Lister les sources de données."""
         query = self.db.query(DataSource).filter(
             DataSource.tenant_id == self.tenant_id,
-            DataSource.is_active == True
+            DataSource.is_active
         )
 
         if source_type:
@@ -1048,18 +1083,18 @@ class BIService:
                 detail=f"Requête avec code '{data.code}' existe déjà"
             )
 
-    def get_query(self, query_id: int) -> Optional[DataQuery]:
+    def get_query(self, query_id: int) -> DataQuery | None:
         """Récupérer une requête."""
         return self.db.query(DataQuery).filter(
             DataQuery.id == query_id,
             DataQuery.tenant_id == self.tenant_id
         ).first()
 
-    def list_queries(self, skip: int = 0, limit: int = 50) -> Tuple[List[DataQuery], int]:
+    def list_queries(self, skip: int = 0, limit: int = 50) -> tuple[list[DataQuery], int]:
         """Lister les requêtes."""
         query = self.db.query(DataQuery).filter(
             DataQuery.tenant_id == self.tenant_id,
-            DataQuery.is_active == True
+            DataQuery.is_active
         )
 
         total = query.count()
@@ -1087,7 +1122,7 @@ class BIService:
         self.db.refresh(bookmark)
         return bookmark
 
-    def list_bookmarks(self, item_type: Optional[str] = None) -> List[Bookmark]:
+    def list_bookmarks(self, item_type: str | None = None) -> list[Bookmark]:
         """Lister les favoris de l'utilisateur."""
         query = self.db.query(Bookmark).filter(
             Bookmark.tenant_id == self.tenant_id,
@@ -1139,7 +1174,7 @@ class BIService:
         # TODO: Lancer l'export en arrière-plan
         return export
 
-    def get_export(self, export_id: int) -> Optional[ExportHistory]:
+    def get_export(self, export_id: int) -> ExportHistory | None:
         """Récupérer un export."""
         return self.db.query(ExportHistory).filter(
             ExportHistory.id == export_id,
@@ -1147,7 +1182,7 @@ class BIService:
             ExportHistory.tenant_id == self.tenant_id
         ).first()
 
-    def list_exports(self, skip: int = 0, limit: int = 20) -> List[ExportHistory]:
+    def list_exports(self, skip: int = 0, limit: int = 20) -> list[ExportHistory]:
         """Lister les exports de l'utilisateur."""
         return self.db.query(ExportHistory).filter(
             ExportHistory.tenant_id == self.tenant_id,
@@ -1158,23 +1193,23 @@ class BIService:
     # OVERVIEW & STATS
     # ========================================================================
 
-    def get_overview(self) -> Dict[str, Any]:
+    def get_overview(self) -> dict[str, Any]:
         """Vue d'ensemble BI."""
         # Dashboards
         total_dashboards = self.db.query(Dashboard).filter(
             Dashboard.tenant_id == self.tenant_id,
-            Dashboard.is_active == True
+            Dashboard.is_active
         ).count()
 
         recent_dashboards = self.db.query(Dashboard).filter(
             Dashboard.tenant_id == self.tenant_id,
-            Dashboard.is_active == True
+            Dashboard.is_active
         ).order_by(desc(Dashboard.last_viewed_at)).limit(5).all()
 
         # Reports
         total_reports = self.db.query(Report).filter(
             Report.tenant_id == self.tenant_id,
-            Report.is_active == True
+            Report.is_active
         ).count()
 
         recent_executions = self.db.query(ReportExecution).filter(
@@ -1184,7 +1219,7 @@ class BIService:
         # KPIs
         total_kpis = self.db.query(KPIDefinition).filter(
             KPIDefinition.tenant_id == self.tenant_id,
-            KPIDefinition.is_active == True
+            KPIDefinition.is_active
         ).count()
 
         # Alertes
@@ -1202,7 +1237,7 @@ class BIService:
         # Data sources
         total_sources = self.db.query(DataSource).filter(
             DataSource.tenant_id == self.tenant_id,
-            DataSource.is_active == True
+            DataSource.is_active
         ).count()
 
         return {
@@ -1226,7 +1261,7 @@ class BIService:
             }
         }
 
-    def get_dashboard_stats(self, dashboard_id: int) -> Dict[str, Any]:
+    def get_dashboard_stats(self, dashboard_id: int) -> dict[str, Any]:
         """Statistiques d'un tableau de bord."""
         dashboard = self.get_dashboard(dashboard_id)
         if not dashboard:

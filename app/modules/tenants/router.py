@@ -6,16 +6,15 @@ API REST pour la gestion des tenants.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
 from .service import get_tenant_service
-
 
 # ============================================================================
 # SÉCURITÉ: Fonctions de vérification des accès
@@ -66,17 +65,27 @@ def require_tenant_admin(current_user: User) -> None:
             detail="Accès refusé. Rôle ADMIN ou DIRIGEANT requis."
         )
 from .schemas import (
-    TenantCreate, TenantUpdate, TenantResponse, TenantListResponse,
-    SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse,
-    ModuleActivation, TenantModuleResponse,
-    TenantInvitationCreate, TenantInvitationResponse,
-    TenantUsageResponse,
-    TenantSettingsUpdate, TenantSettingsResponse,
-    OnboardingStepUpdate, TenantOnboardingResponse,
-    TenantEventResponse,
+    ModuleActivation,
+    OnboardingStepUpdate,
+    PlatformStatsResponse,
+    ProvisionTenantRequest,
+    ProvisionTenantResponse,
+    SubscriptionCreate,
+    SubscriptionResponse,
+    SubscriptionUpdate,
+    TenantCreate,
     TenantDashboardResponse,
-    ProvisionTenantRequest, ProvisionTenantResponse,
-    PlatformStatsResponse
+    TenantEventResponse,
+    TenantInvitationCreate,
+    TenantInvitationResponse,
+    TenantListResponse,
+    TenantModuleResponse,
+    TenantOnboardingResponse,
+    TenantResponse,
+    TenantSettingsResponse,
+    TenantSettingsUpdate,
+    TenantUpdate,
+    TenantUsageResponse,
 )
 
 router = APIRouter(prefix="/api/v1/tenants", tags=["Tenants"])
@@ -105,11 +114,11 @@ def create_tenant(
     return service.create_tenant(data)
 
 
-@router.get("", response_model=List[TenantListResponse])
+@router.get("", response_model=list[TenantListResponse])
 def list_tenants(
-    status: Optional[str] = None,
-    plan: Optional[str] = None,
-    country: Optional[str] = None,
+    status: str | None = None,
+    plan: str | None = None,
+    country: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -191,7 +200,7 @@ def activate_tenant(
 @router.post("/{tenant_id}/suspend", response_model=TenantResponse)
 def suspend_tenant(
     tenant_id: str,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -209,7 +218,7 @@ def suspend_tenant(
 @router.post("/{tenant_id}/cancel", response_model=TenantResponse)
 def cancel_tenant(
     tenant_id: str,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -311,7 +320,7 @@ def activate_module(
     return service.activate_module(tenant_id, data)
 
 
-@router.get("/{tenant_id}/modules", response_model=List[TenantModuleResponse])
+@router.get("/{tenant_id}/modules", response_model=list[TenantModuleResponse])
 def list_tenant_modules(
     tenant_id: str,
     active_only: bool = True,
@@ -398,7 +407,7 @@ def accept_invitation(
 # USAGE & EVENTS
 # ============================================================================
 
-@router.get("/{tenant_id}/usage", response_model=List[TenantUsageResponse])
+@router.get("/{tenant_id}/usage", response_model=list[TenantUsageResponse])
 def get_tenant_usage(
     tenant_id: str,
     start_date: datetime,
@@ -424,10 +433,10 @@ def record_tenant_usage(
     return service.record_usage(tenant_id, data)
 
 
-@router.get("/{tenant_id}/events", response_model=List[TenantEventResponse])
+@router.get("/{tenant_id}/events", response_model=list[TenantEventResponse])
 def get_tenant_events(
     tenant_id: str,
-    event_type: Optional[str] = None,
+    event_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),

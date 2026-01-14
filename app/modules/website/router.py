@@ -6,26 +6,43 @@ API REST pour le site web officiel.
 """
 
 from datetime import datetime
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
-from .service import get_website_service
 from .schemas import (
-    SitePageCreate, SitePageUpdate, SitePageResponse, SitePageListResponse,
-    BlogPostCreate, BlogPostUpdate, BlogPostResponse, BlogPostListResponse,
-    TestimonialCreate, TestimonialUpdate, TestimonialResponse,
-    ContactSubmissionCreate, ContactSubmissionUpdate, ContactSubmissionResponse,
-    NewsletterSubscribeRequest, NewsletterUnsubscribeRequest, NewsletterSubscriberResponse,
-    SiteMediaCreate, SiteMediaUpdate, SiteMediaResponse,
-    SiteSEOUpdate, SiteSEOResponse,
-    SiteAnalyticsResponse, AnalyticsDashboardResponse,
-    PublishRequest, PublicSiteConfigResponse
+    AnalyticsDashboardResponse,
+    BlogPostCreate,
+    BlogPostListResponse,
+    BlogPostResponse,
+    BlogPostUpdate,
+    ContactSubmissionCreate,
+    ContactSubmissionResponse,
+    ContactSubmissionUpdate,
+    NewsletterSubscribeRequest,
+    NewsletterSubscriberResponse,
+    NewsletterUnsubscribeRequest,
+    PublicSiteConfigResponse,
+    PublishRequest,
+    SiteAnalyticsResponse,
+    SiteMediaCreate,
+    SiteMediaResponse,
+    SiteMediaUpdate,
+    SitePageCreate,
+    SitePageListResponse,
+    SitePageResponse,
+    SitePageUpdate,
+    SiteSEOResponse,
+    SiteSEOUpdate,
+    TestimonialCreate,
+    TestimonialResponse,
+    TestimonialUpdate,
 )
+from .service import get_website_service
 
 router = APIRouter(prefix="/api/v1/website", tags=["Website"])
 
@@ -45,13 +62,13 @@ def create_page(
     return service.create_page(data)
 
 
-@router.get("/pages", response_model=List[SitePageListResponse])
+@router.get("/pages", response_model=list[SitePageListResponse])
 def list_pages(
-    page_type: Optional[str] = None,
-    status: Optional[str] = None,
-    parent_id: Optional[int] = None,
-    show_in_menu: Optional[bool] = None,
-    language: Optional[str] = None,
+    page_type: str | None = None,
+    status: str | None = None,
+    parent_id: int | None = None,
+    show_in_menu: bool | None = None,
+    language: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -147,14 +164,14 @@ def create_blog_post(
     return service.create_blog_post(data)
 
 
-@router.get("/blog/posts", response_model=List[BlogPostListResponse])
+@router.get("/blog/posts", response_model=list[BlogPostListResponse])
 def list_blog_posts(
-    content_type: Optional[str] = None,
-    category: Optional[str] = None,
-    tag: Optional[str] = None,
-    status: Optional[str] = None,
-    is_featured: Optional[bool] = None,
-    language: Optional[str] = None,
+    content_type: str | None = None,
+    category: str | None = None,
+    tag: str | None = None,
+    status: str | None = None,
+    is_featured: bool | None = None,
+    language: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -262,12 +279,12 @@ def create_testimonial(
     return service.create_testimonial(data)
 
 
-@router.get("/testimonials", response_model=List[TestimonialResponse])
+@router.get("/testimonials", response_model=list[TestimonialResponse])
 def list_testimonials(
-    industry: Optional[str] = None,
-    is_featured: Optional[bool] = None,
-    show_on_homepage: Optional[bool] = None,
-    status: Optional[str] = None,
+    industry: str | None = None,
+    is_featured: bool | None = None,
+    show_on_homepage: bool | None = None,
+    status: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -359,11 +376,11 @@ def submit_contact_form(
     return service.create_contact_submission(data, ip_address, user_agent, referrer)
 
 
-@router.get("/contact/submissions", response_model=List[ContactSubmissionResponse])
+@router.get("/contact/submissions", response_model=list[ContactSubmissionResponse])
 def list_contact_submissions(
-    form_category: Optional[str] = None,
-    status: Optional[str] = None,
-    assigned_to: Optional[int] = None,
+    form_category: str | None = None,
+    status: str | None = None,
+    assigned_to: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -459,10 +476,10 @@ def unsubscribe_newsletter(
     return {"message": "Désabonnement effectué", "email": subscriber.email}
 
 
-@router.get("/newsletter/subscribers", response_model=List[NewsletterSubscriberResponse])
+@router.get("/newsletter/subscribers", response_model=list[NewsletterSubscriberResponse])
 def list_newsletter_subscribers(
-    is_active: Optional[bool] = None,
-    is_verified: Optional[bool] = None,
+    is_active: bool | None = None,
+    is_verified: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -498,11 +515,11 @@ def create_media(
     return service.create_media(data)
 
 
-@router.get("/media", response_model=List[SiteMediaResponse])
+@router.get("/media", response_model=list[SiteMediaResponse])
 def list_media(
-    media_type: Optional[str] = None,
-    folder: Optional[str] = None,
-    tag: Optional[str] = None,
+    media_type: str | None = None,
+    folder: str | None = None,
+    tag: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -597,7 +614,7 @@ def get_analytics_dashboard(
     return service.get_analytics_dashboard(days)
 
 
-@router.get("/analytics", response_model=List[SiteAnalyticsResponse])
+@router.get("/analytics", response_model=list[SiteAnalyticsResponse])
 def get_analytics(
     start_date: datetime,
     end_date: datetime,

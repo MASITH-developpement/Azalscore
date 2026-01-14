@@ -7,13 +7,12 @@ Schémas de validation pour les API du module Qualité.
 
 from __future__ import annotations
 
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # ============================================================================
 # ENUMS
@@ -155,61 +154,61 @@ class CertificationStatusEnum(str, Enum):
 
 class NonConformanceBase(BaseModel):
     title: str = Field(..., min_length=3, max_length=300)
-    description: Optional[str] = None
+    description: str | None = None
     nc_type: NonConformanceTypeEnum
     severity: NonConformanceSeverityEnum
     detected_date: date
-    detection_location: Optional[str] = None
-    detection_phase: Optional[str] = None
+    detection_location: str | None = None
+    detection_phase: str | None = None
 
 
 class NonConformanceCreate(NonConformanceBase):
-    source_type: Optional[str] = None
-    source_reference: Optional[str] = None
-    source_id: Optional[int] = None
-    product_id: Optional[int] = None
-    lot_number: Optional[str] = None
-    serial_number: Optional[str] = None
-    quantity_affected: Optional[Decimal] = None
-    unit_id: Optional[int] = None
-    supplier_id: Optional[int] = None
-    customer_id: Optional[int] = None
-    immediate_action: Optional[str] = None
-    responsible_id: Optional[int] = None
-    department: Optional[str] = None
-    notes: Optional[str] = None
+    source_type: str | None = None
+    source_reference: str | None = None
+    source_id: int | None = None
+    product_id: int | None = None
+    lot_number: str | None = None
+    serial_number: str | None = None
+    quantity_affected: Decimal | None = None
+    unit_id: int | None = None
+    supplier_id: int | None = None
+    customer_id: int | None = None
+    immediate_action: str | None = None
+    responsible_id: int | None = None
+    department: str | None = None
+    notes: str | None = None
 
 
 class NonConformanceUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=3, max_length=300)
-    description: Optional[str] = None
-    severity: Optional[NonConformanceSeverityEnum] = None
-    status: Optional[NonConformanceStatusEnum] = None
+    title: str | None = Field(None, min_length=3, max_length=300)
+    description: str | None = None
+    severity: NonConformanceSeverityEnum | None = None
+    status: NonConformanceStatusEnum | None = None
 
     # Analyse des causes
-    immediate_cause: Optional[str] = None
-    root_cause: Optional[str] = None
-    cause_analysis_method: Optional[str] = None
+    immediate_cause: str | None = None
+    root_cause: str | None = None
+    cause_analysis_method: str | None = None
 
     # Impact
-    impact_description: Optional[str] = None
-    estimated_cost: Optional[Decimal] = None
-    actual_cost: Optional[Decimal] = None
+    impact_description: str | None = None
+    estimated_cost: Decimal | None = None
+    actual_cost: Decimal | None = None
 
     # Traitement
-    immediate_action: Optional[str] = None
-    disposition: Optional[str] = None
-    disposition_justification: Optional[str] = None
+    immediate_action: str | None = None
+    disposition: str | None = None
+    disposition_justification: str | None = None
 
     # CAPA
-    capa_required: Optional[bool] = None
-    capa_id: Optional[int] = None
+    capa_required: bool | None = None
+    capa_id: int | None = None
 
     # Responsable
-    responsible_id: Optional[int] = None
-    department: Optional[str] = None
+    responsible_id: int | None = None
+    department: str | None = None
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class NonConformanceClose(BaseModel):
@@ -220,19 +219,19 @@ class NonConformanceClose(BaseModel):
 class NonConformanceActionCreate(BaseModel):
     action_type: str = Field(..., min_length=2, max_length=50)
     description: str = Field(..., min_length=10)
-    responsible_id: Optional[int] = None
-    planned_date: Optional[date] = None
-    due_date: Optional[date] = None
-    comments: Optional[str] = None
+    responsible_id: int | None = None
+    planned_date: date | None = None
+    due_date: date | None = None
+    comments: str | None = None
 
 
 class NonConformanceActionUpdate(BaseModel):
-    description: Optional[str] = None
-    responsible_id: Optional[int] = None
-    due_date: Optional[date] = None
-    status: Optional[str] = None
-    completed_date: Optional[date] = None
-    comments: Optional[str] = None
+    description: str | None = None
+    responsible_id: int | None = None
+    due_date: date | None = None
+    status: str | None = None
+    completed_date: date | None = None
+    comments: str | None = None
 
 
 class NonConformanceActionResponse(BaseModel):
@@ -241,14 +240,14 @@ class NonConformanceActionResponse(BaseModel):
     action_number: int
     action_type: str
     description: str
-    responsible_id: Optional[int] = None
-    planned_date: Optional[date] = None
-    due_date: Optional[date] = None
-    completed_date: Optional[date] = None
+    responsible_id: int | None = None
+    planned_date: date | None = None
+    due_date: date | None = None
+    completed_date: date | None = None
     status: str
     verified: bool
-    verified_date: Optional[date] = None
-    comments: Optional[str] = None
+    verified_date: date | None = None
+    comments: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -259,43 +258,43 @@ class NonConformanceResponse(NonConformanceBase):
     id: int
     nc_number: str
     status: NonConformanceStatusEnum
-    detected_by_id: Optional[int] = None
-    source_type: Optional[str] = None
-    source_reference: Optional[str] = None
-    product_id: Optional[int] = None
-    lot_number: Optional[str] = None
-    quantity_affected: Optional[Decimal] = None
-    supplier_id: Optional[int] = None
-    customer_id: Optional[int] = None
+    detected_by_id: int | None = None
+    source_type: str | None = None
+    source_reference: str | None = None
+    product_id: int | None = None
+    lot_number: str | None = None
+    quantity_affected: Decimal | None = None
+    supplier_id: int | None = None
+    customer_id: int | None = None
 
-    immediate_cause: Optional[str] = None
-    root_cause: Optional[str] = None
-    cause_analysis_method: Optional[str] = None
+    immediate_cause: str | None = None
+    root_cause: str | None = None
+    cause_analysis_method: str | None = None
 
-    impact_description: Optional[str] = None
-    estimated_cost: Optional[Decimal] = None
-    actual_cost: Optional[Decimal] = None
+    impact_description: str | None = None
+    estimated_cost: Decimal | None = None
+    actual_cost: Decimal | None = None
 
-    immediate_action: Optional[str] = None
-    disposition: Optional[str] = None
+    immediate_action: str | None = None
+    disposition: str | None = None
 
-    responsible_id: Optional[int] = None
-    department: Optional[str] = None
+    responsible_id: int | None = None
+    department: str | None = None
 
     capa_required: bool
-    capa_id: Optional[int] = None
+    capa_id: int | None = None
 
-    closed_date: Optional[date] = None
+    closed_date: date | None = None
     effectiveness_verified: bool
 
     is_recurrent: bool
     recurrence_count: int
 
-    actions: List[NonConformanceActionResponse] = []
+    actions: list[NonConformanceActionResponse] = []
 
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -307,18 +306,18 @@ class NonConformanceResponse(NonConformanceBase):
 class ControlTemplateItemBase(BaseModel):
     sequence: int
     characteristic: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     measurement_type: str = Field(..., min_length=2, max_length=50)
-    unit: Optional[str] = None
-    nominal_value: Optional[Decimal] = None
-    tolerance_min: Optional[Decimal] = None
-    tolerance_max: Optional[Decimal] = None
-    expected_result: Optional[str] = None
-    measurement_method: Optional[str] = None
-    equipment_code: Optional[str] = None
+    unit: str | None = None
+    nominal_value: Decimal | None = None
+    tolerance_min: Decimal | None = None
+    tolerance_max: Decimal | None = None
+    expected_result: str | None = None
+    measurement_method: str | None = None
+    equipment_code: str | None = None
     is_critical: bool = False
     is_mandatory: bool = True
-    sampling_frequency: Optional[str] = None
+    sampling_frequency: str | None = None
 
 
 class ControlTemplateItemCreate(ControlTemplateItemBase):
@@ -328,8 +327,8 @@ class ControlTemplateItemCreate(ControlTemplateItemBase):
 class ControlTemplateItemResponse(ControlTemplateItemBase):
     id: int
     template_id: int
-    upper_limit: Optional[Decimal] = None
-    lower_limit: Optional[Decimal] = None
+    upper_limit: Decimal | None = None
+    lower_limit: Decimal | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -338,49 +337,49 @@ class ControlTemplateItemResponse(ControlTemplateItemBase):
 class ControlTemplateBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     version: str = "1.0"
     control_type: ControlTypeEnum
 
 
 class ControlTemplateCreate(ControlTemplateBase):
-    applies_to: Optional[str] = None
-    product_category_id: Optional[int] = None
-    instructions: Optional[str] = None
-    sampling_plan: Optional[str] = None
-    acceptance_criteria: Optional[str] = None
-    estimated_duration_minutes: Optional[int] = None
-    required_equipment: Optional[List[str]] = None
-    items: Optional[List[ControlTemplateItemCreate]] = None
+    applies_to: str | None = None
+    product_category_id: int | None = None
+    instructions: str | None = None
+    sampling_plan: str | None = None
+    acceptance_criteria: str | None = None
+    estimated_duration_minutes: int | None = None
+    required_equipment: list[str] | None = None
+    items: list[ControlTemplateItemCreate] | None = None
 
 
 class ControlTemplateUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    version: Optional[str] = None
-    instructions: Optional[str] = None
-    sampling_plan: Optional[str] = None
-    acceptance_criteria: Optional[str] = None
-    estimated_duration_minutes: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    version: str | None = None
+    instructions: str | None = None
+    sampling_plan: str | None = None
+    acceptance_criteria: str | None = None
+    estimated_duration_minutes: int | None = None
+    is_active: bool | None = None
 
 
 class ControlTemplateResponse(ControlTemplateBase):
     id: int
-    applies_to: Optional[str] = None
-    product_category_id: Optional[int] = None
-    instructions: Optional[str] = None
-    sampling_plan: Optional[str] = None
-    acceptance_criteria: Optional[str] = None
-    estimated_duration_minutes: Optional[int] = None
-    required_equipment: Optional[List[str]] = None
+    applies_to: str | None = None
+    product_category_id: int | None = None
+    instructions: str | None = None
+    sampling_plan: str | None = None
+    acceptance_criteria: str | None = None
+    estimated_duration_minutes: int | None = None
+    required_equipment: list[str] | None = None
     is_active: bool
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
-    items: List[ControlTemplateItemResponse] = []
+    valid_from: date | None = None
+    valid_until: date | None = None
+    items: list[ControlTemplateItemResponse] = []
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -392,43 +391,43 @@ class ControlTemplateResponse(ControlTemplateBase):
 class ControlLineBase(BaseModel):
     sequence: int
     characteristic: str = Field(..., min_length=2, max_length=200)
-    nominal_value: Optional[Decimal] = None
-    tolerance_min: Optional[Decimal] = None
-    tolerance_max: Optional[Decimal] = None
-    unit: Optional[str] = None
+    nominal_value: Decimal | None = None
+    tolerance_min: Decimal | None = None
+    tolerance_max: Decimal | None = None
+    unit: str | None = None
 
 
 class ControlLineCreate(ControlLineBase):
-    template_item_id: Optional[int] = None
-    measured_value: Optional[Decimal] = None
-    measured_text: Optional[str] = None
-    measured_boolean: Optional[bool] = None
-    result: Optional[ControlResultEnum] = None
-    equipment_code: Optional[str] = None
-    comments: Optional[str] = None
+    template_item_id: int | None = None
+    measured_value: Decimal | None = None
+    measured_text: str | None = None
+    measured_boolean: bool | None = None
+    result: ControlResultEnum | None = None
+    equipment_code: str | None = None
+    comments: str | None = None
 
 
 class ControlLineUpdate(BaseModel):
-    measured_value: Optional[Decimal] = None
-    measured_text: Optional[str] = None
-    measured_boolean: Optional[bool] = None
-    result: Optional[ControlResultEnum] = None
-    equipment_code: Optional[str] = None
-    comments: Optional[str] = None
+    measured_value: Decimal | None = None
+    measured_text: str | None = None
+    measured_boolean: bool | None = None
+    result: ControlResultEnum | None = None
+    equipment_code: str | None = None
+    comments: str | None = None
 
 
 class ControlLineResponse(ControlLineBase):
     id: int
     control_id: int
-    template_item_id: Optional[int] = None
-    measured_value: Optional[Decimal] = None
-    measured_text: Optional[str] = None
-    measured_boolean: Optional[bool] = None
-    measurement_date: Optional[datetime] = None
-    result: Optional[ControlResultEnum] = None
-    deviation: Optional[Decimal] = None
-    equipment_code: Optional[str] = None
-    comments: Optional[str] = None
+    template_item_id: int | None = None
+    measured_value: Decimal | None = None
+    measured_text: str | None = None
+    measured_boolean: bool | None = None
+    measurement_date: datetime | None = None
+    result: ControlResultEnum | None = None
+    deviation: Decimal | None = None
+    equipment_code: str | None = None
+    comments: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -440,69 +439,69 @@ class ControlBase(BaseModel):
 
 
 class ControlCreate(ControlBase):
-    template_id: Optional[int] = None
-    source_type: Optional[str] = None
-    source_reference: Optional[str] = None
-    source_id: Optional[int] = None
-    product_id: Optional[int] = None
-    lot_number: Optional[str] = None
-    serial_number: Optional[str] = None
-    quantity_to_control: Optional[Decimal] = None
-    unit_id: Optional[int] = None
-    supplier_id: Optional[int] = None
-    customer_id: Optional[int] = None
-    location: Optional[str] = None
-    controller_id: Optional[int] = None
-    observations: Optional[str] = None
-    lines: Optional[List[ControlLineCreate]] = None
+    template_id: int | None = None
+    source_type: str | None = None
+    source_reference: str | None = None
+    source_id: int | None = None
+    product_id: int | None = None
+    lot_number: str | None = None
+    serial_number: str | None = None
+    quantity_to_control: Decimal | None = None
+    unit_id: int | None = None
+    supplier_id: int | None = None
+    customer_id: int | None = None
+    location: str | None = None
+    controller_id: int | None = None
+    observations: str | None = None
+    lines: list[ControlLineCreate] | None = None
 
 
 class ControlUpdate(BaseModel):
-    control_date: Optional[date] = None
-    quantity_controlled: Optional[Decimal] = None
-    quantity_conforming: Optional[Decimal] = None
-    quantity_non_conforming: Optional[Decimal] = None
-    location: Optional[str] = None
-    controller_id: Optional[int] = None
-    status: Optional[ControlStatusEnum] = None
-    result: Optional[ControlResultEnum] = None
-    decision: Optional[str] = None
-    decision_comments: Optional[str] = None
-    observations: Optional[str] = None
+    control_date: date | None = None
+    quantity_controlled: Decimal | None = None
+    quantity_conforming: Decimal | None = None
+    quantity_non_conforming: Decimal | None = None
+    location: str | None = None
+    controller_id: int | None = None
+    status: ControlStatusEnum | None = None
+    result: ControlResultEnum | None = None
+    decision: str | None = None
+    decision_comments: str | None = None
+    observations: str | None = None
 
 
 class ControlResponse(ControlBase):
     id: int
     control_number: str
-    template_id: Optional[int] = None
-    source_type: Optional[str] = None
-    source_reference: Optional[str] = None
-    product_id: Optional[int] = None
-    lot_number: Optional[str] = None
-    serial_number: Optional[str] = None
-    quantity_to_control: Optional[Decimal] = None
-    quantity_controlled: Optional[Decimal] = None
-    quantity_conforming: Optional[Decimal] = None
-    quantity_non_conforming: Optional[Decimal] = None
-    supplier_id: Optional[int] = None
-    customer_id: Optional[int] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    location: Optional[str] = None
-    controller_id: Optional[int] = None
+    template_id: int | None = None
+    source_type: str | None = None
+    source_reference: str | None = None
+    product_id: int | None = None
+    lot_number: str | None = None
+    serial_number: str | None = None
+    quantity_to_control: Decimal | None = None
+    quantity_controlled: Decimal | None = None
+    quantity_conforming: Decimal | None = None
+    quantity_non_conforming: Decimal | None = None
+    supplier_id: int | None = None
+    customer_id: int | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    location: str | None = None
+    controller_id: int | None = None
     status: ControlStatusEnum
-    result: Optional[ControlResultEnum] = None
-    result_date: Optional[datetime] = None
-    decision: Optional[str] = None
-    decision_by_id: Optional[int] = None
-    decision_date: Optional[datetime] = None
-    decision_comments: Optional[str] = None
-    nc_id: Optional[int] = None
-    observations: Optional[str] = None
-    lines: List[ControlLineResponse] = []
+    result: ControlResultEnum | None = None
+    result_date: datetime | None = None
+    decision: str | None = None
+    decision_by_id: int | None = None
+    decision_date: datetime | None = None
+    decision_comments: str | None = None
+    nc_id: int | None = None
+    observations: str | None = None
+    lines: list[ControlLineResponse] = []
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -515,48 +514,48 @@ class AuditFindingBase(BaseModel):
     title: str = Field(..., min_length=5, max_length=300)
     description: str = Field(..., min_length=10)
     severity: FindingSeverityEnum
-    category: Optional[str] = None
-    clause_reference: Optional[str] = None
-    process_reference: Optional[str] = None
+    category: str | None = None
+    clause_reference: str | None = None
+    process_reference: str | None = None
 
 
 class AuditFindingCreate(AuditFindingBase):
-    evidence: Optional[str] = None
-    risk_description: Optional[str] = None
+    evidence: str | None = None
+    risk_description: str | None = None
     capa_required: bool = False
-    action_due_date: Optional[date] = None
+    action_due_date: date | None = None
 
 
 class AuditFindingUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=5, max_length=300)
-    description: Optional[str] = None
-    severity: Optional[FindingSeverityEnum] = None
-    category: Optional[str] = None
-    evidence: Optional[str] = None
-    risk_description: Optional[str] = None
-    auditee_response: Optional[str] = None
-    action_due_date: Optional[date] = None
-    status: Optional[str] = None
-    capa_id: Optional[int] = None
+    title: str | None = Field(None, min_length=5, max_length=300)
+    description: str | None = None
+    severity: FindingSeverityEnum | None = None
+    category: str | None = None
+    evidence: str | None = None
+    risk_description: str | None = None
+    auditee_response: str | None = None
+    action_due_date: date | None = None
+    status: str | None = None
+    capa_id: int | None = None
 
 
 class AuditFindingResponse(AuditFindingBase):
     id: int
     audit_id: int
     finding_number: int
-    evidence: Optional[str] = None
-    risk_description: Optional[str] = None
-    risk_level: Optional[str] = None
+    evidence: str | None = None
+    risk_description: str | None = None
+    risk_level: str | None = None
     capa_required: bool
-    capa_id: Optional[int] = None
-    auditee_response: Optional[str] = None
-    response_date: Optional[date] = None
-    action_due_date: Optional[date] = None
-    action_completed_date: Optional[date] = None
+    capa_id: int | None = None
+    auditee_response: str | None = None
+    response_date: date | None = None
+    action_due_date: date | None = None
+    action_completed_date: date | None = None
     status: str
     verified: bool
-    verified_date: Optional[date] = None
-    verification_comments: Optional[str] = None
+    verified_date: date | None = None
+    verification_comments: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -565,85 +564,85 @@ class AuditFindingResponse(AuditFindingBase):
 
 class AuditBase(BaseModel):
     title: str = Field(..., min_length=5, max_length=300)
-    description: Optional[str] = None
+    description: str | None = None
     audit_type: AuditTypeEnum
-    reference_standard: Optional[str] = None
+    reference_standard: str | None = None
 
 
 class AuditCreate(AuditBase):
-    reference_version: Optional[str] = None
-    audit_scope: Optional[str] = None
-    planned_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    lead_auditor_id: Optional[int] = None
-    auditors: Optional[List[int]] = None
-    audited_entity: Optional[str] = None
-    audited_department: Optional[str] = None
-    auditee_contact_id: Optional[int] = None
-    supplier_id: Optional[int] = None
+    reference_version: str | None = None
+    audit_scope: str | None = None
+    planned_date: date | None = None
+    planned_end_date: date | None = None
+    lead_auditor_id: int | None = None
+    auditors: list[int] | None = None
+    audited_entity: str | None = None
+    audited_department: str | None = None
+    auditee_contact_id: int | None = None
+    supplier_id: int | None = None
 
 
 class AuditUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=5, max_length=300)
-    description: Optional[str] = None
-    audit_scope: Optional[str] = None
-    planned_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    actual_date: Optional[date] = None
-    actual_end_date: Optional[date] = None
-    status: Optional[AuditStatusEnum] = None
-    lead_auditor_id: Optional[int] = None
-    auditors: Optional[List[int]] = None
-    audited_entity: Optional[str] = None
-    audited_department: Optional[str] = None
-    overall_score: Optional[Decimal] = None
-    max_score: Optional[Decimal] = None
-    audit_conclusion: Optional[str] = None
-    recommendation: Optional[str] = None
-    follow_up_required: Optional[bool] = None
-    follow_up_date: Optional[date] = None
+    title: str | None = Field(None, min_length=5, max_length=300)
+    description: str | None = None
+    audit_scope: str | None = None
+    planned_date: date | None = None
+    planned_end_date: date | None = None
+    actual_date: date | None = None
+    actual_end_date: date | None = None
+    status: AuditStatusEnum | None = None
+    lead_auditor_id: int | None = None
+    auditors: list[int] | None = None
+    audited_entity: str | None = None
+    audited_department: str | None = None
+    overall_score: Decimal | None = None
+    max_score: Decimal | None = None
+    audit_conclusion: str | None = None
+    recommendation: str | None = None
+    follow_up_required: bool | None = None
+    follow_up_date: date | None = None
 
 
 class AuditClose(BaseModel):
     audit_conclusion: str = Field(..., min_length=10)
-    recommendation: Optional[str] = None
+    recommendation: str | None = None
 
 
 class AuditResponse(AuditBase):
     id: int
     audit_number: str
-    reference_version: Optional[str] = None
-    audit_scope: Optional[str] = None
-    planned_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    actual_date: Optional[date] = None
-    actual_end_date: Optional[date] = None
+    reference_version: str | None = None
+    audit_scope: str | None = None
+    planned_date: date | None = None
+    planned_end_date: date | None = None
+    actual_date: date | None = None
+    actual_end_date: date | None = None
     status: AuditStatusEnum
-    lead_auditor_id: Optional[int] = None
-    auditors: Optional[List[int]] = None
-    audited_entity: Optional[str] = None
-    audited_department: Optional[str] = None
-    auditee_contact_id: Optional[int] = None
-    supplier_id: Optional[int] = None
+    lead_auditor_id: int | None = None
+    auditors: list[int] | None = None
+    audited_entity: str | None = None
+    audited_department: str | None = None
+    auditee_contact_id: int | None = None
+    supplier_id: int | None = None
     total_findings: int
     critical_findings: int
     major_findings: int
     minor_findings: int
     observations: int
-    overall_score: Optional[Decimal] = None
-    max_score: Optional[Decimal] = None
-    audit_conclusion: Optional[str] = None
-    recommendation: Optional[str] = None
-    report_date: Optional[date] = None
-    report_file: Optional[str] = None
+    overall_score: Decimal | None = None
+    max_score: Decimal | None = None
+    audit_conclusion: str | None = None
+    recommendation: str | None = None
+    report_date: date | None = None
+    report_file: str | None = None
     follow_up_required: bool
-    follow_up_date: Optional[date] = None
+    follow_up_date: date | None = None
     follow_up_completed: bool
-    closed_date: Optional[date] = None
-    findings: List[AuditFindingResponse] = []
+    closed_date: date | None = None
+    findings: list[AuditFindingResponse] = []
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -655,44 +654,44 @@ class AuditResponse(AuditBase):
 class CAPAActionBase(BaseModel):
     action_type: str = Field(..., min_length=2, max_length=50)
     description: str = Field(..., min_length=10)
-    responsible_id: Optional[int] = None
+    responsible_id: int | None = None
     due_date: date
 
 
 class CAPAActionCreate(CAPAActionBase):
-    planned_date: Optional[date] = None
+    planned_date: date | None = None
     verification_required: bool = True
-    estimated_cost: Optional[Decimal] = None
+    estimated_cost: Decimal | None = None
 
 
 class CAPAActionUpdate(BaseModel):
-    description: Optional[str] = None
-    responsible_id: Optional[int] = None
-    due_date: Optional[date] = None
-    status: Optional[str] = None
-    completed_date: Optional[date] = None
-    result: Optional[str] = None
-    evidence: Optional[str] = None
-    actual_cost: Optional[Decimal] = None
-    comments: Optional[str] = None
+    description: str | None = None
+    responsible_id: int | None = None
+    due_date: date | None = None
+    status: str | None = None
+    completed_date: date | None = None
+    result: str | None = None
+    evidence: str | None = None
+    actual_cost: Decimal | None = None
+    comments: str | None = None
 
 
 class CAPAActionResponse(CAPAActionBase):
     id: int
     capa_id: int
     action_number: int
-    planned_date: Optional[date] = None
-    completed_date: Optional[date] = None
+    planned_date: date | None = None
+    completed_date: date | None = None
     status: str
-    result: Optional[str] = None
-    evidence: Optional[str] = None
+    result: str | None = None
+    evidence: str | None = None
     verification_required: bool
     verified: bool
-    verified_date: Optional[date] = None
-    verification_result: Optional[str] = None
-    estimated_cost: Optional[Decimal] = None
-    actual_cost: Optional[Decimal] = None
-    comments: Optional[str] = None
+    verified_date: date | None = None
+    verification_result: str | None = None
+    estimated_cost: Decimal | None = None
+    actual_cost: Decimal | None = None
+    comments: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -706,76 +705,76 @@ class CAPABase(BaseModel):
 
 
 class CAPACreate(CAPABase):
-    source_type: Optional[str] = None
-    source_reference: Optional[str] = None
-    source_id: Optional[int] = None
+    source_type: str | None = None
+    source_reference: str | None = None
+    source_id: int | None = None
     priority: str = "MEDIUM"
     open_date: date
-    target_close_date: Optional[date] = None
+    target_close_date: date | None = None
     owner_id: int
-    department: Optional[str] = None
-    problem_statement: Optional[str] = None
-    immediate_containment: Optional[str] = None
-    effectiveness_criteria: Optional[str] = None
+    department: str | None = None
+    problem_statement: str | None = None
+    immediate_containment: str | None = None
+    effectiveness_criteria: str | None = None
 
 
 class CAPAUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=5, max_length=300)
-    description: Optional[str] = None
-    priority: Optional[str] = None
-    status: Optional[CAPAStatusEnum] = None
-    target_close_date: Optional[date] = None
-    owner_id: Optional[int] = None
-    department: Optional[str] = None
-    problem_statement: Optional[str] = None
-    immediate_containment: Optional[str] = None
-    root_cause_analysis: Optional[str] = None
-    root_cause_method: Optional[str] = None
-    root_cause_verified: Optional[bool] = None
-    impact_assessment: Optional[str] = None
-    risk_level: Optional[str] = None
-    effectiveness_criteria: Optional[str] = None
-    extension_required: Optional[bool] = None
-    extension_scope: Optional[str] = None
+    title: str | None = Field(None, min_length=5, max_length=300)
+    description: str | None = None
+    priority: str | None = None
+    status: CAPAStatusEnum | None = None
+    target_close_date: date | None = None
+    owner_id: int | None = None
+    department: str | None = None
+    problem_statement: str | None = None
+    immediate_containment: str | None = None
+    root_cause_analysis: str | None = None
+    root_cause_method: str | None = None
+    root_cause_verified: bool | None = None
+    impact_assessment: str | None = None
+    risk_level: str | None = None
+    effectiveness_criteria: str | None = None
+    extension_required: bool | None = None
+    extension_scope: str | None = None
 
 
 class CAPAClose(BaseModel):
     effectiveness_verified: bool
     effectiveness_result: str = Field(..., min_length=10)
-    closure_comments: Optional[str] = None
+    closure_comments: str | None = None
 
 
 class CAPAResponse(CAPABase):
     id: int
     capa_number: str
-    source_type: Optional[str] = None
-    source_reference: Optional[str] = None
+    source_type: str | None = None
+    source_reference: str | None = None
     status: CAPAStatusEnum
     priority: str
     open_date: date
-    target_close_date: Optional[date] = None
-    actual_close_date: Optional[date] = None
+    target_close_date: date | None = None
+    actual_close_date: date | None = None
     owner_id: int
-    department: Optional[str] = None
-    problem_statement: Optional[str] = None
-    immediate_containment: Optional[str] = None
-    root_cause_analysis: Optional[str] = None
-    root_cause_method: Optional[str] = None
+    department: str | None = None
+    problem_statement: str | None = None
+    immediate_containment: str | None = None
+    root_cause_analysis: str | None = None
+    root_cause_method: str | None = None
     root_cause_verified: bool
-    impact_assessment: Optional[str] = None
-    risk_level: Optional[str] = None
-    effectiveness_criteria: Optional[str] = None
+    impact_assessment: str | None = None
+    risk_level: str | None = None
+    effectiveness_criteria: str | None = None
     effectiveness_verified: bool
-    effectiveness_date: Optional[date] = None
-    effectiveness_result: Optional[str] = None
+    effectiveness_date: date | None = None
+    effectiveness_result: str | None = None
     extension_required: bool
-    extension_scope: Optional[str] = None
+    extension_scope: str | None = None
     extension_completed: bool
-    closure_comments: Optional[str] = None
-    actions: List[CAPAActionResponse] = []
+    closure_comments: str | None = None
+    actions: list[CAPAActionResponse] = []
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -787,8 +786,8 @@ class CAPAResponse(CAPABase):
 class ClaimActionBase(BaseModel):
     action_type: str = Field(..., min_length=2, max_length=50)
     description: str = Field(..., min_length=10)
-    responsible_id: Optional[int] = None
-    due_date: Optional[date] = None
+    responsible_id: int | None = None
+    due_date: date | None = None
 
 
 class ClaimActionCreate(ClaimActionBase):
@@ -799,9 +798,9 @@ class ClaimActionResponse(ClaimActionBase):
     id: int
     claim_id: int
     action_number: int
-    completed_date: Optional[date] = None
+    completed_date: date | None = None
     status: str
-    result: Optional[str] = None
+    result: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -816,41 +815,41 @@ class ClaimBase(BaseModel):
 
 
 class ClaimCreate(ClaimBase):
-    customer_contact: Optional[str] = None
-    customer_reference: Optional[str] = None
-    received_via: Optional[str] = None
-    product_id: Optional[int] = None
-    order_reference: Optional[str] = None
-    invoice_reference: Optional[str] = None
-    lot_number: Optional[str] = None
-    quantity_affected: Optional[Decimal] = None
-    claim_type: Optional[str] = None
-    severity: Optional[NonConformanceSeverityEnum] = None
+    customer_contact: str | None = None
+    customer_reference: str | None = None
+    received_via: str | None = None
+    product_id: int | None = None
+    order_reference: str | None = None
+    invoice_reference: str | None = None
+    lot_number: str | None = None
+    quantity_affected: Decimal | None = None
+    claim_type: str | None = None
+    severity: NonConformanceSeverityEnum | None = None
     priority: str = "MEDIUM"
-    owner_id: Optional[int] = None
-    response_due_date: Optional[date] = None
-    claim_amount: Optional[Decimal] = None
+    owner_id: int | None = None
+    response_due_date: date | None = None
+    claim_amount: Decimal | None = None
 
 
 class ClaimUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=5, max_length=300)
-    description: Optional[str] = None
-    customer_contact: Optional[str] = None
-    severity: Optional[NonConformanceSeverityEnum] = None
-    priority: Optional[str] = None
-    status: Optional[ClaimStatusEnum] = None
-    owner_id: Optional[int] = None
-    investigation_summary: Optional[str] = None
-    root_cause: Optional[str] = None
-    our_responsibility: Optional[bool] = None
-    nc_id: Optional[int] = None
-    capa_id: Optional[int] = None
-    response_due_date: Optional[date] = None
-    response_content: Optional[str] = None
-    resolution_type: Optional[str] = None
-    resolution_description: Optional[str] = None
-    claim_amount: Optional[Decimal] = None
-    accepted_amount: Optional[Decimal] = None
+    title: str | None = Field(None, min_length=5, max_length=300)
+    description: str | None = None
+    customer_contact: str | None = None
+    severity: NonConformanceSeverityEnum | None = None
+    priority: str | None = None
+    status: ClaimStatusEnum | None = None
+    owner_id: int | None = None
+    investigation_summary: str | None = None
+    root_cause: str | None = None
+    our_responsibility: bool | None = None
+    nc_id: int | None = None
+    capa_id: int | None = None
+    response_due_date: date | None = None
+    response_content: str | None = None
+    resolution_type: str | None = None
+    resolution_description: str | None = None
+    claim_amount: Decimal | None = None
+    accepted_amount: Decimal | None = None
 
 
 class ClaimRespond(BaseModel):
@@ -860,51 +859,51 @@ class ClaimRespond(BaseModel):
 class ClaimResolve(BaseModel):
     resolution_type: str = Field(..., min_length=2, max_length=50)
     resolution_description: str = Field(..., min_length=10)
-    accepted_amount: Optional[Decimal] = None
+    accepted_amount: Decimal | None = None
 
 
 class ClaimClose(BaseModel):
-    customer_satisfied: Optional[bool] = None
-    satisfaction_feedback: Optional[str] = None
+    customer_satisfied: bool | None = None
+    satisfaction_feedback: str | None = None
 
 
 class ClaimResponse(ClaimBase):
     id: int
     claim_number: str
-    customer_contact: Optional[str] = None
-    customer_reference: Optional[str] = None
-    received_via: Optional[str] = None
-    received_by_id: Optional[int] = None
-    product_id: Optional[int] = None
-    order_reference: Optional[str] = None
-    invoice_reference: Optional[str] = None
-    lot_number: Optional[str] = None
-    quantity_affected: Optional[Decimal] = None
-    claim_type: Optional[str] = None
-    severity: Optional[NonConformanceSeverityEnum] = None
+    customer_contact: str | None = None
+    customer_reference: str | None = None
+    received_via: str | None = None
+    received_by_id: int | None = None
+    product_id: int | None = None
+    order_reference: str | None = None
+    invoice_reference: str | None = None
+    lot_number: str | None = None
+    quantity_affected: Decimal | None = None
+    claim_type: str | None = None
+    severity: NonConformanceSeverityEnum | None = None
     priority: str
     status: ClaimStatusEnum
-    owner_id: Optional[int] = None
-    investigation_summary: Optional[str] = None
-    root_cause: Optional[str] = None
-    our_responsibility: Optional[bool] = None
-    nc_id: Optional[int] = None
-    capa_id: Optional[int] = None
-    response_due_date: Optional[date] = None
-    response_date: Optional[date] = None
-    response_content: Optional[str] = None
-    resolution_type: Optional[str] = None
-    resolution_description: Optional[str] = None
-    resolution_date: Optional[date] = None
-    claim_amount: Optional[Decimal] = None
-    accepted_amount: Optional[Decimal] = None
-    customer_satisfied: Optional[bool] = None
-    satisfaction_feedback: Optional[str] = None
-    closed_date: Optional[date] = None
-    actions: List[ClaimActionResponse] = []
+    owner_id: int | None = None
+    investigation_summary: str | None = None
+    root_cause: str | None = None
+    our_responsibility: bool | None = None
+    nc_id: int | None = None
+    capa_id: int | None = None
+    response_due_date: date | None = None
+    response_date: date | None = None
+    response_content: str | None = None
+    resolution_type: str | None = None
+    resolution_description: str | None = None
+    resolution_date: date | None = None
+    claim_amount: Decimal | None = None
+    accepted_amount: Decimal | None = None
+    customer_satisfied: bool | None = None
+    satisfaction_feedback: str | None = None
+    closed_date: date | None = None
+    actions: list[ClaimActionResponse] = []
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -919,28 +918,28 @@ class IndicatorMeasurementBase(BaseModel):
 
 
 class IndicatorMeasurementCreate(IndicatorMeasurementBase):
-    period_start: Optional[date] = None
-    period_end: Optional[date] = None
-    numerator: Optional[Decimal] = None
-    denominator: Optional[Decimal] = None
-    comments: Optional[str] = None
+    period_start: date | None = None
+    period_end: date | None = None
+    numerator: Decimal | None = None
+    denominator: Decimal | None = None
+    comments: str | None = None
     source: str = "MANUAL"
 
 
 class IndicatorMeasurementResponse(IndicatorMeasurementBase):
     id: int
     indicator_id: int
-    period_start: Optional[date] = None
-    period_end: Optional[date] = None
-    numerator: Optional[Decimal] = None
-    denominator: Optional[Decimal] = None
-    target_value: Optional[Decimal] = None
-    deviation: Optional[Decimal] = None
-    achievement_rate: Optional[Decimal] = None
-    status: Optional[str] = None
-    comments: Optional[str] = None
+    period_start: date | None = None
+    period_end: date | None = None
+    numerator: Decimal | None = None
+    denominator: Decimal | None = None
+    target_value: Decimal | None = None
+    deviation: Decimal | None = None
+    achievement_rate: Decimal | None = None
+    status: str | None = None
+    comments: str | None = None
     action_required: bool
-    source: Optional[str] = None
+    source: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -949,59 +948,59 @@ class IndicatorMeasurementResponse(IndicatorMeasurementBase):
 class IndicatorBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
 
 
 class IndicatorCreate(IndicatorBase):
-    formula: Optional[str] = None
-    unit: Optional[str] = None
-    target_value: Optional[Decimal] = None
-    target_min: Optional[Decimal] = None
-    target_max: Optional[Decimal] = None
-    warning_threshold: Optional[Decimal] = None
-    critical_threshold: Optional[Decimal] = None
-    direction: Optional[str] = None
-    measurement_frequency: Optional[str] = None
-    data_source: Optional[str] = None
-    owner_id: Optional[int] = None
+    formula: str | None = None
+    unit: str | None = None
+    target_value: Decimal | None = None
+    target_min: Decimal | None = None
+    target_max: Decimal | None = None
+    warning_threshold: Decimal | None = None
+    critical_threshold: Decimal | None = None
+    direction: str | None = None
+    measurement_frequency: str | None = None
+    data_source: str | None = None
+    owner_id: int | None = None
 
 
 class IndicatorUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    category: Optional[str] = None
-    formula: Optional[str] = None
-    unit: Optional[str] = None
-    target_value: Optional[Decimal] = None
-    target_min: Optional[Decimal] = None
-    target_max: Optional[Decimal] = None
-    warning_threshold: Optional[Decimal] = None
-    critical_threshold: Optional[Decimal] = None
-    direction: Optional[str] = None
-    measurement_frequency: Optional[str] = None
-    owner_id: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    category: str | None = None
+    formula: str | None = None
+    unit: str | None = None
+    target_value: Decimal | None = None
+    target_min: Decimal | None = None
+    target_max: Decimal | None = None
+    warning_threshold: Decimal | None = None
+    critical_threshold: Decimal | None = None
+    direction: str | None = None
+    measurement_frequency: str | None = None
+    owner_id: int | None = None
+    is_active: bool | None = None
 
 
 class IndicatorResponse(IndicatorBase):
     id: int
-    formula: Optional[str] = None
-    unit: Optional[str] = None
-    target_value: Optional[Decimal] = None
-    target_min: Optional[Decimal] = None
-    target_max: Optional[Decimal] = None
-    warning_threshold: Optional[Decimal] = None
-    critical_threshold: Optional[Decimal] = None
-    direction: Optional[str] = None
-    measurement_frequency: Optional[str] = None
-    data_source: Optional[str] = None
-    owner_id: Optional[int] = None
+    formula: str | None = None
+    unit: str | None = None
+    target_value: Decimal | None = None
+    target_min: Decimal | None = None
+    target_max: Decimal | None = None
+    warning_threshold: Decimal | None = None
+    critical_threshold: Decimal | None = None
+    direction: str | None = None
+    measurement_frequency: str | None = None
+    data_source: str | None = None
+    owner_id: int | None = None
     is_active: bool
-    measurements: List[IndicatorMeasurementResponse] = []
+    measurements: list[IndicatorMeasurementResponse] = []
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -1016,47 +1015,47 @@ class CertificationAuditBase(BaseModel):
 
 
 class CertificationAuditCreate(CertificationAuditBase):
-    audit_end_date: Optional[date] = None
-    lead_auditor: Optional[str] = None
-    audit_team: Optional[List[str]] = None
-    notes: Optional[str] = None
+    audit_end_date: date | None = None
+    lead_auditor: str | None = None
+    audit_team: list[str] | None = None
+    notes: str | None = None
 
 
 class CertificationAuditUpdate(BaseModel):
-    audit_date: Optional[date] = None
-    audit_end_date: Optional[date] = None
-    lead_auditor: Optional[str] = None
-    result: Optional[str] = None
-    findings_count: Optional[int] = None
-    major_nc_count: Optional[int] = None
-    minor_nc_count: Optional[int] = None
-    observations_count: Optional[int] = None
-    report_date: Optional[date] = None
-    report_file: Optional[str] = None
-    corrective_actions_due: Optional[date] = None
-    corrective_actions_closed: Optional[date] = None
-    follow_up_audit_date: Optional[date] = None
-    notes: Optional[str] = None
+    audit_date: date | None = None
+    audit_end_date: date | None = None
+    lead_auditor: str | None = None
+    result: str | None = None
+    findings_count: int | None = None
+    major_nc_count: int | None = None
+    minor_nc_count: int | None = None
+    observations_count: int | None = None
+    report_date: date | None = None
+    report_file: str | None = None
+    corrective_actions_due: date | None = None
+    corrective_actions_closed: date | None = None
+    follow_up_audit_date: date | None = None
+    notes: str | None = None
 
 
 class CertificationAuditResponse(CertificationAuditBase):
     id: int
     certification_id: int
-    audit_end_date: Optional[date] = None
-    lead_auditor: Optional[str] = None
-    audit_team: Optional[List[str]] = None
-    result: Optional[str] = None
+    audit_end_date: date | None = None
+    lead_auditor: str | None = None
+    audit_team: list[str] | None = None
+    result: str | None = None
     findings_count: int
     major_nc_count: int
     minor_nc_count: int
     observations_count: int
-    report_date: Optional[date] = None
-    report_file: Optional[str] = None
-    corrective_actions_due: Optional[date] = None
-    corrective_actions_closed: Optional[date] = None
-    follow_up_audit_date: Optional[date] = None
-    quality_audit_id: Optional[int] = None
-    notes: Optional[str] = None
+    report_date: date | None = None
+    report_file: str | None = None
+    corrective_actions_due: date | None = None
+    corrective_actions_closed: date | None = None
+    follow_up_audit_date: date | None = None
+    quality_audit_id: int | None = None
+    notes: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -1066,60 +1065,60 @@ class CertificationAuditResponse(CertificationAuditBase):
 class CertificationBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     standard: str = Field(..., min_length=2, max_length=100)
 
 
 class CertificationCreate(CertificationBase):
-    standard_version: Optional[str] = None
-    scope: Optional[str] = None
-    certification_body: Optional[str] = None
-    certification_body_accreditation: Optional[str] = None
-    initial_certification_date: Optional[date] = None
-    manager_id: Optional[int] = None
-    annual_cost: Optional[Decimal] = None
-    notes: Optional[str] = None
+    standard_version: str | None = None
+    scope: str | None = None
+    certification_body: str | None = None
+    certification_body_accreditation: str | None = None
+    initial_certification_date: date | None = None
+    manager_id: int | None = None
+    annual_cost: Decimal | None = None
+    notes: str | None = None
 
 
 class CertificationUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    standard_version: Optional[str] = None
-    scope: Optional[str] = None
-    certification_body: Optional[str] = None
-    status: Optional[CertificationStatusEnum] = None
-    current_certificate_date: Optional[date] = None
-    expiry_date: Optional[date] = None
-    certificate_number: Optional[str] = None
-    certificate_file: Optional[str] = None
-    next_surveillance_date: Optional[date] = None
-    next_renewal_date: Optional[date] = None
-    manager_id: Optional[int] = None
-    annual_cost: Optional[Decimal] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    standard_version: str | None = None
+    scope: str | None = None
+    certification_body: str | None = None
+    status: CertificationStatusEnum | None = None
+    current_certificate_date: date | None = None
+    expiry_date: date | None = None
+    certificate_number: str | None = None
+    certificate_file: str | None = None
+    next_surveillance_date: date | None = None
+    next_renewal_date: date | None = None
+    manager_id: int | None = None
+    annual_cost: Decimal | None = None
+    notes: str | None = None
 
 
 class CertificationResponse(CertificationBase):
     id: int
-    standard_version: Optional[str] = None
-    scope: Optional[str] = None
-    certification_body: Optional[str] = None
-    certification_body_accreditation: Optional[str] = None
-    initial_certification_date: Optional[date] = None
-    current_certificate_date: Optional[date] = None
-    expiry_date: Optional[date] = None
-    next_surveillance_date: Optional[date] = None
-    next_renewal_date: Optional[date] = None
-    certificate_number: Optional[str] = None
-    certificate_file: Optional[str] = None
+    standard_version: str | None = None
+    scope: str | None = None
+    certification_body: str | None = None
+    certification_body_accreditation: str | None = None
+    initial_certification_date: date | None = None
+    current_certificate_date: date | None = None
+    expiry_date: date | None = None
+    next_surveillance_date: date | None = None
+    next_renewal_date: date | None = None
+    certificate_number: str | None = None
+    certificate_file: str | None = None
     status: CertificationStatusEnum
-    manager_id: Optional[int] = None
-    annual_cost: Optional[Decimal] = None
-    audits: List[CertificationAuditResponse] = []
-    notes: Optional[str] = None
+    manager_id: int | None = None
+    annual_cost: Decimal | None = None
+    audits: list[CertificationAuditResponse] = []
+    notes: str | None = None
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -1129,56 +1128,56 @@ class CertificationResponse(CertificationBase):
 # ============================================================================
 
 class PaginatedNCResponse(BaseModel):
-    items: List[NonConformanceResponse]
+    items: list[NonConformanceResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedControlTemplateResponse(BaseModel):
-    items: List[ControlTemplateResponse]
+    items: list[ControlTemplateResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedControlResponse(BaseModel):
-    items: List[ControlResponse]
+    items: list[ControlResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedAuditResponse(BaseModel):
-    items: List[AuditResponse]
+    items: list[AuditResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedCAPAResponse(BaseModel):
-    items: List[CAPAResponse]
+    items: list[CAPAResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedClaimResponse(BaseModel):
-    items: List[ClaimResponse]
+    items: list[ClaimResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedIndicatorResponse(BaseModel):
-    items: List[IndicatorResponse]
+    items: list[IndicatorResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedCertificationResponse(BaseModel):
-    items: List[CertificationResponse]
+    items: list[CertificationResponse]
     total: int
     skip: int
     limit: int
@@ -1193,14 +1192,14 @@ class QualityDashboard(BaseModel):
     nc_total: int = 0
     nc_open: int = 0
     nc_critical: int = 0
-    nc_by_type: Dict[str, int] = {}
-    nc_by_status: Dict[str, int] = {}
+    nc_by_type: dict[str, int] = {}
+    nc_by_status: dict[str, int] = {}
 
     # Contrôles qualité
     controls_total: int = 0
     controls_completed: int = 0
     controls_pass_rate: Decimal = Decimal("0")
-    controls_by_type: Dict[str, int] = {}
+    controls_by_type: dict[str, int] = {}
 
     # Audits
     audits_planned: int = 0
@@ -1216,8 +1215,8 @@ class QualityDashboard(BaseModel):
     # Réclamations clients
     claims_total: int = 0
     claims_open: int = 0
-    claims_avg_resolution_days: Optional[Decimal] = None
-    claims_satisfaction_rate: Optional[Decimal] = None
+    claims_avg_resolution_days: Decimal | None = None
+    claims_satisfaction_rate: Decimal | None = None
 
     # Certifications
     certifications_active: int = 0
@@ -1229,5 +1228,5 @@ class QualityDashboard(BaseModel):
     indicators_critical: int = 0
 
     # Tendances
-    nc_trend_30_days: List[Dict[str, Any]] = []
-    control_trend_30_days: List[Dict[str, Any]] = []
+    nc_trend_30_days: list[dict[str, Any]] = []
+    control_trend_30_days: list[dict[str, Any]] = []

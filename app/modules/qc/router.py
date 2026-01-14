@@ -6,40 +6,53 @@ Endpoints REST pour le module de contrôle qualité central.
 """
 
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
-from app.modules.qc.service import get_qc_service, QCService
-from app.modules.qc.models import (
-    QCRuleCategory, QCRuleSeverity, QCCheckStatus, ModuleStatus,
-    TestType, ValidationPhase
-)
+from app.core.database import get_db
+from app.modules.qc.models import ModuleStatus, QCCheckStatus, QCRuleCategory, QCRuleSeverity, TestType, ValidationPhase
 from app.modules.qc.schemas import (
-    # Rules
-    QCRuleCreate, QCRuleUpdate, QCRuleResponse, PaginatedRulesResponse,
+    AlertResolveRequest,
+    DashboardDataResponse,
     # Modules
-    ModuleRegisterCreate, ModuleRegistryResponse, ModuleStatusUpdate,
+    ModuleRegisterCreate,
+    ModuleRegistryResponse,
+    ModuleScoreBreakdown,
+    ModuleStatusUpdate,
+    PaginatedAlertsResponse,
+    PaginatedCheckResultsResponse,
     PaginatedModulesResponse,
-    # Validations
-    ValidationRunRequest, ValidationResponse,
-    PaginatedValidationsResponse, PaginatedCheckResultsResponse,
-    # Tests
-    TestRunCreate, TestRunResponse, PaginatedTestRunsResponse,
+    PaginatedRulesResponse,
+    PaginatedTestRunsResponse,
+    PaginatedValidationsResponse,
+    # Alerts
+    QCAlertCreate,
+    QCAlertResponse,
+    # Dashboards
+    QCDashboardCreate,
+    QCDashboardResponse,
     # Metrics
     QCMetricResponse,
-    # Alerts
-    QCAlertCreate, QCAlertResponse, AlertResolveRequest, PaginatedAlertsResponse,
-    # Dashboards
-    QCDashboardCreate, QCDashboardResponse, DashboardDataResponse,
-    # Templates
-    QCTemplateCreate, QCTemplateResponse,
+    # Rules
+    QCRuleCreate,
+    QCRuleResponse,
+    QCRuleUpdate,
     # Stats
-    QCStatsResponse, ModuleScoreBreakdown
+    QCStatsResponse,
+    # Templates
+    QCTemplateCreate,
+    QCTemplateResponse,
+    # Tests
+    TestRunCreate,
+    TestRunResponse,
+    ValidationResponse,
+    # Validations
+    ValidationRunRequest,
 )
+from app.modules.qc.service import QCService, get_qc_service
 
 router = APIRouter(prefix="/api/v1/qc", tags=["Quality Control"])
 
@@ -82,9 +95,9 @@ def create_rule(
 
 @router.get("/rules", response_model=PaginatedRulesResponse)
 def list_rules(
-    category: Optional[QCRuleCategory] = None,
-    severity: Optional[QCRuleSeverity] = None,
-    is_active: Optional[bool] = None,
+    category: QCRuleCategory | None = None,
+    severity: QCRuleSeverity | None = None,
+    is_active: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: QCService = Depends(get_service)
@@ -152,8 +165,8 @@ def register_module(
 
 @router.get("/modules", response_model=PaginatedModulesResponse)
 def list_modules(
-    module_type: Optional[str] = None,
-    status: Optional[ModuleStatus] = None,
+    module_type: str | None = None,
+    status: ModuleStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     service: QCService = Depends(get_service)
@@ -249,9 +262,9 @@ def run_validation(
 
 @router.get("/validations", response_model=PaginatedValidationsResponse)
 def list_validations(
-    module_id: Optional[int] = None,
-    status: Optional[QCCheckStatus] = None,
-    phase: Optional[ValidationPhase] = None,
+    module_id: int | None = None,
+    status: QCCheckStatus | None = None,
+    phase: ValidationPhase | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     service: QCService = Depends(get_service)
@@ -279,8 +292,8 @@ def get_validation(validation_id: int, service: QCService = Depends(get_service)
 @router.get("/validations/{validation_id}/results", response_model=PaginatedCheckResultsResponse)
 def get_validation_results(
     validation_id: int,
-    status: Optional[QCCheckStatus] = None,
-    category: Optional[QCRuleCategory] = None,
+    status: QCCheckStatus | None = None,
+    category: QCRuleCategory | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: QCService = Depends(get_service)
@@ -329,8 +342,8 @@ def record_test_run(
 
 @router.get("/tests", response_model=PaginatedTestRunsResponse)
 def list_test_runs(
-    module_id: Optional[int] = None,
-    test_type: Optional[TestType] = None,
+    module_id: int | None = None,
+    test_type: TestType | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     service: QCService = Depends(get_service)
@@ -345,7 +358,7 @@ def list_test_runs(
     return PaginatedTestRunsResponse(items=runs, total=total, skip=skip, limit=limit)
 
 
-@router.get("/tests/module/{module_id}", response_model=List[TestRunResponse])
+@router.get("/tests/module/{module_id}", response_model=list[TestRunResponse])
 def get_module_tests(
     module_id: int,
     limit: int = Query(20, ge=1, le=100),
@@ -362,7 +375,7 @@ def get_module_tests(
 
 @router.post("/metrics/record", response_model=QCMetricResponse)
 def record_metrics(
-    module_id: Optional[int] = None,
+    module_id: int | None = None,
     service: QCService = Depends(get_service)
 ):
     """Enregistre les métriques QC actuelles."""
@@ -370,11 +383,11 @@ def record_metrics(
     return metric
 
 
-@router.get("/metrics/history", response_model=List[QCMetricResponse])
+@router.get("/metrics/history", response_model=list[QCMetricResponse])
 def get_metrics_history(
-    module_id: Optional[int] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    module_id: int | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     limit: int = Query(30, ge=1, le=365),
     service: QCService = Depends(get_service)
 ):
@@ -420,9 +433,9 @@ def create_alert(
 
 @router.get("/alerts", response_model=PaginatedAlertsResponse)
 def list_alerts(
-    is_resolved: Optional[bool] = None,
-    severity: Optional[QCRuleSeverity] = None,
-    module_id: Optional[int] = None,
+    is_resolved: bool | None = None,
+    severity: QCRuleSeverity | None = None,
+    module_id: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     service: QCService = Depends(get_service)
@@ -438,7 +451,7 @@ def list_alerts(
     return PaginatedAlertsResponse(items=alerts, total=total, skip=skip, limit=limit)
 
 
-@router.get("/alerts/unresolved", response_model=List[QCAlertResponse])
+@router.get("/alerts/unresolved", response_model=list[QCAlertResponse])
 def get_unresolved_alerts(
     limit: int = Query(20, ge=1, le=100),
     service: QCService = Depends(get_service)
@@ -490,7 +503,7 @@ def create_dashboard(
     return dashboard
 
 
-@router.get("/dashboards", response_model=List[QCDashboardResponse])
+@router.get("/dashboards", response_model=list[QCDashboardResponse])
 def list_dashboards(
     service: QCService = Depends(get_service),
     current_user = Depends(get_current_user)
@@ -548,9 +561,9 @@ def create_template(
     return template
 
 
-@router.get("/templates", response_model=List[QCTemplateResponse])
+@router.get("/templates", response_model=list[QCTemplateResponse])
 def list_templates(
-    category: Optional[str] = None,
+    category: str | None = None,
     service: QCService = Depends(get_service)
 ):
     """Liste les templates de règles QC."""
@@ -566,7 +579,7 @@ def get_template(template_id: int, service: QCService = Depends(get_service)):
     return template
 
 
-@router.post("/templates/{template_id}/apply", response_model=List[QCRuleResponse])
+@router.post("/templates/{template_id}/apply", response_model=list[QCRuleResponse])
 def apply_template(
     template_id: int,
     service: QCService = Depends(get_service),
@@ -616,7 +629,7 @@ def get_qc_stats(service: QCService = Depends(get_service)):
     )
 
 
-@router.get("/stats/modules", response_model=List[ModuleScoreBreakdown])
+@router.get("/stats/modules", response_model=list[ModuleScoreBreakdown])
 def get_all_module_scores(service: QCService = Depends(get_service)):
     """Récupère les scores de tous les modules."""
     modules, _ = service.list_modules()

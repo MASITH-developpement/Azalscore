@@ -11,8 +11,8 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db import Base
 from app.core.types import JSON, UniversalUUID
+from app.db import Base
 
 
 class SystemSettings(Base):

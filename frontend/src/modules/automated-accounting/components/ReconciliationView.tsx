@@ -520,7 +520,7 @@ const RulesWidget: React.FC<{
                 leftIcon={<X size={14} />}
                 onClick={() => onDelete(rule.id)}
               >
-
+                Supprimer
               </Button>
             </div>
           ))}
@@ -667,9 +667,10 @@ const AddRuleModal: React.FC<{
           <Input
             type="number"
             value={String(priority)}
-            onChange={(value) => setPriority(parseInt(value) || 10)}
-            min={1}
-            max={100}
+            onChange={(value) => {
+              const num = parseInt(value) || 10;
+              setPriority(Math.min(100, Math.max(1, num)));
+            }}
           />
           <span className="azals-form-hint">
             Les règles avec une priorité plus élevée sont appliquées en premier

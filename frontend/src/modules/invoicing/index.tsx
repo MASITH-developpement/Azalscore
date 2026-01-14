@@ -234,7 +234,7 @@ const useUpdateDocument = () => {
   return useMutation({
     mutationFn: async ({ id, data }: {
       id: string;
-      data: Partial<Document> & { lines?: LineFormData[] };
+      data: Omit<Partial<Document>, 'lines'> & { lines?: LineFormData[] };
     }) => {
       const response = await api.put<Document>(`/v1/commercial/documents/${id}`, data);
       return response.data;

@@ -4,32 +4,56 @@ AZALS MODULE 16 - Helpdesk Router
 API endpoints pour le système de support client.
 """
 
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 
-from .models import TicketStatus, TicketPriority, AgentStatus
+from .models import AgentStatus, TicketPriority, TicketStatus
 from .schemas import (
-    CategoryCreate, CategoryUpdate, CategoryResponse,
-    TeamCreate, TeamUpdate, TeamResponse,
-    AgentCreate, AgentUpdate, AgentResponse, AgentStatusUpdate,
-    SLACreate, SLAUpdate, SLAResponse,
-    TicketCreate, TicketUpdate, TicketResponse, TicketAssign, TicketStatusChange,
-    ReplyCreate, ReplyResponse,
-    AttachmentCreate, AttachmentResponse,
+    AgentCreate,
+    AgentResponse,
+    AgentStatusUpdate,
+    AgentUpdate,
+    AttachmentCreate,
+    AttachmentResponse,
+    AutomationCreate,
+    AutomationResponse,
+    AutomationUpdate,
+    CannedResponseCreate,
+    CannedResponseResponse,
+    CannedResponseUpdate,
+    CategoryCreate,
+    CategoryResponse,
+    CategoryUpdate,
+    HelpdeskDashboard,
     HistoryResponse,
-    CannedResponseCreate, CannedResponseUpdate, CannedResponseResponse,
-    KBCategoryCreate, KBCategoryUpdate, KBCategoryResponse,
-    KBArticleCreate, KBArticleUpdate, KBArticleResponse,
-    SatisfactionCreate, SatisfactionResponse,
-    AutomationCreate, AutomationUpdate, AutomationResponse,
-    TicketStats, HelpdeskDashboard
+    KBArticleCreate,
+    KBArticleResponse,
+    KBArticleUpdate,
+    KBCategoryCreate,
+    KBCategoryResponse,
+    KBCategoryUpdate,
+    ReplyCreate,
+    ReplyResponse,
+    SatisfactionCreate,
+    SatisfactionResponse,
+    SLACreate,
+    SLAResponse,
+    SLAUpdate,
+    TeamCreate,
+    TeamResponse,
+    TeamUpdate,
+    TicketAssign,
+    TicketCreate,
+    TicketResponse,
+    TicketStats,
+    TicketStatusChange,
+    TicketUpdate,
 )
 from .service import HelpdeskService
-
 
 router = APIRouter(prefix="/api/v1/helpdesk", tags=["Helpdesk"])
 
@@ -46,11 +70,11 @@ def get_service(
 # CATEGORIES
 # ============================================================================
 
-@router.get("/categories", response_model=List[CategoryResponse])
+@router.get("/categories", response_model=list[CategoryResponse])
 async def list_categories(
     active_only: bool = True,
     public_only: bool = False,
-    parent_id: Optional[int] = None,
+    parent_id: int | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Liste des catégories de tickets."""
@@ -106,7 +130,7 @@ async def delete_category(
 # TEAMS
 # ============================================================================
 
-@router.get("/teams", response_model=List[TeamResponse])
+@router.get("/teams", response_model=list[TeamResponse])
 async def list_teams(
     active_only: bool = True,
     service: HelpdeskService = Depends(get_service)
@@ -164,11 +188,11 @@ async def delete_team(
 # AGENTS
 # ============================================================================
 
-@router.get("/agents", response_model=List[AgentResponse])
+@router.get("/agents", response_model=list[AgentResponse])
 async def list_agents(
     active_only: bool = True,
-    team_id: Optional[int] = None,
-    status: Optional[AgentStatus] = None,
+    team_id: int | None = None,
+    status: AgentStatus | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Liste des agents support."""
@@ -237,7 +261,7 @@ async def delete_agent(
 # SLA
 # ============================================================================
 
-@router.get("/sla", response_model=List[SLAResponse])
+@router.get("/sla", response_model=list[SLAResponse])
 async def list_slas(
     active_only: bool = True,
     service: HelpdeskService = Depends(get_service)
@@ -297,15 +321,15 @@ async def delete_sla(
 
 @router.get("/tickets")
 async def list_tickets(
-    status: Optional[TicketStatus] = None,
-    priority: Optional[TicketPriority] = None,
-    category_id: Optional[int] = None,
-    team_id: Optional[int] = None,
-    assigned_to_id: Optional[int] = None,
-    requester_id: Optional[int] = None,
-    requester_email: Optional[str] = None,
+    status: TicketStatus | None = None,
+    priority: TicketPriority | None = None,
+    category_id: int | None = None,
+    team_id: int | None = None,
+    assigned_to_id: int | None = None,
+    requester_id: int | None = None,
+    requester_email: str | None = None,
     overdue_only: bool = False,
-    search: Optional[str] = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     service: HelpdeskService = Depends(get_service)
@@ -425,7 +449,7 @@ async def merge_tickets(
 # REPLIES
 # ============================================================================
 
-@router.get("/tickets/{ticket_id}/replies", response_model=List[ReplyResponse])
+@router.get("/tickets/{ticket_id}/replies", response_model=list[ReplyResponse])
 async def list_replies(
     ticket_id: int,
     include_internal: bool = True,
@@ -440,9 +464,9 @@ async def add_reply(
     ticket_id: int,
     data: ReplyCreate,
     author_type: str = Query("agent", pattern="^(agent|customer|system)$"),
-    author_id: Optional[int] = None,
-    author_name: Optional[str] = None,
-    author_email: Optional[str] = None,
+    author_id: int | None = None,
+    author_name: str | None = None,
+    author_email: str | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Ajoute une réponse à un ticket."""
@@ -463,7 +487,7 @@ async def add_reply(
 # ATTACHMENTS
 # ============================================================================
 
-@router.get("/tickets/{ticket_id}/attachments", response_model=List[AttachmentResponse])
+@router.get("/tickets/{ticket_id}/attachments", response_model=list[AttachmentResponse])
 async def list_attachments(
     ticket_id: int,
     service: HelpdeskService = Depends(get_service)
@@ -476,7 +500,7 @@ async def list_attachments(
 async def add_attachment(
     ticket_id: int,
     data: AttachmentCreate,
-    uploaded_by_id: Optional[int] = None,
+    uploaded_by_id: int | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Ajoute une pièce jointe."""
@@ -490,7 +514,7 @@ async def add_attachment(
 # HISTORY
 # ============================================================================
 
-@router.get("/tickets/{ticket_id}/history", response_model=List[HistoryResponse])
+@router.get("/tickets/{ticket_id}/history", response_model=list[HistoryResponse])
 async def get_ticket_history(
     ticket_id: int,
     service: HelpdeskService = Depends(get_service)
@@ -503,12 +527,12 @@ async def get_ticket_history(
 # CANNED RESPONSES
 # ============================================================================
 
-@router.get("/canned-responses", response_model=List[CannedResponseResponse])
+@router.get("/canned-responses", response_model=list[CannedResponseResponse])
 async def list_canned_responses(
-    team_id: Optional[int] = None,
-    agent_id: Optional[int] = None,
-    category: Optional[str] = None,
-    search: Optional[str] = None,
+    team_id: int | None = None,
+    agent_id: int | None = None,
+    category: str | None = None,
+    search: str | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Liste les réponses pré-enregistrées."""
@@ -542,7 +566,7 @@ async def get_canned_by_shortcut(
 @router.post("/canned-responses", response_model=CannedResponseResponse)
 async def create_canned_response(
     data: CannedResponseCreate,
-    agent_id: Optional[int] = None,
+    agent_id: int | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Crée une réponse pré-enregistrée."""
@@ -589,9 +613,9 @@ async def delete_canned_response(
 # KNOWLEDGE BASE - CATEGORIES
 # ============================================================================
 
-@router.get("/kb/categories", response_model=List[KBCategoryResponse])
+@router.get("/kb/categories", response_model=list[KBCategoryResponse])
 async def list_kb_categories(
-    parent_id: Optional[int] = None,
+    parent_id: int | None = None,
     public_only: bool = False,
     service: HelpdeskService = Depends(get_service)
 ):
@@ -639,11 +663,11 @@ async def update_kb_category(
 
 @router.get("/kb/articles")
 async def list_kb_articles(
-    category_id: Optional[int] = None,
-    status: Optional[str] = None,
+    category_id: int | None = None,
+    status: str | None = None,
     public_only: bool = False,
     featured_only: bool = False,
-    search: Optional[str] = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     service: HelpdeskService = Depends(get_service)
@@ -699,8 +723,8 @@ async def get_kb_article_by_slug(
 @router.post("/kb/articles", response_model=KBArticleResponse)
 async def create_kb_article(
     data: KBArticleCreate,
-    author_id: Optional[int] = None,
-    author_name: Optional[str] = None,
+    author_id: int | None = None,
+    author_name: str | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Crée un article KB."""
@@ -740,7 +764,7 @@ async def rate_kb_article(
 @router.post("/satisfaction", response_model=SatisfactionResponse)
 async def submit_satisfaction(
     data: SatisfactionCreate,
-    customer_id: Optional[int] = None,
+    customer_id: int | None = None,
     service: HelpdeskService = Depends(get_service)
 ):
     """Soumet une enquête de satisfaction."""
@@ -752,7 +776,7 @@ async def submit_satisfaction(
 
 @router.get("/satisfaction/stats")
 async def get_satisfaction_stats(
-    agent_id: Optional[int] = None,
+    agent_id: int | None = None,
     days: int = Query(30, ge=1, le=365),
     service: HelpdeskService = Depends(get_service)
 ):
@@ -764,7 +788,7 @@ async def get_satisfaction_stats(
 # AUTOMATIONS
 # ============================================================================
 
-@router.get("/automations", response_model=List[AutomationResponse])
+@router.get("/automations", response_model=list[AutomationResponse])
 async def list_automations(
     active_only: bool = True,
     service: HelpdeskService = Depends(get_service)

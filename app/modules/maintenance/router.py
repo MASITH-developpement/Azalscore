@@ -5,43 +5,70 @@ AZALS MODULE M8 - Router Maintenance (GMAO)
 Endpoints API REST pour la gestion de la maintenance.
 """
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
 
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.core.models import User
 
-from .service import get_maintenance_service
 from .models import (
-    AssetCategory, AssetStatus, AssetCriticality,
-    WorkOrderStatus, WorkOrderPriority, PartRequestStatus, ContractStatus
+    AssetCategory,
+    AssetCriticality,
+    AssetStatus,
+    ContractStatus,
+    PartRequestStatus,
+    WorkOrderPriority,
+    WorkOrderStatus,
 )
 from .schemas import (
     # Assets
-    AssetCreate, AssetUpdate, AssetResponse, PaginatedAssetResponse,
-    # Meters
-    MeterCreate, MeterResponse, MeterReadingCreate, MeterReadingResponse,
-    # Plans
-    MaintenancePlanCreate, MaintenancePlanUpdate, MaintenancePlanResponse,
-    PaginatedMaintenancePlanResponse,
-    # Work Orders
-    WorkOrderCreate, WorkOrderUpdate, WorkOrderComplete, WorkOrderResponse,
-    PaginatedWorkOrderResponse, WorkOrderLaborCreate, WorkOrderLaborResponse,
-    WorkOrderPartCreate, WorkOrderPartResponse,
-    # Failures
-    FailureCreate, FailureUpdate, FailureResponse, PaginatedFailureResponse,
-    # Spare Parts
-    SparePartCreate, SparePartUpdate, SparePartResponse, PaginatedSparePartResponse,
-    PartRequestCreate, PartRequestResponse,
+    AssetCreate,
+    AssetResponse,
+    AssetUpdate,
     # Contracts
-    ContractCreate, ContractUpdate, ContractResponse, PaginatedContractResponse,
+    ContractCreate,
+    ContractResponse,
+    ContractUpdate,
+    # Failures
+    FailureCreate,
+    FailureResponse,
+    FailureUpdate,
     # Dashboard
-    MaintenanceDashboard
+    MaintenanceDashboard,
+    # Plans
+    MaintenancePlanCreate,
+    MaintenancePlanResponse,
+    MaintenancePlanUpdate,
+    # Meters
+    MeterCreate,
+    MeterReadingCreate,
+    MeterReadingResponse,
+    MeterResponse,
+    PaginatedAssetResponse,
+    PaginatedContractResponse,
+    PaginatedFailureResponse,
+    PaginatedMaintenancePlanResponse,
+    PaginatedSparePartResponse,
+    PaginatedWorkOrderResponse,
+    PartRequestCreate,
+    PartRequestResponse,
+    # Spare Parts
+    SparePartCreate,
+    SparePartResponse,
+    SparePartUpdate,
+    WorkOrderComplete,
+    # Work Orders
+    WorkOrderCreate,
+    WorkOrderLaborCreate,
+    WorkOrderLaborResponse,
+    WorkOrderPartCreate,
+    WorkOrderPartResponse,
+    WorkOrderResponse,
+    WorkOrderUpdate,
 )
-
+from .service import get_maintenance_service
 
 router = APIRouter(prefix="/api/v1/maintenance", tags=["Maintenance (GMAO)"])
 
@@ -65,10 +92,10 @@ async def create_asset(
 async def list_assets(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    category: Optional[AssetCategory] = None,
-    status: Optional[AssetStatus] = None,
-    criticality: Optional[AssetCriticality] = None,
-    search: Optional[str] = None,
+    category: AssetCategory | None = None,
+    status: AssetStatus | None = None,
+    criticality: AssetCriticality | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -172,8 +199,8 @@ async def create_maintenance_plan(
 async def list_maintenance_plans(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    asset_id: Optional[int] = None,
-    is_active: Optional[bool] = None,
+    asset_id: int | None = None,
+    is_active: bool | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -231,10 +258,10 @@ async def create_work_order(
 async def list_work_orders(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    asset_id: Optional[int] = None,
-    status: Optional[WorkOrderStatus] = None,
-    priority: Optional[WorkOrderPriority] = None,
-    assigned_to_id: Optional[int] = None,
+    asset_id: int | None = None,
+    status: WorkOrderStatus | None = None,
+    priority: WorkOrderPriority | None = None,
+    assigned_to_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -351,8 +378,8 @@ async def create_failure(
 async def list_failures(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    asset_id: Optional[int] = None,
-    status: Optional[str] = None,
+    asset_id: int | None = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -410,8 +437,8 @@ async def create_spare_part(
 async def list_spare_parts(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    category: Optional[str] = None,
-    search: Optional[str] = None,
+    category: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -469,8 +496,8 @@ async def create_part_request(
 async def list_part_requests(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    status: Optional[PartRequestStatus] = None,
-    work_order_id: Optional[int] = None,
+    status: PartRequestStatus | None = None,
+    work_order_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -499,7 +526,7 @@ async def create_contract(
 async def list_contracts(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    status: Optional[ContractStatus] = None,
+    status: ContractStatus | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

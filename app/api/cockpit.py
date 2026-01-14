@@ -5,18 +5,17 @@ API pour le tableau de bord exécutif.
 Données agrégées de tous les modules.
 """
 
-from typing import Optional, List
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from pydantic import BaseModel
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
-
 
 router = APIRouter(prefix="/v1/cockpit", tags=["Cockpit Dirigeant"])
 
@@ -29,8 +28,8 @@ class DashboardKPI(BaseModel):
     id: str
     label: str
     value: float
-    unit: Optional[str] = None
-    trend: Optional[float] = None
+    unit: str | None = None
+    trend: float | None = None
     status: str  # green, orange, red
 
 
@@ -39,7 +38,7 @@ class Alert(BaseModel):
     severity: str  # RED, ORANGE, GREEN
     message: str
     module: str
-    action_url: Optional[str] = None
+    action_url: str | None = None
     created_at: datetime
 
 
@@ -63,8 +62,8 @@ class ActivitySummary(BaseModel):
 
 
 class CockpitDashboard(BaseModel):
-    kpis: List[DashboardKPI]
-    alerts: List[Alert]
+    kpis: list[DashboardKPI]
+    alerts: list[Alert]
     treasury_summary: TreasurySummary
     sales_summary: SalesSummary
     activity_summary: ActivitySummary
@@ -81,7 +80,7 @@ class PendingDecision(BaseModel):
 
 
 class PaginatedDecisions(BaseModel):
-    items: List[PendingDecision]
+    items: list[PendingDecision]
     total: int
     page: int
     page_size: int
@@ -91,7 +90,7 @@ class PaginatedDecisions(BaseModel):
 # HELPERS
 # ============================================================================
 
-def get_kpis(db: Session, tenant_id: str) -> List[DashboardKPI]:
+def get_kpis(db: Session, tenant_id: str) -> list[DashboardKPI]:
     """Calcule les KPIs du tableau de bord."""
     kpis = []
     now = datetime.utcnow()
@@ -179,7 +178,7 @@ def get_kpis(db: Session, tenant_id: str) -> List[DashboardKPI]:
     return kpis
 
 
-def get_alerts(db: Session, tenant_id: str) -> List[Alert]:
+def get_alerts(db: Session, tenant_id: str) -> list[Alert]:
     """Récupère les alertes actives."""
     alerts = []
     now = datetime.utcnow()
@@ -204,7 +203,7 @@ def get_alerts(db: Session, tenant_id: str) -> List[Alert]:
                 created_at=now
             ))
     except Exception:
-        pass
+        pass  # Non-critical: alertes ne bloquent pas le dashboard
 
     # Alertes factures à échéance proche
     try:
@@ -377,7 +376,7 @@ def get_pending_decisions(
 ):
     """Liste des décisions en attente pour le dirigeant."""
     decisions = []
-    now = datetime.utcnow()
+    datetime.utcnow()
 
     # Devis à valider
     try:

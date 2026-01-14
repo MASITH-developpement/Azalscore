@@ -6,31 +6,44 @@ Endpoints API pour le système de déclencheurs.
 """
 
 from datetime import datetime
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, BackgroundTasks
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
-from .models import (
-    TriggerType, TriggerStatus, AlertSeverity, NotificationStatus
-)
+from .models import AlertSeverity, NotificationStatus, TriggerStatus, TriggerType
 from .schemas import (
-    TriggerCreateSchema, TriggerUpdateSchema, TriggerResponseSchema, TriggerListResponseSchema,
-    SubscriptionCreateSchema, SubscriptionResponseSchema,
-    EventResponseSchema, EventListResponseSchema, ResolveEventSchema, FireTriggerSchema,
-    NotificationResponseSchema, NotificationListResponseSchema,
-    TemplateCreateSchema, TemplateUpdateSchema, TemplateResponseSchema,
-    ScheduledReportCreateSchema, ScheduledReportUpdateSchema, ScheduledReportResponseSchema,
+    EventListResponseSchema,
+    EventResponseSchema,
+    FireTriggerSchema,
+    NotificationListResponseSchema,
+    NotificationResponseSchema,
     ReportHistoryResponseSchema,
-    WebhookCreateSchema, WebhookUpdateSchema, WebhookResponseSchema, WebhookTestResponseSchema,
+    ResolveEventSchema,
+    ScheduledReportCreateSchema,
+    ScheduledReportResponseSchema,
+    ScheduledReportUpdateSchema,
+    SubscriptionCreateSchema,
+    SubscriptionResponseSchema,
+    TemplateCreateSchema,
+    TemplateResponseSchema,
+    TemplateUpdateSchema,
+    TriggerCreateSchema,
+    TriggerDashboardSchema,
+    TriggerListResponseSchema,
     TriggerLogListResponseSchema,
-    TriggerStatsSchema, TriggerDashboardSchema
+    TriggerResponseSchema,
+    TriggerStatsSchema,
+    TriggerUpdateSchema,
+    WebhookCreateSchema,
+    WebhookResponseSchema,
+    WebhookTestResponseSchema,
+    WebhookUpdateSchema,
 )
 from .service import get_trigger_service
-
 
 router = APIRouter(prefix="/api/v1/triggers", tags=["Triggers & Diffusion"])
 
@@ -87,8 +100,8 @@ async def create_trigger(
 async def list_triggers(
     request: Request,
     db: Session = Depends(get_db),
-    source_module: Optional[str] = Query(None, description="Filtrer par module source"),
-    trigger_type: Optional[TriggerType] = Query(None, description="Filtrer par type"),
+    source_module: str | None = Query(None, description="Filtrer par module source"),
+    trigger_type: TriggerType | None = Query(None, description="Filtrer par type"),
     include_inactive: bool = Query(False, description="Inclure les inactifs"),
     current_user: User = Depends(get_current_user)
 ):
@@ -296,7 +309,7 @@ async def create_subscription(
     return subscription
 
 
-@router.get("/subscriptions/{trigger_id}", response_model=List[SubscriptionResponseSchema])
+@router.get("/subscriptions/{trigger_id}", response_model=list[SubscriptionResponseSchema])
 async def get_trigger_subscriptions(
     trigger_id: int,
     request: Request,
@@ -339,11 +352,11 @@ async def delete_subscription(
 async def list_events(
     request: Request,
     db: Session = Depends(get_db),
-    trigger_id: Optional[int] = Query(None, description="Filtrer par trigger"),
-    resolved: Optional[bool] = Query(None, description="Filtrer par statut résolu"),
-    severity: Optional[AlertSeverity] = Query(None, description="Filtrer par sévérité"),
-    from_date: Optional[datetime] = Query(None, description="Date de début"),
-    to_date: Optional[datetime] = Query(None, description="Date de fin"),
+    trigger_id: int | None = Query(None, description="Filtrer par trigger"),
+    resolved: bool | None = Query(None, description="Filtrer par statut résolu"),
+    severity: AlertSeverity | None = Query(None, description="Filtrer par sévérité"),
+    from_date: datetime | None = Query(None, description="Date de début"),
+    to_date: datetime | None = Query(None, description="Date de fin"),
     limit: int = Query(100, ge=1, le=500),
     current_user: User = Depends(get_current_user)
 ):
@@ -547,7 +560,7 @@ async def create_template(
     return template
 
 
-@router.get("/templates", response_model=List[TemplateResponseSchema])
+@router.get("/templates", response_model=list[TemplateResponseSchema])
 async def list_templates(
     request: Request,
     db: Session = Depends(get_db),
@@ -598,8 +611,9 @@ async def update_template(
     Met à jour un template.
     Nécessite: triggers.templates.update
     """
-    from .models import NotificationTemplate
     import json
+
+    from .models import NotificationTemplate
     tenant_id = request.state.tenant_id
 
     template = db.query(NotificationTemplate).filter(
@@ -688,7 +702,7 @@ async def create_scheduled_report(
     return report
 
 
-@router.get("/reports", response_model=List[ScheduledReportResponseSchema])
+@router.get("/reports", response_model=list[ScheduledReportResponseSchema])
 async def list_scheduled_reports(
     request: Request,
     db: Session = Depends(get_db),
@@ -740,8 +754,9 @@ async def update_scheduled_report(
     Met à jour un rapport planifié.
     Nécessite: triggers.reports.update
     """
-    from .models import ScheduledReport
     import json
+
+    from .models import ScheduledReport
     tenant_id = request.state.tenant_id
 
     report = db.query(ScheduledReport).filter(
@@ -817,7 +832,7 @@ async def generate_report_now(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/reports/{report_id}/history", response_model=List[ReportHistoryResponseSchema])
+@router.get("/reports/{report_id}/history", response_model=list[ReportHistoryResponseSchema])
 async def get_report_history(
     report_id: int,
     request: Request,
@@ -871,7 +886,7 @@ async def create_webhook(
     return webhook
 
 
-@router.get("/webhooks", response_model=List[WebhookResponseSchema])
+@router.get("/webhooks", response_model=list[WebhookResponseSchema])
 async def list_webhooks(
     request: Request,
     db: Session = Depends(get_db),
@@ -922,8 +937,9 @@ async def update_webhook(
     Met à jour un webhook.
     Nécessite: triggers.webhooks.update
     """
-    from .models import WebhookEndpoint
     import json
+
+    from .models import WebhookEndpoint
     tenant_id = request.state.tenant_id
 
     webhook = db.query(WebhookEndpoint).filter(
@@ -1013,10 +1029,10 @@ async def test_webhook(
 async def list_logs(
     request: Request,
     db: Session = Depends(get_db),
-    action: Optional[str] = Query(None, description="Filtrer par action"),
-    entity_type: Optional[str] = Query(None, description="Filtrer par type d'entité"),
-    from_date: Optional[datetime] = Query(None),
-    to_date: Optional[datetime] = Query(None),
+    action: str | None = Query(None, description="Filtrer par action"),
+    entity_type: str | None = Query(None, description="Filtrer par type d'entité"),
+    from_date: datetime | None = Query(None),
+    to_date: datetime | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     current_user: User = Depends(get_current_user)
 ):
@@ -1058,7 +1074,8 @@ async def get_dashboard(
     Nécessite: triggers.read
     """
     from datetime import timedelta
-    from .models import Trigger, TriggerEvent, Notification, ScheduledReport
+
+    from .models import Notification, ScheduledReport, Trigger, TriggerEvent
     tenant_id = request.state.tenant_id
     now = datetime.utcnow()
     yesterday = now - timedelta(hours=24)
@@ -1085,11 +1102,11 @@ async def get_dashboard(
     ).count()
     unresolved_events = db.query(TriggerEvent).filter(
         TriggerEvent.tenant_id == tenant_id,
-        TriggerEvent.resolved == False
+        not TriggerEvent.resolved
     ).count()
     critical_events = db.query(TriggerEvent).filter(
         TriggerEvent.tenant_id == tenant_id,
-        TriggerEvent.resolved == False,
+        not TriggerEvent.resolved,
         TriggerEvent.severity.in_([AlertSeverity.CRITICAL, AlertSeverity.EMERGENCY])
     ).count()
 
@@ -1110,7 +1127,7 @@ async def get_dashboard(
     # Statistiques rapports
     scheduled_reports = db.query(ScheduledReport).filter(
         ScheduledReport.tenant_id == tenant_id,
-        ScheduledReport.is_active == True
+        ScheduledReport.is_active
     ).count()
     reports_generated_24h = db.query(ScheduledReport).filter(
         ScheduledReport.tenant_id == tenant_id,
@@ -1140,8 +1157,8 @@ async def get_dashboard(
     # Prochains rapports
     upcoming_reports = db.query(ScheduledReport).filter(
         ScheduledReport.tenant_id == tenant_id,
-        ScheduledReport.is_active == True,
-        ScheduledReport.next_generation_at != None
+        ScheduledReport.is_active,
+        ScheduledReport.next_generation_at is not None
     ).order_by(ScheduledReport.next_generation_at).limit(5).all()
 
     return TriggerDashboardSchema(

@@ -5,17 +5,30 @@ AZALS MODULE T2 - Service Déclencheurs & Diffusion
 Logique métier pour le système de déclencheurs.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
 import json
+from datetime import datetime, timedelta
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from .models import (
-    Trigger, TriggerSubscription, TriggerEvent, Notification,
-    NotificationTemplate, ScheduledReport, ReportHistory,
-    WebhookEndpoint, TriggerLog,
-    TriggerType, TriggerStatus, ConditionOperator, AlertSeverity,
-    NotificationChannel, NotificationStatus, ReportFrequency, EscalationLevel
+    AlertSeverity,
+    ConditionOperator,
+    EscalationLevel,
+    Notification,
+    NotificationChannel,
+    NotificationStatus,
+    NotificationTemplate,
+    ReportFrequency,
+    ReportHistory,
+    ScheduledReport,
+    Trigger,
+    TriggerEvent,
+    TriggerLog,
+    TriggerStatus,
+    TriggerSubscription,
+    TriggerType,
+    WebhookEndpoint,
 )
 
 
@@ -36,19 +49,19 @@ class TriggerService:
         name: str,
         trigger_type: TriggerType,
         source_module: str,
-        condition: Dict[str, Any],
-        created_by: Optional[int] = None,
-        description: Optional[str] = None,
-        source_entity: Optional[str] = None,
-        source_field: Optional[str] = None,
-        threshold_value: Optional[str] = None,
-        threshold_operator: Optional[ConditionOperator] = None,
-        schedule_cron: Optional[str] = None,
+        condition: dict[str, Any],
+        created_by: int | None = None,
+        description: str | None = None,
+        source_entity: str | None = None,
+        source_field: str | None = None,
+        threshold_value: str | None = None,
+        threshold_operator: ConditionOperator | None = None,
+        schedule_cron: str | None = None,
         severity: AlertSeverity = AlertSeverity.WARNING,
         escalation_enabled: bool = False,
         escalation_delay_minutes: int = 60,
         cooldown_minutes: int = 60,
-        action_template_id: Optional[int] = None
+        action_template_id: int | None = None
     ) -> Trigger:
         """Crée un nouveau trigger."""
         # Vérifier code unique
@@ -85,14 +98,14 @@ class TriggerService:
         self.db.commit()
         return trigger
 
-    def get_trigger(self, trigger_id: int) -> Optional[Trigger]:
+    def get_trigger(self, trigger_id: int) -> Trigger | None:
         """Récupère un trigger par ID."""
         return self.db.query(Trigger).filter(
             Trigger.tenant_id == self.tenant_id,
             Trigger.id == trigger_id
         ).first()
 
-    def get_trigger_by_code(self, code: str) -> Optional[Trigger]:
+    def get_trigger_by_code(self, code: str) -> Trigger | None:
         """Récupère un trigger par code."""
         return self.db.query(Trigger).filter(
             Trigger.tenant_id == self.tenant_id,
@@ -101,10 +114,10 @@ class TriggerService:
 
     def list_triggers(
         self,
-        source_module: Optional[str] = None,
-        trigger_type: Optional[TriggerType] = None,
+        source_module: str | None = None,
+        trigger_type: TriggerType | None = None,
         include_inactive: bool = False
-    ) -> List[Trigger]:
+    ) -> list[Trigger]:
         """Liste les triggers."""
         query = self.db.query(Trigger).filter(
             Trigger.tenant_id == self.tenant_id
@@ -141,7 +154,7 @@ class TriggerService:
         self.db.commit()
         return trigger
 
-    def delete_trigger(self, trigger_id: int, deleted_by: Optional[int] = None) -> bool:
+    def delete_trigger(self, trigger_id: int, deleted_by: int | None = None) -> bool:
         """Supprime un trigger."""
         trigger = self.get_trigger(trigger_id)
         if not trigger:
@@ -186,7 +199,7 @@ class TriggerService:
         user_id: int,
         channel: NotificationChannel = NotificationChannel.IN_APP,
         escalation_level: EscalationLevel = EscalationLevel.L1,
-        created_by: Optional[int] = None
+        created_by: int | None = None
     ) -> TriggerSubscription:
         """Abonne un utilisateur à un trigger."""
         subscription = TriggerSubscription(
@@ -208,7 +221,7 @@ class TriggerService:
         role_code: str,
         channel: NotificationChannel = NotificationChannel.IN_APP,
         escalation_level: EscalationLevel = EscalationLevel.L1,
-        created_by: Optional[int] = None
+        created_by: int | None = None
     ) -> TriggerSubscription:
         """Abonne tous les utilisateurs d'un rôle à un trigger."""
         subscription = TriggerSubscription(
@@ -237,19 +250,19 @@ class TriggerService:
             return True
         return False
 
-    def get_trigger_subscriptions(self, trigger_id: int) -> List[TriggerSubscription]:
+    def get_trigger_subscriptions(self, trigger_id: int) -> list[TriggerSubscription]:
         """Liste les abonnements d'un trigger."""
         return self.db.query(TriggerSubscription).filter(
             TriggerSubscription.trigger_id == trigger_id,
             TriggerSubscription.tenant_id == self.tenant_id,
-            TriggerSubscription.is_active == True
+            TriggerSubscription.is_active
         ).all()
 
     # ========================================================================
     # ÉVALUATION ET DÉCLENCHEMENT
     # ========================================================================
 
-    def evaluate_trigger(self, trigger: Trigger, data: Dict[str, Any]) -> bool:
+    def evaluate_trigger(self, trigger: Trigger, data: dict[str, Any]) -> bool:
         """
         Évalue si un trigger doit se déclencher.
         Retourne True si la condition est remplie.
@@ -266,7 +279,7 @@ class TriggerService:
         condition = json.loads(trigger.condition)
         return self._evaluate_condition(condition, data)
 
-    def _evaluate_condition(self, condition: Dict[str, Any], data: Dict[str, Any]) -> bool:
+    def _evaluate_condition(self, condition: dict[str, Any], data: dict[str, Any]) -> bool:
         """Évalue une condition."""
         # Condition AND
         if 'and' in condition:
@@ -295,7 +308,7 @@ class TriggerService:
 
         return self._compare(field_value, operator, value)
 
-    def _get_field_value(self, data: Dict[str, Any], field: str) -> Any:
+    def _get_field_value(self, data: dict[str, Any], field: str) -> Any:
         """Récupère la valeur d'un champ (support notation pointée)."""
         keys = field.split('.')
         value = data
@@ -346,7 +359,7 @@ class TriggerService:
         self,
         trigger: Trigger,
         triggered_value: Any = None,
-        condition_details: Dict[str, Any] = None
+        condition_details: dict[str, Any] = None
     ) -> TriggerEvent:
         """
         Déclenche un trigger et crée les notifications.
@@ -387,7 +400,7 @@ class TriggerService:
         self,
         event: TriggerEvent,
         trigger: Trigger,
-        subscriptions: List[TriggerSubscription]
+        subscriptions: list[TriggerSubscription]
     ):
         """Crée les notifications pour un événement."""
         template = trigger.template
@@ -415,7 +428,7 @@ class TriggerService:
 
                 self.db.add(notification)
 
-    def _resolve_subscription_recipients(self, subscription: TriggerSubscription) -> List[Dict[str, Any]]:
+    def _resolve_subscription_recipients(self, subscription: TriggerSubscription) -> list[dict[str, Any]]:
         """Résout les destinataires d'un abonnement."""
         recipients = []
 
@@ -446,9 +459,9 @@ class TriggerService:
         self,
         trigger: Trigger,
         event: TriggerEvent,
-        template: Optional[NotificationTemplate],
-        recipient: Dict[str, Any]
-    ) -> Tuple[str, str]:
+        template: NotificationTemplate | None,
+        recipient: dict[str, Any]
+    ) -> tuple[str, str]:
         """Génère le contenu de la notification."""
         # Variables disponibles
         variables = {
@@ -481,7 +494,7 @@ Message automatique AZALS
 
         return subject, body
 
-    def _render_template(self, template: str, variables: Dict[str, Any]) -> str:
+    def _render_template(self, template: str, variables: dict[str, Any]) -> str:
         """Remplace les variables dans un template."""
         result = template
         for key, value in variables.items():
@@ -492,7 +505,7 @@ Message automatique AZALS
     # ÉVÉNEMENTS
     # ========================================================================
 
-    def get_event(self, event_id: int) -> Optional[TriggerEvent]:
+    def get_event(self, event_id: int) -> TriggerEvent | None:
         """Récupère un événement par ID."""
         return self.db.query(TriggerEvent).filter(
             TriggerEvent.tenant_id == self.tenant_id,
@@ -501,13 +514,13 @@ Message automatique AZALS
 
     def list_events(
         self,
-        trigger_id: Optional[int] = None,
-        resolved: Optional[bool] = None,
-        severity: Optional[AlertSeverity] = None,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
+        trigger_id: int | None = None,
+        resolved: bool | None = None,
+        severity: AlertSeverity | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
         limit: int = 100
-    ) -> List[TriggerEvent]:
+    ) -> list[TriggerEvent]:
         """Liste les événements."""
         query = self.db.query(TriggerEvent).filter(
             TriggerEvent.tenant_id == self.tenant_id
@@ -534,7 +547,7 @@ Message automatique AZALS
         self,
         event_id: int,
         resolved_by: int,
-        resolution_notes: Optional[str] = None
+        resolution_notes: str | None = None
     ) -> TriggerEvent:
         """Marque un événement comme résolu."""
         event = self.get_event(event_id)
@@ -579,7 +592,7 @@ Message automatique AZALS
         subscriptions = self.db.query(TriggerSubscription).filter(
             TriggerSubscription.trigger_id == trigger.id,
             TriggerSubscription.escalation_level == event.escalation_level,
-            TriggerSubscription.is_active == True
+            TriggerSubscription.is_active
         ).all()
 
         self._create_notifications(event, trigger, subscriptions)
@@ -599,7 +612,7 @@ Message automatique AZALS
         user_id: int,
         unread_only: bool = False,
         limit: int = 50
-    ) -> List[Notification]:
+    ) -> list[Notification]:
         """Liste les notifications d'un utilisateur."""
         query = self.db.query(Notification).filter(
             Notification.tenant_id == self.tenant_id,
@@ -672,12 +685,12 @@ Message automatique AZALS
         name: str,
         report_type: str,
         frequency: ReportFrequency,
-        recipients: Dict[str, Any],
-        created_by: Optional[int] = None,
-        description: Optional[str] = None,
-        report_config: Optional[Dict] = None,
-        schedule_day: Optional[int] = None,
-        schedule_time: Optional[str] = None,
+        recipients: dict[str, Any],
+        created_by: int | None = None,
+        description: str | None = None,
+        report_config: dict | None = None,
+        schedule_day: int | None = None,
+        schedule_time: str | None = None,
         output_format: str = 'PDF'
     ) -> ScheduledReport:
         """Crée un rapport périodique."""
@@ -742,18 +755,18 @@ Message automatique AZALS
 
         return next_gen
 
-    def list_scheduled_reports(self, include_inactive: bool = False) -> List[ScheduledReport]:
+    def list_scheduled_reports(self, include_inactive: bool = False) -> list[ScheduledReport]:
         """Liste les rapports planifiés."""
         query = self.db.query(ScheduledReport).filter(
             ScheduledReport.tenant_id == self.tenant_id
         )
 
         if not include_inactive:
-            query = query.filter(ScheduledReport.is_active == True)
+            query = query.filter(ScheduledReport.is_active)
 
         return query.order_by(ScheduledReport.next_generation_at).all()
 
-    def generate_report(self, report_id: int, generated_by: Optional[int] = None) -> ReportHistory:
+    def generate_report(self, report_id: int, generated_by: int | None = None) -> ReportHistory:
         """Génère un rapport."""
         report = self.db.query(ScheduledReport).filter(
             ScheduledReport.id == report_id,
@@ -792,7 +805,7 @@ Message automatique AZALS
         """Génère les rapports dont la date est passée."""
         due_reports = self.db.query(ScheduledReport).filter(
             ScheduledReport.tenant_id == self.tenant_id,
-            ScheduledReport.is_active == True,
+            ScheduledReport.is_active,
             ScheduledReport.next_generation_at <= datetime.utcnow()
         ).all()
 
@@ -816,11 +829,11 @@ Message automatique AZALS
         code: str,
         name: str,
         body_template: str,
-        created_by: Optional[int] = None,
-        description: Optional[str] = None,
-        subject_template: Optional[str] = None,
-        body_html: Optional[str] = None,
-        available_variables: Optional[List[str]] = None
+        created_by: int | None = None,
+        description: str | None = None,
+        subject_template: str | None = None,
+        body_html: str | None = None,
+        available_variables: list[str] | None = None
     ) -> NotificationTemplate:
         """Crée un template de notification."""
         template = NotificationTemplate(
@@ -839,11 +852,11 @@ Message automatique AZALS
         self.db.commit()
         return template
 
-    def list_templates(self) -> List[NotificationTemplate]:
+    def list_templates(self) -> list[NotificationTemplate]:
         """Liste les templates."""
         return self.db.query(NotificationTemplate).filter(
             NotificationTemplate.tenant_id == self.tenant_id,
-            NotificationTemplate.is_active == True
+            NotificationTemplate.is_active
         ).all()
 
     # ========================================================================
@@ -855,12 +868,12 @@ Message automatique AZALS
         code: str,
         name: str,
         url: str,
-        created_by: Optional[int] = None,
-        description: Optional[str] = None,
+        created_by: int | None = None,
+        description: str | None = None,
         method: str = 'POST',
-        headers: Optional[Dict] = None,
-        auth_type: Optional[str] = None,
-        auth_config: Optional[Dict] = None
+        headers: dict | None = None,
+        auth_type: str | None = None,
+        auth_config: dict | None = None
     ) -> WebhookEndpoint:
         """Crée un endpoint webhook."""
         webhook = WebhookEndpoint(
@@ -880,11 +893,11 @@ Message automatique AZALS
         self.db.commit()
         return webhook
 
-    def list_webhooks(self) -> List[WebhookEndpoint]:
+    def list_webhooks(self) -> list[WebhookEndpoint]:
         """Liste les webhooks."""
         return self.db.query(WebhookEndpoint).filter(
             WebhookEndpoint.tenant_id == self.tenant_id,
-            WebhookEndpoint.is_active == True
+            WebhookEndpoint.is_active
         ).all()
 
     # ========================================================================
@@ -895,8 +908,8 @@ Message automatique AZALS
         self,
         action: str,
         entity_type: str,
-        entity_id: Optional[int],
-        details: Dict = None,
+        entity_id: int | None,
+        details: dict = None,
         success: bool = True,
         error_message: str = None
     ) -> None:

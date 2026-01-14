@@ -6,7 +6,6 @@ Définitions des permissions standard AZALS.
 Format: module.resource.action
 """
 
-from typing import Dict, List
 
 # ============================================================================
 # PERMISSIONS PAR MODULE
@@ -1269,7 +1268,7 @@ BI_PERMISSIONS = {
 # AGRÉGATION DE TOUTES LES PERMISSIONS
 # ============================================================================
 
-ALL_PERMISSIONS: Dict[str, str] = {
+ALL_PERMISSIONS: dict[str, str] = {
     **IAM_PERMISSIONS,
     **TREASURY_PERMISSIONS,
     **LEGAL_PERMISSIONS,
@@ -1306,7 +1305,7 @@ ALL_PERMISSIONS: Dict[str, str] = {
 # RÔLES PRÉDÉFINIS ET LEURS PERMISSIONS
 # ============================================================================
 
-ROLE_PERMISSIONS: Dict[str, List[str]] = {
+ROLE_PERMISSIONS: dict[str, list[str]] = {
     "SUPER_ADMIN": ["*"],  # Toutes les permissions
 
     "TENANT_ADMIN": [
@@ -1729,7 +1728,7 @@ ROLE_PERMISSIONS: Dict[str, List[str]] = {
 # FONCTIONS UTILITAIRES
 # ============================================================================
 
-def get_permissions_for_role(role_code: str) -> List[str]:
+def get_permissions_for_role(role_code: str) -> list[str]:
     """Retourne les permissions pour un rôle."""
     if role_code not in ROLE_PERMISSIONS:
         return []
@@ -1742,23 +1741,23 @@ def get_permissions_for_role(role_code: str) -> List[str]:
         elif perm.endswith(".*"):
             # Wildcard module
             module = perm[:-2]
-            permissions.extend([p for p in ALL_PERMISSIONS.keys() if p.startswith(f"{module}.")])
+            permissions.extend([p for p in ALL_PERMISSIONS if p.startswith(f"{module}.")])
         else:
             permissions.append(perm)
 
     return list(set(permissions))
 
 
-def get_modules() -> List[str]:
+def get_modules() -> list[str]:
     """Retourne la liste des modules."""
     modules = set()
-    for perm in ALL_PERMISSIONS.keys():
+    for perm in ALL_PERMISSIONS:
         module = perm.split(".")[0]
         modules.add(module)
-    return sorted(list(modules))
+    return sorted(modules)
 
 
-def get_permissions_by_module(module: str) -> Dict[str, str]:
+def get_permissions_by_module(module: str) -> dict[str, str]:
     """Retourne les permissions d'un module."""
     return {
         code: desc for code, desc in ALL_PERMISSIONS.items()

@@ -6,7 +6,7 @@ Endpoints API pour le système de correction automatique gouvernée.
 """
 
 from datetime import datetime
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -15,43 +15,40 @@ from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 
 from .models import (
-    ErrorSeverity,
-    ErrorSource,
-    ErrorType,
     CorrectionStatus,
     Environment,
+    ErrorSeverity,
+    ErrorType,
 )
 from .schemas import (
-    # Error Detection
-    ErrorDetectionCreate,
-    ErrorDetectionResponse,
-    ErrorDetectionListResponse,
-    FrontendErrorReport,
+    AlertResolveRequest,
     # Correction Registry
     CorrectionRegistryCreate,
-    CorrectionRegistryResponse,
     CorrectionRegistryListResponse,
-    CorrectionValidationRequest,
+    CorrectionRegistryResponse,
     CorrectionRollbackRequest,
     # Correction Rules
     CorrectionRuleCreate,
-    CorrectionRuleUpdate,
-    CorrectionRuleResponse,
     CorrectionRuleListResponse,
-    # Correction Tests
-    CorrectionTestResponse,
+    CorrectionRuleResponse,
+    CorrectionRuleUpdate,
     CorrectionTestListResponse,
+    # Correction Tests
+    CorrectionValidationRequest,
+    # Error Detection
+    ErrorDetectionCreate,
+    ErrorDetectionListResponse,
+    ErrorDetectionResponse,
+    FrontendErrorReport,
+    GuardianAlertListResponse,
     # Alerts
     GuardianAlertResponse,
-    GuardianAlertListResponse,
-    AlertAcknowledgeRequest,
-    AlertResolveRequest,
+    GuardianConfigResponse,
     # Config
     GuardianConfigUpdate,
-    GuardianConfigResponse,
+    GuardianDashboard,
     # Statistics
     GuardianStatistics,
-    GuardianDashboard,
 )
 from .service import get_guardian_service
 
@@ -140,13 +137,13 @@ async def report_frontend_error(
 async def list_errors(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    severity: Optional[ErrorSeverity] = None,
-    error_type: Optional[ErrorType] = None,
-    module: Optional[str] = None,
-    is_processed: Optional[bool] = None,
-    environment: Optional[Environment] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    severity: ErrorSeverity | None = None,
+    error_type: ErrorType | None = None,
+    module: str | None = None,
+    is_processed: bool | None = None,
+    environment: Environment | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
@@ -257,13 +254,13 @@ async def create_correction(
 async def list_corrections(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    status_filter: Optional[CorrectionStatus] = Query(None, alias="status"),
-    environment: Optional[Environment] = None,
-    severity: Optional[ErrorSeverity] = None,
-    module: Optional[str] = None,
-    requires_validation: Optional[bool] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    status_filter: CorrectionStatus | None = Query(None, alias="status"),
+    environment: Environment | None = None,
+    severity: ErrorSeverity | None = None,
+    module: str | None = None,
+    requires_validation: bool | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
@@ -448,7 +445,7 @@ async def create_rule(
 async def list_rules(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    is_active: Optional[bool] = True,
+    is_active: bool | None = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
@@ -551,8 +548,8 @@ async def delete_rule(
 async def list_alerts(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    is_resolved: Optional[bool] = None,
-    severity: Optional[ErrorSeverity] = None,
+    is_resolved: bool | None = None,
+    severity: ErrorSeverity | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)

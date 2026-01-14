@@ -6,16 +6,25 @@ Service principal pour la gestion des configurations pays.
 """
 
 from datetime import date
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc
 
 from app.modules.country_packs.models import (
-    CountryPack, TaxRate, DocumentTemplate, BankConfig,
-    PublicHoliday, LegalRequirement, TenantCountrySettings,
-    TaxType, DocumentType, BankFormat, PackStatus,
-    DateFormatStyle, NumberFormatStyle
+    BankConfig,
+    BankFormat,
+    CountryPack,
+    DateFormatStyle,
+    DocumentTemplate,
+    DocumentType,
+    LegalRequirement,
+    NumberFormatStyle,
+    PackStatus,
+    PublicHoliday,
+    TaxRate,
+    TaxType,
+    TenantCountrySettings,
 )
 
 
@@ -45,7 +54,7 @@ class CountryPackService:
         default_vat_rate: float = 20.0,
         company_id_label: str = "SIRET",
         vat_id_label: str = "TVA",
-        config: Dict = None,
+        config: dict = None,
         is_default: bool = False,
         created_by: int = None
     ) -> CountryPack:
@@ -54,7 +63,7 @@ class CountryPackService:
         if is_default:
             self.db.query(CountryPack).filter(
                 CountryPack.tenant_id == self.tenant_id,
-                CountryPack.is_default == True
+                CountryPack.is_default
             ).update({"is_default": False})
 
         pack = CountryPack(
@@ -81,25 +90,25 @@ class CountryPackService:
         self.db.refresh(pack)
         return pack
 
-    def get_country_pack(self, pack_id: int) -> Optional[CountryPack]:
+    def get_country_pack(self, pack_id: int) -> CountryPack | None:
         """Récupère un pack par ID."""
         return self.db.query(CountryPack).filter(
             CountryPack.id == pack_id,
             CountryPack.tenant_id == self.tenant_id
         ).first()
 
-    def get_country_pack_by_code(self, country_code: str) -> Optional[CountryPack]:
+    def get_country_pack_by_code(self, country_code: str) -> CountryPack | None:
         """Récupère un pack par code pays."""
         return self.db.query(CountryPack).filter(
             CountryPack.country_code == country_code.upper(),
             CountryPack.tenant_id == self.tenant_id
         ).first()
 
-    def get_default_pack(self) -> Optional[CountryPack]:
+    def get_default_pack(self) -> CountryPack | None:
         """Récupère le pack par défaut."""
         return self.db.query(CountryPack).filter(
             CountryPack.tenant_id == self.tenant_id,
-            CountryPack.is_default == True
+            CountryPack.is_default
         ).first()
 
     def list_country_packs(
@@ -107,7 +116,7 @@ class CountryPackService:
         status: PackStatus = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[CountryPack], int]:
+    ) -> tuple[list[CountryPack], int]:
         """Liste les packs pays."""
         query = self.db.query(CountryPack).filter(
             CountryPack.tenant_id == self.tenant_id
@@ -121,7 +130,7 @@ class CountryPackService:
 
         return packs, total
 
-    def update_country_pack(self, pack_id: int, **updates) -> Optional[CountryPack]:
+    def update_country_pack(self, pack_id: int, **updates) -> CountryPack | None:
         """Met à jour un pack pays."""
         pack = self.get_country_pack(pack_id)
         if not pack:
@@ -132,7 +141,7 @@ class CountryPackService:
             self.db.query(CountryPack).filter(
                 CountryPack.tenant_id == self.tenant_id,
                 CountryPack.id != pack_id,
-                CountryPack.is_default == True
+                CountryPack.is_default
             ).update({"is_default": False})
 
         for key, value in updates.items():
@@ -180,7 +189,7 @@ class CountryPackService:
                 TaxRate.tenant_id == self.tenant_id,
                 TaxRate.country_pack_id == country_pack_id,
                 TaxRate.tax_type == tax_type,
-                TaxRate.is_default == True
+                TaxRate.is_default
             ).update({"is_default": False})
 
         tax = TaxRate(
@@ -210,7 +219,7 @@ class CountryPackService:
         country_pack_id: int = None,
         tax_type: TaxType = None,
         is_active: bool = True
-    ) -> List[TaxRate]:
+    ) -> list[TaxRate]:
         """Récupère les taux de taxe."""
         query = self.db.query(TaxRate).filter(TaxRate.tenant_id == self.tenant_id)
 
@@ -223,7 +232,7 @@ class CountryPackService:
 
         return query.order_by(TaxRate.code).all()
 
-    def get_vat_rates(self, country_code: str) -> List[TaxRate]:
+    def get_vat_rates(self, country_code: str) -> list[TaxRate]:
         """Récupère les taux de TVA pour un pays."""
         pack = self.get_country_pack_by_code(country_code)
         if not pack:
@@ -234,7 +243,7 @@ class CountryPackService:
             tax_type=TaxType.VAT
         )
 
-    def get_default_vat_rate(self, country_code: str) -> Optional[TaxRate]:
+    def get_default_vat_rate(self, country_code: str) -> TaxRate | None:
         """Récupère le taux de TVA par défaut pour un pays."""
         pack = self.get_country_pack_by_code(country_code)
         if not pack:
@@ -244,11 +253,11 @@ class CountryPackService:
             TaxRate.tenant_id == self.tenant_id,
             TaxRate.country_pack_id == pack.id,
             TaxRate.tax_type == TaxType.VAT,
-            TaxRate.is_default == True,
-            TaxRate.is_active == True
+            TaxRate.is_default,
+            TaxRate.is_active
         ).first()
 
-    def update_tax_rate(self, tax_id: int, **updates) -> Optional[TaxRate]:
+    def update_tax_rate(self, tax_id: int, **updates) -> TaxRate | None:
         """Met à jour un taux de taxe."""
         tax = self.db.query(TaxRate).filter(
             TaxRate.id == tax_id,
@@ -294,7 +303,7 @@ class CountryPackService:
         template_format: str = "html",
         template_content: str = None,
         template_path: str = None,
-        mandatory_fields: List[str] = None,
+        mandatory_fields: list[str] = None,
         legal_mentions: str = None,
         numbering_prefix: str = None,
         numbering_pattern: str = None,
@@ -308,7 +317,7 @@ class CountryPackService:
                 DocumentTemplate.tenant_id == self.tenant_id,
                 DocumentTemplate.country_pack_id == country_pack_id,
                 DocumentTemplate.document_type == document_type,
-                DocumentTemplate.is_default == True
+                DocumentTemplate.is_default
             ).update({"is_default": False})
 
         template = DocumentTemplate(
@@ -339,7 +348,7 @@ class CountryPackService:
         country_pack_id: int = None,
         document_type: DocumentType = None,
         is_active: bool = True
-    ) -> List[DocumentTemplate]:
+    ) -> list[DocumentTemplate]:
         """Récupère les templates de documents."""
         query = self.db.query(DocumentTemplate).filter(
             DocumentTemplate.tenant_id == self.tenant_id
@@ -358,7 +367,7 @@ class CountryPackService:
         self,
         country_code: str,
         document_type: DocumentType
-    ) -> Optional[DocumentTemplate]:
+    ) -> DocumentTemplate | None:
         """Récupère le template par défaut pour un type de document."""
         pack = self.get_country_pack_by_code(country_code)
         if not pack:
@@ -368,8 +377,8 @@ class CountryPackService:
             DocumentTemplate.tenant_id == self.tenant_id,
             DocumentTemplate.country_pack_id == pack.id,
             DocumentTemplate.document_type == document_type,
-            DocumentTemplate.is_default == True,
-            DocumentTemplate.is_active == True
+            DocumentTemplate.is_default,
+            DocumentTemplate.is_active
         ).first()
 
     # ========================================================================
@@ -389,7 +398,7 @@ class CountryPackService:
         export_format: str = "xml",
         export_encoding: str = "utf-8",
         export_template: str = None,
-        config: Dict = None,
+        config: dict = None,
         is_default: bool = False
     ) -> BankConfig:
         """Crée une configuration bancaire."""
@@ -418,11 +427,11 @@ class CountryPackService:
         self,
         country_pack_id: int = None,
         bank_format: BankFormat = None
-    ) -> List[BankConfig]:
+    ) -> list[BankConfig]:
         """Récupère les configurations bancaires."""
         query = self.db.query(BankConfig).filter(
             BankConfig.tenant_id == self.tenant_id,
-            BankConfig.is_active == True
+            BankConfig.is_active
         )
 
         if country_pack_id:
@@ -432,7 +441,7 @@ class CountryPackService:
 
         return query.order_by(BankConfig.code).all()
 
-    def validate_iban(self, iban: str, country_code: str) -> Dict[str, Any]:
+    def validate_iban(self, iban: str, country_code: str) -> dict[str, Any]:
         """Valide un IBAN pour un pays."""
         pack = self.get_country_pack_by_code(country_code)
         if not pack:
@@ -441,7 +450,7 @@ class CountryPackService:
         bank_config = self.db.query(BankConfig).filter(
             BankConfig.tenant_id == self.tenant_id,
             BankConfig.country_pack_id == pack.id,
-            BankConfig.is_default == True
+            BankConfig.is_default
         ).first()
 
         if not bank_config:
@@ -507,11 +516,11 @@ class CountryPackService:
         country_pack_id: int = None,
         year: int = None,
         region: str = None
-    ) -> List[PublicHoliday]:
+    ) -> list[PublicHoliday]:
         """Récupère les jours fériés."""
         query = self.db.query(PublicHoliday).filter(
             PublicHoliday.tenant_id == self.tenant_id,
-            PublicHoliday.is_active == True
+            PublicHoliday.is_active
         )
 
         if country_pack_id:
@@ -527,13 +536,13 @@ class CountryPackService:
             query = query.filter(
                 or_(
                     PublicHoliday.region == region,
-                    PublicHoliday.is_national == True
+                    PublicHoliday.is_national
                 )
             )
 
         return query.order_by(PublicHoliday.month, PublicHoliday.day).all()
 
-    def get_holidays_for_year(self, country_code: str, year: int) -> List[Dict[str, Any]]:
+    def get_holidays_for_year(self, country_code: str, year: int) -> list[dict[str, Any]]:
         """Récupère les jours fériés pour une année avec dates calculées."""
         pack = self.get_country_pack_by_code(country_code)
         if not pack:
@@ -581,7 +590,7 @@ class CountryPackService:
             PublicHoliday.tenant_id == self.tenant_id,
             PublicHoliday.country_pack_id == pack.id,
             PublicHoliday.holiday_date == check_date,
-            PublicHoliday.is_active == True
+            PublicHoliday.is_active
         ).first()
 
         if exact:
@@ -593,8 +602,8 @@ class CountryPackService:
             PublicHoliday.country_pack_id == pack.id,
             PublicHoliday.month == check_date.month,
             PublicHoliday.day == check_date.day,
-            PublicHoliday.is_fixed == True,
-            PublicHoliday.is_active == True
+            PublicHoliday.is_fixed,
+            PublicHoliday.is_active
         ).first()
 
         return recurring is not None
@@ -613,7 +622,7 @@ class CountryPackService:
         requirement_type: str = None,
         frequency: str = None,
         deadline_rule: str = None,
-        config: Dict = None,
+        config: dict = None,
         legal_reference: str = None,
         effective_date: date = None,
         is_mandatory: bool = True
@@ -643,11 +652,11 @@ class CountryPackService:
         self,
         country_pack_id: int = None,
         category: str = None
-    ) -> List[LegalRequirement]:
+    ) -> list[LegalRequirement]:
         """Récupère les exigences légales."""
         query = self.db.query(LegalRequirement).filter(
             LegalRequirement.tenant_id == self.tenant_id,
-            LegalRequirement.is_active == True
+            LegalRequirement.is_active
         )
 
         if country_pack_id:
@@ -665,7 +674,7 @@ class CountryPackService:
         self,
         country_pack_id: int,
         is_primary: bool = False,
-        custom_config: Dict = None,
+        custom_config: dict = None,
         activated_by: int = None
     ) -> TenantCountrySettings:
         """Active un pack pays pour le tenant."""
@@ -673,7 +682,7 @@ class CountryPackService:
         if is_primary:
             self.db.query(TenantCountrySettings).filter(
                 TenantCountrySettings.tenant_id == self.tenant_id,
-                TenantCountrySettings.is_primary == True
+                TenantCountrySettings.is_primary
             ).update({"is_primary": False})
 
         # Vérifier si déjà activé
@@ -702,23 +711,23 @@ class CountryPackService:
         self.db.refresh(settings)
         return settings
 
-    def get_tenant_countries(self, active_only: bool = True) -> List[TenantCountrySettings]:
+    def get_tenant_countries(self, active_only: bool = True) -> list[TenantCountrySettings]:
         """Récupère les pays activés pour le tenant."""
         query = self.db.query(TenantCountrySettings).filter(
             TenantCountrySettings.tenant_id == self.tenant_id
         )
 
         if active_only:
-            query = query.filter(TenantCountrySettings.is_active == True)
+            query = query.filter(TenantCountrySettings.is_active)
 
         return query.order_by(desc(TenantCountrySettings.is_primary)).all()
 
-    def get_primary_country(self) -> Optional[CountryPack]:
+    def get_primary_country(self) -> CountryPack | None:
         """Récupère le pack pays principal du tenant."""
         settings = self.db.query(TenantCountrySettings).filter(
             TenantCountrySettings.tenant_id == self.tenant_id,
-            TenantCountrySettings.is_primary == True,
-            TenantCountrySettings.is_active == True
+            TenantCountrySettings.is_primary,
+            TenantCountrySettings.is_active
         ).first()
 
         if not settings:
@@ -768,7 +777,7 @@ class CountryPackService:
         else:
             return d.isoformat()
 
-    def get_country_summary(self, country_code: str) -> Dict[str, Any]:
+    def get_country_summary(self, country_code: str) -> dict[str, Any]:
         """Récupère un résumé complet du pack pays."""
         pack = self.get_country_pack_by_code(country_code)
         if not pack:

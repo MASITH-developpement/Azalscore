@@ -4,12 +4,13 @@ AZALS - Module Marketplace - Modèles
 Modèles pour les offres commerciales et abonnements.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-from sqlalchemy import Column, String, Text, DateTime, Boolean, Integer, Numeric, Enum as SQLEnum, JSON
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
 
 from app.db.base import Base
 

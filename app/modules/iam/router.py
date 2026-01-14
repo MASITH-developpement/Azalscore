@@ -6,37 +6,59 @@ Endpoints REST pour la gestion des identités et accès.
 """
 
 from datetime import datetime
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 
-from .service import IAMService, get_iam_service
-from .schemas import (
-    # User
-    UserCreate, UserUpdate, UserResponse, UserListResponse,
-    PasswordChange, RoleCreate, RoleUpdate, RoleResponse, RoleListResponse,
-    RoleAssignment, PermissionResponse, PermissionListResponse,
-    PermissionCheck, PermissionCheckResult,
-    # Group
-    GroupCreate, GroupResponse, GroupListResponse,
-    GroupMembership,
-    # Session
-    SessionResponse, SessionListResponse, SessionRevoke,
-    # Invitation
-    InvitationCreate, InvitationResponse, InvitationAccept,
-    # MFA
-    MFASetupResponse, MFAVerify, MFADisable,
-    # Auth
-    LoginRequest, LoginResponse, RefreshTokenRequest, RefreshTokenResponse, LogoutRequest,
-    # Policy
-    PasswordPolicyUpdate, PasswordPolicyResponse
-)
 from .decorators import require_permission
-
+from .schemas import (
+    # Group
+    GroupCreate,
+    GroupListResponse,
+    GroupMembership,
+    GroupResponse,
+    InvitationAccept,
+    # Invitation
+    InvitationCreate,
+    InvitationResponse,
+    # Auth
+    LoginRequest,
+    LoginResponse,
+    LogoutRequest,
+    MFADisable,
+    # MFA
+    MFASetupResponse,
+    MFAVerify,
+    PasswordChange,
+    PasswordPolicyResponse,
+    # Policy
+    PasswordPolicyUpdate,
+    PermissionCheck,
+    PermissionCheckResult,
+    PermissionListResponse,
+    PermissionResponse,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
+    RoleAssignment,
+    RoleCreate,
+    RoleListResponse,
+    RoleResponse,
+    RoleUpdate,
+    SessionListResponse,
+    # Session
+    SessionResponse,
+    SessionRevoke,
+    # User
+    UserCreate,
+    UserListResponse,
+    UserResponse,
+    UserUpdate,
+)
+from .service import IAMService, get_iam_service
 
 router = APIRouter(prefix="/iam", tags=["iam"])
 
@@ -223,9 +245,9 @@ async def create_user(
 async def list_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    is_active: Optional[bool] = None,
-    search: Optional[str] = None,
-    role_code: Optional[str] = None,
+    is_active: bool | None = None,
+    search: str | None = None,
+    role_code: str | None = None,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
@@ -395,7 +417,7 @@ async def delete_user(
 async def lock_user(
     user_id: int,
     reason: str = Query(..., min_length=1),
-    duration_minutes: Optional[int] = Query(None, ge=1),
+    duration_minutes: int | None = Query(None, ge=1),
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
@@ -678,7 +700,7 @@ async def revoke_role(
 @router.get("/permissions", response_model=PermissionListResponse)
 @require_permission("iam.permission.read")
 async def list_permissions(
-    module: Optional[str] = None,
+    module: str | None = None,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
@@ -724,7 +746,7 @@ async def check_permission(
     )
 
 
-@router.get("/users/{user_id}/permissions", response_model=List[str])
+@router.get("/users/{user_id}/permissions", response_model=list[str])
 @require_permission("iam.permission.read")
 async def get_user_permissions(
     user_id: int,

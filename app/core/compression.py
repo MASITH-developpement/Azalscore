@@ -6,13 +6,14 @@ Seuil minimal pour éviter surcharge sur petites réponses.
 """
 
 import gzip
+import logging
 import zlib
-from typing import Callable
+from collections.abc import Callable
+
+from starlette.datastructures import MutableHeaders
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
-from starlette.datastructures import MutableHeaders
-import logging
 
 logger = logging.getLogger(__name__)
 

@@ -4,13 +4,13 @@ AZALS - Module Email - Modèles
 Modèles de données pour les emails transactionnels.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-from sqlalchemy import Column, String, Text, DateTime, Boolean, Integer, ForeignKey, Enum as SQLEnum, JSON
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-import uuid
 
 from app.db.base import Base
 

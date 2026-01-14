@@ -6,7 +6,6 @@ Routes API pour la gestion de la conformité réglementaire.
 """
 
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -16,30 +15,42 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User
 
+from .models import ComplianceStatus, RegulationType, RequirementPriority
 from .schemas import (
-    RegulationCreate, RegulationUpdate, RegulationResponse,
-    RequirementCreate, RequirementUpdate, RequirementResponse,
-    AssessmentCreate, AssessmentResponse,
-    GapCreate, GapResponse,
-    ActionCreate, ActionResponse,
-    PolicyCreate, PolicyResponse,
-    AcknowledgmentCreate, AcknowledgmentResponse,
-    TrainingCreate, TrainingResponse,
-    CompletionCreate, CompletionResponse,
-    AuditCreate, AuditResponse,
-    FindingCreate, FindingResponse,
-    RiskCreate, RiskUpdate, RiskResponse,
-    IncidentCreate, IncidentResponse,
-    ReportCreate, ReportResponse,
-    ComplianceMetrics
+    AcknowledgmentCreate,
+    AcknowledgmentResponse,
+    ActionCreate,
+    ActionResponse,
+    AssessmentCreate,
+    AssessmentResponse,
+    AuditCreate,
+    AuditResponse,
+    CompletionCreate,
+    CompletionResponse,
+    ComplianceMetrics,
+    FindingCreate,
+    FindingResponse,
+    GapCreate,
+    GapResponse,
+    IncidentCreate,
+    IncidentResponse,
+    PolicyCreate,
+    PolicyResponse,
+    RegulationCreate,
+    RegulationResponse,
+    RegulationUpdate,
+    ReportCreate,
+    ReportResponse,
+    RequirementCreate,
+    RequirementResponse,
+    RequirementUpdate,
+    RiskCreate,
+    RiskResponse,
+    RiskUpdate,
+    TrainingCreate,
+    TrainingResponse,
 )
-
-from .models import (
-    ComplianceStatus, RegulationType, RequirementPriority
-)
-
 from .service import get_compliance_service
-
 
 router = APIRouter(prefix="/compliance", tags=["Compliance"])
 
@@ -60,9 +71,9 @@ def create_regulation(
     return service.create_regulation(data, current_user.id)
 
 
-@router.get("/regulations", response_model=List[RegulationResponse])
+@router.get("/regulations", response_model=list[RegulationResponse])
 def list_regulations(
-    regulation_type: Optional[RegulationType] = None,
+    regulation_type: RegulationType | None = None,
     is_active: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -122,11 +133,11 @@ def create_requirement(
     return service.create_requirement(data, current_user.id)
 
 
-@router.get("/requirements", response_model=List[RequirementResponse])
+@router.get("/requirements", response_model=list[RequirementResponse])
 def list_requirements(
-    regulation_id: Optional[UUID] = None,
-    compliance_status: Optional[ComplianceStatus] = None,
-    priority: Optional[RequirementPriority] = None,
+    regulation_id: UUID | None = None,
+    compliance_status: ComplianceStatus | None = None,
+    priority: RequirementPriority | None = None,
     is_active: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -174,7 +185,7 @@ def update_requirement(
 def assess_requirement(
     requirement_id: UUID,
     status: ComplianceStatus,
-    score: Optional[Decimal] = None,
+    score: Decimal | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
@@ -236,8 +247,8 @@ def start_assessment(
 @router.post("/assessments/{assessment_id}/complete", response_model=AssessmentResponse)
 def complete_assessment(
     assessment_id: UUID,
-    findings_summary: Optional[str] = None,
-    recommendations: Optional[str] = None,
+    findings_summary: str | None = None,
+    recommendations: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
@@ -346,8 +357,8 @@ def start_action(
 def complete_action(
     action_id: UUID,
     resolution_notes: str,
-    evidence: Optional[List[str]] = None,
-    actual_cost: Optional[Decimal] = None,
+    evidence: list[str] | None = None,
+    actual_cost: Decimal | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
@@ -363,7 +374,7 @@ def complete_action(
 @router.post("/actions/{action_id}/verify", response_model=ActionResponse)
 def verify_action(
     action_id: UUID,
-    verification_notes: Optional[str] = None,
+    verification_notes: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
@@ -376,7 +387,7 @@ def verify_action(
     return action
 
 
-@router.get("/actions/overdue", response_model=List[ActionResponse])
+@router.get("/actions/overdue", response_model=list[ActionResponse])
 def get_overdue_actions(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
@@ -507,7 +518,7 @@ def start_training_completion(
 def complete_training_completion(
     completion_id: UUID,
     score: int,
-    certificate_number: Optional[str] = None,
+    certificate_number: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
@@ -569,9 +580,9 @@ def start_audit(
 @router.post("/audits/{audit_id}/complete", response_model=AuditResponse)
 def complete_audit(
     audit_id: UUID,
-    executive_summary: Optional[str] = None,
-    conclusions: Optional[str] = None,
-    recommendations: Optional[str] = None,
+    executive_summary: str | None = None,
+    conclusions: str | None = None,
+    recommendations: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
@@ -759,8 +770,8 @@ def assign_incident(
 def resolve_incident(
     incident_id: UUID,
     resolution: str,
-    root_cause: Optional[str] = None,
-    lessons_learned: Optional[str] = None,
+    root_cause: str | None = None,
+    lessons_learned: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user)
