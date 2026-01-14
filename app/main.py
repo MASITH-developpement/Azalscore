@@ -673,6 +673,9 @@ api_v1.include_router(ai_router)
 # Module GUARDIAN - Correction Automatique Gouvernee & Auditable
 api_v1.include_router(guardian_router)
 
+# API Incidents - Endpoint simplifie pour frontend Guardian
+api_v1.include_router(incidents_router)
+
 # Module COCKPIT - Tableau de bord dirigeant
 api_v1.include_router(cockpit_router)
 
