@@ -134,8 +134,8 @@ async def list_quotes(
             client_name=item.customer.name if item.customer else "N/A",
             date=item.date,
             due_date=item.due_date,
-            total_ht=item.total_ht,
-            total_ttc=item.total_ttc,
+            total_ht=item.subtotal,  # subtotal = Total HT
+            total_ttc=item.total,    # total = Total TTC
             currency=item.currency,
             created_at=item.created_at
         ))
@@ -164,8 +164,8 @@ async def get_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at,
         lines=doc.lines,
@@ -201,8 +201,8 @@ async def create_quote(
             description=line.description,
             quantity=line.quantity,
             unit_price=line.unit_price,
-            vat_rate=line.vat_rate,
-            discount_percent=line.discount_percent
+            tax_rate=float(line.vat_rate) if line.vat_rate else 20.0,
+            discount_percent=float(line.discount_percent) if line.discount_percent else 0.0
         )
         service.add_document_line(doc.id, line_data)
 
@@ -218,8 +218,8 @@ async def create_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -256,8 +256,8 @@ async def update_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -301,8 +301,8 @@ async def send_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -345,8 +345,8 @@ async def list_invoices(
             client_name=item.customer.name if item.customer else "N/A",
             date=item.date,
             due_date=item.due_date,
-            total_ht=item.total_ht,
-            total_ttc=item.total_ttc,
+            total_ht=item.subtotal,  # subtotal = Total HT
+            total_ttc=item.total,    # total = Total TTC
             currency=item.currency,
             created_at=item.created_at
         ))
@@ -375,8 +375,8 @@ async def get_invoice(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at,
         lines=doc.lines,
@@ -426,8 +426,8 @@ async def create_invoice(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -454,8 +454,8 @@ async def send_invoice(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -498,8 +498,8 @@ async def list_credits(
             client_name=item.customer.name if item.customer else "N/A",
             date=item.date,
             due_date=item.due_date,
-            total_ht=item.total_ht,
-            total_ttc=item.total_ttc,
+            total_ht=item.subtotal,  # subtotal = Total HT
+            total_ttc=item.total,    # total = Total TTC
             currency=item.currency,
             created_at=item.created_at
         ))
@@ -548,8 +548,8 @@ async def create_credit(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -576,8 +576,8 @@ async def send_credit(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )

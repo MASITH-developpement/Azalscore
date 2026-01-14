@@ -55,7 +55,7 @@ from .service import (
 )
 
 
-router = APIRouter(prefix="/api/v1/interventions", tags=["M-INT - Interventions"])
+router = APIRouter(prefix="/interventions", tags=["M-INT - Interventions"])
 
 
 # ============================================================================
@@ -77,11 +77,16 @@ def require_role(*allowed_roles):
     Usage:
         @require_role(RBACRoles.ADMIN, RBACRoles.MANAGER)
     """
-    def check_role(current_user: dict = Depends(get_current_user)):
-        user_role = current_user.get("role", RBACRoles.READONLY)
+    def check_role(current_user = Depends(get_current_user)):
+        # current_user est un objet User, pas un dict
+        user_role = getattr(current_user, "role", None)
+        if user_role:
+            user_role = user_role.value if hasattr(user_role, "value") else str(user_role)
+        else:
+            user_role = RBACRoles.READONLY
 
-        # Admin a tous les droits
-        if user_role == RBACRoles.ADMIN:
+        # Admin/DIRIGEANT a tous les droits
+        if user_role in (RBACRoles.ADMIN, "DIRIGEANT", "ADMIN"):
             return current_user
 
         if user_role not in allowed_roles:
@@ -281,7 +286,7 @@ async def create_intervention(
     """
     return service.create_intervention(
         data,
-        created_by=current_user.get("user_id")
+        created_by=current_user.id
     )
 
 
@@ -710,7 +715,7 @@ async def generer_rapport_final(
     try:
         return service.generer_rapport_final(
             data,
-            created_by=current_user.get("user_id")
+            created_by=current_user.id
         )
     except InterventionNotFoundError as e:
         raise HTTPException(

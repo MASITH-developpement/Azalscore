@@ -442,10 +442,10 @@ class CommercialService:
     def create_document(self, data: DocumentCreate, user_id: UUID) -> CommercialDocument:
         """Créer un document commercial."""
         # Générer le numéro
-        number = self._generate_document_number(data.type)
+        number = self._generate_document_number(data.document_type)
 
-        # Créer le document
-        doc_data = data.model_dump(exclude={'lines'})
+        # Créer le document (by_alias=True pour mapper document_type->type, doc_date->date)
+        doc_data = data.model_dump(exclude={'lines'}, by_alias=True)
         document = CommercialDocument(
             tenant_id=self.tenant_id,
             number=number,
