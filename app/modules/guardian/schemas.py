@@ -590,3 +590,44 @@ class FrontendErrorReport(BaseModel):
     timestamp: datetime
     correlation_id: Optional[str] = Field(None, max_length=255)
     extra_context: Optional[Dict[str, Any]] = None
+
+
+# ============================================================================
+# INCIDENT SCHEMAS (Simplifié pour frontend)
+# ============================================================================
+
+class IncidentCreate(BaseModel):
+    """
+    Schéma pour créer un incident depuis le frontend.
+    Format simplifié pour capture rapide des erreurs.
+    """
+    type: str = Field(..., pattern="^(auth|api|business|js|network|validation)$")
+    severity: str = Field(..., pattern="^(info|warning|error|critical)$")
+    page: str = Field(..., max_length=500)
+    route: str = Field(..., max_length=500)
+    endpoint: Optional[str] = Field(None, max_length=500)
+    method: Optional[str] = Field(None, max_length=10)
+    http_status: Optional[int] = None
+    message: str = Field(..., max_length=2000)
+    details: Optional[str] = Field(None, max_length=5000)
+    stack_trace: Optional[str] = None
+    screenshot_data: Optional[str] = None  # Base64 encoded image
+    timestamp: datetime
+
+
+class IncidentResponse(GuardianBaseSchema):
+    """Réponse pour un incident créé."""
+    id: str
+    tenant_id: str
+    type: str
+    severity: str
+    page: str
+    route: str
+    endpoint: Optional[str] = None
+    method: Optional[str] = None
+    http_status: Optional[int] = None
+    message: str
+    details: Optional[str] = None
+    timestamp: datetime
+    created_at: datetime
+    has_screenshot: bool

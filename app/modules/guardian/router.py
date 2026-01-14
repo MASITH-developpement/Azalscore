@@ -810,3 +810,342 @@ async def export_audit_data(
         ]
 
     return export_data
+
+
+# ============================================================================
+# INCIDENTS FRONTEND (SIMPLIFIÉ)
+# ============================================================================
+
+from .schemas import IncidentCreate, IncidentResponse
+from .models import Incident
+import base64
+import os
+import uuid as uuid_module
+
+# Dossier pour stocker les captures d'écran
+SCREENSHOT_DIR = os.environ.get("GUARDIAN_SCREENSHOT_DIR", "/tmp/guardian_screenshots")
+
+@router.post("/incidents", response_model=IncidentResponse, status_code=status.HTTP_201_CREATED)
+async def create_incident(
+    data: IncidentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Crée un incident depuis le frontend.
+
+    GUARDIAN: Cet endpoint ne doit JAMAIS retourner 500.
+    Toute erreur est gérée silencieusement pour ne pas bloquer le frontend.
+    """
+    from app.core.logging_config import get_logger
+    logger = get_logger(__name__)
+
+    try:
+        # Sauvegarder la capture d'écran si présente
+        screenshot_path = None
+        has_screenshot = False
+
+        if data.screenshot_data:
+            try:
+                # Créer le dossier si nécessaire
+                os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+
+                # Décoder et sauvegarder
+                screenshot_filename = f"{tenant_id}_{uuid_module.uuid4()}.jpg"
+                screenshot_path = os.path.join(SCREENSHOT_DIR, screenshot_filename)
+
+                # Extraire les données base64 (supprimer le préfixe data:image/...)
+                if "," in data.screenshot_data:
+                    _, base64_data = data.screenshot_data.split(",", 1)
+                else:
+                    base64_data = data.screenshot_data
+
+                with open(screenshot_path, "wb") as f:
+                    f.write(base64.b64decode(base64_data))
+
+                has_screenshot = True
+                logger.info(f"[GUARDIAN] Screenshot saved: {screenshot_path}")
+            except Exception as screenshot_error:
+                logger.warning(f"[GUARDIAN] Screenshot save failed: {screenshot_error}")
+                screenshot_path = None
+                has_screenshot = False
+
+        # Créer l'incident
+        incident = Incident(
+            tenant_id=tenant_id,
+            type=data.type,
+            severity=data.severity,
+            user_id=current_user.id,
+            user_role=current_user.role.value if hasattr(current_user, 'role') else None,
+            page=data.page,
+            route=data.route,
+            endpoint=data.endpoint,
+            method=data.method,
+            http_status=data.http_status,
+            message=data.message,
+            details=data.details,
+            stack_trace=data.stack_trace,
+            screenshot_path=screenshot_path,
+            has_screenshot=has_screenshot,
+            frontend_timestamp=data.timestamp,
+        )
+
+        db.add(incident)
+        db.commit()
+        db.refresh(incident)
+
+        logger.info(
+            f"[GUARDIAN] Incident created: {incident.incident_uid}",
+            extra={
+                "tenant_id": tenant_id,
+                "incident_type": data.type,
+                "severity": data.severity,
+                "page": data.page,
+            }
+        )
+
+        return IncidentResponse(
+            id=str(incident.incident_uid),
+            tenant_id=tenant_id,
+            type=incident.type,
+            severity=incident.severity,
+            page=incident.page,
+            route=incident.route,
+            endpoint=incident.endpoint,
+            method=incident.method,
+            http_status=incident.http_status,
+            message=incident.message,
+            details=incident.details,
+            timestamp=incident.frontend_timestamp,
+            created_at=incident.created_at,
+            has_screenshot=has_screenshot,
+        )
+
+    except Exception as e:
+        # GUARDIAN: JAMAIS de 500 sur cet endpoint
+        # Log l'erreur mais retourne un succès partiel
+        logger.error(
+            f"[GUARDIAN] Incident creation failed: {e}",
+            extra={
+                "tenant_id": tenant_id,
+                "error_type": type(e).__name__,
+            },
+            exc_info=True
+        )
+
+        # Retourner une réponse minimale
+        return IncidentResponse(
+            id=str(uuid_module.uuid4()),
+            tenant_id=tenant_id,
+            type=data.type,
+            severity=data.severity,
+            page=data.page,
+            route=data.route,
+            endpoint=data.endpoint,
+            method=data.method,
+            http_status=data.http_status,
+            message=data.message,
+            details=data.details,
+            timestamp=data.timestamp,
+            created_at=datetime.utcnow(),
+            has_screenshot=False,
+        )
+
+
+@router.get("/incidents")
+async def list_incidents(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    severity: Optional[str] = None,
+    incident_type: Optional[str] = Query(None, alias="type"),
+    is_resolved: Optional[bool] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Liste les incidents avec filtres et pagination."""
+    query = db.query(Incident).filter(Incident.tenant_id == tenant_id)
+
+    if severity:
+        query = query.filter(Incident.severity == severity)
+    if incident_type:
+        query = query.filter(Incident.type == incident_type)
+    if is_resolved is not None:
+        query = query.filter(Incident.is_resolved == is_resolved)
+    if date_from:
+        query = query.filter(Incident.created_at >= date_from)
+    if date_to:
+        query = query.filter(Incident.created_at <= date_to)
+
+    total = query.count()
+    items = query.order_by(Incident.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    return {
+        "items": [
+            {
+                "id": str(i.incident_uid),
+                "type": i.type,
+                "severity": i.severity,
+                "page": i.page,
+                "route": i.route,
+                "endpoint": i.endpoint,
+                "method": i.method,
+                "http_status": i.http_status,
+                "message": i.message,
+                "details": i.details,
+                "has_screenshot": i.has_screenshot,
+                "is_resolved": i.is_resolved,
+                "created_at": i.created_at.isoformat(),
+                "frontend_timestamp": i.frontend_timestamp.isoformat(),
+            }
+            for i in items
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size,
+    }
+
+
+@router.get("/incidents/{incident_id}/screenshot")
+async def get_incident_screenshot(
+    incident_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Récupère la capture d'écran d'un incident."""
+    from fastapi.responses import FileResponse
+
+    incident = db.query(Incident).filter(
+        Incident.incident_uid == incident_id,
+        Incident.tenant_id == tenant_id
+    ).first()
+
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident non trouvé")
+
+    if not incident.has_screenshot or not incident.screenshot_path:
+        raise HTTPException(status_code=404, detail="Pas de capture d'écran pour cet incident")
+
+    if not os.path.exists(incident.screenshot_path):
+        raise HTTPException(status_code=404, detail="Fichier de capture non trouvé")
+
+    return FileResponse(
+        incident.screenshot_path,
+        media_type="image/jpeg",
+        filename=f"incident_{incident_id}.jpg"
+    )
+
+
+# ============================================================================
+# RAPPORTS JOURNALIERS
+# ============================================================================
+
+from .daily_report import DailyReportService
+
+@router.get("/reports/daily")
+async def list_daily_reports(
+    limit: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Liste les derniers rapports journaliers."""
+    service = DailyReportService(db, tenant_id)
+    reports = service.list_reports(limit)
+
+    return {
+        "items": [
+            {
+                "id": str(r.report_uid),
+                "report_date": r.report_date.isoformat(),
+                "total_incidents": r.total_incidents,
+                "incidents_by_severity": r.incidents_by_severity,
+                "total_corrections": r.total_corrections,
+                "successful_corrections": r.successful_corrections,
+                "generated_at": r.generated_at.isoformat(),
+            }
+            for r in reports
+        ],
+        "total": len(reports),
+    }
+
+
+@router.get("/reports/daily/{report_date}")
+async def get_daily_report(
+    report_date: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Récupère un rapport journalier spécifique."""
+    from datetime import datetime as dt
+
+    try:
+        date = dt.strptime(report_date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Format de date invalide. Utilisez YYYY-MM-DD")
+
+    service = DailyReportService(db, tenant_id)
+    report = service.get_report(date)
+
+    if not report:
+        # Générer le rapport s'il n'existe pas
+        report = service.generate_daily_report(date)
+
+    return {
+        "id": str(report.report_uid),
+        "report_date": report.report_date.isoformat(),
+        "total_incidents": report.total_incidents,
+        "incidents_by_type": report.incidents_by_type,
+        "incidents_by_severity": report.incidents_by_severity,
+        "total_corrections": report.total_corrections,
+        "successful_corrections": report.successful_corrections,
+        "failed_corrections": report.failed_corrections,
+        "rollbacks": report.rollbacks,
+        "guardian_actions_count": report.guardian_actions_count,
+        "guardian_actions_summary": report.guardian_actions_summary,
+        "affected_pages": report.affected_pages,
+        "report_content": report.report_content,
+        "generated_at": report.generated_at.isoformat(),
+    }
+
+
+@router.post("/reports/daily/generate")
+async def generate_daily_report(
+    report_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Génère manuellement un rapport journalier.
+    Réservé aux rôles DIRIGEANT et ADMIN.
+    """
+    if current_user.role.value not in ["DIRIGEANT", "ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seuls les rôles DIRIGEANT et ADMIN peuvent générer des rapports"
+        )
+
+    from datetime import datetime as dt
+
+    date = None
+    if report_date:
+        try:
+            date = dt.strptime(report_date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Format de date invalide. Utilisez YYYY-MM-DD")
+
+    service = DailyReportService(db, tenant_id)
+    report = service.generate_daily_report(date)
+
+    return {
+        "status": "generated",
+        "report_id": str(report.report_uid),
+        "report_date": report.report_date.isoformat(),
+    }
