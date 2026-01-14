@@ -14,46 +14,65 @@ Vues disponibles:
 
 import logging
 from datetime import date
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Body
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user, get_tenant_id
+from app.core.database import get_db
 
 from .models import (
-    DocumentType, DocumentStatus, DocumentSource,
-    PaymentStatus, ConfidenceLevel, ViewType,
-    ReconciliationStatusAuto
+    ConfidenceLevel,
+    DocumentSource,
+    DocumentStatus,
+    DocumentType,
+    ReconciliationStatusAuto,
 )
 from .schemas import (
-    # Document schemas
-    DocumentCreate, DocumentUpdate, DocumentValidate, DocumentReject,
-    DocumentResponse, DocumentListResponse, DocumentDetailResponse,
-    # Dashboard schemas
-    DirigeantDashboard, AssistanteDashboard, ExpertComptableDashboard,
-    # Bank schemas
-    BankConnectionCreate, BankConnectionResponse, BankConnectionListResponse,
-    BankSyncTrigger, BankSyncSessionResponse,
-    SyncedAccountResponse, SyncedTransactionResponse, SyncedTransactionListResponse,
-    # Reconciliation schemas
-    ReconciliationRuleCreate, ReconciliationRuleUpdate, ReconciliationRuleResponse,
-    ManualReconciliation, ReconciliationHistoryResponse,
+    AlertListResponse,
+    AlertResolve,
     # Alert schemas
-    AlertResponse, AlertResolve, AlertListResponse,
+    AlertResponse,
+    AssistanteDashboard,
+    AutoEntryResponse,
+    AutoEntryValidate,
+    # Bank schemas
+    BankConnectionCreate,
+    BankConnectionListResponse,
+    BankConnectionResponse,
+    BankSyncSessionResponse,
+    BankSyncTrigger,
     # Validation schemas
-    BulkValidationRequest, BulkValidationResponse,
-    AutoEntryResponse, AutoEntryValidate,
-    # Preferences schemas
-    UserPreferencesCreate, UserPreferencesUpdate, UserPreferencesResponse,
+    BulkValidationRequest,
+    BulkValidationResponse,
+    # Dashboard schemas
+    DirigeantDashboard,
+    # Document schemas
+    DocumentDetailResponse,
+    DocumentListResponse,
+    DocumentReject,
+    DocumentResponse,
+    DocumentUpdate,
+    DocumentValidate,
+    ExpertComptableDashboard,
+    ManualReconciliation,
+    ReconciliationHistoryResponse,
+    # Reconciliation schemas
+    ReconciliationRuleCreate,
+    ReconciliationRuleResponse,
+    SyncedAccountResponse,
+    SyncedTransactionListResponse,
+    SyncedTransactionResponse,
 )
 from .services import (
-    DocumentService, DashboardService, BankPullService,
-    ReconciliationService, OCRService, AIClassificationService,
-    AutoAccountingService
+    AIClassificationService,
+    AutoAccountingService,
+    BankPullService,
+    DashboardService,
+    DocumentService,
+    ReconciliationService,
 )
 
 logger = logging.getLogger(__name__)
@@ -165,9 +184,9 @@ async def get_assistante_dashboard(
     summary="Liste des documents (vue assistante)"
 )
 async def list_documents_assistante(
-    document_type: Optional[DocumentType] = None,
-    status: Optional[DocumentStatus] = None,
-    search: Optional[str] = None,
+    document_type: DocumentType | None = None,
+    status: DocumentStatus | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: DocumentService = Depends(get_document_service)
@@ -209,8 +228,8 @@ async def upload_document(
     L'utilisateur n'a rien d'autre à faire.
     """
     # Sauvegarde temporaire du fichier
-    import tempfile
     import os
+    import tempfile
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
         content = await file.read()
@@ -284,7 +303,7 @@ async def get_expert_dashboard(
     summary="File de validation"
 )
 async def get_validation_queue(
-    confidence: Optional[ConfidenceLevel] = None,
+    confidence: ConfidenceLevel | None = None,
     limit: int = Query(50, ge=1, le=100),
     service: DocumentService = Depends(get_document_service)
 ):
@@ -463,7 +482,7 @@ async def delete_bank_connection(
 
 @router.post(
     "/bank/sync",
-    response_model=List[BankSyncSessionResponse],
+    response_model=list[BankSyncSessionResponse],
     summary="Synchroniser la banque (PULL)"
 )
 async def sync_bank(
@@ -496,11 +515,11 @@ async def sync_bank(
 
 @router.get(
     "/bank/accounts",
-    response_model=List[SyncedAccountResponse],
+    response_model=list[SyncedAccountResponse],
     summary="Comptes bancaires synchronisés"
 )
 async def list_synced_accounts(
-    connection_id: Optional[UUID] = None,
+    connection_id: UUID | None = None,
     service: BankPullService = Depends(get_bank_service)
 ):
     """Liste les comptes bancaires synchronisés."""
@@ -514,10 +533,10 @@ async def list_synced_accounts(
     summary="Transactions bancaires"
 )
 async def list_transactions(
-    account_id: Optional[UUID] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    status: Optional[ReconciliationStatusAuto] = None,
+    account_id: UUID | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    status: ReconciliationStatusAuto | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: BankPullService = Depends(get_bank_service)
@@ -592,7 +611,7 @@ async def manual_reconcile(
 
 @router.get(
     "/reconciliation/rules",
-    response_model=List[ReconciliationRuleResponse],
+    response_model=list[ReconciliationRuleResponse],
     summary="Règles de rapprochement"
 )
 async def list_reconciliation_rules(
@@ -701,7 +720,7 @@ async def get_document_stats(
     summary="Liste des alertes"
 )
 async def list_alerts(
-    resolved: Optional[bool] = Query(False),
+    resolved: bool | None = Query(False),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id)
@@ -745,8 +764,9 @@ async def resolve_alert(
     tenant_id: str = Depends(get_tenant_id)
 ):
     """Marque une alerte comme résolue."""
-    from .models import AccountingAlert
     from datetime import datetime
+
+    from .models import AccountingAlert
 
     alert = db.query(AccountingAlert).filter(
         AccountingAlert.id == alert_id,
@@ -779,8 +799,9 @@ async def mark_alert_read(
     tenant_id: str = Depends(get_tenant_id)
 ):
     """Marque une alerte comme lue."""
-    from .models import AccountingAlert
     from datetime import datetime
+
+    from .models import AccountingAlert
 
     alert = db.query(AccountingAlert).filter(
         AccountingAlert.id == alert_id,

@@ -4,32 +4,44 @@ AZALS - PACK PAYS FRANCE - API Router
 Endpoints pour la localisation française.
 """
 
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from .service import FrancePackService
+
 from .schemas import (
-    # PCG
-    PCGAccountCreate, PCGAccountResponse,
-    # TVA
-    FRVATRateResponse,
-    VATDeclarationCreate, VATDeclarationResponse,
-    # FEC
-    FECGenerateRequest, FECValidationResult, FECExportResponse,
+    DSNDeclarationResponse,
+    DSNEmployeeData,
     # DSN
-    DSNGenerateRequest, DSNDeclarationResponse, DSNEmployeeData,
-    # Contrats
-    FRContractCreate, FRContractResponse,
-    # RGPD
-    RGPDConsentCreate, RGPDConsentResponse,
-    RGPDRequestCreate, RGPDRequestResponse,
-    RGPDProcessingCreate, RGPDProcessingResponse,
-    RGPDBreachCreate, RGPDBreachResponse,
+    DSNGenerateRequest,
+    FECExportResponse,
+    # FEC
+    FECGenerateRequest,
+    FECValidationResult,
     # Stats
     FrancePackStats,
+    # Contrats
+    FRContractCreate,
+    FRContractResponse,
+    # TVA
+    FRVATRateResponse,
+    # PCG
+    PCGAccountCreate,
+    PCGAccountResponse,
+    RGPDBreachCreate,
+    RGPDBreachResponse,
+    # RGPD
+    RGPDConsentCreate,
+    RGPDConsentResponse,
+    RGPDProcessingCreate,
+    RGPDProcessingResponse,
+    RGPDRequestCreate,
+    RGPDRequestResponse,
+    VATDeclarationCreate,
+    VATDeclarationResponse,
 )
+from .service import FrancePackService
 
 router = APIRouter(prefix="/france", tags=["Pack France"])
 
@@ -49,10 +61,10 @@ def initialize_pcg(
     return {"message": f"{count} comptes PCG créés", "count": count}
 
 
-@router.get("/pcg/accounts", response_model=List[PCGAccountResponse])
+@router.get("/pcg/accounts", response_model=list[PCGAccountResponse])
 def list_pcg_accounts(
     tenant_id: str = Query(...),
-    pcg_class: Optional[str] = None,
+    pcg_class: str | None = None,
     active_only: bool = True,
     skip: int = 0,
     limit: int = 100,
@@ -103,7 +115,7 @@ def initialize_vat_rates(
     return {"message": f"{count} taux de TVA créés", "count": count}
 
 
-@router.get("/tva/rates", response_model=List[FRVATRateResponse])
+@router.get("/tva/rates", response_model=list[FRVATRateResponse])
 def list_vat_rates(
     tenant_id: str = Query(...),
     active_only: bool = True,
@@ -275,7 +287,7 @@ def create_consent(
 @router.post("/rgpd/consents/{consent_id}/withdraw", response_model=RGPDConsentResponse)
 def withdraw_consent(
     consent_id: int,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     tenant_id: str = Query(...),
     db: Session = Depends(get_db)
 ):

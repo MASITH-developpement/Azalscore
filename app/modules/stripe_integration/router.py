@@ -4,7 +4,7 @@ AZALS MODULE 15 - Stripe Integration Router
 Endpoints API pour l'intégration Stripe.
 """
 
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
@@ -13,17 +13,31 @@ from app.core.dependencies import get_tenant_id
 
 from .models import PaymentIntentStatus
 from .schemas import (
-    StripeCustomerCreate, StripeCustomerUpdate, StripeCustomerResponse,
-    PaymentMethodCreate, PaymentMethodResponse,
-    SetupIntentCreate, SetupIntentResponse,
-    PaymentIntentCreate, PaymentIntentResponse,
-    PaymentIntentConfirm, PaymentIntentCapture,
-    CheckoutSessionCreate, CheckoutSessionResponse,
-    RefundCreate, RefundResponse,
-    StripeProductCreate, StripeProductResponse,
-    StripePriceCreate, StripePriceResponse,
-    ConnectAccountCreate, ConnectAccountResponse, StripeConfigCreate, StripeConfigUpdate, StripeConfigResponse,
-    StripeDashboard
+    CheckoutSessionCreate,
+    CheckoutSessionResponse,
+    ConnectAccountCreate,
+    ConnectAccountResponse,
+    PaymentIntentCapture,
+    PaymentIntentConfirm,
+    PaymentIntentCreate,
+    PaymentIntentResponse,
+    PaymentMethodCreate,
+    PaymentMethodResponse,
+    RefundCreate,
+    RefundResponse,
+    SetupIntentCreate,
+    SetupIntentResponse,
+    StripeConfigCreate,
+    StripeConfigResponse,
+    StripeConfigUpdate,
+    StripeCustomerCreate,
+    StripeCustomerResponse,
+    StripeCustomerUpdate,
+    StripeDashboard,
+    StripePriceCreate,
+    StripePriceResponse,
+    StripeProductCreate,
+    StripeProductResponse,
 )
 from .service import StripeService
 
@@ -136,7 +150,7 @@ def create_customer(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/customers", response_model=List[StripeCustomerResponse])
+@router.get("/customers", response_model=list[StripeCustomerResponse])
 def list_customers(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -212,7 +226,7 @@ def add_payment_method(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/customers/{customer_id}/payment-methods", response_model=List[PaymentMethodResponse])
+@router.get("/customers/{customer_id}/payment-methods", response_model=list[PaymentMethodResponse])
 def list_payment_methods(
     customer_id: int,
     service: StripeService = Depends(get_service)
@@ -260,10 +274,10 @@ def create_payment_intent(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/payment-intents", response_model=List[PaymentIntentResponse])
+@router.get("/payment-intents", response_model=list[PaymentIntentResponse])
 def list_payment_intents(
-    customer_id: Optional[int] = None,
-    status: Optional[PaymentIntentStatus] = None,
+    customer_id: int | None = None,
+    status: PaymentIntentStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service: StripeService = Depends(get_service)
@@ -317,7 +331,7 @@ def capture_payment_intent(
 @router.post("/payment-intents/{payment_intent_id}/cancel", response_model=PaymentIntentResponse)
 def cancel_payment_intent(
     payment_intent_id: int,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     service: StripeService = Depends(get_service)
 ):
     """Annuler un PaymentIntent."""
@@ -371,9 +385,9 @@ def create_refund(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/refunds", response_model=List[RefundResponse])
+@router.get("/refunds", response_model=list[RefundResponse])
 def list_refunds(
-    payment_intent_id: Optional[int] = None,
+    payment_intent_id: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service: StripeService = Depends(get_service)

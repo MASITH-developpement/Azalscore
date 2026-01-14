@@ -7,19 +7,26 @@ Schémas Pydantic pour la gestion des ressources humaines.
 
 from __future__ import annotations
 
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from uuid import UUID
 import json
+from datetime import date, datetime
+from decimal import Decimal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import (
-    ContractType, EmployeeStatus, LeaveType, LeaveStatus,
-    PayrollStatus, PayElementType, DocumentType,
-    EvaluationType, EvaluationStatus, TrainingType, TrainingStatus
+    ContractType,
+    DocumentType,
+    EmployeeStatus,
+    EvaluationStatus,
+    EvaluationType,
+    LeaveStatus,
+    LeaveType,
+    PayElementType,
+    PayrollStatus,
+    TrainingStatus,
+    TrainingType,
 )
-
 
 # ============================================================================
 # SCHÉMAS DÉPARTEMENTS
@@ -29,10 +36,10 @@ class DepartmentBase(BaseModel):
     """Base pour les départements."""
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    parent_id: Optional[UUID] = None
-    manager_id: Optional[UUID] = None
-    cost_center: Optional[str] = None
+    description: str | None = None
+    parent_id: UUID | None = None
+    manager_id: UUID | None = None
+    cost_center: str | None = None
 
 
 class DepartmentCreate(DepartmentBase):
@@ -42,12 +49,12 @@ class DepartmentCreate(DepartmentBase):
 
 class DepartmentUpdate(BaseModel):
     """Mise à jour d'un département."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    parent_id: Optional[UUID] = None
-    manager_id: Optional[UUID] = None
-    cost_center: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    parent_id: UUID | None = None
+    manager_id: UUID | None = None
+    cost_center: str | None = None
+    is_active: bool | None = None
 
 
 class DepartmentResponse(DepartmentBase):
@@ -68,13 +75,13 @@ class PositionBase(BaseModel):
     """Base pour les postes."""
     code: str = Field(..., min_length=1, max_length=20)
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    department_id: Optional[UUID] = None
-    category: Optional[str] = None
+    description: str | None = None
+    department_id: UUID | None = None
+    category: str | None = None
     level: int = 1
-    min_salary: Optional[Decimal] = None
-    max_salary: Optional[Decimal] = None
-    requirements: List[str] = Field(default_factory=list)
+    min_salary: Decimal | None = None
+    max_salary: Decimal | None = None
+    requirements: list[str] = Field(default_factory=list)
 
 
 class PositionCreate(PositionBase):
@@ -84,15 +91,15 @@ class PositionCreate(PositionBase):
 
 class PositionUpdate(BaseModel):
     """Mise à jour d'un poste."""
-    title: Optional[str] = None
-    description: Optional[str] = None
-    department_id: Optional[UUID] = None
-    category: Optional[str] = None
-    level: Optional[int] = None
-    min_salary: Optional[Decimal] = None
-    max_salary: Optional[Decimal] = None
-    requirements: Optional[List[str]] = None
-    is_active: Optional[bool] = None
+    title: str | None = None
+    description: str | None = None
+    department_id: UUID | None = None
+    category: str | None = None
+    level: int | None = None
+    min_salary: Decimal | None = None
+    max_salary: Decimal | None = None
+    requirements: list[str] | None = None
+    is_active: bool | None = None
 
 
 class PositionResponse(PositionBase):
@@ -114,95 +121,95 @@ class EmployeeBase(BaseModel):
     employee_number: str = Field(..., min_length=1, max_length=50)
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    maiden_name: Optional[str] = None
-    gender: Optional[str] = None
-    birth_date: Optional[date] = None
-    birth_place: Optional[str] = None
-    nationality: Optional[str] = None
-    social_security_number: Optional[str] = None
-    email: Optional[str] = None
-    personal_email: Optional[str] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    postal_code: Optional[str] = None
-    city: Optional[str] = None
+    maiden_name: str | None = None
+    gender: str | None = None
+    birth_date: date | None = None
+    birth_place: str | None = None
+    nationality: str | None = None
+    social_security_number: str | None = None
+    email: str | None = None
+    personal_email: str | None = None
+    phone: str | None = None
+    mobile: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    postal_code: str | None = None
+    city: str | None = None
     country: str = "France"
 
 
 class EmployeeCreate(EmployeeBase):
     """Création d'un employé."""
-    user_id: Optional[int] = None
-    department_id: Optional[UUID] = None
-    position_id: Optional[UUID] = None
-    manager_id: Optional[UUID] = None
-    work_location: Optional[str] = None
-    contract_type: Optional[ContractType] = None
-    hire_date: Optional[date] = None
-    start_date: Optional[date] = None
-    gross_salary: Optional[Decimal] = None
+    user_id: int | None = None
+    department_id: UUID | None = None
+    position_id: UUID | None = None
+    manager_id: UUID | None = None
+    work_location: str | None = None
+    contract_type: ContractType | None = None
+    hire_date: date | None = None
+    start_date: date | None = None
+    gross_salary: Decimal | None = None
     currency: str = "EUR"
     weekly_hours: Decimal = Decimal("35.0")
-    bank_name: Optional[str] = None
-    iban: Optional[str] = None
-    bic: Optional[str] = None
+    bank_name: str | None = None
+    iban: str | None = None
+    bic: str | None = None
 
 
 class EmployeeUpdate(BaseModel):
     """Mise à jour d'un employé."""
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    maiden_name: Optional[str] = None
-    gender: Optional[str] = None
-    birth_date: Optional[date] = None
-    birth_place: Optional[str] = None
-    nationality: Optional[str] = None
-    email: Optional[str] = None
-    personal_email: Optional[str] = None
-    phone: Optional[str] = None
-    mobile: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    postal_code: Optional[str] = None
-    city: Optional[str] = None
-    country: Optional[str] = None
-    department_id: Optional[UUID] = None
-    position_id: Optional[UUID] = None
-    manager_id: Optional[UUID] = None
-    work_location: Optional[str] = None
-    status: Optional[EmployeeStatus] = None
-    gross_salary: Optional[Decimal] = None
-    weekly_hours: Optional[Decimal] = None
-    bank_name: Optional[str] = None
-    iban: Optional[str] = None
-    bic: Optional[str] = None
-    photo_url: Optional[str] = None
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
-    is_active: Optional[bool] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    maiden_name: str | None = None
+    gender: str | None = None
+    birth_date: date | None = None
+    birth_place: str | None = None
+    nationality: str | None = None
+    email: str | None = None
+    personal_email: str | None = None
+    phone: str | None = None
+    mobile: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    postal_code: str | None = None
+    city: str | None = None
+    country: str | None = None
+    department_id: UUID | None = None
+    position_id: UUID | None = None
+    manager_id: UUID | None = None
+    work_location: str | None = None
+    status: EmployeeStatus | None = None
+    gross_salary: Decimal | None = None
+    weekly_hours: Decimal | None = None
+    bank_name: str | None = None
+    iban: str | None = None
+    bic: str | None = None
+    photo_url: str | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
+    is_active: bool | None = None
 
 
 class EmployeeResponse(EmployeeBase):
     """Réponse employé."""
     id: UUID
-    user_id: Optional[int] = None
-    department_id: Optional[UUID] = None
-    position_id: Optional[UUID] = None
-    manager_id: Optional[UUID] = None
-    work_location: Optional[str] = None
+    user_id: int | None = None
+    department_id: UUID | None = None
+    position_id: UUID | None = None
+    manager_id: UUID | None = None
+    work_location: str | None = None
     status: EmployeeStatus = EmployeeStatus.ACTIVE
-    contract_type: Optional[ContractType] = None
-    hire_date: Optional[date] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    gross_salary: Optional[Decimal] = None
+    contract_type: ContractType | None = None
+    hire_date: date | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    gross_salary: Decimal | None = None
     currency: str = "EUR"
     weekly_hours: Decimal = Decimal("35.0")
     annual_leave_balance: Decimal = Decimal("0")
     rtt_balance: Decimal = Decimal("0")
-    photo_url: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    photo_url: str | None = None
+    tags: list[str] = Field(default_factory=list)
     is_active: bool = True
     created_at: datetime
     updated_at: datetime
@@ -219,7 +226,7 @@ class EmployeeResponse(EmployeeBase):
 
 class EmployeeList(BaseModel):
     """Liste d'employés."""
-    items: List[EmployeeResponse]
+    items: list[EmployeeResponse]
     total: int
 
 
@@ -233,12 +240,12 @@ class ContractBase(BaseModel):
 
     contract_number: str = Field(..., min_length=1, max_length=50)
     contract_type: ContractType = Field(..., alias="type")
-    title: Optional[str] = None
-    department_id: Optional[UUID] = None
-    position_id: Optional[UUID] = None
+    title: str | None = None
+    department_id: UUID | None = None
+    position_id: UUID | None = None
     start_date: date
-    end_date: Optional[date] = None
-    probation_duration: Optional[int] = None
+    end_date: date | None = None
+    probation_duration: int | None = None
     gross_salary: Decimal
     currency: str = "EUR"
     pay_frequency: str = "MONTHLY"
@@ -249,8 +256,8 @@ class ContractBase(BaseModel):
 class ContractCreate(ContractBase):
     """Création d'un contrat."""
     employee_id: UUID
-    bonus_clause: Optional[str] = None
-    notice_period: Optional[int] = None
+    bonus_clause: str | None = None
+    notice_period: int | None = None
     non_compete_clause: bool = False
     confidentiality_clause: bool = True
 
@@ -259,12 +266,12 @@ class ContractResponse(ContractBase):
     """Réponse contrat."""
     id: UUID
     employee_id: UUID
-    probation_end_date: Optional[date] = None
-    signed_date: Optional[date] = None
+    probation_end_date: date | None = None
+    signed_date: date | None = None
     is_current: bool = True
-    terminated_date: Optional[date] = None
-    termination_reason: Optional[str] = None
-    document_url: Optional[str] = None
+    terminated_date: date | None = None
+    termination_reason: str | None = None
+    document_url: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -284,8 +291,8 @@ class LeaveRequestBase(BaseModel):
     end_date: date
     start_half_day: bool = False
     end_half_day: bool = False
-    reason: Optional[str] = None
-    replacement_id: Optional[UUID] = None
+    reason: str | None = None
+    replacement_id: UUID | None = None
 
 
 class LeaveRequestCreate(LeaveRequestBase):
@@ -299,10 +306,10 @@ class LeaveRequestResponse(LeaveRequestBase):
     employee_id: UUID
     status: LeaveStatus = LeaveStatus.PENDING
     days_count: Decimal
-    attachment_url: Optional[str] = None
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
-    rejection_reason: Optional[str] = None
+    attachment_url: str | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
+    rejection_reason: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -334,7 +341,7 @@ class PayrollPeriodBase(BaseModel):
     month: int
     start_date: date
     end_date: date
-    payment_date: Optional[date] = None
+    payment_date: date | None = None
 
 
 class PayrollPeriodCreate(PayrollPeriodBase):
@@ -347,7 +354,7 @@ class PayrollPeriodResponse(PayrollPeriodBase):
     id: UUID
     status: PayrollStatus = PayrollStatus.DRAFT
     is_closed: bool = False
-    closed_at: Optional[datetime] = None
+    closed_at: datetime | None = None
     total_gross: Decimal = Decimal("0")
     total_net: Decimal = Decimal("0")
     total_employer_charges: Decimal = Decimal("0")
@@ -365,9 +372,9 @@ class PayslipLineCreate(BaseModel):
     element_type: PayElementType = Field(..., alias="type")
     code: str
     label: str
-    base: Optional[Decimal] = None
-    rate: Optional[Decimal] = None
-    quantity: Optional[Decimal] = None
+    base: Decimal | None = None
+    rate: Decimal | None = None
+    quantity: Decimal | None = None
     amount: Decimal
     is_deduction: bool = False
     is_employer_charge: bool = False
@@ -388,12 +395,12 @@ class PayslipCreate(BaseModel):
     period_id: UUID
     start_date: date
     end_date: date
-    payment_date: Optional[date] = None
+    payment_date: date | None = None
     worked_hours: Decimal = Decimal("0")
     overtime_hours: Decimal = Decimal("0")
     absence_hours: Decimal = Decimal("0")
     gross_salary: Decimal
-    lines: List[PayslipLineCreate] = Field(default_factory=list)
+    lines: list[PayslipLineCreate] = Field(default_factory=list)
 
 
 class PayslipResponse(BaseModel):
@@ -405,7 +412,7 @@ class PayslipResponse(BaseModel):
     status: PayrollStatus = PayrollStatus.DRAFT
     start_date: date
     end_date: date
-    payment_date: Optional[date] = None
+    payment_date: date | None = None
     worked_hours: Decimal = Decimal("0")
     overtime_hours: Decimal = Decimal("0")
     absence_hours: Decimal = Decimal("0")
@@ -421,12 +428,12 @@ class PayslipResponse(BaseModel):
     ytd_gross: Decimal = Decimal("0")
     ytd_net: Decimal = Decimal("0")
     ytd_tax: Decimal = Decimal("0")
-    document_url: Optional[str] = None
-    sent_at: Optional[datetime] = None
-    validated_by: Optional[UUID] = None
-    validated_at: Optional[datetime] = None
-    paid_at: Optional[datetime] = None
-    lines: List[PayslipLineResponse] = Field(default_factory=list)
+    document_url: str | None = None
+    sent_at: datetime | None = None
+    validated_by: UUID | None = None
+    validated_at: datetime | None = None
+    paid_at: datetime | None = None
+    lines: list[PayslipLineResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -442,13 +449,13 @@ class TimeEntryBase(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     entry_date: date = Field(..., alias="date")
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     break_duration: int = 0
     worked_hours: Decimal
     overtime_hours: Decimal = Decimal("0")
-    project_id: Optional[UUID] = None
-    task_description: Optional[str] = None
+    project_id: UUID | None = None
+    task_description: str | None = None
 
 
 class TimeEntryCreate(TimeEntryBase):
@@ -461,8 +468,8 @@ class TimeEntryResponse(TimeEntryBase):
     id: UUID
     employee_id: UUID
     is_approved: bool = False
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -476,8 +483,8 @@ class SkillBase(BaseModel):
     """Base pour les compétences."""
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    category: Optional[str] = None
-    description: Optional[str] = None
+    category: str | None = None
+    description: str | None = None
 
 
 class SkillCreate(SkillBase):
@@ -498,18 +505,18 @@ class EmployeeSkillCreate(BaseModel):
     """Création d'une compétence employé."""
     skill_id: UUID
     level: int = Field(1, ge=1, le=5)
-    acquired_date: Optional[date] = None
-    expiry_date: Optional[date] = None
-    certification_url: Optional[str] = None
-    notes: Optional[str] = None
+    acquired_date: date | None = None
+    expiry_date: date | None = None
+    certification_url: str | None = None
+    notes: str | None = None
 
 
 class EmployeeSkillResponse(EmployeeSkillCreate):
     """Réponse compétence employé."""
     id: UUID
     employee_id: UUID
-    validated_by: Optional[UUID] = None
-    validated_at: Optional[datetime] = None
+    validated_by: UUID | None = None
+    validated_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -526,30 +533,30 @@ class TrainingBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     training_type: TrainingType = Field(..., alias="type")
-    provider: Optional[str] = None
-    trainer: Optional[str] = None
-    location: Optional[str] = None
+    provider: str | None = None
+    trainer: str | None = None
+    location: str | None = None
     start_date: date
     end_date: date
-    duration_hours: Optional[Decimal] = None
-    max_participants: Optional[int] = None
-    cost_per_person: Optional[Decimal] = None
+    duration_hours: Decimal | None = None
+    max_participants: int | None = None
+    cost_per_person: Decimal | None = None
 
 
 class TrainingCreate(TrainingBase):
     """Création d'une formation."""
-    skills_acquired: List[UUID] = Field(default_factory=list)
+    skills_acquired: list[UUID] = Field(default_factory=list)
 
 
 class TrainingResponse(TrainingBase):
     """Réponse formation."""
     id: UUID
     status: TrainingStatus = TrainingStatus.PLANNED
-    total_cost: Optional[Decimal] = None
-    skills_acquired: List[UUID] = Field(default_factory=list)
-    created_by: Optional[UUID] = None
+    total_cost: Decimal | None = None
+    skills_acquired: list[UUID] = Field(default_factory=list)
+    created_by: UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -567,13 +574,13 @@ class TrainingParticipantResponse(BaseModel):
     training_id: UUID
     employee_id: UUID
     status: str = "ENROLLED"
-    attendance_rate: Optional[Decimal] = None
-    score: Optional[Decimal] = None
-    passed: Optional[bool] = None
-    certificate_url: Optional[str] = None
-    feedback: Optional[str] = None
+    attendance_rate: Decimal | None = None
+    score: Decimal | None = None
+    passed: bool | None = None
+    certificate_url: str | None = None
+    feedback: str | None = None
     enrolled_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -589,8 +596,8 @@ class EvaluationBase(BaseModel):
     evaluation_type: EvaluationType = Field(..., alias="type")
     period_start: date
     period_end: date
-    scheduled_date: Optional[date] = None
-    evaluator_id: Optional[UUID] = None
+    scheduled_date: date | None = None
+    evaluator_id: UUID | None = None
 
 
 class EvaluationCreate(EvaluationBase):
@@ -600,21 +607,21 @@ class EvaluationCreate(EvaluationBase):
 
 class EvaluationUpdate(BaseModel):
     """Mise à jour d'une évaluation."""
-    status: Optional[EvaluationStatus] = None
-    completed_date: Optional[date] = None
-    overall_score: Optional[Decimal] = None
-    objectives_score: Optional[Decimal] = None
-    skills_score: Optional[Decimal] = None
-    behavior_score: Optional[Decimal] = None
-    objectives_achieved: Optional[List[str]] = None
-    objectives_next: Optional[List[str]] = None
-    strengths: Optional[str] = None
-    improvements: Optional[str] = None
-    employee_comments: Optional[str] = None
-    evaluator_comments: Optional[str] = None
-    promotion_recommended: Optional[bool] = None
-    salary_increase_recommended: Optional[bool] = None
-    training_needs: Optional[List[str]] = None
+    status: EvaluationStatus | None = None
+    completed_date: date | None = None
+    overall_score: Decimal | None = None
+    objectives_score: Decimal | None = None
+    skills_score: Decimal | None = None
+    behavior_score: Decimal | None = None
+    objectives_achieved: list[str] | None = None
+    objectives_next: list[str] | None = None
+    strengths: str | None = None
+    improvements: str | None = None
+    employee_comments: str | None = None
+    evaluator_comments: str | None = None
+    promotion_recommended: bool | None = None
+    salary_increase_recommended: bool | None = None
+    training_needs: list[str] | None = None
 
 
 class EvaluationResponse(EvaluationBase):
@@ -622,23 +629,23 @@ class EvaluationResponse(EvaluationBase):
     id: UUID
     employee_id: UUID
     status: EvaluationStatus = EvaluationStatus.SCHEDULED
-    completed_date: Optional[date] = None
-    overall_score: Optional[Decimal] = None
-    objectives_score: Optional[Decimal] = None
-    skills_score: Optional[Decimal] = None
-    behavior_score: Optional[Decimal] = None
-    objectives_achieved: List[str] = Field(default_factory=list)
-    objectives_next: List[str] = Field(default_factory=list)
-    strengths: Optional[str] = None
-    improvements: Optional[str] = None
-    employee_comments: Optional[str] = None
-    evaluator_comments: Optional[str] = None
+    completed_date: date | None = None
+    overall_score: Decimal | None = None
+    objectives_score: Decimal | None = None
+    skills_score: Decimal | None = None
+    behavior_score: Decimal | None = None
+    objectives_achieved: list[str] = Field(default_factory=list)
+    objectives_next: list[str] = Field(default_factory=list)
+    strengths: str | None = None
+    improvements: str | None = None
+    employee_comments: str | None = None
+    evaluator_comments: str | None = None
     promotion_recommended: bool = False
     salary_increase_recommended: bool = False
-    training_needs: List[str] = Field(default_factory=list)
-    employee_signed_at: Optional[datetime] = None
-    evaluator_signed_at: Optional[datetime] = None
-    document_url: Optional[str] = None
+    training_needs: list[str] = Field(default_factory=list)
+    employee_signed_at: datetime | None = None
+    evaluator_signed_at: datetime | None = None
+    document_url: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -656,12 +663,12 @@ class HRDocumentCreate(BaseModel):
     employee_id: UUID
     document_type: DocumentType = Field(..., alias="type")
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     file_url: str
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-    issue_date: Optional[date] = None
-    expiry_date: Optional[date] = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    issue_date: date | None = None
+    expiry_date: date | None = None
     is_confidential: bool = False
 
 
@@ -673,14 +680,14 @@ class HRDocumentResponse(BaseModel):
     employee_id: UUID
     document_type: DocumentType = Field(..., alias="type")
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     file_url: str
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-    issue_date: Optional[date] = None
-    expiry_date: Optional[date] = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    issue_date: date | None = None
+    expiry_date: date | None = None
     is_confidential: bool = False
-    uploaded_by: Optional[UUID] = None
+    uploaded_by: UUID | None = None
     created_at: datetime
 
 

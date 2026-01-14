@@ -6,16 +6,16 @@ Endpoints pour gérer le favicon, logo et titre de l'application.
 Accessible uniquement aux rôles ADMIN et DIRIGEANT.
 """
 
-import os
 import shutil
-from pathlib import Path
 from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
 from app.core.dependencies import get_current_user
-from app.core.models import User, UserRole
+from app.core.models import User
 
 router = APIRouter(prefix="/branding", tags=["Branding"])
 
@@ -33,7 +33,7 @@ class BrandingConfig(BaseModel):
     """Configuration de branding actuelle."""
     title: str = "Azalscore"
     favicon_url: str = "/static/favicon.png"
-    logo_url: Optional[str] = None
+    logo_url: str | None = None
     primary_color: str = "#1e40af"
     secondary_color: str = "#3b82f6"
     enable_tenant_branding: bool = False
@@ -41,9 +41,9 @@ class BrandingConfig(BaseModel):
 
 class BrandingUpdateRequest(BaseModel):
     """Requête de mise à jour du branding."""
-    title: Optional[str] = None
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
+    title: str | None = None
+    primary_color: str | None = None
+    secondary_color: str | None = None
 
 
 # ============================================================================
@@ -131,10 +131,7 @@ async def upload_favicon(
     ext = Path(file.filename).suffix.lower()
 
     # Convertir en PNG si nécessaire (garder l'original pour l'instant)
-    if ext in [".png", ".ico"]:
-        favicon_path = UPLOAD_DIR / "favicon-custom.png"
-    else:
-        favicon_path = UPLOAD_DIR / f"favicon-custom{ext}"
+    favicon_path = UPLOAD_DIR / "favicon-custom.png" if ext in [".png", ".ico"] else UPLOAD_DIR / f"favicon-custom{ext}"
 
     # Backup de l'ancien favicon custom si existant
     if favicon_path.exists():

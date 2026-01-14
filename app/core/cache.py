@@ -5,13 +5,16 @@ Cache distribué pour performance et scalabilité.
 Support Redis, fallback mémoire en développement.
 """
 
+import hashlib
 import json
 import logging
-import hashlib
-from typing import Optional, Callable, TypeVar
+from collections.abc import Callable
 from functools import wraps
+from typing import TypeVar
+
 import redis
 from redis.exceptions import RedisError
+
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -22,7 +25,7 @@ T = TypeVar('T')
 class CacheBackend:
     """Interface abstraite pour le cache."""
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         raise NotImplementedError
 
     def set(self, key: str, value: str, ttl: int) -> bool:
@@ -37,7 +40,7 @@ class CacheBackend:
     def clear_pattern(self, pattern: str) -> int:
         raise NotImplementedError
 
-    def incr(self, key: str, ttl: Optional[int] = None) -> int:
+    def incr(self, key: str, ttl: int | None = None) -> int:
         raise NotImplementedError
 
 
@@ -45,12 +48,12 @@ class RedisCache(CacheBackend):
     """Cache Redis pour production."""
 
     def __init__(self, redis_url: str, prefix: str = "azals"):
-        self._client: Optional[redis.Redis] = None
+        self._client: redis.Redis | None = None
         self._redis_url = redis_url
         self._prefix = prefix
         self._connected = False
 
-    def _get_client(self) -> Optional[redis.Redis]:
+    def _get_client(self) -> redis.Redis | None:
         """Connexion lazy au Redis."""
         if self._client is None:
             try:
@@ -75,7 +78,7 @@ class RedisCache(CacheBackend):
         """Préfixe la clé."""
         return f"{self._prefix}:{key}"
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         client = self._get_client()
         if client:
             try:
@@ -124,7 +127,7 @@ class RedisCache(CacheBackend):
                 logger.error(f"Redis CLEAR_PATTERN error: {e}")
         return 0
 
-    def incr(self, key: str, ttl: Optional[int] = None) -> int:
+    def incr(self, key: str, ttl: int | None = None) -> int:
         """Incrémente un compteur (pour rate limiting)."""
         client = self._get_client()
         if client:
@@ -164,7 +167,7 @@ class MemoryCache(CacheBackend):
             return True
         return False
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         self._cleanup(key)
         return self._store.get(key)
 
@@ -185,12 +188,12 @@ class MemoryCache(CacheBackend):
 
     def clear_pattern(self, pattern: str) -> int:
         import fnmatch
-        keys_to_delete = [k for k in self._store.keys() if fnmatch.fnmatch(k, pattern)]
+        keys_to_delete = [k for k in self._store if fnmatch.fnmatch(k, pattern)]
         for k in keys_to_delete:
             self.delete(k)
         return len(keys_to_delete)
 
-    def incr(self, key: str, ttl: Optional[int] = None) -> int:
+    def incr(self, key: str, ttl: int | None = None) -> int:
         self._cleanup(key)
         value = int(self._store.get(key, 0)) + 1
         self._store[key] = str(value)
@@ -200,7 +203,7 @@ class MemoryCache(CacheBackend):
 
 
 # Instance globale du cache
-_cache: Optional[CacheBackend] = None
+_cache: CacheBackend | None = None
 
 
 def get_cache() -> CacheBackend:
@@ -223,7 +226,7 @@ def get_cache() -> CacheBackend:
 def cached(
     ttl: int = 300,
     key_prefix: str = "",
-    key_builder: Optional[Callable] = None
+    key_builder: Callable | None = None
 ):
     """
     Décorateur pour mettre en cache le résultat d'une fonction.

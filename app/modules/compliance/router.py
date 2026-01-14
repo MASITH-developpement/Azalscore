@@ -6,39 +6,51 @@ Routes API pour la gestion de la conformité réglementaire.
 """
 
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user_and_tenant, get_tenant_id
+from app.core.dependencies import get_current_user, get_tenant_id
+from app.core.models import User
 
+from .models import ComplianceStatus, RegulationType, RequirementPriority
 from .schemas import (
-    RegulationCreate, RegulationUpdate, RegulationResponse,
-    RequirementCreate, RequirementUpdate, RequirementResponse,
-    AssessmentCreate, AssessmentResponse,
-    GapCreate, GapResponse,
-    ActionCreate, ActionResponse,
-    PolicyCreate, PolicyResponse,
-    AcknowledgmentCreate, AcknowledgmentResponse,
-    TrainingCreate, TrainingResponse,
-    CompletionCreate, CompletionResponse,
-    AuditCreate, AuditResponse,
-    FindingCreate, FindingResponse,
-    RiskCreate, RiskUpdate, RiskResponse,
-    IncidentCreate, IncidentResponse,
-    ReportCreate, ReportResponse,
-    ComplianceMetrics
+    AcknowledgmentCreate,
+    AcknowledgmentResponse,
+    ActionCreate,
+    ActionResponse,
+    AssessmentCreate,
+    AssessmentResponse,
+    AuditCreate,
+    AuditResponse,
+    CompletionCreate,
+    CompletionResponse,
+    ComplianceMetrics,
+    FindingCreate,
+    FindingResponse,
+    GapCreate,
+    GapResponse,
+    IncidentCreate,
+    IncidentResponse,
+    PolicyCreate,
+    PolicyResponse,
+    RegulationCreate,
+    RegulationResponse,
+    RegulationUpdate,
+    ReportCreate,
+    ReportResponse,
+    RequirementCreate,
+    RequirementResponse,
+    RequirementUpdate,
+    RiskCreate,
+    RiskResponse,
+    RiskUpdate,
+    TrainingCreate,
+    TrainingResponse,
 )
-
-from .models import (
-    ComplianceStatus, RegulationType, RequirementPriority
-)
-
 from .service import get_compliance_service
-
 
 router = APIRouter(prefix="/compliance", tags=["Compliance"])
 
@@ -52,22 +64,22 @@ def create_regulation(
     data: RegulationCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une nouvelle réglementation."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_regulation(data, current_user["id"])
+    return service.create_regulation(data, current_user.id)
 
 
-@router.get("/regulations", response_model=List[RegulationResponse])
+@router.get("/regulations", response_model=list[RegulationResponse])
 def list_regulations(
-    regulation_type: Optional[RegulationType] = None,
+    regulation_type: RegulationType | None = None,
     is_active: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les réglementations."""
     service = get_compliance_service(db, tenant_id)
@@ -79,7 +91,7 @@ def get_regulation(
     regulation_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une réglementation."""
     service = get_compliance_service(db, tenant_id)
@@ -95,11 +107,11 @@ def update_regulation(
     data: RegulationUpdate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une réglementation."""
     service = get_compliance_service(db, tenant_id)
-    regulation = service.update_regulation(regulation_id, data, current_user["id"])
+    regulation = service.update_regulation(regulation_id, data, current_user.id)
     if not regulation:
         raise HTTPException(status_code=404, detail="Réglementation non trouvée")
     return regulation
@@ -114,24 +126,24 @@ def create_requirement(
     data: RequirementCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une nouvelle exigence."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_requirement(data, current_user["id"])
+    return service.create_requirement(data, current_user.id)
 
 
-@router.get("/requirements", response_model=List[RequirementResponse])
+@router.get("/requirements", response_model=list[RequirementResponse])
 def list_requirements(
-    regulation_id: Optional[UUID] = None,
-    compliance_status: Optional[ComplianceStatus] = None,
-    priority: Optional[RequirementPriority] = None,
+    regulation_id: UUID | None = None,
+    compliance_status: ComplianceStatus | None = None,
+    priority: RequirementPriority | None = None,
     is_active: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les exigences."""
     service = get_compliance_service(db, tenant_id)
@@ -143,7 +155,7 @@ def get_requirement(
     requirement_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une exigence."""
     service = get_compliance_service(db, tenant_id)
@@ -159,11 +171,11 @@ def update_requirement(
     data: RequirementUpdate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une exigence."""
     service = get_compliance_service(db, tenant_id)
-    requirement = service.update_requirement(requirement_id, data, current_user["id"])
+    requirement = service.update_requirement(requirement_id, data, current_user.id)
     if not requirement:
         raise HTTPException(status_code=404, detail="Exigence non trouvée")
     return requirement
@@ -173,14 +185,14 @@ def update_requirement(
 def assess_requirement(
     requirement_id: UUID,
     status: ComplianceStatus,
-    score: Optional[Decimal] = None,
+    score: Decimal | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Évaluer la conformité d'une exigence."""
     service = get_compliance_service(db, tenant_id)
-    requirement = service.assess_requirement(requirement_id, status, score, current_user["id"])
+    requirement = service.assess_requirement(requirement_id, status, score, current_user.id)
     if not requirement:
         raise HTTPException(status_code=404, detail="Exigence non trouvée")
     return requirement
@@ -195,11 +207,11 @@ def create_assessment(
     data: AssessmentCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une nouvelle évaluation."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_assessment(data, current_user["id"])
+    return service.create_assessment(data, current_user.id)
 
 
 @router.get("/assessments/{assessment_id}", response_model=AssessmentResponse)
@@ -207,7 +219,7 @@ def get_assessment(
     assessment_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -222,7 +234,7 @@ def start_assessment(
     assessment_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Démarrer une évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -235,11 +247,11 @@ def start_assessment(
 @router.post("/assessments/{assessment_id}/complete", response_model=AssessmentResponse)
 def complete_assessment(
     assessment_id: UUID,
-    findings_summary: Optional[str] = None,
-    recommendations: Optional[str] = None,
+    findings_summary: str | None = None,
+    recommendations: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Terminer une évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -254,11 +266,11 @@ def approve_assessment(
     assessment_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Approuver une évaluation."""
     service = get_compliance_service(db, tenant_id)
-    assessment = service.approve_assessment(assessment_id, current_user["id"])
+    assessment = service.approve_assessment(assessment_id, current_user.id)
     if not assessment:
         raise HTTPException(status_code=400, detail="Impossible d'approuver l'évaluation")
     return assessment
@@ -273,11 +285,11 @@ def create_gap(
     data: GapCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un écart de conformité."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_gap(data, current_user["id"])
+    return service.create_gap(data, current_user.id)
 
 
 @router.post("/gaps/{gap_id}/close", response_model=GapResponse)
@@ -285,7 +297,7 @@ def close_gap(
     gap_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Clôturer un écart."""
     service = get_compliance_service(db, tenant_id)
@@ -304,11 +316,11 @@ def create_action(
     data: ActionCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une action corrective."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_action(data, current_user["id"])
+    return service.create_action(data, current_user.id)
 
 
 @router.get("/actions/{action_id}", response_model=ActionResponse)
@@ -316,7 +328,7 @@ def get_action(
     action_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une action."""
     service = get_compliance_service(db, tenant_id)
@@ -331,7 +343,7 @@ def start_action(
     action_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Démarrer une action."""
     service = get_compliance_service(db, tenant_id)
@@ -345,11 +357,11 @@ def start_action(
 def complete_action(
     action_id: UUID,
     resolution_notes: str,
-    evidence: Optional[List[str]] = None,
-    actual_cost: Optional[Decimal] = None,
+    evidence: list[str] | None = None,
+    actual_cost: Decimal | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Terminer une action."""
     service = get_compliance_service(db, tenant_id)
@@ -362,24 +374,24 @@ def complete_action(
 @router.post("/actions/{action_id}/verify", response_model=ActionResponse)
 def verify_action(
     action_id: UUID,
-    verification_notes: Optional[str] = None,
+    verification_notes: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Vérifier une action."""
     service = get_compliance_service(db, tenant_id)
-    action = service.verify_action(action_id, current_user["id"], verification_notes)
+    action = service.verify_action(action_id, current_user.id, verification_notes)
     if not action:
         raise HTTPException(status_code=400, detail="Impossible de vérifier l'action")
     return action
 
 
-@router.get("/actions/overdue", response_model=List[ActionResponse])
+@router.get("/actions/overdue", response_model=list[ActionResponse])
 def get_overdue_actions(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les actions en retard."""
     service = get_compliance_service(db, tenant_id)
@@ -395,11 +407,11 @@ def create_policy(
     data: PolicyCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une politique."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_policy(data, current_user["id"])
+    return service.create_policy(data, current_user.id)
 
 
 @router.get("/policies/{policy_id}", response_model=PolicyResponse)
@@ -407,7 +419,7 @@ def get_policy(
     policy_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une politique."""
     service = get_compliance_service(db, tenant_id)
@@ -422,11 +434,11 @@ def publish_policy(
     policy_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Publier une politique."""
     service = get_compliance_service(db, tenant_id)
-    policy = service.publish_policy(policy_id, current_user["id"])
+    policy = service.publish_policy(policy_id, current_user.id)
     if not policy:
         raise HTTPException(status_code=400, detail="Impossible de publier la politique")
     return policy
@@ -437,11 +449,11 @@ def acknowledge_policy(
     data: AcknowledgmentCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Accuser réception d'une politique."""
     service = get_compliance_service(db, tenant_id)
-    return service.acknowledge_policy(data, current_user["id"])
+    return service.acknowledge_policy(data, current_user.id)
 
 
 # =============================================================================
@@ -453,11 +465,11 @@ def create_training(
     data: TrainingCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une formation."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_training(data, current_user["id"])
+    return service.create_training(data, current_user.id)
 
 
 @router.get("/trainings/{training_id}", response_model=TrainingResponse)
@@ -465,7 +477,7 @@ def get_training(
     training_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une formation."""
     service = get_compliance_service(db, tenant_id)
@@ -480,11 +492,11 @@ def assign_training(
     data: CompletionCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Assigner une formation à un utilisateur."""
     service = get_compliance_service(db, tenant_id)
-    return service.assign_training(data, current_user["id"])
+    return service.assign_training(data, current_user.id)
 
 
 @router.post("/trainings/completions/{completion_id}/start", response_model=CompletionResponse)
@@ -492,7 +504,7 @@ def start_training_completion(
     completion_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Démarrer une formation."""
     service = get_compliance_service(db, tenant_id)
@@ -506,10 +518,10 @@ def start_training_completion(
 def complete_training_completion(
     completion_id: UUID,
     score: int,
-    certificate_number: Optional[str] = None,
+    certificate_number: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Terminer une formation."""
     service = get_compliance_service(db, tenant_id)
@@ -528,11 +540,11 @@ def create_audit(
     data: AuditCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un audit."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_audit(data, current_user["id"])
+    return service.create_audit(data, current_user.id)
 
 
 @router.get("/audits/{audit_id}", response_model=AuditResponse)
@@ -540,7 +552,7 @@ def get_audit(
     audit_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -555,7 +567,7 @@ def start_audit(
     audit_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Démarrer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -568,12 +580,12 @@ def start_audit(
 @router.post("/audits/{audit_id}/complete", response_model=AuditResponse)
 def complete_audit(
     audit_id: UUID,
-    executive_summary: Optional[str] = None,
-    conclusions: Optional[str] = None,
-    recommendations: Optional[str] = None,
+    executive_summary: str | None = None,
+    conclusions: str | None = None,
+    recommendations: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Terminer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -588,11 +600,11 @@ def close_audit(
     audit_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Clôturer un audit."""
     service = get_compliance_service(db, tenant_id)
-    audit = service.close_audit(audit_id, current_user["id"])
+    audit = service.close_audit(audit_id, current_user.id)
     if not audit:
         raise HTTPException(status_code=400, detail="Impossible de clôturer l'audit")
     return audit
@@ -607,11 +619,11 @@ def create_finding(
     data: FindingCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une constatation d'audit."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_finding(data, current_user["id"])
+    return service.create_finding(data, current_user.id)
 
 
 @router.post("/findings/{finding_id}/respond")
@@ -620,7 +632,7 @@ def respond_to_finding(
     response: str,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Répondre à une constatation."""
     service = get_compliance_service(db, tenant_id)
@@ -635,7 +647,7 @@ def close_finding(
     finding_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Clôturer une constatation."""
     service = get_compliance_service(db, tenant_id)
@@ -654,11 +666,11 @@ def create_risk(
     data: RiskCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un risque."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_risk(data, current_user["id"])
+    return service.create_risk(data, current_user.id)
 
 
 @router.get("/risks/{risk_id}", response_model=RiskResponse)
@@ -666,7 +678,7 @@ def get_risk(
     risk_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un risque."""
     service = get_compliance_service(db, tenant_id)
@@ -682,11 +694,11 @@ def update_risk(
     data: RiskUpdate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un risque."""
     service = get_compliance_service(db, tenant_id)
-    risk = service.update_risk(risk_id, data, current_user["id"])
+    risk = service.update_risk(risk_id, data, current_user.id)
     if not risk:
         raise HTTPException(status_code=404, detail="Risque non trouvé")
     return risk
@@ -697,11 +709,11 @@ def accept_risk(
     risk_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Accepter un risque."""
     service = get_compliance_service(db, tenant_id)
-    risk = service.accept_risk(risk_id, current_user["id"])
+    risk = service.accept_risk(risk_id, current_user.id)
     if not risk:
         raise HTTPException(status_code=400, detail="Impossible d'accepter le risque")
     return risk
@@ -716,11 +728,11 @@ def create_incident(
     data: IncidentCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un incident."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_incident(data, current_user["id"])
+    return service.create_incident(data, current_user.id)
 
 
 @router.get("/incidents/{incident_id}", response_model=IncidentResponse)
@@ -728,7 +740,7 @@ def get_incident(
     incident_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -744,7 +756,7 @@ def assign_incident(
     assignee_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Assigner un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -758,11 +770,11 @@ def assign_incident(
 def resolve_incident(
     incident_id: UUID,
     resolution: str,
-    root_cause: Optional[str] = None,
-    lessons_learned: Optional[str] = None,
+    root_cause: str | None = None,
+    lessons_learned: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Résoudre un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -777,7 +789,7 @@ def close_incident(
     incident_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Clôturer un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -796,11 +808,11 @@ def create_report(
     data: ReportCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un rapport."""
     service = get_compliance_service(db, tenant_id)
-    return service.create_report(data, current_user["id"])
+    return service.create_report(data, current_user.id)
 
 
 @router.post("/reports/{report_id}/publish", response_model=ReportResponse)
@@ -808,11 +820,11 @@ def publish_report(
     report_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Publier un rapport."""
     service = get_compliance_service(db, tenant_id)
-    report = service.publish_report(report_id, current_user["id"])
+    report = service.publish_report(report_id, current_user.id)
     if not report:
         raise HTTPException(status_code=400, detail="Impossible de publier le rapport")
     return report
@@ -826,7 +838,7 @@ def publish_report(
 def get_compliance_metrics(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les métriques de conformité."""
     service = get_compliance_service(db, tenant_id)

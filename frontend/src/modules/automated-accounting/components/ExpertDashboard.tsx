@@ -98,13 +98,6 @@ interface PeriodStatus {
   certified_by: string | null;
 }
 
-interface ValidationQueueResponse {
-  items: ValidationQueueItem[];
-  total: number;
-  page: number;
-  page_size: number;
-}
-
 interface ExpertDashboardData {
   validation_queue: ValidationQueueItem[];
   validation_queue_total: number;
@@ -130,6 +123,11 @@ const useExpertDashboard = () => {
     staleTime: 30000,
   });
 };
+
+interface ValidationQueueResponse {
+  items: ValidationQueueItem[];
+  total: number;
+}
 
 const useValidationQueue = (
   page = 1,
@@ -678,6 +676,7 @@ export const ExpertDashboard: React.FC = () => {
           onChange={handleSelectAll}
         />
       ),
+      accessor: 'id',
       width: '40px',
       render: (_, row) => (
         <input
@@ -705,13 +704,13 @@ export const ExpertDashboard: React.FC = () => {
       id: 'issue_type',
       header: 'Problème',
       accessor: 'issue_type',
-      render: (value) => getIssueTypeLabel(value as string),
+      render: (value) => <span>{getIssueTypeLabel(value as string)}</span>,
     },
     {
       id: 'reference',
       header: 'Référence',
       accessor: 'reference',
-      render: (value, row) => String(value || row.partner_name || '-'),
+      render: (value, row) => <span>{(value as string) || row.partner_name || '-'}</span>,
     },
     {
       id: 'amount_total',
@@ -724,7 +723,7 @@ export const ExpertDashboard: React.FC = () => {
       id: 'suggested_account',
       header: 'Compte suggéré',
       accessor: 'suggested_account',
-      render: (value) => String(value || '-'),
+      render: (value) => <span>{(value as string) || '-'}</span>,
     },
     {
       id: 'document_date',
@@ -858,9 +857,6 @@ export const ExpertDashboard: React.FC = () => {
               onPageSizeChange: () => {},
             }}
             emptyMessage="Aucune écriture en attente de validation"
-            onRowClick={(row: ValidationQueueItem) =>
-              navigate(`/auto-accounting/documents/${row.document_id}`)
-            }
           />
         </Card>
       </section>

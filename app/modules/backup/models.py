@@ -4,12 +4,13 @@ AZALS - Module Backup - Modèles
 Modèles de données pour les sauvegardes chiffrées.
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-from sqlalchemy import Column, String, Text, DateTime, Boolean, Integer, BigInteger, Enum as SQLEnum, JSON
+
+from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
 
 from app.db.base import Base
 

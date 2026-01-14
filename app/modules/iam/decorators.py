@@ -6,7 +6,7 @@ Décorateurs pour la vérification des permissions et rôles.
 """
 
 from functools import wraps
-from typing import List, Union
+
 from fastapi import HTTPException, status
 
 
@@ -48,7 +48,7 @@ def require_permission(permission_code: str):
     return decorator
 
 
-def require_role(role_codes: Union[str, List[str]]):
+def require_role(role_codes: str | list[str]):
     """
     Décorateur pour vérifier qu'un utilisateur a un rôle.
 
@@ -100,7 +100,7 @@ def require_role(role_codes: Union[str, List[str]]):
     return decorator
 
 
-def require_any_permission(permission_codes: List[str]):
+def require_any_permission(permission_codes: list[str]):
     """
     Décorateur pour vérifier qu'un utilisateur a AU MOINS UNE des permissions.
 
@@ -137,7 +137,7 @@ def require_any_permission(permission_codes: List[str]):
     return decorator
 
 
-def require_all_permissions(permission_codes: List[str]):
+def require_all_permissions(permission_codes: list[str]):
     """
     Décorateur pour vérifier qu'un utilisateur a TOUTES les permissions.
 
@@ -242,11 +242,11 @@ class PermissionChecker:
             self._cache[permission_code] = granted
         return self._cache[permission_code]
 
-    def has_any(self, permission_codes: List[str]) -> bool:
+    def has_any(self, permission_codes: list[str]) -> bool:
         """Vérifie si l'utilisateur a au moins une permission."""
         return any(self.has(code) for code in permission_codes)
 
-    def has_all(self, permission_codes: List[str]) -> bool:
+    def has_all(self, permission_codes: list[str]) -> bool:
         """Vérifie si l'utilisateur a toutes les permissions."""
         return all(self.has(code) for code in permission_codes)
 

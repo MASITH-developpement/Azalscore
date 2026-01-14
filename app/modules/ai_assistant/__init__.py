@@ -20,67 +20,65 @@ Fonctionnalités:
 """
 
 from .models import (
+    AIAnalysis,
+    AIAuditLog,
+    AIConfiguration,
+    # Models
+    AIConversation,
+    AIDecisionSupport,
+    AIFeedback,
+    AILearningData,
+    AIMessage,
+    AIPrediction,
     # Enums
     AIRequestType,
     AIResponseStatus,
-    RiskLevel,
-    RiskCategory,
-    DecisionStatus,
-    # Models
-    AIConversation,
-    AIMessage,
-    AIAnalysis,
-    AIDecisionSupport,
     AIRiskAlert,
-    AIPrediction,
-    AIFeedback,
-    AILearningData,
-    AIConfiguration,
-    AIAuditLog,
+    DecisionStatus,
+    RiskCategory,
+    RiskLevel,
 )
-
+from .router import router
 from .schemas import (
+    AIConfigResponse,
+    # Config
+    AIConfigUpdate,
+    AIHealthCheck,
+    AIQuestionRequest,
+    AIQuestionResponse,
+    # Dashboard
+    AIStats,
+    AnalysisFinding,
+    AnalysisRecommendation,
+    # Analysis
+    AnalysisRequest,
+    AnalysisResponse,
     # Conversation
     ConversationCreate,
     ConversationResponse,
-    MessageCreate,
-    MessageResponse,
-    AIQuestionRequest,
-    AIQuestionResponse,
-    # Analysis
-    AnalysisRequest,
-    AnalysisFinding,
-    AnalysisRecommendation,
-    AnalysisResponse,
+    DecisionConfirmation,
     # Decision Support
     DecisionOption,
     DecisionSupportCreate,
     DecisionSupportResponse,
-    DecisionConfirmation,
+    # Feedback
+    FeedbackCreate,
+    MessageCreate,
+    MessageResponse,
+    # Prediction
+    PredictionRequest,
+    PredictionResponse,
+    PredictionValue,
+    RiskAcknowledge,
     # Risk
     RiskAlertCreate,
     RiskAlertResponse,
-    RiskAcknowledge,
     RiskResolve,
-    # Prediction
-    PredictionRequest,
-    PredictionValue,
-    PredictionResponse,
-    # Feedback
-    FeedbackCreate,
-    # Config
-    AIConfigUpdate,
-    AIConfigResponse,
-    # Dashboard
-    AIStats,
-    AIHealthCheck,
     # Synthesis
     SynthesisRequest,
     SynthesisResponse,
 )
-
 from .service import AIAssistantService
-from .router import router
 
 __all__ = [
     # Enums

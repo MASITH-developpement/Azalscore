@@ -15,37 +15,34 @@ Principes fondamentaux:
 GUARDIAN agit. GUARDIAN explique. GUARDIAN assume.
 """
 
+# Fonctions SAFE de gestion des erreurs HTTP
+from .error_response import (
+    DEFAULT_ERROR_MESSAGES,
+    build_error_response,
+    build_safe_error_response,
+    get_error_severity_for_status,
+    get_error_type_for_status,
+)
+from .middleware import GuardianMiddleware, setup_guardian_middleware
 from .models import (
+    CorrectionAction,
+    CorrectionRegistry,
+    CorrectionRule,
+    CorrectionStatus,
+    CorrectionTest,
+    Environment,
+    # Models
+    ErrorDetection,
     # Enums
     ErrorSeverity,
     ErrorSource,
     ErrorType,
-    CorrectionStatus,
-    CorrectionAction,
-    TestResult,
-    Environment,
-
-    # Models
-    ErrorDetection,
-    CorrectionRegistry,
-    CorrectionRule,
-    CorrectionTest,
     GuardianAlert,
     GuardianConfig,
+    TestResult,
 )
-
-from .service import GuardianService, get_guardian_service
 from .router import router as guardian_router
-from .middleware import GuardianMiddleware, setup_guardian_middleware
-
-# Fonctions SAFE de gestion des erreurs HTTP
-from .error_response import (
-    build_error_response,
-    build_safe_error_response,
-    get_error_type_for_status,
-    get_error_severity_for_status,
-    DEFAULT_ERROR_MESSAGES,
-)
+from .service import GuardianService, get_guardian_service
 
 __all__ = [
     # Enums

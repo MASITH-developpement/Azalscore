@@ -5,11 +5,11 @@ Schémas Pydantic pour les emails transactionnels.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any
+
 from pydantic import BaseModel, EmailStr, Field
 
 from .models import EmailStatus, EmailType
-
 
 # ============================================================================
 # CONFIGURATION
@@ -17,18 +17,18 @@ from .models import EmailStatus, EmailType
 
 class EmailConfigCreate(BaseModel):
     """Création configuration email."""
-    smtp_host: Optional[str] = None
+    smtp_host: str | None = None
     smtp_port: int = 587
-    smtp_username: Optional[str] = None
-    smtp_password: Optional[str] = None
+    smtp_username: str | None = None
+    smtp_password: str | None = None
     smtp_use_tls: bool = True
     smtp_use_ssl: bool = False
     provider: str = "smtp"
-    api_key: Optional[str] = None
-    api_endpoint: Optional[str] = None
+    api_key: str | None = None
+    api_endpoint: str | None = None
     from_email: EmailStr
     from_name: str
-    reply_to_email: Optional[EmailStr] = None
+    reply_to_email: EmailStr | None = None
     max_emails_per_hour: int = 100
     max_emails_per_day: int = 1000
     track_opens: bool = True
@@ -37,45 +37,45 @@ class EmailConfigCreate(BaseModel):
 
 class EmailConfigUpdate(BaseModel):
     """Mise à jour configuration email."""
-    smtp_host: Optional[str] = None
-    smtp_port: Optional[int] = None
-    smtp_username: Optional[str] = None
-    smtp_password: Optional[str] = None
-    smtp_use_tls: Optional[bool] = None
-    smtp_use_ssl: Optional[bool] = None
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
-    api_endpoint: Optional[str] = None
-    from_email: Optional[EmailStr] = None
-    from_name: Optional[str] = None
-    reply_to_email: Optional[EmailStr] = None
-    max_emails_per_hour: Optional[int] = None
-    max_emails_per_day: Optional[int] = None
-    track_opens: Optional[bool] = None
-    track_clicks: Optional[bool] = None
-    is_active: Optional[bool] = None
+    smtp_host: str | None = None
+    smtp_port: int | None = None
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_use_tls: bool | None = None
+    smtp_use_ssl: bool | None = None
+    provider: str | None = None
+    api_key: str | None = None
+    api_endpoint: str | None = None
+    from_email: EmailStr | None = None
+    from_name: str | None = None
+    reply_to_email: EmailStr | None = None
+    max_emails_per_hour: int | None = None
+    max_emails_per_day: int | None = None
+    track_opens: bool | None = None
+    track_clicks: bool | None = None
+    is_active: bool | None = None
 
 
 class EmailConfigResponse(BaseModel):
     """Réponse configuration email."""
     id: str
     tenant_id: str
-    smtp_host: Optional[str]
+    smtp_host: str | None
     smtp_port: int
-    smtp_username: Optional[str]
+    smtp_username: str | None
     smtp_use_tls: bool
     smtp_use_ssl: bool
     provider: str
     from_email: str
     from_name: str
-    reply_to_email: Optional[str]
+    reply_to_email: str | None
     max_emails_per_hour: int
     max_emails_per_day: int
     track_opens: bool
     track_clicks: bool
     is_active: bool
     is_verified: bool
-    last_verified_at: Optional[datetime]
+    last_verified_at: datetime | None
     created_at: datetime
 
     class Config:
@@ -93,33 +93,33 @@ class EmailTemplateCreate(BaseModel):
     email_type: EmailType
     subject: str = Field(..., min_length=1, max_length=500)
     body_html: str
-    body_text: Optional[str] = None
-    variables: List[str] = []
+    body_text: str | None = None
+    variables: list[str] = []
     language: str = "fr"
 
 
 class EmailTemplateUpdate(BaseModel):
     """Mise à jour template email."""
-    name: Optional[str] = None
-    subject: Optional[str] = None
-    body_html: Optional[str] = None
-    body_text: Optional[str] = None
-    variables: Optional[List[str]] = None
-    language: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    subject: str | None = None
+    body_html: str | None = None
+    body_text: str | None = None
+    variables: list[str] | None = None
+    language: str | None = None
+    is_active: bool | None = None
 
 
 class EmailTemplateResponse(BaseModel):
     """Réponse template email."""
     id: str
-    tenant_id: Optional[str]
+    tenant_id: str | None
     code: str
     name: str
     email_type: EmailType
     subject: str
     body_html: str
-    body_text: Optional[str]
-    variables: List[str]
+    body_text: str | None
+    variables: list[str]
     language: str
     is_active: bool
     created_at: datetime
@@ -136,20 +136,20 @@ class EmailTemplateResponse(BaseModel):
 class SendEmailRequest(BaseModel):
     """Requête d'envoi d'email."""
     to_email: EmailStr
-    to_name: Optional[str] = None
-    cc_emails: List[EmailStr] = []
-    bcc_emails: List[EmailStr] = []
+    to_name: str | None = None
+    cc_emails: list[EmailStr] = []
+    bcc_emails: list[EmailStr] = []
     email_type: EmailType
-    template_code: Optional[str] = None
-    subject: Optional[str] = None
-    body_html: Optional[str] = None
-    body_text: Optional[str] = None
-    variables: Dict[str, Any] = {}
-    attachments: List[Dict[str, Any]] = []
-    reference_type: Optional[str] = None
-    reference_id: Optional[str] = None
+    template_code: str | None = None
+    subject: str | None = None
+    body_html: str | None = None
+    body_text: str | None = None
+    variables: dict[str, Any] = {}
+    attachments: list[dict[str, Any]] = []
+    reference_type: str | None = None
+    reference_id: str | None = None
     priority: int = Field(default=5, ge=1, le=10)
-    schedule_at: Optional[datetime] = None
+    schedule_at: datetime | None = None
 
 
 class SendEmailResponse(BaseModel):
@@ -158,16 +158,16 @@ class SendEmailResponse(BaseModel):
     status: EmailStatus
     to_email: str
     subject: str
-    queued_at: Optional[datetime]
+    queued_at: datetime | None
     message: str
 
 
 class BulkSendRequest(BaseModel):
     """Requête envoi en masse."""
-    recipients: List[Dict[str, Any]]  # Liste de {email, name, variables}
+    recipients: list[dict[str, Any]]  # Liste de {email, name, variables}
     email_type: EmailType
     template_code: str
-    base_variables: Dict[str, Any] = {}
+    base_variables: dict[str, Any] = {}
     priority: int = 5
 
 
@@ -176,7 +176,7 @@ class BulkSendResponse(BaseModel):
     total: int
     queued: int
     failed: int
-    email_ids: List[str]
+    email_ids: list[str]
 
 
 # ============================================================================
@@ -190,22 +190,22 @@ class EmailLogResponse(BaseModel):
     email_type: EmailType
     status: EmailStatus
     to_email: str
-    to_name: Optional[str]
+    to_name: str | None
     subject: str
-    reference_type: Optional[str]
-    reference_id: Optional[str]
+    reference_type: str | None
+    reference_id: str | None
     priority: int
     retry_count: int
-    provider: Optional[str]
-    provider_message_id: Optional[str]
+    provider: str | None
+    provider_message_id: str | None
     created_at: datetime
-    queued_at: Optional[datetime]
-    sent_at: Optional[datetime]
-    delivered_at: Optional[datetime]
-    opened_at: Optional[datetime]
-    clicked_at: Optional[datetime]
-    failed_at: Optional[datetime]
-    error_message: Optional[str]
+    queued_at: datetime | None
+    sent_at: datetime | None
+    delivered_at: datetime | None
+    opened_at: datetime | None
+    clicked_at: datetime | None
+    failed_at: datetime | None
+    error_message: str | None
 
     class Config:
         from_attributes = True
@@ -213,15 +213,15 @@ class EmailLogResponse(BaseModel):
 
 class EmailLogDetail(EmailLogResponse):
     """Détail complet d'un log email."""
-    body_html: Optional[str]
-    body_text: Optional[str]
-    variables_used: Dict[str, Any]
-    attachments: List[Dict[str, Any]]
-    cc_emails: List[str]
-    bcc_emails: List[str]
-    provider_response: Optional[Dict[str, Any]]
-    created_by: Optional[str]
-    ip_address: Optional[str]
+    body_html: str | None
+    body_text: str | None
+    variables_used: dict[str, Any]
+    attachments: list[dict[str, Any]]
+    cc_emails: list[str]
+    bcc_emails: list[str]
+    provider_response: dict[str, Any] | None
+    created_by: str | None
+    ip_address: str | None
 
 
 # ============================================================================
@@ -254,9 +254,9 @@ class EmailStatsByType(BaseModel):
 
 class EmailDashboard(BaseModel):
     """Dashboard email."""
-    config: Optional[EmailConfigResponse]
+    config: EmailConfigResponse | None
     stats_today: EmailStats
     stats_month: EmailStats
-    by_type: List[EmailStatsByType]
-    recent_failures: List[EmailLogResponse]
+    by_type: list[EmailStatsByType]
+    recent_failures: list[EmailLogResponse]
     queue_size: int

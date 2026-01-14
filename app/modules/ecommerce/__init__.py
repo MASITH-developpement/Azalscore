@@ -23,33 +23,32 @@ Intégrations AZALS:
 """
 
 from .models import (
-    EcommerceCategory,
-    EcommerceProduct,
-    ProductVariant,
-    EcommerceCart,
     CartItem,
-    EcommerceOrder,
-    OrderItem,
-    EcommercePayment,
-    ShippingMethod,
-    Shipment,
+    CartStatus,
     Coupon,
-    EcommerceCustomer,
     CustomerAddress,
-    ProductReview,
-    Wishlist,
-    WishlistItem,
-    ProductStatus,
-    ProductType,
+    DiscountType,
+    EcommerceCart,
+    EcommerceCategory,
+    EcommerceCustomer,
+    EcommerceOrder,
+    EcommercePayment,
+    EcommerceProduct,
+    OrderItem,
     OrderStatus,
     PaymentStatus,
+    ProductReview,
+    ProductStatus,
+    ProductType,
+    ProductVariant,
+    Shipment,
+    ShippingMethod,
     ShippingStatus,
-    DiscountType,
-    CartStatus
+    Wishlist,
+    WishlistItem,
 )
-
-from .service import EcommerceService
 from .router import router
+from .service import EcommerceService
 
 __all__ = [
     # Models

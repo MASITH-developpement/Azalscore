@@ -4,38 +4,62 @@ Router FastAPI pour Business Intelligence
 """
 
 from datetime import date
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user_id
+from app.core.dependencies import get_current_user_id, get_tenant_id
 
-from .models import (
-    DashboardType, ReportType, KPICategory, AlertSeverity, AlertStatus, DataSourceType
-)
+from .models import AlertSeverity, AlertStatus, DashboardType, DataSourceType, KPICategory, ReportType
 from .schemas import (
-    DashboardCreate, DashboardUpdate, DashboardResponse, DashboardList,
-    WidgetCreate, WidgetUpdate, WidgetResponse,
-    ReportCreate, ReportUpdate, ReportResponse, ReportList,
-    ReportScheduleCreate, ReportScheduleResponse,
-    ReportExecuteRequest, ReportExecutionResponse,
-    KPICreate, KPIUpdate, KPIResponse, KPIList,
-    KPIValueCreate, KPIValueResponse,
-    KPITargetCreate, KPITargetResponse,
-    AlertResponse, AlertList,
-    AlertRuleCreate, AlertRuleUpdate, AlertRuleResponse,
-    AlertAcknowledge, AlertResolve, AlertSnooze,
-    DataSourceCreate, DataSourceUpdate, DataSourceResponse,
-    DataQueryCreate, DataQueryResponse,
-    BookmarkCreate, BookmarkResponse,
-    ExportRequest, ExportResponse,
-    DashboardStats, BIOverview, AlertSummary
+    AlertAcknowledge,
+    AlertList,
+    AlertResolve,
+    AlertResponse,
+    AlertRuleCreate,
+    AlertRuleResponse,
+    AlertRuleUpdate,
+    AlertSnooze,
+    AlertSummary,
+    BIOverview,
+    BookmarkCreate,
+    BookmarkResponse,
+    DashboardCreate,
+    DashboardList,
+    DashboardResponse,
+    DashboardStats,
+    DashboardUpdate,
+    DataQueryCreate,
+    DataQueryResponse,
+    DataSourceCreate,
+    DataSourceResponse,
+    DataSourceUpdate,
+    ExportRequest,
+    ExportResponse,
+    KPICreate,
+    KPIList,
+    KPIResponse,
+    KPITargetCreate,
+    KPITargetResponse,
+    KPIUpdate,
+    KPIValueCreate,
+    KPIValueResponse,
+    ReportCreate,
+    ReportExecuteRequest,
+    ReportExecutionResponse,
+    ReportList,
+    ReportResponse,
+    ReportScheduleCreate,
+    ReportScheduleResponse,
+    ReportUpdate,
+    WidgetCreate,
+    WidgetResponse,
+    WidgetUpdate,
 )
 from .service import get_bi_service
 
-
-router = APIRouter(prefix="/bi", tags=["bi"])
+router = APIRouter(prefix="/api/v1/bi", tags=["bi"])
 
 
 # ============================================================================
@@ -54,9 +78,9 @@ def create_dashboard(
     return service.create_dashboard(data)
 
 
-@router.get("/dashboards", response_model=List[DashboardList])
+@router.get("/dashboards", response_model=list[DashboardList])
 def list_dashboards(
-    dashboard_type: Optional[DashboardType] = None,
+    dashboard_type: DashboardType | None = None,
     owner_only: bool = False,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -219,7 +243,7 @@ def delete_widget(
 @router.put("/dashboards/{dashboard_id}/widgets/positions")
 def update_widget_positions(
     dashboard_id: int,
-    positions: List[dict],
+    positions: list[dict],
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     user_id: int = Depends(get_current_user_id)
@@ -246,9 +270,9 @@ def create_report(
     return service.create_report(data)
 
 
-@router.get("/reports", response_model=List[ReportList])
+@router.get("/reports", response_model=list[ReportList])
 def list_reports(
-    report_type: Optional[ReportType] = None,
+    report_type: ReportType | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -340,7 +364,7 @@ def execute_report(
     return service.execute_report(report_id, request)
 
 
-@router.get("/reports/{report_id}/executions", response_model=List[ReportExecutionResponse])
+@router.get("/reports/{report_id}/executions", response_model=list[ReportExecutionResponse])
 def get_report_executions(
     report_id: int,
     skip: int = Query(0, ge=0),
@@ -387,9 +411,9 @@ def create_kpi(
     return service.create_kpi(data)
 
 
-@router.get("/kpis", response_model=List[KPIList])
+@router.get("/kpis", response_model=list[KPIList])
 def list_kpis(
-    category: Optional[KPICategory] = None,
+    category: KPICategory | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -476,11 +500,11 @@ def record_kpi_value(
     return service.record_kpi_value(kpi_id, data)
 
 
-@router.get("/kpis/{kpi_id}/values", response_model=List[KPIValueResponse])
+@router.get("/kpis/{kpi_id}/values", response_model=list[KPIValueResponse])
 def get_kpi_values(
     kpi_id: int,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     period_type: str = "daily",
     limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
@@ -521,7 +545,7 @@ def create_alert_rule(
     return service.create_alert_rule(data)
 
 
-@router.get("/alert-rules", response_model=List[AlertRuleResponse])
+@router.get("/alert-rules", response_model=list[AlertRuleResponse])
 def list_alert_rules(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -566,10 +590,10 @@ def update_alert_rule(
     return service.update_alert_rule(rule_id, data)
 
 
-@router.get("/alerts", response_model=List[AlertList])
+@router.get("/alerts", response_model=list[AlertList])
 def list_alerts(
-    status_filter: Optional[AlertStatus] = None,
-    severity: Optional[AlertSeverity] = None,
+    status_filter: AlertStatus | None = None,
+    severity: AlertSeverity | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -665,9 +689,9 @@ def create_data_source(
     return service.create_data_source(data)
 
 
-@router.get("/data-sources", response_model=List[DataSourceResponse])
+@router.get("/data-sources", response_model=list[DataSourceResponse])
 def list_data_sources(
-    source_type: Optional[DataSourceType] = None,
+    source_type: DataSourceType | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -727,7 +751,7 @@ def create_query(
     return service.create_query(data)
 
 
-@router.get("/queries", response_model=List[DataQueryResponse])
+@router.get("/queries", response_model=list[DataQueryResponse])
 def list_queries(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -775,9 +799,9 @@ def create_bookmark(
     return service.create_bookmark(data)
 
 
-@router.get("/bookmarks", response_model=List[BookmarkResponse])
+@router.get("/bookmarks", response_model=list[BookmarkResponse])
 def list_bookmarks(
-    item_type: Optional[str] = None,
+    item_type: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     user_id: int = Depends(get_current_user_id)
@@ -819,7 +843,7 @@ def create_export(
     return service.create_export(data)
 
 
-@router.get("/exports", response_model=List[ExportResponse])
+@router.get("/exports", response_model=list[ExportResponse])
 def list_exports(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),

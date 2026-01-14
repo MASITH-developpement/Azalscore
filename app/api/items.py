@@ -5,20 +5,15 @@ CRUD sécurisé avec isolation stricte par tenant_id.
 Pagination standardisée pour performance.
 """
 
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
-from app.core.models import Item
-from app.core.dependencies import get_tenant_id
 from app.core.database import get_db
-from app.core.pagination import (
-    PaginationParams,
-    get_pagination_params,
-    paginate_query
-)
-
+from app.core.dependencies import get_tenant_id
+from app.core.models import Item
+from app.core.pagination import PaginationParams, get_pagination_params, paginate_query
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -28,7 +23,7 @@ router = APIRouter(prefix="/items", tags=["items"])
 class ItemCreate(BaseModel):
     """Schéma de création d'un item. tenant_id injecté automatiquement."""
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class ItemResponse(BaseModel):
@@ -36,18 +31,18 @@ class ItemResponse(BaseModel):
     id: int
     tenant_id: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedItemsResponse(BaseModel):
     """Réponse paginée pour liste d'items."""
-    items: List[ItemResponse]
-    total: Optional[int] = None
+    items: list[ItemResponse]
+    total: int | None = None
     page: int
     page_size: int
-    pages: Optional[int] = None
+    pages: int | None = None
     has_next: bool
     has_prev: bool
 
@@ -71,11 +66,11 @@ def create_item(
         name=item_data.name,
         description=item_data.description
     )
-    
+
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
-    
+
     return db_item
 
 
@@ -127,13 +122,13 @@ def get_item(
         Item.id == item_id,
         Item.tenant_id == tenant_id  # Double vérification obligatoire
     ).first()
-    
+
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Item not found or access denied"
         )
-    
+
     return item
 
 
@@ -152,20 +147,20 @@ def update_item(
         Item.id == item_id,
         Item.tenant_id == tenant_id  # Validation tenant obligatoire
     ).first()
-    
+
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Item not found or access denied"
         )
-    
+
     # Mise à jour des champs
     item.name = item_data.name
     item.description = item_data.description
-    
+
     db.commit()
     db.refresh(item)
-    
+
     return item
 
 
@@ -183,14 +178,14 @@ def delete_item(
         Item.id == item_id,
         Item.tenant_id == tenant_id  # Validation tenant obligatoire
     ).first()
-    
+
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Item not found or access denied"
         )
-    
+
     db.delete(item)
     db.commit()
-    
+
     return None

@@ -5,11 +5,10 @@ Schémas Pydantic pour les sauvegardes.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+
 from pydantic import BaseModel, Field
 
-from .models import BackupStatus, BackupType, BackupFrequency
-
+from .models import BackupFrequency, BackupStatus, BackupType
 
 # ============================================================================
 # CONFIGURATION
@@ -23,7 +22,7 @@ class BackupConfigCreate(BaseModel):
     backup_day_of_month: int = Field(default=1, ge=1, le=28)
     retention_days: int = Field(default=90, ge=7, le=365)
     max_backups: int = Field(default=12, ge=1, le=100)
-    storage_path: Optional[str] = None
+    storage_path: str | None = None
     storage_type: str = "local"
     include_attachments: bool = True
     compress: bool = True
@@ -32,18 +31,18 @@ class BackupConfigCreate(BaseModel):
 
 class BackupConfigUpdate(BaseModel):
     """Mise à jour configuration backup."""
-    frequency: Optional[BackupFrequency] = None
-    backup_hour: Optional[int] = Field(default=None, ge=0, le=23)
-    backup_day: Optional[int] = Field(default=None, ge=0, le=6)
-    backup_day_of_month: Optional[int] = Field(default=None, ge=1, le=28)
-    retention_days: Optional[int] = Field(default=None, ge=7, le=365)
-    max_backups: Optional[int] = Field(default=None, ge=1, le=100)
-    storage_path: Optional[str] = None
-    storage_type: Optional[str] = None
-    include_attachments: Optional[bool] = None
-    compress: Optional[bool] = None
-    verify_after_backup: Optional[bool] = None
-    is_active: Optional[bool] = None
+    frequency: BackupFrequency | None = None
+    backup_hour: int | None = Field(default=None, ge=0, le=23)
+    backup_day: int | None = Field(default=None, ge=0, le=6)
+    backup_day_of_month: int | None = Field(default=None, ge=1, le=28)
+    retention_days: int | None = Field(default=None, ge=7, le=365)
+    max_backups: int | None = Field(default=None, ge=1, le=100)
+    storage_path: str | None = None
+    storage_type: str | None = None
+    include_attachments: bool | None = None
+    compress: bool | None = None
+    verify_after_backup: bool | None = None
+    is_active: bool | None = None
 
 
 class BackupConfigResponse(BaseModel):
@@ -57,14 +56,14 @@ class BackupConfigResponse(BaseModel):
     backup_day_of_month: int
     retention_days: int
     max_backups: int
-    storage_path: Optional[str]
+    storage_path: str | None
     storage_type: str
     include_attachments: bool
     compress: bool
     verify_after_backup: bool
     is_active: bool
-    last_backup_at: Optional[datetime]
-    next_backup_at: Optional[datetime]
+    last_backup_at: datetime | None
+    next_backup_at: datetime | None
     created_at: datetime
 
     class Config:
@@ -79,7 +78,7 @@ class BackupCreate(BaseModel):
     """Création manuelle de backup."""
     backup_type: BackupType = BackupType.FULL
     include_attachments: bool = True
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class BackupResponse(BaseModel):
@@ -89,22 +88,22 @@ class BackupResponse(BaseModel):
     reference: str
     backup_type: BackupType
     status: BackupStatus
-    file_name: Optional[str]
-    file_size: Optional[int]
-    file_checksum: Optional[str]
+    file_name: str | None
+    file_size: int | None
+    file_checksum: str | None
     is_encrypted: bool
     encryption_algorithm: str
     records_count: int
     include_attachments: bool
     is_compressed: bool
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    duration_seconds: Optional[int]
-    last_restored_at: Optional[datetime]
+    started_at: datetime | None
+    completed_at: datetime | None
+    duration_seconds: int | None
+    last_restored_at: datetime | None
     restore_count: int
-    notes: Optional[str]
-    error_message: Optional[str]
-    triggered_by: Optional[str]
+    notes: str | None
+    error_message: str | None
+    triggered_by: str | None
     created_at: datetime
 
     class Config:
@@ -113,9 +112,9 @@ class BackupResponse(BaseModel):
 
 class BackupDetail(BackupResponse):
     """Détail complet d'une sauvegarde."""
-    file_path: Optional[str]
-    encryption_iv: Optional[str]
-    tables_included: List[str]
+    file_path: str | None
+    encryption_iv: str | None
+    tables_included: list[str]
 
 
 # ============================================================================
@@ -126,8 +125,8 @@ class RestoreRequest(BaseModel):
     """Requête de restauration."""
     backup_id: str
     target_type: str = "same_tenant"  # same_tenant, new_tenant, test
-    target_tenant_id: Optional[str] = None
-    tables_to_restore: Optional[List[str]] = None  # None = toutes
+    target_tenant_id: str | None = None
+    tables_to_restore: list[str] | None = None  # None = toutes
 
 
 class RestoreResponse(BaseModel):
@@ -137,13 +136,13 @@ class RestoreResponse(BaseModel):
     tenant_id: str
     status: BackupStatus
     target_type: str
-    target_tenant_id: Optional[str]
-    tables_restored: List[str]
+    target_tenant_id: str | None
+    tables_restored: list[str]
     records_restored: int
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    duration_seconds: Optional[int]
-    error_message: Optional[str]
+    started_at: datetime | None
+    completed_at: datetime | None
+    duration_seconds: int | None
+    error_message: str | None
     created_at: datetime
 
     class Config:
@@ -158,16 +157,16 @@ class BackupStats(BaseModel):
     """Statistiques backup."""
     total_backups: int
     total_size_bytes: int
-    last_backup_at: Optional[datetime]
-    last_backup_status: Optional[BackupStatus]
-    next_backup_at: Optional[datetime]
+    last_backup_at: datetime | None
+    last_backup_status: BackupStatus | None
+    next_backup_at: datetime | None
     success_rate: float
     average_duration_seconds: float
 
 
 class BackupDashboard(BaseModel):
     """Dashboard backup."""
-    config: Optional[BackupConfigResponse]
+    config: BackupConfigResponse | None
     stats: BackupStats
-    recent_backups: List[BackupResponse]
-    recent_restores: List[RestoreResponse]
+    recent_backups: list[BackupResponse]
+    recent_restores: list[RestoreResponse]

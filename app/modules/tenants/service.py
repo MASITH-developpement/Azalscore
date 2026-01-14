@@ -5,32 +5,45 @@ AZALS MODULE T9 - Service Tenants
 Logique métier pour la gestion des tenants.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 import secrets
+from datetime import datetime, timedelta
+from typing import Any
+
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from .models import (
-    Tenant, TenantSubscription, TenantModule, TenantInvitation,
-    TenantUsage, TenantEvent, TenantSettings, TenantOnboarding,
-    TenantStatus, SubscriptionPlan, BillingCycle, ModuleStatus, InvitationStatus
+    BillingCycle,
+    InvitationStatus,
+    ModuleStatus,
+    SubscriptionPlan,
+    Tenant,
+    TenantEvent,
+    TenantInvitation,
+    TenantModule,
+    TenantOnboarding,
+    TenantSettings,
+    TenantStatus,
+    TenantSubscription,
+    TenantUsage,
 )
 from .schemas import (
-    TenantCreate, TenantUpdate,
-    SubscriptionCreate, SubscriptionUpdate,
     ModuleActivation,
+    OnboardingStepUpdate,
+    ProvisionTenantRequest,
+    SubscriptionCreate,
+    SubscriptionUpdate,
+    TenantCreate,
     TenantInvitationCreate,
     TenantSettingsUpdate,
-    OnboardingStepUpdate,
-    ProvisionTenantRequest
+    TenantUpdate,
 )
 
 
 class TenantService:
     """Service de gestion des tenants."""
 
-    def __init__(self, db: Session, actor_id: Optional[int] = None, actor_email: Optional[str] = None):
+    def __init__(self, db: Session, actor_id: int | None = None, actor_email: str | None = None):
         self.db = db
         self.actor_id = actor_id
         self.actor_email = actor_email
@@ -86,24 +99,24 @@ class TenantService:
 
         return tenant
 
-    def get_tenant(self, tenant_id: str) -> Optional[Tenant]:
+    def get_tenant(self, tenant_id: str) -> Tenant | None:
         """Récupérer un tenant par ID."""
         return self.db.query(Tenant).filter(
             Tenant.tenant_id == tenant_id
         ).first()
 
-    def get_tenant_by_pk(self, pk: int) -> Optional[Tenant]:
+    def get_tenant_by_pk(self, pk: int) -> Tenant | None:
         """Récupérer un tenant par clé primaire."""
         return self.db.query(Tenant).filter(Tenant.id == pk).first()
 
     def list_tenants(
         self,
-        status: Optional[str] = None,
-        plan: Optional[str] = None,
-        country: Optional[str] = None,
+        status: str | None = None,
+        plan: str | None = None,
+        country: str | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> List[Tenant]:
+    ) -> list[Tenant]:
         """Lister les tenants."""
         query = self.db.query(Tenant)
 
@@ -116,7 +129,7 @@ class TenantService:
 
         return query.order_by(Tenant.created_at.desc()).offset(skip).limit(limit).all()
 
-    def update_tenant(self, tenant_id: str, data: TenantUpdate) -> Optional[Tenant]:
+    def update_tenant(self, tenant_id: str, data: TenantUpdate) -> Tenant | None:
         """Mettre à jour un tenant."""
         tenant = self.get_tenant(tenant_id)
         if not tenant:
@@ -132,7 +145,7 @@ class TenantService:
         self._log_event(tenant_id, "tenant.updated", update_data)
         return tenant
 
-    def activate_tenant(self, tenant_id: str) -> Optional[Tenant]:
+    def activate_tenant(self, tenant_id: str) -> Tenant | None:
         """Activer un tenant."""
         tenant = self.get_tenant(tenant_id)
         if not tenant:
@@ -148,7 +161,7 @@ class TenantService:
         self._log_event(tenant_id, "tenant.activated", {})
         return tenant
 
-    def suspend_tenant(self, tenant_id: str, reason: str = None) -> Optional[Tenant]:
+    def suspend_tenant(self, tenant_id: str, reason: str = None) -> Tenant | None:
         """Suspendre un tenant."""
         tenant = self.get_tenant(tenant_id)
         if not tenant:
@@ -163,7 +176,7 @@ class TenantService:
         self._log_event(tenant_id, "tenant.suspended", {"reason": reason})
         return tenant
 
-    def cancel_tenant(self, tenant_id: str, reason: str = None) -> Optional[Tenant]:
+    def cancel_tenant(self, tenant_id: str, reason: str = None) -> Tenant | None:
         """Annuler un tenant."""
         tenant = self.get_tenant(tenant_id)
         if not tenant:
@@ -178,7 +191,7 @@ class TenantService:
         self._log_event(tenant_id, "tenant.cancelled", {"reason": reason})
         return tenant
 
-    def start_trial(self, tenant_id: str, days: int = 14) -> Optional[Tenant]:
+    def start_trial(self, tenant_id: str, days: int = 14) -> Tenant | None:
         """Démarrer un essai gratuit."""
         tenant = self.get_tenant(tenant_id)
         if not tenant:
@@ -239,14 +252,14 @@ class TenantService:
 
         return subscription
 
-    def get_active_subscription(self, tenant_id: str) -> Optional[TenantSubscription]:
+    def get_active_subscription(self, tenant_id: str) -> TenantSubscription | None:
         """Récupérer l'abonnement actif."""
         return self.db.query(TenantSubscription).filter(
             TenantSubscription.tenant_id == tenant_id,
-            TenantSubscription.is_active == True
+            TenantSubscription.is_active
         ).first()
 
-    def update_subscription(self, tenant_id: str, data: SubscriptionUpdate) -> Optional[TenantSubscription]:
+    def update_subscription(self, tenant_id: str, data: SubscriptionUpdate) -> TenantSubscription | None:
         """Mettre à jour un abonnement."""
         subscription = self.get_active_subscription(tenant_id)
         if not subscription:
@@ -311,7 +324,7 @@ class TenantService:
 
         return module
 
-    def deactivate_module(self, tenant_id: str, module_code: str) -> Optional[TenantModule]:
+    def deactivate_module(self, tenant_id: str, module_code: str) -> TenantModule | None:
         """Désactiver un module."""
         module = self.db.query(TenantModule).filter(
             TenantModule.tenant_id == tenant_id,
@@ -333,7 +346,7 @@ class TenantService:
 
         return module
 
-    def list_tenant_modules(self, tenant_id: str, active_only: bool = True) -> List[TenantModule]:
+    def list_tenant_modules(self, tenant_id: str, active_only: bool = True) -> list[TenantModule]:
         """Lister les modules d'un tenant."""
         query = self.db.query(TenantModule).filter(
             TenantModule.tenant_id == tenant_id
@@ -381,13 +394,13 @@ class TenantService:
 
         return invitation
 
-    def get_invitation_by_token(self, token: str) -> Optional[TenantInvitation]:
+    def get_invitation_by_token(self, token: str) -> TenantInvitation | None:
         """Récupérer une invitation par token."""
         return self.db.query(TenantInvitation).filter(
             TenantInvitation.token == token
         ).first()
 
-    def accept_invitation(self, token: str) -> Optional[TenantInvitation]:
+    def accept_invitation(self, token: str) -> TenantInvitation | None:
         """Accepter une invitation."""
         invitation = self.get_invitation_by_token(token)
         if not invitation:
@@ -413,7 +426,7 @@ class TenantService:
     # USAGE & EVENTS
     # ========================================================================
 
-    def record_usage(self, tenant_id: str, data: Dict[str, Any]) -> TenantUsage:
+    def record_usage(self, tenant_id: str, data: dict[str, Any]) -> TenantUsage:
         """Enregistrer l'utilisation."""
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -441,7 +454,7 @@ class TenantService:
         start_date: datetime,
         end_date: datetime,
         period: str = "daily"
-    ) -> List[TenantUsage]:
+    ) -> list[TenantUsage]:
         """Récupérer l'utilisation sur une période."""
         return self.db.query(TenantUsage).filter(
             TenantUsage.tenant_id == tenant_id,
@@ -450,7 +463,7 @@ class TenantService:
             TenantUsage.date <= end_date
         ).order_by(TenantUsage.date).all()
 
-    def _log_event(self, tenant_id: str, event_type: str, event_data: Dict[str, Any]) -> None:
+    def _log_event(self, tenant_id: str, event_type: str, event_data: dict[str, Any]) -> None:
         """Logger un événement."""
         event = TenantEvent(
             tenant_id=tenant_id,
@@ -465,10 +478,10 @@ class TenantService:
     def get_events(
         self,
         tenant_id: str,
-        event_type: Optional[str] = None,
+        event_type: str | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> List[TenantEvent]:
+    ) -> list[TenantEvent]:
         """Récupérer les événements."""
         query = self.db.query(TenantEvent).filter(
             TenantEvent.tenant_id == tenant_id
@@ -483,7 +496,7 @@ class TenantService:
     # SETTINGS
     # ========================================================================
 
-    def get_settings(self, tenant_id: str) -> Optional[TenantSettings]:
+    def get_settings(self, tenant_id: str) -> TenantSettings | None:
         """Récupérer les paramètres."""
         return self.db.query(TenantSettings).filter(
             TenantSettings.tenant_id == tenant_id
@@ -518,13 +531,13 @@ class TenantService:
     # ONBOARDING
     # ========================================================================
 
-    def get_onboarding(self, tenant_id: str) -> Optional[TenantOnboarding]:
+    def get_onboarding(self, tenant_id: str) -> TenantOnboarding | None:
         """Récupérer l'onboarding."""
         return self.db.query(TenantOnboarding).filter(
             TenantOnboarding.tenant_id == tenant_id
         ).first()
 
-    def update_onboarding_step(self, tenant_id: str, data: OnboardingStepUpdate) -> Optional[TenantOnboarding]:
+    def update_onboarding_step(self, tenant_id: str, data: OnboardingStepUpdate) -> TenantOnboarding | None:
         """Mettre à jour une étape onboarding."""
         onboarding = self.get_onboarding(tenant_id)
         if not onboarding:
@@ -591,7 +604,7 @@ class TenantService:
     # PROVISIONING
     # ========================================================================
 
-    def provision_tenant(self, data: ProvisionTenantRequest) -> Dict[str, Any]:
+    def provision_tenant(self, data: ProvisionTenantRequest) -> dict[str, Any]:
         """Provisionner un tenant complet."""
         # 1. Créer le tenant
         tenant = self.create_tenant(data.tenant)
@@ -638,7 +651,7 @@ class TenantService:
             "onboarding_url": f"/onboarding/{data.tenant.tenant_id}",
         }
 
-    def provision_masith(self) -> Dict[str, Any]:
+    def provision_masith(self) -> dict[str, Any]:
         """Provisionner le tenant SAS MASITH (premier client)."""
         from . import FIRST_TENANT
 
@@ -671,7 +684,7 @@ class TenantService:
     # PLATFORM STATS
     # ========================================================================
 
-    def get_platform_stats(self) -> Dict[str, Any]:
+    def get_platform_stats(self) -> dict[str, Any]:
         """Statistiques globales de la plateforme."""
         total = self.db.query(Tenant).count()
         active = self.db.query(Tenant).filter(Tenant.status == TenantStatus.ACTIVE).count()
@@ -690,7 +703,7 @@ class TenantService:
             Tenant.country,
             func.count(Tenant.id)
         ).group_by(Tenant.country).all()
-        tenants_by_country = {c: count for c, count in country_counts}
+        tenants_by_country = dict(country_counts)
 
         # Nouveaux ce mois
         month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -717,8 +730,8 @@ class TenantService:
 
 def get_tenant_service(
     db: Session,
-    actor_id: Optional[int] = None,
-    actor_email: Optional[str] = None
+    actor_id: int | None = None,
+    actor_email: str | None = None
 ) -> TenantService:
     """Factory pour le service tenant."""
     return TenantService(db, actor_id, actor_email)

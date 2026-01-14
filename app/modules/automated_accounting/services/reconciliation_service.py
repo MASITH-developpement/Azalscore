@@ -9,21 +9,25 @@ Service de rapprochement automatique IA entre:
 - Écritures comptables
 """
 
-import re
 import logging
-from datetime import datetime, date, timedelta
-from decimal import Decimal
-from typing import Optional, Dict, Any, List, Tuple
-from uuid import UUID
+import re
 import uuid
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import Any
+from uuid import UUID
 
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
 
 from ..models import (
-    AccountingDocument, SyncedTransaction, ReconciliationRule,
-    ReconciliationHistory, ReconciliationStatusAuto,
-    DocumentType, DocumentStatus, PaymentStatus
+    AccountingDocument,
+    DocumentType,
+    PaymentStatus,
+    ReconciliationHistory,
+    ReconciliationRule,
+    ReconciliationStatusAuto,
+    SyncedTransaction,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,12 +51,12 @@ class MatchingEngine:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
-        self._rules_cache: Optional[List[ReconciliationRule]] = None
+        self._rules_cache: list[ReconciliationRule] | None = None
 
     def find_matches(
         self,
         transaction: SyncedTransaction
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Trouve les correspondances possibles pour une transaction.
 
         Args:
@@ -90,12 +94,12 @@ class MatchingEngine:
     def _apply_custom_rules(
         self,
         transaction: SyncedTransaction
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Applique les règles de rapprochement personnalisées."""
         if self._rules_cache is None:
             self._rules_cache = self.db.query(ReconciliationRule).filter(
                 ReconciliationRule.tenant_id == self.tenant_id,
-                ReconciliationRule.is_active == True
+                ReconciliationRule.is_active
             ).order_by(ReconciliationRule.priority.desc()).all()
 
         matches = []
@@ -111,7 +115,7 @@ class MatchingEngine:
         self,
         transaction: SyncedTransaction,
         rule: ReconciliationRule
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Évalue si une règle correspond à la transaction."""
         criteria = rule.match_criteria or {}
         confidence = Decimal("100")
@@ -134,13 +138,11 @@ class MatchingEngine:
                 return None
 
         # Critère: Montant min/max
-        if "amount_min" in criteria:
-            if abs(transaction.amount) < Decimal(str(criteria["amount_min"])):
-                return None
+        if "amount_min" in criteria and abs(transaction.amount) < Decimal(str(criteria["amount_min"])):
+            return None
 
-        if "amount_max" in criteria:
-            if abs(transaction.amount) > Decimal(str(criteria["amount_max"])):
-                return None
+        if "amount_max" in criteria and abs(transaction.amount) > Decimal(str(criteria["amount_max"])):
+            return None
 
         # Critère: Type de transaction (débit/crédit)
         if "transaction_type" in criteria:
@@ -171,7 +173,7 @@ class MatchingEngine:
     def _find_document_matches(
         self,
         transaction: SyncedTransaction
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Recherche les documents correspondants à la transaction."""
         matches = []
         txn_amount = abs(transaction.amount)
@@ -197,8 +199,8 @@ class MatchingEngine:
         amount_max = txn_amount + tolerance
 
         # Recherche avec tolérance sur la date
-        date_min = txn_date - timedelta(days=self.THRESHOLDS["date_tolerance_days"])
-        date_max = txn_date + timedelta(days=self.THRESHOLDS["date_tolerance_days"])
+        txn_date - timedelta(days=self.THRESHOLDS["date_tolerance_days"])
+        txn_date + timedelta(days=self.THRESHOLDS["date_tolerance_days"])
 
         documents = self.db.query(AccountingDocument).filter(
             AccountingDocument.tenant_id == self.tenant_id,
@@ -280,9 +282,8 @@ class MatchingEngine:
                 confidence += 10
 
         # Score sur la référence (0-10 points)
-        if document.reference and transaction.description:
-            if document.reference in transaction.description:
-                confidence += 10
+        if document.reference and transaction.description and document.reference in transaction.description:
+            confidence += 10
 
         return min(100.0, confidence)
 
@@ -290,7 +291,7 @@ class MatchingEngine:
         self,
         transaction: SyncedTransaction,
         document: AccountingDocument
-    ) -> List[str]:
+    ) -> list[str]:
         """Génère les raisons du match."""
         reasons = []
 
@@ -331,7 +332,7 @@ class ReconciliationService:
     # RAPPROCHEMENT AUTOMATIQUE
     # =========================================================================
 
-    def auto_reconcile_all(self) -> Dict[str, Any]:
+    def auto_reconcile_all(self) -> dict[str, Any]:
         """Lance le rapprochement automatique sur toutes les transactions en attente.
 
         Returns:
@@ -373,7 +374,7 @@ class ReconciliationService:
         self,
         transaction_id: UUID,
         auto_mode: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Tente de rapprocher une transaction.
 
         Args:
@@ -431,9 +432,9 @@ class ReconciliationService:
     def manual_reconcile(
         self,
         transaction_id: UUID,
-        document_id: Optional[UUID] = None,
-        entry_line_id: Optional[UUID] = None,
-        validated_by: Optional[UUID] = None
+        document_id: UUID | None = None,
+        entry_line_id: UUID | None = None,
+        validated_by: UUID | None = None
     ) -> ReconciliationHistory:
         """Rapprochement manuel.
 
@@ -454,9 +455,8 @@ class ReconciliationService:
         if not transaction:
             raise ValueError(f"Transaction {transaction_id} not found")
 
-        document = None
         if document_id:
-            document = self.db.query(AccountingDocument).filter(
+            self.db.query(AccountingDocument).filter(
                 AccountingDocument.id == document_id,
                 AccountingDocument.tenant_id == self.tenant_id
             ).first()
@@ -478,7 +478,7 @@ class ReconciliationService:
         self,
         reconciliation_id: UUID,
         cancelled_by: UUID,
-        reason: Optional[str] = None
+        reason: str | None = None
     ):
         """Annule un rapprochement.
 
@@ -524,13 +524,13 @@ class ReconciliationService:
     def _create_reconciliation(
         self,
         transaction: SyncedTransaction,
-        document_id: Optional[UUID],
+        document_id: UUID | None,
         confidence: Decimal,
         reconciliation_type: str,
-        match_details: Dict[str, Any],
-        entry_line_id: Optional[UUID] = None,
-        rule_id: Optional[UUID] = None,
-        validated_by: Optional[UUID] = None
+        match_details: dict[str, Any],
+        entry_line_id: UUID | None = None,
+        rule_id: UUID | None = None,
+        validated_by: UUID | None = None
     ) -> ReconciliationHistory:
         """Crée un enregistrement de rapprochement."""
         document = None
@@ -583,13 +583,13 @@ class ReconciliationService:
     def create_rule(
         self,
         name: str,
-        match_criteria: Dict[str, Any],
+        match_criteria: dict[str, Any],
         created_by: UUID,
-        description: Optional[str] = None,
+        description: str | None = None,
         auto_reconcile: bool = False,
         min_confidence: Decimal = Decimal("90"),
-        default_account_code: Optional[str] = None,
-        default_tax_code: Optional[str] = None,
+        default_account_code: str | None = None,
+        default_tax_code: str | None = None,
         priority: int = 0
     ) -> ReconciliationRule:
         """Crée une règle de rapprochement."""
@@ -657,14 +657,14 @@ class ReconciliationService:
             self.db.commit()
             self.matching_engine._rules_cache = None
 
-    def get_rules(self, active_only: bool = True) -> List[ReconciliationRule]:
+    def get_rules(self, active_only: bool = True) -> list[ReconciliationRule]:
         """Récupère les règles de rapprochement."""
         query = self.db.query(ReconciliationRule).filter(
             ReconciliationRule.tenant_id == self.tenant_id
         )
 
         if active_only:
-            query = query.filter(ReconciliationRule.is_active == True)
+            query = query.filter(ReconciliationRule.is_active)
 
         return query.order_by(ReconciliationRule.priority.desc()).all()
 
@@ -672,7 +672,7 @@ class ReconciliationService:
     # STATISTIQUES
     # =========================================================================
 
-    def get_reconciliation_stats(self) -> Dict[str, Any]:
+    def get_reconciliation_stats(self) -> dict[str, Any]:
         """Calcule les statistiques de rapprochement."""
         # Compte total des transactions
         total = self.db.query(SyncedTransaction).filter(
@@ -683,13 +683,13 @@ class ReconciliationService:
         matched_auto = self.db.query(ReconciliationHistory).filter(
             ReconciliationHistory.tenant_id == self.tenant_id,
             ReconciliationHistory.reconciliation_type == "auto",
-            ReconciliationHistory.is_cancelled == False
+            not ReconciliationHistory.is_cancelled
         ).count()
 
         matched_manual = self.db.query(ReconciliationHistory).filter(
             ReconciliationHistory.tenant_id == self.tenant_id,
             ReconciliationHistory.reconciliation_type == "manual",
-            ReconciliationHistory.is_cancelled == False
+            not ReconciliationHistory.is_cancelled
         ).count()
 
         unmatched = self.db.query(SyncedTransaction).filter(
@@ -714,10 +714,10 @@ class ReconciliationService:
 
     def get_reconciliation_history(
         self,
-        document_id: Optional[UUID] = None,
-        transaction_id: Optional[UUID] = None,
+        document_id: UUID | None = None,
+        transaction_id: UUID | None = None,
         limit: int = 50
-    ) -> List[ReconciliationHistory]:
+    ) -> list[ReconciliationHistory]:
         """Récupère l'historique des rapprochements."""
         query = self.db.query(ReconciliationHistory).filter(
             ReconciliationHistory.tenant_id == self.tenant_id

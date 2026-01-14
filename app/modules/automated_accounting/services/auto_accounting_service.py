@@ -7,27 +7,36 @@ ZÉRO saisie manuelle - l'humain valide par exception uniquement.
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, Dict, Any, List, Tuple
-from uuid import UUID
 import uuid
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any, Optional
+from uuid import UUID
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 
 from ..models import (
-    AccountingDocument, AIClassification, AutoEntry,
-    UniversalChartAccount, ChartMapping, TaxConfiguration,
-    DocumentType, DocumentStatus, ConfidenceLevel, PaymentStatus
+    AccountingDocument,
+    AIClassification,
+    AutoEntry,
+    ChartMapping,
+    ConfidenceLevel,
+    DocumentStatus,
+    DocumentType,
 )
-from ..schemas import ProposedEntryLine, AutoEntryCreate
+from ..schemas import ProposedEntryLine
 
 # Import des modèles Finance existants
 try:
     from app.modules.finance.models import (
-        Account, Journal, JournalEntry, JournalEntryLine,
-        FiscalYear, FiscalPeriod, JournalType, EntryStatus
+        Account,
+        EntryStatus,
+        FiscalPeriod,
+        FiscalYear,
+        Journal,
+        JournalEntry,
+        JournalEntryLine,
+        JournalType,
     )
     FINANCE_MODULE_AVAILABLE = True
 except ImportError:
@@ -117,14 +126,14 @@ class AccountingRulesEngine:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
-        self._account_cache: Dict[str, str] = {}
+        self._account_cache: dict[str, str] = {}
         self._load_account_mappings()
 
     def _load_account_mappings(self):
         """Charge les mappings de comptes pour le tenant."""
         mappings = self.db.query(ChartMapping).filter(
             ChartMapping.tenant_id == self.tenant_id,
-            ChartMapping.is_active == True
+            ChartMapping.is_active
         ).all()
 
         for mapping in mappings:
@@ -144,8 +153,8 @@ class AccountingRulesEngine:
     def generate_entry_lines(
         self,
         document: AccountingDocument,
-        classification: Optional[AIClassification] = None
-    ) -> List[ProposedEntryLine]:
+        classification: AIClassification | None = None
+    ) -> list[ProposedEntryLine]:
         """Génère les lignes d'écriture pour un document.
 
         Args:
@@ -185,9 +194,7 @@ class AccountingRulesEngine:
             side = line_template["side"]
 
             # Détermination du compte
-            if line_type == "expense" and suggested_account:
-                account_code = suggested_account
-            elif line_type == "revenue" and suggested_account:
+            if line_type == "expense" and suggested_account or line_type == "revenue" and suggested_account:
                 account_code = suggested_account
             else:
                 account_code = self.get_account_code(line_type)
@@ -246,7 +253,7 @@ class AccountingRulesEngine:
     def _detect_vat_rate(
         self,
         document: AccountingDocument,
-        classification: Optional[AIClassification]
+        classification: AIClassification | None
     ) -> Decimal:
         """Détecte le taux de TVA applicable."""
         # Priorité: classification IA > analyse du texte > défaut
@@ -258,7 +265,7 @@ class AccountingRulesEngine:
         # Par défaut: TVA normale
         return self.DEFAULT_VAT_RATES["normal"]
 
-    def _get_account_name(self, account_code: str) -> Optional[str]:
+    def _get_account_name(self, account_code: str) -> str | None:
         """Récupère le libellé d'un compte."""
         if FINANCE_MODULE_AVAILABLE:
             account = self.db.query(Account).filter(
@@ -420,8 +427,8 @@ class AutoAccountingService:
         auto_entry_id: UUID,
         validated_by: UUID,
         approved: bool,
-        modified_lines: Optional[List[ProposedEntryLine]] = None,
-        modification_reason: Optional[str] = None
+        modified_lines: list[ProposedEntryLine] | None = None,
+        modification_reason: str | None = None
     ) -> AutoEntry:
         """Valide ou rejette une écriture automatique.
 
@@ -485,9 +492,9 @@ class AutoAccountingService:
 
     def bulk_validate(
         self,
-        auto_entry_ids: List[UUID],
+        auto_entry_ids: list[UUID],
         validated_by: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Validation en masse des écritures.
 
         Args:
@@ -521,10 +528,10 @@ class AutoAccountingService:
 
     def get_pending_entries(
         self,
-        confidence_filter: Optional[ConfidenceLevel] = None,
+        confidence_filter: ConfidenceLevel | None = None,
         limit: int = 100,
         offset: int = 0
-    ) -> Tuple[List[AutoEntry], int]:
+    ) -> tuple[list[AutoEntry], int]:
         """Récupère les écritures en attente de validation.
 
         Args:
@@ -537,8 +544,8 @@ class AutoAccountingService:
         """
         query = self.db.query(AutoEntry).filter(
             AutoEntry.tenant_id == self.tenant_id,
-            AutoEntry.requires_review == True,
-            AutoEntry.is_posted == False
+            AutoEntry.requires_review,
+            not AutoEntry.is_posted
         )
 
         if confidence_filter:
@@ -556,9 +563,9 @@ class AutoAccountingService:
     def _calculate_entry_confidence(
         self,
         document: AccountingDocument,
-        classification: Optional[AIClassification],
-        proposed_lines: List[ProposedEntryLine]
-    ) -> Tuple[Decimal, ConfidenceLevel]:
+        classification: AIClassification | None,
+        proposed_lines: list[ProposedEntryLine]
+    ) -> tuple[Decimal, ConfidenceLevel]:
         """Calcule la confiance de l'écriture générée."""
         scores = []
 
@@ -613,8 +620,8 @@ class AutoAccountingService:
     def _get_applied_rules(
         self,
         document: AccountingDocument,
-        classification: Optional[AIClassification]
-    ) -> List[str]:
+        classification: AIClassification | None
+    ) -> list[str]:
         """Liste les règles comptables appliquées."""
         rules = []
 
@@ -633,7 +640,7 @@ class AutoAccountingService:
         self,
         document: AccountingDocument,
         auto_entry: AutoEntry,
-        proposed_lines: List[ProposedEntryLine]
+        proposed_lines: list[ProposedEntryLine]
     ) -> Optional["JournalEntry"]:
         """Crée l'écriture comptable dans le module Finance."""
         if not FINANCE_MODULE_AVAILABLE:
@@ -743,7 +750,7 @@ class AutoAccountingService:
     def _create_account_if_needed(
         self,
         code: str,
-        name: Optional[str]
+        name: str | None
     ) -> Optional["Account"]:
         """Crée un compte s'il n'existe pas."""
         if not FINANCE_MODULE_AVAILABLE:

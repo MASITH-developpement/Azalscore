@@ -6,30 +6,31 @@ Service de gestion des documents comptables.
 Gère le flux complet: réception -> OCR -> IA -> comptabilisation.
 """
 
-import os
 import hashlib
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, Dict, Any, List, Tuple, BinaryIO
-from uuid import UUID
 import uuid
+from datetime import date, datetime
+from typing import Any, BinaryIO
+from uuid import UUID
 
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
 
 from ..models import (
-    AccountingDocument, AccountingAlert,
-    DocumentType, DocumentStatus, DocumentSource,
-    PaymentStatus, ConfidenceLevel, AlertType, AlertSeverity
+    AccountingAlert,
+    AccountingDocument,
+    AlertSeverity,
+    AlertType,
+    ConfidenceLevel,
+    DocumentSource,
+    DocumentStatus,
+    DocumentType,
+    PaymentStatus,
 )
-from ..schemas import (
-    DocumentCreate, DocumentUpdate, DocumentValidate, DocumentReject,
-    DocumentResponse, DocumentListResponse
-)
-from .ocr_service import OCRService
+from ..schemas import DocumentReject, DocumentUpdate, DocumentValidate
 from .ai_classification_service import AIClassificationService
 from .auto_accounting_service import AutoAccountingService
+from .ocr_service import OCRService
 
 logger = logging.getLogger(__name__)
 
@@ -56,10 +57,10 @@ class DocumentService:
         self,
         document_type: DocumentType,
         source: DocumentSource,
-        file_content: Optional[BinaryIO] = None,
-        file_path: Optional[str] = None,
-        original_filename: Optional[str] = None,
-        created_by: Optional[UUID] = None,
+        file_content: BinaryIO | None = None,
+        file_path: str | None = None,
+        original_filename: str | None = None,
+        created_by: UUID | None = None,
         **kwargs
     ) -> AccountingDocument:
         """Crée un nouveau document et lance le traitement automatique.
@@ -126,7 +127,7 @@ class DocumentService:
     def process_document(
         self,
         document_id: UUID,
-        file_path: Optional[str] = None
+        file_path: str | None = None
     ) -> AccountingDocument:
         """Traite un document: OCR -> IA -> Comptabilisation.
 
@@ -200,7 +201,7 @@ class DocumentService:
     # LECTURE
     # =========================================================================
 
-    def get_document(self, document_id: UUID) -> Optional[AccountingDocument]:
+    def get_document(self, document_id: UUID) -> AccountingDocument | None:
         """Récupère un document par son ID."""
         return self.db.query(AccountingDocument).filter(
             AccountingDocument.id == document_id,
@@ -209,17 +210,17 @@ class DocumentService:
 
     def list_documents(
         self,
-        document_type: Optional[DocumentType] = None,
-        status: Optional[DocumentStatus] = None,
-        payment_status: Optional[PaymentStatus] = None,
-        partner_name: Optional[str] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-        requires_validation: Optional[bool] = None,
-        search: Optional[str] = None,
+        document_type: DocumentType | None = None,
+        status: DocumentStatus | None = None,
+        payment_status: PaymentStatus | None = None,
+        partner_name: str | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        requires_validation: bool | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 50
-    ) -> Tuple[List[AccountingDocument], int]:
+    ) -> tuple[list[AccountingDocument], int]:
         """Liste les documents avec filtres.
 
         Returns:
@@ -274,16 +275,16 @@ class DocumentService:
 
     def get_documents_for_validation(
         self,
-        confidence_filter: Optional[ConfidenceLevel] = None,
+        confidence_filter: ConfidenceLevel | None = None,
         limit: int = 50
-    ) -> List[AccountingDocument]:
+    ) -> list[AccountingDocument]:
         """Récupère les documents en attente de validation.
 
         Pour la vue Expert-comptable.
         """
         query = self.db.query(AccountingDocument).filter(
             AccountingDocument.tenant_id == self.tenant_id,
-            AccountingDocument.requires_validation == True,
+            AccountingDocument.requires_validation,
             AccountingDocument.status.in_([
                 DocumentStatus.PENDING_VALIDATION,
                 DocumentStatus.ANALYZED
@@ -406,9 +407,9 @@ class DocumentService:
 
     def bulk_validate(
         self,
-        document_ids: List[UUID],
+        document_ids: list[UUID],
         validated_by: UUID
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Validation en masse de documents.
 
         Pour l'expert-comptable.
@@ -501,9 +502,9 @@ class DocumentService:
         alert_type: AlertType,
         title: str,
         message: str,
-        document_id: Optional[UUID] = None,
+        document_id: UUID | None = None,
         severity: AlertSeverity = AlertSeverity.WARNING,
-        target_roles: List[str] = None
+        target_roles: list[str] = None
     ):
         """Crée une alerte."""
         if target_roles is None:
@@ -528,7 +529,7 @@ class DocumentService:
     # STATISTIQUES
     # =========================================================================
 
-    def get_document_stats(self) -> Dict[str, Any]:
+    def get_document_stats(self) -> dict[str, Any]:
         """Récupère les statistiques des documents."""
         # Par statut
         status_counts = dict(
@@ -553,7 +554,7 @@ class DocumentService:
         # En attente de validation
         pending_validation = self.db.query(AccountingDocument).filter(
             AccountingDocument.tenant_id == self.tenant_id,
-            AccountingDocument.requires_validation == True
+            AccountingDocument.requires_validation
         ).count()
 
         # Erreurs
