@@ -12,6 +12,7 @@ import { Button } from '@ui/actions';
 import { z } from 'zod';
 
 const loginSchema = z.object({
+  tenant: z.string().min(1, 'Société requise'),
   email: z.string().email('Email invalide'),
   password: z.string().min(1, 'Mot de passe requis'),
 });
@@ -22,30 +23,30 @@ const LoginPage: React.FC = () => {
   const { login, isLoading, error } = useAuth();
   const loadCapabilities = useCapabilitiesStore((state) => state.loadCapabilities);
 
-  // Extract tenant from URL and store it for API calls
-  useEffect(() => {
-    const tenantFromUrl = searchParams.get('tenant');
-    if (tenantFromUrl) {
-      setTenantId(tenantFromUrl);
-    }
-  }, [searchParams]);
-
+  // Initialize tenant from URL parameter
+  const [tenant, setTenant] = useState(searchParams.get('tenant') || '');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // Get tenant from URL
-  const tenantId = searchParams.get('tenant');
-  const hasTenant = Boolean(tenantId);
+  // Update tenant in sessionStorage when it changes
+  useEffect(() => {
+    if (tenant) {
+      setTenantId(tenant);
+    }
+  }, [tenant]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationErrors({});
 
     try {
-      const data = loginSchema.parse({ email, password });
+      const data = loginSchema.parse({ tenant, email, password });
 
-      const result = await login(data);
+      // Ensure tenant is set before login
+      setTenantId(data.tenant);
+
+      const result = await login({ email: data.email, password: data.password });
 
       if (result.requires_2fa) {
         trackAuthEvent('login', true);
@@ -74,12 +75,6 @@ const LoginPage: React.FC = () => {
     <div className="azals-login">
       <h1 className="azals-login__title">Connexion</h1>
 
-      {!hasTenant && (
-        <div className="azals-login__error">
-          Tenant non spécifié. Ajoutez ?tenant=votre_tenant à l'URL.
-        </div>
-      )}
-
       {error && (
         <div className="azals-login__error">
           {error}
@@ -87,6 +82,25 @@ const LoginPage: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit} className="azals-login__form">
+        <div className="azals-field">
+          <label htmlFor="tenant" className="azals-field__label">
+            Société
+          </label>
+          <input
+            id="tenant"
+            type="text"
+            value={tenant}
+            onChange={(e) => setTenant(e.target.value.toLowerCase().trim())}
+            className={`azals-input ${validationErrors.tenant ? 'azals-input--error' : ''}`}
+            placeholder="identifiant-societe"
+            autoComplete="organization"
+            disabled={isLoading}
+          />
+          {validationErrors.tenant && (
+            <span className="azals-field__error">{validationErrors.tenant}</span>
+          )}
+        </div>
+
         <div className="azals-field">
           <label htmlFor="email" className="azals-field__label">
             Email
