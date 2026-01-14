@@ -74,14 +74,8 @@ services:
     restart: always
     env_file:
       - .env.production
-    environment:
-      # Toutes les variables sensibles sont lues depuis .env.production :
-      # DATABASE_URL, SECRET_KEY, CORS_ORIGINS, ENCRYPTION_KEY, etc.
-      # Seules les valeurs Docker-spécifiques sont définies ici :
-      REDIS_URL: redis://redis:6379/0
-      DEBUG: "false"
-      LOG_JSON: "true"
-      ENVIRONMENT: production
+    # Toutes les variables sont lues depuis .env.production :
+    # DATABASE_URL, SECRET_KEY, CORS_ORIGINS, ENCRYPTION_KEY, REDIS_URL, etc.
     ports:
       - "8000:8000"
     volumes:
@@ -209,12 +203,7 @@ services:
     restart: always
     env_file:
       - .env.production
-    environment:
-      # Variables Grafana mappées depuis .env.production
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_ROOT_URL: http://localhost:3000
+    # Variables Grafana mappées depuis .env.production (GF_* requises par Grafana)
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
