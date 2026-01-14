@@ -134,10 +134,18 @@ class GuardianMiddleware(BaseHTTPMiddleware):
         # Exécuter la requête
         start_time = datetime.utcnow()
         response = None
-        error_captured = None
 
         try:
             response = await call_next(request)
+
+            # Protection: si call_next ne retourne pas de réponse
+            if response is None:
+                logger.warning(f"No response from call_next for {request.method} {path}")
+                return Response(
+                    content='{"error": "Internal server error"}',
+                    status_code=500,
+                    media_type="application/json"
+                )
 
             # Vérifier si c'est une erreur HTTP
             if response.status_code >= 400:
@@ -152,7 +160,6 @@ class GuardianMiddleware(BaseHTTPMiddleware):
 
         except HTTPException as e:
             # Erreur HTTP FastAPI
-            error_captured = e
             await self._record_exception(
                 request=request,
                 exception=e,
@@ -164,7 +171,6 @@ class GuardianMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             # Erreur non gérée
-            error_captured = e
             await self._record_exception(
                 request=request,
                 exception=e,
