@@ -73,73 +73,42 @@ class InvitationStatus(str, enum.Enum):
 # ============================================================================
 
 class Tenant(Base):
-    """Tenant (client) de la plateforme."""
+    """
+    Tenant (client) de la plateforme.
+    NOTE V1: Ce modele correspond a la table creee par la migration initiale.
+    """
     __tablename__ = "tenants"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    tenant_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
 
     # Informations entreprise
-    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
     legal_name: Mapped[Optional[str]] = mapped_column(String(255))
     siret: Mapped[Optional[str]] = mapped_column(String(20))
     vat_number: Mapped[Optional[str]] = mapped_column(String(30))
 
-    # Adresse
-    address_line1: Mapped[Optional[str]] = mapped_column(String(255))
-    address_line2: Mapped[Optional[str]] = mapped_column(String(255))
-    city: Mapped[Optional[str]] = mapped_column(String(100))
-    postal_code: Mapped[Optional[str]] = mapped_column(String(20))
-    country: Mapped[Optional[str]] = mapped_column(String(2), default="FR")
-
     # Contact
-    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
     phone: Mapped[Optional[str]] = mapped_column(String(50))
     website: Mapped[Optional[str]] = mapped_column(String(255))
 
-    # Statut et plan
-    status: Mapped[Optional[str]] = mapped_column(Enum(TenantStatus), default=TenantStatus.PENDING)
-    plan: Mapped[Optional[str]] = mapped_column(Enum(SubscriptionPlan), default=SubscriptionPlan.STARTER)
-
-    # Environnement (beta, production, staging, development)
-    environment: Mapped[Optional[str]] = mapped_column(
-        Enum(TenantEnvironment),
-        default=TenantEnvironment.PRODUCTION,
-        nullable=False
-    )
+    # Statut - stocke comme VARCHAR(30) en base, pas ENUM
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="ACTIVE")
+    environment: Mapped[str] = mapped_column(String(20), nullable=False, default="prod")
 
     # Configuration
     timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
-    language: Mapped[Optional[str]] = mapped_column(String(5), default="fr")
+    language: Mapped[Optional[str]] = mapped_column(String(10), default="fr")
     currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
-    date_format: Mapped[Optional[str]] = mapped_column(String(20), default="DD/MM/YYYY")
 
-    # Limites
-    max_users: Mapped[Optional[int]] = mapped_column(Integer, default=5)
-    max_storage_gb: Mapped[Optional[int]] = mapped_column(Integer, default=10)
-    storage_used_gb: Mapped[Optional[float]] = mapped_column(Float, default=0)
-
-    # Branding
-    logo_url: Mapped[Optional[str]] = mapped_column(String(500))
-    primary_color: Mapped[Optional[str]] = mapped_column(String(7), default="#1976D2")
-    secondary_color: Mapped[Optional[str]] = mapped_column(String(7), default="#424242")
-
-    # Fonctionnalités
-    features: Mapped[Optional[dict]] = mapped_column(JSON)  # {"feature1": true, "feature2": false}
-
-    # Données supplémentaires
+    # Fonctionnalites et donnees supplementaires (JSONB)
+    features: Mapped[Optional[dict]] = mapped_column(JSON)
     extra_data: Mapped[Optional[dict]] = mapped_column(JSON)
 
-    # Dates
-    trial_ends_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    activated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    suspended_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by: Mapped[Optional[str]] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 class TenantSubscription(Base):

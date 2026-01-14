@@ -451,6 +451,18 @@ def bootstrap(
             detail="Admin password must be at least 12 characters"
         )
 
+    # Import du modele Tenant
+    from app.modules.tenants.models import Tenant, TenantStatus
+
+    # Creer le tenant dans la table tenants
+    tenant = Tenant(
+        tenant_id=data.tenant_id,
+        name=data.tenant_name,
+        email=data.admin_email,
+        status=TenantStatus.ACTIVE
+    )
+    db.add(tenant)
+
     # Créer l'utilisateur admin
     password_hash = get_password_hash(data.admin_password)
 
