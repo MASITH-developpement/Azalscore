@@ -41,7 +41,7 @@ from .schemas import (
     UIConfigResponse
 )
 
-router = APIRouter(prefix="/api/v1/web", tags=["Web"])
+router = APIRouter(prefix="/web", tags=["Web"])
 
 
 # ============================================================================

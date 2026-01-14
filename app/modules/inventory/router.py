@@ -39,7 +39,7 @@ from .schemas import (
     InventoryDashboard,
 )
 
-router = APIRouter(prefix="/api/v1/inventory", tags=["M5 - Inventaire"])
+router = APIRouter(prefix="/inventory", tags=["M5 - Inventaire"])
 
 
 # ============================================================================

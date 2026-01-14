@@ -28,7 +28,7 @@ from .schemas import (
 )
 from .service import get_commercial_service
 
-router = APIRouter(prefix="/api/v1/commercial", tags=["M1 - Commercial"])
+router = APIRouter(prefix="/commercial", tags=["M1 - Commercial"])
 
 
 # ============================================================================

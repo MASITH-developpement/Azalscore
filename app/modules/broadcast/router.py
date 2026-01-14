@@ -39,7 +39,7 @@ from .schemas import (
     ContentTypeEnum, BroadcastStatusEnum, DeliveryStatusEnum
 )
 
-router = APIRouter(prefix="/api/v1/broadcast", tags=["Broadcast"])
+router = APIRouter(prefix="/broadcast", tags=["Broadcast"])
 
 
 # ============================================================================

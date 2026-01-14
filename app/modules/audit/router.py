@@ -31,7 +31,7 @@ from .schemas import (
 from .service import get_audit_service
 
 
-router = APIRouter(prefix="/api/v1/audit", tags=["Audit & Benchmark"])
+router = APIRouter(prefix="/audit", tags=["Audit & Benchmark"])
 
 
 def get_service(request: Request, db: Session = Depends(get_db)):

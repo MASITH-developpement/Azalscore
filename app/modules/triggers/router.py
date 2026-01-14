@@ -31,7 +31,7 @@ from .schemas import (
 from .service import get_trigger_service
 
 
-router = APIRouter(prefix="/api/v1/triggers", tags=["Triggers & Diffusion"])
+router = APIRouter(prefix="/triggers", tags=["Triggers & Diffusion"])
 
 
 def get_service(request: Request, db: Session = Depends(get_db)):

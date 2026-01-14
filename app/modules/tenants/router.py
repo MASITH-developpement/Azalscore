@@ -78,7 +78,7 @@ from .schemas import (
     PlatformStatsResponse
 )
 
-router = APIRouter(prefix="/api/v1/tenants", tags=["Tenants"])
+router = APIRouter(prefix="/tenants", tags=["Tenants"])
 
 
 # ============================================================================

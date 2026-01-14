@@ -42,7 +42,7 @@ from .schemas import (
 )
 
 
-router = APIRouter(prefix="/api/v1/maintenance", tags=["Maintenance (GMAO)"])
+router = APIRouter(prefix="/maintenance", tags=["Maintenance (GMAO)"])
 
 
 # ============================================================================
