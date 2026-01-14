@@ -2,11 +2,12 @@
  * AZALSCORE - Page de connexion
  */
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@core/auth';
 import { useCapabilitiesStore } from '@core/capabilities';
 import { trackAuthEvent } from '@core/audit-ui';
+import { setTenantId } from '@core/api-client';
 import { Button } from '@ui/actions';
 import { z } from 'zod';
 
@@ -17,12 +18,25 @@ const loginSchema = z.object({
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, isLoading, error } = useAuth();
   const loadCapabilities = useCapabilitiesStore((state) => state.loadCapabilities);
+
+  // Extract tenant from URL and store it for API calls
+  useEffect(() => {
+    const tenantFromUrl = searchParams.get('tenant');
+    if (tenantFromUrl) {
+      setTenantId(tenantFromUrl);
+    }
+  }, [searchParams]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Get tenant from URL
+  const tenantId = searchParams.get('tenant');
+  const hasTenant = Boolean(tenantId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +73,12 @@ const LoginPage: React.FC = () => {
   return (
     <div className="azals-login">
       <h1 className="azals-login__title">Connexion</h1>
+
+      {!hasTenant && (
+        <div className="azals-login__error">
+          Tenant non spécifié. Ajoutez ?tenant=votre_tenant à l'URL.
+        </div>
+      )}
 
       {error && (
         <div className="azals-login__error">
