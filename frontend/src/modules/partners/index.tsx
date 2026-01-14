@@ -333,10 +333,10 @@ export const ContactsPage: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Récupérer la liste des clients pour le select
-  const { data: clientsData } = useQuery({
+  const { data: clientsData, isLoading: loadingClients } = useQuery({
     queryKey: ['partners', 'clients-for-select'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Partner>>('/v1/partners/clients?page=1&page_size=100');
+      const response = await api.get<PaginatedResponse<Partner>>('/v1/partners/clients?page=1&page_size=100&is_active=true');
       return response as unknown as PaginatedResponse<Partner>;
     },
   });
@@ -420,6 +420,7 @@ export const ContactsPage: React.FC = () => {
       label: 'Client',
       type: 'select' as const,
       required: true,
+      placeholder: 'Sélectionner un client',
       options: (clientsData?.items || []).map((c: Partner) => ({ value: c.id, label: c.name }))
     },
     { name: 'first_name', label: 'Prénom', type: 'text' as const, required: true },
@@ -462,15 +463,26 @@ export const ContactsPage: React.FC = () => {
 
       {showCreate && (
         <Modal isOpen onClose={() => setShowCreate(false)} title="Nouveau contact" size="md">
-          <DynamicForm
-            fields={contactFields}
-            schema={contactSchema}
-            onSubmit={async (formData) => {
-              await createContact.mutateAsync(formData);
-            }}
-            onCancel={() => setShowCreate(false)}
-            isLoading={createContact.isPending}
-          />
+          {loadingClients ? (
+            <div className="azals-loading">
+              <p>Chargement des clients...</p>
+            </div>
+          ) : clientsData?.items?.length === 0 ? (
+            <div className="azals-alert azals-alert--warning">
+              <p>Aucun client disponible. Veuillez d'abord créer un client.</p>
+            </div>
+          ) : (
+            <DynamicForm
+              fields={contactFields}
+              schema={contactSchema}
+              onSubmit={async (formData) => {
+                console.log('Contact form data:', formData);
+                await createContact.mutateAsync(formData);
+              }}
+              onCancel={() => setShowCreate(false)}
+              isLoading={createContact.isPending}
+            />
+          )}
         </Modal>
       )}
     </PageWrapper>
