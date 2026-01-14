@@ -6,6 +6,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 import type { ApiResponse, ApiError, ApiRequestConfig } from '@/types';
+import { createHttpIncident, createNetworkIncident, createAuthIncident } from '@/core/guardian/incident-store';
 
 // ============================================================
 // CONFIGURATION PRODUCTION
@@ -119,16 +120,50 @@ const createApiClient = (): AxiosInstance => {
     (error) => Promise.reject(error)
   );
 
-  // Intercepteur réponses - Gestion erreurs et refresh token
+  // Intercepteur réponses - Gestion erreurs et refresh token + Guardian incidents
   client.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-      const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+      const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean; _incidentCreated?: boolean };
 
       // Skip refresh pour les endpoints d'authentification (login, register, etc.)
       const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
                              originalRequest.url?.includes('/auth/register') ||
                              originalRequest.url?.includes('/auth/refresh');
+
+      // Skip incidents pour les endpoints d'incidents eux-mêmes (éviter boucle infinie)
+      const isIncidentEndpoint = originalRequest.url?.includes('/incidents');
+
+      // GUARDIAN: Créer un incident pour les erreurs significatives
+      if (!isIncidentEndpoint && !originalRequest._incidentCreated) {
+        originalRequest._incidentCreated = true;
+
+        const status = error.response?.status;
+        const url = originalRequest.url || 'unknown';
+        const method = originalRequest.method?.toUpperCase() || 'GET';
+        const responseData = error.response?.data as { error?: string; message?: string; trace_id?: string } | null;
+
+        // Erreur réseau (pas de réponse)
+        if (!error.response) {
+          createNetworkIncident(
+            error.message || 'Erreur de connexion réseau',
+            url
+          ).catch(() => {}); // Ignorer les erreurs de création d'incident
+        }
+        // Erreurs HTTP significatives (pas les 404 sur GET)
+        else if (status && (status >= 400) && !(status === 404 && method === 'GET')) {
+          // Créer incident pour 401, 403, 422, 500+
+          if (status === 401 || status === 403 || status === 422 || status >= 500) {
+            createHttpIncident(
+              status,
+              url,
+              method,
+              responseData,
+              `Requête ${method} vers ${url}`
+            ).catch(() => {}); // Ignorer les erreurs de création d'incident
+          }
+        }
+      }
 
       // Token expiré - tentative de refresh (sauf pour auth endpoints)
       if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
@@ -141,6 +176,14 @@ const createApiClient = (): AxiosInstance => {
           }
           return client(originalRequest);
         } catch (refreshError) {
+          // GUARDIAN: Créer incident d'auth quand le refresh échoue
+          if (!isIncidentEndpoint) {
+            createAuthIncident(
+              'Session expirée - Reconnexion requise',
+              'Le rafraîchissement du token a échoué'
+            ).catch(() => {});
+          }
+
           tokenManager.clearTokens();
           window.dispatchEvent(new CustomEvent('azals:auth:logout'));
           return Promise.reject(refreshError);

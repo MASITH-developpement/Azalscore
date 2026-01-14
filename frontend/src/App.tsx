@@ -15,6 +15,7 @@ import { useAuthStore, type AuthStatus } from '@core/auth';
 import { useCapabilitiesStore, type CapabilitiesStatus } from '@core/capabilities';
 import { initAuditUI } from '@core/audit-ui';
 import { initializeStores, useUIStore } from '@ui/states';
+import { initGuardianErrorHandlers } from '@core/guardian/incident-store';
 import './styles/main.css';
 
 // ============================================================
@@ -99,6 +100,9 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
       try {
         // 1. Initialize audit system (fire and forget)
         initAuditUI();
+
+        // 1bis. Initialize GUARDIAN error handlers
+        initGuardianErrorHandlers();
 
         // 2. Setup mobile detection
         const checkMobile = () => setIsMobile(window.innerWidth < 768);

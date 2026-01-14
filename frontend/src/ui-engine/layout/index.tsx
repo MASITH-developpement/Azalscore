@@ -11,6 +11,7 @@ import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
 import { DynamicMenu } from '@ui/menu-dynamic';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
+import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
 
 // ============================================================
 // TYPES
@@ -171,6 +172,7 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       <ErrorToaster />
+      <GuardianPanelContainer />
     </div>
   );
 };

@@ -148,6 +148,9 @@ from app.modules.ai_assistant.router import router as ai_router
 from app.modules.guardian.router import router as guardian_router
 from app.modules.guardian.middleware import setup_guardian_middleware
 
+# API Incidents - Endpoint simplifié pour frontend Guardian
+from app.api.incidents import router as incidents_router
+
 # Module COCKPIT - Tableau de bord dirigeant
 from app.api.cockpit import router as cockpit_router
 
@@ -674,6 +677,9 @@ api_v1.include_router(ai_router)
 
 # Module GUARDIAN - Correction Automatique Gouvernee & Auditable
 api_v1.include_router(guardian_router)
+
+# API Incidents - Endpoint simplifie pour frontend Guardian
+api_v1.include_router(incidents_router)
 
 # Module COCKPIT - Tableau de bord dirigeant
 api_v1.include_router(cockpit_router)
