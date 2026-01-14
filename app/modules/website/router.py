@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user_and_tenant
 
 from .service import get_website_service
 from .schemas import (
@@ -37,7 +37,7 @@ router = APIRouter(prefix="/website", tags=["Website"])
 def create_page(
     data: SitePageCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une page du site."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -54,7 +54,7 @@ def list_pages(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les pages."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -65,7 +65,7 @@ def list_pages(
 def get_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une page."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -79,7 +79,7 @@ def get_page(
 def get_page_by_slug(
     slug: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une page par slug."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -94,7 +94,7 @@ def update_page(
     page_id: int,
     data: SitePageUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une page."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -109,7 +109,7 @@ def publish_page(
     page_id: int,
     data: PublishRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Publier/dépublier une page."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -123,7 +123,7 @@ def publish_page(
 def delete_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer une page."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -139,7 +139,7 @@ def delete_page(
 def create_blog_post(
     data: BlogPostCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un article de blog."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -157,7 +157,7 @@ def list_blog_posts(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les articles."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -169,7 +169,7 @@ def list_blog_posts(
 @router.get("/blog/categories")
 def get_blog_categories(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les catégories du blog."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -180,7 +180,7 @@ def get_blog_categories(
 def get_blog_post(
     post_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un article."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -194,7 +194,7 @@ def get_blog_post(
 def get_blog_post_by_slug(
     slug: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un article par slug."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -209,7 +209,7 @@ def update_blog_post(
     post_id: int,
     data: BlogPostUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un article."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -224,7 +224,7 @@ def publish_blog_post(
     post_id: int,
     data: PublishRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Publier/dépublier un article."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -238,7 +238,7 @@ def publish_blog_post(
 def delete_blog_post(
     post_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un article."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -254,7 +254,7 @@ def delete_blog_post(
 def create_testimonial(
     data: TestimonialCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un témoignage."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -270,7 +270,7 @@ def list_testimonials(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les témoignages."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -281,7 +281,7 @@ def list_testimonials(
 def get_testimonial(
     testimonial_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un témoignage."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -296,7 +296,7 @@ def update_testimonial(
     testimonial_id: int,
     data: TestimonialUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un témoignage."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -311,7 +311,7 @@ def publish_testimonial(
     testimonial_id: int,
     data: PublishRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Publier/dépublier un témoignage."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -325,7 +325,7 @@ def publish_testimonial(
 def delete_testimonial(
     testimonial_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un témoignage."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -342,7 +342,7 @@ def submit_contact_form(
     data: ContactSubmissionCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Soumettre un formulaire de contact."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -366,7 +366,7 @@ def list_contact_submissions(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les soumissions."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -377,7 +377,7 @@ def list_contact_submissions(
 def get_contact_submission(
     submission_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une soumission."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -395,7 +395,7 @@ def update_contact_submission(
     submission_id: int,
     data: ContactSubmissionUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une soumission."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -408,7 +408,7 @@ def update_contact_submission(
 @router.get("/contact/stats")
 def get_contact_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Statistiques des contacts."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -423,7 +423,7 @@ def get_contact_stats(
 def subscribe_newsletter(
     data: NewsletterSubscribeRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """S'abonner à la newsletter."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -434,7 +434,7 @@ def subscribe_newsletter(
 def verify_newsletter(
     token: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Vérifier l'email d'un abonné."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -448,7 +448,7 @@ def verify_newsletter(
 def unsubscribe_newsletter(
     data: NewsletterUnsubscribeRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Se désabonner de la newsletter."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -465,7 +465,7 @@ def list_newsletter_subscribers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les abonnés newsletter."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -475,7 +475,7 @@ def list_newsletter_subscribers(
 @router.get("/newsletter/stats")
 def get_newsletter_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Statistiques newsletter."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -490,7 +490,7 @@ def get_newsletter_stats(
 def create_media(
     data: SiteMediaCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un média."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -505,7 +505,7 @@ def list_media(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les médias."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -516,7 +516,7 @@ def list_media(
 def get_media(
     media_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un média."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -531,7 +531,7 @@ def update_media(
     media_id: int,
     data: SiteMediaUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un média."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -545,7 +545,7 @@ def update_media(
 def delete_media(
     media_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un média."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -560,7 +560,7 @@ def delete_media(
 @router.get("/seo", response_model=SiteSEOResponse)
 def get_seo_config(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer la configuration SEO."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -574,7 +574,7 @@ def get_seo_config(
 def update_seo_config(
     data: SiteSEOUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour la configuration SEO."""
     service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -589,7 +589,7 @@ def update_seo_config(
 def get_analytics_dashboard(
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Dashboard analytics."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -602,7 +602,7 @@ def get_analytics(
     end_date: datetime,
     period: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les analytics pour une période."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -615,7 +615,7 @@ def record_analytics(
     period: str = "daily",
     data: dict = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Enregistrer des données analytics."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -630,7 +630,7 @@ def record_analytics(
 def get_public_site_config(
     language: str = "fr",
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Configuration publique du site."""
     service = get_website_service(db, current_user["tenant_id"])
@@ -640,7 +640,7 @@ def get_public_site_config(
 @router.get("/homepage", response_model=SitePageResponse)
 def get_homepage(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer la page d'accueil."""
     service = get_website_service(db, current_user["tenant_id"])

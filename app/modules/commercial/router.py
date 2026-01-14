@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user_and_tenant
 
 from .models import CustomerType, OpportunityStatus, DocumentType, DocumentStatus
 from .schemas import (
@@ -39,7 +39,7 @@ router = APIRouter(prefix="/commercial", tags=["M1 - Commercial"])
 async def create_customer(
     data: CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouveau client/prospect."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -61,7 +61,7 @@ async def list_customers(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les clients avec filtres."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -73,7 +73,7 @@ async def list_customers(
 async def get_customer(
     customer_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un client."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -88,7 +88,7 @@ async def update_customer(
     customer_id: UUID,
     data: CustomerUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un client."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -102,7 +102,7 @@ async def update_customer(
 async def delete_customer(
     customer_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un client."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -114,7 +114,7 @@ async def delete_customer(
 async def convert_prospect(
     customer_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Convertir un prospect en client."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -132,7 +132,7 @@ async def convert_prospect(
 async def create_contact(
     data: ContactCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un contact pour un client."""
     print(f"[DEBUG] commercial/router create_contact appelé avec data={data}")
@@ -152,7 +152,7 @@ async def create_contact(
 async def list_contacts(
     customer_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les contacts d'un client."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -164,7 +164,7 @@ async def update_contact(
     contact_id: UUID,
     data: ContactUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un contact."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -178,7 +178,7 @@ async def update_contact(
 async def delete_contact(
     contact_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un contact."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -194,7 +194,7 @@ async def delete_contact(
 async def create_opportunity(
     data: OpportunityCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une opportunité."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -215,7 +215,7 @@ async def list_opportunities(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les opportunités."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -227,7 +227,7 @@ async def list_opportunities(
 async def get_opportunity(
     opportunity_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une opportunité."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -242,7 +242,7 @@ async def update_opportunity(
     opportunity_id: UUID,
     data: OpportunityUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une opportunité."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -257,7 +257,7 @@ async def win_opportunity(
     opportunity_id: UUID,
     win_reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Marquer une opportunité comme gagnée."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -272,7 +272,7 @@ async def lose_opportunity(
     opportunity_id: UUID,
     loss_reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Marquer une opportunité comme perdue."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -290,7 +290,7 @@ async def lose_opportunity(
 async def create_document(
     data: DocumentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un document commercial (devis, commande, facture)."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -313,7 +313,7 @@ async def list_documents(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les documents commerciaux."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -325,7 +325,7 @@ async def list_documents(
 async def get_document(
     document_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un document."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -340,7 +340,7 @@ async def update_document(
     document_id: UUID,
     data: DocumentUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un document."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -354,7 +354,7 @@ async def update_document(
 async def validate_document(
     document_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Valider un document."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -368,7 +368,7 @@ async def validate_document(
 async def send_document(
     document_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Marquer un document comme envoyé."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -382,7 +382,7 @@ async def send_document(
 async def convert_quote_to_order(
     quote_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Convertir un devis en commande."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -396,7 +396,7 @@ async def convert_quote_to_order(
 async def create_invoice_from_order(
     order_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une facture à partir d'une commande."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -411,7 +411,7 @@ async def add_document_line(
     document_id: UUID,
     data: DocumentLineCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Ajouter une ligne à un document."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -425,7 +425,7 @@ async def add_document_line(
 async def delete_document_line(
     line_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer une ligne de document."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -441,7 +441,7 @@ async def delete_document_line(
 async def create_payment(
     data: PaymentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Enregistrer un paiement sur une facture."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -455,7 +455,7 @@ async def create_payment(
 async def list_payments(
     document_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les paiements d'un document."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -470,7 +470,7 @@ async def list_payments(
 async def create_activity(
     data: ActivityCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une activité (appel, email, réunion, etc.)."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -491,7 +491,7 @@ async def list_activities(
     is_completed: Optional[bool] = None,
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les activités."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -502,7 +502,7 @@ async def list_activities(
 async def complete_activity(
     activity_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Marquer une activité comme terminée."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -520,7 +520,7 @@ async def complete_activity(
 async def create_pipeline_stage(
     data: PipelineStageCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une étape du pipeline."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -530,7 +530,7 @@ async def create_pipeline_stage(
 @router.get("/pipeline/stages", response_model=List[PipelineStageResponse])
 async def list_pipeline_stages(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les étapes du pipeline."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -540,7 +540,7 @@ async def list_pipeline_stages(
 @router.get("/pipeline/stats", response_model=PipelineStats)
 async def get_pipeline_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Obtenir les statistiques du pipeline."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -555,7 +555,7 @@ async def get_pipeline_stats(
 async def create_product(
     data: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un produit ou service."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -577,7 +577,7 @@ async def list_products(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les produits."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -589,7 +589,7 @@ async def list_products(
 async def get_product(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un produit."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -604,7 +604,7 @@ async def update_product(
     product_id: UUID,
     data: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un produit."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -621,7 +621,7 @@ async def update_product(
 @router.get("/dashboard", response_model=SalesDashboard)
 async def get_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Obtenir le dashboard commercial."""
     service = get_commercial_service(db, current_user["tenant_id"])
@@ -640,7 +640,7 @@ async def export_customers_csv(
     type: Optional[CustomerType] = None,
     is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """
     Exporter les clients au format CSV.
@@ -665,7 +665,7 @@ async def export_customers_csv(
 async def export_contacts_csv(
     customer_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """
     Exporter les contacts au format CSV.
@@ -691,7 +691,7 @@ async def export_opportunities_csv(
     status: Optional[OpportunityStatus] = None,
     customer_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """
     Exporter les opportunités au format CSV.

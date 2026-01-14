@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user_and_tenant
 
 from .service import get_projects_service
 from .models import (
@@ -45,7 +45,7 @@ router = APIRouter(prefix="/projects", tags=["Projets (Project Management)"])
 def create_project(
     data: ProjectCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouveau projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -64,7 +64,7 @@ def list_projects(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les projets."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -79,7 +79,7 @@ def list_projects(
 def get_project(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -94,7 +94,7 @@ def update_project(
     project_id: UUID,
     data: ProjectUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -108,7 +108,7 @@ def update_project(
 def delete_project(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Archiver un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -120,7 +120,7 @@ def delete_project(
 def refresh_project_progress(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Recalculer la progression du projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -134,7 +134,7 @@ def refresh_project_progress(
 def get_project_dashboard(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Obtenir le dashboard du projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -148,7 +148,7 @@ def get_project_dashboard(
 def get_project_stats(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Obtenir les statistiques du projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -167,7 +167,7 @@ def create_phase(
     project_id: UUID,
     data: PhaseCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une phase."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -180,7 +180,7 @@ def create_phase(
 def get_phases(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les phases d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -192,7 +192,7 @@ def update_phase(
     phase_id: UUID,
     data: PhaseUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une phase."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -206,7 +206,7 @@ def update_phase(
 def delete_phase(
     phase_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer une phase."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -223,7 +223,7 @@ def create_task(
     project_id: UUID,
     data: TaskCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une tâche."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -244,7 +244,7 @@ def list_project_tasks(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les tâches d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -259,7 +259,7 @@ def get_my_tasks(
     status: Optional[TaskStatus] = None,
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer mes tâches."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -270,7 +270,7 @@ def get_my_tasks(
 def get_task(
     task_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une tâche."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -285,7 +285,7 @@ def update_task(
     task_id: UUID,
     data: TaskUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une tâche."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -299,7 +299,7 @@ def update_task(
 def delete_task(
     task_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer une tâche."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -316,7 +316,7 @@ def create_milestone(
     project_id: UUID,
     data: MilestoneCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un jalon."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -329,7 +329,7 @@ def create_milestone(
 def get_milestones(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les jalons d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -341,7 +341,7 @@ def update_milestone(
     milestone_id: UUID,
     data: MilestoneUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un jalon."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -360,7 +360,7 @@ def add_team_member(
     project_id: UUID,
     data: TeamMemberCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Ajouter un membre à l'équipe."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -373,7 +373,7 @@ def add_team_member(
 def get_team_members(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer l'équipe d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -385,7 +385,7 @@ def update_team_member(
     member_id: UUID,
     data: TeamMemberUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un membre."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -399,7 +399,7 @@ def update_team_member(
 def remove_team_member(
     member_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Retirer un membre de l'équipe."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -416,7 +416,7 @@ def create_risk(
     project_id: UUID,
     data: RiskCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un risque."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -430,7 +430,7 @@ def get_risks(
     project_id: UUID,
     status: Optional[RiskStatus] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les risques d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -442,7 +442,7 @@ def update_risk(
     risk_id: UUID,
     data: RiskUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un risque."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -461,7 +461,7 @@ def create_issue(
     project_id: UUID,
     data: IssueCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une issue."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -476,7 +476,7 @@ def get_issues(
     status: Optional[IssueStatus] = None,
     priority: Optional[IssuePriority] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les issues d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -488,7 +488,7 @@ def update_issue(
     issue_id: UUID,
     data: IssueUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une issue."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -507,7 +507,7 @@ def create_time_entry(
     project_id: UUID,
     data: TimeEntryCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une saisie de temps."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -527,7 +527,7 @@ def get_time_entries(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les saisies de temps."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -546,7 +546,7 @@ def get_time_entries(
 def submit_time_entry(
     entry_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Soumettre une saisie pour approbation."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -560,7 +560,7 @@ def submit_time_entry(
 def approve_time_entry(
     entry_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Approuver une saisie de temps."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -575,7 +575,7 @@ def reject_time_entry(
     entry_id: UUID,
     reason: str = Query(..., min_length=1),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Rejeter une saisie de temps."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -594,7 +594,7 @@ def create_expense(
     project_id: UUID,
     data: ExpenseCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une dépense."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -608,7 +608,7 @@ def get_expenses(
     project_id: UUID,
     status: Optional[ExpenseStatus] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les dépenses d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -619,7 +619,7 @@ def get_expenses(
 def approve_expense(
     expense_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Approuver une dépense."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -638,7 +638,7 @@ def create_document(
     project_id: UUID,
     data: DocumentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un document."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -652,7 +652,7 @@ def get_documents(
     project_id: UUID,
     category: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les documents d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -668,7 +668,7 @@ def create_budget(
     project_id: UUID,
     data: BudgetCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un budget."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -681,7 +681,7 @@ def create_budget(
 def get_budgets(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les budgets d'un projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -692,7 +692,7 @@ def get_budgets(
 def approve_budget(
     budget_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Approuver un budget."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -710,7 +710,7 @@ def approve_budget(
 def create_template(
     data: TemplateCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un template de projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -720,7 +720,7 @@ def create_template(
 @router.get("/templates", response_model=List[TemplateResponse])
 def get_templates(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les templates."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -734,7 +734,7 @@ def create_project_from_template(
     name: str = Query(..., min_length=1),
     start_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un projet depuis un template."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -753,7 +753,7 @@ def create_comment(
     project_id: UUID,
     data: CommentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un commentaire."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -767,7 +767,7 @@ def get_comments(
     project_id: UUID,
     task_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les commentaires."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
@@ -782,7 +782,7 @@ def get_comments(
 def calculate_kpis(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Calculer les KPIs du projet."""
     service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])

@@ -53,7 +53,7 @@ router = APIRouter(prefix="/maintenance", tags=["Maintenance (GMAO)"])
 async def create_asset(
     data: AssetCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouvel actif."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -69,7 +69,7 @@ async def list_assets(
     criticality: Optional[AssetCriticality] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les actifs avec filtres."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -81,7 +81,7 @@ async def list_assets(
 async def get_asset(
     asset_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un actif par ID."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -96,7 +96,7 @@ async def update_asset(
     asset_id: int,
     data: AssetUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un actif."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -110,7 +110,7 @@ async def update_asset(
 async def delete_asset(
     asset_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un actif (soft delete)."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -127,7 +127,7 @@ async def create_meter(
     asset_id: int,
     data: MeterCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un compteur pour un actif."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -142,7 +142,7 @@ async def record_meter_reading(
     meter_id: int,
     data: MeterReadingCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Enregistrer un relevé de compteur."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -160,7 +160,7 @@ async def record_meter_reading(
 async def create_maintenance_plan(
     data: MaintenancePlanCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un plan de maintenance."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -174,7 +174,7 @@ async def list_maintenance_plans(
     asset_id: Optional[int] = None,
     is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les plans de maintenance."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -186,7 +186,7 @@ async def list_maintenance_plans(
 async def get_maintenance_plan(
     plan_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un plan de maintenance."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -201,7 +201,7 @@ async def update_maintenance_plan(
     plan_id: int,
     data: MaintenancePlanUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un plan de maintenance."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -219,7 +219,7 @@ async def update_maintenance_plan(
 async def create_work_order(
     data: WorkOrderCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un ordre de travail."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -235,7 +235,7 @@ async def list_work_orders(
     priority: Optional[WorkOrderPriority] = None,
     assigned_to_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les ordres de travail."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -247,7 +247,7 @@ async def list_work_orders(
 async def get_work_order(
     wo_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un ordre de travail."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -262,7 +262,7 @@ async def update_work_order(
     wo_id: int,
     data: WorkOrderUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un ordre de travail."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -276,7 +276,7 @@ async def update_work_order(
 async def start_work_order(
     wo_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer un ordre de travail."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -291,7 +291,7 @@ async def complete_work_order(
     wo_id: int,
     data: WorkOrderComplete,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer un ordre de travail."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -306,7 +306,7 @@ async def add_labor_entry(
     wo_id: int,
     data: WorkOrderLaborCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Ajouter une entrée de main d'œuvre."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -321,7 +321,7 @@ async def add_part_used(
     wo_id: int,
     data: WorkOrderPartCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Ajouter une pièce utilisée."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -339,7 +339,7 @@ async def add_part_used(
 async def create_failure(
     data: FailureCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Enregistrer une panne."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -353,7 +353,7 @@ async def list_failures(
     asset_id: Optional[int] = None,
     status: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les pannes."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -365,7 +365,7 @@ async def list_failures(
 async def get_failure(
     failure_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une panne."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -380,7 +380,7 @@ async def update_failure(
     failure_id: int,
     data: FailureUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une panne."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -398,7 +398,7 @@ async def update_failure(
 async def create_spare_part(
     data: SparePartCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une pièce de rechange."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -412,7 +412,7 @@ async def list_spare_parts(
     category: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les pièces de rechange."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -424,7 +424,7 @@ async def list_spare_parts(
 async def get_spare_part(
     part_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une pièce de rechange."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -439,7 +439,7 @@ async def update_spare_part(
     part_id: int,
     data: SparePartUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une pièce de rechange."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -457,7 +457,7 @@ async def update_spare_part(
 async def create_part_request(
     data: PartRequestCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une demande de pièce."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -471,7 +471,7 @@ async def list_part_requests(
     status: Optional[PartRequestStatus] = None,
     work_order_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les demandes de pièces."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -487,7 +487,7 @@ async def list_part_requests(
 async def create_contract(
     data: ContractCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un contrat de maintenance."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -500,7 +500,7 @@ async def list_contracts(
     limit: int = Query(50, ge=1, le=200),
     status: Optional[ContractStatus] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les contrats de maintenance."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -512,7 +512,7 @@ async def list_contracts(
 async def get_contract(
     contract_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un contrat."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -527,7 +527,7 @@ async def update_contract(
     contract_id: int,
     data: ContractUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un contrat."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])
@@ -544,7 +544,7 @@ async def update_contract(
 @router.get("/dashboard", response_model=MaintenanceDashboard)
 async def get_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Obtenir le tableau de bord maintenance."""
     service = get_maintenance_service(db, current_user["tenant_id"], current_user["id"])

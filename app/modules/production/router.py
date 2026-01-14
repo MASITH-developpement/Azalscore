@@ -50,7 +50,7 @@ router = APIRouter(prefix="/production", tags=["Production (M6)"])
 async def create_work_center(
     data: WorkCenterCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un centre de travail."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -64,7 +64,7 @@ async def list_work_centers(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les centres de travail."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -76,7 +76,7 @@ async def list_work_centers(
 async def get_work_center(
     wc_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un centre de travail."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -91,7 +91,7 @@ async def update_work_center(
     wc_id: UUID,
     data: WorkCenterUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un centre de travail."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -106,7 +106,7 @@ async def set_work_center_status(
     wc_id: UUID,
     status: WorkCenterStatus,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Changer le statut d'un centre de travail."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -121,7 +121,7 @@ async def list_work_orders_for_work_center(
     wc_id: UUID,
     status: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les ordres de travail d'un centre."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -138,7 +138,7 @@ async def list_work_orders_for_work_center(
 async def create_bom(
     data: BOMCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une nomenclature."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -152,7 +152,7 @@ async def list_boms(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les nomenclatures."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -164,7 +164,7 @@ async def list_boms(
 async def get_bom(
     bom_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une nomenclature."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -178,7 +178,7 @@ async def get_bom(
 async def get_bom_for_product(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer la nomenclature par défaut d'un produit."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -193,7 +193,7 @@ async def update_bom(
     bom_id: UUID,
     data: BOMUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une nomenclature."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -207,7 +207,7 @@ async def update_bom(
 async def activate_bom(
     bom_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Activer une nomenclature."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -222,7 +222,7 @@ async def add_bom_line(
     bom_id: UUID,
     data: BOMLineCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Ajouter une ligne à une nomenclature."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -240,7 +240,7 @@ async def add_bom_line(
 async def create_routing(
     data: RoutingCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une gamme de fabrication."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -253,7 +253,7 @@ async def list_routings(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les gammes de fabrication."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -265,7 +265,7 @@ async def list_routings(
 async def get_routing(
     routing_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une gamme de fabrication."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -283,7 +283,7 @@ async def get_routing(
 async def create_manufacturing_order(
     data: MOCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un ordre de fabrication."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -300,7 +300,7 @@ async def list_manufacturing_orders(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les ordres de fabrication."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -315,7 +315,7 @@ async def list_manufacturing_orders(
 async def get_manufacturing_order(
     mo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un ordre de fabrication."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -330,7 +330,7 @@ async def update_manufacturing_order(
     mo_id: UUID,
     data: MOUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un ordre de fabrication."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -344,7 +344,7 @@ async def update_manufacturing_order(
 async def confirm_manufacturing_order(
     mo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Confirmer un ordre de fabrication."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -358,7 +358,7 @@ async def confirm_manufacturing_order(
 async def start_manufacturing_order(
     mo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer un ordre de fabrication."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -372,7 +372,7 @@ async def start_manufacturing_order(
 async def complete_manufacturing_order(
     mo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer un ordre de fabrication."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -386,7 +386,7 @@ async def complete_manufacturing_order(
 async def cancel_manufacturing_order(
     mo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Annuler un ordre de fabrication."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -404,7 +404,7 @@ async def cancel_manufacturing_order(
 async def get_work_order(
     wo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un ordre de travail."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -419,7 +419,7 @@ async def start_work_order(
     wo_id: UUID,
     data: StartWorkOrderRequest = StartWorkOrderRequest(),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer un ordre de travail."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -434,7 +434,7 @@ async def complete_work_order(
     wo_id: UUID,
     data: CompleteWorkOrderRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer un ordre de travail."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -448,7 +448,7 @@ async def complete_work_order(
 async def pause_work_order(
     wo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre en pause un ordre de travail."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -462,7 +462,7 @@ async def pause_work_order(
 async def resume_work_order(
     wo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Reprendre un ordre de travail."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -481,7 +481,7 @@ async def consume_material(
     mo_id: UUID,
     data: ConsumeRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Consommer des matières."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -495,7 +495,7 @@ async def consume_material(
 async def return_material(
     data: ReturnRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Retourner des matières non utilisées."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -514,7 +514,7 @@ async def produce(
     mo_id: UUID,
     data: ProduceRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Déclarer une production."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -532,7 +532,7 @@ async def produce(
 async def create_scrap(
     data: ScrapCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Déclarer un rebut."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -548,7 +548,7 @@ async def list_scraps(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les rebuts."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -568,7 +568,7 @@ async def list_scraps(
 async def create_production_plan(
     data: PlanCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un plan de production."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -579,7 +579,7 @@ async def create_production_plan(
 async def get_production_plan(
     plan_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un plan de production."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -597,7 +597,7 @@ async def get_production_plan(
 async def create_maintenance_schedule(
     data: MaintenanceScheduleCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un calendrier de maintenance."""
     service = get_production_service(db, current_user["tenant_id"], current_user.get("user_id"))
@@ -608,7 +608,7 @@ async def create_maintenance_schedule(
 async def list_maintenance_schedules(
     work_center_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les calendriers de maintenance."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -618,7 +618,7 @@ async def list_maintenance_schedules(
 @router.get("/maintenance/due", response_model=List[MaintenanceScheduleResponse])
 async def get_due_maintenance(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les maintenances dues."""
     service = get_production_service(db, current_user["tenant_id"])
@@ -632,7 +632,7 @@ async def get_due_maintenance(
 @router.get("/dashboard", response_model=ProductionDashboard)
 async def get_production_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer le dashboard production."""
     service = get_production_service(db, current_user["tenant_id"])

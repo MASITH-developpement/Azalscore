@@ -52,7 +52,7 @@ def create_regulation(
     data: RegulationCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une nouvelle réglementation."""
     service = get_compliance_service(db, tenant_id)
@@ -67,7 +67,7 @@ def list_regulations(
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les réglementations."""
     service = get_compliance_service(db, tenant_id)
@@ -79,7 +79,7 @@ def get_regulation(
     regulation_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une réglementation."""
     service = get_compliance_service(db, tenant_id)
@@ -95,7 +95,7 @@ def update_regulation(
     data: RegulationUpdate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une réglementation."""
     service = get_compliance_service(db, tenant_id)
@@ -114,7 +114,7 @@ def create_requirement(
     data: RequirementCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une nouvelle exigence."""
     service = get_compliance_service(db, tenant_id)
@@ -131,7 +131,7 @@ def list_requirements(
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les exigences."""
     service = get_compliance_service(db, tenant_id)
@@ -143,7 +143,7 @@ def get_requirement(
     requirement_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une exigence."""
     service = get_compliance_service(db, tenant_id)
@@ -159,7 +159,7 @@ def update_requirement(
     data: RequirementUpdate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une exigence."""
     service = get_compliance_service(db, tenant_id)
@@ -176,7 +176,7 @@ def assess_requirement(
     score: Optional[Decimal] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Évaluer la conformité d'une exigence."""
     service = get_compliance_service(db, tenant_id)
@@ -195,7 +195,7 @@ def create_assessment(
     data: AssessmentCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une nouvelle évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -207,7 +207,7 @@ def get_assessment(
     assessment_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -222,7 +222,7 @@ def start_assessment(
     assessment_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer une évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -239,7 +239,7 @@ def complete_assessment(
     recommendations: Optional[str] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer une évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -254,7 +254,7 @@ def approve_assessment(
     assessment_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Approuver une évaluation."""
     service = get_compliance_service(db, tenant_id)
@@ -273,7 +273,7 @@ def create_gap(
     data: GapCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un écart de conformité."""
     service = get_compliance_service(db, tenant_id)
@@ -285,7 +285,7 @@ def close_gap(
     gap_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Clôturer un écart."""
     service = get_compliance_service(db, tenant_id)
@@ -304,7 +304,7 @@ def create_action(
     data: ActionCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une action corrective."""
     service = get_compliance_service(db, tenant_id)
@@ -316,7 +316,7 @@ def get_action(
     action_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une action."""
     service = get_compliance_service(db, tenant_id)
@@ -331,7 +331,7 @@ def start_action(
     action_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer une action."""
     service = get_compliance_service(db, tenant_id)
@@ -349,7 +349,7 @@ def complete_action(
     actual_cost: Optional[Decimal] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer une action."""
     service = get_compliance_service(db, tenant_id)
@@ -365,7 +365,7 @@ def verify_action(
     verification_notes: Optional[str] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Vérifier une action."""
     service = get_compliance_service(db, tenant_id)
@@ -379,7 +379,7 @@ def verify_action(
 def get_overdue_actions(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les actions en retard."""
     service = get_compliance_service(db, tenant_id)
@@ -395,7 +395,7 @@ def create_policy(
     data: PolicyCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une politique."""
     service = get_compliance_service(db, tenant_id)
@@ -407,7 +407,7 @@ def get_policy(
     policy_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une politique."""
     service = get_compliance_service(db, tenant_id)
@@ -422,7 +422,7 @@ def publish_policy(
     policy_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Publier une politique."""
     service = get_compliance_service(db, tenant_id)
@@ -437,7 +437,7 @@ def acknowledge_policy(
     data: AcknowledgmentCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Accuser réception d'une politique."""
     service = get_compliance_service(db, tenant_id)
@@ -453,7 +453,7 @@ def create_training(
     data: TrainingCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une formation."""
     service = get_compliance_service(db, tenant_id)
@@ -465,7 +465,7 @@ def get_training(
     training_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une formation."""
     service = get_compliance_service(db, tenant_id)
@@ -480,7 +480,7 @@ def assign_training(
     data: CompletionCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Assigner une formation à un utilisateur."""
     service = get_compliance_service(db, tenant_id)
@@ -492,7 +492,7 @@ def start_training_completion(
     completion_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer une formation."""
     service = get_compliance_service(db, tenant_id)
@@ -509,7 +509,7 @@ def complete_training_completion(
     certificate_number: Optional[str] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer une formation."""
     service = get_compliance_service(db, tenant_id)
@@ -528,7 +528,7 @@ def create_audit(
     data: AuditCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -540,7 +540,7 @@ def get_audit(
     audit_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -555,7 +555,7 @@ def start_audit(
     audit_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -573,7 +573,7 @@ def complete_audit(
     recommendations: Optional[str] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -588,7 +588,7 @@ def close_audit(
     audit_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Clôturer un audit."""
     service = get_compliance_service(db, tenant_id)
@@ -607,7 +607,7 @@ def create_finding(
     data: FindingCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une constatation d'audit."""
     service = get_compliance_service(db, tenant_id)
@@ -620,7 +620,7 @@ def respond_to_finding(
     response: str,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Répondre à une constatation."""
     service = get_compliance_service(db, tenant_id)
@@ -635,7 +635,7 @@ def close_finding(
     finding_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Clôturer une constatation."""
     service = get_compliance_service(db, tenant_id)
@@ -654,7 +654,7 @@ def create_risk(
     data: RiskCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un risque."""
     service = get_compliance_service(db, tenant_id)
@@ -666,7 +666,7 @@ def get_risk(
     risk_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un risque."""
     service = get_compliance_service(db, tenant_id)
@@ -682,7 +682,7 @@ def update_risk(
     data: RiskUpdate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un risque."""
     service = get_compliance_service(db, tenant_id)
@@ -697,7 +697,7 @@ def accept_risk(
     risk_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Accepter un risque."""
     service = get_compliance_service(db, tenant_id)
@@ -716,7 +716,7 @@ def create_incident(
     data: IncidentCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -728,7 +728,7 @@ def get_incident(
     incident_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -744,7 +744,7 @@ def assign_incident(
     assignee_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Assigner un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -762,7 +762,7 @@ def resolve_incident(
     lessons_learned: Optional[str] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Résoudre un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -777,7 +777,7 @@ def close_incident(
     incident_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Clôturer un incident."""
     service = get_compliance_service(db, tenant_id)
@@ -796,7 +796,7 @@ def create_report(
     data: ReportCreate,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un rapport."""
     service = get_compliance_service(db, tenant_id)
@@ -808,7 +808,7 @@ def publish_report(
     report_id: UUID,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Publier un rapport."""
     service = get_compliance_service(db, tenant_id)
@@ -826,7 +826,7 @@ def publish_report(
 def get_compliance_metrics(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les métriques de conformité."""
     service = get_compliance_service(db, tenant_id)
