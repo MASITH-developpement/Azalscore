@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user_and_tenant
 
 from .service import get_tenant_service
 
@@ -78,7 +78,7 @@ from .schemas import (
     PlatformStatsResponse
 )
 
-router = APIRouter(prefix="/api/v1/tenants", tags=["Tenants"])
+router = APIRouter(prefix="/tenants", tags=["Tenants"])
 
 
 # ============================================================================
@@ -89,7 +89,7 @@ router = APIRouter(prefix="/api/v1/tenants", tags=["Tenants"])
 def create_tenant(
     data: TenantCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouveau tenant."""
     # SÉCURITÉ: Seul super_admin peut créer de nouveaux tenants
@@ -112,7 +112,7 @@ def list_tenants(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les tenants."""
     # SÉCURITÉ: Seul super_admin peut voir tous les tenants
@@ -124,7 +124,7 @@ def list_tenants(
 @router.get("/me", response_model=TenantResponse)
 def get_current_tenant(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer le tenant courant."""
     service = get_tenant_service(db)
@@ -138,7 +138,7 @@ def get_current_tenant(
 def get_tenant(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un tenant."""
     # SÉCURITÉ: Vérifier l'accès au tenant
@@ -156,7 +156,7 @@ def update_tenant(
     tenant_id: str,
     data: TenantUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un tenant."""
     # SÉCURITÉ: Vérifier l'accès au tenant + rôle admin
@@ -174,7 +174,7 @@ def update_tenant(
 def activate_tenant(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Activer un tenant."""
     # SÉCURITÉ: Seul super_admin peut activer un tenant
@@ -192,7 +192,7 @@ def suspend_tenant(
     tenant_id: str,
     reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Suspendre un tenant."""
     # SÉCURITÉ: Seul super_admin peut suspendre un tenant
@@ -210,7 +210,7 @@ def cancel_tenant(
     tenant_id: str,
     reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Annuler un tenant."""
     # SÉCURITÉ: Seul super_admin peut annuler un tenant
@@ -228,7 +228,7 @@ def start_trial(
     tenant_id: str,
     days: int = 14,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer un essai gratuit."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -247,7 +247,7 @@ def create_subscription(
     tenant_id: str,
     data: SubscriptionCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un abonnement."""
     # SÉCURITÉ: Seul super_admin peut créer des abonnements
@@ -265,7 +265,7 @@ def create_subscription(
 def get_active_subscription(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer l'abonnement actif."""
     service = get_tenant_service(db)
@@ -280,7 +280,7 @@ def update_subscription(
     tenant_id: str,
     data: SubscriptionUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour l'abonnement."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -299,7 +299,7 @@ def activate_module(
     tenant_id: str,
     data: ModuleActivation,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Activer un module."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -315,7 +315,7 @@ def list_tenant_modules(
     tenant_id: str,
     active_only: bool = True,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les modules d'un tenant."""
     service = get_tenant_service(db)
@@ -327,7 +327,7 @@ def deactivate_module(
     tenant_id: str,
     module_code: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Désactiver un module."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -342,7 +342,7 @@ def check_module_active(
     tenant_id: str,
     module_code: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Vérifier si un module est actif."""
     service = get_tenant_service(db)
@@ -358,7 +358,7 @@ def check_module_active(
 def create_invitation(
     data: TenantInvitationCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une invitation."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -369,7 +369,7 @@ def create_invitation(
 def get_invitation(
     token: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une invitation."""
     service = get_tenant_service(db)
@@ -383,7 +383,7 @@ def get_invitation(
 def accept_invitation(
     token: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Accepter une invitation."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -404,7 +404,7 @@ def get_tenant_usage(
     end_date: datetime,
     period: str = "daily",
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer l'utilisation."""
     service = get_tenant_service(db)
@@ -416,7 +416,7 @@ def record_tenant_usage(
     tenant_id: str,
     data: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Enregistrer l'utilisation."""
     service = get_tenant_service(db)
@@ -430,7 +430,7 @@ def get_tenant_events(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les événements."""
     service = get_tenant_service(db)
@@ -445,7 +445,7 @@ def get_tenant_events(
 def get_tenant_settings(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les paramètres."""
     service = get_tenant_service(db)
@@ -460,7 +460,7 @@ def update_tenant_settings(
     tenant_id: str,
     data: TenantSettingsUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour les paramètres."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -475,7 +475,7 @@ def update_tenant_settings(
 def get_tenant_onboarding(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer l'onboarding."""
     service = get_tenant_service(db)
@@ -490,7 +490,7 @@ def update_onboarding_step(
     tenant_id: str,
     data: OnboardingStepUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une étape onboarding."""
     service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
@@ -508,7 +508,7 @@ def update_onboarding_step(
 def get_tenant_dashboard(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Dashboard complet du tenant."""
     service = get_tenant_service(db)
@@ -544,7 +544,7 @@ def get_tenant_dashboard(
 def provision_tenant(
     data: ProvisionTenantRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Provisionner un tenant complet."""
     # SÉCURITÉ: Seul super_admin peut provisionner des tenants
@@ -563,7 +563,7 @@ def provision_tenant(
 @router.post("/provision/masith", status_code=201)
 def provision_masith(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Provisionner le tenant SAS MASITH (premier client)."""
     # SÉCURITÉ: Seul super_admin peut provisionner des tenants
@@ -580,7 +580,7 @@ def provision_masith(
 @router.get("/platform/stats", response_model=PlatformStatsResponse)
 def get_platform_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Statistiques globales de la plateforme."""
     # SÉCURITÉ: Seul super_admin peut voir les stats de la plateforme

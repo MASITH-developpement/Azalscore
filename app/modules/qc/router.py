@@ -41,7 +41,7 @@ from app.modules.qc.schemas import (
     QCStatsResponse, ModuleScoreBreakdown
 )
 
-router = APIRouter(prefix="/api/v1/qc", tags=["Quality Control"])
+router = APIRouter(prefix="/qc", tags=["Quality Control"])
 
 
 def get_service(

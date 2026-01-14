@@ -14,10 +14,8 @@ services:
     env_file:
       - .env.production
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-azals}
-      POSTGRES_USER: ${POSTGRES_USER:-azals_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # Performance tuning
+      # Toutes les variables POSTGRES_* sont lues depuis .env.production
+      # Seules les options Docker-spécifiques sont définies ici
       POSTGRES_INITDB_ARGS: "--data-checksums"
     ports:
       - "127.0.0.1:5432:5432"  # Bind uniquement localhost en prod
@@ -25,7 +23,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-azals_user} -d ${POSTGRES_DB:-azals}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,17 +74,8 @@ services:
     restart: always
     env_file:
       - .env.production
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: redis://redis:6379/0
-      DEBUG: "false"
-      SECRET_KEY: ${SECRET_KEY}
-      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
-      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-20}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      LOG_JSON: "true"
-      ENVIRONMENT: production
+    # Toutes les variables sont lues depuis .env.production :
+    # DATABASE_URL, SECRET_KEY, CORS_ORIGINS, ENCRYPTION_KEY, REDIS_URL, etc.
     ports:
       - "8000:8000"
     volumes:
@@ -212,11 +201,9 @@ services:
     image: grafana/grafana:10.0.0
     container_name: azals_grafana
     restart: always
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+    env_file:
+      - .env.production
+    # Variables Grafana mappées depuis .env.production (GF_* requises par Grafana)
     ports:
       - "127.0.0.1:3000:3000"
     volumes:

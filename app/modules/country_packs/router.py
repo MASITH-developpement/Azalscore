@@ -37,7 +37,7 @@ from app.modules.country_packs.schemas import (
     CountrySummary
 )
 
-router = APIRouter(prefix="/api/v1/country-packs", tags=["Country Packs"])
+router = APIRouter(prefix="/country-packs", tags=["Country Packs"])
 
 
 def get_service(

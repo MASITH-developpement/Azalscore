@@ -11,7 +11,7 @@ import type { ApiResponse, ApiError, ApiRequestConfig } from '@/types';
 // CONFIGURATION PRODUCTION
 // ============================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 const API_TIMEOUT = 30000;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
@@ -125,8 +125,13 @@ const createApiClient = (): AxiosInstance => {
     async (error: AxiosError) => {
       const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-      // Token expiré - tentative de refresh
-      if (error.response?.status === 401 && !originalRequest._retry) {
+      // Skip refresh pour les endpoints d'authentification (login, register, etc.)
+      const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
+                             originalRequest.url?.includes('/auth/register') ||
+                             originalRequest.url?.includes('/auth/refresh');
+
+      // Token expiré - tentative de refresh (sauf pour auth endpoints)
+      if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
         originalRequest._retry = true;
 
         try {

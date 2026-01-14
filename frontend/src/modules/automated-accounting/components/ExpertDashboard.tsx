@@ -98,6 +98,13 @@ interface PeriodStatus {
   certified_by: string | null;
 }
 
+interface ValidationQueueResponse {
+  items: ValidationQueueItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 interface ExpertDashboardData {
   validation_queue: ValidationQueueItem[];
   validation_queue_total: number;
@@ -129,7 +136,7 @@ const useValidationQueue = (
   pageSize = 20,
   filters: Record<string, string> = {}
 ) => {
-  return useQuery({
+  return useQuery<ValidationQueueResponse>({
     queryKey: ['accounting', 'expert', 'validation-queue', page, pageSize, filters],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -137,7 +144,7 @@ const useValidationQueue = (
         page_size: pageSize.toString(),
         ...filters,
       });
-      const response = await api.get(
+      const response = await api.get<ValidationQueueResponse>(
         `/accounting/expert/validation-queue?${params}`
       );
       return response.data;
@@ -704,7 +711,7 @@ export const ExpertDashboard: React.FC = () => {
       id: 'reference',
       header: 'Référence',
       accessor: 'reference',
-      render: (value, row) => value || row.partner_name || '-',
+      render: (value, row) => String(value || row.partner_name || '-'),
     },
     {
       id: 'amount_total',
@@ -717,7 +724,7 @@ export const ExpertDashboard: React.FC = () => {
       id: 'suggested_account',
       header: 'Compte suggéré',
       accessor: 'suggested_account',
-      render: (value) => value || '-',
+      render: (value) => String(value || '-'),
     },
     {
       id: 'document_date',
@@ -851,7 +858,7 @@ export const ExpertDashboard: React.FC = () => {
               onPageSizeChange: () => {},
             }}
             emptyMessage="Aucune écriture en attente de validation"
-            onRowClick={(row) =>
+            onRowClick={(row: ValidationQueueItem) =>
               navigate(`/auto-accounting/documents/${row.document_id}`)
             }
           />

@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user_and_tenant
 
 from .service import get_inventory_service
 from .models import ProductStatus, MovementType, MovementStatus, InventoryStatus, PickingStatus, LotStatus
@@ -39,7 +39,7 @@ from .schemas import (
     InventoryDashboard,
 )
 
-router = APIRouter(prefix="/api/v1/inventory", tags=["M5 - Inventaire"])
+router = APIRouter(prefix="/inventory", tags=["M5 - Inventaire"])
 
 
 # ============================================================================
@@ -50,7 +50,7 @@ router = APIRouter(prefix="/api/v1/inventory", tags=["M5 - Inventaire"])
 async def create_category(
     data: CategoryCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une catégorie de produits."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -64,7 +64,7 @@ async def list_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les catégories."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -76,7 +76,7 @@ async def list_categories(
 async def get_category(
     category_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une catégorie."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -91,7 +91,7 @@ async def update_category(
     category_id: UUID,
     data: CategoryUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une catégorie."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -109,7 +109,7 @@ async def update_category(
 async def create_warehouse(
     data: WarehouseCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un entrepôt."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -122,7 +122,7 @@ async def list_warehouses(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les entrepôts."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -134,7 +134,7 @@ async def list_warehouses(
 async def get_warehouse(
     warehouse_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un entrepôt."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -149,7 +149,7 @@ async def update_warehouse(
     warehouse_id: UUID,
     data: WarehouseUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un entrepôt."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -165,7 +165,7 @@ async def get_warehouse_stock(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer le stock d'un entrepôt."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -182,7 +182,7 @@ async def create_location(
     warehouse_id: UUID,
     data: LocationCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un emplacement."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -196,7 +196,7 @@ async def list_locations(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les emplacements."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -208,7 +208,7 @@ async def list_locations(
 async def get_location(
     location_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un emplacement."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -226,7 +226,7 @@ async def get_location(
 async def create_product(
     data: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un produit."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -242,7 +242,7 @@ async def list_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les produits."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -254,7 +254,7 @@ async def list_products(
 async def get_product(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un produit."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -269,7 +269,7 @@ async def update_product(
     product_id: UUID,
     data: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un produit."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -283,7 +283,7 @@ async def update_product(
 async def activate_product(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Activer un produit."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -297,7 +297,7 @@ async def activate_product(
 async def get_product_stock(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer le stock d'un produit."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -312,7 +312,7 @@ async def get_product_stock(
 async def create_lot(
     data: LotCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un lot."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -327,7 +327,7 @@ async def list_lots(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les lots."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -339,7 +339,7 @@ async def list_lots(
 async def get_lot(
     lot_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un lot."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -357,7 +357,7 @@ async def get_lot(
 async def create_serial(
     data: SerialCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un numéro de série."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -368,7 +368,7 @@ async def create_serial(
 async def get_serial(
     serial_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un numéro de série."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -386,7 +386,7 @@ async def get_serial(
 async def create_movement(
     data: MovementCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un mouvement de stock."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -403,7 +403,7 @@ async def list_movements(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les mouvements."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -415,7 +415,7 @@ async def list_movements(
 async def get_movement(
     movement_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un mouvement."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -429,7 +429,7 @@ async def get_movement(
 async def confirm_movement(
     movement_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Confirmer un mouvement (impacter les stocks)."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -443,7 +443,7 @@ async def confirm_movement(
 async def cancel_movement(
     movement_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Annuler un mouvement brouillon."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -461,7 +461,7 @@ async def cancel_movement(
 async def create_inventory_count(
     data: InventoryCountCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un inventaire physique."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -475,7 +475,7 @@ async def list_inventory_counts(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les inventaires."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -487,7 +487,7 @@ async def list_inventory_counts(
 async def get_inventory_count(
     count_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un inventaire."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -501,7 +501,7 @@ async def get_inventory_count(
 async def start_inventory_count(
     count_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer un inventaire (générer les lignes)."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -517,7 +517,7 @@ async def update_count_line(
     line_id: UUID,
     data: CountLineUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une ligne d'inventaire (compter)."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -531,7 +531,7 @@ async def update_count_line(
 async def validate_inventory_count(
     count_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Valider un inventaire (ajuster les stocks)."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -549,7 +549,7 @@ async def validate_inventory_count(
 async def create_picking(
     data: PickingCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une préparation de commande."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -564,7 +564,7 @@ async def list_pickings(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les préparations."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -576,7 +576,7 @@ async def list_pickings(
 async def get_picking(
     picking_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une préparation."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -591,7 +591,7 @@ async def assign_picking(
     picking_id: UUID,
     user_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Assigner une préparation à un utilisateur."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -605,7 +605,7 @@ async def assign_picking(
 async def start_picking(
     picking_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Démarrer une préparation."""
     service = get_inventory_service(db, current_user["tenant_id"])
@@ -621,7 +621,7 @@ async def pick_line(
     line_id: UUID,
     data: PickingLineUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Valider une ligne de préparation."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -635,7 +635,7 @@ async def pick_line(
 async def complete_picking(
     picking_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Terminer une préparation."""
     service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
@@ -652,7 +652,7 @@ async def complete_picking(
 @router.get("/dashboard", response_model=InventoryDashboard)
 async def get_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer le dashboard inventaire."""
     service = get_inventory_service(db, current_user["tenant_id"])

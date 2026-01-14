@@ -520,7 +520,7 @@ const RulesWidget: React.FC<{
                 leftIcon={<X size={14} />}
                 onClick={() => onDelete(rule.id)}
               >
-
+                Supprimer
               </Button>
             </div>
           ))}

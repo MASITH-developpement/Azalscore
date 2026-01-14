@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user_and_tenant
 
 from .service import get_broadcast_service
 from .models import (
@@ -39,7 +39,7 @@ from .schemas import (
     ContentTypeEnum, BroadcastStatusEnum, DeliveryStatusEnum
 )
 
-router = APIRouter(prefix="/api/v1/broadcast", tags=["Broadcast"])
+router = APIRouter(prefix="/broadcast", tags=["Broadcast"])
 
 
 # ============================================================================
@@ -50,7 +50,7 @@ router = APIRouter(prefix="/api/v1/broadcast", tags=["Broadcast"])
 async def create_template(
     template: BroadcastTemplateCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouveau template de diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -76,7 +76,7 @@ async def list_templates(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les templates de diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -93,7 +93,7 @@ async def list_templates(
 async def get_template(
     template_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un template par ID."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -108,7 +108,7 @@ async def update_template(
     template_id: int,
     updates: BroadcastTemplateUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un template."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -122,7 +122,7 @@ async def update_template(
 async def delete_template(
     template_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un template."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -138,7 +138,7 @@ async def delete_template(
 async def create_recipient_list(
     recipient_list: RecipientListCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une nouvelle liste de destinataires."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -154,7 +154,7 @@ async def list_recipient_lists(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les listes de destinataires."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -166,7 +166,7 @@ async def list_recipient_lists(
 async def get_recipient_list(
     list_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une liste par ID."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -181,7 +181,7 @@ async def add_member_to_list(
     list_id: int,
     member: RecipientMemberCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Ajouter un membre à une liste."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -211,7 +211,7 @@ async def get_list_members(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les membres d'une liste."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -224,7 +224,7 @@ async def remove_member_from_list(
     list_id: int,
     member_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Retirer un membre d'une liste."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -240,7 +240,7 @@ async def remove_member_from_list(
 async def create_scheduled_broadcast(
     broadcast: ScheduledBroadcastCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une nouvelle diffusion programmée."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -275,7 +275,7 @@ async def list_scheduled_broadcasts(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les diffusions programmées."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -293,7 +293,7 @@ async def list_scheduled_broadcasts(
 async def get_scheduled_broadcast(
     broadcast_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une diffusion programmée par ID."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -308,7 +308,7 @@ async def update_scheduled_broadcast(
     broadcast_id: int,
     updates: ScheduledBroadcastUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour une diffusion programmée."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -331,7 +331,7 @@ async def update_scheduled_broadcast(
 async def activate_broadcast(
     broadcast_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Activer une diffusion programmée."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -345,7 +345,7 @@ async def activate_broadcast(
 async def pause_broadcast(
     broadcast_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre en pause une diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -359,7 +359,7 @@ async def pause_broadcast(
 async def cancel_broadcast(
     broadcast_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Annuler une diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -374,7 +374,7 @@ async def execute_broadcast_now(
     broadcast_id: int,
     request: ExecuteRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Exécuter une diffusion manuellement."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -399,7 +399,7 @@ async def list_executions(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les exécutions de diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -416,7 +416,7 @@ async def list_executions(
 async def get_execution(
     execution_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une exécution par ID."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -433,7 +433,7 @@ async def get_execution_details(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les détails de livraison d'une exécution."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -453,7 +453,7 @@ async def get_execution_details(
 @router.get("/preferences", response_model=BroadcastPreferenceResponse)
 async def get_my_preferences(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer mes préférences de diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -468,7 +468,7 @@ async def get_my_preferences(
 async def update_my_preferences(
     preferences: BroadcastPreferenceCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour mes préférences de diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -489,7 +489,7 @@ async def update_my_preferences(
 async def unsubscribe(
     request: UnsubscribeRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Se désabonner d'une diffusion ou de toutes."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -506,7 +506,7 @@ async def get_metrics(
     period_type: str = Query("DAILY", pattern="^(DAILY|WEEKLY|MONTHLY)$"),
     limit: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les métriques de diffusion."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -517,7 +517,7 @@ async def get_metrics(
 async def record_metrics(
     period_type: str = Query("DAILY", pattern="^(DAILY|WEEKLY|MONTHLY)$"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Enregistrer les métriques actuelles."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -527,7 +527,7 @@ async def record_metrics(
 @router.get("/dashboard", response_model=DashboardStatsResponse)
 async def get_dashboard_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les statistiques pour le dashboard."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -541,7 +541,7 @@ async def get_dashboard_stats(
 @router.get("/due", response_model=list[ScheduledBroadcastResponse])
 async def get_broadcasts_due(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer les diffusions à exécuter maintenant."""
     service = get_broadcast_service(db, current_user["tenant_id"])
@@ -551,7 +551,7 @@ async def get_broadcasts_due(
 @router.post("/process-due", response_model=list[BroadcastExecutionResponse])
 async def process_due_broadcasts(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Traiter toutes les diffusions en attente."""
     service = get_broadcast_service(db, current_user["tenant_id"])

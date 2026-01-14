@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user_and_tenant
 
 from .service import get_web_service
 from .models import (
@@ -41,7 +41,7 @@ from .schemas import (
     UIConfigResponse
 )
 
-router = APIRouter(prefix="/api/v1/web", tags=["Web"])
+router = APIRouter(prefix="/web", tags=["Web"])
 
 
 # ============================================================================
@@ -52,7 +52,7 @@ router = APIRouter(prefix="/api/v1/web", tags=["Web"])
 async def create_theme(
     theme: ThemeCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouveau thème."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -77,7 +77,7 @@ async def list_themes(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les thèmes."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -93,7 +93,7 @@ async def list_themes(
 @router.get("/themes/default", response_model=ThemeResponse)
 async def get_default_theme(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer le thème par défaut."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -107,7 +107,7 @@ async def get_default_theme(
 async def get_theme(
     theme_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un thème par ID."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -122,7 +122,7 @@ async def update_theme(
     theme_id: int,
     updates: ThemeUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un thème."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -136,7 +136,7 @@ async def update_theme(
 async def delete_theme(
     theme_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un thème."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -152,7 +152,7 @@ async def delete_theme(
 async def create_widget(
     widget: WidgetCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouveau widget."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -175,7 +175,7 @@ async def list_widgets(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les widgets."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -192,7 +192,7 @@ async def list_widgets(
 async def get_widget(
     widget_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un widget par ID."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -207,7 +207,7 @@ async def update_widget(
     widget_id: int,
     updates: WidgetUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un widget."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -221,7 +221,7 @@ async def update_widget(
 async def delete_widget(
     widget_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un widget."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -237,7 +237,7 @@ async def delete_widget(
 async def create_dashboard(
     dashboard: DashboardCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un nouveau dashboard."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -267,7 +267,7 @@ async def list_dashboards(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les dashboards."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -284,7 +284,7 @@ async def list_dashboards(
 @router.get("/dashboards/default", response_model=DashboardResponse)
 async def get_default_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer le dashboard par défaut."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -298,7 +298,7 @@ async def get_default_dashboard(
 async def get_dashboard(
     dashboard_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer un dashboard par ID."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -313,7 +313,7 @@ async def update_dashboard(
     dashboard_id: int,
     updates: DashboardUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un dashboard."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -332,7 +332,7 @@ async def update_dashboard(
 async def delete_dashboard(
     dashboard_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un dashboard."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -348,7 +348,7 @@ async def delete_dashboard(
 async def create_menu_item(
     item: MenuItemCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un élément de menu."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -373,7 +373,7 @@ async def list_menu_items(
     parent_id: Optional[int] = None,
     is_active: Optional[bool] = True,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les éléments de menu."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -388,7 +388,7 @@ async def list_menu_items(
 async def get_menu_tree(
     menu_type: MenuTypeEnum = MenuTypeEnum.MAIN,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer l'arbre de menu complet."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -400,7 +400,7 @@ async def update_menu_item(
     item_id: int,
     updates: MenuItemUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour un élément de menu."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -414,7 +414,7 @@ async def update_menu_item(
 async def delete_menu_item(
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Supprimer un élément de menu."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -429,7 +429,7 @@ async def delete_menu_item(
 @router.get("/preferences", response_model=UserPreferenceResponse)
 async def get_my_preferences(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer mes préférences UI."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -443,7 +443,7 @@ async def get_my_preferences(
 async def update_my_preferences(
     preferences: UserPreferenceCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Mettre à jour mes préférences UI."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -458,7 +458,7 @@ async def update_my_preferences(
 @router.get("/config", response_model=UIConfigResponse)
 async def get_ui_config(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer la configuration UI complète."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -473,7 +473,7 @@ async def get_ui_config(
 async def create_shortcut(
     shortcut: ShortcutCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un raccourci clavier."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -485,7 +485,7 @@ async def list_shortcuts(
     context: Optional[str] = None,
     is_active: Optional[bool] = True,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les raccourcis clavier."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -500,7 +500,7 @@ async def list_shortcuts(
 async def create_custom_page(
     page: CustomPageCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer une page personnalisée."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -525,7 +525,7 @@ async def list_custom_pages(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les pages personnalisées."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -542,7 +542,7 @@ async def list_custom_pages(
 async def get_custom_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une page par ID."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -556,7 +556,7 @@ async def get_custom_page(
 async def get_custom_page_by_slug(
     slug: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Récupérer une page par slug."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -570,7 +570,7 @@ async def get_custom_page_by_slug(
 async def publish_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Publier une page."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -588,7 +588,7 @@ async def publish_page(
 async def create_component(
     component: ComponentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Créer un composant UI."""
     service = get_web_service(db, current_user["tenant_id"])
@@ -610,7 +610,7 @@ async def list_components(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_and_tenant)
 ):
     """Lister les composants UI."""
     service = get_web_service(db, current_user["tenant_id"])
