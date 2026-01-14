@@ -15,6 +15,7 @@ import { useAuthStore, type AuthStatus } from '@core/auth';
 import { useCapabilitiesStore, type CapabilitiesStatus } from '@core/capabilities';
 import { initAuditUI } from '@core/audit-ui';
 import { initializeStores, useUIStore } from '@ui/states';
+import { AzalscoreLogo } from '@/components/Logo';
 import './styles/main.css';
 
 // ============================================================
@@ -159,7 +160,9 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return (
       <div className="azals-app-loading" data-app-ready="false">
         <div className="azals-app-loading__content">
-          <div className="azals-app-loading__logo">AZALSCORE</div>
+          <div className="azals-app-loading__logo">
+            <AzalscoreLogo size="2xl" variant="full" alt="AZALSCORE - Chargement" />
+          </div>
           <div className="azals-spinner azals-spinner--lg" />
           <p>Chargement de l'application...</p>
           <small className="azals-app-loading__status">
@@ -175,6 +178,9 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return (
       <div className="azals-app-error" data-app-ready="false" data-app-error="true">
         <div className="azals-app-error__content">
+          <div className="azals-app-error__logo">
+            <AzalscoreLogo size="xl" variant="full" alt="AZALSCORE - Erreur" />
+          </div>
           <h1>Erreur</h1>
           <p>{appState.error}</p>
           <button onClick={() => window.location.reload()}>Recharger</button>

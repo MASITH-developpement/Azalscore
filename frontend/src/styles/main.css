@@ -1794,3 +1794,361 @@ body {
 .justify-between { justify-content: space-between; }
 .items-center { align-items: center; }
 .animate-spin { animation: spin 1s linear infinite; }
+
+/* ============================================================
+   LOGO COMPONENT
+   ============================================================ */
+
+.azals-logo {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.azals-logo--icon {
+  align-items: center;
+  justify-content: center;
+}
+
+.azals-logo--horizontal {
+  align-items: center;
+}
+
+.azals-logo--full {
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ============================================================
+   ERROR PAGES (403, 500)
+   ============================================================ */
+
+.azals-error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--azals-spacing-lg);
+  background: var(--azals-bg);
+}
+
+.azals-error-page__content {
+  max-width: 500px;
+}
+
+.azals-error-page__logo {
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+.azals-error-page__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--azals-spacing-lg);
+}
+
+.azals-error-page__icon--warning {
+  color: var(--azals-warning);
+}
+
+.azals-error-page__icon--danger {
+  color: var(--azals-danger);
+}
+
+.azals-error-page__code {
+  font-size: 5rem;
+  font-weight: 700;
+  color: var(--azals-primary-600);
+  line-height: 1;
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-error-page__title {
+  font-size: var(--azals-font-size-2xl);
+  font-weight: 600;
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-error-page__message {
+  color: var(--azals-text-secondary);
+  margin-bottom: var(--azals-spacing-xl);
+  line-height: 1.6;
+}
+
+.azals-error-page__actions {
+  display: flex;
+  gap: var(--azals-spacing-sm);
+  justify-content: center;
+}
+
+/* ============================================================
+   MAINTENANCE PAGE
+   ============================================================ */
+
+.azals-maintenance {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--azals-spacing-lg);
+  background: linear-gradient(135deg, var(--azals-gray-50) 0%, var(--azals-primary-50) 100%);
+}
+
+.azals-maintenance__content {
+  max-width: 500px;
+}
+
+.azals-maintenance__logo {
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+.azals-maintenance__icon {
+  display: flex;
+  justify-content: center;
+  color: var(--azals-primary-500);
+  margin-bottom: var(--azals-spacing-lg);
+}
+
+.azals-maintenance__title {
+  font-size: var(--azals-font-size-2xl);
+  font-weight: 600;
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-maintenance__message {
+  color: var(--azals-text-secondary);
+  margin-bottom: var(--azals-spacing-xl);
+  line-height: 1.6;
+}
+
+.azals-maintenance__status {
+  background: var(--azals-bg);
+  padding: var(--azals-spacing-lg);
+  border-radius: var(--azals-radius-lg);
+  border: 1px solid var(--azals-border);
+}
+
+.azals-maintenance__contact {
+  margin-top: var(--azals-spacing-md);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-maintenance__contact a {
+  color: var(--azals-primary-600);
+  text-decoration: none;
+}
+
+.azals-maintenance__contact a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   ABOUT PAGE
+   ============================================================ */
+
+.azals-about {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-lg);
+}
+
+.azals-about__hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--azals-spacing-xl);
+}
+
+@media (min-width: 768px) {
+  .azals-about__hero-content {
+    flex-direction: row;
+    text-align: left;
+  }
+}
+
+.azals-about__logo {
+  flex-shrink: 0;
+}
+
+.azals-about__description h2 {
+  font-size: var(--azals-font-size-xl);
+  font-weight: 600;
+  margin-bottom: var(--azals-spacing-md);
+  color: var(--azals-primary-700);
+}
+
+.azals-about__description p {
+  color: var(--azals-text-secondary);
+  line-height: 1.6;
+}
+
+.azals-about__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--azals-spacing-md);
+}
+
+@media (min-width: 640px) {
+  .azals-about__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.azals-about__info p {
+  margin-bottom: var(--azals-spacing-sm);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-about__features {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--azals-spacing-lg);
+}
+
+@media (min-width: 640px) {
+  .azals-about__features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.azals-about__feature {
+  display: flex;
+  gap: var(--azals-spacing-md);
+}
+
+.azals-about__feature-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-600);
+  border-radius: var(--azals-radius-lg);
+}
+
+.azals-about__feature h4 {
+  font-weight: 600;
+  margin-bottom: var(--azals-spacing-xs);
+}
+
+.azals-about__feature p {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+}
+
+.azals-about__legal {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+}
+
+.azals-about__legal p {
+  margin-bottom: var(--azals-spacing-sm);
+}
+
+.azals-about__legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--azals-spacing-md);
+  margin-top: var(--azals-spacing-md);
+  padding-top: var(--azals-spacing-md);
+  border-top: 1px solid var(--azals-border);
+}
+
+.azals-about__legal-links a {
+  color: var(--azals-primary-600);
+  text-decoration: none;
+}
+
+.azals-about__legal-links a:hover {
+  text-decoration: underline;
+}
+
+.azals-about__footer {
+  display: flex;
+  justify-content: center;
+  padding: var(--azals-spacing-xl) 0;
+}
+
+/* ============================================================
+   SIDEBAR HEADER (Logo)
+   ============================================================ */
+
+.azals-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--azals-spacing-md);
+  border-bottom: 1px solid var(--azals-border);
+}
+
+/* Update sidebar footer */
+.azals-sidebar__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-md);
+  border-top: 1px solid var(--azals-border);
+  text-align: center;
+}
+
+/* ============================================================
+   AUTH LAYOUT UPDATES (Logo)
+   ============================================================ */
+
+.azals-auth-layout__logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+.azals-auth-layout__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  text-align: center;
+  margin-top: var(--azals-spacing-xl);
+  color: var(--azals-text-secondary);
+  font-size: var(--azals-font-size-sm);
+}
+
+/* ============================================================
+   NOT FOUND PAGE UPDATES (Logo)
+   ============================================================ */
+
+.azals-not-found__logo {
+  margin-bottom: var(--azals-spacing-lg);
+}
+
+/* ============================================================
+   APP LOADING UPDATES (Logo)
+   ============================================================ */
+
+.azals-app-loading__logo {
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+.azals-app-error__logo {
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+/* ============================================================
+   LOGO COLOR VARIABLES
+   ============================================================ */
+
+:root {
+  --azals-logo-cyan: #2DD4BF;
+  --azals-logo-blue: #3B82F6;
+  --azals-logo-violet: #8B5CF6;
+  --azals-logo-text: #1E40AF;
+}
+
+[data-theme='dark'] {
+  --azals-logo-text: #FFFFFF;
+}

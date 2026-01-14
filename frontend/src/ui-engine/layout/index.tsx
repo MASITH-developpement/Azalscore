@@ -11,6 +11,7 @@ import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
 import { DynamicMenu } from '@ui/menu-dynamic';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
+import { AzalscoreLogo } from '@/components/Logo';
 
 // ============================================================
 // TYPES
@@ -47,7 +48,7 @@ const Header: React.FC<{
         </button>
 
         <div className="azals-header__logo">
-          <span className="azals-header__logo-text">AZALSCORE</span>
+          <AzalscoreLogo size="sm" variant="horizontal" alt="AZALSCORE - Accueil" />
         </div>
       </div>
 
@@ -119,11 +120,16 @@ const Sidebar: React.FC<{
           'azals-sidebar--open': isOpen,
         })}
       >
+        <div className="azals-sidebar__header">
+          <AzalscoreLogo size="xs" variant="icon" />
+        </div>
+
         <nav className="azals-sidebar__nav">
           <DynamicMenu onItemClick={onClose} />
         </nav>
 
         <div className="azals-sidebar__footer">
+          <AzalscoreLogo size={16} variant="icon" />
           <span className="azals-sidebar__version">v1.0.0</span>
         </div>
       </aside>
@@ -184,8 +190,8 @@ export const AuthLayout: React.FC<LayoutProps> = ({ children }) => {
     <div className="azals-auth-layout">
       <div className="azals-auth-layout__container">
         <div className="azals-auth-layout__logo">
-          <span className="azals-auth-layout__logo-text">AZALSCORE</span>
-          <span className="azals-auth-layout__logo-subtitle">ERP SaaS</span>
+          <AzalscoreLogo size="xl" variant="full" alt="AZALSCORE - Connexion" />
+          <span className="azals-auth-layout__logo-subtitle">ERP SaaS Enterprise</span>
         </div>
 
         <div className="azals-auth-layout__card">
@@ -193,6 +199,7 @@ export const AuthLayout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         <div className="azals-auth-layout__footer">
+          <AzalscoreLogo size="xs" variant="icon" />
           <p>&copy; 2026 MASITH - Tous droits réservés</p>
         </div>
       </div>

@@ -6,6 +6,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, ArrowLeft } from 'lucide-react';
 import { Button } from '@ui/actions';
+import { AzalscoreLogo } from '@/components/Logo';
 
 const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,9 @@ const NotFoundPage: React.FC = () => {
   return (
     <div className="azals-not-found">
       <div className="azals-not-found__content">
+        <div className="azals-not-found__logo">
+          <AzalscoreLogo size="lg" variant="icon" alt="AZALSCORE" />
+        </div>
         <h1 className="azals-not-found__code">404</h1>
         <h2 className="azals-not-found__title">Page non trouvée</h2>
         <p className="azals-not-found__message">
