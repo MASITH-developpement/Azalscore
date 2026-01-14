@@ -352,8 +352,14 @@ const DocumentListPage: React.FC = () => {
     {
       id: 'partner',
       header: isSales ? t('documents.form.customer') : t('documents.form.supplier'),
-      accessor: isSales ? 'customer_name' : 'supplier_name',
-      sortable: true,
+      accessor: 'id',
+      sortable: false,
+      render: (_, row) => {
+        const doc = row as unknown as SalesDocument | PurchaseOrder | PurchaseInvoice;
+        return (doc as SalesDocument).customer_name ||
+               (doc as PurchaseOrder).supplier_name ||
+               (doc as PurchaseInvoice).supplier_name || '-';
+      },
     },
     {
       id: 'date',

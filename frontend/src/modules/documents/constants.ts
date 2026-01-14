@@ -188,7 +188,12 @@ export const DEFAULT_PAYMENT_TERMS = 'NET30';
 // PARAMÈTRES DE CACHE REACT QUERY
 // ============================================================
 
-export const QUERY_CONFIG = {
+export const QUERY_CONFIG: {
+  staleTime: number;
+  cacheTime: number;
+  partnerLookupLimit: number;
+  defaultPageSize: number;
+} = {
   // Temps avant que les données soient considérées périmées (5 minutes)
   staleTime: 5 * 60 * 1000,
   // Temps de cache (10 minutes)
@@ -197,7 +202,7 @@ export const QUERY_CONFIG = {
   partnerLookupLimit: 50,
   // Taille de page par défaut
   defaultPageSize: 25,
-} as const;
+};
 
 // ============================================================
 // HELPERS
