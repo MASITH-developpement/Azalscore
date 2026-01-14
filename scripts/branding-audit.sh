@@ -4,8 +4,6 @@
 # Vérifie la conformité du logo et de la charte graphique
 # ============================================================
 
-set -e
-
 FRONTEND_DIR="./frontend/src"
 PUBLIC_DIR="./frontend/public"
 DOCS_DIR="./docs"
@@ -21,17 +19,17 @@ WARN_COUNT=0
 
 check_pass() {
     echo "[PASS] $1"
-    ((PASS_COUNT++))
+    PASS_COUNT=$((PASS_COUNT + 1))
 }
 
 check_fail() {
     echo "[FAIL] $1"
-    ((FAIL_COUNT++))
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 }
 
 check_warn() {
     echo "[WARN] $1"
-    ((WARN_COUNT++))
+    WARN_COUNT=$((WARN_COUNT + 1))
 }
 
 # ============================================================
@@ -131,7 +129,7 @@ for file in $DASHBOARD_FILES; do
             # Vérifier si c'est dans un header/footer acceptable
             if ! grep -B5 "AzalscoreLogo" "$file" | grep -qE "(header|footer|Header|Footer)" 2>/dev/null; then
                 check_warn "Logo potentiellement mal placé: $file"
-                ((DASHBOARD_VIOLATIONS++))
+                DASHBOARD_VIOLATIONS=$((DASHBOARD_VIOLATIONS + 1))
             fi
         fi
     fi
