@@ -54,6 +54,7 @@ interface DataTableProps<T> {
   selectable?: boolean;
   selectedRows?: T[];
   onSelectionChange?: (rows: T[]) => void;
+  onRowClick?: (row: T) => void;
   className?: string;
 }
 
@@ -145,6 +146,7 @@ interface TableRowProps<T> {
   selectable?: boolean;
   isSelected: boolean;
   onSelect: () => void;
+  onClick?: () => void;
 }
 
 function TableRow<T>({
@@ -154,10 +156,12 @@ function TableRow<T>({
   selectable,
   isSelected,
   onSelect,
+  onClick,
 }: TableRowProps<T>) {
   const [actionsOpen, setActionsOpen] = useState(false);
 
   const getCellValue = (column: TableColumn<T>): unknown => {
+    if (!column.accessor) return undefined;
     if (typeof column.accessor === 'function') {
       return column.accessor(row);
     }
@@ -173,7 +177,10 @@ function TableRow<T>({
     <tr
       className={clsx('azals-table__row', {
         'azals-table__row--selected': isSelected,
+        'azals-table__row--clickable': !!onClick,
       })}
+      onClick={onClick}
+      style={onClick ? { cursor: 'pointer' } : undefined}
     >
       {selectable && (
         <td className="azals-table__td azals-table__td--checkbox">
@@ -327,6 +334,7 @@ export function DataTable<T>({
   selectable,
   selectedRows = [],
   onSelectionChange,
+  onRowClick,
   className,
 }: DataTableProps<T>) {
   const hasActions = actions && actions.length > 0;
@@ -449,6 +457,7 @@ export function DataTable<T>({
                   selectable={selectable}
                   isSelected={isRowSelected(row)}
                   onSelect={() => handleSelectRow(row)}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
                 />
               ))
             )}

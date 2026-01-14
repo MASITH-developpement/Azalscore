@@ -5,6 +5,7 @@
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 gunicorn==21.2.0
+python-multipart==0.0.9
 
 # Base de données
 sqlalchemy==2.0.25
@@ -12,8 +13,9 @@ psycopg2-binary==2.9.9
 alembic==1.13.1
 
 # Configuration
-pydantic[email]==2.10.4
+pydantic==2.10.4
 pydantic-settings==2.7.1
+email-validator==2.1.0
 
 # Authentification & Sécurité
 python-jose[cryptography]==3.3.0

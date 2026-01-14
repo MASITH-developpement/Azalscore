@@ -98,14 +98,14 @@ groups:
       # High Disk I/O
       - alert: HighDiskIO
         expr: |
-          rate(node_disk_io_time_seconds_total[5m]) > 0.9
+          rate(node_disk_io_time_seconds_total[5m]) * 100 > 90
         for: 10m
         labels:
           severity: warning
           team: infra
         annotations:
           summary: "High disk I/O on {{ $labels.instance }}"
-          description: "Disk {{ $labels.device }} is spending {{ printf \"%.0f\" (multiply $value 100) }}% of time on I/O"
+          description: "Disk {{ $labels.device }} is spending {{ printf \"%.0f\" $value }}% of time on I/O"
 
   - name: azalscore.infra.network
     interval: 30s

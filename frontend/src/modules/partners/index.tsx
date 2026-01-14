@@ -40,7 +40,7 @@ const usePartners = (type: 'client' | 'supplier' | 'contact', page = 1, pageSize
       const response = await api.get<PaginatedResponse<Partner>>(
         `/v1/partners/${type}s?page=${page}&page_size=${pageSize}`
       );
-      return response.data;
+      return response as unknown as PaginatedResponse<Partner>;
     },
   });
 };
@@ -50,7 +50,7 @@ const useCreatePartner = (type: string) => {
   return useMutation({
     mutationFn: async (data: Partial<Partner>) => {
       const response = await api.post<Partner>(`/v1/partners/${type}s`, data);
-      return response.data;
+      return response as unknown as Partner;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', type] });
@@ -185,14 +185,15 @@ export const ClientsPage: React.FC = () => {
     queryKey: ['partners', 'clients', page, pageSize],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Partner>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
-      return response.data;
+      // api.get retourne déjà response.data, pas besoin de .data
+      return response as unknown as PaginatedResponse<Partner>;
     },
   });
 
   const createClient = useMutation({
     mutationFn: async (clientData: any) => {
       const response = await api.post('/v1/partners/clients', clientData);
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
@@ -332,11 +333,11 @@ export const ContactsPage: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Récupérer la liste des clients pour le select
-  const { data: clientsData } = useQuery({
+  const { data: clientsData, isLoading: loadingClients } = useQuery({
     queryKey: ['partners', 'clients-for-select'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Partner>>('/v1/partners/clients?page=1&page_size=100');
-      return response.data;
+      const response = await api.get<PaginatedResponse<Partner>>('/v1/partners/clients?page=1&page_size=100&is_active=true');
+      return response as unknown as PaginatedResponse<Partner>;
     },
   });
 
@@ -345,7 +346,7 @@ export const ContactsPage: React.FC = () => {
     queryKey: ['partners', 'contacts', page, pageSize],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<any>>(`/v1/partners/contacts?page=${page}&page_size=${pageSize}`);
-      return response.data;
+      return response as unknown as PaginatedResponse<any>;
     },
   });
 
@@ -353,7 +354,7 @@ export const ContactsPage: React.FC = () => {
   const createContact = useMutation({
     mutationFn: async (contactData: any) => {
       const response = await api.post('/v1/partners/contacts', contactData);
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'contacts'] });
@@ -419,6 +420,7 @@ export const ContactsPage: React.FC = () => {
       label: 'Client',
       type: 'select' as const,
       required: true,
+      placeholder: 'Sélectionner un client',
       options: (clientsData?.items || []).map((c: Partner) => ({ value: c.id, label: c.name }))
     },
     { name: 'first_name', label: 'Prénom', type: 'text' as const, required: true },
@@ -461,15 +463,26 @@ export const ContactsPage: React.FC = () => {
 
       {showCreate && (
         <Modal isOpen onClose={() => setShowCreate(false)} title="Nouveau contact" size="md">
-          <DynamicForm
-            fields={contactFields}
-            schema={contactSchema}
-            onSubmit={async (formData) => {
-              await createContact.mutateAsync(formData);
-            }}
-            onCancel={() => setShowCreate(false)}
-            isLoading={createContact.isPending}
-          />
+          {loadingClients ? (
+            <div className="azals-loading">
+              <p>Chargement des clients...</p>
+            </div>
+          ) : clientsData?.items?.length === 0 ? (
+            <div className="azals-alert azals-alert--warning">
+              <p>Aucun client disponible. Veuillez d'abord créer un client.</p>
+            </div>
+          ) : (
+            <DynamicForm
+              fields={contactFields}
+              schema={contactSchema}
+              onSubmit={async (formData) => {
+                console.log('Contact form data:', formData);
+                await createContact.mutateAsync(formData);
+              }}
+              onCancel={() => setShowCreate(false)}
+              isLoading={createContact.isPending}
+            />
+          )}
         </Modal>
       )}
     </PageWrapper>

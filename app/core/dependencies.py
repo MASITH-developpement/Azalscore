@@ -155,7 +155,7 @@ def get_current_user_and_tenant(
     """
     Dépendance combinée : utilisateur authentifié + tenant_id + user_id.
     Retourne un dict avec toutes les infos nécessaires.
-    
+
     Usage :
         @app.post("/action")
         def protected_action(auth_data: dict = Depends(get_current_user_and_tenant)):
@@ -166,5 +166,6 @@ def get_current_user_and_tenant(
     return {
         "user": current_user,
         "user_id": current_user.id,
-        "tenant_id": tenant_id
+        "tenant_id": tenant_id,
+        "email": current_user.email
     }

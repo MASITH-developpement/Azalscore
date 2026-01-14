@@ -303,6 +303,42 @@ def hash_sensitive_for_search(value: str) -> str:
 
 
 # ============================================================================
+# FONCTIONS SIMPLES POUR CHIFFREMENT DE VALEURS
+# ============================================================================
+
+def encrypt_value(value: str) -> str:
+    """
+    Chiffre une valeur simple.
+
+    Args:
+        value: Valeur à chiffrer
+
+    Returns:
+        Valeur chiffrée en base64
+    """
+    if not value:
+        return ""
+    encryption = FieldEncryption.get_instance()
+    return encryption.encrypt(value)
+
+
+def decrypt_value(ciphertext: str) -> str:
+    """
+    Déchiffre une valeur chiffrée.
+
+    Args:
+        ciphertext: Valeur chiffrée
+
+    Returns:
+        Valeur en clair
+    """
+    if not ciphertext:
+        return ""
+    encryption = FieldEncryption.get_instance()
+    return encryption.decrypt(ciphertext)
+
+
+# ============================================================================
 # EXPORT
 # ============================================================================
 
@@ -314,4 +350,6 @@ __all__ = [
     'generate_encryption_key',
     'derive_key_from_password',
     'hash_sensitive_for_search',
+    'encrypt_value',
+    'decrypt_value',
 ]
