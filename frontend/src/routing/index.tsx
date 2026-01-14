@@ -2,12 +2,15 @@
  * AZALSCORE UI Engine - Routing System
  * Routes principales de l'application
  * Accès contrôlé par capacités backend
+ *
+ * MIGRATION V2: Route /documents comme vue unique
+ * Les anciennes routes /invoicing/* et /purchases/* redirigent vers /documents
  */
 
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { MainLayout, AuthLayout } from '@ui/layout';
-import { CapabilityGuard } from '@core/capabilities';
+import { CapabilityGuard, useHasAnyCapability } from '@core/capabilities';
 import { useIsAuthenticated } from '@core/auth';
 
 // ============================================================
@@ -16,9 +19,11 @@ import { useIsAuthenticated } from '@core/auth';
 
 const CockpitPage = lazy(() => import('@modules/cockpit'));
 const PartnersRoutes = lazy(() => import('@modules/partners'));
+// LEGACY: InvoicingRoutes conservé pour migration progressive
 const InvoicingRoutes = lazy(() => import('@modules/invoicing'));
 const TreasuryRoutes = lazy(() => import('@modules/treasury'));
 const AccountingRoutes = lazy(() => import('@modules/accounting'));
+// LEGACY: PurchasesRoutes conservé pour migration progressive
 const PurchasesRoutes = lazy(() => import('@modules/purchases'));
 const ProjectsRoutes = lazy(() => import('@modules/projects'));
 const InterventionsRoutes = lazy(() => import('@modules/interventions'));
@@ -29,6 +34,9 @@ const PaymentsRoutes = lazy(() => import('@modules/payments'));
 const MobileRoutes = lazy(() => import('@modules/mobile'));
 const AdminRoutes = lazy(() => import('@modules/admin'));
 const BreakGlassPage = lazy(() => import('@modules/break-glass'));
+
+// V2: Nouveau module Documents unifié
+const DocumentsRoutes = lazy(() => import('@modules/documents'));
 
 // Pages Auth
 const LoginPage = lazy(() => import('@/pages/auth/Login'));
@@ -97,6 +105,21 @@ const CapabilityRoute: React.FC<CapabilityRouteProps> = ({ capability, children 
 };
 
 // ============================================================
+// DOCUMENTS CAPABILITY ROUTE
+// Accès si l'utilisateur a invoicing.view OU purchases.view
+// ============================================================
+
+const DocumentsCapabilityRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const hasAccess = useHasAnyCapability(['invoicing.view', 'purchases.view']);
+
+  if (!hasAccess) {
+    return <Navigate to="/cockpit" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// ============================================================
 // MAIN ROUTER
 // ============================================================
 
@@ -131,7 +154,28 @@ export const AppRouter: React.FC = () => {
               </CapabilityRoute>
             } />
 
-            {/* Facturation */}
+            {/* ============================================================
+               DOCUMENTS - Vue Unique V2
+               Route principale pour tous les documents commerciaux
+               ============================================================ */}
+            <Route path="/documents/*" element={
+              <DocumentsCapabilityRoute>
+                <DocumentsRoutes />
+              </DocumentsCapabilityRoute>
+            } />
+
+            {/* ============================================================
+               LEGACY ROUTES - Redirections vers /documents
+               Ces routes sont maintenues pour la rétrocompatibilité
+               ============================================================ */}
+
+            {/* Facturation (LEGACY) - Redirige vers /documents */}
+            <Route path="/invoicing" element={<Navigate to="/documents?type=QUOTE" replace />} />
+            <Route path="/invoicing/quotes" element={<Navigate to="/documents?type=QUOTE&mode=list" replace />} />
+            <Route path="/invoicing/quotes/*" element={<Navigate to="/documents?type=QUOTE" replace />} />
+            <Route path="/invoicing/invoices" element={<Navigate to="/documents?type=INVOICE&mode=list" replace />} />
+            <Route path="/invoicing/invoices/*" element={<Navigate to="/documents?type=INVOICE" replace />} />
+            {/* Fallback: anciennes routes non migrées */}
             <Route path="/invoicing/*" element={
               <CapabilityRoute capability="invoicing.view">
                 <InvoicingRoutes />
@@ -152,7 +196,13 @@ export const AppRouter: React.FC = () => {
               </CapabilityRoute>
             } />
 
-            {/* Achats */}
+            {/* Achats (LEGACY) - Redirige vers /documents */}
+            <Route path="/purchases" element={<Navigate to="/documents?type=PURCHASE_ORDER" replace />} />
+            <Route path="/purchases/orders" element={<Navigate to="/documents?type=PURCHASE_ORDER&mode=list" replace />} />
+            <Route path="/purchases/orders/*" element={<Navigate to="/documents?type=PURCHASE_ORDER" replace />} />
+            <Route path="/purchases/invoices" element={<Navigate to="/documents?type=PURCHASE_INVOICE&mode=list" replace />} />
+            <Route path="/purchases/invoices/*" element={<Navigate to="/documents?type=PURCHASE_INVOICE" replace />} />
+            {/* Fallback: fournisseurs et autres routes non migrées */}
             <Route path="/purchases/*" element={
               <CapabilityRoute capability="purchases.view">
                 <PurchasesRoutes />

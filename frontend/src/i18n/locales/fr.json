@@ -1,0 +1,220 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "create": "Créer",
+    "validate": "Valider",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher...",
+    "filters": "Filtres",
+    "reset": "Réinitialiser",
+    "export": "Exporter",
+    "refresh": "Actualiser",
+    "actions": "Actions",
+    "yes": "Oui",
+    "no": "Non",
+    "all": "Tous",
+    "none": "Aucun",
+    "required": "Requis",
+    "optional": "Optionnel",
+    "noData": "Aucune donnée disponible",
+    "error": "Erreur",
+    "success": "Succès",
+    "warning": "Attention",
+    "info": "Information"
+  },
+  "pagination": {
+    "page": "Page",
+    "of": "sur",
+    "perPage": "par page",
+    "previousPage": "Page précédente",
+    "nextPage": "Page suivante",
+    "showing": "Affichage de",
+    "to": "à",
+    "total": "sur"
+  },
+  "documents": {
+    "title": "Documents",
+    "newDocument": "Nouveau document",
+    "selectType": "Sélectionner le type",
+    "modes": {
+      "entry": "Saisie",
+      "list": "Liste"
+    },
+    "types": {
+      "QUOTE": "Devis",
+      "INVOICE": "Facture",
+      "ORDER": "Commande",
+      "PURCHASE_ORDER": "Commande fournisseur",
+      "PURCHASE_INVOICE": "Facture fournisseur",
+      "CREDIT_NOTE": "Avoir",
+      "PROFORMA": "Proforma",
+      "DELIVERY": "Bon de livraison"
+    },
+    "typesPlural": {
+      "QUOTE": "Devis",
+      "INVOICE": "Factures",
+      "ORDER": "Commandes",
+      "PURCHASE_ORDER": "Commandes fournisseurs",
+      "PURCHASE_INVOICE": "Factures fournisseurs",
+      "CREDIT_NOTE": "Avoirs",
+      "PROFORMA": "Proformas",
+      "DELIVERY": "Bons de livraison"
+    },
+    "status": {
+      "DRAFT": "Brouillon",
+      "PENDING": "En attente",
+      "VALIDATED": "Validé",
+      "SENT": "Envoyé",
+      "ACCEPTED": "Accepté",
+      "REJECTED": "Rejeté",
+      "DELIVERED": "Livré",
+      "INVOICED": "Facturé",
+      "PAID": "Payé",
+      "PARTIAL": "Partiel",
+      "CANCELLED": "Annulé",
+      "CONFIRMED": "Confirmé",
+      "RECEIVED": "Reçu"
+    },
+    "fields": {
+      "number": "Numéro",
+      "date": "Date",
+      "dueDate": "Date d'échéance",
+      "validityDate": "Date de validité",
+      "expectedDate": "Date prévue",
+      "customer": "Client",
+      "supplier": "Fournisseur",
+      "reference": "Référence",
+      "supplierReference": "Réf. fournisseur",
+      "notes": "Notes",
+      "internalNotes": "Notes internes",
+      "status": "Statut",
+      "total": "Total",
+      "totalHT": "Total HT",
+      "totalTVA": "Total TVA",
+      "totalTTC": "Total TTC"
+    },
+    "lines": {
+      "title": "Lignes",
+      "addLine": "Ajouter une ligne",
+      "noLines": "Aucune ligne",
+      "clickToAdd": "Cliquez pour ajouter une ligne",
+      "clickToEdit": "Cliquez pour éditer",
+      "description": "Description",
+      "quantity": "Qté",
+      "unit": "Unité",
+      "unitPrice": "Prix unit. HT",
+      "discount": "Remise",
+      "tax": "TVA",
+      "lineTotal": "Total HT",
+      "removeLine": "Supprimer la ligne"
+    },
+    "actions": {
+      "create": "Créer le document",
+      "save": "Enregistrer",
+      "validate": "Valider",
+      "duplicate": "Dupliquer",
+      "convert": "Convertir",
+      "convertToInvoice": "Convertir en facture",
+      "createInvoice": "Créer facture",
+      "print": "Imprimer",
+      "download": "Télécharger",
+      "send": "Envoyer"
+    },
+    "messages": {
+      "created": "Document créé avec succès",
+      "updated": "Document enregistré",
+      "deleted": "Document supprimé",
+      "validated": "Document validé",
+      "validationWarning": "Un document validé ne peut plus être modifié.",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce document ?",
+      "confirmValidate": "Voulez-vous valider ce document ?",
+      "confirmConvert": "Voulez-vous créer une facture à partir de ce document ?",
+      "notFound": "Document non trouvé",
+      "cannotEdit": "Ce document ne peut plus être modifié"
+    },
+    "placeholders": {
+      "searchDocuments": "Rechercher par numéro ou client...",
+      "selectCustomer": "Sélectionner un client",
+      "selectSupplier": "Sélectionner un fournisseur",
+      "notesPlaceholder": "Notes visibles sur le document...",
+      "internalNotesPlaceholder": "Notes internes..."
+    },
+    "filters": {
+      "allStatuses": "Tous les statuts",
+      "allTypes": "Tous les types",
+      "dateFrom": "Date début",
+      "dateTo": "Date fin"
+    },
+    "empty": {
+      "noDocuments": "Aucun document",
+      "noQuotes": "Aucun devis",
+      "noInvoices": "Aucune facture",
+      "noOrders": "Aucune commande",
+      "startCreating": "Commencez par créer un nouveau document"
+    }
+  },
+  "partners": {
+    "customer": "Client",
+    "customers": "Clients",
+    "supplier": "Fournisseur",
+    "suppliers": "Fournisseurs",
+    "status": {
+      "PROSPECT": "Prospect",
+      "PENDING": "En attente",
+      "APPROVED": "Approuvé",
+      "ACTIVE": "Actif",
+      "BLOCKED": "Bloqué",
+      "INACTIVE": "Inactif"
+    },
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "contact": "Contact",
+      "email": "Email",
+      "phone": "Téléphone",
+      "address": "Adresse",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "country": "Pays",
+      "taxId": "N° TVA / SIRET",
+      "paymentTerms": "Conditions de paiement"
+    },
+    "paymentTerms": {
+      "IMMEDIATE": "Paiement immédiat",
+      "NET15": "Net 15 jours",
+      "NET30": "Net 30 jours",
+      "NET45": "Net 45 jours",
+      "NET60": "Net 60 jours",
+      "EOM": "Fin de mois",
+      "EOM30": "Fin de mois + 30"
+    }
+  },
+  "tax": {
+    "rates": {
+      "0": "0%",
+      "5.5": "5,5%",
+      "10": "10%",
+      "20": "20%"
+    }
+  },
+  "validation": {
+    "required": "Ce champ est requis",
+    "invalidEmail": "Email invalide",
+    "invalidNumber": "Nombre invalide",
+    "minLength": "Minimum {{min}} caractères",
+    "maxLength": "Maximum {{max}} caractères",
+    "min": "Minimum {{min}}",
+    "max": "Maximum {{max}}",
+    "selectOption": "Veuillez sélectionner une option",
+    "addAtLeastOneLine": "Ajoutez au moins une ligne",
+    "allLinesMustHaveDescription": "Toutes les lignes doivent avoir une description"
+  }
+}

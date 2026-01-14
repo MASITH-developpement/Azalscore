@@ -1,0 +1,557 @@
+/**
+ * AZALSCORE - Styles du module Documents
+ *
+ * Composants :
+ * - Type Selector
+ * - Mode Toggle
+ * - Line Editor
+ * - Document Form
+ * - Document List
+ */
+
+/* ============================================================
+   TYPE SELECTOR
+   ============================================================ */
+
+.azals-type-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.azals-type-selector__trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.azals-type-selector__trigger:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-hover);
+}
+
+.azals-type-selector__trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.azals-type-selector__trigger svg:last-child {
+  transition: transform 0.15s ease;
+}
+
+.azals-type-selector__trigger svg:last-child.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.azals-type-selector__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+.azals-type-selector__dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  z-index: 101;
+  min-width: 220px;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.azals-type-selector__group {
+  padding: 0.5rem 0;
+}
+
+.azals-type-selector__group:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.azals-type-selector__group-label {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.azals-type-selector__option {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.azals-type-selector__option:hover {
+  background: var(--color-bg-secondary);
+}
+
+.azals-type-selector__option.active {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  font-weight: 500;
+}
+
+/* ============================================================
+   MODE TOGGLE
+   ============================================================ */
+
+.azals-mode-toggle {
+  display: inline-flex;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.azals-mode-toggle__btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.azals-mode-toggle__btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.azals-mode-toggle__btn.active {
+  color: var(--color-primary-700);
+  background: var(--color-primary-100);
+  font-weight: 500;
+}
+
+.azals-mode-toggle__btn:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+
+/* ============================================================
+   PAGE ACTIONS
+   ============================================================ */
+
+.azals-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ============================================================
+   LINE EDITOR
+   ============================================================ */
+
+.azals-line-editor {
+  width: 100%;
+}
+
+.azals-line-editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.azals-line-editor__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.azals-line-editor__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.azals-line-editor__empty svg {
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.azals-line-editor__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.azals-line-editor__table th {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.azals-line-editor__table td {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.azals-line-editor__table tr:hover {
+  background: var(--color-bg-secondary);
+}
+
+.azals-line-editor__table tr.editing {
+  background: var(--color-primary-50);
+}
+
+.azals-line-editor__table td .clickable {
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.1s ease;
+}
+
+.azals-line-editor__table td .clickable:hover {
+  background: var(--color-primary-100);
+}
+
+.azals-line-editor__table td .text-muted {
+  color: var(--color-text-muted);
+}
+
+.azals-line-editor__table td.text-right {
+  text-align: right;
+}
+
+.azals-line-editor__table td.font-medium {
+  font-weight: 500;
+}
+
+.azals-line-editor__table .azals-input,
+.azals-line-editor__table .azals-select {
+  width: 100%;
+}
+
+.azals-line-editor__table .azals-input--sm,
+.azals-line-editor__table .azals-select--sm {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.azals-line-editor__totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-top: 1rem;
+  border-top: 2px solid var(--color-border);
+}
+
+.azals-line-editor__total-row {
+  display: flex;
+  justify-content: space-between;
+  width: 250px;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.azals-line-editor__total-row span:first-child {
+  color: var(--color-text-secondary);
+}
+
+.azals-line-editor__total-row span:last-child {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.azals-line-editor__total-row--main {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 1rem;
+}
+
+.azals-line-editor__total-row--main span:last-child {
+  font-weight: 700;
+  color: var(--color-primary-700);
+}
+
+/* ============================================================
+   DOCUMENT FORM
+   ============================================================ */
+
+.azals-document-form {
+  width: 100%;
+}
+
+.azals-document-form__header {
+  margin-bottom: 1rem;
+}
+
+.azals-document-form__number {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.azals-document-form__number .azals-label {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.azals-document-form__number strong {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* ============================================================
+   DOCUMENT LIST
+   ============================================================ */
+
+.azals-document-list {
+  width: 100%;
+}
+
+/* ============================================================
+   FILTER BAR
+   ============================================================ */
+
+.azals-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.azals-filter-bar__search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.azals-filter-bar__search .azals-input {
+  width: 100%;
+}
+
+.azals-filter-bar__fields {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.azals-filter-bar__fields .azals-select {
+  min-width: 150px;
+}
+
+.azals-filter-bar__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ============================================================
+   FORM FIELDS
+   ============================================================ */
+
+.azals-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.azals-form-field label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.azals-form-error {
+  font-size: 0.75rem;
+  color: var(--color-error);
+}
+
+/* ============================================================
+   FORM ACTIONS
+   ============================================================ */
+
+.azals-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ============================================================
+   BADGE
+   ============================================================ */
+
+.azals-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: var(--radius-full);
+}
+
+.azals-badge--gray {
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+.azals-badge--blue {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+.azals-badge--green {
+  background: var(--color-success-100);
+  color: var(--color-success-700);
+}
+
+.azals-badge--yellow {
+  background: var(--color-warning-100);
+  color: var(--color-warning-700);
+}
+
+.azals-badge--red {
+  background: var(--color-error-100);
+  color: var(--color-error-700);
+}
+
+.azals-badge--purple {
+  background: var(--color-purple-100);
+  color: var(--color-purple-700);
+}
+
+/* ============================================================
+   ALERT
+   ============================================================ */
+
+.azals-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.azals-alert--error {
+  background: var(--color-error-100);
+  color: var(--color-error-700);
+  border: 1px solid var(--color-error-200);
+}
+
+.azals-alert--warning {
+  background: var(--color-warning-100);
+  color: var(--color-warning-700);
+  border: 1px solid var(--color-warning-200);
+}
+
+/* ============================================================
+   BUTTON ICON
+   ============================================================ */
+
+.azals-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all 0.15s ease;
+}
+
+.azals-btn-icon:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.azals-btn-icon--danger:hover {
+  background: var(--color-error-100);
+  color: var(--color-error-700);
+}
+
+/* ============================================================
+   LINK
+   ============================================================ */
+
+.azals-link {
+  color: var(--color-primary-600);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.azals-link:hover {
+  color: var(--color-primary-700);
+  text-decoration: underline;
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+.ml-1 {
+  margin-left: 0.25rem;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.text-warning {
+  color: var(--color-warning-700);
+}
+
+.inline {
+  display: inline;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
