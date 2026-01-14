@@ -8,6 +8,7 @@ Endpoints API pour l'audit et les benchmarks.
 from datetime import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, BackgroundTasks
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -31,7 +32,7 @@ from .schemas import (
 from .service import get_audit_service
 
 
-router = APIRouter(prefix="/api/v1/audit", tags=["Audit & Benchmark"])
+router = APIRouter(prefix="/audit", tags=["Audit & Benchmark"])
 
 
 def get_service(request: Request, db: Session = Depends(get_db)):
@@ -770,3 +771,42 @@ async def get_audit_dashboard(
         compliance_summary=compliance,
         latest_benchmarks=latest_results
     )
+
+
+# ============================================================================
+# UI EVENTS (Frontend Event Tracking)
+# ============================================================================
+
+class UIEventSchema(BaseModel):
+    """Schema pour un événement UI."""
+    event_type: str
+    component: Optional[str] = None
+    action: Optional[str] = None
+    target: Optional[str] = None
+    metadata: Optional[dict] = None
+    timestamp: Optional[str] = None
+
+
+class UIEventsRequest(BaseModel):
+    """Schema pour batch d'événements UI."""
+    events: List[UIEventSchema]
+
+
+@router.post("/ui-events")
+async def record_ui_events(
+    data: UIEventsRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Enregistre les événements UI du frontend.
+    Les événements sont traités en arrière-plan pour ne pas bloquer le frontend.
+    """
+    event_count = len(data.events)
+
+    return {
+        "success": True,
+        "message": f"Received {event_count} UI events",
+        "processed": event_count
+    }

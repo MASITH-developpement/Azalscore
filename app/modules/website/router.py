@@ -26,7 +26,7 @@ from .schemas import (
     PublishRequest, PublicSiteConfigResponse
 )
 
-router = APIRouter(prefix="/api/v1/website", tags=["Website"])
+router = APIRouter(prefix="/website", tags=["Website"])
 
 
 # ============================================================================

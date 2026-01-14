@@ -30,7 +30,7 @@ from .schemas import (
 from .service import FieldServiceService
 
 
-router = APIRouter(prefix="/api/v1/field-service", tags=["Field Service"])
+router = APIRouter(prefix="/field-service", tags=["Field Service"])
 
 
 def get_service(

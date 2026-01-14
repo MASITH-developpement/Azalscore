@@ -98,7 +98,7 @@ from app.modules.quality.schemas import (
     QualityDashboard,
 )
 
-router = APIRouter(prefix="/api/v1/quality", tags=["Quality Management"])
+router = APIRouter(prefix="/quality", tags=["Quality Management"])
 
 
 # ============================================================================

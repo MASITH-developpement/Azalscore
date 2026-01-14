@@ -55,7 +55,7 @@ from .schemas import (
 )
 from .service import get_guardian_service
 
-router = APIRouter(prefix="/api/v1/guardian", tags=["GUARDIAN"])
+router = APIRouter(prefix="/guardian", tags=["GUARDIAN"])
 
 
 # ============================================================================
