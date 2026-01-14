@@ -13,40 +13,36 @@ Responsabilités:
 - Intégration Planning
 """
 
-from datetime import datetime
-from decimal import Decimal
-from typing import Optional, List, Tuple
-from uuid import UUID
 import uuid
+from datetime import datetime
+from uuid import UUID
 
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy import func, or_, and_
-from sqlalchemy.exc import IntegrityError
 
 from .models import (
-    Intervention,
-    InterventionStatut,
-    InterventionPriorite,
-    TypeIntervention,
-    RapportIntervention,
-    RapportFinal,
     DonneurOrdre,
+    Intervention,
+    InterventionPriorite,
     InterventionSequence,
+    InterventionStatut,
+    RapportFinal,
+    RapportIntervention,
 )
 from .schemas import (
-    InterventionCreate,
-    InterventionUpdate,
-    InterventionPlanifier,
     ArriveeRequest,
-    FinInterventionRequest,
     DonneurOrdreCreate,
     DonneurOrdreUpdate,
-    RapportInterventionUpdate,
-    SignatureRapportRequest,
+    FinInterventionRequest,
+    InterventionCreate,
+    InterventionPlanifier,
+    InterventionStats,
+    InterventionUpdate,
     PhotoRequest,
     RapportFinalGenerateRequest,
-    InterventionStats,
+    RapportInterventionUpdate,
+    SignatureRapportRequest,
 )
 
 
@@ -134,16 +130,16 @@ class InterventionsService:
     # DONNEURS D'ORDRE
     # ========================================================================
 
-    def list_donneurs_ordre(self, active_only: bool = True) -> List[DonneurOrdre]:
+    def list_donneurs_ordre(self, active_only: bool = True) -> list[DonneurOrdre]:
         """Liste des donneurs d'ordre."""
         query = self.db.query(DonneurOrdre).filter(
             DonneurOrdre.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(DonneurOrdre.is_active == True)
+            query = query.filter(DonneurOrdre.is_active)
         return query.order_by(DonneurOrdre.nom).all()
 
-    def get_donneur_ordre(self, donneur_id: UUID) -> Optional[DonneurOrdre]:
+    def get_donneur_ordre(self, donneur_id: UUID) -> DonneurOrdre | None:
         """Récupère un donneur d'ordre."""
         return self.db.query(DonneurOrdre).filter(
             DonneurOrdre.id == donneur_id,
@@ -165,7 +161,7 @@ class InterventionsService:
         self,
         donneur_id: UUID,
         data: DonneurOrdreUpdate
-    ) -> Optional[DonneurOrdre]:
+    ) -> DonneurOrdre | None:
         """Met à jour un donneur d'ordre."""
         donneur = self.get_donneur_ordre(donneur_id)
         if not donneur:
@@ -184,19 +180,19 @@ class InterventionsService:
 
     def list_interventions(
         self,
-        statut: Optional[InterventionStatut] = None,
-        priorite: Optional[InterventionPriorite] = None,
-        client_id: Optional[UUID] = None,
-        donneur_ordre_id: Optional[UUID] = None,
-        projet_id: Optional[UUID] = None,
-        intervenant_id: Optional[UUID] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
-        search: Optional[str] = None,
+        statut: InterventionStatut | None = None,
+        priorite: InterventionPriorite | None = None,
+        client_id: UUID | None = None,
+        donneur_ordre_id: UUID | None = None,
+        projet_id: UUID | None = None,
+        intervenant_id: UUID | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        search: str | None = None,
         include_deleted: bool = False,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[Intervention], int]:
+    ) -> tuple[list[Intervention], int]:
         """Liste des interventions avec filtres et pagination."""
         query = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id
@@ -204,7 +200,7 @@ class InterventionsService:
 
         # Soft delete
         if not include_deleted:
-            query = query.filter(Intervention.deleted_at == None)
+            query = query.filter(Intervention.deleted_at is None)
 
         # Filtres
         if statut:
@@ -241,26 +237,26 @@ class InterventionsService:
 
         return interventions, total
 
-    def get_intervention(self, intervention_id: UUID) -> Optional[Intervention]:
+    def get_intervention(self, intervention_id: UUID) -> Intervention | None:
         """Récupère une intervention par ID."""
         return self.db.query(Intervention).filter(
             Intervention.id == intervention_id,
             Intervention.tenant_id == self.tenant_id,
-            Intervention.deleted_at == None
+            Intervention.deleted_at is None
         ).first()
 
-    def get_intervention_by_reference(self, reference: str) -> Optional[Intervention]:
+    def get_intervention_by_reference(self, reference: str) -> Intervention | None:
         """Récupère une intervention par référence."""
         return self.db.query(Intervention).filter(
             Intervention.reference == reference,
             Intervention.tenant_id == self.tenant_id,
-            Intervention.deleted_at == None
+            Intervention.deleted_at is None
         ).first()
 
     def create_intervention(
         self,
         data: InterventionCreate,
-        created_by: Optional[UUID] = None
+        created_by: UUID | None = None
     ) -> Intervention:
         """
         Crée une nouvelle intervention.
@@ -289,7 +285,7 @@ class InterventionsService:
         self,
         intervention_id: UUID,
         data: InterventionUpdate
-    ) -> Optional[Intervention]:
+    ) -> Intervention | None:
         """
         Met à jour une intervention.
 
@@ -596,7 +592,7 @@ class InterventionsService:
     def get_rapport_intervention(
         self,
         intervention_id: UUID
-    ) -> Optional[RapportIntervention]:
+    ) -> RapportIntervention | None:
         """Récupère le rapport d'une intervention."""
         return self.db.query(RapportIntervention).filter(
             RapportIntervention.intervention_id == intervention_id,
@@ -712,7 +708,7 @@ class InterventionsService:
     def generer_rapport_final(
         self,
         data: RapportFinalGenerateRequest,
-        created_by: Optional[UUID] = None
+        created_by: UUID | None = None
     ) -> RapportFinal:
         """
         Génère un rapport final consolidé.
@@ -727,7 +723,7 @@ class InterventionsService:
         query = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id,
             Intervention.statut == InterventionStatut.TERMINEE,
-            Intervention.deleted_at == None
+            Intervention.deleted_at is None
         )
 
         if data.projet_id:
@@ -773,7 +769,7 @@ class InterventionsService:
 
         return rapport_final
 
-    def get_rapport_final(self, rapport_id: UUID) -> Optional[RapportFinal]:
+    def get_rapport_final(self, rapport_id: UUID) -> RapportFinal | None:
         """Récupère un rapport final."""
         return self.db.query(RapportFinal).filter(
             RapportFinal.id == rapport_id,
@@ -782,9 +778,9 @@ class InterventionsService:
 
     def list_rapports_final(
         self,
-        projet_id: Optional[UUID] = None,
-        donneur_ordre_id: Optional[UUID] = None
-    ) -> List[RapportFinal]:
+        projet_id: UUID | None = None,
+        donneur_ordre_id: UUID | None = None
+    ) -> list[RapportFinal]:
         """Liste les rapports finaux."""
         query = self.db.query(RapportFinal).filter(
             RapportFinal.tenant_id == self.tenant_id
@@ -801,7 +797,7 @@ class InterventionsService:
     # INTÉGRATION PLANNING (Consommation)
     # ========================================================================
 
-    def _create_planning_event(self, intervention: Intervention) -> Optional[UUID]:
+    def _create_planning_event(self, intervention: Intervention) -> UUID | None:
         """
         Crée un événement dans le module Planning.
 
@@ -847,7 +843,7 @@ class InterventionsService:
         """Calcule les statistiques des interventions."""
         base_query = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id,
-            Intervention.deleted_at == None
+            Intervention.deleted_at is None
         )
 
         total = base_query.count()
@@ -872,7 +868,7 @@ class InterventionsService:
         ).filter(
             Intervention.tenant_id == self.tenant_id,
             Intervention.statut == InterventionStatut.TERMINEE,
-            Intervention.duree_reelle_minutes != None
+            Intervention.duree_reelle_minutes is not None
         ).scalar() or 0
 
         return InterventionStats(

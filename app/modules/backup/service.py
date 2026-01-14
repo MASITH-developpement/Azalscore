@@ -4,33 +4,34 @@ AZALS - Module Backup - Service
 Service de sauvegarde chiffrée AES-256 par tenant.
 """
 
-import os
-import json
+import base64
+import contextlib
 import gzip
 import hashlib
+import json
+import logging
+import os
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-import logging
+from typing import Any
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.backends import default_backend
-import base64
-
+from sqlalchemy import text
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func
 
-from app.core.encryption import encrypt_value, decrypt_value
-from .models import BackupConfig, Backup, RestoreLog, BackupStatus, BackupType, BackupFrequency
+from app.core.encryption import decrypt_value, encrypt_value
+
+from .models import Backup, BackupConfig, BackupFrequency, BackupStatus, RestoreLog
 from .schemas import (
-    BackupConfigCreate, BackupConfigUpdate,
-    BackupCreate, BackupResponse,
-    RestoreRequest, RestoreResponse,
-    BackupStats, BackupDashboard
+    BackupConfigCreate,
+    BackupConfigUpdate,
+    BackupCreate,
+    BackupDashboard,
+    BackupResponse,
+    BackupStats,
+    RestoreRequest,
+    RestoreResponse,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class BackupService:
     # CONFIGURATION
     # =========================================================================
 
-    def get_config(self) -> Optional[BackupConfig]:
+    def get_config(self) -> BackupConfig | None:
         """Récupère la configuration backup du tenant."""
         return self.db.query(BackupConfig).filter(
             BackupConfig.tenant_id == self.tenant_id
@@ -85,7 +86,7 @@ class BackupService:
 
         return config
 
-    def update_config(self, data: BackupConfigUpdate) -> Optional[BackupConfig]:
+    def update_config(self, data: BackupConfigUpdate) -> BackupConfig | None:
         """Met à jour la configuration backup."""
         config = self.get_config()
         if not config:
@@ -145,7 +146,7 @@ class BackupService:
         key_b64 = decrypt_value(config.encryption_key_encrypted)
         return base64.b64decode(key_b64)
 
-    def _encrypt_data(self, data: bytes) -> Tuple[bytes, bytes]:
+    def _encrypt_data(self, data: bytes) -> tuple[bytes, bytes]:
         """Chiffre les données avec AES-256-GCM."""
         key = self._get_encryption_key()
         aesgcm = AESGCM(key)
@@ -269,7 +270,7 @@ class BackupService:
             self.db.commit()
             raise
 
-    def _collect_tenant_data(self, include_attachments: bool) -> Dict[str, Any]:
+    def _collect_tenant_data(self, include_attachments: bool) -> dict[str, Any]:
         """Collecte toutes les données du tenant."""
         data = {}
 
@@ -296,7 +297,7 @@ class BackupService:
                     WHERE tenant_id = :tenant_id
                 """), {"tenant_id": self.tenant_id})
                 columns = result.keys()
-                rows = [dict(zip(columns, row)) for row in result.fetchall()]
+                rows = [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
                 data[table] = rows
             except Exception as e:
                 logger.warning(f"Table {table} non trouvée ou erreur: {e}")
@@ -332,10 +333,8 @@ class BackupService:
         if len(all_backups) > config.max_backups:
             for backup in all_backups[config.max_backups:]:
                 if backup.file_path and os.path.exists(backup.file_path):
-                    try:
+                    with contextlib.suppress(Exception):
                         os.remove(backup.file_path)
-                    except Exception:
-                        pass
                 backup.status = BackupStatus.DELETED
             self.db.commit()
 
@@ -374,7 +373,7 @@ class BackupService:
 
         return restore_log
 
-    def _execute_restore(self, restore_log: RestoreLog, backup: Backup, tables_to_restore: Optional[List[str]]):
+    def _execute_restore(self, restore_log: RestoreLog, backup: Backup, tables_to_restore: list[str] | None):
         """Exécute la restauration."""
         restore_log.status = BackupStatus.IN_PROGRESS
         restore_log.started_at = datetime.utcnow()
@@ -401,8 +400,6 @@ class BackupService:
             backup_data = json.loads(data_bytes.decode('utf-8'))
 
             # Restaurer les tables
-            tables_restored = []
-            records_restored = 0
 
             # Note: la restauration complète nécessiterait plus de logique
             # pour gérer les contraintes FK, etc.
@@ -431,7 +428,7 @@ class BackupService:
     # QUERIES
     # =========================================================================
 
-    def get_backup(self, backup_id: str) -> Optional[Backup]:
+    def get_backup(self, backup_id: str) -> Backup | None:
         """Récupère une sauvegarde."""
         return self.db.query(Backup).filter(
             Backup.id == backup_id,
@@ -440,10 +437,10 @@ class BackupService:
 
     def list_backups(
         self,
-        status: Optional[BackupStatus] = None,
+        status: BackupStatus | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Backup], int]:
+    ) -> tuple[list[Backup], int]:
         """Liste les sauvegardes."""
         query = self.db.query(Backup).filter(
             Backup.tenant_id == self.tenant_id,
@@ -464,7 +461,7 @@ class BackupService:
         ).all()
 
         completed = [b for b in backups if b.status == BackupStatus.COMPLETED]
-        failed = [b for b in backups if b.status == BackupStatus.FAILED]
+        [b for b in backups if b.status == BackupStatus.FAILED]
 
         total_size = sum(b.file_size or 0 for b in completed)
         avg_duration = sum(b.duration_seconds or 0 for b in completed) / len(completed) if completed else 0
@@ -485,7 +482,7 @@ class BackupService:
 
     def get_dashboard(self) -> BackupDashboard:
         """Dashboard backup."""
-        from .schemas import BackupConfigResponse, BackupResponse, RestoreResponse
+        from .schemas import BackupConfigResponse
 
         config = self.get_config()
         stats = self.get_stats()

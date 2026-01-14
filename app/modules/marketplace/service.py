@@ -4,27 +4,33 @@ AZALS - Module Marketplace - Service
 Service pour le site marchand avec provisioning automatique.
 """
 
+import logging
 import secrets
 import string
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, Tuple
-import logging
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 import bcrypt
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from .models import (
-    CommercialPlan, Order, DiscountCode, WebhookEvent,
-    PlanType, BillingCycle, PaymentMethod, OrderStatus
+    BillingCycle,
+    CommercialPlan,
+    DiscountCode,
+    Order,
+    OrderStatus,
+    PaymentMethod,
+    PlanType,
+    WebhookEvent,
 )
 from .schemas import (
-    CheckoutRequest, CheckoutResponse,
-    OrderResponse, DiscountCodeResponse,
-    TenantProvisionResponse, MarketplaceStats
+    CheckoutRequest,
+    CheckoutResponse,
+    DiscountCodeResponse,
+    MarketplaceStats,
+    TenantProvisionResponse,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -39,22 +45,22 @@ class MarketplaceService:
     # PLANS
     # =========================================================================
 
-    def get_plans(self, active_only: bool = True) -> List[CommercialPlan]:
+    def get_plans(self, active_only: bool = True) -> list[CommercialPlan]:
         """Récupère les plans disponibles."""
         query = self.db.query(CommercialPlan)
         if active_only:
-            query = query.filter(CommercialPlan.is_active == True)
+            query = query.filter(CommercialPlan.is_active)
         return query.order_by(CommercialPlan.sort_order).all()
 
-    def get_plan(self, plan_id: str) -> Optional[CommercialPlan]:
+    def get_plan(self, plan_id: str) -> CommercialPlan | None:
         """Récupère un plan par ID."""
         return self.db.query(CommercialPlan).filter(CommercialPlan.id == plan_id).first()
 
-    def get_plan_by_code(self, code: str) -> Optional[CommercialPlan]:
+    def get_plan_by_code(self, code: str) -> CommercialPlan | None:
         """Récupère un plan par code."""
         return self.db.query(CommercialPlan).filter(
             CommercialPlan.code == code,
-            CommercialPlan.is_active == True
+            CommercialPlan.is_active
         ).first()
 
     def seed_default_plans(self):
@@ -145,10 +151,7 @@ class MarketplaceService:
             raise ValueError(f"Plan '{data.plan_code}' non trouvé")
 
         # Calculer les montants
-        if data.billing_cycle == BillingCycle.MONTHLY:
-            subtotal = plan.price_monthly
-        else:
-            subtotal = plan.price_annual
+        subtotal = plan.price_monthly if data.billing_cycle == BillingCycle.MONTHLY else plan.price_annual
 
         # Appliquer code promo
         discount_amount = Decimal("0.00")
@@ -236,7 +239,7 @@ class MarketplaceService:
         random_part = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         return f"CMD-{now.strftime('%Y%m%d')}-{random_part}"
 
-    def _create_stripe_payment_intent(self, order: Order) -> Optional[str]:
+    def _create_stripe_payment_intent(self, order: Order) -> str | None:
         """Crée un PaymentIntent Stripe."""
         import os
         try:
@@ -271,7 +274,7 @@ class MarketplaceService:
             logger.error(f"Erreur création PaymentIntent Stripe: {e}")
             return None
 
-    def _create_stripe_sepa_payment(self, order: Order) -> Optional[str]:
+    def _create_stripe_sepa_payment(self, order: Order) -> str | None:
         """Crée un paiement SEPA via Stripe."""
         import os
         try:
@@ -331,7 +334,7 @@ Votre compte sera activé sous 48h après réception du virement.
         """Valide un code promo."""
         discount = self.db.query(DiscountCode).filter(
             DiscountCode.code == code.upper(),
-            DiscountCode.is_active == True
+            DiscountCode.is_active
         ).first()
 
         if not discount:
@@ -522,7 +525,7 @@ Votre compte sera activé sous 48h après réception du virement.
     # WEBHOOKS
     # =========================================================================
 
-    def process_stripe_webhook(self, event_id: str, event_type: str, payload: Dict, signature: str):
+    def process_stripe_webhook(self, event_id: str, event_type: str, payload: dict, signature: str):
         """Traite un webhook Stripe."""
         # Vérifier si déjà traité
         existing = self.db.query(WebhookEvent).filter(
@@ -564,7 +567,7 @@ Votre compte sera activé sous 48h après réception du virement.
 
         return webhook
 
-    def _handle_payment_succeeded(self, payload: Dict, webhook: WebhookEvent):
+    def _handle_payment_succeeded(self, payload: dict, webhook: WebhookEvent):
         """Traite un paiement réussi."""
         payment_intent_id = payload.get("data", {}).get("object", {}).get("id")
         if not payment_intent_id:
@@ -587,7 +590,7 @@ Votre compte sera activé sous 48h après réception du virement.
             except Exception as e:
                 logger.error(f"Erreur provisioning auto: {e}")
 
-    def _handle_payment_failed(self, payload: Dict, webhook: WebhookEvent):
+    def _handle_payment_failed(self, payload: dict, webhook: WebhookEvent):
         """Traite un paiement échoué."""
         payment_intent_id = payload.get("data", {}).get("object", {}).get("id")
         if not payment_intent_id:
@@ -603,7 +606,7 @@ Votre compte sera activé sous 48h après réception du virement.
             webhook.order_id = order.id
             self.db.commit()
 
-    def _handle_checkout_completed(self, payload: Dict, webhook: WebhookEvent):
+    def _handle_checkout_completed(self, payload: dict, webhook: WebhookEvent):
         """Traite un checkout Stripe complété."""
         pass
 
@@ -682,20 +685,20 @@ Votre compte sera activé sous 48h après réception du virement.
     # COMMANDES
     # =========================================================================
 
-    def get_order(self, order_id: str) -> Optional[Order]:
+    def get_order(self, order_id: str) -> Order | None:
         """Récupère une commande."""
         return self.db.query(Order).filter(Order.id == order_id).first()
 
-    def get_order_by_number(self, order_number: str) -> Optional[Order]:
+    def get_order_by_number(self, order_number: str) -> Order | None:
         """Récupère une commande par numéro."""
         return self.db.query(Order).filter(Order.order_number == order_number).first()
 
     def list_orders(
         self,
-        status: Optional[OrderStatus] = None,
+        status: OrderStatus | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Order], int]:
+    ) -> tuple[list[Order], int]:
         """Liste les commandes."""
         query = self.db.query(Order)
         if status:

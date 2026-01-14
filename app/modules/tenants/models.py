@@ -10,12 +10,10 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Enum, Float, Integer, String, Text
-
-from app.db import Base
-from app.core.types import JSON, UniversalUUID
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from typing import Optional
+
+from app.core.types import JSON, UniversalUUID
+from app.db import Base
 
 # ============================================================================
 # ENUMS
@@ -73,42 +71,73 @@ class InvitationStatus(str, enum.Enum):
 # ============================================================================
 
 class Tenant(Base):
-    """
-    Tenant (client) de la plateforme.
-    NOTE V1: Ce modele correspond a la table creee par la migration initiale.
-    """
+    """Tenant (client) de la plateforme."""
     __tablename__ = "tenants"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=False, index=True)
 
     # Informations entreprise
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    legal_name: Mapped[Optional[str]] = mapped_column(String(255))
-    siret: Mapped[Optional[str]] = mapped_column(String(20))
-    vat_number: Mapped[Optional[str]] = mapped_column(String(30))
+    name: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    legal_name: Mapped[str | None] = mapped_column(String(255))
+    siret: Mapped[str | None] = mapped_column(String(20))
+    vat_number: Mapped[str | None] = mapped_column(String(30))
+
+    # Adresse
+    address_line1: Mapped[str | None] = mapped_column(String(255))
+    address_line2: Mapped[str | None] = mapped_column(String(255))
+    city: Mapped[str | None] = mapped_column(String(100))
+    postal_code: Mapped[str | None] = mapped_column(String(20))
+    country: Mapped[str | None] = mapped_column(String(2), default="FR")
 
     # Contact
-    email: Mapped[Optional[str]] = mapped_column(String(255))
-    phone: Mapped[Optional[str]] = mapped_column(String(50))
-    website: Mapped[Optional[str]] = mapped_column(String(255))
+    email: Mapped[str | None] = mapped_column(String(255), nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(50))
+    website: Mapped[str | None] = mapped_column(String(255))
 
-    # Statut - stocke comme VARCHAR(30) en base, pas ENUM
-    status: Mapped[str] = mapped_column(String(30), nullable=False, default="ACTIVE")
-    environment: Mapped[str] = mapped_column(String(20), nullable=False, default="prod")
+    # Statut et plan
+    status: Mapped[str | None] = mapped_column(Enum(TenantStatus), default=TenantStatus.PENDING)
+    plan: Mapped[str | None] = mapped_column(Enum(SubscriptionPlan), default=SubscriptionPlan.STARTER)
+
+    # Environnement (beta, production, staging, development)
+    environment: Mapped[str | None] = mapped_column(
+        Enum(TenantEnvironment),
+        default=TenantEnvironment.PRODUCTION,
+        nullable=False
+    )
 
     # Configuration
-    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
-    language: Mapped[Optional[str]] = mapped_column(String(10), default="fr")
-    currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
+    timezone: Mapped[str | None] = mapped_column(String(50), default="Europe/Paris")
+    language: Mapped[str | None] = mapped_column(String(5), default="fr")
+    currency: Mapped[str | None] = mapped_column(String(3), default="EUR")
+    date_format: Mapped[str | None] = mapped_column(String(20), default="DD/MM/YYYY")
 
-    # Fonctionnalites et donnees supplementaires (JSONB)
-    features: Mapped[Optional[dict]] = mapped_column(JSON)
-    extra_data: Mapped[Optional[dict]] = mapped_column(JSON)
+    # Limites
+    max_users: Mapped[int | None] = mapped_column(Integer, default=5)
+    max_storage_gb: Mapped[int | None] = mapped_column(Integer, default=10)
+    storage_used_gb: Mapped[float | None] = mapped_column(Float, default=0)
+
+    # Branding
+    logo_url: Mapped[str | None] = mapped_column(String(500))
+    primary_color: Mapped[str | None] = mapped_column(String(7), default="#1976D2")
+    secondary_color: Mapped[str | None] = mapped_column(String(7), default="#424242")
+
+    # Fonctionnalités
+    features: Mapped[dict | None] = mapped_column(JSON)  # {"feature1": true, "feature2": false}
+
+    # Données supplémentaires
+    extra_data: Mapped[dict | None] = mapped_column(JSON)
+
+    # Dates
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime)
+    suspended_at: Mapped[datetime | None] = mapped_column(DateTime)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Audit
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by: Mapped[str | None] = mapped_column(String(100))
 
 
 class TenantSubscription(Base):
@@ -116,35 +145,35 @@ class TenantSubscription(Base):
     __tablename__ = "tenant_subscriptions"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Plan
-    plan: Mapped[Optional[str]] = mapped_column(Enum(SubscriptionPlan), nullable=False)
-    billing_cycle: Mapped[Optional[str]] = mapped_column(Enum(BillingCycle), default=BillingCycle.MONTHLY)
+    plan: Mapped[str | None] = mapped_column(Enum(SubscriptionPlan), nullable=False)
+    billing_cycle: Mapped[str | None] = mapped_column(Enum(BillingCycle), default=BillingCycle.MONTHLY)
 
     # Prix
-    price_monthly: Mapped[Optional[float]] = mapped_column(Float)
-    price_yearly: Mapped[Optional[float]] = mapped_column(Float)
-    discount_percent: Mapped[Optional[float]] = mapped_column(Float, default=0)
+    price_monthly: Mapped[float | None] = mapped_column(Float)
+    price_yearly: Mapped[float | None] = mapped_column(Float)
+    discount_percent: Mapped[float | None] = mapped_column(Float, default=0)
 
     # Période
     starts_at: Mapped[datetime] = mapped_column(DateTime)
-    ends_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    next_billing_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime)
+    next_billing_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Statut
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    is_trial: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    auto_renew: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_trial: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    auto_renew: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
     # Paiement
-    payment_method: Mapped[Optional[str]] = mapped_column(String(50))
-    last_payment_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    last_payment_amount: Mapped[Optional[float]] = mapped_column(Float)
+    payment_method: Mapped[str | None] = mapped_column(String(50))
+    last_payment_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_payment_amount: Mapped[float | None] = mapped_column(Float)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class TenantModule(Base):
@@ -152,27 +181,27 @@ class TenantModule(Base):
     __tablename__ = "tenant_modules"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Module
-    module_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=False)
-    module_name: Mapped[Optional[str]] = mapped_column(String(100))
-    module_version: Mapped[Optional[str]] = mapped_column(String(20))
+    module_code: Mapped[str | None] = mapped_column(String(10), nullable=False)
+    module_name: Mapped[str | None] = mapped_column(String(100))
+    module_version: Mapped[str | None] = mapped_column(String(20))
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(Enum(ModuleStatus), default=ModuleStatus.ACTIVE)
+    status: Mapped[str | None] = mapped_column(Enum(ModuleStatus), default=ModuleStatus.ACTIVE)
 
     # Configuration
-    config: Mapped[Optional[dict]] = mapped_column(JSON)
-    limits: Mapped[Optional[dict]] = mapped_column(JSON)  # {"max_records": 1000}
+    config: Mapped[dict | None] = mapped_column(JSON)
+    limits: Mapped[dict | None] = mapped_column(JSON)  # {"max_records": 1000}
 
     # Dates
-    activated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    deactivated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class TenantInvitation(Base):
@@ -182,27 +211,27 @@ class TenantInvitation(Base):
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
 
     # Invitation
-    token: Mapped[Optional[str]] = mapped_column(String(255), unique=True, nullable=False)
-    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    token: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
     # Tenant cible (nouveau ou existant)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50))
-    tenant_name: Mapped[Optional[str]] = mapped_column(String(255))
-    plan: Mapped[Optional[str]] = mapped_column(Enum(SubscriptionPlan))
+    tenant_id: Mapped[str | None] = mapped_column(String(50))
+    tenant_name: Mapped[str | None] = mapped_column(String(255))
+    plan: Mapped[str | None] = mapped_column(Enum(SubscriptionPlan))
 
     # Rôle proposé
-    proposed_role: Mapped[Optional[str]] = mapped_column(String(50), default="TENANT_ADMIN")
+    proposed_role: Mapped[str | None] = mapped_column(String(50), default="TENANT_ADMIN")
 
     # Statut
-    status: Mapped[Optional[str]] = mapped_column(Enum(InvitationStatus), default=InvitationStatus.PENDING)
+    status: Mapped[str | None] = mapped_column(Enum(InvitationStatus), default=InvitationStatus.PENDING)
 
     # Dates
     expires_at: Mapped[datetime] = mapped_column(DateTime)
-    accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    created_by: Mapped[Optional[str]] = mapped_column(String(100))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    created_by: Mapped[str | None] = mapped_column(String(100))
 
 
 class TenantUsage(Base):
@@ -210,30 +239,30 @@ class TenantUsage(Base):
     __tablename__ = "tenant_usage"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Période
     date: Mapped[datetime] = mapped_column(DateTime, index=True)
-    period: Mapped[Optional[str]] = mapped_column(String(20), default="daily")
+    period: Mapped[str | None] = mapped_column(String(20), default="daily")
 
     # Utilisateurs
-    active_users: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    total_users: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    new_users: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    active_users: Mapped[int | None] = mapped_column(Integer, default=0)
+    total_users: Mapped[int | None] = mapped_column(Integer, default=0)
+    new_users: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # Stockage
-    storage_used_gb: Mapped[Optional[float]] = mapped_column(Float, default=0)
-    files_count: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    storage_used_gb: Mapped[float | None] = mapped_column(Float, default=0)
+    files_count: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # API
-    api_calls: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    api_errors: Mapped[Optional[int]] = mapped_column(Integer, default=0)
+    api_calls: Mapped[int | None] = mapped_column(Integer, default=0)
+    api_errors: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # Modules
-    module_usage: Mapped[Optional[dict]] = mapped_column(JSON)  # {"M1": 100, "M2": 50}
+    module_usage: Mapped[dict | None] = mapped_column(JSON)  # {"M1": 100, "M2": 50}
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class TenantEvent(Base):
@@ -241,20 +270,20 @@ class TenantEvent(Base):
     __tablename__ = "tenant_events"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
 
     # Événement
-    event_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, index=True)
-    event_data: Mapped[Optional[dict]] = mapped_column(JSON)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    event_type: Mapped[str | None] = mapped_column(String(50), nullable=False, index=True)
+    event_data: Mapped[dict | None] = mapped_column(JSON)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Acteur
     actor_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
-    actor_email: Mapped[Optional[str]] = mapped_column(String(255))
-    actor_ip: Mapped[Optional[str]] = mapped_column(String(50))
+    actor_email: Mapped[str | None] = mapped_column(String(255))
+    actor_ip: Mapped[str | None] = mapped_column(String(50))
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class TenantSettings(Base):
@@ -262,33 +291,33 @@ class TenantSettings(Base):
     __tablename__ = "tenant_settings"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, unique=True, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, unique=True, index=True)
 
     # Sécurité
-    two_factor_required: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    session_timeout_minutes: Mapped[Optional[int]] = mapped_column(Integer, default=30)
-    password_expiry_days: Mapped[Optional[int]] = mapped_column(Integer, default=90)
-    ip_whitelist: Mapped[Optional[dict]] = mapped_column(JSON)
+    two_factor_required: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    session_timeout_minutes: Mapped[int | None] = mapped_column(Integer, default=30)
+    password_expiry_days: Mapped[int | None] = mapped_column(Integer, default=90)
+    ip_whitelist: Mapped[dict | None] = mapped_column(JSON)
 
     # Notifications
-    notify_admin_on_signup: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    notify_admin_on_error: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    daily_digest_enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    notify_admin_on_signup: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    notify_admin_on_error: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    daily_digest_enabled: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
     # Intégrations
-    webhook_url: Mapped[Optional[str]] = mapped_column(String(500))
-    api_rate_limit: Mapped[Optional[int]] = mapped_column(Integer, default=1000)
+    webhook_url: Mapped[str | None] = mapped_column(String(500))
+    api_rate_limit: Mapped[int | None] = mapped_column(Integer, default=1000)
 
     # Backup
-    auto_backup_enabled: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    backup_retention_days: Mapped[Optional[int]] = mapped_column(Integer, default=30)
+    auto_backup_enabled: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    backup_retention_days: Mapped[int | None] = mapped_column(Integer, default=30)
 
     # Custom
-    custom_settings: Mapped[Optional[dict]] = mapped_column(JSON)
+    custom_settings: Mapped[dict | None] = mapped_column(JSON)
 
     # Audit
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class TenantOnboarding(Base):
@@ -296,24 +325,24 @@ class TenantOnboarding(Base):
     __tablename__ = "tenant_onboarding"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=False, unique=True, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), nullable=False, unique=True, index=True)
 
     # Étapes complétées
-    company_info_completed: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    admin_created: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    users_invited: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    modules_configured: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    country_pack_selected: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    first_data_imported: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    training_completed: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    company_info_completed: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    admin_created: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    users_invited: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    modules_configured: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    country_pack_selected: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    first_data_imported: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    training_completed: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
     # Progression
-    progress_percent: Mapped[Optional[int]] = mapped_column(Integer, default=0)
-    current_step: Mapped[Optional[str]] = mapped_column(String(50), default="company_info")
+    progress_percent: Mapped[int | None] = mapped_column(Integer, default=0)
+    current_step: Mapped[str | None] = mapped_column(String(50), default="company_info")
 
     # Dates
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Audit
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

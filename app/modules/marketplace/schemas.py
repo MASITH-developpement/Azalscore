@@ -6,11 +6,11 @@ Schémas Pydantic pour le site marchand.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
+from typing import Any
+
 from pydantic import BaseModel, EmailStr, Field
 
-from .models import PlanType, BillingCycle, PaymentMethod, OrderStatus
-
+from .models import BillingCycle, OrderStatus, PaymentMethod, PlanType
 
 # ============================================================================
 # PLANS
@@ -20,7 +20,7 @@ class PlanFeature(BaseModel):
     """Fonctionnalité d'un plan."""
     name: str
     included: bool
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class CommercialPlanResponse(BaseModel):
@@ -29,15 +29,15 @@ class CommercialPlanResponse(BaseModel):
     code: str
     name: str
     plan_type: PlanType
-    description: Optional[str]
+    description: str | None
     price_monthly: Decimal
     price_annual: Decimal
     currency: str
     max_users: int
     max_storage_gb: int
     max_documents_month: int
-    modules_included: List[str]
-    features: List[str]
+    modules_included: list[str]
+    features: list[str]
     trial_days: int
     setup_fee: Decimal
     is_featured: bool
@@ -48,8 +48,8 @@ class CommercialPlanResponse(BaseModel):
 
 class PlanComparison(BaseModel):
     """Comparatif des plans."""
-    plans: List[CommercialPlanResponse]
-    features: List[Dict[str, Any]]  # Matrice features x plans
+    plans: list[CommercialPlanResponse]
+    features: list[dict[str, Any]]  # Matrice features x plans
 
 
 # ============================================================================
@@ -62,16 +62,16 @@ class CheckoutRequest(BaseModel):
     billing_cycle: BillingCycle
     customer_email: EmailStr
     customer_name: str
-    company_name: Optional[str] = None
-    company_siret: Optional[str] = None
-    phone: Optional[str] = None
+    company_name: str | None = None
+    company_siret: str | None = None
+    phone: str | None = None
     billing_address_line1: str
-    billing_address_line2: Optional[str] = None
+    billing_address_line2: str | None = None
     billing_city: str
     billing_postal_code: str
     billing_country: str = "FR"
     payment_method: PaymentMethod
-    discount_code: Optional[str] = None
+    discount_code: str | None = None
     accept_terms: bool = Field(..., description="Acceptation CGV obligatoire")
     accept_privacy: bool = Field(..., description="Acceptation politique confidentialité obligatoire")
 
@@ -86,9 +86,9 @@ class CheckoutResponse(BaseModel):
     discount_amount: Decimal
     total: Decimal
     currency: str
-    payment_intent_client_secret: Optional[str]  # Pour Stripe
-    checkout_url: Optional[str]  # Pour PayPal
-    instructions: Optional[str]  # Pour virement
+    payment_intent_client_secret: str | None  # Pour Stripe
+    checkout_url: str | None  # Pour PayPal
+    instructions: str | None  # Pour virement
 
 
 class OrderResponse(BaseModel):
@@ -99,18 +99,18 @@ class OrderResponse(BaseModel):
     plan_code: str
     billing_cycle: BillingCycle
     customer_email: str
-    customer_name: Optional[str]
-    company_name: Optional[str]
+    customer_name: str | None
+    company_name: str | None
     subtotal: Decimal
     tax_amount: Decimal
     discount_amount: Decimal
     total: Decimal
     currency: str
-    payment_method: Optional[PaymentMethod]
-    paid_at: Optional[datetime]
-    tenant_id: Optional[str]
+    payment_method: PaymentMethod | None
+    paid_at: datetime | None
+    tenant_id: str | None
     created_at: datetime
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -118,17 +118,17 @@ class OrderResponse(BaseModel):
 
 class OrderDetail(OrderResponse):
     """Détail complet d'une commande."""
-    company_siret: Optional[str]
-    phone: Optional[str]
-    billing_address_line1: Optional[str]
-    billing_address_line2: Optional[str]
-    billing_city: Optional[str]
-    billing_postal_code: Optional[str]
-    billing_country: Optional[str]
-    payment_intent_id: Optional[str]
-    payment_status: Optional[str]
-    tenant_created_at: Optional[datetime]
-    notes: Optional[str]
+    company_siret: str | None
+    phone: str | None
+    billing_address_line1: str | None
+    billing_address_line2: str | None
+    billing_city: str | None
+    billing_postal_code: str | None
+    billing_country: str | None
+    payment_intent_id: str | None
+    payment_status: str | None
+    tenant_created_at: datetime | None
+    notes: str | None
 
 
 # ============================================================================
@@ -146,9 +146,9 @@ class DiscountCodeResponse(BaseModel):
     """Réponse code promo."""
     code: str
     valid: bool
-    discount_type: Optional[str]
-    discount_value: Optional[Decimal]
-    final_discount: Optional[Decimal]
+    discount_type: str | None
+    discount_value: Decimal | None
+    final_discount: Decimal | None
     message: str
 
 
@@ -166,7 +166,7 @@ class TenantProvisionResponse(BaseModel):
     tenant_id: str
     admin_email: str
     login_url: str
-    temporary_password: Optional[str]  # Affiché une seule fois
+    temporary_password: str | None  # Affiché une seule fois
     welcome_email_sent: bool
 
 
@@ -178,7 +178,7 @@ class StripeWebhookPayload(BaseModel):
     """Payload webhook Stripe."""
     id: str
     type: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
 
 # ============================================================================
@@ -195,12 +195,12 @@ class MarketplaceStats(BaseModel):
     revenue_month: Decimal
     conversion_rate: float
     avg_order_value: Decimal
-    by_plan: Dict[str, int]
-    by_billing_cycle: Dict[str, int]
+    by_plan: dict[str, int]
+    by_billing_cycle: dict[str, int]
 
 
 class MarketplaceDashboard(BaseModel):
     """Dashboard marketplace."""
     stats: MarketplaceStats
-    recent_orders: List[OrderResponse]
-    popular_plans: List[CommercialPlanResponse]
+    recent_orders: list[OrderResponse]
+    popular_plans: list[CommercialPlanResponse]

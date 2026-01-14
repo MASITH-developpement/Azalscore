@@ -4,8 +4,9 @@ Endpoints de classification décisionnelle protégés JWT + tenant
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_and_tenant
 from app.core.models import DecisionLevel
@@ -35,7 +36,7 @@ class DecisionResponse(BaseModel):
     level: DecisionLevel
     reason: str
     created_at: str
-    
+
     model_config = {"from_attributes": True}
 
 
@@ -47,21 +48,21 @@ async def classify_decision(
 ):
     """
     Crée une décision de classification pour une entité.
-    
+
     Protection :
     - JWT requis (DIRIGEANT)
     - X-Tenant-ID requis
-    
+
     Règles :
     - GREEN → ORANGE : autorisé
     - ORANGE → RED : autorisé
     - RED → * : INTERDIT (403)
-    
+
     Toute décision RED est automatiquement journalisée.
     """
     tenant_id = auth_data["tenant_id"]
     user_id = auth_data["user_id"]
-    
+
     try:
         decision = DecisionService.classify(
             db=db,
@@ -72,7 +73,7 @@ async def classify_decision(
             reason=request.reason,
             user_id=user_id
         )
-        
+
         return DecisionResponse(
             id=decision.id,
             tenant_id=decision.tenant_id,
@@ -97,18 +98,18 @@ async def get_decision_status(
 ):
     """
     Récupère le statut décisionnel actuel d'une entité.
-    
+
     Protection : JWT + X-Tenant-ID
     """
     tenant_id = auth_data["tenant_id"]
-    
+
     current_decision = DecisionService.get_current_decision(
         db=db,
         tenant_id=tenant_id,
         entity_type=entity_type,
         entity_id=entity_id
     )
-    
+
     if not current_decision:
         return {
             "entity_type": entity_type,
@@ -117,7 +118,7 @@ async def get_decision_status(
             "reason": None,
             "is_red": False
         }
-    
+
     return {
         "entity_type": entity_type,
         "entity_id": entity_id,

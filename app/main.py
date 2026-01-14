@@ -11,154 +11,156 @@ SECURITE:
 """
 
 import asyncio
-from fastapi import FastAPI, APIRouter, Depends, Request
-from fastapi.exceptions import RequestValidationError
-from sqlalchemy.orm import Session
-from app.core.database import get_db
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
-from pathlib import Path
 from contextlib import asynccontextmanager
-# IMPORTANT: Importer Base depuis app.db (avec UUIDMixin), PAS depuis app.core.database
-from app.db import Base
-from app.core.database import check_database_connection, engine
-from app.db.model_loader import load_all_models, verify_models_loaded
-from app.core.middleware import TenantMiddleware
-from app.core.dependencies import get_current_user, get_tenant_id
-from app.core.models import User
-from app.core.compression import CompressionMiddleware
-from app.core.security_middleware import setup_cors
-from app.core.metrics import MetricsMiddleware, router as metrics_router, init_metrics
-from app.core.health import router as health_router
-from app.core.logging_config import setup_logging, get_logger
-from app.services.scheduler import scheduler_service
-from app.core.config import get_settings
-from app.core.version import AZALS_VERSION
-from app.core.guards import enforce_startup_security, log_security_status
-from app.core.http_errors import register_error_handlers
-from app.api.items import router as items_router
-from app.api.auth import router as auth_router
-from app.api.protected import router as protected_router
-from app.api.journal import router as journal_router
-from app.api.decision import router as decision_router
-from app.api.red_workflow import router as red_workflow_router
-from app.api.treasury import router as treasury_router
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, FastAPI
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
+
 from app.api.accounting import router as accounting_router
-from app.api.tax import router as tax_router
-from app.api.hr import router as hr_router
-from app.api.legal import router as legal_router
 from app.api.admin_migration import router as admin_migration_router
-from app.api.partners import router as partners_router
-from app.api.invoicing import router as invoicing_router
+from app.api.auth import router as auth_router
 from app.api.branding import router as branding_router
 
-# Module T0 - IAM (Gestion Utilisateurs & Rôles)
-from app.modules.iam.router import router as iam_router
-from app.modules.iam.rbac_middleware import RBACMiddleware
+# Module COCKPIT - Tableau de bord dirigeant
+from app.api.cockpit import router as cockpit_router
+from app.api.decision import router as decision_router
+from app.api.hr import router as hr_router
+from app.api.invoicing import router as invoicing_router
+from app.api.items import router as items_router
+from app.api.journal import router as journal_router
+from app.api.legal import router as legal_router
+from app.api.partners import router as partners_router
+from app.api.protected import router as protected_router
+from app.api.red_workflow import router as red_workflow_router
+from app.api.tax import router as tax_router
+from app.api.treasury import router as treasury_router
+from app.core.compression import CompressionMiddleware
+from app.core.config import get_settings
+from app.core.database import check_database_connection, engine, get_db
+from app.core.dependencies import get_current_user
+from app.core.guards import enforce_startup_security
+from app.core.health import router as health_router
+from app.core.http_errors import register_error_handlers
+from app.core.logging_config import get_logger, setup_logging
+from app.core.metrics import MetricsMiddleware, init_metrics
+from app.core.metrics import router as metrics_router
+from app.core.middleware import TenantMiddleware
+from app.core.models import User
+from app.core.security_middleware import setup_cors
+from app.core.version import AZALS_VERSION
 
-# Module T1 - Configuration Automatique par Fonction
-from app.modules.autoconfig.router import router as autoconfig_router
+# IMPORTANT: Importer Base depuis app.db (avec UUIDMixin), PAS depuis app.core.database
+from app.db import Base
+from app.db.model_loader import load_all_models, verify_models_loaded
 
-# Module T2 - Système de Déclencheurs & Diffusion
-from app.modules.triggers.router import router as triggers_router
+# Module IA - Assistant IA Transverse Opérationnelle
+from app.modules.ai_assistant.router import router as ai_router
 
 # Module T3 - Audit & Benchmark Évolutif
 from app.modules.audit.router import router as audit_router
 
-# Module T4 - Contrôle Qualité Central
-from app.modules.qc.router import router as qc_router
+# Module T1 - Configuration Automatique par Fonction
+from app.modules.autoconfig.router import router as autoconfig_router
 
-# Module T5 - Packs Pays (Localisation)
-from app.modules.country_packs.router import router as country_packs_router
-from app.modules.country_packs.france.router import router as france_pack_router
+# Module BACKUP - Sauvegardes chiffrées
+from app.modules.backup.router import router as backup_router
+
+# Module M10 - BI & Reporting (Business Intelligence)
+from app.modules.bi.router import router as bi_router
 
 # Module T6 - Diffusion d'Information Périodique
 from app.modules.broadcast.router import router as broadcast_router
+
+# Module M1 - Commercial (CRM & Ventes)
+from app.modules.commercial.router import router as commercial_router
+
+# Module M11 - Compliance (Conformité Réglementaire)
+from app.modules.compliance.router import router as compliance_router
+from app.modules.country_packs.france.router import router as france_pack_router
+
+# Module T5 - Packs Pays (Localisation)
+from app.modules.country_packs.router import router as country_packs_router
+
+# Module M12 - E-Commerce
+from app.modules.ecommerce.router import router as ecommerce_router
+
+# Module EMAIL - Email transactionnel
+from app.modules.email.router import router as email_router
+
+# Module M17 - Field Service (Interventions Terrain)
+from app.modules.field_service.router import router as field_service_router
+
+# Module M2 - Finance (Comptabilité & Trésorerie)
+from app.modules.finance.router import router as finance_router
+from app.modules.guardian.middleware import setup_guardian_middleware
+
+# Module GUARDIAN - Correction Automatique Gouvernée & Auditable
+from app.modules.guardian.router import router as guardian_router
+
+# Module M16 - Helpdesk (Support Client)
+from app.modules.helpdesk.router import router as helpdesk_router
+
+# Module M3 - RH (Ressources Humaines)
+from app.modules.hr.router import router as hr_module_router
+from app.modules.iam.rbac_middleware import RBACMiddleware
+
+# Module T0 - IAM (Gestion Utilisateurs & Rôles)
+from app.modules.iam.router import router as iam_router
+
+# Module INTERVENTIONS v1 - Interventions conformes spec
+from app.modules.interventions.router import router as interventions_router
+
+# Module M5 - Stock (Inventaire + Logistique)
+from app.modules.inventory.router import router as inventory_router
+
+# Module M8 - Maintenance (Asset Management / GMAO)
+from app.modules.maintenance.router import router as maintenance_router
+
+# Module MARKETPLACE - Site marchand
+from app.modules.marketplace.router import router as marketplace_router
+
+# Module M18 - Mobile App Backend
+from app.modules.mobile.router import router as mobile_router
+
+# Module M13 - POS (Point de Vente)
+from app.modules.pos.router import router as pos_router
+
+# Module M4 - Achats (Procurement)
+from app.modules.procurement.router import router as procurement_router
+
+# Module M6 - Production (Manufacturing)
+from app.modules.production.router import router as production_router
+
+# Module M9 - Projets (Project Management)
+from app.modules.projects.router import router as projects_router
+
+# Module T4 - Contrôle Qualité Central
+from app.modules.qc.router import router as qc_router
+
+# Module M7 - Qualité (Quality Management)
+from app.modules.quality.router import router as quality_router
+
+# Module M15 - Stripe Integration
+from app.modules.stripe_integration.router import router as stripe_router
+
+# Module M14 - Subscriptions (Abonnements)
+from app.modules.subscriptions.router import router as subscriptions_router
+
+# Module T9 - Gestion des Tenants (Multi-Tenancy)
+from app.modules.tenants.router import router as tenants_router
+
+# Module T2 - Système de Déclencheurs & Diffusion
+from app.modules.triggers.router import router as triggers_router
 
 # Module T7 - Module Web Transverse
 from app.modules.web.router import router as web_router
 
 # Module T8 - Site Web Officiel AZALS
 from app.modules.website.router import router as website_router
-
-# Module T9 - Gestion des Tenants (Multi-Tenancy)
-from app.modules.tenants.router import router as tenants_router
-
-# Module M1 - Commercial (CRM & Ventes)
-from app.modules.commercial.router import router as commercial_router
-
-# Module M2 - Finance (Comptabilité & Trésorerie)
-from app.modules.finance.router import router as finance_router
-
-# Module M3 - RH (Ressources Humaines)
-from app.modules.hr.router import router as hr_module_router
-
-# Module M4 - Achats (Procurement)
-from app.modules.procurement.router import router as procurement_router
-
-# Module M5 - Stock (Inventaire + Logistique)
-from app.modules.inventory.router import router as inventory_router
-
-# Module M6 - Production (Manufacturing)
-from app.modules.production.router import router as production_router
-
-# Module M7 - Qualité (Quality Management)
-from app.modules.quality.router import router as quality_router
-
-# Module M8 - Maintenance (Asset Management / GMAO)
-from app.modules.maintenance.router import router as maintenance_router
-
-# Module M9 - Projets (Project Management)
-from app.modules.projects.router import router as projects_router
-
-# Module M10 - BI & Reporting (Business Intelligence)
-from app.modules.bi.router import router as bi_router
-
-# Module M11 - Compliance (Conformité Réglementaire)
-from app.modules.compliance.router import router as compliance_router
-
-# Module M12 - E-Commerce
-from app.modules.ecommerce.router import router as ecommerce_router
-
-# Module M13 - POS (Point de Vente)
-from app.modules.pos.router import router as pos_router
-
-# Module M14 - Subscriptions (Abonnements)
-from app.modules.subscriptions.router import router as subscriptions_router
-
-# Module M15 - Stripe Integration
-from app.modules.stripe_integration.router import router as stripe_router
-
-# Module M16 - Helpdesk (Support Client)
-from app.modules.helpdesk.router import router as helpdesk_router
-
-# Module M17 - Field Service (Interventions Terrain)
-from app.modules.field_service.router import router as field_service_router
-
-# Module INTERVENTIONS v1 - Interventions conformes spec
-from app.modules.interventions.router import router as interventions_router
-
-# Module M18 - Mobile App Backend
-from app.modules.mobile.router import router as mobile_router
-
-# Module IA - Assistant IA Transverse Opérationnelle
-from app.modules.ai_assistant.router import router as ai_router
-
-# Module GUARDIAN - Correction Automatique Gouvernée & Auditable
-from app.modules.guardian.router import router as guardian_router
-from app.modules.guardian.middleware import setup_guardian_middleware
-
-# Module COCKPIT - Tableau de bord dirigeant
-from app.api.cockpit import router as cockpit_router
-
-# Module EMAIL - Email transactionnel
-from app.modules.email.router import router as email_router
-
-# Module BACKUP - Sauvegardes chiffrées
-from app.modules.backup.router import router as backup_router
-
-# Module MARKETPLACE - Site marchand
-from app.modules.marketplace.router import router as marketplace_router
+from app.services.scheduler import scheduler_service
 
 
 @asynccontextmanager
@@ -248,11 +250,7 @@ async def lifespan(app: FastAPI):
             # - Auto-reset en dev/test si configure
             # - Blocage strict en production
             # =========================================================================
-            from app.db.uuid_reset import (
-                UUIDComplianceManager,
-                UUIDComplianceError,
-                UUIDResetBlockedError
-            )
+            from app.db.uuid_reset import UUIDComplianceError, UUIDComplianceManager, UUIDResetBlockedError
 
             uuid_manager = UUIDComplianceManager(engine, _settings)
 
@@ -261,7 +259,7 @@ async def lifespan(app: FastAPI):
             db_violation_count = len(initial_violations)
 
             if db_violation_count > 0:
-                tables_affected = len(set(v[0] for v in initial_violations))
+                tables_affected = len({v[0] for v in initial_violations})
                 print(f"\n{'='*60}")
                 print("[UUID] BASE LEGACY UUID DETECTEE")
                 print(f"{'='*60}")
@@ -318,9 +316,9 @@ async def lifespan(app: FastAPI):
                     # Mode non-strict avec violations - NE PAS mentir sur l'etat
                     db_uuid_status = "LEGACY (violations ignorees)"
                     db_violation_count = len(uuid_manager.violations)
-                    print(f"[WARN] Violations UUID ignorees (mode non-strict)")
+                    print("[WARN] Violations UUID ignorees (mode non-strict)")
                     print(f"[WARN] Colonnes INT/BIGINT : {db_violation_count}")
-                    print(f"[WARN] Base de donnees : INCOMPATIBLE UUID")
+                    print("[WARN] Base de donnees : INCOMPATIBLE UUID")
 
             except UUIDComplianceError as uuid_err:
                 # Violations detectees et mode strict - arreter le demarrage
@@ -429,9 +427,9 @@ async def lifespan(app: FastAPI):
         print(f"Environnement      : {_settings.environment}")
         print(f"Branche Git        : {current_branch}")
         print(f"Securite           : {security_locked}")
-        print(f"Verrou UUID        : ACTIF")
-        print(f"Violations UUID    : 0")
-        print(f"Base de donnees    : UUID-native")
+        print("Verrou UUID        : ACTIF")
+        print("Violations UUID    : 0")
+        print("Base de donnees    : UUID-native")
         print(f"ORM                : {len(Base.metadata.tables)} tables")
         print(f"{'='*60}")
         print(f"[SECURITY] ENV={_settings.environment} | VERSION={AZALS_VERSION} | BRANCH={current_branch} | STATUS={security_locked}")
@@ -458,18 +456,18 @@ async def lifespan(app: FastAPI):
         print(f"Environnement      : {_settings.environment}")
         print(f"Branche Git        : {current_branch}")
         print(f"Securite           : {security_locked}")
-        print(f"Verrou UUID        : ACTIF")
+        print("Verrou UUID        : ACTIF")
         print(f"Violations UUID    : {db_violation_count}")
         print(f"Base de donnees    : {db_uuid_status}")
         print(f"{'='*60}")
         print("[WARN] BASE NON CONFORME UUID - RESET REQUIS")
         print(f"{'='*60}")
-        print(f"Pour corriger, executez :")
-        print(f"  ./scripts/run_dev.sh")
-        print(f"OU :")
-        print(f"  export AZALS_ENV=dev")
-        print(f"  export DB_AUTO_RESET_ON_VIOLATION=true")
-        print(f"  # Relancez l'application")
+        print("Pour corriger, executez :")
+        print("  ./scripts/run_dev.sh")
+        print("OU :")
+        print("  export AZALS_ENV=dev")
+        print("  export DB_AUTO_RESET_ON_VIOLATION=true")
+        print("  # Relancez l'application")
         print(f"{'='*60}")
         print(f"[SECURITY] ENV={_settings.environment} | VERSION={AZALS_VERSION} | BRANCH={current_branch} | STATUS={security_locked}")
         print(f"{'='*60}\n")
@@ -793,6 +791,7 @@ def get_cockpit_decisions(
 
 from app.core.models import UserRole
 
+
 def require_admin_role(current_user: User) -> None:
     """Vérifie que l'utilisateur a un rôle admin (DIRIGEANT ou ADMIN)."""
     role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
@@ -899,8 +898,9 @@ def create_admin_user(
     db: Session = Depends(get_db)
 ):
     """Crée un nouvel utilisateur."""
-    from app.core.security import get_password_hash
     from fastapi import HTTPException
+
+    from app.core.security import get_password_hash
 
     # SÉCURITÉ: Vérification du rôle admin obligatoire
     require_admin_role(current_user)
@@ -967,7 +967,7 @@ async def health_check():
     Endpoint PUBLIC : pas de validation tenant.
     """
     db_ok = check_database_connection()
-    
+
     return {
         "status": "ok" if db_ok else "degraded",
         "api": True,
@@ -983,7 +983,7 @@ UI_DIR = Path(__file__).parent.parent / "ui"
 # Servir les fichiers statiques (CSS, JS) depuis /ui
 if UI_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(UI_DIR)), name="static")
-    
+
     @app.get("/")
     async def serve_index():
         """Servir la page d'accueil"""
@@ -991,7 +991,7 @@ if UI_DIR.exists():
         if index_path.exists():
             return FileResponse(index_path)
         return {"message": "Interface frontend non disponible"}
-    
+
     @app.get("/dashboard")
     async def serve_dashboard():
         """Servir le dashboard"""
@@ -999,7 +999,7 @@ if UI_DIR.exists():
         if dashboard_path.exists():
             return FileResponse(dashboard_path)
         return {"message": "Dashboard non disponible"}
-    
+
     @app.get("/treasury")
     async def serve_treasury():
         """Servir la page Trésorerie"""
@@ -1007,7 +1007,7 @@ if UI_DIR.exists():
         if treasury_path.exists():
             return FileResponse(treasury_path)
         return {"message": "Page Trésorerie non disponible"}
-    
+
     @app.get("/favicon.ico")
     async def serve_favicon_ico():
         """Servir le favicon (format .ico redirige vers PNG)"""

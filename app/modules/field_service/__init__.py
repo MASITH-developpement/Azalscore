@@ -23,8 +23,8 @@ Note: Les modèles SQLAlchemy doivent être importés directement depuis
 app.modules.field_service.models pour éviter les conflits de registry.
 """
 
-from .service import FieldServiceService
 from .router import router
+from .service import FieldServiceService
 
 __all__ = [
     "FieldServiceService",

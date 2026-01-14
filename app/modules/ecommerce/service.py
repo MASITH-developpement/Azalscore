@@ -6,31 +6,55 @@ Intégration avec: Inventory, Finance, Commercial, Country Packs
 """
 
 import uuid
-import bcrypt
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Tuple
+
+import bcrypt
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_, desc
 
 from .models import (
-    EcommerceCategory, EcommerceProduct, ProductVariant,
-    EcommerceCart, CartItem, EcommerceOrder, OrderItem,
-    EcommercePayment, ShippingMethod, Shipment,
-    Coupon, EcommerceCustomer, CustomerAddress,
-    ProductReview, Wishlist, WishlistItem,
-    ProductStatus, OrderStatus, PaymentStatus, ShippingStatus,
-    CartStatus, DiscountType
+    CartItem,
+    CartStatus,
+    Coupon,
+    CustomerAddress,
+    DiscountType,
+    EcommerceCart,
+    EcommerceCategory,
+    EcommerceCustomer,
+    EcommerceOrder,
+    EcommercePayment,
+    EcommerceProduct,
+    OrderItem,
+    OrderStatus,
+    PaymentStatus,
+    ProductReview,
+    ProductStatus,
+    ProductVariant,
+    Shipment,
+    ShippingMethod,
+    ShippingStatus,
+    Wishlist,
+    WishlistItem,
 )
 from .schemas import (
-    CategoryCreate, CategoryUpdate,
-    ProductCreate, ProductUpdate,
-    VariantCreate, VariantUpdate,
-    CartItemAdd, CheckoutRequest, OrderStatusUpdate,
-    ShippingMethodCreate, ShipmentCreate,
-    CouponCreate, CouponUpdate,
-    CustomerRegisterRequest, CustomerAddressCreate,
-    ReviewCreate, WishlistItemAdd
+    CartItemAdd,
+    CategoryCreate,
+    CategoryUpdate,
+    CheckoutRequest,
+    CouponCreate,
+    CouponUpdate,
+    CustomerAddressCreate,
+    CustomerRegisterRequest,
+    OrderStatusUpdate,
+    ProductCreate,
+    ProductUpdate,
+    ReviewCreate,
+    ShipmentCreate,
+    ShippingMethodCreate,
+    VariantCreate,
+    VariantUpdate,
+    WishlistItemAdd,
 )
 
 
@@ -56,7 +80,7 @@ class EcommerceService:
         self.db.refresh(category)
         return category
 
-    def get_category(self, category_id: int) -> Optional[EcommerceCategory]:
+    def get_category(self, category_id: int) -> EcommerceCategory | None:
         """Récupérer une catégorie."""
         return self.db.query(EcommerceCategory).filter(
             EcommerceCategory.tenant_id == self.tenant_id,
@@ -65,9 +89,9 @@ class EcommerceService:
 
     def get_categories(
         self,
-        parent_id: Optional[int] = None,
+        parent_id: int | None = None,
         visible_only: bool = True
-    ) -> List[EcommerceCategory]:
+    ) -> list[EcommerceCategory]:
         """Lister les catégories."""
         query = self.db.query(EcommerceCategory).filter(
             EcommerceCategory.tenant_id == self.tenant_id
@@ -77,7 +101,7 @@ class EcommerceService:
             query = query.filter(EcommerceCategory.parent_id == parent_id)
 
         if visible_only:
-            query = query.filter(EcommerceCategory.is_visible == True)
+            query = query.filter(EcommerceCategory.is_visible)
 
         return query.order_by(EcommerceCategory.sort_order).all()
 
@@ -85,7 +109,7 @@ class EcommerceService:
         self,
         category_id: int,
         data: CategoryUpdate
-    ) -> Optional[EcommerceCategory]:
+    ) -> EcommerceCategory | None:
         """Mettre à jour une catégorie."""
         category = self.get_category(category_id)
         if not category:
@@ -131,21 +155,21 @@ class EcommerceService:
         self.db.refresh(product)
         return product
 
-    def get_product(self, product_id: int) -> Optional[EcommerceProduct]:
+    def get_product(self, product_id: int) -> EcommerceProduct | None:
         """Récupérer un produit."""
         return self.db.query(EcommerceProduct).filter(
             EcommerceProduct.tenant_id == self.tenant_id,
             EcommerceProduct.id == product_id
         ).first()
 
-    def get_product_by_slug(self, slug: str) -> Optional[EcommerceProduct]:
+    def get_product_by_slug(self, slug: str) -> EcommerceProduct | None:
         """Récupérer un produit par slug."""
         return self.db.query(EcommerceProduct).filter(
             EcommerceProduct.tenant_id == self.tenant_id,
             EcommerceProduct.slug == slug
         ).first()
 
-    def get_product_by_sku(self, sku: str) -> Optional[EcommerceProduct]:
+    def get_product_by_sku(self, sku: str) -> EcommerceProduct | None:
         """Récupérer un produit par SKU."""
         return self.db.query(EcommerceProduct).filter(
             EcommerceProduct.tenant_id == self.tenant_id,
@@ -156,16 +180,16 @@ class EcommerceService:
         self,
         page: int = 1,
         page_size: int = 20,
-        category_id: Optional[int] = None,
-        status: Optional[ProductStatus] = None,
-        search: Optional[str] = None,
-        min_price: Optional[Decimal] = None,
-        max_price: Optional[Decimal] = None,
+        category_id: int | None = None,
+        status: ProductStatus | None = None,
+        search: str | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
         in_stock_only: bool = False,
         featured_only: bool = False,
         sort_by: str = "created_at",
         sort_order: str = "desc"
-    ) -> Tuple[List[EcommerceProduct], int]:
+    ) -> tuple[list[EcommerceProduct], int]:
         """Lister les produits avec filtres et pagination."""
         query = self.db.query(EcommerceProduct).filter(
             EcommerceProduct.tenant_id == self.tenant_id
@@ -198,17 +222,14 @@ class EcommerceService:
             query = query.filter(EcommerceProduct.stock_quantity > 0)
 
         if featured_only:
-            query = query.filter(EcommerceProduct.is_featured == True)
+            query = query.filter(EcommerceProduct.is_featured)
 
         # Total
         total = query.count()
 
         # Tri
         sort_column = getattr(EcommerceProduct, sort_by, EcommerceProduct.created_at)
-        if sort_order == "desc":
-            query = query.order_by(desc(sort_column))
-        else:
-            query = query.order_by(sort_column)
+        query = query.order_by(desc(sort_column)) if sort_order == "desc" else query.order_by(sort_column)
 
         # Pagination
         offset = (page - 1) * page_size
@@ -220,7 +241,7 @@ class EcommerceService:
         self,
         product_id: int,
         data: ProductUpdate
-    ) -> Optional[EcommerceProduct]:
+    ) -> EcommerceProduct | None:
         """Mettre à jour un produit."""
         product = self.get_product(product_id)
         if not product:
@@ -253,7 +274,7 @@ class EcommerceService:
         self.db.commit()
         return True
 
-    def publish_product(self, product_id: int) -> Optional[EcommerceProduct]:
+    def publish_product(self, product_id: int) -> EcommerceProduct | None:
         """Publier un produit."""
         product = self.get_product(product_id)
         if not product:
@@ -269,7 +290,7 @@ class EcommerceService:
         self,
         product_id: int,
         quantity_change: int,
-        variant_id: Optional[int] = None
+        variant_id: int | None = None
     ) -> bool:
         """Mettre à jour le stock."""
         if variant_id:
@@ -310,7 +331,7 @@ class EcommerceService:
         self.db.refresh(variant)
         return variant
 
-    def get_variants(self, product_id: int) -> List[ProductVariant]:
+    def get_variants(self, product_id: int) -> list[ProductVariant]:
         """Lister les variantes d'un produit."""
         return self.db.query(ProductVariant).filter(
             ProductVariant.tenant_id == self.tenant_id,
@@ -321,7 +342,7 @@ class EcommerceService:
         self,
         variant_id: int,
         data: VariantUpdate
-    ) -> Optional[ProductVariant]:
+    ) -> ProductVariant | None:
         """Mettre à jour une variante."""
         variant = self.db.query(ProductVariant).filter(
             ProductVariant.tenant_id == self.tenant_id,
@@ -359,8 +380,8 @@ class EcommerceService:
 
     def get_or_create_cart(
         self,
-        session_id: Optional[str] = None,
-        customer_id: Optional[int] = None
+        session_id: str | None = None,
+        customer_id: int | None = None
     ) -> EcommerceCart:
         """Récupérer ou créer un panier."""
         query = self.db.query(EcommerceCart).filter(
@@ -390,14 +411,14 @@ class EcommerceService:
 
         return cart
 
-    def get_cart(self, cart_id: int) -> Optional[EcommerceCart]:
+    def get_cart(self, cart_id: int) -> EcommerceCart | None:
         """Récupérer un panier."""
         return self.db.query(EcommerceCart).filter(
             EcommerceCart.tenant_id == self.tenant_id,
             EcommerceCart.id == cart_id
         ).first()
 
-    def get_cart_items(self, cart_id: int) -> List[CartItem]:
+    def get_cart_items(self, cart_id: int) -> list[CartItem]:
         """Récupérer les articles du panier."""
         return self.db.query(CartItem).filter(
             CartItem.tenant_id == self.tenant_id,
@@ -408,7 +429,7 @@ class EcommerceService:
         self,
         cart_id: int,
         data: CartItemAdd
-    ) -> Tuple[Optional[CartItem], str]:
+    ) -> tuple[CartItem | None, str]:
         """Ajouter un article au panier."""
         cart = self.get_cart(cart_id)
         if not cart:
@@ -423,9 +444,8 @@ class EcommerceService:
             return None, "Produit non disponible"
 
         # Vérifier le stock
-        if product.track_inventory and not product.allow_backorder:
-            if product.stock_quantity < data.quantity:
-                return None, f"Stock insuffisant (disponible: {product.stock_quantity})"
+        if product.track_inventory and not product.allow_backorder and product.stock_quantity < data.quantity:
+            return None, f"Stock insuffisant (disponible: {product.stock_quantity})"
 
         # Déterminer le prix
         price = product.price
@@ -476,7 +496,7 @@ class EcommerceService:
         cart_id: int,
         item_id: int,
         quantity: int
-    ) -> Tuple[Optional[CartItem], str]:
+    ) -> tuple[CartItem | None, str]:
         """Mettre à jour la quantité d'un article."""
         item = self.db.query(CartItem).filter(
             CartItem.tenant_id == self.tenant_id,
@@ -510,7 +530,7 @@ class EcommerceService:
         self,
         cart_id: int,
         item_id: int
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Retirer un article du panier."""
         item = self.db.query(CartItem).filter(
             CartItem.tenant_id == self.tenant_id,
@@ -551,7 +571,7 @@ class EcommerceService:
         self,
         cart_id: int,
         coupon_code: str
-    ) -> Tuple[bool, str, Optional[Decimal]]:
+    ) -> tuple[bool, str, Decimal | None]:
         """Appliquer un code promo."""
         cart = self.get_cart(cart_id)
         if not cart:
@@ -561,7 +581,7 @@ class EcommerceService:
         coupon = self.db.query(Coupon).filter(
             Coupon.tenant_id == self.tenant_id,
             Coupon.code == coupon_code.upper(),
-            Coupon.is_active == True
+            Coupon.is_active
         ).first()
 
         if not coupon:
@@ -659,7 +679,7 @@ class EcommerceService:
     # CHECKOUT & ORDERS
     # ========================================================================
 
-    def checkout(self, data: CheckoutRequest) -> Tuple[Optional[EcommerceOrder], str]:
+    def checkout(self, data: CheckoutRequest) -> tuple[EcommerceOrder | None, str]:
         """Processus de checkout."""
         cart = self.get_cart(data.cart_id)
         if not cart:
@@ -690,9 +710,8 @@ class EcommerceService:
 
         # Calculer les frais de port
         shipping_total = shipping_method.price
-        if shipping_method.free_shipping_threshold:
-            if cart.subtotal >= shipping_method.free_shipping_threshold:
-                shipping_total = Decimal('0')
+        if shipping_method.free_shipping_threshold and cart.subtotal >= shipping_method.free_shipping_threshold:
+            shipping_total = Decimal('0')
 
         cart.shipping_total = shipping_total
         self._recalculate_cart_totals(cart)
@@ -799,21 +818,21 @@ class EcommerceService:
         random_part = uuid.uuid4().hex[:6].upper()
         return f"ORD-{timestamp}-{random_part}"
 
-    def get_order(self, order_id: int) -> Optional[EcommerceOrder]:
+    def get_order(self, order_id: int) -> EcommerceOrder | None:
         """Récupérer une commande."""
         return self.db.query(EcommerceOrder).filter(
             EcommerceOrder.tenant_id == self.tenant_id,
             EcommerceOrder.id == order_id
         ).first()
 
-    def get_order_by_number(self, order_number: str) -> Optional[EcommerceOrder]:
+    def get_order_by_number(self, order_number: str) -> EcommerceOrder | None:
         """Récupérer une commande par numéro."""
         return self.db.query(EcommerceOrder).filter(
             EcommerceOrder.tenant_id == self.tenant_id,
             EcommerceOrder.order_number == order_number
         ).first()
 
-    def get_order_items(self, order_id: int) -> List[OrderItem]:
+    def get_order_items(self, order_id: int) -> list[OrderItem]:
         """Récupérer les articles d'une commande."""
         return self.db.query(OrderItem).filter(
             OrderItem.tenant_id == self.tenant_id,
@@ -824,11 +843,11 @@ class EcommerceService:
         self,
         page: int = 1,
         page_size: int = 20,
-        status: Optional[OrderStatus] = None,
-        customer_email: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
-    ) -> Tuple[List[EcommerceOrder], int]:
+        status: OrderStatus | None = None,
+        customer_email: str | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None
+    ) -> tuple[list[EcommerceOrder], int]:
         """Lister les commandes."""
         query = self.db.query(EcommerceOrder).filter(
             EcommerceOrder.tenant_id == self.tenant_id
@@ -859,7 +878,7 @@ class EcommerceService:
         self,
         order_id: int,
         data: OrderStatusUpdate
-    ) -> Optional[EcommerceOrder]:
+    ) -> EcommerceOrder | None:
         """Mettre à jour le statut d'une commande."""
         order = self.get_order(order_id)
         if not order:
@@ -895,7 +914,7 @@ class EcommerceService:
         self.db.refresh(order)
         return order
 
-    def cancel_order(self, order_id: int) -> Tuple[bool, str]:
+    def cancel_order(self, order_id: int) -> tuple[bool, str]:
         """Annuler une commande."""
         order = self.get_order(order_id)
         if not order:
@@ -946,9 +965,9 @@ class EcommerceService:
         self,
         payment_id: int,
         external_id: str,
-        card_brand: Optional[str] = None,
-        card_last4: Optional[str] = None
-    ) -> Optional[EcommercePayment]:
+        card_brand: str | None = None,
+        card_last4: str | None = None
+    ) -> EcommercePayment | None:
         """Confirmer un paiement."""
         payment = self.db.query(EcommercePayment).filter(
             EcommercePayment.tenant_id == self.tenant_id,
@@ -980,7 +999,7 @@ class EcommerceService:
         payment_id: int,
         error_code: str,
         error_message: str
-    ) -> Optional[EcommercePayment]:
+    ) -> EcommercePayment | None:
         """Marquer un paiement comme échoué."""
         payment = self.db.query(EcommercePayment).filter(
             EcommercePayment.tenant_id == self.tenant_id,
@@ -1016,13 +1035,13 @@ class EcommerceService:
 
     def get_shipping_methods(
         self,
-        country: Optional[str] = None,
-        cart_subtotal: Optional[Decimal] = None
-    ) -> List[ShippingMethod]:
+        country: str | None = None,
+        cart_subtotal: Decimal | None = None
+    ) -> list[ShippingMethod]:
         """Lister les méthodes de livraison disponibles."""
         query = self.db.query(ShippingMethod).filter(
             ShippingMethod.tenant_id == self.tenant_id,
-            ShippingMethod.is_active == True
+            ShippingMethod.is_active
         )
 
         methods = query.order_by(ShippingMethod.sort_order).all()
@@ -1069,8 +1088,8 @@ class EcommerceService:
     def mark_shipment_shipped(
         self,
         shipment_id: int,
-        tracking_number: Optional[str] = None
-    ) -> Optional[Shipment]:
+        tracking_number: str | None = None
+    ) -> Shipment | None:
         """Marquer une expédition comme expédiée."""
         shipment = self.db.query(Shipment).filter(
             Shipment.tenant_id == self.tenant_id,
@@ -1115,14 +1134,14 @@ class EcommerceService:
         self.db.refresh(coupon)
         return coupon
 
-    def get_coupon(self, coupon_id: int) -> Optional[Coupon]:
+    def get_coupon(self, coupon_id: int) -> Coupon | None:
         """Récupérer un coupon."""
         return self.db.query(Coupon).filter(
             Coupon.tenant_id == self.tenant_id,
             Coupon.id == coupon_id
         ).first()
 
-    def get_coupon_by_code(self, code: str) -> Optional[Coupon]:
+    def get_coupon_by_code(self, code: str) -> Coupon | None:
         """Récupérer un coupon par code."""
         return self.db.query(Coupon).filter(
             Coupon.tenant_id == self.tenant_id,
@@ -1132,14 +1151,14 @@ class EcommerceService:
     def list_coupons(
         self,
         active_only: bool = True
-    ) -> List[Coupon]:
+    ) -> list[Coupon]:
         """Lister les coupons."""
         query = self.db.query(Coupon).filter(
             Coupon.tenant_id == self.tenant_id
         )
 
         if active_only:
-            query = query.filter(Coupon.is_active == True)
+            query = query.filter(Coupon.is_active)
 
         return query.order_by(desc(Coupon.created_at)).all()
 
@@ -1147,7 +1166,7 @@ class EcommerceService:
         self,
         coupon_id: int,
         data: CouponUpdate
-    ) -> Optional[Coupon]:
+    ) -> Coupon | None:
         """Mettre à jour un coupon."""
         coupon = self.get_coupon(coupon_id)
         if not coupon:
@@ -1175,7 +1194,7 @@ class EcommerceService:
     # CUSTOMERS
     # ========================================================================
 
-    def register_customer(self, data: CustomerRegisterRequest) -> Tuple[Optional[EcommerceCustomer], str]:
+    def register_customer(self, data: CustomerRegisterRequest) -> tuple[EcommerceCustomer | None, str]:
         """Inscrire un client."""
         # Vérifier si l'email existe
         existing = self.db.query(EcommerceCustomer).filter(
@@ -1205,14 +1224,14 @@ class EcommerceService:
 
         return customer, "Inscription réussie"
 
-    def get_customer(self, customer_id: int) -> Optional[EcommerceCustomer]:
+    def get_customer(self, customer_id: int) -> EcommerceCustomer | None:
         """Récupérer un client."""
         return self.db.query(EcommerceCustomer).filter(
             EcommerceCustomer.tenant_id == self.tenant_id,
             EcommerceCustomer.id == customer_id
         ).first()
 
-    def get_customer_by_email(self, email: str) -> Optional[EcommerceCustomer]:
+    def get_customer_by_email(self, email: str) -> EcommerceCustomer | None:
         """Récupérer un client par email."""
         return self.db.query(EcommerceCustomer).filter(
             EcommerceCustomer.tenant_id == self.tenant_id,
@@ -1223,7 +1242,7 @@ class EcommerceService:
         self,
         email: str,
         password: str
-    ) -> Optional[EcommerceCustomer]:
+    ) -> EcommerceCustomer | None:
         """Authentifier un client."""
         customer = self.get_customer_by_email(email)
         if not customer or not customer.password_hash:
@@ -1251,7 +1270,7 @@ class EcommerceService:
         self.db.refresh(address)
         return address
 
-    def get_customer_addresses(self, customer_id: int) -> List[CustomerAddress]:
+    def get_customer_addresses(self, customer_id: int) -> list[CustomerAddress]:
         """Lister les adresses d'un client."""
         return self.db.query(CustomerAddress).filter(
             CustomerAddress.tenant_id == self.tenant_id,
@@ -1265,7 +1284,7 @@ class EcommerceService:
     def create_review(
         self,
         data: ReviewCreate,
-        customer_id: Optional[int] = None
+        customer_id: int | None = None
     ) -> ProductReview:
         """Créer un avis produit."""
         review = ProductReview(
@@ -1286,7 +1305,7 @@ class EcommerceService:
         self,
         product_id: int,
         approved_only: bool = True
-    ) -> List[ProductReview]:
+    ) -> list[ProductReview]:
         """Lister les avis d'un produit."""
         query = self.db.query(ProductReview).filter(
             ProductReview.tenant_id == self.tenant_id,
@@ -1294,7 +1313,7 @@ class EcommerceService:
         )
 
         if approved_only:
-            query = query.filter(ProductReview.is_approved == True)
+            query = query.filter(ProductReview.is_approved)
 
         return query.order_by(desc(ProductReview.created_at)).all()
 
@@ -1445,14 +1464,14 @@ class EcommerceService:
         out_of_stock = self.db.query(EcommerceProduct).filter(
             EcommerceProduct.tenant_id == self.tenant_id,
             EcommerceProduct.stock_quantity <= 0,
-            EcommerceProduct.track_inventory == True
+            EcommerceProduct.track_inventory
         ).count()
 
         low_stock = self.db.query(EcommerceProduct).filter(
             EcommerceProduct.tenant_id == self.tenant_id,
             EcommerceProduct.stock_quantity > 0,
             EcommerceProduct.stock_quantity <= EcommerceProduct.low_stock_threshold,
-            EcommerceProduct.track_inventory == True
+            EcommerceProduct.track_inventory
         ).count()
 
         # Clients
@@ -1502,7 +1521,7 @@ class EcommerceService:
             "cart_abandonment_rate": round(abandonment_rate, 2)
         }
 
-    def get_top_selling_products(self, limit: int = 10) -> List[dict]:
+    def get_top_selling_products(self, limit: int = 10) -> list[dict]:
         """Obtenir les produits les plus vendus."""
         products = self.db.query(EcommerceProduct).filter(
             EcommerceProduct.tenant_id == self.tenant_id,
@@ -1520,7 +1539,7 @@ class EcommerceService:
             for p in products
         ]
 
-    def get_recent_orders(self, limit: int = 10) -> List[dict]:
+    def get_recent_orders(self, limit: int = 10) -> list[dict]:
         """Obtenir les commandes récentes."""
         orders = self.db.query(EcommerceOrder).filter(
             EcommerceOrder.tenant_id == self.tenant_id

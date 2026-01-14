@@ -329,21 +329,21 @@ const getSourceLabel = (source: string): string => {
 // ============================================================
 
 const DocumentPreview: React.FC<{ document: DocumentDetail }> = ({
-  document,
+  document: doc,
 }) => {
-  const previewUrl = `/api/accounting/documents/${document.id}/preview`;
+  const previewUrl = `/api/accounting/documents/${doc.id}/preview`;
 
   return (
     <Card title="Document" icon={<FileText size={18} />} noPadding>
       <div className="azals-auto-accounting__doc-preview">
-        {document.file_mime_type.startsWith('image/') ? (
-          <img src={previewUrl} alt={document.original_filename} />
-        ) : document.file_mime_type === 'application/pdf' ? (
-          <iframe src={previewUrl} title={document.original_filename} />
+        {doc.file_mime_type.startsWith('image/') ? (
+          <img src={previewUrl} alt={doc.original_filename} />
+        ) : doc.file_mime_type === 'application/pdf' ? (
+          <iframe src={previewUrl} title={doc.original_filename} />
         ) : (
           <div className="azals-auto-accounting__doc-preview-placeholder">
             <FileText size={48} />
-            <p>{document.original_filename}</p>
+            <p>{doc.original_filename}</p>
           </div>
         )}
       </div>
@@ -363,7 +363,7 @@ const DocumentPreview: React.FC<{ document: DocumentDetail }> = ({
           onClick={() => {
             const link = window.document.createElement('a');
             link.href = previewUrl;
-            link.download = document.original_filename;
+            link.download = doc.original_filename;
             link.click();
           }}
         >

@@ -9,11 +9,12 @@ import logging
 import sys
 import time
 import uuid
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-
 
 # ============================================================================
 # FORMATTER JSON
@@ -289,7 +290,7 @@ class AuditLogger:
         resource_id: Any,
         tenant_id: str,
         user_id: int,
-        details: Optional[dict] = None,
+        details: dict | None = None,
         result: str = "success"
     ):
         """
@@ -324,8 +325,8 @@ class AuditLogger:
         action: str,
         tenant_id: str,
         first_validator: int,
-        second_validator: Optional[int] = None,
-        details: Optional[dict] = None
+        second_validator: int | None = None,
+        details: dict | None = None
     ):
         """
         Log spécifique pour les points rouges (double validation).

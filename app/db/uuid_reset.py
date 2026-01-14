@@ -44,13 +44,11 @@ USAGE EXTERNE (script standalone):
     python scripts/reset_database_uuid.py
 """
 
-import os
 import logging
-from pathlib import Path
-from typing import List, Tuple, Optional, Set
 from datetime import datetime
+from pathlib import Path
 
-from sqlalchemy import text, inspect
+from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -125,8 +123,8 @@ class UUIDComplianceManager:
         """
         self.engine = engine
         self.settings = settings
-        self.violations: List[Tuple[str, str, str]] = []
-        self.tables_dropped: List[str] = []
+        self.violations: list[tuple[str, str, str]] = []
+        self.tables_dropped: list[str] = []
         self.reset_performed: bool = False
 
     @property
@@ -157,7 +155,7 @@ class UUIDComplianceManager:
             and not self.is_production
         )
 
-    def detect_violations(self) -> List[Tuple[str, str, str]]:
+    def detect_violations(self) -> list[tuple[str, str, str]]:
         """
         Detecte toutes les colonnes identifiants non-UUID.
 
@@ -191,7 +189,7 @@ class UUIDComplianceManager:
 
         return self.violations
 
-    def get_all_tables(self) -> List[str]:
+    def get_all_tables(self) -> list[str]:
         """
         Liste toutes les tables du schema public.
 
@@ -329,7 +327,7 @@ class UUIDComplianceManager:
             return True
 
         violation_count = len(violations)
-        tables_affected = len(set(v[0] for v in violations))
+        tables_affected = len({v[0] for v in violations})
 
         logger.warning(
             f"[UUID_VIOLATION] {violation_count} colonnes BIGINT/INT "
@@ -358,9 +356,9 @@ class UUIDComplianceManager:
                 print("[UUID_RESET] RESET DEJA EFFECTUE")
                 print(f"{'='*60}")
                 print(f"Le fichier sentinel '{SENTINEL_FILE}' existe.")
-                print(f"Le reset ne sera pas relance.")
-                print(f"")
-                print(f"Pour forcer un nouveau reset :")
+                print("Le reset ne sera pas relance.")
+                print("")
+                print("Pour forcer un nouveau reset :")
                 print(f"  rm {SENTINEL_FILE}")
                 print(f"{'='*60}\n")
                 # Lever une erreur car la base est toujours legacy
@@ -421,9 +419,9 @@ class UUIDComplianceManager:
         print(f"\n{'='*60}")
         print("[UUID_RESET] RESULTAT POST-RESET")
         print(f"{'='*60}")
-        print(f"Colonnes INT/BIGINT detectees : 0")
-        print(f"Tables affectees : 0")
-        print(f"Verrou UUID : ACTIF (silencieux)")
+        print("Colonnes INT/BIGINT detectees : 0")
+        print("Tables affectees : 0")
+        print("Verrou UUID : ACTIF (silencieux)")
         print(f"{'='*60}\n")
 
         logger.info("[UUID_RESET] Reset termine avec succes - base conforme UUID")
@@ -434,8 +432,8 @@ class UUIDComplianceManager:
         print("[UUID] VIOLATIONS DETECTEES")
         print(f"{'='*60}")
         print(f"Colonnes BIGINT/INT: {len(self.violations)}")
-        print(f"Tables affectees: {len(set(v[0] for v in self.violations))}")
-        print(f"\nExemples:")
+        print(f"Tables affectees: {len({v[0] for v in self.violations})}")
+        print("\nExemples:")
         for table, col, dtype in self.violations[:15]:
             print(f"  - {table}.{col}: {dtype}")
         if len(self.violations) > 15:

@@ -16,9 +16,9 @@ les middlewares de l'application.
 
 import enum
 from pathlib import Path
-from typing import Optional
-from starlette.responses import Response, JSONResponse
+
 from fastapi.responses import FileResponse
+from starlette.responses import JSONResponse, Response
 
 from app.core.logging_config import get_logger
 
@@ -65,8 +65,8 @@ def build_error_response(
     status_code: int,
     error_type: ErrorType,
     message: str,
-    html_path: Optional[str] = None,
-    extra_data: Optional[dict] = None
+    html_path: str | None = None,
+    extra_data: dict | None = None
 ) -> Response:
     """
     Construit une réponse d'erreur HTTP de manière SAFE.
@@ -202,9 +202,9 @@ DEFAULT_ERROR_MESSAGES = {
 
 def build_safe_error_response(
     status_code: int,
-    message: Optional[str] = None,
-    html_path: Optional[str] = None,
-    extra_data: Optional[dict] = None
+    message: str | None = None,
+    html_path: str | None = None,
+    extra_data: dict | None = None
 ) -> Response:
     """
     Version simplifiée de build_error_response qui détermine automatiquement

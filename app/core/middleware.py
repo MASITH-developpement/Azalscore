@@ -7,17 +7,15 @@ SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
           qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
 """
 
-from fastapi import Request, HTTPException, status
+
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
-from typing import Optional
 
 # Import de la fonction SAFE de gestion des erreurs
 # Note: Utilise error_response.py au lieu de middleware.py pour éviter les imports circulaires
 from app.modules.guardian.error_response import (
-    build_error_response,
-    build_safe_error_response,
     ErrorType,
+    build_error_response,
 )
 
 
@@ -27,7 +25,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
     Refuse toute requête sans X-Tenant-ID valide (hors endpoints publics).
     Injecte le tenant_id dans request.state pour usage par les endpoints.
     """
-    
+
     # Endpoints publics exclus de la validation tenant
     # Note: /auth/login et /auth/bootstrap n'ont pas besoin de validation tenant
     # - login: recherche l'utilisateur par email et retourne son tenant_id
@@ -50,7 +48,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         # Audit routes (public for UI events without auth)
         "/v1/audit", "/v1/audit/ui-events",
     }
-    
+
     async def dispatch(self, request: Request, call_next):
         """
         Intercepte chaque requete HTTP.
@@ -63,16 +61,16 @@ class TenantMiddleware(BaseHTTPMiddleware):
         # Endpoints publics : bypass validation mais injecter tenant_id si present
         is_public_path = any(request.url.path == path or request.url.path.startswith(path + "/")
                             for path in self.PUBLIC_PATHS)
-        
+
         # Extraction du header X-Tenant-ID
-        tenant_id: Optional[str] = request.headers.get("X-Tenant-ID")
-        
+        tenant_id: str | None = request.headers.get("X-Tenant-ID")
+
         if is_public_path:
             # Pour les paths publics, injecter tenant_id si présent et valide
             if tenant_id and self._is_valid_tenant_id(tenant_id):
                 request.state.tenant_id = tenant_id
             return await call_next(request)
-        
+
         # Routes protégées : validation obligatoire
         if not tenant_id:
             return build_error_response(
@@ -90,14 +88,14 @@ class TenantMiddleware(BaseHTTPMiddleware):
                 message="Invalid X-Tenant-ID format. Alphanumeric and hyphens only.",
                 html_path="frontend/errors/400.html"
             )
-        
+
         # Injection du tenant_id dans request.state
         request.state.tenant_id = tenant_id
-        
+
         # Poursuite de la requête
         response = await call_next(request)
         return response
-    
+
     @staticmethod
     def _is_valid_tenant_id(tenant_id: str) -> bool:
         """
@@ -107,6 +105,6 @@ class TenantMiddleware(BaseHTTPMiddleware):
         """
         if not tenant_id or len(tenant_id) > 255:
             return False
-        
+
         # Validation alphanumérique + tirets + underscores uniquement
         return all(c.isalnum() or c in ['-', '_'] for c in tenant_id)

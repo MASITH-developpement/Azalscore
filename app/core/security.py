@@ -4,9 +4,10 @@ Gestion JWT et hashing de mots de passe
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
+
 import bcrypt
 from jose import JWTError, jwt
+
 from app.core.config import get_settings
 
 # Configuration JWT
@@ -60,37 +61,37 @@ def get_password_hash(password: str) -> str:
     return hashed.decode('utf-8')
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
     Crée un JWT access token.
-    
+
     Args:
         data: Données à encoder (sub, tenant_id, role)
         expires_delta: Durée de validité personnalisée
-    
+
     Returns:
         JWT signé
     """
     to_encode = data.copy()
-    
+
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    
+
     return encoded_jwt
 
 
-def decode_access_token(token: str) -> Optional[dict]:
+def decode_access_token(token: str) -> dict | None:
     """
     Décode et valide un JWT.
-    
+
     Args:
         token: JWT à décoder
-    
+
     Returns:
         Payload du JWT si valide, None sinon
     """

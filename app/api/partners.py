@@ -9,20 +9,27 @@ Frontend: /v1/partners/*
 Backend: Module Commercial (M1)
 """
 
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
 
 # Réutiliser les schémas et services du module commercial
 from app.modules.commercial.models import CustomerType
 from app.modules.commercial.schemas import (
-    CustomerCreate, CustomerCreateAuto, CustomerUpdate, CustomerResponse, CustomerList,
-    ContactCreate, ContactUpdate, ContactResponse, ContactList,
+    ContactCreate,
+    ContactList,
+    ContactResponse,
+    ContactUpdate,
+    CustomerCreate,
+    CustomerCreateAuto,
+    CustomerList,
+    CustomerResponse,
+    CustomerUpdate,
 )
 from app.modules.commercial.service import get_commercial_service
 
@@ -35,10 +42,10 @@ router = APIRouter(prefix="/partners", tags=["Partners - Clients & Fournisseurs"
 
 @router.get("/clients", response_model=CustomerList)
 async def list_clients(
-    type: Optional[CustomerType] = None,
-    assigned_to: Optional[UUID] = None,
-    is_active: Optional[bool] = None,
-    search: Optional[str] = None,
+    type: CustomerType | None = None,
+    assigned_to: UUID | None = None,
+    is_active: bool | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -126,9 +133,9 @@ async def delete_client(
 
 @router.get("/suppliers", response_model=CustomerList)
 async def list_suppliers(
-    assigned_to: Optional[UUID] = None,
-    is_active: Optional[bool] = None,
-    search: Optional[str] = None,
+    assigned_to: UUID | None = None,
+    is_active: bool | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -212,8 +219,8 @@ async def delete_supplier(
 
 @router.get("/contacts", response_model=ContactList)
 async def list_all_contacts(
-    customer_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    customer_id: UUID | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),

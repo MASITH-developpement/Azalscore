@@ -5,32 +5,52 @@ API endpoints pour la gestion des interventions terrain.
 """
 
 from datetime import date
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 
-from .models import TechnicianStatus, InterventionStatus, InterventionPriority, InterventionType
+from .models import InterventionPriority, InterventionStatus, InterventionType, TechnicianStatus
 from .schemas import (
-    ZoneCreate, ZoneUpdate, ZoneResponse,
-    TechnicianCreate, TechnicianUpdate, TechnicianResponse,
-    TechnicianStatusUpdate, TechnicianLocation,
-    VehicleCreate, VehicleUpdate, VehicleResponse,
-    TemplateCreate, TemplateUpdate, TemplateResponse,
-    InterventionCreate, InterventionUpdate, InterventionResponse,
-    InterventionAssign, InterventionStart, InterventionComplete,
-    TimeEntryCreate, TimeEntryUpdate, TimeEntryResponse,
-    RouteCreate, RouteUpdate, RouteResponse,
-    ExpenseCreate, ExpenseResponse,
-    ContractCreate, ContractUpdate, ContractResponse,
-    InterventionStats, FieldServiceDashboard
+    ContractCreate,
+    ContractResponse,
+    ContractUpdate,
+    ExpenseCreate,
+    ExpenseResponse,
+    FieldServiceDashboard,
+    InterventionAssign,
+    InterventionComplete,
+    InterventionCreate,
+    InterventionResponse,
+    InterventionStart,
+    InterventionStats,
+    InterventionUpdate,
+    RouteCreate,
+    RouteResponse,
+    RouteUpdate,
+    TechnicianCreate,
+    TechnicianLocation,
+    TechnicianResponse,
+    TechnicianStatusUpdate,
+    TechnicianUpdate,
+    TemplateCreate,
+    TemplateResponse,
+    TemplateUpdate,
+    TimeEntryCreate,
+    TimeEntryResponse,
+    TimeEntryUpdate,
+    VehicleCreate,
+    VehicleResponse,
+    VehicleUpdate,
+    ZoneCreate,
+    ZoneResponse,
+    ZoneUpdate,
 )
 from .service import FieldServiceService
 
-
-router = APIRouter(prefix="/field-service", tags=["Field Service"])
+router = APIRouter(prefix="/api/v1/field-service", tags=["Field Service"])
 
 
 def get_service(
@@ -45,7 +65,7 @@ def get_service(
 # ZONES
 # ============================================================================
 
-@router.get("/zones", response_model=List[ZoneResponse])
+@router.get("/zones", response_model=list[ZoneResponse])
 async def list_zones(
     active_only: bool = True,
     service: FieldServiceService = Depends(get_service)
@@ -103,11 +123,11 @@ async def delete_zone(
 # TECHNICIANS
 # ============================================================================
 
-@router.get("/technicians", response_model=List[TechnicianResponse])
+@router.get("/technicians", response_model=list[TechnicianResponse])
 async def list_technicians(
     active_only: bool = True,
-    zone_id: Optional[int] = None,
-    status: Optional[TechnicianStatus] = None,
+    zone_id: int | None = None,
+    status: TechnicianStatus | None = None,
     available_only: bool = False,
     service: FieldServiceService = Depends(get_service)
 ):
@@ -203,7 +223,7 @@ async def get_technician_schedule(
 # VEHICLES
 # ============================================================================
 
-@router.get("/vehicles", response_model=List[VehicleResponse])
+@router.get("/vehicles", response_model=list[VehicleResponse])
 async def list_vehicles(
     active_only: bool = True,
     service: FieldServiceService = Depends(get_service)
@@ -261,7 +281,7 @@ async def delete_vehicle(
 # TEMPLATES
 # ============================================================================
 
-@router.get("/templates", response_model=List[TemplateResponse])
+@router.get("/templates", response_model=list[TemplateResponse])
 async def list_templates(
     active_only: bool = True,
     service: FieldServiceService = Depends(get_service)
@@ -321,16 +341,16 @@ async def delete_template(
 
 @router.get("/interventions")
 async def list_interventions(
-    status: Optional[InterventionStatus] = None,
-    priority: Optional[InterventionPriority] = None,
-    intervention_type: Optional[InterventionType] = None,
-    technician_id: Optional[int] = None,
-    zone_id: Optional[int] = None,
-    customer_id: Optional[int] = None,
-    scheduled_date: Optional[date] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    search: Optional[str] = None,
+    status: InterventionStatus | None = None,
+    priority: InterventionPriority | None = None,
+    intervention_type: InterventionType | None = None,
+    technician_id: int | None = None,
+    zone_id: int | None = None,
+    customer_id: int | None = None,
+    scheduled_date: date | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     service: FieldServiceService = Depends(get_service)
@@ -416,7 +436,7 @@ async def assign_intervention(
 async def start_travel(
     intervention_id: int,
     tech_id: int,
-    data: Optional[InterventionStart] = None,
+    data: InterventionStart | None = None,
     service: FieldServiceService = Depends(get_service)
 ):
     """Démarre le trajet vers l'intervention."""
@@ -432,7 +452,7 @@ async def start_travel(
 async def arrive_on_site(
     intervention_id: int,
     tech_id: int,
-    data: Optional[InterventionStart] = None,
+    data: InterventionStart | None = None,
     service: FieldServiceService = Depends(get_service)
 ):
     """Arrive sur le site d'intervention."""
@@ -448,7 +468,7 @@ async def arrive_on_site(
 async def start_intervention(
     intervention_id: int,
     tech_id: int,
-    data: Optional[InterventionStart] = None,
+    data: InterventionStart | None = None,
     service: FieldServiceService = Depends(get_service)
 ):
     """Démarre l'intervention."""
@@ -491,7 +511,7 @@ async def cancel_intervention(
 async def rate_intervention(
     intervention_id: int,
     rating: int = Query(..., ge=1, le=5),
-    feedback: Optional[str] = None,
+    feedback: str | None = None,
     service: FieldServiceService = Depends(get_service)
 ):
     """Note une intervention (satisfaction client)."""
@@ -514,13 +534,13 @@ async def get_intervention_history(
 # TIME ENTRIES
 # ============================================================================
 
-@router.get("/time-entries", response_model=List[TimeEntryResponse])
+@router.get("/time-entries", response_model=list[TimeEntryResponse])
 async def list_time_entries(
-    technician_id: Optional[int] = None,
-    intervention_id: Optional[int] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    entry_type: Optional[str] = None,
+    technician_id: int | None = None,
+    intervention_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    entry_type: str | None = None,
     service: FieldServiceService = Depends(get_service)
 ):
     """Liste les entrées de temps."""
@@ -594,12 +614,12 @@ async def update_route(
 # EXPENSES
 # ============================================================================
 
-@router.get("/expenses", response_model=List[ExpenseResponse])
+@router.get("/expenses", response_model=list[ExpenseResponse])
 async def list_expenses(
-    technician_id: Optional[int] = None,
-    status: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    technician_id: int | None = None,
+    status: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     service: FieldServiceService = Depends(get_service)
 ):
     """Liste les frais."""
@@ -645,10 +665,10 @@ async def reject_expense(
 # CONTRACTS
 # ============================================================================
 
-@router.get("/contracts", response_model=List[ContractResponse])
+@router.get("/contracts", response_model=list[ContractResponse])
 async def list_contracts(
-    customer_id: Optional[int] = None,
-    status: Optional[str] = None,
+    customer_id: int | None = None,
+    status: str | None = None,
     service: FieldServiceService = Depends(get_service)
 ):
     """Liste des contrats de service."""

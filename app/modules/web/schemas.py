@@ -7,13 +7,12 @@ Schémas de validation pour les API du module Web.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
-from enum import Enum
-
-from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ============================================================================
 # ENUMS
@@ -81,7 +80,7 @@ class PageTypeEnum(str, Enum):
 class ThemeBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     mode: ThemeModeEnum = ThemeModeEnum.LIGHT
     primary_color: str = "#1976D2"
     secondary_color: str = "#424242"
@@ -102,17 +101,17 @@ class ThemeCreate(ThemeBase):
 
 
 class ThemeUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    mode: Optional[ThemeModeEnum] = None
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
-    accent_color: Optional[str] = None
-    background_color: Optional[str] = None
-    text_primary: Optional[str] = None
-    font_family: Optional[str] = None
-    is_default: Optional[bool] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    mode: ThemeModeEnum | None = None
+    primary_color: str | None = None
+    secondary_color: str | None = None
+    accent_color: str | None = None
+    background_color: str | None = None
+    text_primary: str | None = None
+    font_family: str | None = None
+    is_default: bool | None = None
+    is_active: bool | None = None
 
 
 class ThemeResponse(ThemeBase):
@@ -122,7 +121,7 @@ class ThemeResponse(ThemeBase):
     is_system: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -134,45 +133,45 @@ class ThemeResponse(ThemeBase):
 class WidgetBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     widget_type: WidgetTypeEnum
     default_size: WidgetSizeEnum = WidgetSizeEnum.MEDIUM
 
 
 class WidgetCreate(WidgetBase):
-    data_source: Optional[str] = None
-    data_query: Optional[Dict[str, Any]] = None
-    display_config: Optional[Dict[str, Any]] = None
-    chart_config: Optional[Dict[str, Any]] = None
+    data_source: str | None = None
+    data_query: dict[str, Any] | None = None
+    display_config: dict[str, Any] | None = None
+    chart_config: dict[str, Any] | None = None
     refresh_interval: int = 60
-    required_permission: Optional[str] = None
+    required_permission: str | None = None
 
 
 class WidgetUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    default_size: Optional[WidgetSizeEnum] = None
-    data_source: Optional[str] = None
-    data_query: Optional[Dict[str, Any]] = None
-    display_config: Optional[Dict[str, Any]] = None
-    chart_config: Optional[Dict[str, Any]] = None
-    refresh_interval: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    default_size: WidgetSizeEnum | None = None
+    data_source: str | None = None
+    data_query: dict[str, Any] | None = None
+    display_config: dict[str, Any] | None = None
+    chart_config: dict[str, Any] | None = None
+    refresh_interval: int | None = None
+    is_active: bool | None = None
 
 
 class WidgetResponse(WidgetBase):
     id: int
-    data_source: Optional[str] = None
-    data_query: Optional[Dict[str, Any]] = None
-    display_config: Optional[Dict[str, Any]] = None
-    chart_config: Optional[Dict[str, Any]] = None
+    data_source: str | None = None
+    data_query: dict[str, Any] | None = None
+    display_config: dict[str, Any] | None = None
+    chart_config: dict[str, Any] | None = None
     refresh_interval: int
-    required_permission: Optional[str] = None
+    required_permission: str | None = None
     is_active: bool
     is_system: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -194,7 +193,7 @@ class WidgetResponse(WidgetBase):
 class DashboardBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     page_type: PageTypeEnum = PageTypeEnum.DASHBOARD
     layout_type: str = "grid"
     columns: int = Field(4, ge=1, le=12)
@@ -209,35 +208,35 @@ class WidgetPosition(BaseModel):
 
 
 class DashboardCreate(DashboardBase):
-    widgets_config: Optional[List[WidgetPosition]] = None
-    default_filters: Optional[Dict[str, Any]] = None
+    widgets_config: list[WidgetPosition] | None = None
+    default_filters: dict[str, Any] | None = None
     is_default: bool = False
     is_public: bool = False
 
 
 class DashboardUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    layout_type: Optional[str] = None
-    columns: Optional[int] = Field(None, ge=1, le=12)
-    widgets_config: Optional[List[WidgetPosition]] = None
-    default_filters: Optional[Dict[str, Any]] = None
-    is_default: Optional[bool] = None
-    is_public: Optional[bool] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    layout_type: str | None = None
+    columns: int | None = Field(None, ge=1, le=12)
+    widgets_config: list[WidgetPosition] | None = None
+    default_filters: dict[str, Any] | None = None
+    is_default: bool | None = None
+    is_public: bool | None = None
+    is_active: bool | None = None
 
 
 class DashboardResponse(DashboardBase):
     id: int
-    widgets_config: Optional[List[Dict[str, Any]]] = None
-    default_filters: Optional[Dict[str, Any]] = None
+    widgets_config: list[dict[str, Any]] | None = None
+    default_filters: dict[str, Any] | None = None
     is_active: bool
     is_default: bool
     is_public: bool
-    owner_id: Optional[int] = None
+    owner_id: int | None = None
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -259,39 +258,39 @@ class DashboardResponse(DashboardBase):
 class MenuItemBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     label: str = Field(..., min_length=1, max_length=200)
-    icon: Optional[str] = None
-    route: Optional[str] = None
+    icon: str | None = None
+    route: str | None = None
     menu_type: MenuTypeEnum = MenuTypeEnum.MAIN
 
 
 class MenuItemCreate(MenuItemBase):
-    parent_id: Optional[int] = None
+    parent_id: int | None = None
     sort_order: int = 0
-    external_url: Optional[str] = None
+    external_url: str | None = None
     target: str = "_self"
-    required_permission: Optional[str] = None
+    required_permission: str | None = None
     is_separator: bool = False
 
 
 class MenuItemUpdate(BaseModel):
-    label: Optional[str] = Field(None, min_length=1, max_length=200)
-    icon: Optional[str] = None
-    route: Optional[str] = None
-    parent_id: Optional[int] = None
-    sort_order: Optional[int] = None
-    external_url: Optional[str] = None
-    required_permission: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_separator: Optional[bool] = None
+    label: str | None = Field(None, min_length=1, max_length=200)
+    icon: str | None = None
+    route: str | None = None
+    parent_id: int | None = None
+    sort_order: int | None = None
+    external_url: str | None = None
+    required_permission: str | None = None
+    is_active: bool | None = None
+    is_separator: bool | None = None
 
 
 class MenuItemResponse(MenuItemBase):
     id: int
-    parent_id: Optional[int] = None
+    parent_id: int | None = None
     sort_order: int
-    external_url: Optional[str] = None
+    external_url: str | None = None
     target: str
-    required_permission: Optional[str] = None
+    required_permission: str | None = None
     is_active: bool
     is_separator: bool
     created_at: datetime
@@ -304,10 +303,10 @@ class MenuTreeNode(BaseModel):
     id: int
     code: str
     label: str
-    icon: Optional[str] = None
-    route: Optional[str] = None
+    icon: str | None = None
+    route: str | None = None
     is_separator: bool = False
-    children: List["MenuTreeNode"] = []
+    children: list[MenuTreeNode] = []
 
 
 # Résoudre les références circulaires pour MenuTreeNode
@@ -319,12 +318,12 @@ MenuTreeNode.model_rebuild()
 # ============================================================================
 
 class UserPreferenceCreate(BaseModel):
-    theme_id: Optional[int] = None
+    theme_id: int | None = None
     theme_mode: ThemeModeEnum = ThemeModeEnum.SYSTEM
     sidebar_collapsed: bool = False
     sidebar_mini: bool = False
     toolbar_dense: bool = False
-    default_dashboard_id: Optional[int] = None
+    default_dashboard_id: int | None = None
     table_density: str = "default"
     table_page_size: int = 25
     font_size: str = "medium"
@@ -342,12 +341,12 @@ class UserPreferenceCreate(BaseModel):
 class UserPreferenceResponse(BaseModel):
     id: int
     user_id: int
-    theme_id: Optional[int] = None
+    theme_id: int | None = None
     theme_mode: ThemeModeEnum
     sidebar_collapsed: bool
     sidebar_mini: bool
     toolbar_dense: bool
-    default_dashboard_id: Optional[int] = None
+    default_dashboard_id: int | None = None
     table_density: str
     table_page_size: int
     font_size: str
@@ -360,8 +359,8 @@ class UserPreferenceResponse(BaseModel):
     show_tooltips: bool
     sound_enabled: bool
     desktop_notifications: bool
-    custom_shortcuts: Optional[Dict[str, Any]] = None
-    favorite_widgets: Optional[List[int]] = None
+    custom_shortcuts: dict[str, Any] | None = None
+    favorite_widgets: list[int] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -385,10 +384,10 @@ class UserPreferenceResponse(BaseModel):
 class ShortcutCreate(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     key_combination: str = Field(..., min_length=1, max_length=100)
     action_type: str = Field(..., min_length=2, max_length=50)
-    action_value: Optional[str] = None
+    action_value: str | None = None
     context: str = "global"
 
 
@@ -396,10 +395,10 @@ class ShortcutResponse(BaseModel):
     id: int
     code: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     key_combination: str
     action_type: str
-    action_value: Optional[str] = None
+    action_value: str | None = None
     context: str
     is_active: bool
     is_system: bool
@@ -416,52 +415,52 @@ class ShortcutResponse(BaseModel):
 class CustomPageCreate(BaseModel):
     slug: str = Field(..., min_length=2, max_length=100)
     title: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     page_type: PageTypeEnum = PageTypeEnum.CUSTOM
-    content: Optional[str] = None
-    template: Optional[str] = None
+    content: str | None = None
+    template: str | None = None
     layout: str = "default"
     show_sidebar: bool = True
     show_toolbar: bool = True
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    required_permission: Optional[str] = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    required_permission: str | None = None
 
 
 class CustomPageUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    content: Optional[str] = None
-    template: Optional[str] = None
-    layout: Optional[str] = None
-    show_sidebar: Optional[bool] = None
-    show_toolbar: Optional[bool] = None
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    required_permission: Optional[str] = None
-    is_active: Optional[bool] = None
+    title: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    content: str | None = None
+    template: str | None = None
+    layout: str | None = None
+    show_sidebar: bool | None = None
+    show_toolbar: bool | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    required_permission: str | None = None
+    is_active: bool | None = None
 
 
 class CustomPageResponse(BaseModel):
     id: int
     slug: str
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     page_type: PageTypeEnum
-    content: Optional[str] = None
-    template: Optional[str] = None
+    content: str | None = None
+    template: str | None = None
     layout: str
     show_sidebar: bool
     show_toolbar: bool
-    meta_title: Optional[str] = None
-    meta_description: Optional[str] = None
-    required_permission: Optional[str] = None
+    meta_title: str | None = None
+    meta_description: str | None = None
+    required_permission: str | None = None
     is_active: bool
     is_published: bool
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -473,29 +472,29 @@ class CustomPageResponse(BaseModel):
 class ComponentCreate(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     category: ComponentCategoryEnum
-    props_schema: Optional[Dict[str, Any]] = None
-    default_props: Optional[Dict[str, Any]] = None
-    template: Optional[str] = None
-    styles: Optional[str] = None
+    props_schema: dict[str, Any] | None = None
+    default_props: dict[str, Any] | None = None
+    template: str | None = None
+    styles: str | None = None
 
 
 class ComponentResponse(BaseModel):
     id: int
     code: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     category: ComponentCategoryEnum
-    props_schema: Optional[Dict[str, Any]] = None
-    default_props: Optional[Dict[str, Any]] = None
-    template: Optional[str] = None
-    styles: Optional[str] = None
+    props_schema: dict[str, Any] | None = None
+    default_props: dict[str, Any] | None = None
+    template: str | None = None
+    styles: str | None = None
     is_active: bool
     is_system: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -515,10 +514,10 @@ class ComponentResponse(BaseModel):
 # ============================================================================
 
 class UIConfigResponse(BaseModel):
-    theme: Optional[Dict[str, Any]] = None
-    preferences: Dict[str, Any] = {}
-    menu: List[Dict[str, Any]] = []
-    shortcuts: List[Dict[str, str]] = []
+    theme: dict[str, Any] | None = None
+    preferences: dict[str, Any] = {}
+    menu: list[dict[str, Any]] = []
+    shortcuts: list[dict[str, str]] = []
 
 
 # ============================================================================
@@ -526,35 +525,35 @@ class UIConfigResponse(BaseModel):
 # ============================================================================
 
 class PaginatedThemesResponse(BaseModel):
-    items: List[ThemeResponse]
+    items: list[ThemeResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedWidgetsResponse(BaseModel):
-    items: List[WidgetResponse]
+    items: list[WidgetResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedDashboardsResponse(BaseModel):
-    items: List[DashboardResponse]
+    items: list[DashboardResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedPagesResponse(BaseModel):
-    items: List[CustomPageResponse]
+    items: list[CustomPageResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedComponentsResponse(BaseModel):
-    items: List[ComponentResponse]
+    items: list[ComponentResponse]
     total: int
     skip: int
     limit: int

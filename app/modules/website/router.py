@@ -6,27 +6,45 @@ API REST pour le site web officiel.
 """
 
 from datetime import datetime
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.core.auth import get_current_user_and_tenant
+from app.core.models import User
 
-from .service import get_website_service
 from .schemas import (
-    SitePageCreate, SitePageUpdate, SitePageResponse, SitePageListResponse,
-    BlogPostCreate, BlogPostUpdate, BlogPostResponse, BlogPostListResponse,
-    TestimonialCreate, TestimonialUpdate, TestimonialResponse,
-    ContactSubmissionCreate, ContactSubmissionUpdate, ContactSubmissionResponse,
-    NewsletterSubscribeRequest, NewsletterUnsubscribeRequest, NewsletterSubscriberResponse,
-    SiteMediaCreate, SiteMediaUpdate, SiteMediaResponse,
-    SiteSEOUpdate, SiteSEOResponse,
-    SiteAnalyticsResponse, AnalyticsDashboardResponse,
-    PublishRequest, PublicSiteConfigResponse
+    AnalyticsDashboardResponse,
+    BlogPostCreate,
+    BlogPostListResponse,
+    BlogPostResponse,
+    BlogPostUpdate,
+    ContactSubmissionCreate,
+    ContactSubmissionResponse,
+    ContactSubmissionUpdate,
+    NewsletterSubscribeRequest,
+    NewsletterSubscriberResponse,
+    NewsletterUnsubscribeRequest,
+    PublicSiteConfigResponse,
+    PublishRequest,
+    SiteAnalyticsResponse,
+    SiteMediaCreate,
+    SiteMediaResponse,
+    SiteMediaUpdate,
+    SitePageCreate,
+    SitePageListResponse,
+    SitePageResponse,
+    SitePageUpdate,
+    SiteSEOResponse,
+    SiteSEOUpdate,
+    TestimonialCreate,
+    TestimonialResponse,
+    TestimonialUpdate,
 )
+from .service import get_website_service
 
-router = APIRouter(prefix="/website", tags=["Website"])
+router = APIRouter(prefix="/api/v1/website", tags=["Website"])
 
 
 # ============================================================================
@@ -37,27 +55,27 @@ router = APIRouter(prefix="/website", tags=["Website"])
 def create_page(
     data: SitePageCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une page du site."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     return service.create_page(data)
 
 
-@router.get("/pages", response_model=List[SitePageListResponse])
+@router.get("/pages", response_model=list[SitePageListResponse])
 def list_pages(
-    page_type: Optional[str] = None,
-    status: Optional[str] = None,
-    parent_id: Optional[int] = None,
-    show_in_menu: Optional[bool] = None,
-    language: Optional[str] = None,
+    page_type: str | None = None,
+    status: str | None = None,
+    parent_id: int | None = None,
+    show_in_menu: bool | None = None,
+    language: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les pages."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.list_pages(page_type, status, parent_id, show_in_menu, language, skip, limit)
 
 
@@ -65,10 +83,10 @@ def list_pages(
 def get_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une page."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     page = service.get_page(page_id)
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -79,10 +97,10 @@ def get_page(
 def get_page_by_slug(
     slug: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une page par slug."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     page = service.get_page_by_slug(slug)
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -94,10 +112,10 @@ def update_page(
     page_id: int,
     data: SitePageUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une page."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     page = service.update_page(page_id, data)
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée ou système")
@@ -109,10 +127,10 @@ def publish_page(
     page_id: int,
     data: PublishRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Publier/dépublier une page."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     page = service.publish_page(page_id, data.publish)
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -123,10 +141,10 @@ def publish_page(
 def delete_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer une page."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     if not service.delete_page(page_id):
         raise HTTPException(status_code=404, detail="Page non trouvée ou système")
 
@@ -139,28 +157,28 @@ def delete_page(
 def create_blog_post(
     data: BlogPostCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un article de blog."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     return service.create_blog_post(data)
 
 
-@router.get("/blog/posts", response_model=List[BlogPostListResponse])
+@router.get("/blog/posts", response_model=list[BlogPostListResponse])
 def list_blog_posts(
-    content_type: Optional[str] = None,
-    category: Optional[str] = None,
-    tag: Optional[str] = None,
-    status: Optional[str] = None,
-    is_featured: Optional[bool] = None,
-    language: Optional[str] = None,
+    content_type: str | None = None,
+    category: str | None = None,
+    tag: str | None = None,
+    status: str | None = None,
+    is_featured: bool | None = None,
+    language: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les articles."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.list_blog_posts(
         content_type, category, tag, status, is_featured, language, skip, limit
     )
@@ -169,10 +187,10 @@ def list_blog_posts(
 @router.get("/blog/categories")
 def get_blog_categories(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les catégories du blog."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.get_blog_categories()
 
 
@@ -180,10 +198,10 @@ def get_blog_categories(
 def get_blog_post(
     post_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un article."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     post = service.get_blog_post(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Article non trouvé")
@@ -194,10 +212,10 @@ def get_blog_post(
 def get_blog_post_by_slug(
     slug: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un article par slug."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     post = service.get_blog_post_by_slug(slug)
     if not post:
         raise HTTPException(status_code=404, detail="Article non trouvé")
@@ -209,10 +227,10 @@ def update_blog_post(
     post_id: int,
     data: BlogPostUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un article."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     post = service.update_blog_post(post_id, data)
     if not post:
         raise HTTPException(status_code=404, detail="Article non trouvé")
@@ -224,10 +242,10 @@ def publish_blog_post(
     post_id: int,
     data: PublishRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Publier/dépublier un article."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     post = service.publish_blog_post(post_id, data.publish)
     if not post:
         raise HTTPException(status_code=404, detail="Article non trouvé")
@@ -238,10 +256,10 @@ def publish_blog_post(
 def delete_blog_post(
     post_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un article."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     if not service.delete_blog_post(post_id):
         raise HTTPException(status_code=404, detail="Article non trouvé")
 
@@ -254,26 +272,26 @@ def delete_blog_post(
 def create_testimonial(
     data: TestimonialCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un témoignage."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     return service.create_testimonial(data)
 
 
-@router.get("/testimonials", response_model=List[TestimonialResponse])
+@router.get("/testimonials", response_model=list[TestimonialResponse])
 def list_testimonials(
-    industry: Optional[str] = None,
-    is_featured: Optional[bool] = None,
-    show_on_homepage: Optional[bool] = None,
-    status: Optional[str] = None,
+    industry: str | None = None,
+    is_featured: bool | None = None,
+    show_on_homepage: bool | None = None,
+    status: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les témoignages."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.list_testimonials(industry, is_featured, show_on_homepage, status, skip, limit)
 
 
@@ -281,10 +299,10 @@ def list_testimonials(
 def get_testimonial(
     testimonial_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un témoignage."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     testimonial = service.get_testimonial(testimonial_id)
     if not testimonial:
         raise HTTPException(status_code=404, detail="Témoignage non trouvé")
@@ -296,10 +314,10 @@ def update_testimonial(
     testimonial_id: int,
     data: TestimonialUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un témoignage."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     testimonial = service.update_testimonial(testimonial_id, data)
     if not testimonial:
         raise HTTPException(status_code=404, detail="Témoignage non trouvé")
@@ -311,10 +329,10 @@ def publish_testimonial(
     testimonial_id: int,
     data: PublishRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Publier/dépublier un témoignage."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     testimonial = service.publish_testimonial(testimonial_id, data.publish)
     if not testimonial:
         raise HTTPException(status_code=404, detail="Témoignage non trouvé")
@@ -325,10 +343,10 @@ def publish_testimonial(
 def delete_testimonial(
     testimonial_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un témoignage."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     if not service.delete_testimonial(testimonial_id):
         raise HTTPException(status_code=404, detail="Témoignage non trouvé")
 
@@ -342,10 +360,10 @@ def submit_contact_form(
     data: ContactSubmissionCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Soumettre un formulaire de contact."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
 
     # Anti-spam basique (honeypot)
     if hasattr(data, "honeypot") and data.custom_fields and data.custom_fields.get("honeypot"):
@@ -358,18 +376,18 @@ def submit_contact_form(
     return service.create_contact_submission(data, ip_address, user_agent, referrer)
 
 
-@router.get("/contact/submissions", response_model=List[ContactSubmissionResponse])
+@router.get("/contact/submissions", response_model=list[ContactSubmissionResponse])
 def list_contact_submissions(
-    form_category: Optional[str] = None,
-    status: Optional[str] = None,
-    assigned_to: Optional[int] = None,
+    form_category: str | None = None,
+    status: str | None = None,
+    assigned_to: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les soumissions."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.list_contact_submissions(form_category, status, assigned_to, skip, limit)
 
 
@@ -377,10 +395,10 @@ def list_contact_submissions(
 def get_contact_submission(
     submission_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une soumission."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     submission = service.get_contact_submission(submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Soumission non trouvée")
@@ -395,10 +413,10 @@ def update_contact_submission(
     submission_id: int,
     data: ContactSubmissionUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une soumission."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     submission = service.update_contact_submission(submission_id, data)
     if not submission:
         raise HTTPException(status_code=404, detail="Soumission non trouvée")
@@ -408,10 +426,10 @@ def update_contact_submission(
 @router.get("/contact/stats")
 def get_contact_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Statistiques des contacts."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.get_contact_stats()
 
 
@@ -423,10 +441,10 @@ def get_contact_stats(
 def subscribe_newsletter(
     data: NewsletterSubscribeRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """S'abonner à la newsletter."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.subscribe_newsletter(data)
 
 
@@ -434,10 +452,10 @@ def subscribe_newsletter(
 def verify_newsletter(
     token: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Vérifier l'email d'un abonné."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     subscriber = service.verify_newsletter(token)
     if not subscriber:
         raise HTTPException(status_code=404, detail="Token invalide")
@@ -448,37 +466,37 @@ def verify_newsletter(
 def unsubscribe_newsletter(
     data: NewsletterUnsubscribeRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Se désabonner de la newsletter."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     subscriber = service.unsubscribe_newsletter(data.token)
     if not subscriber:
         raise HTTPException(status_code=404, detail="Token invalide")
     return {"message": "Désabonnement effectué", "email": subscriber.email}
 
 
-@router.get("/newsletter/subscribers", response_model=List[NewsletterSubscriberResponse])
+@router.get("/newsletter/subscribers", response_model=list[NewsletterSubscriberResponse])
 def list_newsletter_subscribers(
-    is_active: Optional[bool] = None,
-    is_verified: Optional[bool] = None,
+    is_active: bool | None = None,
+    is_verified: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les abonnés newsletter."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.list_newsletter_subscribers(is_active, is_verified, skip, limit)
 
 
 @router.get("/newsletter/stats")
 def get_newsletter_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Statistiques newsletter."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.get_newsletter_stats()
 
 
@@ -490,25 +508,25 @@ def get_newsletter_stats(
 def create_media(
     data: SiteMediaCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un média."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     return service.create_media(data)
 
 
-@router.get("/media", response_model=List[SiteMediaResponse])
+@router.get("/media", response_model=list[SiteMediaResponse])
 def list_media(
-    media_type: Optional[str] = None,
-    folder: Optional[str] = None,
-    tag: Optional[str] = None,
+    media_type: str | None = None,
+    folder: str | None = None,
+    tag: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les médias."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.list_media(media_type, folder, tag, skip, limit)
 
 
@@ -516,10 +534,10 @@ def list_media(
 def get_media(
     media_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un média."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     media = service.get_media(media_id)
     if not media:
         raise HTTPException(status_code=404, detail="Média non trouvé")
@@ -531,10 +549,10 @@ def update_media(
     media_id: int,
     data: SiteMediaUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un média."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     media = service.update_media(media_id, data)
     if not media:
         raise HTTPException(status_code=404, detail="Média non trouvé")
@@ -545,10 +563,10 @@ def update_media(
 def delete_media(
     media_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un média."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     if not service.delete_media(media_id):
         raise HTTPException(status_code=404, detail="Média non trouvé")
 
@@ -560,10 +578,10 @@ def delete_media(
 @router.get("/seo", response_model=SiteSEOResponse)
 def get_seo_config(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer la configuration SEO."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     seo = service.get_seo_config()
     if not seo:
         raise HTTPException(status_code=404, detail="Configuration SEO non trouvée")
@@ -574,10 +592,10 @@ def get_seo_config(
 def update_seo_config(
     data: SiteSEOUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour la configuration SEO."""
-    service = get_website_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_website_service(db, current_user.tenant_id, current_user.id)
     return service.update_seo_config(data)
 
 
@@ -589,23 +607,23 @@ def update_seo_config(
 def get_analytics_dashboard(
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Dashboard analytics."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.get_analytics_dashboard(days)
 
 
-@router.get("/analytics", response_model=List[SiteAnalyticsResponse])
+@router.get("/analytics", response_model=list[SiteAnalyticsResponse])
 def get_analytics(
     start_date: datetime,
     end_date: datetime,
     period: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les analytics pour une période."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.get_analytics(start_date, end_date, period)
 
 
@@ -615,10 +633,10 @@ def record_analytics(
     period: str = "daily",
     data: dict = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Enregistrer des données analytics."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.record_analytics(date, period, data)
 
 
@@ -630,20 +648,20 @@ def record_analytics(
 def get_public_site_config(
     language: str = "fr",
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Configuration publique du site."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     return service.get_public_site_config(language)
 
 
 @router.get("/homepage", response_model=SitePageResponse)
 def get_homepage(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_and_tenant)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer la page d'accueil."""
-    service = get_website_service(db, current_user["tenant_id"])
+    service = get_website_service(db, current_user.tenant_id)
     page = service.get_homepage()
     if not page:
         raise HTTPException(status_code=404, detail="Page d'accueil non trouvée")

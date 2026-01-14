@@ -10,23 +10,39 @@ Principes fondamentaux:
 - Apprentissage transversal anonymisé
 """
 
-import uuid
 import hashlib
+import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
+from typing import Any
+
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from .models import (
-    AIConversation, AIMessage, AIAnalysis, AIDecisionSupport,
-    AIRiskAlert, AIPrediction, AIFeedback, AILearningData,
-    AIConfiguration, AIAuditLog
+    AIAnalysis,
+    AIAuditLog,
+    AIConfiguration,
+    AIConversation,
+    AIDecisionSupport,
+    AIFeedback,
+    AILearningData,
+    AIMessage,
+    AIPrediction,
+    AIRiskAlert,
 )
 from .schemas import (
-    ConversationCreate, MessageCreate, AnalysisRequest, DecisionSupportCreate, DecisionConfirmation,
-    RiskAlertCreate, RiskAcknowledge, RiskResolve,
-    PredictionRequest, FeedbackCreate, AIConfigUpdate,
-    SynthesisRequest
+    AIConfigUpdate,
+    AnalysisRequest,
+    ConversationCreate,
+    DecisionConfirmation,
+    DecisionSupportCreate,
+    FeedbackCreate,
+    MessageCreate,
+    PredictionRequest,
+    RiskAcknowledge,
+    RiskAlertCreate,
+    RiskResolve,
+    SynthesisRequest,
 )
 
 
@@ -118,7 +134,7 @@ class AIAssistantService:
 
         return conversation
 
-    def get_conversation(self, conversation_id: int) -> Optional[AIConversation]:
+    def get_conversation(self, conversation_id: int) -> AIConversation | None:
         """Récupérer une conversation."""
         return self.db.query(AIConversation).filter(
             AIConversation.tenant_id == self.tenant_id,
@@ -128,14 +144,14 @@ class AIAssistantService:
     def list_conversations(
         self, user_id: int, active_only: bool = True,
         skip: int = 0, limit: int = 50
-    ) -> List[AIConversation]:
+    ) -> list[AIConversation]:
         """Lister les conversations d'un utilisateur."""
         query = self.db.query(AIConversation).filter(
             AIConversation.tenant_id == self.tenant_id,
             AIConversation.user_id == user_id
         )
         if active_only:
-            query = query.filter(AIConversation.is_active == True)
+            query = query.filter(AIConversation.is_active)
 
         return query.order_by(
             AIConversation.last_activity.desc()
@@ -143,7 +159,7 @@ class AIAssistantService:
 
     def add_message(
         self, conversation_id: int, user_id: int, data: MessageCreate
-    ) -> Tuple[AIMessage, AIMessage]:
+    ) -> tuple[AIMessage, AIMessage]:
         """Ajouter un message et générer une réponse."""
         conversation = self.get_conversation(conversation_id)
         if not conversation:
@@ -195,7 +211,7 @@ class AIAssistantService:
         return user_message, assistant_message
 
     def _generate_response(
-        self, question: str, request_type: str, context: Optional[Dict] = None
+        self, question: str, request_type: str, context: dict | None = None
     ) -> str:
         """Générer une réponse IA (placeholder pour intégration LLM)."""
         # TODO: Intégrer avec un vrai LLM (GPT, Claude, etc.)
@@ -214,7 +230,7 @@ class AIAssistantService:
         else:
             return self._generate_generic_response(question, context)
 
-    def _generate_question_response(self, question: str, context: Optional[Dict]) -> str:
+    def _generate_question_response(self, question: str, context: dict | None) -> str:
         """Générer réponse à une question."""
         return f"""**Analyse de votre question**
 
@@ -232,7 +248,7 @@ j'aurais besoin d'accéder aux données pertinentes de votre système.
 *Note : Cette réponse est générée par l'IA. Toute décision importante
 doit être validée par un responsable humain.*"""
 
-    def _generate_analysis_response(self, question: str, context: Optional[Dict]) -> str:
+    def _generate_analysis_response(self, question: str, context: dict | None) -> str:
         """Générer réponse d'analyse."""
         return f"""**Analyse demandée**
 
@@ -255,7 +271,7 @@ L'analyse complète nécessite l'accès aux données du module concerné.
 *⚠️ Cette analyse est une aide à la décision. La décision finale
 revient au responsable désigné.*"""
 
-    def _generate_recommendation_response(self, question: str, context: Optional[Dict]) -> str:
+    def _generate_recommendation_response(self, question: str, context: dict | None) -> str:
         """Générer recommandation."""
         return f"""**Recommandation IA**
 
@@ -277,7 +293,7 @@ Une recommandation précise nécessite l'analyse des données spécifiques.
 *⚠️ IMPORTANT : Cette recommandation est une aide. La décision finale
 appartient au dirigeant/responsable.*"""
 
-    def _generate_risk_response(self, question: str, context: Optional[Dict]) -> str:
+    def _generate_risk_response(self, question: str, context: dict | None) -> str:
         """Générer analyse de risque."""
         return f"""**Analyse des risques**
 
@@ -297,7 +313,7 @@ Contexte : "{question[:100]}..."
 
 *⚠️ Cette analyse doit être validée par un expert.*"""
 
-    def _generate_synthesis_response(self, question: str, context: Optional[Dict]) -> str:
+    def _generate_synthesis_response(self, question: str, context: dict | None) -> str:
         """Générer synthèse."""
         return f"""**Synthèse**
 
@@ -313,7 +329,7 @@ La synthèse complète sera disponible après analyse des données.
 
 *Document généré par IA - À valider par le responsable.*"""
 
-    def _generate_generic_response(self, question: str, context: Optional[Dict]) -> str:
+    def _generate_generic_response(self, question: str, context: dict | None) -> str:
         """Générer réponse générique."""
         return f"""**Réponse de l'assistant AZALS**
 
@@ -393,7 +409,7 @@ doivent être validées par les responsables humains.*"""
             max_level = max(r.get("level", "low") for r in risks)
             analysis.overall_risk_level = max_level
 
-    def _analysis_360(self, analysis: AIAnalysis) -> Tuple[List, List, List]:
+    def _analysis_360(self, analysis: AIAnalysis) -> tuple[list, list, list]:
         """Analyse 360° complète."""
         findings = [
             {"category": "general", "title": "Vue d'ensemble", "description": "Analyse globale de l'entité", "severity": "info"}
@@ -404,7 +420,7 @@ doivent être validées par les responsables humains.*"""
         risks = []
         return findings, recommendations, risks
 
-    def _analysis_financial(self, analysis: AIAnalysis) -> Tuple[List, List, List]:
+    def _analysis_financial(self, analysis: AIAnalysis) -> tuple[list, list, list]:
         """Analyse financière."""
         findings = [
             {"category": "financial", "title": "Situation financière", "description": "État des finances", "severity": "info"}
@@ -415,7 +431,7 @@ doivent être validées par les responsables humains.*"""
         risks = []
         return findings, recommendations, risks
 
-    def _analysis_operational(self, analysis: AIAnalysis) -> Tuple[List, List, List]:
+    def _analysis_operational(self, analysis: AIAnalysis) -> tuple[list, list, list]:
         """Analyse opérationnelle."""
         findings = [
             {"category": "operational", "title": "Performance opérationnelle", "description": "État des opérations", "severity": "info"}
@@ -426,7 +442,7 @@ doivent être validées par les responsables humains.*"""
         risks = []
         return findings, recommendations, risks
 
-    def _analysis_risk(self, analysis: AIAnalysis) -> Tuple[List, List, List]:
+    def _analysis_risk(self, analysis: AIAnalysis) -> tuple[list, list, list]:
         """Analyse des risques."""
         findings = [
             {"category": "risk", "title": "Cartographie des risques", "description": "Identification des risques", "severity": "warning"}
@@ -439,7 +455,7 @@ doivent être validées par les responsables humains.*"""
         ]
         return findings, recommendations, risks
 
-    def get_analysis(self, analysis_id: int) -> Optional[AIAnalysis]:
+    def get_analysis(self, analysis_id: int) -> AIAnalysis | None:
         """Récupérer une analyse."""
         return self.db.query(AIAnalysis).filter(
             AIAnalysis.tenant_id == self.tenant_id,
@@ -447,10 +463,10 @@ doivent être validées par les responsables humains.*"""
         ).first()
 
     def list_analyses(
-        self, user_id: Optional[int] = None,
-        analysis_type: Optional[str] = None,
+        self, user_id: int | None = None,
+        analysis_type: str | None = None,
         skip: int = 0, limit: int = 50
-    ) -> List[AIAnalysis]:
+    ) -> list[AIAnalysis]:
         """Lister les analyses."""
         query = self.db.query(AIAnalysis).filter(
             AIAnalysis.tenant_id == self.tenant_id
@@ -518,14 +534,10 @@ doivent être validées par les responsables humains.*"""
         ]
 
         text = f"{data.title} {data.description or ''} {data.decision_type}".lower()
-        for keyword in red_keywords:
-            if keyword in text:
-                return True
-
-        return False
+        return any(keyword in text for keyword in red_keywords)
 
     def _generate_decision_options(
-        self, decision: AIDecisionSupport, context: Optional[Dict] = None
+        self, decision: AIDecisionSupport, context: dict | None = None
     ) -> None:
         """Générer les options de décision."""
         # Options par défaut (à personnaliser selon le contexte)
@@ -559,7 +571,7 @@ doivent être validées par les responsables humains.*"""
         decision.recommendation_rationale = "L'approche modérée offre le meilleur équilibre entre risque et opportunité dans le contexte actuel."
         decision.risk_level = "medium"
 
-    def get_decision(self, decision_id: int) -> Optional[AIDecisionSupport]:
+    def get_decision(self, decision_id: int) -> AIDecisionSupport | None:
         """Récupérer un support de décision."""
         return self.db.query(AIDecisionSupport).filter(
             AIDecisionSupport.tenant_id == self.tenant_id,
@@ -568,7 +580,7 @@ doivent être validées par les responsables humains.*"""
 
     def list_pending_decisions(
         self, skip: int = 0, limit: int = 50
-    ) -> List[AIDecisionSupport]:
+    ) -> list[AIDecisionSupport]:
         """Lister les décisions en attente."""
         return self.db.query(AIDecisionSupport).filter(
             AIDecisionSupport.tenant_id == self.tenant_id,
@@ -672,7 +684,7 @@ doivent être validées par les responsables humains.*"""
 
         return alert
 
-    def detect_risks(self, module: str, data: Dict) -> List[AIRiskAlert]:
+    def detect_risks(self, module: str, data: dict) -> list[AIRiskAlert]:
         """Détecter automatiquement les risques."""
         alerts = []
 
@@ -690,28 +702,28 @@ doivent être validées par les responsables humains.*"""
 
         return alerts
 
-    def _detect_financial_risks(self, data: Dict) -> List[AIRiskAlert]:
+    def _detect_financial_risks(self, data: dict) -> list[AIRiskAlert]:
         """Détecter risques financiers."""
         alerts = []
         # Logique de détection à implémenter
         return alerts
 
-    def _detect_hr_risks(self, data: Dict) -> List[AIRiskAlert]:
+    def _detect_hr_risks(self, data: dict) -> list[AIRiskAlert]:
         """Détecter risques RH."""
         alerts = []
         return alerts
 
-    def _detect_commercial_risks(self, data: Dict) -> List[AIRiskAlert]:
+    def _detect_commercial_risks(self, data: dict) -> list[AIRiskAlert]:
         """Détecter risques commerciaux."""
         alerts = []
         return alerts
 
-    def _detect_compliance_risks(self, data: Dict) -> List[AIRiskAlert]:
+    def _detect_compliance_risks(self, data: dict) -> list[AIRiskAlert]:
         """Détecter risques conformité."""
         alerts = []
         return alerts
 
-    def get_risk_alert(self, alert_id: int) -> Optional[AIRiskAlert]:
+    def get_risk_alert(self, alert_id: int) -> AIRiskAlert | None:
         """Récupérer une alerte."""
         return self.db.query(AIRiskAlert).filter(
             AIRiskAlert.tenant_id == self.tenant_id,
@@ -719,10 +731,10 @@ doivent être validées par les responsables humains.*"""
         ).first()
 
     def list_active_risks(
-        self, category: Optional[str] = None,
-        level: Optional[str] = None,
+        self, category: str | None = None,
+        level: str | None = None,
         skip: int = 0, limit: int = 50
-    ) -> List[AIRiskAlert]:
+    ) -> list[AIRiskAlert]:
         """Lister les risques actifs."""
         query = self.db.query(AIRiskAlert).filter(
             AIRiskAlert.tenant_id == self.tenant_id,
@@ -820,7 +832,7 @@ doivent être validées par les responsables humains.*"""
         prediction.confidence_score = 0.75
         prediction.status = "active"
 
-    def get_prediction(self, prediction_id: int) -> Optional[AIPrediction]:
+    def get_prediction(self, prediction_id: int) -> AIPrediction | None:
         """Récupérer une prédiction."""
         return self.db.query(AIPrediction).filter(
             AIPrediction.tenant_id == self.tenant_id,
@@ -828,9 +840,9 @@ doivent être validées par les responsables humains.*"""
         ).first()
 
     def list_predictions(
-        self, prediction_type: Optional[str] = None,
+        self, prediction_type: str | None = None,
         skip: int = 0, limit: int = 50
-    ) -> List[AIPrediction]:
+    ) -> list[AIPrediction]:
         """Lister les prédictions."""
         query = self.db.query(AIPrediction).filter(
             AIPrediction.tenant_id == self.tenant_id
@@ -877,7 +889,7 @@ doivent être validées par les responsables humains.*"""
             )
 
     def _record_learning_data(
-        self, data_type: str, category: str, pattern_data: Dict
+        self, data_type: str, category: str, pattern_data: dict
     ) -> None:
         """Enregistrer données d'apprentissage anonymisées."""
         # Créer hash pour anonymisation
@@ -905,7 +917,7 @@ doivent être validées par les responsables humains.*"""
     # SYNTHESIS
     # ========================================================================
 
-    def generate_synthesis(self, user_id: int, data: SynthesisRequest) -> Dict[str, Any]:
+    def generate_synthesis(self, user_id: int, data: SynthesisRequest) -> dict[str, Any]:
         """Générer une synthèse."""
         # TODO: Implémenter synthèse réelle basée sur données
         synthesis = {
@@ -939,7 +951,7 @@ doivent être validées par les responsables humains.*"""
     # STATISTICS
     # ========================================================================
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Statistiques IA."""
         now = datetime.utcnow()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -981,12 +993,12 @@ doivent être validées par les responsables humains.*"""
         avg_response_time = self.db.query(func.avg(AIMessage.processing_time_ms)).filter(
             AIMessage.tenant_id == self.tenant_id,
             AIMessage.role == "assistant",
-            AIMessage.processing_time_ms != None
+            AIMessage.processing_time_ms is not None
         ).scalar() or 0
 
         avg_rating = self.db.query(func.avg(AIFeedback.rating)).filter(
             AIFeedback.tenant_id == self.tenant_id,
-            AIFeedback.rating != None
+            AIFeedback.rating is not None
         ).scalar() or 0
 
         return {
@@ -1002,7 +1014,7 @@ doivent être validées par les responsables humains.*"""
             "predictions_accuracy": 0.0  # À calculer avec données réelles
         }
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """Vérification santé IA."""
         start = datetime.utcnow()
 
@@ -1041,9 +1053,9 @@ doivent être validées par les responsables humains.*"""
     # ========================================================================
 
     def _log_action(
-        self, user_id: Optional[int], action: str,
-        reference_type: Optional[str], reference_id: Optional[int],
-        details: Optional[Dict] = None
+        self, user_id: int | None, action: str,
+        reference_type: str | None, reference_id: int | None,
+        details: dict | None = None
     ) -> None:
         """Journaliser une action IA."""
         log = AIAuditLog(
@@ -1059,10 +1071,10 @@ doivent être validées par les responsables humains.*"""
         self.db.add(log)
 
     def get_audit_logs(
-        self, action: Optional[str] = None,
-        user_id: Optional[int] = None,
+        self, action: str | None = None,
+        user_id: int | None = None,
         skip: int = 0, limit: int = 100
-    ) -> List[AIAuditLog]:
+    ) -> list[AIAuditLog]:
         """Récupérer les logs d'audit."""
         query = self.db.query(AIAuditLog).filter(
             AIAuditLog.tenant_id == self.tenant_id

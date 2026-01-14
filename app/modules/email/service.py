@@ -4,30 +4,37 @@ AZALS - Module Email - Service
 Service d'envoi d'emails transactionnels avec file d'attente et retry.
 """
 
+import logging
+import re
 import smtplib
 import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-import logging
 import uuid
-import re
+from datetime import datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Any
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
 
-from app.core.encryption import encrypt_value, decrypt_value
-from .models import EmailConfig, EmailTemplate, EmailLog, EmailQueue, EmailStatus, EmailType
+from app.core.encryption import decrypt_value, encrypt_value
+
+from .models import EmailConfig, EmailLog, EmailQueue, EmailStatus, EmailTemplate, EmailType
 from .schemas import (
-    EmailConfigCreate, EmailConfigUpdate, EmailConfigResponse,
-    EmailTemplateCreate, EmailTemplateUpdate, EmailTemplateResponse,
-    SendEmailRequest, SendEmailResponse, BulkSendRequest, BulkSendResponse,
-    EmailLogResponse, EmailStats, EmailStatsByType, EmailDashboard
+    BulkSendRequest,
+    BulkSendResponse,
+    EmailConfigCreate,
+    EmailConfigResponse,
+    EmailConfigUpdate,
+    EmailDashboard,
+    EmailLogResponse,
+    EmailStats,
+    EmailStatsByType,
+    EmailTemplateCreate,
+    EmailTemplateUpdate,
+    SendEmailRequest,
+    SendEmailResponse,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +50,7 @@ class EmailService:
     # CONFIGURATION
     # =========================================================================
 
-    def get_config(self) -> Optional[EmailConfig]:
+    def get_config(self) -> EmailConfig | None:
         """Récupère la configuration email du tenant."""
         return self.db.query(EmailConfig).filter(
             EmailConfig.tenant_id == self.tenant_id
@@ -75,7 +82,7 @@ class EmailService:
         self.db.refresh(config)
         return config
 
-    def update_config(self, data: EmailConfigUpdate) -> Optional[EmailConfig]:
+    def update_config(self, data: EmailConfigUpdate) -> EmailConfig | None:
         """Met à jour la configuration email."""
         config = self.get_config()
         if not config:
@@ -101,7 +108,7 @@ class EmailService:
         self.db.refresh(config)
         return config
 
-    def verify_config(self) -> Tuple[bool, str]:
+    def verify_config(self) -> tuple[bool, str]:
         """Vérifie la configuration email en envoyant un email test."""
         config = self.get_config()
         if not config:
@@ -115,7 +122,7 @@ class EmailService:
         except Exception as e:
             return False, str(e)
 
-    def _verify_smtp(self, config: EmailConfig) -> Tuple[bool, str]:
+    def _verify_smtp(self, config: EmailConfig) -> tuple[bool, str]:
         """Vérifie la connexion SMTP."""
         try:
             if config.smtp_use_ssl:
@@ -144,21 +151,21 @@ class EmailService:
     # TEMPLATES
     # =========================================================================
 
-    def get_template(self, template_id: str) -> Optional[EmailTemplate]:
+    def get_template(self, template_id: str) -> EmailTemplate | None:
         """Récupère un template par ID."""
         return self.db.query(EmailTemplate).filter(
             EmailTemplate.id == template_id,
             or_(EmailTemplate.tenant_id == self.tenant_id, EmailTemplate.tenant_id.is_(None))
         ).first()
 
-    def get_template_by_code(self, code: str, language: str = "fr") -> Optional[EmailTemplate]:
+    def get_template_by_code(self, code: str, language: str = "fr") -> EmailTemplate | None:
         """Récupère un template par code."""
         # D'abord chercher un template spécifique au tenant
         template = self.db.query(EmailTemplate).filter(
             EmailTemplate.code == code,
             EmailTemplate.tenant_id == self.tenant_id,
             EmailTemplate.language == language,
-            EmailTemplate.is_active == True
+            EmailTemplate.is_active
         ).first()
 
         if not template:
@@ -167,7 +174,7 @@ class EmailService:
                 EmailTemplate.code == code,
                 EmailTemplate.tenant_id.is_(None),
                 EmailTemplate.language == language,
-                EmailTemplate.is_active == True
+                EmailTemplate.is_active
             ).first()
 
         return template
@@ -190,7 +197,7 @@ class EmailService:
         self.db.refresh(template)
         return template
 
-    def update_template(self, template_id: str, data: EmailTemplateUpdate) -> Optional[EmailTemplate]:
+    def update_template(self, template_id: str, data: EmailTemplateUpdate) -> EmailTemplate | None:
         """Met à jour un template."""
         template = self.get_template(template_id)
         if not template or (template.tenant_id and template.tenant_id != self.tenant_id):
@@ -205,7 +212,7 @@ class EmailService:
         self.db.refresh(template)
         return template
 
-    def list_templates(self, email_type: Optional[EmailType] = None) -> List[EmailTemplate]:
+    def list_templates(self, email_type: EmailType | None = None) -> list[EmailTemplate]:
         """Liste les templates disponibles."""
         query = self.db.query(EmailTemplate).filter(
             or_(EmailTemplate.tenant_id == self.tenant_id, EmailTemplate.tenant_id.is_(None))
@@ -218,7 +225,7 @@ class EmailService:
     # ENVOI D'EMAILS
     # =========================================================================
 
-    def send_email(self, data: SendEmailRequest, created_by: Optional[str] = None) -> SendEmailResponse:
+    def send_email(self, data: SendEmailRequest, created_by: str | None = None) -> SendEmailResponse:
         """Envoie un email (mise en file d'attente)."""
         config = self.get_config()
         if not config or not config.is_active:
@@ -315,7 +322,7 @@ class EmailService:
             email_ids=email_ids
         )
 
-    def _render_template(self, template: str, variables: Dict[str, Any]) -> str:
+    def _render_template(self, template: str, variables: dict[str, Any]) -> str:
         """Rend un template avec les variables."""
         if not template:
             return ""
@@ -559,7 +566,7 @@ class EmailService:
     # LOGS
     # =========================================================================
 
-    def get_log(self, log_id: str) -> Optional[EmailLog]:
+    def get_log(self, log_id: str) -> EmailLog | None:
         """Récupère un log email."""
         return self.db.query(EmailLog).filter(
             EmailLog.id == log_id,
@@ -568,13 +575,13 @@ class EmailService:
 
     def list_logs(
         self,
-        email_type: Optional[EmailType] = None,
-        status: Optional[EmailStatus] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        email_type: EmailType | None = None,
+        status: EmailStatus | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[EmailLog], int]:
+    ) -> tuple[list[EmailLog], int]:
         """Liste les logs emails."""
         query = self.db.query(EmailLog).filter(EmailLog.tenant_id == self.tenant_id)
 

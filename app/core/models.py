@@ -9,8 +9,8 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Enum, Index, Integer, Numeric, String, Text, func
 
-from app.db import Base
 from app.core.types import UniversalUUID
+from app.db import Base
 
 
 class UserRole(str, enum.Enum):

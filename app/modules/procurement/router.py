@@ -6,29 +6,38 @@ Endpoints API pour la gestion des achats.
 """
 
 from datetime import date
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from fastapi.responses import Response
-from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.core.database import get_db
-from app.core.auth import get_current_user, get_tenant_id
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
+from sqlalchemy.orm import Session
 
-from .models import (
-    SupplierStatus, SupplierType, RequisitionStatus,
-    PurchaseOrderStatus, PurchaseInvoiceStatus
-)
+from app.core.auth import get_current_user, get_tenant_id
+from app.core.database import get_db
+
+from .models import PurchaseInvoiceStatus, PurchaseOrderStatus, RequisitionStatus, SupplierStatus, SupplierType
 from .schemas import (
-    SupplierCreate, SupplierUpdate, SupplierResponse, SupplierList,
-    SupplierContactCreate, SupplierContactResponse,
-    RequisitionCreate, RequisitionResponse,
-    PurchaseOrderCreate, PurchaseOrderResponse, PurchaseOrderList,
-    GoodsReceiptCreate, GoodsReceiptResponse,
-    PurchaseInvoiceCreate, PurchaseInvoiceResponse, PurchaseInvoiceList,
-    SupplierPaymentCreate, SupplierPaymentResponse,
-    SupplierEvaluationCreate, SupplierEvaluationResponse,
-    ProcurementDashboard
+    GoodsReceiptCreate,
+    GoodsReceiptResponse,
+    ProcurementDashboard,
+    PurchaseInvoiceCreate,
+    PurchaseInvoiceList,
+    PurchaseInvoiceResponse,
+    PurchaseOrderCreate,
+    PurchaseOrderList,
+    PurchaseOrderResponse,
+    RequisitionCreate,
+    RequisitionResponse,
+    SupplierContactCreate,
+    SupplierContactResponse,
+    SupplierCreate,
+    SupplierEvaluationCreate,
+    SupplierEvaluationResponse,
+    SupplierList,
+    SupplierPaymentCreate,
+    SupplierPaymentResponse,
+    SupplierResponse,
+    SupplierUpdate,
 )
 from .service import get_procurement_service
 
@@ -56,10 +65,10 @@ def create_supplier(
 
 @router.get("/suppliers", response_model=SupplierList)
 def list_suppliers(
-    status: Optional[SupplierStatus] = None,
-    supplier_type: Optional[SupplierType] = None,
-    category: Optional[str] = None,
-    search: Optional[str] = None,
+    status: SupplierStatus | None = None,
+    supplier_type: SupplierType | None = None,
+    category: str | None = None,
+    search: str | None = None,
     is_active: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -143,7 +152,7 @@ def add_supplier_contact(
     return service.add_supplier_contact(supplier_id, data)
 
 
-@router.get("/suppliers/{supplier_id}/contacts", response_model=List[SupplierContactResponse])
+@router.get("/suppliers/{supplier_id}/contacts", response_model=list[SupplierContactResponse])
 def get_supplier_contacts(
     supplier_id: UUID,
     db: Session = Depends(get_db),
@@ -173,8 +182,8 @@ def create_requisition(
 
 @router.get("/requisitions")
 def list_requisitions(
-    requisition_status: Optional[RequisitionStatus] = None,
-    requester_id: Optional[UUID] = None,
+    requisition_status: RequisitionStatus | None = None,
+    requester_id: UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -271,10 +280,10 @@ def create_purchase_order(
 
 @router.get("/orders", response_model=PurchaseOrderList)
 def list_purchase_orders(
-    supplier_id: Optional[UUID] = None,
-    order_status: Optional[PurchaseOrderStatus] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    supplier_id: UUID | None = None,
+    order_status: PurchaseOrderStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -327,8 +336,8 @@ def send_purchase_order(
 @router.post("/orders/{order_id}/confirm", response_model=PurchaseOrderResponse)
 def confirm_purchase_order(
     order_id: UUID,
-    supplier_reference: Optional[str] = None,
-    confirmed_date: Optional[date] = None,
+    supplier_reference: str | None = None,
+    confirmed_date: date | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -393,8 +402,8 @@ def validate_purchase_order(
 @router.post("/orders/{order_id}/create-invoice", response_model=PurchaseInvoiceResponse, status_code=status.HTTP_201_CREATED)
 def create_invoice_from_order(
     order_id: UUID,
-    invoice_date: Optional[date] = None,
-    supplier_invoice_number: Optional[str] = None,
+    invoice_date: date | None = None,
+    supplier_invoice_number: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -411,10 +420,10 @@ def create_invoice_from_order(
 
 @router.get("/orders/export/csv")
 def export_orders_csv(
-    supplier_id: Optional[UUID] = None,
-    order_status: Optional[PurchaseOrderStatus] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    supplier_id: UUID | None = None,
+    order_status: PurchaseOrderStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -486,10 +495,10 @@ def create_purchase_invoice(
 
 @router.get("/invoices", response_model=PurchaseInvoiceList)
 def list_purchase_invoices(
-    supplier_id: Optional[UUID] = None,
-    invoice_status: Optional[PurchaseInvoiceStatus] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    supplier_id: UUID | None = None,
+    invoice_status: PurchaseInvoiceStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -575,10 +584,10 @@ def delete_purchase_invoice(
 
 @router.get("/invoices/export/csv")
 def export_invoices_csv(
-    supplier_id: Optional[UUID] = None,
-    invoice_status: Optional[PurchaseInvoiceStatus] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    supplier_id: UUID | None = None,
+    invoice_status: PurchaseInvoiceStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)

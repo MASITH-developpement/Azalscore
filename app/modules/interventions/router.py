@@ -12,50 +12,47 @@ RBAC appliqué:
 """
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id, get_current_user
+from app.core.dependencies import get_current_user, get_tenant_id
+from app.core.models import User
 
-from .models import InterventionStatut, InterventionPriorite
+from .models import InterventionPriorite, InterventionStatut
 from .schemas import (
-    # Donneur d'ordre
-    DonneurOrdreCreate,
-    DonneurOrdreUpdate,
-    DonneurOrdreResponse,
-    # Intervention
-    InterventionCreate,
-    InterventionUpdate,
-    InterventionPlanifier,
-    InterventionResponse,
-    InterventionListResponse,
     # Actions terrain
     ArriveeRequest,
-    DemarrageRequest,
+    DonneurOrdreCreate,
+    DonneurOrdreResponse,
+    DonneurOrdreUpdate,
     FinInterventionRequest,
-    SignatureRapportRequest,
-    PhotoRequest,
-    # Rapports
-    RapportInterventionUpdate,
-    RapportInterventionResponse,
-    RapportFinalResponse,
-    RapportFinalGenerateRequest,
+    # Intervention
+    InterventionCreate,
+    InterventionListResponse,
+    InterventionPlanifier,
+    InterventionResponse,
     # Stats
     InterventionStats,
+    InterventionUpdate,
+    PhotoRequest,
+    RapportFinalGenerateRequest,
+    RapportFinalResponse,
+    RapportInterventionResponse,
+    # Rapports
+    RapportInterventionUpdate,
+    SignatureRapportRequest,
 )
 from .service import (
+    InterventionNotFoundError,
     InterventionsService,
     InterventionWorkflowError,
-    InterventionNotFoundError,
     RapportLockedError,
 )
 
-
-router = APIRouter(prefix="/interventions", tags=["M-INT - Interventions"])
+router = APIRouter(prefix="/api/v1/interventions", tags=["M-INT - Interventions"])
 
 
 # ============================================================================
@@ -77,16 +74,11 @@ def require_role(*allowed_roles):
     Usage:
         @require_role(RBACRoles.ADMIN, RBACRoles.MANAGER)
     """
-    def check_role(current_user = Depends(get_current_user)):
-        # current_user est un objet User, pas un dict
-        user_role = getattr(current_user, "role", None)
-        if user_role:
-            user_role = user_role.value if hasattr(user_role, "value") else str(user_role)
-        else:
-            user_role = RBACRoles.READONLY
+    def check_role(current_user: User = Depends(get_current_user)):
+        user_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
 
-        # Admin/DIRIGEANT a tous les droits
-        if user_role in (RBACRoles.ADMIN, "DIRIGEANT", "ADMIN"):
+        # Admin a tous les droits
+        if user_role == RBACRoles.ADMIN or user_role in ["DIRIGEANT", "ADMIN"]:
             return current_user
 
         if user_role not in allowed_roles:
@@ -112,14 +104,14 @@ def get_service(
 
 @router.get(
     "/donneurs-ordre",
-    response_model=List[DonneurOrdreResponse],
+    response_model=list[DonneurOrdreResponse],
     summary="Lister les donneurs d'ordre",
     description="Liste tous les donneurs d'ordre du tenant."
 )
 async def list_donneurs_ordre(
     active_only: bool = True,
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Liste des donneurs d'ordre. Accessible à tous les rôles authentifiés."""
     return service.list_donneurs_ordre(active_only)
@@ -133,7 +125,7 @@ async def list_donneurs_ordre(
 async def get_donneur_ordre(
     donneur_id: UUID,
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Récupère un donneur d'ordre par ID."""
     donneur = service.get_donneur_ordre(donneur_id)
@@ -154,7 +146,7 @@ async def get_donneur_ordre(
 async def create_donneur_ordre(
     data: DonneurOrdreCreate,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """Crée un donneur d'ordre. Réservé aux managers et admins."""
     return service.create_donneur_ordre(data)
@@ -169,7 +161,7 @@ async def update_donneur_ordre(
     donneur_id: UUID,
     data: DonneurOrdreUpdate,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """Met à jour un donneur d'ordre. Réservé aux managers et admins."""
     donneur = service.update_donneur_ordre(donneur_id, data)
@@ -191,19 +183,19 @@ async def update_donneur_ordre(
     summary="Lister les interventions"
 )
 async def list_interventions(
-    statut: Optional[InterventionStatut] = None,
-    priorite: Optional[InterventionPriorite] = None,
-    client_id: Optional[UUID] = None,
-    donneur_ordre_id: Optional[UUID] = None,
-    projet_id: Optional[UUID] = None,
-    intervenant_id: Optional[UUID] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
-    search: Optional[str] = None,
+    statut: InterventionStatut | None = None,
+    priorite: InterventionPriorite | None = None,
+    client_id: UUID | None = None,
+    donneur_ordre_id: UUID | None = None,
+    projet_id: UUID | None = None,
+    intervenant_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Liste les interventions avec filtres et pagination."""
     items, total = service.list_interventions(
@@ -235,7 +227,7 @@ async def list_interventions(
 async def get_intervention(
     intervention_id: UUID,
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Récupère une intervention par ID."""
     intervention = service.get_intervention(intervention_id)
@@ -255,7 +247,7 @@ async def get_intervention(
 async def get_intervention_by_reference(
     reference: str,
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Récupère une intervention par sa référence officielle (INT-YYYY-XXXX)."""
     intervention = service.get_intervention_by_reference(reference)
@@ -276,7 +268,7 @@ async def get_intervention_by_reference(
 async def create_intervention(
     data: InterventionCreate,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """
     Crée une nouvelle intervention.
@@ -299,7 +291,7 @@ async def update_intervention(
     intervention_id: UUID,
     data: InterventionUpdate,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """
     Met à jour une intervention.
@@ -324,7 +316,7 @@ async def update_intervention(
 async def delete_intervention(
     intervention_id: UUID,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN))
 ):
     """Supprime une intervention (soft delete). Réservé aux admins."""
     try:
@@ -353,7 +345,7 @@ async def planifier_intervention(
     intervention_id: UUID,
     data: InterventionPlanifier,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """
     Planifie une intervention.
@@ -385,7 +377,7 @@ async def modifier_planification(
     intervention_id: UUID,
     data: InterventionPlanifier,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """Modifie la planification d'une intervention PLANIFIEE."""
     try:
@@ -410,7 +402,7 @@ async def modifier_planification(
 async def annuler_planification(
     intervention_id: UUID,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """
     Annule la planification d'une intervention.
@@ -445,7 +437,7 @@ async def arrivee_sur_site(
     intervention_id: UUID,
     data: ArriveeRequest,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(
+    current_user: User = Depends(require_role(
         RBACRoles.ADMIN, RBACRoles.MANAGER, RBACRoles.INTERVENANT
     ))
 ):
@@ -478,7 +470,7 @@ async def arrivee_sur_site(
 async def demarrer_intervention(
     intervention_id: UUID,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(
+    current_user: User = Depends(require_role(
         RBACRoles.ADMIN, RBACRoles.MANAGER, RBACRoles.INTERVENANT
     ))
 ):
@@ -511,7 +503,7 @@ async def terminer_intervention(
     intervention_id: UUID,
     data: FinInterventionRequest,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(
+    current_user: User = Depends(require_role(
         RBACRoles.ADMIN, RBACRoles.MANAGER, RBACRoles.INTERVENANT
     ))
 ):
@@ -549,7 +541,7 @@ async def terminer_intervention(
 async def get_rapport_intervention(
     intervention_id: UUID,
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Récupère le rapport d'une intervention terminée."""
     rapport = service.get_rapport_intervention(intervention_id)
@@ -570,7 +562,7 @@ async def update_rapport_intervention(
     intervention_id: UUID,
     data: RapportInterventionUpdate,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(
+    current_user: User = Depends(require_role(
         RBACRoles.ADMIN, RBACRoles.MANAGER, RBACRoles.INTERVENANT
     ))
 ):
@@ -602,7 +594,7 @@ async def ajouter_photo_rapport(
     intervention_id: UUID,
     photo: PhotoRequest,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(
+    current_user: User = Depends(require_role(
         RBACRoles.ADMIN, RBACRoles.MANAGER, RBACRoles.INTERVENANT
     ))
 ):
@@ -630,7 +622,7 @@ async def signer_rapport(
     intervention_id: UUID,
     data: SignatureRapportRequest,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(
+    current_user: User = Depends(require_role(
         RBACRoles.ADMIN, RBACRoles.MANAGER, RBACRoles.INTERVENANT
     ))
 ):
@@ -659,14 +651,14 @@ async def signer_rapport(
 
 @router.get(
     "/rapports-finaux",
-    response_model=List[RapportFinalResponse],
+    response_model=list[RapportFinalResponse],
     summary="Lister les rapports finaux"
 )
 async def list_rapports_final(
-    projet_id: Optional[UUID] = None,
-    donneur_ordre_id: Optional[UUID] = None,
+    projet_id: UUID | None = None,
+    donneur_ordre_id: UUID | None = None,
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Liste les rapports finaux consolidés."""
     return service.list_rapports_final(
@@ -683,7 +675,7 @@ async def list_rapports_final(
 async def get_rapport_final(
     rapport_id: UUID,
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Récupère un rapport final par ID."""
     rapport = service.get_rapport_final(rapport_id)
@@ -704,7 +696,7 @@ async def get_rapport_final(
 async def generer_rapport_final(
     data: RapportFinalGenerateRequest,
     service: InterventionsService = Depends(get_service),
-    current_user: dict = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
+    current_user: User = Depends(require_role(RBACRoles.ADMIN, RBACRoles.MANAGER))
 ):
     """
     Génère un rapport final consolidé.
@@ -735,7 +727,7 @@ async def generer_rapport_final(
 )
 async def get_stats(
     service: InterventionsService = Depends(get_service),
-    _user: dict = Depends(get_current_user)
+    _user: User = Depends(get_current_user)
 ):
     """Retourne les statistiques des interventions."""
     return service.get_stats()

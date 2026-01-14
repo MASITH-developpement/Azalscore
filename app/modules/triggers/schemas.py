@@ -7,16 +7,22 @@ Schémas Pydantic pour validation et sérialisation.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict
 import json
+from datetime import datetime
+from typing import Any, Union
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from .models import (
-    TriggerType, TriggerStatus, ConditionOperator, AlertSeverity,
-    NotificationChannel, NotificationStatus, ReportFrequency, EscalationLevel
+    AlertSeverity,
+    ConditionOperator,
+    EscalationLevel,
+    NotificationChannel,
+    NotificationStatus,
+    ReportFrequency,
+    TriggerStatus,
+    TriggerType,
 )
-
 
 # ============================================================================
 # SCHEMAS DE BASE
@@ -31,14 +37,14 @@ class ConditionSchema(BaseModel):
 
 class CompositeConditionSchema(BaseModel):
     """Condition composite (AND/OR/NOT)."""
-    and_: Optional[List['ConditionUnion']] = Field(None, alias='and')
-    or_: Optional[List['ConditionUnion']] = Field(None, alias='or')
-    not_: Optional['ConditionUnion'] = Field(None, alias='not')
+    and_: list[ConditionUnion] | None = Field(None, alias='and')
+    or_: list[ConditionUnion] | None = Field(None, alias='or')
+    not_: ConditionUnion | None = Field(None, alias='not')
 
     # Condition simple
-    field: Optional[str] = None
-    operator: Optional[ConditionOperator] = None
-    value: Optional[Any] = None
+    field: str | None = None
+    operator: ConditionOperator | None = None
+    value: Any | None = None
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -54,19 +60,19 @@ class TriggerCreateSchema(BaseModel):
     """Création d'un trigger."""
     code: str = Field(..., min_length=2, max_length=50, pattern=r'^[A-Z0-9_]+$')
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
 
     trigger_type: TriggerType
     source_module: str = Field(..., min_length=2, max_length=50)
-    source_entity: Optional[str] = Field(None, max_length=100)
-    source_field: Optional[str] = Field(None, max_length=100)
+    source_entity: str | None = Field(None, max_length=100)
+    source_field: str | None = Field(None, max_length=100)
 
-    condition: Dict[str, Any] = Field(..., description="Condition JSON")
+    condition: dict[str, Any] = Field(..., description="Condition JSON")
 
-    threshold_value: Optional[str] = Field(None, max_length=255)
-    threshold_operator: Optional[ConditionOperator] = None
+    threshold_value: str | None = Field(None, max_length=255)
+    threshold_operator: ConditionOperator | None = None
 
-    schedule_cron: Optional[str] = Field(None, max_length=100)
+    schedule_cron: str | None = Field(None, max_length=100)
     schedule_timezone: str = Field(default='Europe/Paris', max_length=50)
 
     severity: AlertSeverity = Field(default=AlertSeverity.WARNING)
@@ -74,7 +80,7 @@ class TriggerCreateSchema(BaseModel):
     escalation_delay_minutes: int = Field(default=60, ge=1, le=10080)
 
     cooldown_minutes: int = Field(default=60, ge=1, le=10080)
-    action_template_id: Optional[int] = None
+    action_template_id: int | None = None
 
     @field_validator('condition')
     @classmethod
@@ -86,30 +92,30 @@ class TriggerCreateSchema(BaseModel):
 
 class TriggerUpdateSchema(BaseModel):
     """Mise à jour d'un trigger."""
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = Field(None, max_length=2000)
 
-    trigger_type: Optional[TriggerType] = None
-    source_module: Optional[str] = Field(None, min_length=2, max_length=50)
-    source_entity: Optional[str] = Field(None, max_length=100)
-    source_field: Optional[str] = Field(None, max_length=100)
+    trigger_type: TriggerType | None = None
+    source_module: str | None = Field(None, min_length=2, max_length=50)
+    source_entity: str | None = Field(None, max_length=100)
+    source_field: str | None = Field(None, max_length=100)
 
-    condition: Optional[Dict[str, Any]] = None
+    condition: dict[str, Any] | None = None
 
-    threshold_value: Optional[str] = Field(None, max_length=255)
-    threshold_operator: Optional[ConditionOperator] = None
+    threshold_value: str | None = Field(None, max_length=255)
+    threshold_operator: ConditionOperator | None = None
 
-    schedule_cron: Optional[str] = Field(None, max_length=100)
-    schedule_timezone: Optional[str] = Field(None, max_length=50)
+    schedule_cron: str | None = Field(None, max_length=100)
+    schedule_timezone: str | None = Field(None, max_length=50)
 
-    severity: Optional[AlertSeverity] = None
-    escalation_enabled: Optional[bool] = None
-    escalation_delay_minutes: Optional[int] = Field(None, ge=1, le=10080)
+    severity: AlertSeverity | None = None
+    escalation_enabled: bool | None = None
+    escalation_delay_minutes: int | None = Field(None, ge=1, le=10080)
 
-    cooldown_minutes: Optional[int] = Field(None, ge=1, le=10080)
-    action_template_id: Optional[int] = None
+    cooldown_minutes: int | None = Field(None, ge=1, le=10080)
+    action_template_id: int | None = None
 
-    is_active: Optional[bool] = None
+    is_active: bool | None = None
 
 
 class TriggerResponseSchema(BaseModel):
@@ -118,37 +124,37 @@ class TriggerResponseSchema(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     trigger_type: TriggerType
     status: TriggerStatus
 
     source_module: str
-    source_entity: Optional[str]
-    source_field: Optional[str]
+    source_entity: str | None
+    source_field: str | None
 
-    condition: Dict[str, Any]
+    condition: dict[str, Any]
 
-    threshold_value: Optional[str]
-    threshold_operator: Optional[ConditionOperator]
+    threshold_value: str | None
+    threshold_operator: ConditionOperator | None
 
-    schedule_cron: Optional[str]
-    schedule_timezone: Optional[str]
+    schedule_cron: str | None
+    schedule_timezone: str | None
 
     severity: AlertSeverity
     escalation_enabled: bool
-    escalation_delay_minutes: Optional[int]
-    escalation_level: Optional[EscalationLevel]
+    escalation_delay_minutes: int | None
+    escalation_level: EscalationLevel | None
 
     cooldown_minutes: int
     is_active: bool
 
-    last_triggered_at: Optional[datetime]
+    last_triggered_at: datetime | None
     trigger_count: int
 
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int]
+    created_by: int | None
 
     @field_validator('condition', mode='before')
     @classmethod
@@ -162,7 +168,7 @@ class TriggerResponseSchema(BaseModel):
 
 class TriggerListResponseSchema(BaseModel):
     """Liste de triggers."""
-    triggers: List[TriggerResponseSchema]
+    triggers: list[TriggerResponseSchema]
     total: int
 
 
@@ -174,13 +180,13 @@ class SubscriptionCreateSchema(BaseModel):
     """Création d'un abonnement."""
     trigger_id: int
 
-    user_id: Optional[int] = None
-    role_code: Optional[str] = Field(None, max_length=50)
-    group_code: Optional[str] = Field(None, max_length=50)
-    email_external: Optional[EmailStr] = None
+    user_id: int | None = None
+    role_code: str | None = Field(None, max_length=50)
+    group_code: str | None = Field(None, max_length=50)
+    email_external: EmailStr | None = None
 
     channel: NotificationChannel = Field(default=NotificationChannel.IN_APP)
-    channel_config: Optional[Dict[str, Any]] = None
+    channel_config: dict[str, Any] | None = None
 
     escalation_level: EscalationLevel = Field(default=EscalationLevel.L1)
 
@@ -196,19 +202,19 @@ class SubscriptionResponseSchema(BaseModel):
     tenant_id: str
     trigger_id: int
 
-    user_id: Optional[int]
-    role_code: Optional[str]
-    group_code: Optional[str]
-    email_external: Optional[str]
+    user_id: int | None
+    role_code: str | None
+    group_code: str | None
+    email_external: str | None
 
     channel: NotificationChannel
-    channel_config: Optional[Dict[str, Any]]
+    channel_config: dict[str, Any] | None
 
     escalation_level: EscalationLevel
     is_active: bool
 
     created_at: datetime
-    created_by: Optional[int]
+    created_by: int | None
 
     @field_validator('channel_config', mode='before')
     @classmethod
@@ -231,17 +237,17 @@ class EventResponseSchema(BaseModel):
     trigger_id: int
 
     triggered_at: datetime
-    triggered_value: Optional[str]
-    condition_details: Optional[Dict[str, Any]]
+    triggered_value: str | None
+    condition_details: dict[str, Any] | None
 
     severity: AlertSeverity
     escalation_level: EscalationLevel
-    escalated_at: Optional[datetime]
+    escalated_at: datetime | None
 
     resolved: bool
-    resolved_at: Optional[datetime]
-    resolved_by: Optional[int]
-    resolution_notes: Optional[str]
+    resolved_at: datetime | None
+    resolved_by: int | None
+    resolution_notes: str | None
 
     @field_validator('condition_details', mode='before')
     @classmethod
@@ -255,19 +261,19 @@ class EventResponseSchema(BaseModel):
 
 class EventListResponseSchema(BaseModel):
     """Liste d'événements."""
-    events: List[EventResponseSchema]
+    events: list[EventResponseSchema]
     total: int
 
 
 class ResolveEventSchema(BaseModel):
     """Résolution d'un événement."""
-    resolution_notes: Optional[str] = Field(None, max_length=2000)
+    resolution_notes: str | None = Field(None, max_length=2000)
 
 
 class FireTriggerSchema(BaseModel):
     """Déclenchement manuel d'un trigger."""
-    triggered_value: Optional[str] = None
-    condition_details: Optional[Dict[str, Any]] = None
+    triggered_value: str | None = None
+    condition_details: dict[str, Any] | None = None
 
 
 # ============================================================================
@@ -280,30 +286,30 @@ class NotificationResponseSchema(BaseModel):
     tenant_id: str
     event_id: int
 
-    user_id: Optional[int]
-    email: Optional[str]
+    user_id: int | None
+    email: str | None
 
     channel: NotificationChannel
-    subject: Optional[str]
+    subject: str | None
     body: str
 
     status: NotificationStatus
 
-    sent_at: Optional[datetime]
-    delivered_at: Optional[datetime]
-    read_at: Optional[datetime]
-    failed_at: Optional[datetime]
-    failure_reason: Optional[str]
+    sent_at: datetime | None
+    delivered_at: datetime | None
+    read_at: datetime | None
+    failed_at: datetime | None
+    failure_reason: str | None
 
     retry_count: int
-    next_retry_at: Optional[datetime]
+    next_retry_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class NotificationListResponseSchema(BaseModel):
     """Liste de notifications."""
-    notifications: List[NotificationResponseSchema]
+    notifications: list[NotificationResponseSchema]
     total: int
     unread_count: int
 
@@ -316,26 +322,26 @@ class TemplateCreateSchema(BaseModel):
     """Création d'un template."""
     code: str = Field(..., min_length=2, max_length=50, pattern=r'^[A-Z0-9_]+$')
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
 
-    subject_template: Optional[str] = Field(None, max_length=500)
+    subject_template: str | None = Field(None, max_length=500)
     body_template: str = Field(..., min_length=1)
-    body_html: Optional[str] = None
+    body_html: str | None = None
 
-    available_variables: Optional[List[str]] = None
+    available_variables: list[str] | None = None
 
 
 class TemplateUpdateSchema(BaseModel):
     """Mise à jour d'un template."""
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = Field(None, max_length=2000)
 
-    subject_template: Optional[str] = Field(None, max_length=500)
-    body_template: Optional[str] = Field(None, min_length=1)
-    body_html: Optional[str] = None
+    subject_template: str | None = Field(None, max_length=500)
+    body_template: str | None = Field(None, min_length=1)
+    body_html: str | None = None
 
-    available_variables: Optional[List[str]] = None
-    is_active: Optional[bool] = None
+    available_variables: list[str] | None = None
+    is_active: bool | None = None
 
 
 class TemplateResponseSchema(BaseModel):
@@ -344,20 +350,20 @@ class TemplateResponseSchema(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
 
-    subject_template: Optional[str]
+    subject_template: str | None
     body_template: str
-    body_html: Optional[str]
+    body_html: str | None
 
-    available_variables: Optional[List[str]]
+    available_variables: list[str] | None
 
     is_active: bool
     is_system: bool
 
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int]
+    created_by: int | None
 
     @field_validator('available_variables', mode='before')
     @classmethod
@@ -375,25 +381,25 @@ class TemplateResponseSchema(BaseModel):
 
 class RecipientsSchema(BaseModel):
     """Configuration des destinataires."""
-    users: Optional[List[int]] = None
-    roles: Optional[List[str]] = None
-    emails: Optional[List[EmailStr]] = None
+    users: list[int] | None = None
+    roles: list[str] | None = None
+    emails: list[EmailStr] | None = None
 
 
 class ScheduledReportCreateSchema(BaseModel):
     """Création d'un rapport planifié."""
     code: str = Field(..., min_length=2, max_length=50, pattern=r'^[A-Z0-9_]+$')
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
 
     report_type: str = Field(..., min_length=2, max_length=50)
-    report_config: Optional[Dict[str, Any]] = None
+    report_config: dict[str, Any] | None = None
 
     frequency: ReportFrequency
-    schedule_day: Optional[int] = Field(None, ge=1, le=31)
-    schedule_time: Optional[str] = Field(None, pattern=r'^[0-2][0-9]:[0-5][0-9]$')
+    schedule_day: int | None = Field(None, ge=1, le=31)
+    schedule_time: str | None = Field(None, pattern=r'^[0-2][0-9]:[0-5][0-9]$')
     schedule_timezone: str = Field(default='Europe/Paris', max_length=50)
-    schedule_cron: Optional[str] = Field(None, max_length=100)
+    schedule_cron: str | None = Field(None, max_length=100)
 
     recipients: RecipientsSchema
     output_format: str = Field(default='PDF', pattern=r'^(PDF|EXCEL|HTML)$')
@@ -401,20 +407,20 @@ class ScheduledReportCreateSchema(BaseModel):
 
 class ScheduledReportUpdateSchema(BaseModel):
     """Mise à jour d'un rapport planifié."""
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = Field(None, max_length=2000)
 
-    report_config: Optional[Dict[str, Any]] = None
+    report_config: dict[str, Any] | None = None
 
-    frequency: Optional[ReportFrequency] = None
-    schedule_day: Optional[int] = Field(None, ge=1, le=31)
-    schedule_time: Optional[str] = Field(None, pattern=r'^[0-2][0-9]:[0-5][0-9]$')
-    schedule_timezone: Optional[str] = Field(None, max_length=50)
+    frequency: ReportFrequency | None = None
+    schedule_day: int | None = Field(None, ge=1, le=31)
+    schedule_time: str | None = Field(None, pattern=r'^[0-2][0-9]:[0-5][0-9]$')
+    schedule_timezone: str | None = Field(None, max_length=50)
 
-    recipients: Optional[RecipientsSchema] = None
-    output_format: Optional[str] = Field(None, pattern=r'^(PDF|EXCEL|HTML)$')
+    recipients: RecipientsSchema | None = None
+    output_format: str | None = Field(None, pattern=r'^(PDF|EXCEL|HTML)$')
 
-    is_active: Optional[bool] = None
+    is_active: bool | None = None
 
 
 class ScheduledReportResponseSchema(BaseModel):
@@ -423,29 +429,29 @@ class ScheduledReportResponseSchema(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     report_type: str
-    report_config: Optional[Dict[str, Any]]
+    report_config: dict[str, Any] | None
 
     frequency: ReportFrequency
-    schedule_day: Optional[int]
-    schedule_time: Optional[str]
+    schedule_day: int | None
+    schedule_time: str | None
     schedule_timezone: str
-    schedule_cron: Optional[str]
+    schedule_cron: str | None
 
-    recipients: Dict[str, Any]
+    recipients: dict[str, Any]
     output_format: str
 
     is_active: bool
 
-    last_generated_at: Optional[datetime]
-    next_generation_at: Optional[datetime]
+    last_generated_at: datetime | None
+    next_generation_at: datetime | None
     generation_count: int
 
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int]
+    created_by: int | None
 
     @field_validator('report_config', 'recipients', mode='before')
     @classmethod
@@ -464,18 +470,18 @@ class ReportHistoryResponseSchema(BaseModel):
     report_id: int
 
     generated_at: datetime
-    generated_by: Optional[int]
+    generated_by: int | None
 
     file_name: str
-    file_path: Optional[str]
-    file_size: Optional[int]
+    file_path: str | None
+    file_size: int | None
     file_format: str
 
-    sent_to: Optional[Dict[str, Any]]
-    sent_at: Optional[datetime]
+    sent_to: dict[str, Any] | None
+    sent_at: datetime | None
 
     success: bool
-    error_message: Optional[str]
+    error_message: str | None
 
     @field_validator('sent_to', mode='before')
     @classmethod
@@ -495,14 +501,14 @@ class WebhookCreateSchema(BaseModel):
     """Création d'un webhook."""
     code: str = Field(..., min_length=2, max_length=50, pattern=r'^[A-Z0-9_]+$')
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
 
     url: str = Field(..., min_length=10, max_length=500)
     method: str = Field(default='POST', pattern=r'^(POST|PUT)$')
-    headers: Optional[Dict[str, str]] = None
+    headers: dict[str, str] | None = None
 
-    auth_type: Optional[str] = Field(None, pattern=r'^(none|basic|bearer|api_key)$')
-    auth_config: Optional[Dict[str, str]] = None
+    auth_type: str | None = Field(None, pattern=r'^(none|basic|bearer|api_key)$')
+    auth_config: dict[str, str] | None = None
 
     max_retries: int = Field(default=3, ge=0, le=10)
     retry_delay_seconds: int = Field(default=60, ge=10, le=3600)
@@ -510,20 +516,20 @@ class WebhookCreateSchema(BaseModel):
 
 class WebhookUpdateSchema(BaseModel):
     """Mise à jour d'un webhook."""
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = Field(None, max_length=2000)
 
-    url: Optional[str] = Field(None, min_length=10, max_length=500)
-    method: Optional[str] = Field(None, pattern=r'^(POST|PUT)$')
-    headers: Optional[Dict[str, str]] = None
+    url: str | None = Field(None, min_length=10, max_length=500)
+    method: str | None = Field(None, pattern=r'^(POST|PUT)$')
+    headers: dict[str, str] | None = None
 
-    auth_type: Optional[str] = Field(None, pattern=r'^(none|basic|bearer|api_key)$')
-    auth_config: Optional[Dict[str, str]] = None
+    auth_type: str | None = Field(None, pattern=r'^(none|basic|bearer|api_key)$')
+    auth_config: dict[str, str] | None = None
 
-    max_retries: Optional[int] = Field(None, ge=0, le=10)
-    retry_delay_seconds: Optional[int] = Field(None, ge=10, le=3600)
+    max_retries: int | None = Field(None, ge=0, le=10)
+    retry_delay_seconds: int | None = Field(None, ge=10, le=3600)
 
-    is_active: Optional[bool] = None
+    is_active: bool | None = None
 
 
 class WebhookResponseSchema(BaseModel):
@@ -532,26 +538,26 @@ class WebhookResponseSchema(BaseModel):
     tenant_id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     url: str
     method: str
-    headers: Optional[Dict[str, str]]
+    headers: dict[str, str] | None
 
-    auth_type: Optional[str]
+    auth_type: str | None
     # auth_config omis pour sécurité
 
     max_retries: int
     retry_delay_seconds: int
 
     is_active: bool
-    last_success_at: Optional[datetime]
-    last_failure_at: Optional[datetime]
+    last_success_at: datetime | None
+    last_failure_at: datetime | None
     consecutive_failures: int
 
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int]
+    created_by: int | None
 
     @field_validator('headers', mode='before')
     @classmethod
@@ -566,9 +572,9 @@ class WebhookResponseSchema(BaseModel):
 class WebhookTestResponseSchema(BaseModel):
     """Réponse test d'un webhook."""
     success: bool
-    status_code: Optional[int] = None
-    response_time_ms: Optional[float] = None
-    error: Optional[str] = None
+    status_code: int | None = None
+    response_time_ms: float | None = None
+    error: str | None = None
 
 
 # ============================================================================
@@ -581,10 +587,10 @@ class TriggerLogResponseSchema(BaseModel):
     tenant_id: str
     action: str
     entity_type: str
-    entity_id: Optional[int]
-    details: Optional[Dict[str, Any]]
+    entity_id: int | None
+    details: dict[str, Any] | None
     success: bool
-    error_message: Optional[str]
+    error_message: str | None
     created_at: datetime
 
     @field_validator('details', mode='before')
@@ -599,7 +605,7 @@ class TriggerLogResponseSchema(BaseModel):
 
 class TriggerLogListResponseSchema(BaseModel):
     """Liste de logs."""
-    logs: List[TriggerLogResponseSchema]
+    logs: list[TriggerLogResponseSchema]
     total: int
 
 
@@ -629,5 +635,5 @@ class TriggerStatsSchema(BaseModel):
 class TriggerDashboardSchema(BaseModel):
     """Dashboard des triggers."""
     stats: TriggerStatsSchema
-    recent_events: List[EventResponseSchema]
-    upcoming_reports: List[ScheduledReportResponseSchema]
+    recent_events: list[EventResponseSchema]
+    upcoming_reports: list[ScheduledReportResponseSchema]

@@ -4,30 +4,58 @@ AZALS MODULE 16 - Helpdesk Service
 Logique métier pour le système de support client.
 """
 
+import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
+
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
-import uuid
 
 from .models import (
-    TicketCategory, HelpdeskTeam, HelpdeskAgent, HelpdeskSLA,
-    Ticket, TicketReply, TicketAttachment, TicketHistory,
-    CannedResponse, KBCategory, KBArticle, SatisfactionSurvey,
-    HelpdeskAutomation, TicketStatus, TicketPriority, TicketSource, AgentStatus
+    AgentStatus,
+    CannedResponse,
+    HelpdeskAgent,
+    HelpdeskAutomation,
+    HelpdeskSLA,
+    HelpdeskTeam,
+    KBArticle,
+    KBCategory,
+    SatisfactionSurvey,
+    Ticket,
+    TicketAttachment,
+    TicketCategory,
+    TicketHistory,
+    TicketPriority,
+    TicketReply,
+    TicketSource,
+    TicketStatus,
 )
 from .schemas import (
-    CategoryCreate, CategoryUpdate,
-    TeamCreate, TeamUpdate,
-    AgentCreate, AgentUpdate, SLACreate, SLAUpdate,
-    TicketCreate, TicketUpdate, ReplyCreate, AttachmentCreate,
-    CannedResponseCreate, CannedResponseUpdate,
-    KBCategoryCreate, KBCategoryUpdate,
-    KBArticleCreate, KBArticleUpdate,
+    AgentCreate,
+    AgentStats,
+    AgentUpdate,
+    AttachmentCreate,
+    AutomationCreate,
+    AutomationUpdate,
+    CannedResponseCreate,
+    CannedResponseUpdate,
+    CategoryCreate,
+    CategoryUpdate,
+    HelpdeskDashboard,
+    KBArticleCreate,
+    KBArticleUpdate,
+    KBCategoryCreate,
+    KBCategoryUpdate,
+    ReplyCreate,
     SatisfactionCreate,
-    AutomationCreate, AutomationUpdate,
-    TicketStats, AgentStats, HelpdeskDashboard
+    SLACreate,
+    SLAUpdate,
+    TeamCreate,
+    TeamUpdate,
+    TicketCreate,
+    TicketStats,
+    TicketUpdate,
 )
 
 
@@ -46,23 +74,23 @@ class HelpdeskService:
         self,
         active_only: bool = True,
         public_only: bool = False,
-        parent_id: Optional[int] = None
-    ) -> List[TicketCategory]:
+        parent_id: int | None = None
+    ) -> list[TicketCategory]:
         """Liste des catégories."""
         query = self.db.query(TicketCategory).filter(
             TicketCategory.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(TicketCategory.is_active == True)
+            query = query.filter(TicketCategory.is_active)
         if public_only:
-            query = query.filter(TicketCategory.is_public == True)
+            query = query.filter(TicketCategory.is_public)
         if parent_id is not None:
             query = query.filter(TicketCategory.parent_id == parent_id)
         else:
-            query = query.filter(TicketCategory.parent_id == None)
+            query = query.filter(TicketCategory.parent_id is None)
         return query.order_by(TicketCategory.sort_order).all()
 
-    def get_category(self, category_id: int) -> Optional[TicketCategory]:
+    def get_category(self, category_id: int) -> TicketCategory | None:
         """Récupère une catégorie."""
         return self.db.query(TicketCategory).filter(
             TicketCategory.id == category_id,
@@ -80,7 +108,7 @@ class HelpdeskService:
         self.db.refresh(category)
         return category
 
-    def update_category(self, category_id: int, data: CategoryUpdate) -> Optional[TicketCategory]:
+    def update_category(self, category_id: int, data: CategoryUpdate) -> TicketCategory | None:
         """Met à jour une catégorie."""
         category = self.get_category(category_id)
         if not category:
@@ -104,16 +132,16 @@ class HelpdeskService:
     # TEAMS
     # ========================================================================
 
-    def list_teams(self, active_only: bool = True) -> List[HelpdeskTeam]:
+    def list_teams(self, active_only: bool = True) -> list[HelpdeskTeam]:
         """Liste des équipes."""
         query = self.db.query(HelpdeskTeam).filter(
             HelpdeskTeam.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(HelpdeskTeam.is_active == True)
+            query = query.filter(HelpdeskTeam.is_active)
         return query.all()
 
-    def get_team(self, team_id: int) -> Optional[HelpdeskTeam]:
+    def get_team(self, team_id: int) -> HelpdeskTeam | None:
         """Récupère une équipe."""
         return self.db.query(HelpdeskTeam).filter(
             HelpdeskTeam.id == team_id,
@@ -131,7 +159,7 @@ class HelpdeskService:
         self.db.refresh(team)
         return team
 
-    def update_team(self, team_id: int, data: TeamUpdate) -> Optional[HelpdeskTeam]:
+    def update_team(self, team_id: int, data: TeamUpdate) -> HelpdeskTeam | None:
         """Met à jour une équipe."""
         team = self.get_team(team_id)
         if not team:
@@ -158,29 +186,29 @@ class HelpdeskService:
     def list_agents(
         self,
         active_only: bool = True,
-        team_id: Optional[int] = None,
-        status: Optional[AgentStatus] = None
-    ) -> List[HelpdeskAgent]:
+        team_id: int | None = None,
+        status: AgentStatus | None = None
+    ) -> list[HelpdeskAgent]:
         """Liste des agents."""
         query = self.db.query(HelpdeskAgent).filter(
             HelpdeskAgent.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(HelpdeskAgent.is_active == True)
+            query = query.filter(HelpdeskAgent.is_active)
         if team_id:
             query = query.filter(HelpdeskAgent.team_id == team_id)
         if status:
             query = query.filter(HelpdeskAgent.status == status)
         return query.all()
 
-    def get_agent(self, agent_id: int) -> Optional[HelpdeskAgent]:
+    def get_agent(self, agent_id: int) -> HelpdeskAgent | None:
         """Récupère un agent."""
         return self.db.query(HelpdeskAgent).filter(
             HelpdeskAgent.id == agent_id,
             HelpdeskAgent.tenant_id == self.tenant_id
         ).first()
 
-    def get_agent_by_user(self, user_id: int) -> Optional[HelpdeskAgent]:
+    def get_agent_by_user(self, user_id: int) -> HelpdeskAgent | None:
         """Récupère agent par user_id."""
         return self.db.query(HelpdeskAgent).filter(
             HelpdeskAgent.user_id == user_id,
@@ -198,7 +226,7 @@ class HelpdeskService:
         self.db.refresh(agent)
         return agent
 
-    def update_agent(self, agent_id: int, data: AgentUpdate) -> Optional[HelpdeskAgent]:
+    def update_agent(self, agent_id: int, data: AgentUpdate) -> HelpdeskAgent | None:
         """Met à jour un agent."""
         agent = self.get_agent(agent_id)
         if not agent:
@@ -209,7 +237,7 @@ class HelpdeskService:
         self.db.refresh(agent)
         return agent
 
-    def update_agent_status(self, agent_id: int, status: AgentStatus) -> Optional[HelpdeskAgent]:
+    def update_agent_status(self, agent_id: int, status: AgentStatus) -> HelpdeskAgent | None:
         """Met à jour le statut d'un agent."""
         agent = self.get_agent(agent_id)
         if not agent:
@@ -233,28 +261,28 @@ class HelpdeskService:
     # SLA
     # ========================================================================
 
-    def list_slas(self, active_only: bool = True) -> List[HelpdeskSLA]:
+    def list_slas(self, active_only: bool = True) -> list[HelpdeskSLA]:
         """Liste des SLAs."""
         query = self.db.query(HelpdeskSLA).filter(
             HelpdeskSLA.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(HelpdeskSLA.is_active == True)
+            query = query.filter(HelpdeskSLA.is_active)
         return query.all()
 
-    def get_sla(self, sla_id: int) -> Optional[HelpdeskSLA]:
+    def get_sla(self, sla_id: int) -> HelpdeskSLA | None:
         """Récupère un SLA."""
         return self.db.query(HelpdeskSLA).filter(
             HelpdeskSLA.id == sla_id,
             HelpdeskSLA.tenant_id == self.tenant_id
         ).first()
 
-    def get_default_sla(self) -> Optional[HelpdeskSLA]:
+    def get_default_sla(self) -> HelpdeskSLA | None:
         """Récupère le SLA par défaut."""
         return self.db.query(HelpdeskSLA).filter(
             HelpdeskSLA.tenant_id == self.tenant_id,
-            HelpdeskSLA.is_default == True,
-            HelpdeskSLA.is_active == True
+            HelpdeskSLA.is_default,
+            HelpdeskSLA.is_active
         ).first()
 
     def create_sla(self, data: SLACreate) -> HelpdeskSLA:
@@ -263,7 +291,7 @@ class HelpdeskService:
         if data.is_default:
             self.db.query(HelpdeskSLA).filter(
                 HelpdeskSLA.tenant_id == self.tenant_id,
-                HelpdeskSLA.is_default == True
+                HelpdeskSLA.is_default
             ).update({"is_default": False})
 
         sla = HelpdeskSLA(
@@ -275,7 +303,7 @@ class HelpdeskService:
         self.db.refresh(sla)
         return sla
 
-    def update_sla(self, sla_id: int, data: SLAUpdate) -> Optional[HelpdeskSLA]:
+    def update_sla(self, sla_id: int, data: SLAUpdate) -> HelpdeskSLA | None:
         """Met à jour un SLA."""
         sla = self.get_sla(sla_id)
         if not sla:
@@ -286,7 +314,7 @@ class HelpdeskService:
         if update_data.get("is_default"):
             self.db.query(HelpdeskSLA).filter(
                 HelpdeskSLA.tenant_id == self.tenant_id,
-                HelpdeskSLA.is_default == True,
+                HelpdeskSLA.is_default,
                 HelpdeskSLA.id != sla_id
             ).update({"is_default": False})
 
@@ -318,8 +346,8 @@ class HelpdeskService:
     def _calculate_sla_due_dates(
         self,
         priority: TicketPriority,
-        sla: Optional[HelpdeskSLA] = None
-    ) -> Tuple[Optional[datetime], Optional[datetime]]:
+        sla: HelpdeskSLA | None = None
+    ) -> tuple[datetime | None, datetime | None]:
         """Calcule les dates dues SLA."""
         if not sla:
             sla = self.get_default_sla()
@@ -351,7 +379,7 @@ class HelpdeskService:
 
         return response_due, resolution_due
 
-    def _auto_assign_ticket(self, team: HelpdeskTeam) -> Optional[int]:
+    def _auto_assign_ticket(self, team: HelpdeskTeam) -> int | None:
         """Auto-assigne un ticket selon la méthode de l'équipe."""
         if not team or team.auto_assign_method == "manual":
             return None
@@ -360,7 +388,7 @@ class HelpdeskService:
         agents = self.db.query(HelpdeskAgent).filter(
             HelpdeskAgent.tenant_id == self.tenant_id,
             HelpdeskAgent.team_id == team.id,
-            HelpdeskAgent.is_active == True,
+            HelpdeskAgent.is_active,
             HelpdeskAgent.status.in_([AgentStatus.AVAILABLE, AgentStatus.BUSY])
         ).all()
 
@@ -388,18 +416,18 @@ class HelpdeskService:
 
     def list_tickets(
         self,
-        status: Optional[TicketStatus] = None,
-        priority: Optional[TicketPriority] = None,
-        category_id: Optional[int] = None,
-        team_id: Optional[int] = None,
-        assigned_to_id: Optional[int] = None,
-        requester_id: Optional[int] = None,
-        requester_email: Optional[str] = None,
+        status: TicketStatus | None = None,
+        priority: TicketPriority | None = None,
+        category_id: int | None = None,
+        team_id: int | None = None,
+        assigned_to_id: int | None = None,
+        requester_id: int | None = None,
+        requester_email: str | None = None,
         overdue_only: bool = False,
-        search: Optional[str] = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Ticket], int]:
+    ) -> tuple[list[Ticket], int]:
         """Liste des tickets avec filtres."""
         query = self.db.query(Ticket).filter(
             Ticket.tenant_id == self.tenant_id
@@ -423,8 +451,8 @@ class HelpdeskService:
             now = datetime.utcnow()
             query = query.filter(
                 or_(
-                    and_(Ticket.first_response_due < now, Ticket.first_responded_at == None),
-                    and_(Ticket.resolution_due < now, Ticket.resolved_at == None)
+                    and_(Ticket.first_response_due < now, Ticket.first_responded_at is None),
+                    and_(Ticket.resolution_due < now, Ticket.resolved_at is None)
                 )
             )
         if search:
@@ -441,14 +469,14 @@ class HelpdeskService:
 
         return tickets, total
 
-    def get_ticket(self, ticket_id: int) -> Optional[Ticket]:
+    def get_ticket(self, ticket_id: int) -> Ticket | None:
         """Récupère un ticket."""
         return self.db.query(Ticket).filter(
             Ticket.id == ticket_id,
             Ticket.tenant_id == self.tenant_id
         ).first()
 
-    def get_ticket_by_number(self, ticket_number: str) -> Optional[Ticket]:
+    def get_ticket_by_number(self, ticket_number: str) -> Ticket | None:
         """Récupère un ticket par numéro."""
         return self.db.query(Ticket).filter(
             Ticket.ticket_number == ticket_number,
@@ -458,8 +486,8 @@ class HelpdeskService:
     def create_ticket(
         self,
         data: TicketCreate,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None,
+        actor_id: int | None = None,
+        actor_name: str | None = None,
         actor_type: str = "customer"
     ) -> Ticket:
         """Crée un ticket."""
@@ -560,10 +588,10 @@ class HelpdeskService:
         self,
         ticket_id: int,
         data: TicketUpdate,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None,
+        actor_id: int | None = None,
+        actor_name: str | None = None,
         actor_type: str = "agent"
-    ) -> Optional[Ticket]:
+    ) -> Ticket | None:
         """Met à jour un ticket."""
         ticket = self.get_ticket(ticket_id)
         if not ticket:
@@ -600,9 +628,9 @@ class HelpdeskService:
         self,
         ticket_id: int,
         agent_id: int,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None
-    ) -> Optional[Ticket]:
+        actor_id: int | None = None,
+        actor_name: str | None = None
+    ) -> Ticket | None:
         """Assigne un ticket à un agent."""
         ticket = self.get_ticket(ticket_id)
         if not ticket:
@@ -651,11 +679,11 @@ class HelpdeskService:
         self,
         ticket_id: int,
         new_status: TicketStatus,
-        comment: Optional[str] = None,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None,
+        comment: str | None = None,
+        actor_id: int | None = None,
+        actor_name: str | None = None,
         actor_type: str = "agent"
-    ) -> Optional[Ticket]:
+    ) -> Ticket | None:
         """Change le statut d'un ticket."""
         ticket = self.get_ticket(ticket_id)
         if not ticket:
@@ -703,9 +731,9 @@ class HelpdeskService:
         self,
         source_ticket_id: int,
         target_ticket_id: int,
-        actor_id: Optional[int] = None,
-        actor_name: Optional[str] = None
-    ) -> Optional[Ticket]:
+        actor_id: int | None = None,
+        actor_name: str | None = None
+    ) -> Ticket | None:
         """Fusionne un ticket dans un autre."""
         source = self.get_ticket(source_ticket_id)
         target = self.get_ticket(target_ticket_id)
@@ -762,25 +790,25 @@ class HelpdeskService:
     # REPLIES
     # ========================================================================
 
-    def list_replies(self, ticket_id: int, include_internal: bool = True) -> List[TicketReply]:
+    def list_replies(self, ticket_id: int, include_internal: bool = True) -> list[TicketReply]:
         """Liste les réponses d'un ticket."""
         query = self.db.query(TicketReply).filter(
             TicketReply.ticket_id == ticket_id,
             TicketReply.tenant_id == self.tenant_id
         )
         if not include_internal:
-            query = query.filter(TicketReply.is_internal == False)
+            query = query.filter(not TicketReply.is_internal)
         return query.order_by(TicketReply.created_at.asc()).all()
 
     def add_reply(
         self,
         ticket_id: int,
         data: ReplyCreate,
-        author_id: Optional[int] = None,
-        author_name: Optional[str] = None,
-        author_email: Optional[str] = None,
+        author_id: int | None = None,
+        author_name: str | None = None,
+        author_email: str | None = None,
         author_type: str = "agent"
-    ) -> Optional[TicketReply]:
+    ) -> TicketReply | None:
         """Ajoute une réponse à un ticket."""
         ticket = self.get_ticket(ticket_id)
         if not ticket:
@@ -849,8 +877,8 @@ class HelpdeskService:
         self,
         ticket_id: int,
         data: AttachmentCreate,
-        uploaded_by_id: Optional[int] = None
-    ) -> Optional[TicketAttachment]:
+        uploaded_by_id: int | None = None
+    ) -> TicketAttachment | None:
         """Ajoute une pièce jointe."""
         ticket = self.get_ticket(ticket_id)
         if not ticket:
@@ -873,7 +901,7 @@ class HelpdeskService:
 
         return attachment
 
-    def list_attachments(self, ticket_id: int) -> List[TicketAttachment]:
+    def list_attachments(self, ticket_id: int) -> list[TicketAttachment]:
         """Liste les pièces jointes d'un ticket."""
         return self.db.query(TicketAttachment).filter(
             TicketAttachment.ticket_id == ticket_id,
@@ -884,7 +912,7 @@ class HelpdeskService:
     # HISTORY
     # ========================================================================
 
-    def get_ticket_history(self, ticket_id: int) -> List[TicketHistory]:
+    def get_ticket_history(self, ticket_id: int) -> list[TicketHistory]:
         """Récupère l'historique d'un ticket."""
         return self.db.query(TicketHistory).filter(
             TicketHistory.ticket_id == ticket_id,
@@ -897,15 +925,15 @@ class HelpdeskService:
 
     def list_canned_responses(
         self,
-        team_id: Optional[int] = None,
-        agent_id: Optional[int] = None,
-        category: Optional[str] = None,
-        search: Optional[str] = None
-    ) -> List[CannedResponse]:
+        team_id: int | None = None,
+        agent_id: int | None = None,
+        category: str | None = None,
+        search: str | None = None
+    ) -> list[CannedResponse]:
         """Liste les réponses pré-enregistrées."""
         query = self.db.query(CannedResponse).filter(
             CannedResponse.tenant_id == self.tenant_id,
-            CannedResponse.is_active == True
+            CannedResponse.is_active
         )
 
         # Scope: global OU team OU personnel
@@ -932,25 +960,25 @@ class HelpdeskService:
 
         return query.order_by(CannedResponse.usage_count.desc()).all()
 
-    def get_canned_response(self, response_id: int) -> Optional[CannedResponse]:
+    def get_canned_response(self, response_id: int) -> CannedResponse | None:
         """Récupère une réponse pré-enregistrée."""
         return self.db.query(CannedResponse).filter(
             CannedResponse.id == response_id,
             CannedResponse.tenant_id == self.tenant_id
         ).first()
 
-    def get_canned_by_shortcut(self, shortcut: str) -> Optional[CannedResponse]:
+    def get_canned_by_shortcut(self, shortcut: str) -> CannedResponse | None:
         """Récupère par shortcut."""
         return self.db.query(CannedResponse).filter(
             CannedResponse.shortcut == shortcut,
             CannedResponse.tenant_id == self.tenant_id,
-            CannedResponse.is_active == True
+            CannedResponse.is_active
         ).first()
 
     def create_canned_response(
         self,
         data: CannedResponseCreate,
-        agent_id: Optional[int] = None
+        agent_id: int | None = None
     ) -> CannedResponse:
         """Crée une réponse pré-enregistrée."""
         response = CannedResponse(
@@ -967,7 +995,7 @@ class HelpdeskService:
         self,
         response_id: int,
         data: CannedResponseUpdate
-    ) -> Optional[CannedResponse]:
+    ) -> CannedResponse | None:
         """Met à jour une réponse pré-enregistrée."""
         response = self.get_canned_response(response_id)
         if not response:
@@ -978,7 +1006,7 @@ class HelpdeskService:
         self.db.refresh(response)
         return response
 
-    def use_canned_response(self, response_id: int) -> Optional[CannedResponse]:
+    def use_canned_response(self, response_id: int) -> CannedResponse | None:
         """Incrémente le compteur d'utilisation."""
         response = self.get_canned_response(response_id)
         if not response:
@@ -1002,23 +1030,23 @@ class HelpdeskService:
 
     def list_kb_categories(
         self,
-        parent_id: Optional[int] = None,
+        parent_id: int | None = None,
         public_only: bool = False
-    ) -> List[KBCategory]:
+    ) -> list[KBCategory]:
         """Liste les catégories KB."""
         query = self.db.query(KBCategory).filter(
             KBCategory.tenant_id == self.tenant_id,
-            KBCategory.is_active == True
+            KBCategory.is_active
         )
         if public_only:
-            query = query.filter(KBCategory.is_public == True)
+            query = query.filter(KBCategory.is_public)
         if parent_id is not None:
             query = query.filter(KBCategory.parent_id == parent_id)
         else:
-            query = query.filter(KBCategory.parent_id == None)
+            query = query.filter(KBCategory.parent_id is None)
         return query.order_by(KBCategory.sort_order).all()
 
-    def get_kb_category(self, category_id: int) -> Optional[KBCategory]:
+    def get_kb_category(self, category_id: int) -> KBCategory | None:
         """Récupère une catégorie KB."""
         return self.db.query(KBCategory).filter(
             KBCategory.id == category_id,
@@ -1040,7 +1068,7 @@ class HelpdeskService:
         self,
         category_id: int,
         data: KBCategoryUpdate
-    ) -> Optional[KBCategory]:
+    ) -> KBCategory | None:
         """Met à jour une catégorie KB."""
         category = self.get_kb_category(category_id)
         if not category:
@@ -1053,14 +1081,14 @@ class HelpdeskService:
 
     def list_kb_articles(
         self,
-        category_id: Optional[int] = None,
-        status: Optional[str] = None,
+        category_id: int | None = None,
+        status: str | None = None,
         public_only: bool = False,
         featured_only: bool = False,
-        search: Optional[str] = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 20
-    ) -> Tuple[List[KBArticle], int]:
+    ) -> tuple[list[KBArticle], int]:
         """Liste les articles KB."""
         query = self.db.query(KBArticle).filter(
             KBArticle.tenant_id == self.tenant_id
@@ -1072,11 +1100,11 @@ class HelpdeskService:
             query = query.filter(KBArticle.status == status)
         if public_only:
             query = query.filter(
-                KBArticle.is_public == True,
+                KBArticle.is_public,
                 KBArticle.status == "published"
             )
         if featured_only:
-            query = query.filter(KBArticle.is_featured == True)
+            query = query.filter(KBArticle.is_featured)
         if search:
             query = query.filter(
                 or_(
@@ -1093,14 +1121,14 @@ class HelpdeskService:
 
         return articles, total
 
-    def get_kb_article(self, article_id: int) -> Optional[KBArticle]:
+    def get_kb_article(self, article_id: int) -> KBArticle | None:
         """Récupère un article KB."""
         return self.db.query(KBArticle).filter(
             KBArticle.id == article_id,
             KBArticle.tenant_id == self.tenant_id
         ).first()
 
-    def get_kb_article_by_slug(self, slug: str) -> Optional[KBArticle]:
+    def get_kb_article_by_slug(self, slug: str) -> KBArticle | None:
         """Récupère un article par slug."""
         return self.db.query(KBArticle).filter(
             KBArticle.slug == slug,
@@ -1110,8 +1138,8 @@ class HelpdeskService:
     def create_kb_article(
         self,
         data: KBArticleCreate,
-        author_id: Optional[int] = None,
-        author_name: Optional[str] = None
+        author_id: int | None = None,
+        author_name: str | None = None
     ) -> KBArticle:
         """Crée un article KB."""
         article = KBArticle(
@@ -1131,7 +1159,7 @@ class HelpdeskService:
         self,
         article_id: int,
         data: KBArticleUpdate
-    ) -> Optional[KBArticle]:
+    ) -> KBArticle | None:
         """Met à jour un article KB."""
         article = self.get_kb_article(article_id)
         if not article:
@@ -1150,7 +1178,7 @@ class HelpdeskService:
         self.db.refresh(article)
         return article
 
-    def view_kb_article(self, article_id: int) -> Optional[KBArticle]:
+    def view_kb_article(self, article_id: int) -> KBArticle | None:
         """Incrémente le compteur de vues."""
         article = self.get_kb_article(article_id)
         if not article:
@@ -1159,7 +1187,7 @@ class HelpdeskService:
         self.db.commit()
         return article
 
-    def rate_kb_article(self, article_id: int, helpful: bool) -> Optional[KBArticle]:
+    def rate_kb_article(self, article_id: int, helpful: bool) -> KBArticle | None:
         """Note un article (utile/pas utile)."""
         article = self.get_kb_article(article_id)
         if not article:
@@ -1178,8 +1206,8 @@ class HelpdeskService:
     def submit_satisfaction(
         self,
         data: SatisfactionCreate,
-        customer_id: Optional[int] = None
-    ) -> Optional[SatisfactionSurvey]:
+        customer_id: int | None = None
+    ) -> SatisfactionSurvey | None:
         """Soumet une enquête de satisfaction."""
         ticket = self.get_ticket(data.ticket_id)
         if not ticket:
@@ -1220,9 +1248,9 @@ class HelpdeskService:
 
     def get_satisfaction_stats(
         self,
-        agent_id: Optional[int] = None,
+        agent_id: int | None = None,
         days: int = 30
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Statistiques de satisfaction."""
         since = datetime.utcnow() - timedelta(days=days)
 
@@ -1259,16 +1287,16 @@ class HelpdeskService:
     # AUTOMATIONS
     # ========================================================================
 
-    def list_automations(self, active_only: bool = True) -> List[HelpdeskAutomation]:
+    def list_automations(self, active_only: bool = True) -> list[HelpdeskAutomation]:
         """Liste les automatisations."""
         query = self.db.query(HelpdeskAutomation).filter(
             HelpdeskAutomation.tenant_id == self.tenant_id
         )
         if active_only:
-            query = query.filter(HelpdeskAutomation.is_active == True)
+            query = query.filter(HelpdeskAutomation.is_active)
         return query.order_by(HelpdeskAutomation.priority.desc()).all()
 
-    def get_automation(self, automation_id: int) -> Optional[HelpdeskAutomation]:
+    def get_automation(self, automation_id: int) -> HelpdeskAutomation | None:
         """Récupère une automatisation."""
         return self.db.query(HelpdeskAutomation).filter(
             HelpdeskAutomation.id == automation_id,
@@ -1290,7 +1318,7 @@ class HelpdeskService:
         self,
         automation_id: int,
         data: AutomationUpdate
-    ) -> Optional[HelpdeskAutomation]:
+    ) -> HelpdeskAutomation | None:
         """Met à jour une automatisation."""
         automation = self.get_automation(automation_id)
         if not automation:
@@ -1335,14 +1363,14 @@ class HelpdeskService:
         # Overdue
         overdue = base_query.filter(
             or_(
-                and_(Ticket.first_response_due < now, Ticket.first_responded_at == None),
-                and_(Ticket.resolution_due < now, Ticket.resolved_at == None)
+                and_(Ticket.first_response_due < now, Ticket.first_responded_at is None),
+                and_(Ticket.resolution_due < now, Ticket.resolved_at is None)
             ),
             Ticket.status.notin_([TicketStatus.RESOLVED, TicketStatus.CLOSED])
         ).count()
 
         # SLA stats
-        resolved_tickets = base_query.filter(Ticket.resolved_at != None).all()
+        resolved_tickets = base_query.filter(Ticket.resolved_at is not None).all()
 
         avg_resolution = 0
         response_sla_met = 0
@@ -1365,9 +1393,8 @@ class HelpdeskService:
                         response_met_count += 1
 
                 # SLA résolution
-                if t.resolution_due and t.resolved_at:
-                    if t.resolved_at <= t.resolution_due:
-                        resolution_met_count += 1
+                if t.resolution_due and t.resolved_at and t.resolved_at <= t.resolution_due:
+                    resolution_met_count += 1
 
             avg_resolution = total_resolution_time / len(resolved_tickets)
             response_sla_met = (response_met_count / len(resolved_tickets)) * 100
@@ -1387,7 +1414,7 @@ class HelpdeskService:
             resolution_sla_met=round(resolution_sla_met, 2)
         )
 
-    def get_agent_stats(self, days: int = 30) -> List[AgentStats]:
+    def get_agent_stats(self, days: int = 30) -> list[AgentStats]:
         """Statistiques par agent."""
         agents = self.list_agents(active_only=True)
         since = datetime.utcnow() - timedelta(days=days)

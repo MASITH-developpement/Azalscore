@@ -11,12 +11,10 @@ from datetime import date, datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
 from app.core.types import UniversalUUID
-from sqlalchemy.dialects.postgresql import UUID
-from typing import Optional
+from app.db import Base
 
 # ============================================================================
 # ENUMS
@@ -92,50 +90,50 @@ class CountryPack(Base):
     __tablename__ = "country_packs"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
-    country_code: Mapped[Optional[str]] = mapped_column(String(2), nullable=False)  # ISO 3166-1 alpha-2
-    country_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
-    country_name_local: Mapped[Optional[str]] = mapped_column(String(100))
+    country_code: Mapped[str | None] = mapped_column(String(2), nullable=False)  # ISO 3166-1 alpha-2
+    country_name: Mapped[str | None] = mapped_column(String(100), nullable=False)
+    country_name_local: Mapped[str | None] = mapped_column(String(100))
 
-    status: Mapped[Optional[str]] = mapped_column(Enum(PackStatus), default=PackStatus.ACTIVE, nullable=False)
+    status: Mapped[str | None] = mapped_column(Enum(PackStatus), default=PackStatus.ACTIVE, nullable=False)
 
     # Localisation de base
-    default_language: Mapped[Optional[str]] = mapped_column(String(5), default="fr")  # ISO 639-1
-    default_currency: Mapped[Optional[str]] = mapped_column(String(3), nullable=False)  # ISO 4217
-    currency_symbol: Mapped[Optional[str]] = mapped_column(String(10))
-    currency_position: Mapped[Optional[str]] = mapped_column(String(10), default="after")  # before/after
+    default_language: Mapped[str | None] = mapped_column(String(5), default="fr")  # ISO 639-1
+    default_currency: Mapped[str | None] = mapped_column(String(3), nullable=False)  # ISO 4217
+    currency_symbol: Mapped[str | None] = mapped_column(String(10))
+    currency_position: Mapped[str | None] = mapped_column(String(10), default="after")  # before/after
 
     # Formats
-    date_format: Mapped[Optional[str]] = mapped_column(Enum(DateFormatStyle), default=DateFormatStyle.DMY)
-    time_format: Mapped[Optional[str]] = mapped_column(String(20), default="HH:mm")  # 24h ou 12h
-    number_format: Mapped[Optional[str]] = mapped_column(Enum(NumberFormatStyle), default=NumberFormatStyle.EU)
-    decimal_separator: Mapped[Optional[str]] = mapped_column(String(1), default=",")
-    thousands_separator: Mapped[Optional[str]] = mapped_column(String(1), default=" ")
+    date_format: Mapped[str | None] = mapped_column(Enum(DateFormatStyle), default=DateFormatStyle.DMY)
+    time_format: Mapped[str | None] = mapped_column(String(20), default="HH:mm")  # 24h ou 12h
+    number_format: Mapped[str | None] = mapped_column(Enum(NumberFormatStyle), default=NumberFormatStyle.EU)
+    decimal_separator: Mapped[str | None] = mapped_column(String(1), default=",")
+    thousands_separator: Mapped[str | None] = mapped_column(String(1), default=" ")
 
     # Fuseau horaire
-    timezone: Mapped[Optional[str]] = mapped_column(String(50), default="Europe/Paris")
-    week_start: Mapped[Optional[int]] = mapped_column(Integer, default=1)  # 0=Dim, 1=Lun
+    timezone: Mapped[str | None] = mapped_column(String(50), default="Europe/Paris")
+    week_start: Mapped[int | None] = mapped_column(Integer, default=1)  # 0=Dim, 1=Lun
 
     # Fiscalité
-    fiscal_year_start_month: Mapped[Optional[int]] = mapped_column(Integer, default=1)  # 1-12
-    fiscal_year_start_day: Mapped[Optional[int]] = mapped_column(Integer, default=1)    # 1-31
-    default_vat_rate: Mapped[Optional[float]] = mapped_column(Float, default=20.0)
-    has_regional_taxes: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    fiscal_year_start_month: Mapped[int | None] = mapped_column(Integer, default=1)  # 1-12
+    fiscal_year_start_day: Mapped[int | None] = mapped_column(Integer, default=1)    # 1-31
+    default_vat_rate: Mapped[float | None] = mapped_column(Float, default=20.0)
+    has_regional_taxes: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
     # Légal
-    company_id_label: Mapped[Optional[str]] = mapped_column(String(50), default="SIRET")  # SIRET, RC, NIF, etc.
-    company_id_format: Mapped[Optional[str]] = mapped_column(String(100))  # Regex format
-    vat_id_label: Mapped[Optional[str]] = mapped_column(String(50), default="TVA")
-    vat_id_format: Mapped[Optional[str]] = mapped_column(String(100))  # Regex format
+    company_id_label: Mapped[str | None] = mapped_column(String(50), default="SIRET")  # SIRET, RC, NIF, etc.
+    company_id_format: Mapped[str | None] = mapped_column(String(100))  # Regex format
+    vat_id_label: Mapped[str | None] = mapped_column(String(50), default="TVA")
+    vat_id_format: Mapped[str | None] = mapped_column(String(100))  # Regex format
 
     # Configuration
-    config: Mapped[Optional[dict]] = mapped_column(JSON)  # Config additionnelle JSON
+    config: Mapped[dict | None] = mapped_column(JSON)  # Config additionnelle JSON
 
     # Métadonnées
-    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_default: Mapped[bool | None] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     # Relations
@@ -154,36 +152,36 @@ class TaxRate(Base):
     __tablename__ = "country_tax_rates"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
     country_pack_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
-    tax_type: Mapped[Optional[str]] = mapped_column(Enum(TaxType), nullable=False)
-    code: Mapped[Optional[str]] = mapped_column(String(20), nullable=False)  # TVA_20, TVA_10, IS, etc.
-    name: Mapped[Optional[str]] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    tax_type: Mapped[str | None] = mapped_column(Enum(TaxType), nullable=False)
+    code: Mapped[str | None] = mapped_column(String(20), nullable=False)  # TVA_20, TVA_10, IS, etc.
+    name: Mapped[str | None] = mapped_column(String(100), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     rate: Mapped[float] = mapped_column(Float)  # Pourcentage (20.0 = 20%)
-    is_percentage: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)  # True=%, False=montant fixe
+    is_percentage: Mapped[bool | None] = mapped_column(Boolean, default=True)  # True=%, False=montant fixe
 
     # Applicabilité
-    applies_to: Mapped[Optional[str]] = mapped_column(String(50))  # goods, services, both
-    region: Mapped[Optional[str]] = mapped_column(String(100))  # Région si taxe régionale
+    applies_to: Mapped[str | None] = mapped_column(String(50))  # goods, services, both
+    region: Mapped[str | None] = mapped_column(String(100))  # Région si taxe régionale
 
     # Comptes comptables
-    account_collected: Mapped[Optional[str]] = mapped_column(String(20))  # 44571 en France
-    account_deductible: Mapped[Optional[str]] = mapped_column(String(20))  # 44566 en France
-    account_payable: Mapped[Optional[str]] = mapped_column(String(20))     # 44551 en France
+    account_collected: Mapped[str | None] = mapped_column(String(20))  # 44571 en France
+    account_deductible: Mapped[str | None] = mapped_column(String(20))  # 44566 en France
+    account_payable: Mapped[str | None] = mapped_column(String(20))     # 44551 en France
 
     # Dates de validité
-    valid_from: Mapped[Optional[date]] = mapped_column(Date, default=date.today)
-    valid_to: Mapped[Optional[date]] = mapped_column(Date)
+    valid_from: Mapped[date | None] = mapped_column(Date, default=date.today)
+    valid_to: Mapped[date | None] = mapped_column(Date)
 
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_default: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     country_pack = relationship("CountryPack", back_populates="tax_rates")
 
@@ -198,35 +196,35 @@ class DocumentTemplate(Base):
     __tablename__ = "country_document_templates"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
     country_pack_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
-    document_type: Mapped[Optional[str]] = mapped_column(Enum(DocumentType), nullable=False)
-    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    document_type: Mapped[str | None] = mapped_column(Enum(DocumentType), nullable=False)
+    code: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Template
-    template_format: Mapped[Optional[str]] = mapped_column(String(20), default="html")  # html, pdf, docx
-    template_content: Mapped[Optional[str]] = mapped_column(Text)  # Contenu ou chemin
-    template_path: Mapped[Optional[str]] = mapped_column(String(500))
+    template_format: Mapped[str | None] = mapped_column(String(20), default="html")  # html, pdf, docx
+    template_content: Mapped[str | None] = mapped_column(Text)  # Contenu ou chemin
+    template_path: Mapped[str | None] = mapped_column(String(500))
 
     # Mentions légales obligatoires
-    mandatory_fields: Mapped[Optional[dict]] = mapped_column(JSON)  # Liste des champs obligatoires
-    legal_mentions: Mapped[Optional[str]] = mapped_column(Text)    # Mentions légales à inclure
+    mandatory_fields: Mapped[dict | None] = mapped_column(JSON)  # Liste des champs obligatoires
+    legal_mentions: Mapped[str | None] = mapped_column(Text)    # Mentions légales à inclure
 
     # Numérotation
-    numbering_prefix: Mapped[Optional[str]] = mapped_column(String(20))
-    numbering_pattern: Mapped[Optional[str]] = mapped_column(String(50))  # FA-{YYYY}-{SEQ:6}
-    numbering_reset: Mapped[Optional[str]] = mapped_column(String(20), default="yearly")  # yearly, monthly, never
+    numbering_prefix: Mapped[str | None] = mapped_column(String(20))
+    numbering_pattern: Mapped[str | None] = mapped_column(String(50))  # FA-{YYYY}-{SEQ:6}
+    numbering_reset: Mapped[str | None] = mapped_column(String(20), default="yearly")  # yearly, monthly, never
 
-    language: Mapped[Optional[str]] = mapped_column(String(5), default="fr")
-    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    language: Mapped[str | None] = mapped_column(String(5), default="fr")
+    is_default: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     country_pack = relationship("CountryPack", back_populates="document_templates")
@@ -242,33 +240,33 @@ class BankConfig(Base):
     __tablename__ = "country_bank_configs"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
     country_pack_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
-    bank_format: Mapped[Optional[str]] = mapped_column(Enum(BankFormat), nullable=False)
-    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    bank_format: Mapped[str | None] = mapped_column(Enum(BankFormat), nullable=False)
+    code: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Format IBAN/BIC
-    iban_prefix: Mapped[Optional[str]] = mapped_column(String(2))  # FR, MA, etc.
-    iban_length: Mapped[Optional[int]] = mapped_column(Integer)
-    bic_required: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    iban_prefix: Mapped[str | None] = mapped_column(String(2))  # FR, MA, etc.
+    iban_length: Mapped[int | None] = mapped_column(Integer)
+    bic_required: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
     # Format fichier
-    export_format: Mapped[Optional[str]] = mapped_column(String(20))  # xml, csv, txt
-    export_encoding: Mapped[Optional[str]] = mapped_column(String(20), default="utf-8")
-    export_template: Mapped[Optional[str]] = mapped_column(Text)  # Template de fichier
+    export_format: Mapped[str | None] = mapped_column(String(20))  # xml, csv, txt
+    export_encoding: Mapped[str | None] = mapped_column(String(20), default="utf-8")
+    export_template: Mapped[str | None] = mapped_column(Text)  # Template de fichier
 
     # Spécificités
-    config: Mapped[Optional[dict]] = mapped_column(JSON)  # Config additionnelle
+    config: Mapped[dict | None] = mapped_column(JSON)  # Config additionnelle
 
-    is_default: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_default: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     country_pack = relationship("CountryPack", back_populates="bank_configs")
 
@@ -283,34 +281,34 @@ class PublicHoliday(Base):
     __tablename__ = "country_public_holidays"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
     country_pack_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
-    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
-    name_local: Mapped[Optional[str]] = mapped_column(String(200))
+    name: Mapped[str | None] = mapped_column(String(200), nullable=False)
+    name_local: Mapped[str | None] = mapped_column(String(200))
 
     # Date
-    holiday_date: Mapped[Optional[date]] = mapped_column(Date)  # Date fixe
-    month: Mapped[Optional[int]] = mapped_column(Integer)      # 1-12 si récurrent
-    day: Mapped[Optional[int]] = mapped_column(Integer)        # 1-31 si récurrent
-    is_fixed: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)  # True=fixe, False=mobile (Pâques, etc.)
-    calculation_rule: Mapped[Optional[str]] = mapped_column(String(100))  # Règle pour jours mobiles
+    holiday_date: Mapped[date | None] = mapped_column(Date)  # Date fixe
+    month: Mapped[int | None] = mapped_column(Integer)      # 1-12 si récurrent
+    day: Mapped[int | None] = mapped_column(Integer)        # 1-31 si récurrent
+    is_fixed: Mapped[bool | None] = mapped_column(Boolean, default=True)  # True=fixe, False=mobile (Pâques, etc.)
+    calculation_rule: Mapped[str | None] = mapped_column(String(100))  # Règle pour jours mobiles
 
     # Applicabilité
-    year: Mapped[Optional[int]] = mapped_column(Integer)  # Si spécifique à une année
-    region: Mapped[Optional[str]] = mapped_column(String(100))  # Si régional
-    is_national: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    year: Mapped[int | None] = mapped_column(Integer)  # Si spécifique à une année
+    region: Mapped[str | None] = mapped_column(String(100))  # Si régional
+    is_national: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
     # Impact
-    is_work_day: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
-    affects_banks: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    affects_business: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_work_day: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    affects_banks: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    affects_business: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     country_pack = relationship("CountryPack", back_populates="holidays")
 
@@ -325,33 +323,33 @@ class LegalRequirement(Base):
     __tablename__ = "country_legal_requirements"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
     country_pack_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
-    category: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)  # fiscal, social, commercial
-    code: Mapped[Optional[str]] = mapped_column(String(50), nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=False)  # fiscal, social, commercial
+    code: Mapped[str | None] = mapped_column(String(50), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Obligation
-    requirement_type: Mapped[Optional[str]] = mapped_column(String(50))  # declaration, payment, report
-    frequency: Mapped[Optional[str]] = mapped_column(String(20))  # monthly, quarterly, yearly
-    deadline_rule: Mapped[Optional[str]] = mapped_column(String(100))  # Règle de calcul échéance
+    requirement_type: Mapped[str | None] = mapped_column(String(50))  # declaration, payment, report
+    frequency: Mapped[str | None] = mapped_column(String(20))  # monthly, quarterly, yearly
+    deadline_rule: Mapped[str | None] = mapped_column(String(100))  # Règle de calcul échéance
 
     # Configuration
-    config: Mapped[Optional[dict]] = mapped_column(JSON)
+    config: Mapped[dict | None] = mapped_column(JSON)
 
     # Références légales
-    legal_reference: Mapped[Optional[str]] = mapped_column(String(200))
-    effective_date: Mapped[Optional[date]] = mapped_column(Date)
-    end_date: Mapped[Optional[date]] = mapped_column(Date)
+    legal_reference: Mapped[str | None] = mapped_column(String(200))
+    effective_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
 
-    is_mandatory: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_mandatory: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         Index("idx_legal_req_tenant_cat", "tenant_id", "category"),
@@ -364,20 +362,20 @@ class TenantCountrySettings(Base):
     __tablename__ = "tenant_country_settings"
 
     id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=False, index=True)
+    tenant_id: Mapped[str | None] = mapped_column(String(255), nullable=False, index=True)
 
     country_pack_id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), ForeignKey("country_packs.id", ondelete="CASCADE"), nullable=False)
 
-    is_primary: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)  # Pays principal
-    is_active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    is_primary: Mapped[bool | None] = mapped_column(Boolean, default=False)  # Pays principal
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
     # Overrides locaux
-    custom_currency: Mapped[Optional[str]] = mapped_column(String(3))
-    custom_language: Mapped[Optional[str]] = mapped_column(String(5))
-    custom_timezone: Mapped[Optional[str]] = mapped_column(String(50))
-    custom_config: Mapped[Optional[dict]] = mapped_column(JSON)
+    custom_currency: Mapped[str | None] = mapped_column(String(3))
+    custom_language: Mapped[str | None] = mapped_column(String(5))
+    custom_timezone: Mapped[str | None] = mapped_column(String(50))
+    custom_config: Mapped[dict | None] = mapped_column(JSON)
 
-    activated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
     activated_by: Mapped[uuid.UUID] = mapped_column(UniversalUUID())
 
     __table_args__ = (

@@ -4,26 +4,47 @@ AZALS MODULE 13 - POS Service
 Logique métier pour le Point de Vente.
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple
+
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_, case
 
 from .models import (
-    POSStore, POSTerminal, POSUser, POSSession, CashMovement,
-    POSTransaction, POSTransactionLine, POSPayment, POSDailyReport,
-    POSProductQuickKey, POSHoldTransaction, POSOfflineQueue,
-    POSTerminalStatus, POSSessionStatus, POSTransactionStatus,
-    PaymentMethodType, DiscountType
+    CashMovement,
+    DiscountType,
+    PaymentMethodType,
+    POSDailyReport,
+    POSHoldTransaction,
+    POSOfflineQueue,
+    POSPayment,
+    POSProductQuickKey,
+    POSSession,
+    POSSessionStatus,
+    POSStore,
+    POSTerminal,
+    POSTerminalStatus,
+    POSTransaction,
+    POSTransactionLine,
+    POSTransactionStatus,
+    POSUser,
 )
 from .schemas import (
-    StoreCreate, StoreUpdate,
-    TerminalCreate, TerminalUpdate,
-    POSUserCreate, POSUserUpdate, POSUserLogin,
-    SessionOpenRequest, SessionCloseRequest, CashMovementCreate,
-    TransactionCreate, TransactionLineCreate, PaymentCreate,
-    QuickKeyCreate, HoldTransactionCreate
+    CashMovementCreate,
+    HoldTransactionCreate,
+    PaymentCreate,
+    POSUserCreate,
+    POSUserLogin,
+    POSUserUpdate,
+    QuickKeyCreate,
+    SessionCloseRequest,
+    SessionOpenRequest,
+    StoreCreate,
+    StoreUpdate,
+    TerminalCreate,
+    TerminalUpdate,
+    TransactionCreate,
+    TransactionLineCreate,
 )
 
 
@@ -57,14 +78,14 @@ class POSService:
         self.db.refresh(store)
         return store
 
-    def get_store(self, store_id: int) -> Optional[POSStore]:
+    def get_store(self, store_id: int) -> POSStore | None:
         """Récupérer un magasin."""
         return self.db.query(POSStore).filter(
             POSStore.tenant_id == self.tenant_id,
             POSStore.id == store_id
         ).first()
 
-    def get_store_by_code(self, code: str) -> Optional[POSStore]:
+    def get_store_by_code(self, code: str) -> POSStore | None:
         """Récupérer magasin par code."""
         return self.db.query(POSStore).filter(
             POSStore.tenant_id == self.tenant_id,
@@ -73,10 +94,10 @@ class POSService:
 
     def list_stores(
         self,
-        is_active: Optional[bool] = None,
+        is_active: bool | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[POSStore]:
+    ) -> list[POSStore]:
         """Lister les magasins."""
         query = self.db.query(POSStore).filter(
             POSStore.tenant_id == self.tenant_id
@@ -85,7 +106,7 @@ class POSService:
             query = query.filter(POSStore.is_active == is_active)
         return query.offset(skip).limit(limit).all()
 
-    def update_store(self, store_id: int, data: StoreUpdate) -> Optional[POSStore]:
+    def update_store(self, store_id: int, data: StoreUpdate) -> POSStore | None:
         """Mettre à jour un magasin."""
         store = self.get_store(store_id)
         if not store:
@@ -140,14 +161,14 @@ class POSService:
         self.db.refresh(terminal)
         return terminal
 
-    def get_terminal(self, terminal_id: int) -> Optional[POSTerminal]:
+    def get_terminal(self, terminal_id: int) -> POSTerminal | None:
         """Récupérer un terminal."""
         return self.db.query(POSTerminal).filter(
             POSTerminal.tenant_id == self.tenant_id,
             POSTerminal.id == terminal_id
         ).first()
 
-    def get_terminal_by_code(self, terminal_code: str) -> Optional[POSTerminal]:
+    def get_terminal_by_code(self, terminal_code: str) -> POSTerminal | None:
         """Récupérer terminal par code."""
         return self.db.query(POSTerminal).filter(
             POSTerminal.tenant_id == self.tenant_id,
@@ -156,11 +177,11 @@ class POSService:
 
     def list_terminals(
         self,
-        store_id: Optional[int] = None,
-        status: Optional[POSTerminalStatus] = None,
+        store_id: int | None = None,
+        status: POSTerminalStatus | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[POSTerminal]:
+    ) -> list[POSTerminal]:
         """Lister les terminaux."""
         query = self.db.query(POSTerminal).filter(
             POSTerminal.tenant_id == self.tenant_id
@@ -173,7 +194,7 @@ class POSService:
 
     def update_terminal(
         self, terminal_id: int, data: TerminalUpdate
-    ) -> Optional[POSTerminal]:
+    ) -> POSTerminal | None:
         """Mettre à jour un terminal."""
         terminal = self.get_terminal(terminal_id)
         if not terminal:
@@ -187,7 +208,7 @@ class POSService:
         self.db.refresh(terminal)
         return terminal
 
-    def ping_terminal(self, terminal_id: int) -> Optional[POSTerminal]:
+    def ping_terminal(self, terminal_id: int) -> POSTerminal | None:
         """Signal heartbeat du terminal."""
         terminal = self.get_terminal(terminal_id)
         if not terminal:
@@ -201,7 +222,7 @@ class POSService:
         self.db.refresh(terminal)
         return terminal
 
-    def sync_terminal(self, terminal_id: int) -> Optional[POSTerminal]:
+    def sync_terminal(self, terminal_id: int) -> POSTerminal | None:
         """Marquer terminal synchronisé."""
         terminal = self.get_terminal(terminal_id)
         if not terminal:
@@ -236,28 +257,28 @@ class POSService:
         self.db.refresh(pos_user)
         return pos_user
 
-    def get_pos_user(self, user_id: int) -> Optional[POSUser]:
+    def get_pos_user(self, user_id: int) -> POSUser | None:
         """Récupérer un utilisateur POS."""
         return self.db.query(POSUser).filter(
             POSUser.tenant_id == self.tenant_id,
             POSUser.id == user_id
         ).first()
 
-    def get_pos_user_by_code(self, employee_code: str) -> Optional[POSUser]:
+    def get_pos_user_by_code(self, employee_code: str) -> POSUser | None:
         """Récupérer utilisateur par code employé."""
         return self.db.query(POSUser).filter(
             POSUser.tenant_id == self.tenant_id,
             POSUser.employee_code == employee_code,
-            POSUser.is_active == True
+            POSUser.is_active
         ).first()
 
     def list_pos_users(
         self,
-        is_active: Optional[bool] = None,
-        is_manager: Optional[bool] = None,
+        is_active: bool | None = None,
+        is_manager: bool | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[POSUser]:
+    ) -> list[POSUser]:
         """Lister les utilisateurs POS."""
         query = self.db.query(POSUser).filter(
             POSUser.tenant_id == self.tenant_id
@@ -270,7 +291,7 @@ class POSService:
 
     def update_pos_user(
         self, user_id: int, data: POSUserUpdate
-    ) -> Optional[POSUser]:
+    ) -> POSUser | None:
         """Mettre à jour un utilisateur POS."""
         pos_user = self.get_pos_user(user_id)
         if not pos_user:
@@ -286,7 +307,7 @@ class POSService:
 
     def authenticate_pos_user(
         self, data: POSUserLogin
-    ) -> Optional[POSUser]:
+    ) -> POSUser | None:
         """Authentifier utilisateur POS."""
         pos_user = self.get_pos_user_by_code(data.employee_code)
         if not pos_user:
@@ -369,14 +390,14 @@ class POSService:
         self.db.refresh(session)
         return session
 
-    def get_session(self, session_id: int) -> Optional[POSSession]:
+    def get_session(self, session_id: int) -> POSSession | None:
         """Récupérer une session."""
         return self.db.query(POSSession).filter(
             POSSession.tenant_id == self.tenant_id,
             POSSession.id == session_id
         ).first()
 
-    def get_current_session(self, terminal_id: int) -> Optional[POSSession]:
+    def get_current_session(self, terminal_id: int) -> POSSession | None:
         """Récupérer session active du terminal."""
         terminal = self.get_terminal(terminal_id)
         if not terminal or not terminal.current_session_id:
@@ -385,13 +406,13 @@ class POSService:
 
     def list_sessions(
         self,
-        terminal_id: Optional[int] = None,
-        status: Optional[POSSessionStatus] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        terminal_id: int | None = None,
+        status: POSSessionStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[POSSession]:
+    ) -> list[POSSession]:
         """Lister les sessions."""
         query = self.db.query(POSSession).filter(
             POSSession.tenant_id == self.tenant_id
@@ -423,9 +444,8 @@ class POSService:
         if not closer:
             raise ValueError("Utilisateur introuvable")
 
-        if not closer.can_close_session and not closer.is_manager:
-            if closer.id != session.opened_by_id:
-                raise ValueError("Pas autorisé à fermer cette session")
+        if not closer.can_close_session and not closer.is_manager and closer.id != session.opened_by_id:
+            raise ValueError("Pas autorisé à fermer cette session")
 
         # Calculer caisse attendue
         expected_cash = (
@@ -498,7 +518,7 @@ class POSService:
         self.db.refresh(movement)
         return movement
 
-    def list_cash_movements(self, session_id: int) -> List[CashMovement]:
+    def list_cash_movements(self, session_id: int) -> list[CashMovement]:
         """Lister mouvements de caisse d'une session."""
         return self.db.query(CashMovement).filter(
             CashMovement.tenant_id == self.tenant_id,
@@ -696,7 +716,7 @@ class POSService:
         self.db.flush()
         return payment
 
-    def get_transaction(self, transaction_id: int) -> Optional[POSTransaction]:
+    def get_transaction(self, transaction_id: int) -> POSTransaction | None:
         """Récupérer une transaction."""
         return self.db.query(POSTransaction).filter(
             POSTransaction.tenant_id == self.tenant_id,
@@ -705,7 +725,7 @@ class POSService:
 
     def get_transaction_by_receipt(
         self, receipt_number: str
-    ) -> Optional[POSTransaction]:
+    ) -> POSTransaction | None:
         """Récupérer transaction par numéro ticket."""
         return self.db.query(POSTransaction).filter(
             POSTransaction.tenant_id == self.tenant_id,
@@ -714,14 +734,14 @@ class POSService:
 
     def list_transactions(
         self,
-        session_id: Optional[int] = None,
-        status: Optional[POSTransactionStatus] = None,
-        customer_id: Optional[int] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        session_id: int | None = None,
+        status: POSTransactionStatus | None = None,
+        customer_id: int | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[POSTransaction], int]:
+    ) -> tuple[list[POSTransaction], int]:
         """Lister les transactions."""
         query = self.db.query(POSTransaction).filter(
             POSTransaction.tenant_id == self.tenant_id
@@ -839,7 +859,7 @@ class POSService:
         return transaction
 
     def refund_transaction(
-        self, original_transaction_id: int, line_items: List[dict],
+        self, original_transaction_id: int, line_items: list[dict],
         session_id: int, cashier_id: int, reason: str
     ) -> POSTransaction:
         """Créer un remboursement."""
@@ -922,8 +942,8 @@ class POSService:
         return quick_key
 
     def list_quick_keys(
-        self, store_id: Optional[int] = None, page: int = 1
-    ) -> List[POSProductQuickKey]:
+        self, store_id: int | None = None, page: int = 1
+    ) -> list[POSProductQuickKey]:
         """Lister raccourcis."""
         query = self.db.query(POSProductQuickKey).filter(
             POSProductQuickKey.tenant_id == self.tenant_id,
@@ -933,11 +953,11 @@ class POSService:
             query = query.filter(
                 or_(
                     POSProductQuickKey.store_id == store_id,
-                    POSProductQuickKey.store_id == None
+                    POSProductQuickKey.store_id is None
                 )
             )
         else:
-            query = query.filter(POSProductQuickKey.store_id == None)
+            query = query.filter(POSProductQuickKey.store_id is None)
 
         return query.order_by(POSProductQuickKey.position).all()
 
@@ -1002,23 +1022,23 @@ class POSService:
         return hold
 
     def list_held_transactions(
-        self, session_id: Optional[int] = None
-    ) -> List[POSHoldTransaction]:
+        self, session_id: int | None = None
+    ) -> list[POSHoldTransaction]:
         """Lister transactions en attente."""
         query = self.db.query(POSHoldTransaction).filter(
             POSHoldTransaction.tenant_id == self.tenant_id,
-            POSHoldTransaction.is_active == True
+            POSHoldTransaction.is_active
         )
         if session_id:
             query = query.filter(POSHoldTransaction.session_id == session_id)
         return query.order_by(POSHoldTransaction.created_at.desc()).all()
 
-    def recall_held_transaction(self, hold_id: int) -> Optional[dict]:
+    def recall_held_transaction(self, hold_id: int) -> dict | None:
         """Récupérer et supprimer transaction en attente."""
         hold = self.db.query(POSHoldTransaction).filter(
             POSHoldTransaction.tenant_id == self.tenant_id,
             POSHoldTransaction.id == hold_id,
-            POSHoldTransaction.is_active == True
+            POSHoldTransaction.is_active
         ).first()
 
         if not hold:
@@ -1158,7 +1178,7 @@ class POSService:
 
     def get_daily_report(
         self, store_id: int, report_date: date
-    ) -> Optional[POSDailyReport]:
+    ) -> POSDailyReport | None:
         """Récupérer rapport journalier."""
         return self.db.query(POSDailyReport).filter(
             POSDailyReport.tenant_id == self.tenant_id,
@@ -1168,12 +1188,12 @@ class POSService:
 
     def list_daily_reports(
         self,
-        store_id: Optional[int] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        store_id: int | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 30
-    ) -> List[POSDailyReport]:
+    ) -> list[POSDailyReport]:
         """Lister rapports journaliers."""
         query = self.db.query(POSDailyReport).filter(
             POSDailyReport.tenant_id == self.tenant_id
@@ -1191,7 +1211,7 @@ class POSService:
     # DASHBOARDS
     # ========================================================================
 
-    def get_pos_dashboard(self, store_id: Optional[int] = None) -> dict:
+    def get_pos_dashboard(self, store_id: int | None = None) -> dict:
         """Dashboard POS global."""
         today = date.today()
         start = datetime.combine(today, datetime.min.time())
@@ -1395,7 +1415,7 @@ class POSService:
         pending = self.db.query(POSOfflineQueue).filter(
             POSOfflineQueue.tenant_id == self.tenant_id,
             POSOfflineQueue.terminal_id == terminal_id,
-            POSOfflineQueue.is_synced == False
+            not POSOfflineQueue.is_synced
         ).order_by(POSOfflineQueue.created_at).all()
 
         synced_count = 0

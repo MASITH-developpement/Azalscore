@@ -6,17 +6,14 @@ Modèles SQLAlchemy pour le CRM et la gestion commerciale.
 """
 
 import enum
-from datetime import datetime, date
-from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, Date,
-    Text, ForeignKey, Enum, Numeric, Index
-)
-from app.core.types import UniversalUUID, JSON
-from sqlalchemy.orm import relationship
 import uuid
+from datetime import date, datetime
 
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, Float, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.orm import relationship
+
+from app.core.types import JSON, UniversalUUID
 from app.db import Base
-
 
 # ============================================================================
 # ENUMS
