@@ -20,6 +20,7 @@ const InvoicingRoutes = lazy(() => import('@modules/invoicing'));
 const TreasuryRoutes = lazy(() => import('@modules/treasury'));
 const AccountingRoutes = lazy(() => import('@modules/accounting'));
 const PurchasesRoutes = lazy(() => import('@modules/purchases'));
+const DocumentsRoutes = lazy(() => import('@modules/documents'));
 const ProjectsRoutes = lazy(() => import('@modules/projects'));
 const InterventionsRoutes = lazy(() => import('@modules/interventions'));
 const WebRoutes = lazy(() => import('@modules/web'));
@@ -131,7 +132,14 @@ export const AppRouter: React.FC = () => {
               </CapabilityRoute>
             } />
 
-            {/* Facturation */}
+            {/* Documents - Vue unifiée (devis, factures, avoirs, commandes, clients, fournisseurs) */}
+            <Route path="/documents/*" element={
+              <CapabilityRoute capability="invoicing.view">
+                <DocumentsRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Facturation (redirige vers /documents pour rétrocompatibilité) */}
             <Route path="/invoicing/*" element={
               <CapabilityRoute capability="invoicing.view">
                 <InvoicingRoutes />
