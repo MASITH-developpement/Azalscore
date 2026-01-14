@@ -263,7 +263,7 @@ const useInterventionSummary = () => {
     queryKey: ['interventions', 'summary'],
     queryFn: async () => {
       const response = await api.get<InterventionSummary>('/v1/interventions/statistiques');
-      return response.data;
+      return (response as any).data || response;
     },
   });
 };
@@ -292,7 +292,7 @@ const useInterventions = (
       const response = await api.get<PaginatedResponse<Intervention>>(
         `/v1/interventions?${queryParams}`
       );
-      return response.data;
+      return (response as any).data || response;
     },
   });
 };
@@ -302,7 +302,7 @@ const useIntervention = (id: string) => {
     queryKey: ['intervention', id],
     queryFn: async () => {
       const response = await api.get<Intervention>(`/v1/interventions/${id}`);
-      return response.data;
+      return (response as any).data || response;
     },
     enabled: !!id && id !== 'new',
   });
@@ -315,7 +315,10 @@ const useCustomers = () => {
       const response = await api.get<PaginatedResponse<Customer>>(
         '/v1/commercial/customers?page_size=500&is_active=true'
       );
-      return response.data.items;
+      // Le backend retourne directement {items, total} sans wrapper data
+      // response peut être {data: {items, total}} ou directement {items, total}
+      const data = (response as any).data || response;
+      return data.items || [];
     },
   });
 };
@@ -326,7 +329,8 @@ const useProjects = (clientId?: string) => {
     queryFn: async () => {
       const params = clientId ? `?client_id=${clientId}&page_size=100` : '?page_size=100';
       const response = await api.get<PaginatedResponse<Project>>(`/v1/projects${params}`);
-      return response.data.items;
+      const data = (response as any).data || response;
+      return data.items || [];
     },
     enabled: true,
   });
@@ -339,7 +343,8 @@ const useDonneursOrdre = () => {
       const response = await api.get<PaginatedResponse<DonneurOrdre>>(
         '/v1/interventions/donneurs-ordre?page_size=500&is_active=true'
       );
-      return response.data.items;
+      const data = (response as any).data || response;
+      return data.items || [];
     },
   });
 };
@@ -351,7 +356,8 @@ const useIntervenants = () => {
       const response = await api.get<{ id: string; name: string; email: string }[]>(
         '/v1/admin/users?role=intervenant&page_size=100'
       );
-      return response.data;
+      // Peut être response.data (si wrappé) ou response directement (si array)
+      return (response as any).data || response || [];
     },
   });
 };
@@ -362,7 +368,7 @@ const useCreateIntervention = () => {
   return useMutation({
     mutationFn: async (data: CreateInterventionData) => {
       const response = await api.post<Intervention>('/v1/interventions', data);
-      return response.data;
+      return (response as any).data || response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
