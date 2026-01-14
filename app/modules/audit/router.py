@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.models import User
 
 from .models import (
     AuditAction, AuditLevel, AuditCategory, ComplianceFramework
@@ -62,7 +63,7 @@ async def search_audit_logs(
     search_text: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Recherche dans les logs d'audit.
@@ -101,7 +102,7 @@ async def get_audit_log(
     log_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un log d'audit par ID.
@@ -123,7 +124,7 @@ async def get_entity_history(
     request: Request,
     db: Session = Depends(get_db),
     limit: int = Query(50, ge=1, le=200),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère l'historique d'une entité.
@@ -142,7 +143,7 @@ async def get_user_activity(
     from_date: Optional[datetime] = Query(None),
     to_date: Optional[datetime] = Query(None),
     limit: int = Query(100, ge=1, le=500),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère l'activité d'un utilisateur.
@@ -162,7 +163,7 @@ async def list_active_sessions(
     request: Request,
     db: Session = Depends(get_db),
     user_id: Optional[int] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les sessions actives.
@@ -179,7 +180,7 @@ async def terminate_session(
     request: Request,
     db: Session = Depends(get_db),
     reason: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Termine une session.
@@ -203,7 +204,7 @@ async def create_metric(
     data: MetricCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée une définition de métrique.
@@ -230,7 +231,7 @@ async def list_metrics(
     request: Request,
     db: Session = Depends(get_db),
     module: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les métriques définies.
@@ -245,7 +246,7 @@ async def record_metric_value(
     data: MetricValueSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Enregistre une valeur de métrique.
@@ -274,7 +275,7 @@ async def get_metric_values(
     from_date: Optional[datetime] = Query(None),
     to_date: Optional[datetime] = Query(None),
     limit: int = Query(1000, ge=1, le=10000),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les valeurs d'une métrique.
@@ -294,7 +295,7 @@ async def create_benchmark(
     data: BenchmarkCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un benchmark.
@@ -310,7 +311,7 @@ async def create_benchmark(
         module=data.module,
         config=data.config,
         baseline=data.baseline,
-        created_by=current_user.get('user_id')
+        created_by=current_user.id
     )
     return BenchmarkResponseSchema.from_orm_custom(benchmark)
 
@@ -320,7 +321,7 @@ async def list_benchmarks(
     request: Request,
     db: Session = Depends(get_db),
     benchmark_type: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les benchmarks.
@@ -336,7 +337,7 @@ async def run_benchmark(
     benchmark_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Exécute un benchmark.
@@ -347,7 +348,7 @@ async def run_benchmark(
     try:
         result = service.run_benchmark(
             benchmark_id=benchmark_id,
-            executed_by=current_user.get('user_id')
+            executed_by=current_user.id
         )
         return BenchmarkResultResponseSchema.from_orm_custom(result)
     except ValueError as e:
@@ -360,7 +361,7 @@ async def get_benchmark_results(
     request: Request,
     db: Session = Depends(get_db),
     limit: int = Query(10, ge=1, le=100),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les résultats d'un benchmark.
@@ -380,7 +381,7 @@ async def create_compliance_check(
     data: ComplianceCheckCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un contrôle de conformité.
@@ -407,7 +408,7 @@ async def list_compliance_checks(
     db: Session = Depends(get_db),
     framework: Optional[ComplianceFramework] = Query(None),
     status: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les contrôles de conformité.
@@ -436,7 +437,7 @@ async def update_compliance_check(
     data: ComplianceUpdateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Met à jour le statut d'un contrôle.
@@ -449,7 +450,7 @@ async def update_compliance_check(
         status=data.status,
         actual_result=data.actual_result,
         evidence=data.evidence,
-        checked_by=current_user.get('user_id')
+        checked_by=current_user.id
     )
 
     if not check:
@@ -463,7 +464,7 @@ async def get_compliance_summary(
     request: Request,
     db: Session = Depends(get_db),
     framework: Optional[ComplianceFramework] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un résumé de conformité.
@@ -483,7 +484,7 @@ async def create_retention_rule(
     data: RetentionRuleCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée une règle de rétention.
@@ -508,7 +509,7 @@ async def create_retention_rule(
 async def list_retention_rules(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les règles de rétention.
@@ -528,7 +529,7 @@ async def list_retention_rules(
 async def apply_retention_rules(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Applique les règles de rétention.
@@ -549,7 +550,7 @@ async def create_export(
     request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée une demande d'export.
@@ -560,7 +561,7 @@ async def create_export(
     export = service.create_export(
         export_type=data.export_type,
         format=data.format,
-        requested_by=current_user.get('user_id'),
+        requested_by=current_user.id,
         date_from=data.date_from,
         date_to=data.date_to,
         filters=data.filters
@@ -578,7 +579,7 @@ async def list_exports(
     db: Session = Depends(get_db),
     status: Optional[str] = Query(None),
     limit: int = Query(20, ge=1, le=100),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les exports.
@@ -603,7 +604,7 @@ async def get_export(
     export_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un export par ID.
@@ -628,7 +629,7 @@ async def process_export(
     export_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Traite un export.
@@ -652,7 +653,7 @@ async def create_dashboard(
     data: DashboardCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un tableau de bord.
@@ -664,7 +665,7 @@ async def create_dashboard(
         code=data.code,
         name=data.name,
         widgets=[w.model_dump() for w in data.widgets],
-        owner_id=current_user.get('user_id'),
+        owner_id=current_user.id,
         description=data.description,
         layout=data.layout,
         refresh_interval=data.refresh_interval
@@ -676,7 +677,7 @@ async def create_dashboard(
 async def list_dashboards(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les tableaux de bord.
@@ -684,7 +685,7 @@ async def list_dashboards(
     """
     from .models import AuditDashboard
     tenant_id = request.state.tenant_id
-    user_id = current_user.get('user_id')
+    user_id = current_user.id
 
     dashboards = db.query(AuditDashboard).filter(
         AuditDashboard.tenant_id == tenant_id,
@@ -701,7 +702,7 @@ async def get_dashboard_data(
     dashboard_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les données d'un tableau de bord.
@@ -724,7 +725,7 @@ async def get_dashboard_data(
 async def get_audit_stats(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les statistiques d'audit.
@@ -738,7 +739,7 @@ async def get_audit_stats(
 async def get_audit_dashboard(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère le dashboard d'audit complet.

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.models import User
 
 from .models import (
     TriggerType, TriggerStatus, AlertSeverity, NotificationStatus
@@ -49,7 +50,7 @@ async def create_trigger(
     data: TriggerCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un nouveau trigger.
@@ -64,7 +65,7 @@ async def create_trigger(
             trigger_type=data.trigger_type,
             source_module=data.source_module,
             condition=data.condition,
-            created_by=current_user.get('user_id'),
+            created_by=current_user.id,
             description=data.description,
             source_entity=data.source_entity,
             source_field=data.source_field,
@@ -89,7 +90,7 @@ async def list_triggers(
     source_module: Optional[str] = Query(None, description="Filtrer par module source"),
     trigger_type: Optional[TriggerType] = Query(None, description="Filtrer par type"),
     include_inactive: bool = Query(False, description="Inclure les inactifs"),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les triggers.
@@ -109,7 +110,7 @@ async def get_trigger(
     trigger_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un trigger par ID.
@@ -130,7 +131,7 @@ async def update_trigger(
     data: TriggerUpdateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Met à jour un trigger.
@@ -151,7 +152,7 @@ async def delete_trigger(
     trigger_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Supprime un trigger.
@@ -159,7 +160,7 @@ async def delete_trigger(
     """
     service = get_service(request, db)
 
-    if not service.delete_trigger(trigger_id, deleted_by=current_user.get('user_id')):
+    if not service.delete_trigger(trigger_id, deleted_by=current_user.id):
         raise HTTPException(status_code=404, detail="Trigger non trouvé")
 
     return {"message": "Trigger supprimé", "trigger_id": trigger_id}
@@ -170,7 +171,7 @@ async def pause_trigger(
     trigger_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Met en pause un trigger.
@@ -190,7 +191,7 @@ async def resume_trigger(
     trigger_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Reprend un trigger en pause.
@@ -211,7 +212,7 @@ async def fire_trigger_manually(
     data: FireTriggerSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Déclenche manuellement un trigger.
@@ -240,7 +241,7 @@ async def create_subscription(
     data: SubscriptionCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un abonnement à un trigger.
@@ -266,7 +267,7 @@ async def create_subscription(
             user_id=data.user_id,
             channel=data.channel,
             escalation_level=data.escalation_level,
-            created_by=current_user.get('user_id')
+            created_by=current_user.id
         )
     elif data.role_code:
         subscription = service.subscribe_role(
@@ -274,7 +275,7 @@ async def create_subscription(
             role_code=data.role_code,
             channel=data.channel,
             escalation_level=data.escalation_level,
-            created_by=current_user.get('user_id')
+            created_by=current_user.id
         )
     else:
         # Email externe ou groupe
@@ -286,7 +287,7 @@ async def create_subscription(
             email_external=data.email_external,
             channel=data.channel,
             escalation_level=data.escalation_level,
-            created_by=current_user.get('user_id')
+            created_by=current_user.id
         )
         db.add(subscription)
         db.commit()
@@ -300,7 +301,7 @@ async def get_trigger_subscriptions(
     trigger_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les abonnements d'un trigger.
@@ -316,7 +317,7 @@ async def delete_subscription(
     subscription_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Supprime un abonnement.
@@ -344,7 +345,7 @@ async def list_events(
     from_date: Optional[datetime] = Query(None, description="Date de début"),
     to_date: Optional[datetime] = Query(None, description="Date de fin"),
     limit: int = Query(100, ge=1, le=500),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les événements de déclenchement.
@@ -367,7 +368,7 @@ async def get_event(
     event_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un événement par ID.
@@ -388,7 +389,7 @@ async def resolve_event(
     data: ResolveEventSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Marque un événement comme résolu.
@@ -399,7 +400,7 @@ async def resolve_event(
     try:
         event = service.resolve_event(
             event_id=event_id,
-            resolved_by=current_user.get('user_id'),
+            resolved_by=current_user.id,
             resolution_notes=data.resolution_notes
         )
         return event
@@ -412,7 +413,7 @@ async def escalate_event(
     event_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Escalade un événement au niveau supérieur.
@@ -437,13 +438,13 @@ async def get_my_notifications(
     db: Session = Depends(get_db),
     unread_only: bool = Query(False, description="Seulement non lues"),
     limit: int = Query(50, ge=1, le=200),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les notifications de l'utilisateur connecté.
     """
     service = get_service(request, db)
-    user_id = current_user.get('user_id')
+    user_id = current_user.id
 
     notifications = service.get_user_notifications(
         user_id=user_id,
@@ -465,7 +466,7 @@ async def mark_notification_read(
     notification_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Marque une notification comme lue.
@@ -483,13 +484,13 @@ async def mark_notification_read(
 async def mark_all_notifications_read(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Marque toutes les notifications comme lues.
     """
     service = get_service(request, db)
-    user_id = current_user.get('user_id')
+    user_id = current_user.id
 
     notifications = service.get_user_notifications(user_id=user_id, unread_only=True)
     count = 0
@@ -505,7 +506,7 @@ async def send_pending_notifications(
     request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Envoie les notifications en attente.
@@ -525,7 +526,7 @@ async def create_template(
     data: TemplateCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un template de notification.
@@ -537,7 +538,7 @@ async def create_template(
         code=data.code,
         name=data.name,
         body_template=data.body_template,
-        created_by=current_user.get('user_id'),
+        created_by=current_user.id,
         description=data.description,
         subject_template=data.subject_template,
         body_html=data.body_html,
@@ -550,7 +551,7 @@ async def create_template(
 async def list_templates(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les templates de notification.
@@ -565,7 +566,7 @@ async def get_template(
     template_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un template par ID.
@@ -591,7 +592,7 @@ async def update_template(
     data: TemplateUpdateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Met à jour un template.
@@ -628,7 +629,7 @@ async def delete_template(
     template_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Supprime un template.
@@ -663,7 +664,7 @@ async def create_scheduled_report(
     data: ScheduledReportCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un rapport planifié.
@@ -677,7 +678,7 @@ async def create_scheduled_report(
         report_type=data.report_type,
         frequency=data.frequency,
         recipients=data.recipients.model_dump(),
-        created_by=current_user.get('user_id'),
+        created_by=current_user.id,
         description=data.description,
         report_config=data.report_config,
         schedule_day=data.schedule_day,
@@ -692,7 +693,7 @@ async def list_scheduled_reports(
     request: Request,
     db: Session = Depends(get_db),
     include_inactive: bool = Query(False),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les rapports planifiés.
@@ -707,7 +708,7 @@ async def get_scheduled_report(
     report_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un rapport planifié par ID.
@@ -733,7 +734,7 @@ async def update_scheduled_report(
     data: ScheduledReportUpdateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Met à jour un rapport planifié.
@@ -770,7 +771,7 @@ async def delete_scheduled_report(
     report_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Supprime un rapport planifié.
@@ -798,7 +799,7 @@ async def generate_report_now(
     report_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Génère immédiatement un rapport.
@@ -809,7 +810,7 @@ async def generate_report_now(
     try:
         history = service.generate_report(
             report_id=report_id,
-            generated_by=current_user.get('user_id')
+            generated_by=current_user.id
         )
         return history
     except ValueError as e:
@@ -822,7 +823,7 @@ async def get_report_history(
     request: Request,
     db: Session = Depends(get_db),
     limit: int = Query(50, ge=1, le=200),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère l'historique de génération d'un rapport.
@@ -848,7 +849,7 @@ async def create_webhook(
     data: WebhookCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un endpoint webhook.
@@ -860,7 +861,7 @@ async def create_webhook(
         code=data.code,
         name=data.name,
         url=data.url,
-        created_by=current_user.get('user_id'),
+        created_by=current_user.id,
         description=data.description,
         method=data.method,
         headers=data.headers,
@@ -874,7 +875,7 @@ async def create_webhook(
 async def list_webhooks(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les webhooks.
@@ -889,7 +890,7 @@ async def get_webhook(
     webhook_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un webhook par ID.
@@ -915,7 +916,7 @@ async def update_webhook(
     data: WebhookUpdateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Met à jour un webhook.
@@ -949,7 +950,7 @@ async def delete_webhook(
     webhook_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Supprime un webhook.
@@ -977,7 +978,7 @@ async def test_webhook(
     webhook_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Teste un webhook.
@@ -1017,7 +1018,7 @@ async def list_logs(
     from_date: Optional[datetime] = Query(None),
     to_date: Optional[datetime] = Query(None),
     limit: int = Query(100, ge=1, le=500),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les logs du système de triggers.
@@ -1050,7 +1051,7 @@ async def list_logs(
 async def get_dashboard(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère le dashboard des triggers.

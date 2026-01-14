@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.models import User
 
 from .service import get_tenant_service
 
@@ -20,15 +21,15 @@ from .service import get_tenant_service
 # SÉCURITÉ: Fonctions de vérification des accès
 # ============================================================================
 
-def verify_tenant_ownership(current_user: dict, tenant_id: str) -> None:
+def verify_tenant_ownership(current_user: User, tenant_id: str) -> None:
     """
     Vérifie que l'utilisateur a accès au tenant spécifié.
     Seuls les utilisateurs du même tenant ou les super_admin peuvent accéder.
     """
     from fastapi import HTTPException
 
-    user_tenant_id = current_user.get("tenant_id")
-    user_role = current_user.get("role", "")
+    user_tenant_id = current_user.tenant_id
+    user_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
 
     # Super admin peut tout faire
     if user_role == "SUPER_ADMIN":
@@ -42,11 +43,11 @@ def verify_tenant_ownership(current_user: dict, tenant_id: str) -> None:
         )
 
 
-def require_super_admin(current_user: dict) -> None:
+def require_super_admin(current_user: User) -> None:
     """Vérifie que l'utilisateur est super_admin (opérations plateforme)."""
     from fastapi import HTTPException
 
-    user_role = current_user.get("role", "")
+    user_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     if user_role != "SUPER_ADMIN":
         raise HTTPException(
             status_code=403,
@@ -54,11 +55,11 @@ def require_super_admin(current_user: dict) -> None:
         )
 
 
-def require_tenant_admin(current_user: dict) -> None:
+def require_tenant_admin(current_user: User) -> None:
     """Vérifie que l'utilisateur a un rôle admin dans son tenant."""
     from fastapi import HTTPException
 
-    user_role = current_user.get("role", "")
+    user_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     if user_role not in ["SUPER_ADMIN", "DIRIGEANT", "ADMIN"]:
         raise HTTPException(
             status_code=403,
@@ -89,13 +90,13 @@ router = APIRouter(prefix="/api/v1/tenants", tags=["Tenants"])
 def create_tenant(
     data: TenantCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un nouveau tenant."""
     # SÉCURITÉ: Seul super_admin peut créer de nouveaux tenants
     require_super_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
 
     # Vérifier si tenant_id existe déjà
     if service.get_tenant(data.tenant_id):
@@ -112,7 +113,7 @@ def list_tenants(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les tenants."""
     # SÉCURITÉ: Seul super_admin peut voir tous les tenants
@@ -124,11 +125,11 @@ def list_tenants(
 @router.get("/me", response_model=TenantResponse)
 def get_current_tenant(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer le tenant courant."""
     service = get_tenant_service(db)
-    tenant = service.get_tenant(current_user["tenant_id"])
+    tenant = service.get_tenant(current_user.tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
     return tenant
@@ -138,7 +139,7 @@ def get_current_tenant(
 def get_tenant(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un tenant."""
     # SÉCURITÉ: Vérifier l'accès au tenant
@@ -156,14 +157,14 @@ def update_tenant(
     tenant_id: str,
     data: TenantUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un tenant."""
     # SÉCURITÉ: Vérifier l'accès au tenant + rôle admin
     verify_tenant_ownership(current_user, tenant_id)
     require_tenant_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     tenant = service.update_tenant(tenant_id, data)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -174,13 +175,13 @@ def update_tenant(
 def activate_tenant(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Activer un tenant."""
     # SÉCURITÉ: Seul super_admin peut activer un tenant
     require_super_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     tenant = service.activate_tenant(tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -192,13 +193,13 @@ def suspend_tenant(
     tenant_id: str,
     reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Suspendre un tenant."""
     # SÉCURITÉ: Seul super_admin peut suspendre un tenant
     require_super_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     tenant = service.suspend_tenant(tenant_id, reason)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -210,13 +211,13 @@ def cancel_tenant(
     tenant_id: str,
     reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Annuler un tenant."""
     # SÉCURITÉ: Seul super_admin peut annuler un tenant
     require_super_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     tenant = service.cancel_tenant(tenant_id, reason)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -228,10 +229,10 @@ def start_trial(
     tenant_id: str,
     days: int = 14,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Démarrer un essai gratuit."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     tenant = service.start_trial(tenant_id, days)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -247,13 +248,13 @@ def create_subscription(
     tenant_id: str,
     data: SubscriptionCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un abonnement."""
     # SÉCURITÉ: Seul super_admin peut créer des abonnements
     require_super_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
 
     if not service.get_tenant(tenant_id):
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -265,7 +266,7 @@ def create_subscription(
 def get_active_subscription(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer l'abonnement actif."""
     service = get_tenant_service(db)
@@ -280,10 +281,10 @@ def update_subscription(
     tenant_id: str,
     data: SubscriptionUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour l'abonnement."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     subscription = service.update_subscription(tenant_id, data)
     if not subscription:
         raise HTTPException(status_code=404, detail="Aucun abonnement actif")
@@ -299,10 +300,10 @@ def activate_module(
     tenant_id: str,
     data: ModuleActivation,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Activer un module."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
 
     if not service.get_tenant(tenant_id):
         raise HTTPException(status_code=404, detail="Tenant non trouvé")
@@ -315,7 +316,7 @@ def list_tenant_modules(
     tenant_id: str,
     active_only: bool = True,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les modules d'un tenant."""
     service = get_tenant_service(db)
@@ -327,10 +328,10 @@ def deactivate_module(
     tenant_id: str,
     module_code: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Désactiver un module."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     module = service.deactivate_module(tenant_id, module_code)
     if not module:
         raise HTTPException(status_code=404, detail="Module non trouvé")
@@ -342,7 +343,7 @@ def check_module_active(
     tenant_id: str,
     module_code: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Vérifier si un module est actif."""
     service = get_tenant_service(db)
@@ -358,10 +359,10 @@ def check_module_active(
 def create_invitation(
     data: TenantInvitationCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une invitation."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     return service.create_invitation(data)
 
 
@@ -369,7 +370,7 @@ def create_invitation(
 def get_invitation(
     token: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une invitation."""
     service = get_tenant_service(db)
@@ -383,10 +384,10 @@ def get_invitation(
 def accept_invitation(
     token: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Accepter une invitation."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     invitation = service.accept_invitation(token)
     if not invitation:
         raise HTTPException(status_code=404, detail="Invitation invalide ou expirée")
@@ -404,7 +405,7 @@ def get_tenant_usage(
     end_date: datetime,
     period: str = "daily",
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer l'utilisation."""
     service = get_tenant_service(db)
@@ -416,7 +417,7 @@ def record_tenant_usage(
     tenant_id: str,
     data: dict,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Enregistrer l'utilisation."""
     service = get_tenant_service(db)
@@ -430,7 +431,7 @@ def get_tenant_events(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les événements."""
     service = get_tenant_service(db)
@@ -445,7 +446,7 @@ def get_tenant_events(
 def get_tenant_settings(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les paramètres."""
     service = get_tenant_service(db)
@@ -460,10 +461,10 @@ def update_tenant_settings(
     tenant_id: str,
     data: TenantSettingsUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour les paramètres."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     return service.update_settings(tenant_id, data)
 
 
@@ -475,7 +476,7 @@ def update_tenant_settings(
 def get_tenant_onboarding(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer l'onboarding."""
     service = get_tenant_service(db)
@@ -490,10 +491,10 @@ def update_onboarding_step(
     tenant_id: str,
     data: OnboardingStepUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une étape onboarding."""
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     onboarding = service.update_onboarding_step(tenant_id, data)
     if not onboarding:
         raise HTTPException(status_code=404, detail="Onboarding non trouvé")
@@ -508,7 +509,7 @@ def update_onboarding_step(
 def get_tenant_dashboard(
     tenant_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Dashboard complet du tenant."""
     service = get_tenant_service(db)
@@ -544,13 +545,13 @@ def get_tenant_dashboard(
 def provision_tenant(
     data: ProvisionTenantRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Provisionner un tenant complet."""
     # SÉCURITÉ: Seul super_admin peut provisionner des tenants
     require_super_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
 
     # Vérifier si tenant_id existe déjà
     if service.get_tenant(data.tenant.tenant_id):
@@ -563,13 +564,13 @@ def provision_tenant(
 @router.post("/provision/masith", status_code=201)
 def provision_masith(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Provisionner le tenant SAS MASITH (premier client)."""
     # SÉCURITÉ: Seul super_admin peut provisionner des tenants
     require_super_admin(current_user)
 
-    service = get_tenant_service(db, current_user["user_id"], current_user.get("email"))
+    service = get_tenant_service(db, current_user.id, current_user.email)
     return service.provision_masith()
 
 
@@ -580,7 +581,7 @@ def provision_masith(
 @router.get("/platform/stats", response_model=PlatformStatsResponse)
 def get_platform_stats(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Statistiques globales de la plateforme."""
     # SÉCURITÉ: Seul super_admin peut voir les stats de la plateforme

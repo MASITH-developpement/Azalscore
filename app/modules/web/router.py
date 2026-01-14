@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.models import User
 
 from .service import get_web_service
 from .models import (
@@ -52,10 +53,10 @@ router = APIRouter(prefix="/api/v1/web", tags=["Web"])
 async def create_theme(
     theme: ThemeCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un nouveau thème."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
 
     existing = service.get_theme_by_code(theme.code)
     if existing:
@@ -66,7 +67,7 @@ async def create_theme(
 
     return service.create_theme(
         **theme.model_dump(),
-        created_by=current_user["user_id"]
+        created_by=current_user.id
     )
 
 
@@ -77,10 +78,10 @@ async def list_themes(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les thèmes."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     items, total = service.list_themes(
         mode=ThemeMode(mode.value) if mode else None,
         is_active=is_active,
@@ -93,10 +94,10 @@ async def list_themes(
 @router.get("/themes/default", response_model=ThemeResponse)
 async def get_default_theme(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer le thème par défaut."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     theme = service.get_default_theme()
     if not theme:
         raise HTTPException(status_code=404, detail="Aucun thème par défaut")
@@ -107,10 +108,10 @@ async def get_default_theme(
 async def get_theme(
     theme_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un thème par ID."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     theme = service.get_theme(theme_id)
     if not theme:
         raise HTTPException(status_code=404, detail="Thème non trouvé")
@@ -122,10 +123,10 @@ async def update_theme(
     theme_id: int,
     updates: ThemeUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un thème."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     theme = service.update_theme(theme_id, **updates.model_dump(exclude_unset=True))
     if not theme:
         raise HTTPException(status_code=404, detail="Thème non trouvé")
@@ -136,10 +137,10 @@ async def update_theme(
 async def delete_theme(
     theme_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un thème."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     if not service.delete_theme(theme_id):
         raise HTTPException(status_code=404, detail="Thème non trouvé ou non supprimable")
 
@@ -152,10 +153,10 @@ async def delete_theme(
 async def create_widget(
     widget: WidgetCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un nouveau widget."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     return service.create_widget(
         code=widget.code,
         name=widget.name,
@@ -164,7 +165,7 @@ async def create_widget(
         data_source=widget.data_source,
         data_query=widget.data_query,
         display_config=widget.display_config,
-        created_by=current_user["user_id"]
+        created_by=current_user.id
     )
 
 
@@ -175,10 +176,10 @@ async def list_widgets(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les widgets."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     items, total = service.list_widgets(
         widget_type=WidgetType(widget_type.value) if widget_type else None,
         is_active=is_active,
@@ -192,10 +193,10 @@ async def list_widgets(
 async def get_widget(
     widget_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un widget par ID."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     widget = service.get_widget(widget_id)
     if not widget:
         raise HTTPException(status_code=404, detail="Widget non trouvé")
@@ -207,10 +208,10 @@ async def update_widget(
     widget_id: int,
     updates: WidgetUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un widget."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     widget = service.update_widget(widget_id, **updates.model_dump(exclude_unset=True))
     if not widget:
         raise HTTPException(status_code=404, detail="Widget non trouvé")
@@ -221,10 +222,10 @@ async def update_widget(
 async def delete_widget(
     widget_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un widget."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     if not service.delete_widget(widget_id):
         raise HTTPException(status_code=404, detail="Widget non trouvé ou système")
 
@@ -237,10 +238,10 @@ async def delete_widget(
 async def create_dashboard(
     dashboard: DashboardCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un nouveau dashboard."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
 
     widgets_config = None
     if dashboard.widgets_config:
@@ -255,8 +256,8 @@ async def create_dashboard(
         widgets_config=widgets_config,
         is_default=dashboard.is_default,
         is_public=dashboard.is_public,
-        owner_id=current_user["user_id"],
-        created_by=current_user["user_id"]
+        owner_id=current_user.id,
+        created_by=current_user.id
     )
 
 
@@ -267,12 +268,12 @@ async def list_dashboards(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les dashboards."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     items, total = service.list_dashboards(
-        owner_id=current_user["user_id"],
+        owner_id=current_user.id,
         is_public=is_public,
         is_active=is_active,
         skip=skip,
@@ -284,10 +285,10 @@ async def list_dashboards(
 @router.get("/dashboards/default", response_model=DashboardResponse)
 async def get_default_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer le dashboard par défaut."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     dashboard = service.get_default_dashboard()
     if not dashboard:
         raise HTTPException(status_code=404, detail="Aucun dashboard par défaut")
@@ -298,10 +299,10 @@ async def get_default_dashboard(
 async def get_dashboard(
     dashboard_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un dashboard par ID."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     dashboard = service.get_dashboard(dashboard_id)
     if not dashboard:
         raise HTTPException(status_code=404, detail="Dashboard non trouvé")
@@ -313,10 +314,10 @@ async def update_dashboard(
     dashboard_id: int,
     updates: DashboardUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un dashboard."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
 
     update_dict = updates.model_dump(exclude_unset=True)
     if "widgets_config" in update_dict and update_dict["widgets_config"]:
@@ -332,10 +333,10 @@ async def update_dashboard(
 async def delete_dashboard(
     dashboard_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un dashboard."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     if not service.delete_dashboard(dashboard_id):
         raise HTTPException(status_code=404, detail="Dashboard non trouvé ou par défaut")
 
@@ -348,10 +349,10 @@ async def delete_dashboard(
 async def create_menu_item(
     item: MenuItemCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un élément de menu."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     return service.create_menu_item(
         code=item.code,
         label=item.label,
@@ -373,10 +374,10 @@ async def list_menu_items(
     parent_id: Optional[int] = None,
     is_active: Optional[bool] = True,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les éléments de menu."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     return service.list_menu_items(
         menu_type=MenuType(menu_type.value),
         parent_id=parent_id,
@@ -388,10 +389,10 @@ async def list_menu_items(
 async def get_menu_tree(
     menu_type: MenuTypeEnum = MenuTypeEnum.MAIN,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer l'arbre de menu complet."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     return service.get_menu_tree(MenuType(menu_type.value))
 
 
@@ -400,10 +401,10 @@ async def update_menu_item(
     item_id: int,
     updates: MenuItemUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un élément de menu."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     item = service.update_menu_item(item_id, **updates.model_dump(exclude_unset=True))
     if not item:
         raise HTTPException(status_code=404, detail="Élément non trouvé")
@@ -414,10 +415,10 @@ async def update_menu_item(
 async def delete_menu_item(
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer un élément de menu."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     if not service.delete_menu_item(item_id):
         raise HTTPException(status_code=404, detail="Élément non trouvé")
 
@@ -429,13 +430,13 @@ async def delete_menu_item(
 @router.get("/preferences", response_model=UserPreferenceResponse)
 async def get_my_preferences(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer mes préférences UI."""
-    service = get_web_service(db, current_user["tenant_id"])
-    prefs = service.get_user_preferences(current_user["user_id"])
+    service = get_web_service(db, current_user.tenant_id)
+    prefs = service.get_user_preferences(current_user.id)
     if not prefs:
-        prefs = service.set_user_preferences(current_user["user_id"])
+        prefs = service.set_user_preferences(current_user.id)
     return prefs
 
 
@@ -443,26 +444,26 @@ async def get_my_preferences(
 async def update_my_preferences(
     preferences: UserPreferenceCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour mes préférences UI."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
 
     pref_dict = preferences.model_dump()
     if pref_dict.get("theme_mode"):
         pref_dict["theme_mode"] = ThemeMode(pref_dict["theme_mode"].value)
 
-    return service.set_user_preferences(current_user["user_id"], **pref_dict)
+    return service.set_user_preferences(current_user.id, **pref_dict)
 
 
 @router.get("/config", response_model=UIConfigResponse)
 async def get_ui_config(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer la configuration UI complète."""
-    service = get_web_service(db, current_user["tenant_id"])
-    return service.get_ui_config(current_user["user_id"])
+    service = get_web_service(db, current_user.tenant_id)
+    return service.get_ui_config(current_user.id)
 
 
 # ============================================================================
@@ -473,10 +474,10 @@ async def get_ui_config(
 async def create_shortcut(
     shortcut: ShortcutCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un raccourci clavier."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     return service.create_shortcut(**shortcut.model_dump())
 
 
@@ -485,10 +486,10 @@ async def list_shortcuts(
     context: Optional[str] = None,
     is_active: Optional[bool] = True,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les raccourcis clavier."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     return service.list_shortcuts(context=context, is_active=is_active)
 
 
@@ -500,10 +501,10 @@ async def list_shortcuts(
 async def create_custom_page(
     page: CustomPageCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une page personnalisée."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
 
     existing = service.get_custom_page_by_slug(page.slug)
     if existing:
@@ -514,7 +515,7 @@ async def create_custom_page(
 
     return service.create_custom_page(
         **page.model_dump(),
-        created_by=current_user["user_id"]
+        created_by=current_user.id
     )
 
 
@@ -525,10 +526,10 @@ async def list_custom_pages(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les pages personnalisées."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     items, total = service.list_custom_pages(
         page_type=PageType(page_type.value) if page_type else None,
         is_published=is_published,
@@ -542,10 +543,10 @@ async def list_custom_pages(
 async def get_custom_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une page par ID."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     page = service.get_custom_page(page_id)
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -556,10 +557,10 @@ async def get_custom_page(
 async def get_custom_page_by_slug(
     slug: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une page par slug."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     page = service.get_custom_page_by_slug(slug)
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -570,10 +571,10 @@ async def get_custom_page_by_slug(
 async def publish_page(
     page_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Publier une page."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     page = service.publish_page(page_id)
     if not page:
         raise HTTPException(status_code=404, detail="Page non trouvée")
@@ -588,10 +589,10 @@ async def publish_page(
 async def create_component(
     component: ComponentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un composant UI."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     return service.create_component(
         code=component.code,
         name=component.name,
@@ -599,7 +600,7 @@ async def create_component(
         props_schema=component.props_schema,
         default_props=component.default_props,
         template=component.template,
-        created_by=current_user["user_id"]
+        created_by=current_user.id
     )
 
 
@@ -610,10 +611,10 @@ async def list_components(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les composants UI."""
-    service = get_web_service(db, current_user["tenant_id"])
+    service = get_web_service(db, current_user.tenant_id)
     items, total = service.list_components(
         category=ComponentCategory(category.value) if category else None,
         is_active=is_active,

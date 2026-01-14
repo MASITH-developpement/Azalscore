@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.models import User
 
 from .service import get_projects_service
 from .models import (
@@ -45,10 +46,10 @@ router = APIRouter(prefix="/api/v1/projects", tags=["Projets (Project Management
 def create_project(
     data: ProjectCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un nouveau projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.create_project(data)
 
 
@@ -64,10 +65,10 @@ def list_projects(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les projets."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     projects, total = service.list_projects(
         status, priority, project_manager_id, customer_id,
         category, is_active, search, skip, limit
@@ -79,10 +80,10 @@ def list_projects(
 def get_project(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     project = service.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Projet non trouvé")
@@ -94,10 +95,10 @@ def update_project(
     project_id: UUID,
     data: ProjectUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     project = service.update_project(project_id, data)
     if not project:
         raise HTTPException(status_code=404, detail="Projet non trouvé")
@@ -108,10 +109,10 @@ def update_project(
 def delete_project(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Archiver un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.delete_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
 
@@ -120,10 +121,10 @@ def delete_project(
 def refresh_project_progress(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Recalculer la progression du projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     project = service.update_project_progress(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Projet non trouvé")
@@ -134,10 +135,10 @@ def refresh_project_progress(
 def get_project_dashboard(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Obtenir le dashboard du projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     dashboard = service.get_dashboard(project_id)
     if not dashboard:
         raise HTTPException(status_code=404, detail="Projet non trouvé")
@@ -148,10 +149,10 @@ def get_project_dashboard(
 def get_project_stats(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Obtenir les statistiques du projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     stats = service.get_project_stats(project_id)
     if not stats:
         raise HTTPException(status_code=404, detail="Projet non trouvé")
@@ -167,10 +168,10 @@ def create_phase(
     project_id: UUID,
     data: PhaseCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une phase."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_phase(project_id, data)
@@ -180,10 +181,10 @@ def create_phase(
 def get_phases(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les phases d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_phases(project_id)
 
 
@@ -192,10 +193,10 @@ def update_phase(
     phase_id: UUID,
     data: PhaseUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une phase."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     phase = service.update_phase(phase_id, data)
     if not phase:
         raise HTTPException(status_code=404, detail="Phase non trouvée")
@@ -206,10 +207,10 @@ def update_phase(
 def delete_phase(
     phase_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer une phase."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.delete_phase(phase_id):
         raise HTTPException(status_code=404, detail="Phase non trouvée")
 
@@ -223,10 +224,10 @@ def create_task(
     project_id: UUID,
     data: TaskCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une tâche."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_task(project_id, data)
@@ -244,10 +245,10 @@ def list_project_tasks(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les tâches d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     tasks, total = service.list_tasks(
         project_id, phase_id, assignee_id, status, priority, is_overdue, search, skip, limit
     )
@@ -259,10 +260,10 @@ def get_my_tasks(
     status: Optional[TaskStatus] = None,
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer mes tâches."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_my_tasks(status, limit)
 
 
@@ -270,10 +271,10 @@ def get_my_tasks(
 def get_task(
     task_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une tâche."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     task = service.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Tâche non trouvée")
@@ -285,10 +286,10 @@ def update_task(
     task_id: UUID,
     data: TaskUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une tâche."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     task = service.update_task(task_id, data)
     if not task:
         raise HTTPException(status_code=404, detail="Tâche non trouvée")
@@ -299,10 +300,10 @@ def update_task(
 def delete_task(
     task_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer une tâche."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.delete_task(task_id):
         raise HTTPException(status_code=404, detail="Tâche non trouvée")
 
@@ -316,10 +317,10 @@ def create_milestone(
     project_id: UUID,
     data: MilestoneCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un jalon."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_milestone(project_id, data)
@@ -329,10 +330,10 @@ def create_milestone(
 def get_milestones(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les jalons d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_milestones(project_id)
 
 
@@ -341,10 +342,10 @@ def update_milestone(
     milestone_id: UUID,
     data: MilestoneUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un jalon."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     milestone = service.update_milestone(milestone_id, data)
     if not milestone:
         raise HTTPException(status_code=404, detail="Jalon non trouvé")
@@ -360,10 +361,10 @@ def add_team_member(
     project_id: UUID,
     data: TeamMemberCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Ajouter un membre à l'équipe."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.add_team_member(project_id, data)
@@ -373,10 +374,10 @@ def add_team_member(
 def get_team_members(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer l'équipe d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_team_members(project_id)
 
 
@@ -385,10 +386,10 @@ def update_team_member(
     member_id: UUID,
     data: TeamMemberUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un membre."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     member = service.update_team_member(member_id, data)
     if not member:
         raise HTTPException(status_code=404, detail="Membre non trouvé")
@@ -399,10 +400,10 @@ def update_team_member(
 def remove_team_member(
     member_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Retirer un membre de l'équipe."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.remove_team_member(member_id):
         raise HTTPException(status_code=404, detail="Membre non trouvé")
 
@@ -416,10 +417,10 @@ def create_risk(
     project_id: UUID,
     data: RiskCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un risque."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_risk(project_id, data)
@@ -430,10 +431,10 @@ def get_risks(
     project_id: UUID,
     status: Optional[RiskStatus] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les risques d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_risks(project_id, status)
 
 
@@ -442,10 +443,10 @@ def update_risk(
     risk_id: UUID,
     data: RiskUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un risque."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     risk = service.update_risk(risk_id, data)
     if not risk:
         raise HTTPException(status_code=404, detail="Risque non trouvé")
@@ -461,10 +462,10 @@ def create_issue(
     project_id: UUID,
     data: IssueCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une issue."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_issue(project_id, data)
@@ -476,10 +477,10 @@ def get_issues(
     status: Optional[IssueStatus] = None,
     priority: Optional[IssuePriority] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les issues d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_issues(project_id, status, priority)
 
 
@@ -488,10 +489,10 @@ def update_issue(
     issue_id: UUID,
     data: IssueUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une issue."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     issue = service.update_issue(issue_id, data)
     if not issue:
         raise HTTPException(status_code=404, detail="Issue non trouvée")
@@ -507,10 +508,10 @@ def create_time_entry(
     project_id: UUID,
     data: TimeEntryCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une saisie de temps."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_time_entry(project_id, data)
@@ -527,10 +528,10 @@ def get_time_entries(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les saisies de temps."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     entries, total, total_hours, billable_hours = service.get_time_entries(
         project_id, task_id, user_id, start_date, end_date, status, skip, limit
     )
@@ -546,10 +547,10 @@ def get_time_entries(
 def submit_time_entry(
     entry_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Soumettre une saisie pour approbation."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     entry = service.submit_time_entry(entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Saisie non trouvée")
@@ -560,10 +561,10 @@ def submit_time_entry(
 def approve_time_entry(
     entry_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Approuver une saisie de temps."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     entry = service.approve_time_entry(entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Saisie non trouvée")
@@ -575,10 +576,10 @@ def reject_time_entry(
     entry_id: UUID,
     reason: str = Query(..., min_length=1),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Rejeter une saisie de temps."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     entry = service.reject_time_entry(entry_id, reason)
     if not entry:
         raise HTTPException(status_code=404, detail="Saisie non trouvée")
@@ -594,10 +595,10 @@ def create_expense(
     project_id: UUID,
     data: ExpenseCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une dépense."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_expense(project_id, data)
@@ -608,10 +609,10 @@ def get_expenses(
     project_id: UUID,
     status: Optional[ExpenseStatus] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les dépenses d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_expenses(project_id, status)
 
 
@@ -619,10 +620,10 @@ def get_expenses(
 def approve_expense(
     expense_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Approuver une dépense."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     expense = service.approve_expense(expense_id)
     if not expense:
         raise HTTPException(status_code=404, detail="Dépense non trouvée")
@@ -638,10 +639,10 @@ def create_document(
     project_id: UUID,
     data: DocumentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un document."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_document(project_id, data)
@@ -652,10 +653,10 @@ def get_documents(
     project_id: UUID,
     category: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les documents d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_documents(project_id, category)
 
 
@@ -668,10 +669,10 @@ def create_budget(
     project_id: UUID,
     data: BudgetCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un budget."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_budget(project_id, data)
@@ -681,10 +682,10 @@ def create_budget(
 def get_budgets(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les budgets d'un projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_budgets(project_id)
 
 
@@ -692,10 +693,10 @@ def get_budgets(
 def approve_budget(
     budget_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Approuver un budget."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     budget = service.approve_budget(budget_id)
     if not budget:
         raise HTTPException(status_code=404, detail="Budget non trouvé")
@@ -710,20 +711,20 @@ def approve_budget(
 def create_template(
     data: TemplateCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un template de projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.create_template(data)
 
 
 @router.get("/templates", response_model=List[TemplateResponse])
 def get_templates(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les templates."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_templates()
 
 
@@ -734,10 +735,10 @@ def create_project_from_template(
     name: str = Query(..., min_length=1),
     start_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un projet depuis un template."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     try:
         return service.create_project_from_template(template_id, code, name, start_date)
     except ValueError as e:
@@ -753,10 +754,10 @@ def create_comment(
     project_id: UUID,
     data: CommentCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un commentaire."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     if not service.get_project(project_id):
         raise HTTPException(status_code=404, detail="Projet non trouvé")
     return service.create_comment(project_id, data)
@@ -767,10 +768,10 @@ def get_comments(
     project_id: UUID,
     task_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer les commentaires."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     return service.get_comments(project_id, task_id)
 
 
@@ -782,10 +783,10 @@ def get_comments(
 def calculate_kpis(
     project_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Calculer les KPIs du projet."""
-    service = get_projects_service(db, current_user["tenant_id"], current_user["user_id"])
+    service = get_projects_service(db, current_user.tenant_id, current_user.id)
     kpi = service.calculate_kpis(project_id)
     if not kpi:
         raise HTTPException(status_code=404, detail="Projet non trouvé")

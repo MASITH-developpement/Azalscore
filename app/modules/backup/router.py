@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.core.dependencies import get_tenant_id
+from app.core.models import User
 
 from .models import BackupStatus
 from .schemas import (
@@ -40,7 +41,7 @@ def get_service(
 def create_config(
     data: BackupConfigCreate,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer configuration backup avec génération de clé AES-256."""
     existing = service.get_config()
@@ -52,7 +53,7 @@ def create_config(
 @router.get("/config", response_model=BackupConfigResponse)
 def get_config(
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer configuration backup."""
     config = service.get_config()
@@ -65,7 +66,7 @@ def get_config(
 def update_config(
     data: BackupConfigUpdate,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour configuration backup."""
     config = service.update_config(data)
@@ -82,11 +83,11 @@ def update_config(
 def create_backup(
     data: BackupCreate,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une sauvegarde manuelle."""
     try:
-        return service.create_backup(data, triggered_by=current_user.get("email", "api"))
+        return service.create_backup(data, triggered_by=current_user.email or "api")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -97,7 +98,7 @@ def list_backups(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les sauvegardes."""
     items, _ = service.list_backups(status, skip, limit)
@@ -108,7 +109,7 @@ def list_backups(
 def get_backup(
     backup_id: str,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une sauvegarde."""
     backup = service.get_backup(backup_id)
@@ -121,7 +122,7 @@ def get_backup(
 def delete_backup(
     backup_id: str,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Supprimer une sauvegarde."""
     backup = service.get_backup(backup_id)
@@ -140,11 +141,11 @@ def delete_backup(
 def restore_backup(
     data: RestoreRequest,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Restaurer une sauvegarde."""
     try:
-        return service.restore_backup(data, restored_by=current_user.get("email", "api"))
+        return service.restore_backup(data, restored_by=current_user.email or "api")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -156,7 +157,7 @@ def restore_backup(
 @router.get("/dashboard/stats", response_model=BackupDashboard)
 def get_dashboard(
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Dashboard backup."""
     return service.get_dashboard()

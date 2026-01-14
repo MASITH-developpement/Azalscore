@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.models import User
 
 from .models import OrderStatus
 from .schemas import (
@@ -52,7 +53,7 @@ def get_plan(plan_code: str, service = Depends(get_service)):
 @router.post("/plans/seed")
 def seed_plans(
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Initialise les plans par défaut (admin only)."""
     service.seed_default_plans()
@@ -98,7 +99,7 @@ def list_orders(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Liste les commandes (admin)."""
     items, _ = service.list_orders(status, skip, limit)
@@ -109,7 +110,7 @@ def list_orders(
 def get_order(
     order_id: str,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupère une commande."""
     order = service.get_order(order_id)
@@ -135,7 +136,7 @@ def get_order_by_number(order_number: str, service = Depends(get_service)):
 def provision_tenant(
     data: TenantProvisionRequest,
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Provisionne un tenant pour une commande payée (admin)."""
     try:
@@ -174,7 +175,7 @@ async def stripe_webhook(request: Request, service = Depends(get_service)):
 @router.get("/dashboard", response_model=MarketplaceDashboard)
 def get_dashboard(
     service = Depends(get_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Dashboard marketplace (admin)."""
     stats = service.get_stats()

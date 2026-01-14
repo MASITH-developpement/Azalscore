@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.core.dependencies import get_tenant_id
+from app.core.models import User
 
 
 router = APIRouter(prefix="/v1/cockpit", tags=["Cockpit Dirigeant"])
@@ -354,7 +355,7 @@ def get_activity_summary(db: Session, tenant_id: str) -> ActivitySummary:
 def get_dashboard(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Dashboard complet du cockpit dirigeant."""
     return CockpitDashboard(
@@ -372,7 +373,7 @@ def get_pending_decisions(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Liste des décisions en attente pour le dirigeant."""
     decisions = []
@@ -462,7 +463,7 @@ def acknowledge_alert(
     alert_id: str,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Acquitter une alerte."""
     # Log l'acquittement
