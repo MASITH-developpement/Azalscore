@@ -171,16 +171,17 @@ def seed_masith_tenant(session):
 
     logger.info(f"Création du tenant '{tenant_id}'...")
 
-    # Créer le tenant
+    # Créer le tenant (colonnes selon app/modules/tenants/models.py)
     session.execute(text("""
         INSERT INTO tenants (
-            tenant_id, name, company_name, plan, status,
+            id, tenant_id, name, legal_name, email, plan, status,
             country, timezone, language, currency,
-            is_platform_admin, created_at, updated_at
+            created_at, updated_at
         ) VALUES (
-            :tenant_id, 'SAS MASITH', 'SAS MASITH', 'entreprise', 'active',
+            gen_random_uuid(), :tenant_id, 'SAS MASITH', 'SAS MASITH', 'contact@masith.fr',
+            'ENTREPRISE', 'ACTIVE',
             'FR', 'Europe/Paris', 'fr', 'EUR',
-            TRUE, NOW(), NOW()
+            NOW(), NOW()
         )
         ON CONFLICT (tenant_id) DO NOTHING
     """), {"tenant_id": tenant_id})
