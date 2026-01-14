@@ -11,7 +11,7 @@ import type { ApiResponse, ApiError, ApiRequestConfig } from '@/types';
 // CONFIGURATION PRODUCTION
 // ============================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 const API_TIMEOUT = 30000;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
