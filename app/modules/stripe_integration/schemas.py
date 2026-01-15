@@ -60,7 +60,7 @@ class StripeCustomerResponse(BaseModel):
     currency: str | None = None
     delinquent: bool
     is_synced: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -88,7 +88,7 @@ class PaymentMethodResponse(BaseModel):
     card_exp_year: int | None = None
     is_default: bool
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -154,7 +154,7 @@ class PaymentIntentResponse(BaseModel):
     description: str | None = None
     stripe_fee: Decimal | None = None
     net_amount: Decimal | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -218,8 +218,8 @@ class CheckoutSessionResponse(BaseModel):
     amount_total: Decimal | None = None
     currency: str
     customer_email: str | None = None
-    expires_at: datetime | None = None
-    created_at: datetime
+    expires_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -247,7 +247,7 @@ class RefundResponse(BaseModel):
     status: RefundStatus
     reason: str | None = None
     description: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -265,8 +265,8 @@ class DisputeResponse(BaseModel):
     currency: str
     status: DisputeStatus
     reason: str | None = None
-    evidence_due_by: datetime | None = None
-    created_at: datetime
+    evidence_due_by: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -304,7 +304,7 @@ class StripeProductResponse(BaseModel):
     product_id: int | None = None
     plan_id: int | None = None
     active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -330,7 +330,7 @@ class StripePriceResponse(BaseModel):
     recurring_interval_count: int
     active: bool
     nickname: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -362,7 +362,7 @@ class ConnectAccountResponse(BaseModel):
     payouts_enabled: bool
     details_submitted: bool
     onboarding_url: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -370,7 +370,7 @@ class ConnectAccountResponse(BaseModel):
 class ConnectOnboardingLink(BaseModel):
     """Lien onboarding Connect."""
     url: str
-    expires_at: datetime
+    expires_at: datetime.datetime
 
 
 # ============================================================================
@@ -384,9 +384,9 @@ class PayoutResponse(BaseModel):
     amount: Decimal
     currency: str
     status: str
-    arrival_date: datetime | None = None
+    arrival_date: datetime.datetime | None = None
     description: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -403,9 +403,9 @@ class WebhookEventResponse(BaseModel):
     object_type: str | None = None
     object_id: str | None = None
     status: WebhookStatus
-    processed_at: datetime | None = None
+    processed_at: datetime.datetime | None = None
     processing_error: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -458,7 +458,7 @@ class StripeConfigResponse(BaseModel):
     # Masquer les clés
     has_live_key: bool = False
     has_test_key: bool = False
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -495,8 +495,8 @@ class StripeDashboard(BaseModel):
 class PaymentAnalytics(BaseModel):
     """Analytics paiements."""
     period: str  # daily, weekly, monthly
-    start_date: datetime
-    end_date: datetime
+    start_date: datetime.datetime
+    end_date: datetime.datetime
     total_volume: Decimal
     total_count: int
     average_amount: Decimal
@@ -527,4 +527,4 @@ class TransferResponse(BaseModel):
     amount: Decimal
     currency: str
     status: str
-    created_at: datetime
+    created_at: datetime.datetime

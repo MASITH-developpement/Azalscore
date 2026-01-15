@@ -52,8 +52,8 @@ class CategoryResponse(CategoryBase):
     """Réponse catégorie."""
     id: int
     tenant_id: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -147,8 +147,8 @@ class ProductResponse(ProductBase):
     status: ProductStatus
     view_count: int
     sale_count: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -204,8 +204,8 @@ class VariantResponse(VariantBase):
     id: int
     tenant_id: str
     product_id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -259,8 +259,8 @@ class CartResponse(BaseModel):
     coupon_codes: list[str] | None = None
     items: list[CartItemResponse] = []
     item_count: int = 0
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -349,11 +349,11 @@ class OrderResponse(BaseModel):
     shipping_method: str | None = None
     tracking_number: str | None = None
     items: list[OrderItemResponse] = []
-    paid_at: datetime | None = None
-    shipped_at: datetime | None = None
-    delivered_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    paid_at: datetime.datetime | None = None
+    shipped_at: datetime.datetime | None = None
+    delivered_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -416,8 +416,8 @@ class PaymentResponse(BaseModel):
     payment_method: str | None = None
     card_brand: str | None = None
     card_last4: str | None = None
-    captured_at: datetime | None = None
-    created_at: datetime
+    captured_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -449,8 +449,8 @@ class ShippingMethodResponse(ShippingMethodBase):
     """Réponse méthode de livraison."""
     id: int
     tenant_id: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -491,9 +491,9 @@ class ShipmentResponse(BaseModel):
     tracking_number: str | None = None
     tracking_url: str | None = None
     status: ShippingStatus
-    shipped_at: datetime | None = None
-    delivered_at: datetime | None = None
-    created_at: datetime
+    shipped_at: datetime.datetime | None = None
+    delivered_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -513,8 +513,8 @@ class CouponBase(BaseModel):
     max_discount_amount: Decimal | None = None
     usage_limit: int | None = None
     usage_limit_per_customer: int | None = None
-    starts_at: datetime | None = None
-    expires_at: datetime | None = None
+    starts_at: datetime.datetime | None = None
+    expires_at: datetime.datetime | None = None
     product_ids: list[int] | None = None
     category_ids: list[int] | None = None
     is_active: bool = True
@@ -536,8 +536,8 @@ class CouponUpdate(BaseModel):
     min_order_amount: Decimal | None = None
     max_discount_amount: Decimal | None = None
     usage_limit: int | None = None
-    starts_at: datetime | None = None
-    expires_at: datetime | None = None
+    starts_at: datetime.datetime | None = None
+    expires_at: datetime.datetime | None = None
     is_active: bool | None = None
 
 
@@ -546,8 +546,8 @@ class CouponResponse(CouponBase):
     id: int
     tenant_id: str
     usage_count: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -593,7 +593,7 @@ class CustomerResponse(BaseModel):
     total_orders: int
     total_spent: Decimal
     is_verified: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -647,7 +647,7 @@ class ReviewResponse(BaseModel):
     is_approved: bool
     vendor_response: str | None = None
     helpful_votes: int
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -668,7 +668,7 @@ class WishlistResponse(BaseModel):
     name: str
     is_public: bool
     items: list[dict] = []
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -715,8 +715,8 @@ class EcommerceDashboard(BaseModel):
 class SalesReport(BaseModel):
     """Rapport de ventes."""
     period: str
-    start_date: datetime
-    end_date: datetime
+    start_date: datetime.datetime
+    end_date: datetime.datetime
     total_revenue: Decimal
     total_orders: int
     total_items_sold: int

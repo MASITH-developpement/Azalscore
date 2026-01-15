@@ -6,7 +6,7 @@ Schémas de validation pour les API du module Packs Pays.
 """
 
 
-from datetime import date, datetime
+import datetime
 from enum import Enum
 from typing import Any
 
@@ -125,8 +125,8 @@ class CountryPackUpdate(BaseModel):
 class CountryPackResponse(CountryPackBase):
     id: int
     status: PackStatusEnum
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -149,8 +149,8 @@ class TaxRateBase(BaseModel):
     account_collected: str | None = None
     account_deductible: str | None = None
     account_payable: str | None = None
-    valid_from: date | None = None
-    valid_to: date | None = None
+    valid_from: datetime.date | None = None
+    valid_to: datetime.date | None = None
     is_default: bool = False
 
 
@@ -167,8 +167,8 @@ class TaxRateUpdate(BaseModel):
     account_collected: str | None = None
     account_deductible: str | None = None
     account_payable: str | None = None
-    valid_from: date | None = None
-    valid_to: date | None = None
+    valid_from: datetime.date | None = None
+    valid_to: datetime.date | None = None
     is_active: bool | None = None
     is_default: bool | None = None
 
@@ -176,8 +176,8 @@ class TaxRateUpdate(BaseModel):
 class TaxRateResponse(TaxRateBase):
     id: int
     is_active: bool
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -224,8 +224,8 @@ class DocumentTemplateUpdate(BaseModel):
 class DocumentTemplateResponse(DocumentTemplateBase):
     id: int
     is_active: bool
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -271,8 +271,8 @@ class BankConfigUpdate(BaseModel):
 class BankConfigResponse(BankConfigBase):
     id: int
     is_active: bool
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -285,7 +285,7 @@ class PublicHolidayBase(BaseModel):
     country_pack_id: int
     name: str = Field(..., min_length=2, max_length=200)
     name_local: str | None = None
-    holiday_date: date | None = None
+    holiday_date: datetime.date | None = None
     month: int | None = Field(None, ge=1, le=12)
     day: int | None = Field(None, ge=1, le=31)
     is_fixed: bool = True
@@ -305,7 +305,7 @@ class PublicHolidayCreate(PublicHolidayBase):
 class PublicHolidayUpdate(BaseModel):
     name: str | None = Field(None, min_length=2, max_length=200)
     name_local: str | None = None
-    holiday_date: date | None = None
+    holiday_date: datetime.date | None = None
     month: int | None = Field(None, ge=1, le=12)
     day: int | None = Field(None, ge=1, le=31)
     is_work_day: bool | None = None
@@ -315,8 +315,8 @@ class PublicHolidayUpdate(BaseModel):
 class PublicHolidayResponse(PublicHolidayBase):
     id: int
     is_active: bool
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -346,8 +346,8 @@ class LegalRequirementBase(BaseModel):
     deadline_rule: str | None = None
     config: dict[str, Any] | None = None
     legal_reference: str | None = None
-    effective_date: date | None = None
-    end_date: date | None = None
+    effective_date: datetime.date | None = None
+    end_date: datetime.date | None = None
     is_mandatory: bool = True
 
 
@@ -369,8 +369,8 @@ class LegalRequirementUpdate(BaseModel):
 class LegalRequirementResponse(LegalRequirementBase):
     id: int
     is_active: bool
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -397,7 +397,7 @@ class TenantCountrySettingsResponse(BaseModel):
     custom_language: str | None = None
     custom_timezone: str | None = None
     custom_config: dict[str, Any] | None = None
-    activated_at: datetime
+    activated_at: datetime.datetime
     activated_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -432,7 +432,7 @@ class CurrencyFormatResponse(BaseModel):
 class DateFormatRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    format_date: date = Field(..., alias="date")
+    format_date: datetime.date = Field(..., alias="date")
     country_code: str = Field(..., min_length=2, max_length=2)
 
 

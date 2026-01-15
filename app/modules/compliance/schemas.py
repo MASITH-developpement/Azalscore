@@ -6,7 +6,7 @@ Schémas Pydantic pour la gestion de la conformité réglementaire.
 """
 
 
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -43,9 +43,9 @@ class RegulationBase(BaseModel):
     description: str | None = None
     scope: str | None = None
     authority: str | None = Field(None, max_length=200)
-    effective_date: date | None = None
-    expiry_date: date | None = None
-    next_review_date: date | None = None
+    effective_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
+    next_review_date: datetime.date | None = None
     is_mandatory: bool = True
     external_reference: str | None = Field(None, max_length=200)
     source_url: str | None = None
@@ -64,9 +64,9 @@ class RegulationUpdate(BaseModel):
     description: str | None = None
     scope: str | None = None
     authority: str | None = Field(None, max_length=200)
-    effective_date: date | None = None
-    expiry_date: date | None = None
-    next_review_date: date | None = None
+    effective_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
+    next_review_date: datetime.date | None = None
     is_mandatory: bool | None = None
     is_active: bool | None = None
     notes: str | None = None
@@ -77,8 +77,8 @@ class RegulationResponse(RegulationBase):
     id: UUID
     tenant_id: str
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     requirements_count: int | None = 0
 
     model_config = ConfigDict(from_attributes=True)
@@ -108,7 +108,7 @@ class RequirementCreate(RequirementBase):
     parent_id: UUID | None = None
     responsible_id: UUID | None = None
     department: str | None = Field(None, max_length=100)
-    next_assessment: date | None = None
+    next_assessment: datetime.date | None = None
 
 
 class RequirementUpdate(BaseModel):
@@ -122,7 +122,7 @@ class RequirementUpdate(BaseModel):
     target_score: Decimal | None = Field(None, ge=0, le=100)
     responsible_id: UUID | None = None
     control_frequency: str | None = Field(None, max_length=50)
-    next_assessment: date | None = None
+    next_assessment: datetime.date | None = None
     is_active: bool | None = None
 
 
@@ -136,10 +136,10 @@ class RequirementResponse(RequirementBase):
     current_score: Decimal | None = None
     responsible_id: UUID | None = None
     department: str | None = None
-    last_assessed: datetime | None = None
-    next_assessment: date | None = None
+    last_assessed: datetime.datetime | None = None
+    next_assessment: datetime.date | None = None
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -154,7 +154,7 @@ class AssessmentBase(BaseModel):
     description: str | None = None
     assessment_type: str | None = Field(None, max_length=50)
     scope_description: str | None = None
-    planned_date: date | None = None
+    planned_date: datetime.date | None = None
 
 
 class AssessmentCreate(AssessmentBase):
@@ -169,9 +169,9 @@ class AssessmentUpdate(BaseModel):
     name: str | None = Field(None, max_length=200)
     description: str | None = None
     scope_description: str | None = None
-    planned_date: date | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    planned_date: datetime.date | None = None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
     status: AssessmentStatus | None = None
     overall_score: Decimal | None = Field(None, ge=0, le=100)
     overall_status: ComplianceStatus | None = None
@@ -185,8 +185,8 @@ class AssessmentResponse(AssessmentBase):
     tenant_id: str
     number: str
     regulation_id: UUID | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
     status: AssessmentStatus
     overall_score: Decimal | None = None
     overall_status: ComplianceStatus | None = None
@@ -198,8 +198,8 @@ class AssessmentResponse(AssessmentBase):
     findings_summary: str | None = None
     recommendations: str | None = None
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
-    created_at: datetime
+    approved_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -214,7 +214,7 @@ class GapBase(BaseModel):
     root_cause: str | None = None
     impact_description: str | None = None
     severity: RiskLevel = RiskLevel.MEDIUM
-    target_closure_date: date | None = None
+    target_closure_date: datetime.date | None = None
 
 
 class GapCreate(GapBase):
@@ -233,10 +233,10 @@ class GapResponse(GapBase):
     requirement_id: UUID
     risk_score: Decimal | None = None
     current_status: ComplianceStatus
-    identified_date: date
-    actual_closure_date: date | None = None
+    identified_date: datetime.date
+    actual_closure_date: datetime.date | None = None
     is_open: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -250,7 +250,7 @@ class ActionBase(BaseModel):
     title: str = Field(..., max_length=200)
     description: str | None = None
     action_type: str | None = Field(None, max_length=50)
-    due_date: date
+    due_date: datetime.date
     priority: RequirementPriority = RequirementPriority.MEDIUM
     estimated_cost: Decimal | None = Field(None, ge=0)
 
@@ -267,12 +267,12 @@ class ActionUpdate(BaseModel):
     """Schéma de mise à jour d'action."""
     title: str | None = Field(None, max_length=200)
     description: str | None = None
-    due_date: date | None = None
+    due_date: datetime.date | None = None
     status: ActionStatus | None = None
     priority: RequirementPriority | None = None
     progress_percent: int | None = Field(None, ge=0, le=100)
-    start_date: date | None = None
-    completion_date: date | None = None
+    start_date: datetime.date | None = None
+    completion_date: datetime.date | None = None
     resolution_notes: str | None = None
     evidence_provided: list[str] | None = None
     actual_cost: Decimal | None = Field(None, ge=0)
@@ -289,13 +289,13 @@ class ActionResponse(ActionBase):
     department: str | None = None
     status: ActionStatus
     progress_percent: int
-    start_date: date | None = None
-    completion_date: date | None = None
+    start_date: datetime.date | None = None
+    completion_date: datetime.date | None = None
     resolution_notes: str | None = None
     verified_by: UUID | None = None
-    verified_at: datetime | None = None
+    verified_at: datetime.datetime | None = None
     actual_cost: Decimal | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -316,8 +316,8 @@ class PolicyBase(BaseModel):
     department: str | None = Field(None, max_length=100)
     content: str | None = None
     summary: str | None = None
-    effective_date: date | None = None
-    expiry_date: date | None = None
+    effective_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
     requires_acknowledgment: bool = True
 
 
@@ -333,9 +333,9 @@ class PolicyUpdate(BaseModel):
     description: str | None = None
     content: str | None = None
     summary: str | None = None
-    effective_date: date | None = None
-    expiry_date: date | None = None
-    next_review_date: date | None = None
+    effective_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
+    next_review_date: datetime.date | None = None
     requires_acknowledgment: bool | None = None
     is_published: bool | None = None
     is_active: bool | None = None
@@ -346,16 +346,16 @@ class PolicyResponse(PolicyBase):
     id: UUID
     tenant_id: str
     version: str
-    version_date: date | None = None
-    next_review_date: date | None = None
+    version_date: datetime.date | None = None
+    next_review_date: datetime.date | None = None
     owner_id: UUID | None = None
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
+    approved_at: datetime.datetime | None = None
     is_published: bool
     is_active: bool
     file_name: str | None = None
     acknowledgments_count: int | None = 0
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -376,7 +376,7 @@ class AcknowledgmentResponse(BaseModel):
     tenant_id: str
     policy_id: UUID
     user_id: UUID
-    acknowledged_at: datetime
+    acknowledged_at: datetime.datetime
     is_valid: bool
 
     model_config = ConfigDict(from_attributes=True)
@@ -404,8 +404,8 @@ class TrainingCreate(TrainingBase):
     regulation_id: UUID | None = None
     target_departments: list[str] | None = None
     target_roles: list[str] | None = None
-    available_from: date | None = None
-    available_until: date | None = None
+    available_from: datetime.date | None = None
+    available_until: datetime.date | None = None
     materials_url: str | None = None
     quiz_enabled: bool = False
 
@@ -418,8 +418,8 @@ class TrainingUpdate(BaseModel):
     passing_score: int | None = Field(None, ge=0, le=100)
     is_mandatory: bool | None = None
     recurrence_months: int | None = None
-    available_from: date | None = None
-    available_until: date | None = None
+    available_from: datetime.date | None = None
+    available_until: datetime.date | None = None
     is_active: bool | None = None
 
 
@@ -430,13 +430,13 @@ class TrainingResponse(TrainingBase):
     regulation_id: UUID | None = None
     target_departments: list[str] | None = None
     target_roles: list[str] | None = None
-    available_from: date | None = None
-    available_until: date | None = None
+    available_from: datetime.date | None = None
+    available_until: datetime.date | None = None
     is_active: bool
     materials_url: str | None = None
     quiz_enabled: bool
     completions_count: int | None = 0
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -449,18 +449,18 @@ class CompletionCreate(BaseModel):
     """Schéma de création de complétion."""
     training_id: UUID
     user_id: UUID
-    assigned_date: date | None = None
-    due_date: date | None = None
+    assigned_date: datetime.date | None = None
+    due_date: datetime.date | None = None
 
 
 class CompletionUpdate(BaseModel):
     """Schéma de mise à jour de complétion."""
-    started_at: datetime | None = None
-    completed_at: datetime | None = None
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
     score: int | None = Field(None, ge=0, le=100)
     passed: bool | None = None
     certificate_number: str | None = Field(None, max_length=100)
-    expiry_date: date | None = None
+    expiry_date: datetime.date | None = None
 
 
 class CompletionResponse(BaseModel):
@@ -469,15 +469,15 @@ class CompletionResponse(BaseModel):
     tenant_id: str
     training_id: UUID
     user_id: UUID
-    assigned_date: date | None = None
-    due_date: date | None = None
-    started_at: datetime | None = None
-    completed_at: datetime | None = None
+    assigned_date: datetime.date | None = None
+    due_date: datetime.date | None = None
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
     score: int | None = None
     passed: bool | None = None
     attempts: int
     certificate_number: str | None = None
-    expiry_date: date | None = None
+    expiry_date: datetime.date | None = None
     is_current: bool
 
     model_config = ConfigDict(from_attributes=True)
@@ -496,8 +496,8 @@ class DocumentBase(BaseModel):
     description: str | None = None
     document_type: DocumentType = Field(..., alias="type")
     category: str | None = Field(None, max_length=100)
-    effective_date: date | None = None
-    expiry_date: date | None = None
+    effective_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
 
 
 class DocumentCreate(DocumentBase):
@@ -505,7 +505,7 @@ class DocumentCreate(DocumentBase):
     regulation_id: UUID | None = None
     owner_id: UUID | None = None
     department: str | None = Field(None, max_length=100)
-    next_review_date: date | None = None
+    next_review_date: datetime.date | None = None
     is_controlled: bool = True
     tags: list[str] | None = None
     external_reference: str | None = Field(None, max_length=200)
@@ -515,9 +515,9 @@ class DocumentUpdate(BaseModel):
     """Schéma de mise à jour de document."""
     name: str | None = Field(None, max_length=200)
     description: str | None = None
-    effective_date: date | None = None
-    expiry_date: date | None = None
-    next_review_date: date | None = None
+    effective_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
+    next_review_date: datetime.date | None = None
     owner_id: UUID | None = None
     is_active: bool | None = None
     tags: list[str] | None = None
@@ -529,17 +529,17 @@ class DocumentResponse(DocumentBase):
     tenant_id: str
     regulation_id: UUID | None = None
     version: str
-    version_date: date
-    next_review_date: date | None = None
+    version_date: datetime.date
+    next_review_date: datetime.date | None = None
     owner_id: UUID | None = None
     department: str | None = None
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
+    approved_at: datetime.datetime | None = None
     is_active: bool
     is_controlled: bool
     file_name: str | None = None
     file_size: int | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -554,8 +554,8 @@ class AuditBase(BaseModel):
     description: str | None = None
     audit_type: str = Field(..., max_length=50)
     scope: str | None = None
-    planned_start: date | None = None
-    planned_end: date | None = None
+    planned_start: datetime.date | None = None
+    planned_end: datetime.date | None = None
 
 
 class AuditCreate(AuditBase):
@@ -572,10 +572,10 @@ class AuditUpdate(BaseModel):
     name: str | None = Field(None, max_length=200)
     description: str | None = None
     scope: str | None = None
-    planned_start: date | None = None
-    planned_end: date | None = None
-    actual_start: date | None = None
-    actual_end: date | None = None
+    planned_start: datetime.date | None = None
+    planned_end: datetime.date | None = None
+    actual_start: datetime.date | None = None
+    actual_end: datetime.date | None = None
     status: AuditStatus | None = None
     executive_summary: str | None = None
     conclusions: str | None = None
@@ -589,8 +589,8 @@ class AuditResponse(AuditBase):
     number: str
     regulation_id: UUID | None = None
     departments: list[str] | None = None
-    actual_start: date | None = None
-    actual_end: date | None = None
+    actual_start: datetime.date | None = None
+    actual_end: datetime.date | None = None
     status: AuditStatus
     lead_auditor_id: UUID | None = None
     total_findings: int
@@ -602,8 +602,8 @@ class AuditResponse(AuditBase):
     conclusions: str | None = None
     recommendations: str | None = None
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
-    created_at: datetime
+    approved_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -627,7 +627,7 @@ class FindingCreate(FindingBase):
     """Schéma de création de constatation."""
     audit_id: UUID
     requirement_id: UUID | None = None
-    response_due_date: date | None = None
+    response_due_date: datetime.date | None = None
     responsible_id: UUID | None = None
 
 
@@ -640,9 +640,9 @@ class FindingUpdate(BaseModel):
     root_cause: str | None = None
     recommendation: str | None = None
     response: str | None = None
-    response_date: date | None = None
+    response_date: datetime.date | None = None
     is_closed: bool | None = None
-    closure_date: date | None = None
+    closure_date: datetime.date | None = None
 
 
 class FindingResponse(FindingBase):
@@ -652,14 +652,14 @@ class FindingResponse(FindingBase):
     number: str
     audit_id: UUID
     requirement_id: UUID | None = None
-    identified_date: date
-    response_due_date: date | None = None
-    closure_date: date | None = None
+    identified_date: datetime.date
+    response_due_date: datetime.date | None = None
+    closure_date: datetime.date | None = None
     responsible_id: UUID | None = None
     is_closed: bool
     response: str | None = None
-    response_date: date | None = None
-    created_at: datetime
+    response_date: datetime.date | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -724,12 +724,12 @@ class RiskResponse(RiskBase):
     planned_controls: str | None = None
     owner_id: UUID | None = None
     department: str | None = None
-    identified_date: date
-    last_review_date: date | None = None
-    next_review_date: date | None = None
+    identified_date: datetime.date
+    last_review_date: datetime.date | None = None
+    next_review_date: datetime.date | None = None
     is_active: bool
     is_accepted: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -744,7 +744,7 @@ class IncidentBase(BaseModel):
     description: str
     incident_type: str | None = Field(None, max_length=100)
     severity: IncidentSeverity = IncidentSeverity.MEDIUM
-    incident_date: datetime
+    incident_date: datetime.datetime
 
 
 class IncidentCreate(IncidentBase):
@@ -765,7 +765,7 @@ class IncidentUpdate(BaseModel):
     impact_assessment: str | None = None
     resolution: str | None = None
     lessons_learned: str | None = None
-    resolved_date: datetime | None = None
+    resolved_date: datetime.datetime | None = None
     requires_disclosure: bool | None = None
 
 
@@ -779,14 +779,14 @@ class IncidentResponse(IncidentBase):
     assigned_to: UUID | None = None
     department: str | None = None
     status: IncidentStatus
-    reported_date: datetime
-    resolved_date: datetime | None = None
-    closed_date: datetime | None = None
+    reported_date: datetime.datetime
+    resolved_date: datetime.datetime | None = None
+    closed_date: datetime.datetime | None = None
     investigation_notes: str | None = None
     root_cause: str | None = None
     resolution: str | None = None
     requires_disclosure: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -802,8 +802,8 @@ class ReportBase(BaseModel):
     name: str = Field(..., max_length=200)
     description: str | None = None
     report_type: ReportType = Field(..., alias="type")
-    period_start: date | None = None
-    period_end: date | None = None
+    period_start: datetime.date | None = None
+    period_end: datetime.date | None = None
 
 
 class ReportCreate(ReportBase):
@@ -822,10 +822,10 @@ class ReportResponse(ReportBase):
     metrics: dict[str, Any] | None = None
     file_name: str | None = None
     is_published: bool
-    published_at: datetime | None = None
+    published_at: datetime.datetime | None = None
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
-    created_at: datetime
+    approved_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -881,8 +881,8 @@ class ComplianceStatusSummary(BaseModel):
     partial: int
     pending: int
     compliance_rate: Decimal
-    last_assessment_date: date | None = None
-    next_assessment_date: date | None = None
+    last_assessment_date: datetime.date | None = None
+    next_assessment_date: datetime.date | None = None
 
 
 class TrainingStatusSummary(BaseModel):

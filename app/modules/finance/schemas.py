@@ -7,7 +7,7 @@ Schémas Pydantic pour la comptabilité et la trésorerie.
 
 
 import json
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -64,8 +64,8 @@ class AccountResponse(AccountBase):
     balance_credit: Decimal = Decimal("0")
     balance: Decimal = Decimal("0")
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -111,8 +111,8 @@ class JournalResponse(JournalBase):
     id: UUID
     is_active: bool = True
     next_sequence: int = 1
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -125,8 +125,8 @@ class FiscalYearBase(BaseModel):
     """Base pour les exercices."""
     name: str = Field(..., min_length=1, max_length=100)
     code: str = Field(..., min_length=1, max_length=20)
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
 
 
 class FiscalYearCreate(FiscalYearBase):
@@ -138,13 +138,13 @@ class FiscalYearResponse(FiscalYearBase):
     """Réponse exercice."""
     id: UUID
     status: FiscalYearStatus = FiscalYearStatus.OPEN
-    closed_at: datetime | None = None
+    closed_at: datetime.datetime | None = None
     closed_by: UUID | None = None
     total_debit: Decimal = Decimal("0")
     total_credit: Decimal = Decimal("0")
     result: Decimal = Decimal("0")
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -155,13 +155,13 @@ class FiscalPeriodResponse(BaseModel):
     fiscal_year_id: UUID
     name: str
     number: int
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     is_closed: bool = False
-    closed_at: datetime | None = None
+    closed_at: datetime.datetime | None = None
     total_debit: Decimal = Decimal("0")
     total_credit: Decimal = Decimal("0")
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -200,8 +200,8 @@ class EntryLineResponse(EntryLineBase):
     entry_id: UUID
     line_number: int
     reconcile_ref: str | None = None
-    reconciled_at: datetime | None = None
-    created_at: datetime
+    reconciled_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -211,7 +211,7 @@ class EntryBase(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     journal_id: UUID
-    entry_date: date = Field(..., alias="date")
+    entry_date: datetime.date = Field(..., alias="date")
     reference: str | None = None
     description: str | None = None
 
@@ -238,13 +238,13 @@ class EntryResponse(EntryBase):
     source_type: str | None = None
     source_id: UUID | None = None
     validated_by: UUID | None = None
-    validated_at: datetime | None = None
+    validated_at: datetime.datetime | None = None
     posted_by: UUID | None = None
-    posted_at: datetime | None = None
+    posted_at: datetime.datetime | None = None
     lines: list[EntryLineResponse] = Field(default_factory=list)
     created_by: UUID | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -299,8 +299,8 @@ class BankAccountResponse(BankAccountBase):
     reconciled_balance: Decimal = Decimal("0")
     is_active: bool = True
     is_default: bool = False
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -309,8 +309,8 @@ class BankStatementLineBase(BaseModel):
     """Base pour les lignes de relevé."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    line_date: date = Field(..., alias="date")
-    value_date: date | None = None
+    line_date: datetime.date = Field(..., alias="date")
+    value_date: datetime.date | None = None
     label: str
     reference: str | None = None
     amount: Decimal
@@ -327,8 +327,8 @@ class BankStatementLineResponse(BankStatementLineBase):
     statement_id: UUID
     status: ReconciliationStatus = ReconciliationStatus.PENDING
     matched_entry_line_id: UUID | None = None
-    matched_at: datetime | None = None
-    created_at: datetime
+    matched_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
 
 
@@ -339,9 +339,9 @@ class BankStatementBase(BaseModel):
     bank_account_id: UUID
     name: str
     reference: str | None = None
-    statement_date: date = Field(..., alias="date")
-    start_date: date
-    end_date: date
+    statement_date: datetime.date = Field(..., alias="date")
+    start_date: datetime.date
+    end_date: datetime.date
     opening_balance: Decimal
     closing_balance: Decimal
 
@@ -357,11 +357,11 @@ class BankStatementResponse(BankStatementBase):
     total_credits: Decimal = Decimal("0")
     total_debits: Decimal = Decimal("0")
     is_reconciled: bool = False
-    reconciled_at: datetime | None = None
+    reconciled_at: datetime.datetime | None = None
     reconciled_by: UUID | None = None
     lines: list[BankStatementLineResponse] = Field(default_factory=list)
     created_by: UUID | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 
@@ -371,8 +371,8 @@ class BankTransactionBase(BaseModel):
 
     bank_account_id: UUID
     transaction_type: BankTransactionType = Field(..., alias="type")
-    transaction_date: date = Field(..., alias="date")
-    value_date: date | None = None
+    transaction_date: datetime.date = Field(..., alias="date")
+    value_date: datetime.date | None = None
     amount: Decimal
     label: str
     reference: str | None = None
@@ -391,7 +391,7 @@ class BankTransactionResponse(BankTransactionBase):
     currency: str = "EUR"
     entry_line_id: UUID | None = None
     created_by: UUID | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 
@@ -404,7 +404,7 @@ class CashForecastBase(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     period: ForecastPeriod
-    forecast_date: date = Field(..., alias="date")
+    forecast_date: datetime.date = Field(..., alias="date")
     opening_balance: Decimal
     expected_receipts: Decimal = Decimal("0")
     expected_payments: Decimal = Decimal("0")
@@ -434,8 +434,8 @@ class CashForecastResponse(CashForecastBase):
     expected_closing: Decimal = Decimal("0")
     actual_closing: Decimal | None = None
     created_by: UUID | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -460,7 +460,7 @@ class CashFlowCategoryResponse(CashFlowCategoryBase):
     """Réponse catégorie."""
     id: UUID
     is_active: bool = True
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -480,8 +480,8 @@ class BalanceSheetItem(BaseModel):
 
 class TrialBalance(BaseModel):
     """Balance générale."""
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     items: list[BalanceSheetItem]
     total_debit: Decimal = Decimal("0")
     total_credit: Decimal = Decimal("0")
@@ -498,8 +498,8 @@ class IncomeStatementItem(BaseModel):
 
 class IncomeStatement(BaseModel):
     """Compte de résultat."""
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     revenues: list[IncomeStatementItem]
     expenses: list[IncomeStatementItem]
     total_revenues: Decimal = Decimal("0")
@@ -510,8 +510,8 @@ class IncomeStatement(BaseModel):
 class FinancialReportCreate(BaseModel):
     """Création d'un rapport."""
     report_type: str
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     fiscal_year_id: UUID | None = None
     period_id: UUID | None = None
     parameters: dict = Field(default_factory=dict)
@@ -524,12 +524,12 @@ class FinancialReportResponse(BaseModel):
     name: str
     fiscal_year_id: UUID | None = None
     period_id: UUID | None = None
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     data: dict
     parameters: dict = Field(default_factory=dict)
     generated_by: UUID | None = None
-    generated_at: datetime
+    generated_at: datetime.datetime
     pdf_url: str | None = None
     excel_url: str | None = None
 

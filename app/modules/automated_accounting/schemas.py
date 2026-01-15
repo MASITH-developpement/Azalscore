@@ -5,7 +5,7 @@ AZALS MODULE M2A - Schemas Comptabilité Automatisée
 Schemas Pydantic pour la validation et sérialisation des données.
 """
 
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -147,8 +147,8 @@ class DocumentBase(BaseSchema):
     document_type: DocumentTypeEnum
     source: DocumentSourceEnum
     reference: str | None = None
-    document_date: date | None = None
-    due_date: date | None = None
+    document_date: datetime.date | None = None
+    due_date: datetime.date | None = None
     partner_name: str | None = None
     partner_tax_id: str | None = None
     amount_untaxed: Decimal | None = None
@@ -169,8 +169,8 @@ class DocumentCreate(DocumentBase):
 class DocumentUpdate(BaseSchema):
     """Mise à jour d'un document."""
     reference: str | None = None
-    document_date: date | None = None
-    due_date: date | None = None
+    document_date: datetime.date | None = None
+    due_date: datetime.date | None = None
     partner_name: str | None = None
     notes: str | None = None
     tags: list[str] | None = None
@@ -200,8 +200,8 @@ class DocumentResponse(DocumentBase):
     payment_status: PaymentStatusEnum
     original_filename: str | None = None
     file_path: str | None = None
-    received_at: datetime
-    processed_at: datetime | None = None
+    received_at: datetime.datetime
+    processed_at: datetime.datetime | None = None
 
     # OCR & IA
     ocr_confidence: Decimal | None = None
@@ -216,14 +216,14 @@ class DocumentResponse(DocumentBase):
     # Validation
     requires_validation: bool = False
     validated_by: UUID | None = None
-    validated_at: datetime | None = None
+    validated_at: datetime.datetime | None = None
 
     # Écriture comptable
     journal_entry_id: UUID | None = None
 
     # Timestamps
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 class DocumentListResponse(BaseSchema):
@@ -285,7 +285,7 @@ class OCRResultResponse(BaseSchema):
     page_count: int
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 # ============================================================================
@@ -310,9 +310,9 @@ class AIClassificationCreate(BaseSchema):
     vendor_confidence: Decimal | None = None
     invoice_number: str | None = None
     invoice_number_confidence: Decimal | None = None
-    invoice_date: date | None = None
+    invoice_date: datetime.date | None = None
     invoice_date_confidence: Decimal | None = None
-    due_date: date | None = None
+    due_date: datetime.date | None = None
     due_date_confidence: Decimal | None = None
     amount_untaxed: Decimal | None = None
     amount_untaxed_confidence: Decimal | None = None
@@ -343,7 +343,7 @@ class AIClassificationResponse(BaseSchema):
     # Extractions principales
     vendor_name: str | None = None
     invoice_number: str | None = None
-    invoice_date: date | None = None
+    invoice_date: datetime.date | None = None
     amount_total: Decimal | None = None
 
     # Suggestions comptables
@@ -353,7 +353,7 @@ class AIClassificationResponse(BaseSchema):
 
     # Apprentissage
     was_corrected: bool = False
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class AIClassificationCorrection(BaseSchema):
@@ -398,7 +398,7 @@ class AutoEntryResponse(BaseSchema):
     auto_validated: bool
     requires_review: bool
     is_posted: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class AutoEntryValidate(BaseSchema):
@@ -428,11 +428,11 @@ class BankConnectionResponse(BaseSchema):
     institution_logo_url: str | None = None
     provider: str
     status: BankConnectionStatusEnum
-    last_sync_at: datetime | None = None
+    last_sync_at: datetime.datetime | None = None
     last_sync_status: str | None = None
-    consent_expires_at: datetime | None = None
+    consent_expires_at: datetime.datetime | None = None
     linked_accounts: list[dict[str, Any]] = Field(default_factory=list)
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class BankConnectionListResponse(BaseSchema):
@@ -457,10 +457,10 @@ class SyncedAccountResponse(BaseSchema):
     balance_current: Decimal | None = None
     balance_available: Decimal | None = None
     balance_currency: str = "EUR"
-    balance_updated_at: datetime | None = None
+    balance_updated_at: datetime.datetime | None = None
     is_sync_enabled: bool = True
     bank_account_id: UUID | None = None  # Lien vers compte interne
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class SyncedAccountLink(BaseSchema):
@@ -476,8 +476,8 @@ class SyncedTransactionResponse(BaseSchema):
     """Réponse transaction synchronisée."""
     id: UUID
     synced_account_id: UUID
-    transaction_date: date
-    value_date: date | None = None
+    transaction_date: datetime.date
+    value_date: datetime.date | None = None
     amount: Decimal
     currency: str = "EUR"
     description: str | None = None
@@ -487,7 +487,7 @@ class SyncedTransactionResponse(BaseSchema):
     reconciliation_status: ReconciliationStatusEnum
     matched_document_id: UUID | None = None
     match_confidence: Decimal | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class SyncedTransactionListResponse(BaseSchema):
@@ -511,8 +511,8 @@ class BankSyncTrigger(BaseSchema):
     """Déclenchement d'une synchronisation bancaire."""
     connection_id: UUID | None = None  # Si None, sync toutes les connexions
     sync_type: SyncTypeEnum = SyncTypeEnum.MANUAL
-    sync_from_date: date | None = None
-    sync_to_date: date | None = None
+    sync_from_date: datetime.date | None = None
+    sync_to_date: datetime.date | None = None
 
 
 class BankSyncSessionResponse(BaseSchema):
@@ -521,17 +521,17 @@ class BankSyncSessionResponse(BaseSchema):
     connection_id: UUID
     sync_type: SyncTypeEnum
     status: SyncStatusEnum
-    sync_from_date: date | None = None
-    sync_to_date: date | None = None
+    sync_from_date: datetime.date | None = None
+    sync_to_date: datetime.date | None = None
     accounts_synced: int = 0
     transactions_fetched: int = 0
     transactions_new: int = 0
     reconciliations_auto: int = 0
     error_message: str | None = None
-    started_at: datetime | None = None
-    completed_at: datetime | None = None
+    started_at: datetime.datetime | None = None
+    completed_at: datetime.datetime | None = None
     duration_ms: int | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 # ============================================================================
@@ -572,8 +572,8 @@ class ReconciliationRuleResponse(BaseSchema):
     priority: int
     is_active: bool
     times_matched: int
-    last_matched_at: datetime | None = None
-    created_at: datetime
+    last_matched_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
 
 class ManualReconciliation(BaseSchema):
@@ -594,7 +594,7 @@ class ReconciliationHistoryResponse(BaseSchema):
     document_amount: Decimal | None = None
     difference: Decimal | None = None
     is_cancelled: bool = False
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 # ============================================================================
@@ -611,7 +611,7 @@ class AlertCreate(BaseSchema):
     entity_id: UUID | None = None
     document_id: UUID | None = None
     target_roles: list[str] = Field(default_factory=lambda: ["EXPERT_COMPTABLE"])
-    expires_at: datetime | None = None
+    expires_at: datetime.datetime | None = None
 
 
 class AlertResponse(BaseSchema):
@@ -626,9 +626,9 @@ class AlertResponse(BaseSchema):
     document_id: UUID | None = None
     is_read: bool = False
     is_resolved: bool = False
-    resolved_at: datetime | None = None
+    resolved_at: datetime.datetime | None = None
     resolution_notes: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class AlertResolve(BaseSchema):
@@ -654,13 +654,13 @@ class CashPositionResponse(BaseSchema):
     available_balance: Decimal
     currency: str = "EUR"
     accounts: list[dict[str, Any]]
-    last_sync_at: datetime | None = None
+    last_sync_at: datetime.datetime | None = None
     freshness_score: Decimal  # 0-100
 
 
 class CashForecastItem(BaseSchema):
     """Élément de prévision de trésorerie."""
-    date: date
+    date: datetime.date
     opening_balance: Decimal
     expected_receipts: Decimal
     expected_payments: Decimal
@@ -671,8 +671,8 @@ class CashForecastResponse(BaseSchema):
     """Prévision de trésorerie."""
     current_balance: Decimal
     forecast_items: list[CashForecastItem]
-    period_start: date
-    period_end: date
+    period_start: datetime.date
+    period_end: datetime.date
     warning_threshold: Decimal | None = None
     alert_threshold: Decimal | None = None
 
@@ -698,8 +698,8 @@ class ResultSummary(BaseSchema):
     expenses: Decimal
     result: Decimal
     period: str  # "MONTH", "QUARTER", "YEAR"
-    period_start: date
-    period_end: date
+    period_start: datetime.date
+    period_end: datetime.date
 
 
 class DirigeantDashboard(BaseSchema):
@@ -710,7 +710,7 @@ class DirigeantDashboard(BaseSchema):
     result_summary: ResultSummary
     alerts: list[AlertResponse]  # Alertes critiques uniquement
     data_freshness: Decimal  # Score global 0-100
-    last_updated: datetime
+    last_updated: datetime.datetime
 
 
 # ============================================================================
@@ -748,7 +748,7 @@ class AssistanteDashboard(BaseSchema):
     documents_by_type: DocumentCountsByType
     recent_documents: list[DocumentResponse]
     alerts: list[AlertResponse]  # Alertes "pièce illisible", "info manquante"
-    last_updated: datetime
+    last_updated: datetime.datetime
 
 
 # ============================================================================
@@ -799,7 +799,7 @@ class ExpertComptableDashboard(BaseSchema):
     reconciliation_stats: ReconciliationStats
     unresolved_alerts: list[AlertResponse]
     periods_status: list[dict[str, Any]]  # Statut des périodes comptables
-    last_updated: datetime
+    last_updated: datetime.datetime
 
 
 # ============================================================================
@@ -843,9 +843,9 @@ class UserPreferencesResponse(BaseSchema):
     list_columns: list[str]
     default_filters: dict[str, Any]
     alert_preferences: dict[str, bool]
-    last_accessed_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    last_accessed_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 # ============================================================================
@@ -870,8 +870,8 @@ class EmailInboxResponse(BaseSchema):
     auto_process: bool
     emails_received: int
     emails_processed: int
-    last_email_at: datetime | None = None
-    created_at: datetime
+    last_email_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
 
 class EmailProcessingLogResponse(BaseSchema):
@@ -881,14 +881,14 @@ class EmailProcessingLogResponse(BaseSchema):
     email_id: str
     email_from: str | None = None
     email_subject: str | None = None
-    email_received_at: datetime | None = None
+    email_received_at: datetime.datetime | None = None
     status: str
     attachments_count: int
     attachments_processed: int
     documents_created: list[UUID]
     error_message: str | None = None
-    processed_at: datetime | None = None
-    created_at: datetime
+    processed_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
 
 # ============================================================================
@@ -924,7 +924,7 @@ class ChartMappingResponse(BaseSchema):
     local_account_code: str | None = None
     priority: int
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 # ============================================================================
@@ -947,8 +947,8 @@ class TaxConfigurationResponse(BaseSchema):
     tax_type: str
     tax_rates: list[TaxRate]
     is_active: bool
-    valid_from: date | None = None
-    valid_to: date | None = None
+    valid_from: datetime.date | None = None
+    valid_to: datetime.date | None = None
 
 
 # ============================================================================
@@ -958,8 +958,8 @@ class TaxConfigurationResponse(BaseSchema):
 class ReportRequest(BaseSchema):
     """Demande de rapport."""
     report_type: str  # balance, trial_balance, income_statement, balance_sheet
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     parameters: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -967,10 +967,10 @@ class ReportResponse(BaseSchema):
     """Réponse rapport."""
     report_type: str
     name: str
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     data: dict[str, Any]
-    generated_at: datetime
+    generated_at: datetime.datetime
     generated_by: UUID | None = None
 
 
@@ -981,8 +981,8 @@ class ReportResponse(BaseSchema):
 class ExportRequest(BaseSchema):
     """Demande d'export (uniquement si obligation légale)."""
     export_type: str  # FEC, AUDIT_TRAIL, etc.
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     format: str = "CSV"  # CSV, XML, JSON
     legal_requirement: str = Field(..., min_length=10)  # Justification obligatoire
 
@@ -995,8 +995,8 @@ class ExportResponse(BaseSchema):
     file_url: str | None = None
     file_size: int | None = None
     legal_requirement: str
-    generated_at: datetime
-    expires_at: datetime  # Exports auto-supprimés
+    generated_at: datetime.datetime
+    expires_at: datetime.datetime  # Exports auto-supprimés
 
 
 # ============================================================================

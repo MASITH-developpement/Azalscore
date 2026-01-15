@@ -4,7 +4,7 @@ Schémas Pydantic pour Business Intelligence
 """
 
 
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -114,8 +114,8 @@ class WidgetResponse(WidgetBase):
     is_active: bool
     display_order: int
     filters: list[WidgetFilterResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 class DashboardBase(BaseModel):
@@ -170,11 +170,11 @@ class DashboardResponse(DashboardBase):
     is_default: bool
     is_public: bool
     view_count: int
-    last_viewed_at: datetime | None
+    last_viewed_at: datetime.datetime | None
     is_active: bool
     widgets: list[WidgetResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None
 
 
@@ -192,7 +192,7 @@ class DashboardList(BaseModel):
     is_public: bool
     view_count: int
     widget_count: int = 0
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 # ============================================================================
@@ -222,11 +222,11 @@ class ReportScheduleResponse(ReportScheduleBase):
 
     id: int
     report_id: int
-    next_run_at: datetime | None
-    last_run_at: datetime | None
+    next_run_at: datetime.datetime | None
+    last_run_at: datetime.datetime | None
     last_status: ReportStatus | None
     is_enabled: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class ReportBase(BaseModel):
@@ -283,8 +283,8 @@ class ReportResponse(ReportBase):
     is_active: bool
     version: int
     schedules: list[ReportScheduleResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None
 
 
@@ -301,7 +301,7 @@ class ReportList(BaseModel):
     is_public: bool
     available_formats: list[str]
     schedule_count: int = 0
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class ReportExecutionResponse(BaseModel):
@@ -312,8 +312,8 @@ class ReportExecutionResponse(BaseModel):
     report_id: int
     schedule_id: int | None
     status: ReportStatus
-    started_at: datetime | None
-    completed_at: datetime | None
+    started_at: datetime.datetime | None
+    completed_at: datetime.datetime | None
     duration_seconds: int | None
     parameters: dict[str, Any] | None
     output_format: ReportFormat
@@ -323,7 +323,7 @@ class ReportExecutionResponse(BaseModel):
     row_count: int | None
     error_message: str | None
     triggered_by: int | None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class ReportExecuteRequest(BaseModel):
@@ -361,12 +361,12 @@ class KPITargetResponse(KPITargetBase):
     kpi_id: int
     current_value: Decimal | None
     achievement_percentage: Decimal | None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 class KPIValueBase(BaseModel):
     """Base pour valeurs KPI."""
-    period_date: date
+    period_date: datetime.date
     period_type: str = "daily"
     value: Decimal
     dimension: str | None = None
@@ -389,7 +389,7 @@ class KPIValueResponse(KPIValueBase):
     change_percentage: Decimal | None
     trend: KPITrend
     source: str
-    calculated_at: datetime
+    calculated_at: datetime.datetime
 
 
 class KPIBase(BaseModel):
@@ -448,11 +448,11 @@ class KPIResponse(KPIBase):
     tenant_id: str
     data_source_id: int | None
     query: str | None
-    last_calculated_at: datetime | None
+    last_calculated_at: datetime.datetime | None
     is_active: bool
     is_system: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None
 
     # Valeur actuelle (calculée dynamiquement)
@@ -526,9 +526,9 @@ class AlertRuleResponse(AlertRuleBase):
     id: int
     tenant_id: str
     is_enabled: bool
-    last_checked_at: datetime | None
-    last_triggered_at: datetime | None
-    created_at: datetime
+    last_checked_at: datetime.datetime | None
+    last_triggered_at: datetime.datetime | None
+    created_at: datetime.datetime
     created_by: int | None
 
 
@@ -554,7 +554,7 @@ class AlertUpdate(BaseModel):
     """Mise à jour d'une alerte."""
     status: AlertStatus | None = None
     resolution_notes: str | None = None
-    snoozed_until: datetime | None = None
+    snoozed_until: datetime.datetime | None = None
 
 
 class AlertResponse(AlertBase):
@@ -565,15 +565,15 @@ class AlertResponse(AlertBase):
     tenant_id: str
     rule_id: int | None
     status: AlertStatus
-    acknowledged_at: datetime | None
+    acknowledged_at: datetime.datetime | None
     acknowledged_by: int | None
-    resolved_at: datetime | None
+    resolved_at: datetime.datetime | None
     resolved_by: int | None
     resolution_notes: str | None
-    snoozed_until: datetime | None
+    snoozed_until: datetime.datetime | None
     notifications_sent: dict[str, Any] | None
-    triggered_at: datetime
-    created_at: datetime
+    triggered_at: datetime.datetime
+    created_at: datetime.datetime
 
 
 class AlertList(BaseModel):
@@ -585,7 +585,7 @@ class AlertList(BaseModel):
     severity: AlertSeverity
     status: AlertStatus
     source_type: str | None
-    triggered_at: datetime
+    triggered_at: datetime.datetime
 
 
 class AlertAcknowledge(BaseModel):
@@ -600,7 +600,7 @@ class AlertResolve(BaseModel):
 
 class AlertSnooze(BaseModel):
     """Mise en pause d'alerte."""
-    snooze_until: datetime
+    snooze_until: datetime.datetime
 
 
 # ============================================================================
@@ -649,9 +649,9 @@ class DataSourceResponse(DataSourceBase):
     allowed_roles: list[str] | None
     is_active: bool
     is_system: bool
-    last_synced_at: datetime | None
-    created_at: datetime
-    updated_at: datetime
+    last_synced_at: datetime.datetime | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None
 
 
@@ -695,11 +695,11 @@ class DataQueryResponse(DataQueryBase):
     tenant_id: str
     data_source_id: int | None
     sample_data: Any | None
-    last_executed_at: datetime | None
+    last_executed_at: datetime.datetime | None
     last_execution_time_ms: int | None
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None
 
 
@@ -742,7 +742,7 @@ class BookmarkResponse(BookmarkBase):
     id: int
     user_id: int
     display_order: int
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 # ============================================================================
@@ -774,8 +774,8 @@ class ExportResponse(BaseModel):
     file_size: int | None
     status: ReportStatus
     error_message: str | None
-    created_at: datetime
-    completed_at: datetime | None
+    created_at: datetime.datetime
+    completed_at: datetime.datetime | None
 
 
 # ============================================================================
@@ -788,7 +788,7 @@ class DashboardStats(BaseModel):
     dashboard_name: str
     widget_count: int
     view_count: int
-    last_viewed_at: datetime | None
+    last_viewed_at: datetime.datetime | None
     avg_load_time_ms: int | None
     active_users: int = 0
 

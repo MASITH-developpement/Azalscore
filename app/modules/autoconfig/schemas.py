@@ -72,7 +72,7 @@ class ProfileResponse(BaseModel):
     is_active: bool
     is_system: bool
     priority: int
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -113,7 +113,7 @@ class ProfileAssignmentResponse(BaseModel):
     manager_id: int | None
     is_active: bool
     is_auto: bool
-    assigned_at: datetime
+    assigned_at: datetime.datetime
     assigned_by: int | None
 
     model_config = {"from_attributes": True}
@@ -163,7 +163,7 @@ class OverrideRequest(BaseModel):
     removed_permissions: list[str] | None = None
     added_modules: list[str] | None = None
     removed_modules: list[str] | None = None
-    expires_at: datetime | None = None
+    expires_at: datetime.datetime | None = None
 
 
 class OverrideResponse(BaseModel):
@@ -181,14 +181,14 @@ class OverrideResponse(BaseModel):
     removed_modules: list[str] | None
     reason: str
     business_justification: str | None
-    starts_at: datetime | None
-    expires_at: datetime | None
+    starts_at: datetime.datetime | None
+    expires_at: datetime.datetime | None
     requested_by: int
-    requested_at: datetime
+    requested_at: datetime.datetime
     approved_by: int | None
-    approved_at: datetime | None
+    approved_at: datetime.datetime | None
     rejected_by: int | None
-    rejected_at: datetime | None
+    rejected_at: datetime.datetime | None
     rejection_reason: str | None
 
     model_config = {"from_attributes": True}
@@ -223,7 +223,7 @@ class OnboardingCreate(BaseModel):
     job_title: str
     department: str | None = None
     manager_id: int | None = None
-    start_date: datetime
+    start_date: datetime.datetime
     profile_override: int | None = None  # ID profil si override
 
 
@@ -238,7 +238,7 @@ class OnboardingResponse(BaseModel):
     job_title: str
     department: str | None
     manager_id: int | None
-    start_date: datetime
+    start_date: datetime.datetime
     detected_profile_id: int | None
     detected_profile_code: str | None
     profile_override: int | None
@@ -247,8 +247,8 @@ class OnboardingResponse(BaseModel):
     welcome_email_sent: bool
     manager_notified: bool
     it_notified: bool
-    created_at: datetime
-    completed_at: datetime | None
+    created_at: datetime.datetime
+    completed_at: datetime.datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -272,7 +272,7 @@ class OnboardingExecutionResult(BaseModel):
 class OffboardingCreate(BaseModel):
     """Création offboarding."""
     user_id: int
-    departure_date: datetime
+    departure_date: datetime.datetime
     departure_type: str  # resignation, termination, end_of_contract
     transfer_to_user_id: int | None = None
     transfer_notes: str | None = None
@@ -283,7 +283,7 @@ class OffboardingResponse(BaseModel):
     id: int
     tenant_id: str
     user_id: int
-    departure_date: datetime
+    departure_date: datetime.datetime
     departure_type: str
     transfer_to_user_id: int | None
     transfer_notes: str | None
@@ -296,8 +296,8 @@ class OffboardingResponse(BaseModel):
     manager_notified: bool
     it_notified: bool
     team_notified: bool
-    created_at: datetime
-    completed_at: datetime | None
+    created_at: datetime.datetime
+    completed_at: datetime.datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -331,7 +331,7 @@ class AutoConfigLogResponse(BaseModel):
     success: bool
     error_message: str | None
     details: dict | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 

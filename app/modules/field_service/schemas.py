@@ -55,7 +55,7 @@ class ZoneResponse(ZoneBase):
     id: int
     tenant_id: str
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -118,13 +118,13 @@ class TechnicianResponse(TechnicianBase):
     status: TechnicianStatus
     last_location_lat: Decimal | None = None
     last_location_lng: Decimal | None = None
-    last_location_at: datetime | None = None
+    last_location_at: datetime.datetime | None = None
     total_interventions: int
     completed_interventions: int
     avg_rating: Decimal
     total_km_traveled: Decimal
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -182,10 +182,10 @@ class VehicleUpdate(BaseModel):
     fuel_type: str | None = None
     fuel_capacity: Decimal | None = None
     current_odometer: int | None = None
-    last_service_date: date | None = None
-    next_service_date: date | None = None
-    insurance_expiry: date | None = None
-    registration_expiry: date | None = None
+    last_service_date: datetime.date | None = None
+    next_service_date: datetime.date | None = None
+    insurance_expiry: datetime.date | None = None
+    registration_expiry: datetime.date | None = None
     is_active: bool | None = None
 
 
@@ -197,13 +197,13 @@ class VehicleResponse(VehicleBase):
     current_odometer: int
     last_location_lat: Decimal | None = None
     last_location_lng: Decimal | None = None
-    last_location_at: datetime | None = None
-    last_service_date: date | None = None
-    next_service_date: date | None = None
-    insurance_expiry: date | None = None
-    registration_expiry: date | None = None
+    last_location_at: datetime.datetime | None = None
+    last_service_date: datetime.date | None = None
+    next_service_date: datetime.date | None = None
+    insurance_expiry: datetime.date | None = None
+    registration_expiry: datetime.date | None = None
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -253,7 +253,7 @@ class TemplateResponse(TemplateBase):
     id: int
     tenant_id: str
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -289,7 +289,7 @@ class InterventionCreate(InterventionBase):
     template_id: int | None = None
     technician_id: int | None = None
     zone_id: int | None = None
-    scheduled_date: date | None = None
+    scheduled_date: datetime.date | None = None
     scheduled_time_start: time | None = None
     scheduled_time_end: time | None = None
     ticket_id: int | None = None
@@ -307,7 +307,7 @@ class InterventionUpdate(BaseModel):
     status: InterventionStatus | None = None
     technician_id: int | None = None
     zone_id: int | None = None
-    scheduled_date: date | None = None
+    scheduled_date: datetime.date | None = None
     scheduled_time_start: time | None = None
     scheduled_time_end: time | None = None
     estimated_duration: int | None = None
@@ -329,7 +329,7 @@ class InterventionUpdate(BaseModel):
 class InterventionAssign(BaseModel):
     """Assignation intervention."""
     technician_id: int
-    scheduled_date: date | None = None
+    scheduled_date: datetime.date | None = None
     scheduled_time_start: time | None = None
     scheduled_time_end: time | None = None
 
@@ -360,13 +360,13 @@ class InterventionResponse(InterventionBase):
     status: InterventionStatus
     technician_id: int | None = None
     zone_id: int | None = None
-    scheduled_date: date | None = None
+    scheduled_date: datetime.date | None = None
     scheduled_time_start: time | None = None
     scheduled_time_end: time | None = None
-    actual_start: datetime | None = None
-    actual_end: datetime | None = None
-    arrival_time: datetime | None = None
-    departure_time: datetime | None = None
+    actual_start: datetime.datetime | None = None
+    actual_end: datetime.datetime | None = None
+    arrival_time: datetime.datetime | None = None
+    departure_time: datetime.datetime | None = None
     internal_notes: str | None = None
     completion_notes: str | None = None
     failure_reason: str | None = None
@@ -382,8 +382,8 @@ class InterventionResponse(InterventionBase):
     customer_rating: int | None = None
     customer_feedback: str | None = None
     ticket_id: int | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -395,8 +395,8 @@ class InterventionResponse(InterventionBase):
 class TimeEntryBase(BaseModel):
     """Base pointage."""
     entry_type: str = Field(..., max_length=50)
-    start_time: datetime
-    end_time: datetime | None = None
+    start_time: datetime.datetime
+    end_time: datetime.datetime | None = None
     start_lat: Decimal | None = None
     start_lng: Decimal | None = None
     end_lat: Decimal | None = None
@@ -414,7 +414,7 @@ class TimeEntryCreate(TimeEntryBase):
 
 class TimeEntryUpdate(BaseModel):
     """Mise à jour pointage."""
-    end_time: datetime | None = None
+    end_time: datetime.datetime | None = None
     end_lat: Decimal | None = None
     end_lng: Decimal | None = None
     distance_km: Decimal | None = None
@@ -429,7 +429,7 @@ class TimeEntryResponse(TimeEntryBase):
     technician_id: int
     intervention_id: int | None = None
     duration_minutes: int | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -440,7 +440,7 @@ class TimeEntryResponse(TimeEntryBase):
 
 class RouteBase(BaseModel):
     """Base tournée."""
-    route_date: date
+    route_date: datetime.date
     start_location: str | None = None
     start_lat: Decimal | None = None
     start_lng: Decimal | None = None
@@ -486,7 +486,7 @@ class RouteResponse(RouteBase):
     optimization_score: Decimal | None = None
     intervention_order: list[int] | None = None
     status: str
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -501,7 +501,7 @@ class ExpenseBase(BaseModel):
     description: str | None = None
     amount: Decimal
     currency: str = "EUR"
-    expense_date: date
+    expense_date: datetime.date
     receipt_url: str | None = None
     receipt_number: str | None = None
     notes: str | None = None
@@ -518,7 +518,7 @@ class ExpenseUpdate(BaseModel):
     expense_type: str | None = None
     description: str | None = None
     amount: Decimal | None = None
-    expense_date: date | None = None
+    expense_date: datetime.date | None = None
     receipt_url: str | None = None
     receipt_number: str | None = None
     notes: str | None = None
@@ -533,9 +533,9 @@ class ExpenseResponse(ExpenseBase):
     intervention_id: int | None = None
     status: str
     approved_by: int | None = None
-    approved_at: datetime | None = None
-    paid_at: datetime | None = None
-    created_at: datetime
+    approved_at: datetime.datetime | None = None
+    paid_at: datetime.datetime | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -550,8 +550,8 @@ class ContractBase(BaseModel):
     name: str = Field(..., max_length=255)
     customer_id: int
     customer_name: str | None = None
-    start_date: date
-    end_date: date | None = None
+    start_date: datetime.date
+    end_date: datetime.date | None = None
     auto_renew: bool = False
     contract_type: str | None = None
     response_time_hours: int = 24
@@ -572,7 +572,7 @@ class ContractUpdate(BaseModel):
     """Mise à jour contrat."""
     name: str | None = Field(None, max_length=255)
     customer_name: str | None = None
-    end_date: date | None = None
+    end_date: datetime.date | None = None
     auto_renew: bool | None = None
     contract_type: str | None = None
     response_time_hours: int | None = None
@@ -591,7 +591,7 @@ class ContractResponse(ContractBase):
     tenant_id: str
     interventions_used: int
     status: str
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 

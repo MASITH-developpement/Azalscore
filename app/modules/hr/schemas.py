@@ -7,7 +7,7 @@ Schémas Pydantic pour la gestion des ressources humaines.
 
 
 import json
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -60,8 +60,8 @@ class DepartmentResponse(DepartmentBase):
     """Réponse département."""
     id: UUID
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -105,8 +105,8 @@ class PositionResponse(PositionBase):
     """Réponse poste."""
     id: UUID
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -122,7 +122,7 @@ class EmployeeBase(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     maiden_name: str | None = None
     gender: str | None = None
-    birth_date: date | None = None
+    birth_date: datetime.date | None = None
     birth_place: str | None = None
     nationality: str | None = None
     social_security_number: str | None = None
@@ -145,8 +145,8 @@ class EmployeeCreate(EmployeeBase):
     manager_id: UUID | None = None
     work_location: str | None = None
     contract_type: ContractType | None = None
-    hire_date: date | None = None
-    start_date: date | None = None
+    hire_date: datetime.date | None = None
+    start_date: datetime.date | None = None
     gross_salary: Decimal | None = None
     currency: str = "EUR"
     weekly_hours: Decimal = Decimal("35.0")
@@ -161,7 +161,7 @@ class EmployeeUpdate(BaseModel):
     last_name: str | None = None
     maiden_name: str | None = None
     gender: str | None = None
-    birth_date: date | None = None
+    birth_date: datetime.date | None = None
     birth_place: str | None = None
     nationality: str | None = None
     email: str | None = None
@@ -199,9 +199,9 @@ class EmployeeResponse(EmployeeBase):
     work_location: str | None = None
     status: EmployeeStatus = EmployeeStatus.ACTIVE
     contract_type: ContractType | None = None
-    hire_date: date | None = None
-    start_date: date | None = None
-    end_date: date | None = None
+    hire_date: datetime.date | None = None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
     gross_salary: Decimal | None = None
     currency: str = "EUR"
     weekly_hours: Decimal = Decimal("35.0")
@@ -210,8 +210,8 @@ class EmployeeResponse(EmployeeBase):
     photo_url: str | None = None
     tags: list[str] = Field(default_factory=list)
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -242,8 +242,8 @@ class ContractBase(BaseModel):
     title: str | None = None
     department_id: UUID | None = None
     position_id: UUID | None = None
-    start_date: date
-    end_date: date | None = None
+    start_date: datetime.date
+    end_date: datetime.date | None = None
     probation_duration: int | None = None
     gross_salary: Decimal
     currency: str = "EUR"
@@ -265,14 +265,14 @@ class ContractResponse(ContractBase):
     """Réponse contrat."""
     id: UUID
     employee_id: UUID
-    probation_end_date: date | None = None
-    signed_date: date | None = None
+    probation_end_date: datetime.date | None = None
+    signed_date: datetime.date | None = None
     is_current: bool = True
-    terminated_date: date | None = None
+    terminated_date: datetime.date | None = None
     termination_reason: str | None = None
     document_url: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -286,8 +286,8 @@ class LeaveRequestBase(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     leave_type: LeaveType = Field(..., alias="type")
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     start_half_day: bool = False
     end_half_day: bool = False
     reason: str | None = None
@@ -307,10 +307,10 @@ class LeaveRequestResponse(LeaveRequestBase):
     days_count: Decimal
     attachment_url: str | None = None
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
+    approved_at: datetime.datetime | None = None
     rejection_reason: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -338,9 +338,9 @@ class PayrollPeriodBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     year: int
     month: int
-    start_date: date
-    end_date: date
-    payment_date: date | None = None
+    start_date: datetime.date
+    end_date: datetime.date
+    payment_date: datetime.date | None = None
 
 
 class PayrollPeriodCreate(PayrollPeriodBase):
@@ -353,13 +353,13 @@ class PayrollPeriodResponse(PayrollPeriodBase):
     id: UUID
     status: PayrollStatus = PayrollStatus.DRAFT
     is_closed: bool = False
-    closed_at: datetime | None = None
+    closed_at: datetime.datetime | None = None
     total_gross: Decimal = Decimal("0")
     total_net: Decimal = Decimal("0")
     total_employer_charges: Decimal = Decimal("0")
     employee_count: int = 0
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -384,7 +384,7 @@ class PayslipLineResponse(PayslipLineCreate):
     id: UUID
     payslip_id: UUID
     line_number: int
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 
@@ -392,9 +392,9 @@ class PayslipCreate(BaseModel):
     """Création d'un bulletin de paie."""
     employee_id: UUID
     period_id: UUID
-    start_date: date
-    end_date: date
-    payment_date: date | None = None
+    start_date: datetime.date
+    end_date: datetime.date
+    payment_date: datetime.date | None = None
     worked_hours: Decimal = Decimal("0")
     overtime_hours: Decimal = Decimal("0")
     absence_hours: Decimal = Decimal("0")
@@ -409,9 +409,9 @@ class PayslipResponse(BaseModel):
     period_id: UUID
     payslip_number: str
     status: PayrollStatus = PayrollStatus.DRAFT
-    start_date: date
-    end_date: date
-    payment_date: date | None = None
+    start_date: datetime.date
+    end_date: datetime.date
+    payment_date: datetime.date | None = None
     worked_hours: Decimal = Decimal("0")
     overtime_hours: Decimal = Decimal("0")
     absence_hours: Decimal = Decimal("0")
@@ -428,13 +428,13 @@ class PayslipResponse(BaseModel):
     ytd_net: Decimal = Decimal("0")
     ytd_tax: Decimal = Decimal("0")
     document_url: str | None = None
-    sent_at: datetime | None = None
+    sent_at: datetime.datetime | None = None
     validated_by: UUID | None = None
-    validated_at: datetime | None = None
-    paid_at: datetime | None = None
+    validated_at: datetime.datetime | None = None
+    paid_at: datetime.datetime | None = None
     lines: list[PayslipLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -447,9 +447,9 @@ class TimeEntryBase(BaseModel):
     """Base pour les entrées de temps."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    entry_date: date = Field(..., alias="date")
-    start_time: datetime | None = None
-    end_time: datetime | None = None
+    entry_date: datetime.date = Field(..., alias="date")
+    start_time: datetime.datetime | None = None
+    end_time: datetime.datetime | None = None
     break_duration: int = 0
     worked_hours: Decimal
     overtime_hours: Decimal = Decimal("0")
@@ -468,9 +468,9 @@ class TimeEntryResponse(TimeEntryBase):
     employee_id: UUID
     is_approved: bool = False
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    approved_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -495,7 +495,7 @@ class SkillResponse(SkillBase):
     """Réponse compétence."""
     id: UUID
     is_active: bool = True
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -504,8 +504,8 @@ class EmployeeSkillCreate(BaseModel):
     """Création d'une compétence employé."""
     skill_id: UUID
     level: int = Field(1, ge=1, le=5)
-    acquired_date: date | None = None
-    expiry_date: date | None = None
+    acquired_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
     certification_url: str | None = None
     notes: str | None = None
 
@@ -515,9 +515,9 @@ class EmployeeSkillResponse(EmployeeSkillCreate):
     id: UUID
     employee_id: UUID
     validated_by: UUID | None = None
-    validated_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    validated_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -537,8 +537,8 @@ class TrainingBase(BaseModel):
     provider: str | None = None
     trainer: str | None = None
     location: str | None = None
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     duration_hours: Decimal | None = None
     max_participants: int | None = None
     cost_per_person: Decimal | None = None
@@ -556,8 +556,8 @@ class TrainingResponse(TrainingBase):
     total_cost: Decimal | None = None
     skills_acquired: list[UUID] = Field(default_factory=list)
     created_by: UUID | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -578,8 +578,8 @@ class TrainingParticipantResponse(BaseModel):
     passed: bool | None = None
     certificate_url: str | None = None
     feedback: str | None = None
-    enrolled_at: datetime
-    completed_at: datetime | None = None
+    enrolled_at: datetime.datetime
+    completed_at: datetime.datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -593,9 +593,9 @@ class EvaluationBase(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     evaluation_type: EvaluationType = Field(..., alias="type")
-    period_start: date
-    period_end: date
-    scheduled_date: date | None = None
+    period_start: datetime.date
+    period_end: datetime.date
+    scheduled_date: datetime.date | None = None
     evaluator_id: UUID | None = None
 
 
@@ -607,7 +607,7 @@ class EvaluationCreate(EvaluationBase):
 class EvaluationUpdate(BaseModel):
     """Mise à jour d'une évaluation."""
     status: EvaluationStatus | None = None
-    completed_date: date | None = None
+    completed_date: datetime.date | None = None
     overall_score: Decimal | None = None
     objectives_score: Decimal | None = None
     skills_score: Decimal | None = None
@@ -628,7 +628,7 @@ class EvaluationResponse(EvaluationBase):
     id: UUID
     employee_id: UUID
     status: EvaluationStatus = EvaluationStatus.SCHEDULED
-    completed_date: date | None = None
+    completed_date: datetime.date | None = None
     overall_score: Decimal | None = None
     objectives_score: Decimal | None = None
     skills_score: Decimal | None = None
@@ -642,11 +642,11 @@ class EvaluationResponse(EvaluationBase):
     promotion_recommended: bool = False
     salary_increase_recommended: bool = False
     training_needs: list[str] = Field(default_factory=list)
-    employee_signed_at: datetime | None = None
-    evaluator_signed_at: datetime | None = None
+    employee_signed_at: datetime.datetime | None = None
+    evaluator_signed_at: datetime.datetime | None = None
     document_url: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -666,8 +666,8 @@ class HRDocumentCreate(BaseModel):
     file_url: str
     file_size: int | None = None
     mime_type: str | None = None
-    issue_date: date | None = None
-    expiry_date: date | None = None
+    issue_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
     is_confidential: bool = False
 
 
@@ -683,11 +683,11 @@ class HRDocumentResponse(BaseModel):
     file_url: str
     file_size: int | None = None
     mime_type: str | None = None
-    issue_date: date | None = None
-    expiry_date: date | None = None
+    issue_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
     is_confidential: bool = False
     uploaded_by: UUID | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 # ============================================================================

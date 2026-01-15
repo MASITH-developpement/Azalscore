@@ -414,7 +414,7 @@ class DocumentBase(BaseModel):
 
     document_type: DocumentType = Field(..., alias="type")
     reference: str | None = None
-    doc_date: datetime.date = Field(default_factory=datetime.date.today, alias="date")
+    doc_date: datetime.date = Field(default_factory=datetime.datetime.date.today, alias="date")
     due_date: datetime.date | None = None
     validity_date: datetime.date | None = None
     delivery_date: datetime.date | None = None
@@ -505,7 +505,7 @@ class PaymentBase(BaseModel):
     method: PaymentMethod
     amount: Decimal
     currency: str = "EUR"
-    payment_date: datetime.date = Field(default_factory=datetime.date.today, alias="date")
+    payment_date: datetime.date = Field(default_factory=datetime.datetime.date.today, alias="date")
     reference: str | None = None
     bank_account: str | None = None
     transaction_id: str | None = None
@@ -538,7 +538,7 @@ class ActivityBase(BaseModel):
     activity_type: ActivityType = Field(..., alias="type")
     subject: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
-    activity_date: datetime.datetime = Field(default_factory=datetime.datetime.utcnow, alias="date")
+    activity_date: datetime.datetime = Field(default_factory=datetime.datetime.datetime.utcnow, alias="date")
     due_date: datetime.datetime | None = None
     duration_minutes: int | None = None
     assigned_to: UUID | None = None

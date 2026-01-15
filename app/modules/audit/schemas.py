@@ -84,9 +84,9 @@ class AuditLogResponseSchema(BaseModel):
     duration_ms: float | None
 
     retention_policy: RetentionPolicy
-    expires_at: datetime | None
+    expires_at: datetime.datetime | None
 
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -142,8 +142,8 @@ class AuditSearchSchema(BaseModel):
     user_id: int | None = None
     session_id: str | None = None
     success: bool | None = None
-    from_date: datetime | None = None
-    to_date: datetime | None = None
+    from_date: datetime.datetime | None = None
+    to_date: datetime.datetime | None = None
     search_text: str | None = None
 
 
@@ -159,9 +159,9 @@ class AuditSessionResponseSchema(BaseModel):
     user_id: int
     user_email: str | None
 
-    login_at: datetime
-    logout_at: datetime | None
-    last_activity_at: datetime
+    login_at: datetime.datetime
+    logout_at: datetime.datetime | None
+    last_activity_at: datetime.datetime
 
     ip_address: str | None
     device_type: str | None
@@ -222,7 +222,7 @@ class MetricResponseSchema(BaseModel):
     is_active: bool
     is_system: bool
 
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -243,8 +243,8 @@ class MetricValueResponseSchema(BaseModel):
     max_value: float | None
     avg_value: float | None
     count: int
-    period_start: datetime
-    period_end: datetime
+    period_start: datetime.datetime
+    period_end: datetime.datetime
     dimensions: dict[str, Any] | None
 
     model_config = ConfigDict(from_attributes=True)
@@ -303,14 +303,14 @@ class BenchmarkResponseSchema(BaseModel):
 
     is_scheduled: bool
     schedule_cron: str | None
-    last_run_at: datetime | None
-    next_run_at: datetime | None
+    last_run_at: datetime.datetime | None
+    next_run_at: datetime.datetime | None
 
     status: BenchmarkStatus
     is_active: bool
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None
 
     model_config = ConfigDict(from_attributes=True)
@@ -346,8 +346,8 @@ class BenchmarkResultResponseSchema(BaseModel):
     tenant_id: str
     benchmark_id: int
 
-    started_at: datetime
-    completed_at: datetime | None
+    started_at: datetime.datetime
+    completed_at: datetime.datetime | None
     duration_ms: float | None
 
     status: BenchmarkStatus
@@ -409,7 +409,7 @@ class ComplianceCheckCreateSchema(BaseModel):
     expected_result: str | None = None
 
     severity: str = Field(default="MEDIUM", pattern=r'^(LOW|MEDIUM|HIGH|CRITICAL)$')
-    due_date: datetime | None = None
+    due_date: datetime.datetime | None = None
 
 
 class ComplianceCheckResponseSchema(BaseModel):
@@ -427,7 +427,7 @@ class ComplianceCheckResponseSchema(BaseModel):
 
     check_type: str
     status: str
-    last_checked_at: datetime | None
+    last_checked_at: datetime.datetime | None
     checked_by: int | None
 
     actual_result: str | None
@@ -435,12 +435,12 @@ class ComplianceCheckResponseSchema(BaseModel):
     remediation: str | None
 
     severity: str
-    due_date: datetime | None
+    due_date: datetime.datetime | None
 
     is_active: bool
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -528,14 +528,14 @@ class RetentionRuleResponseSchema(BaseModel):
     action: str
 
     schedule_cron: str | None
-    last_run_at: datetime | None
-    next_run_at: datetime | None
+    last_run_at: datetime.datetime | None
+    next_run_at: datetime.datetime | None
     last_affected_count: int
 
     is_active: bool
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -549,8 +549,8 @@ class ExportCreateSchema(BaseModel):
     export_type: str = Field(..., pattern=r'^(AUDIT_LOGS|METRICS|COMPLIANCE)$')
     format: str = Field(default="CSV", pattern=r'^(CSV|JSON|PDF|EXCEL)$')
 
-    date_from: datetime | None = None
-    date_to: datetime | None = None
+    date_from: datetime.datetime | None = None
+    date_to: datetime.datetime | None = None
     filters: dict[str, Any] | None = None
 
 
@@ -562,8 +562,8 @@ class ExportResponseSchema(BaseModel):
     export_type: str
     format: str
 
-    date_from: datetime | None
-    date_to: datetime | None
+    date_from: datetime.datetime | None
+    date_to: datetime.datetime | None
     filters: dict[str, Any] | None
 
     status: str
@@ -576,10 +576,10 @@ class ExportResponseSchema(BaseModel):
     error_message: str | None
 
     requested_by: int
-    requested_at: datetime
-    completed_at: datetime | None
+    requested_at: datetime.datetime
+    completed_at: datetime.datetime | None
 
-    expires_at: datetime | None
+    expires_at: datetime.datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -654,8 +654,8 @@ class DashboardResponseSchema(BaseModel):
     is_default: bool
     is_active: bool
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 

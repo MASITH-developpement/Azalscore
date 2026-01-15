@@ -7,7 +7,7 @@ Schémas Pydantic pour la gestion des stocks et logistique.
 
 
 import json
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -55,8 +55,8 @@ class CategoryResponse(CategoryCreate):
     """Réponse catégorie."""
     id: UUID
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -109,8 +109,8 @@ class WarehouseResponse(WarehouseCreate):
     """Réponse entrepôt."""
     id: UUID
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -163,8 +163,8 @@ class LocationResponse(LocationCreate):
     id: UUID
     warehouse_id: UUID
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -285,8 +285,8 @@ class ProductResponse(BaseModel):
     track_expiry: bool
     tags: list[str]
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
     @field_validator('tags', mode='before')
@@ -320,9 +320,9 @@ class StockLevelResponse(BaseModel):
     quantity_outgoing: Decimal
     total_value: Decimal
     average_cost: Decimal
-    last_movement_at: datetime | None
-    last_count_at: datetime | None
-    updated_at: datetime
+    last_movement_at: datetime.datetime | None
+    last_count_at: datetime.datetime | None
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -333,8 +333,8 @@ class StockLevelUpdate(BaseModel):
     quantity_reserved: Decimal | None = None
     quantity_incoming: Decimal | None = None
     quantity_outgoing: Decimal | None = None
-    last_movement_at: datetime | None = None
-    last_count_at: datetime | None = None
+    last_movement_at: datetime.datetime | None = None
+    last_count_at: datetime.datetime | None = None
 
 
 class StockByProduct(BaseModel):
@@ -357,9 +357,9 @@ class LotCreate(BaseModel):
     """Création d'un lot."""
     product_id: UUID
     number: str = Field(..., min_length=1, max_length=100)
-    production_date: date | None = None
-    expiry_date: date | None = None
-    reception_date: date | None = None
+    production_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
+    reception_date: datetime.date | None = None
     supplier_id: UUID | None = None
     supplier_lot: str | None = None
     initial_quantity: Decimal
@@ -370,7 +370,7 @@ class LotCreate(BaseModel):
 class LotUpdate(BaseModel):
     """Mise à jour d'un lot."""
     status: LotStatus | None = None
-    expiry_date: date | None = None
+    expiry_date: datetime.date | None = None
     notes: str | None = None
 
 
@@ -380,17 +380,17 @@ class LotResponse(BaseModel):
     product_id: UUID
     number: str
     status: LotStatus
-    production_date: date | None
-    expiry_date: date | None
-    reception_date: date | None
+    production_date: datetime.date | None
+    expiry_date: datetime.date | None
+    reception_date: datetime.date | None
     supplier_id: UUID | None
     supplier_lot: str | None
     initial_quantity: Decimal
     current_quantity: Decimal
     unit_cost: Decimal | None
     notes: str | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -407,8 +407,8 @@ class SerialCreate(BaseModel):
     warehouse_id: UUID | None = None
     location_id: UUID | None = None
     supplier_id: UUID | None = None
-    reception_date: date | None = None
-    warranty_end_date: date | None = None
+    reception_date: datetime.date | None = None
+    warranty_end_date: datetime.date | None = None
     unit_cost: Decimal | None = None
     notes: str | None = None
 
@@ -418,7 +418,7 @@ class SerialUpdate(BaseModel):
     status: LotStatus | None = None
     warehouse_id: UUID | None = None
     location_id: UUID | None = None
-    warranty_end_date: date | None = None
+    warranty_end_date: datetime.date | None = None
     notes: str | None = None
 
 
@@ -432,14 +432,14 @@ class SerialResponse(BaseModel):
     warehouse_id: UUID | None
     location_id: UUID | None
     supplier_id: UUID | None
-    reception_date: date | None
+    reception_date: datetime.date | None
     customer_id: UUID | None
-    sale_date: date | None
-    warranty_end_date: date | None
+    sale_date: datetime.date | None
+    warranty_end_date: datetime.date | None
     unit_cost: Decimal | None
     notes: str | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -467,7 +467,7 @@ class MovementLineResponse(MovementLineCreate):
     movement_id: UUID
     line_number: int
     total_cost: Decimal | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -477,7 +477,7 @@ class MovementCreate(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     movement_type: MovementType = Field(..., alias="type")
-    movement_date: datetime
+    movement_date: datetime.datetime
     from_warehouse_id: UUID | None = None
     from_location_id: UUID | None = None
     to_warehouse_id: UUID | None = None
@@ -498,7 +498,7 @@ class MovementResponse(BaseModel):
     number: str
     movement_type: MovementType = Field(..., alias="type")
     status: MovementStatus
-    movement_date: datetime
+    movement_date: datetime.datetime
     from_warehouse_id: UUID | None
     from_location_id: UUID | None
     to_warehouse_id: UUID | None
@@ -511,10 +511,10 @@ class MovementResponse(BaseModel):
     total_items: int
     total_quantity: Decimal
     total_value: Decimal
-    confirmed_at: datetime | None
+    confirmed_at: datetime.datetime | None
     lines: list[MovementLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -556,10 +556,10 @@ class CountLineResponse(BaseModel):
     discrepancy: Decimal | None
     unit_cost: Decimal | None
     discrepancy_value: Decimal | None
-    counted_at: datetime | None
+    counted_at: datetime.datetime | None
     counted_by: UUID | None
     notes: str | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -570,7 +570,7 @@ class InventoryCountCreate(BaseModel):
     warehouse_id: UUID | None = None
     location_id: UUID | None = None
     category_id: UUID | None = None
-    planned_date: date
+    planned_date: datetime.date
     notes: str | None = None
 
 
@@ -583,18 +583,18 @@ class InventoryCountResponse(BaseModel):
     warehouse_id: UUID | None
     location_id: UUID | None
     category_id: UUID | None
-    planned_date: date
-    started_at: datetime | None
-    completed_at: datetime | None
+    planned_date: datetime.date
+    started_at: datetime.datetime | None
+    completed_at: datetime.datetime | None
     total_items: int
     counted_items: int
     discrepancy_items: int
     total_discrepancy_value: Decimal
     notes: str | None
-    validated_at: datetime | None
+    validated_at: datetime.datetime | None
     lines: list[CountLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -633,9 +633,9 @@ class PickingLineResponse(BaseModel):
     lot_id: UUID | None
     serial_id: UUID | None
     is_picked: bool
-    picked_at: datetime | None
+    picked_at: datetime.datetime | None
     notes: str | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -649,7 +649,7 @@ class PickingCreate(BaseModel):
     reference_type: str | None = None
     reference_id: UUID | None = None
     reference_number: str | None = None
-    scheduled_date: datetime | None = None
+    scheduled_date: datetime.datetime | None = None
     priority: str = "NORMAL"
     notes: str | None = None
     lines: list[PickingLineCreate] = Field(default_factory=list)
@@ -667,17 +667,17 @@ class PickingResponse(BaseModel):
     reference_type: str | None
     reference_id: UUID | None
     reference_number: str | None
-    scheduled_date: datetime | None
-    started_at: datetime | None
-    completed_at: datetime | None
+    scheduled_date: datetime.datetime | None
+    started_at: datetime.datetime | None
+    completed_at: datetime.datetime | None
     assigned_to: UUID | None
     total_lines: int
     picked_lines: int
     priority: str
     notes: str | None
     lines: list[PickingLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -688,7 +688,7 @@ class PickingResponse(BaseModel):
 class ValuationResponse(BaseModel):
     """Réponse valorisation."""
     id: UUID
-    valuation_date: date
+    valuation_date: datetime.date
     warehouse_id: UUID | None
     total_products: int
     total_quantity: Decimal
@@ -698,7 +698,7 @@ class ValuationResponse(BaseModel):
     value_avg: Decimal
     value_standard: Decimal
     details: list[dict[str, Any]]
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
