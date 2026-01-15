@@ -28,8 +28,8 @@ class ConversationResponse(BaseModel):
     module_source: str | None
     is_active: bool
     message_count: int
-    created_at: datetime.datetime
-    last_activity: datetime.datetime
+    created_at: datetime
+    last_activity: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -49,7 +49,7 @@ class MessageResponse(BaseModel):
     content: str
     message_metadata: dict[str, Any] | None = None
     status: str
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -83,8 +83,8 @@ class AnalysisRequest(BaseModel):
     module_source: str | None = None
     entity_type: str | None = None
     entity_id: str | None = None
-    data_period_start: datetime.datetime | None = None
-    data_period_end: datetime.datetime | None = None
+    data_period_start: datetime | None = None
+    data_period_end: datetime | None = None
     parameters: dict[str, Any] | None = None
 
 
@@ -122,7 +122,7 @@ class AnalysisResponse(BaseModel):
     risks_identified: list[dict[str, Any]] | None
     overall_risk_level: str | None
     recommendations: list[dict[str, Any]] | None
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -150,7 +150,7 @@ class DecisionSupportCreate(BaseModel):
     decision_type: str
     module_source: str | None = None
     priority: str = "normal"
-    deadline: datetime.datetime | None = None
+    deadline: datetime | None = None
     context: dict[str, Any] | None = None
     analysis_id: int | None = None
 
@@ -163,7 +163,7 @@ class DecisionSupportResponse(BaseModel):
     description: str | None
     decision_type: str
     priority: str
-    deadline: datetime.datetime | None
+    deadline: datetime | None
     options: list[dict[str, Any]] | None
     recommended_option: int | None
     recommendation_rationale: str | None
@@ -172,7 +172,7 @@ class DecisionSupportResponse(BaseModel):
     is_red_point: bool
     requires_double_confirmation: bool
     status: str
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -215,7 +215,7 @@ class RiskAlertResponse(BaseModel):
     status: str
     affected_entities: list[dict[str, Any]] | None
     recommended_actions: list[str] | None
-    detected_at: datetime.datetime
+    detected_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -241,15 +241,15 @@ class PredictionRequest(BaseModel):
     prediction_type: str  # sales, cashflow, demand, etc.
     target_metric: str | None = None
     module_source: str | None = None
-    prediction_start: datetime.datetime
-    prediction_end: datetime.datetime
+    prediction_start: datetime
+    prediction_end: datetime
     granularity: str = "daily"  # daily, weekly, monthly
     parameters: dict[str, Any] | None = None
 
 
 class PredictionValue(BaseModel):
     """Valeur prédite."""
-    date: datetime.datetime
+    date: datetime
     value: float
     confidence: float
     lower_bound: float | None = None
@@ -262,13 +262,13 @@ class PredictionResponse(BaseModel):
     prediction_code: str
     title: str
     prediction_type: str
-    prediction_start: datetime.datetime
-    prediction_end: datetime.datetime
+    prediction_start: datetime
+    prediction_end: datetime
     granularity: str
     predicted_values: list[dict[str, Any]] | None
     confidence_score: float | None
     status: str
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -359,8 +359,8 @@ class SynthesisRequest(BaseModel):
     title: str
     synthesis_type: str  # daily, weekly, monthly, custom
     modules: list[str] | None = None
-    period_start: datetime.datetime | None = None
-    period_end: datetime.datetime | None = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
     focus_areas: list[str] | None = None
 
 
@@ -373,4 +373,4 @@ class SynthesisResponse(BaseModel):
     highlights: list[str]
     concerns: list[str]
     action_items: list[str]
-    generated_at: datetime.datetime
+    generated_at: datetime
