@@ -47,7 +47,7 @@ async def list_clients(
     is_active: bool | None = None,
     search: str | None = None,
     page: int = Query(1, ge=1),
-    page_size: int = Query(25, ge=1, le=100),
+    page_size: int = Query(25, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -137,7 +137,7 @@ async def list_suppliers(
     is_active: bool | None = None,
     search: str | None = None,
     page: int = Query(1, ge=1),
-    page_size: int = Query(25, ge=1, le=100),
+    page_size: int = Query(25, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
