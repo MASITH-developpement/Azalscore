@@ -5,8 +5,8 @@ AZALS MODULE M1 - Schémas Commercial
 Schémas Pydantic pour le CRM et la gestion commerciale.
 """
 
+import datetime
 import json
-from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -198,12 +198,12 @@ class CustomerResponse(CustomerBase):
     health_score: int = 100
     total_revenue: Decimal = Decimal("0")
     order_count: int = 0
-    last_order_date: date | None = None
-    first_order_date: date | None = None
+    last_order_date: datetime.date | None = None
+    first_order_date: datetime.date | None = None
     is_active: bool = True
     created_by: UUID | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -275,8 +275,8 @@ class ContactResponse(ContactBase):
     id: UUID
     customer_id: UUID
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -303,7 +303,7 @@ class OpportunityBase(BaseModel):
     probability: int = Field(default=10, ge=0, le=100)
     amount: Decimal = Decimal("0")
     currency: str = "EUR"
-    expected_close_date: date | None = None
+    expected_close_date: datetime.date | None = None
     assigned_to: UUID | None = None
     team: str | None = None
     source: str | None = None
@@ -335,8 +335,8 @@ class OpportunityUpdate(BaseModel):
     probability: int | None = None
     amount: Decimal | None = None
     currency: str | None = None
-    expected_close_date: date | None = None
-    actual_close_date: date | None = None
+    expected_close_date: datetime.date | None = None
+    actual_close_date: datetime.date | None = None
     assigned_to: UUID | None = None
     team: str | None = None
     source: str | None = None
@@ -354,12 +354,12 @@ class OpportunityResponse(OpportunityBase):
     id: UUID
     customer_id: UUID
     weighted_amount: Decimal | None = None
-    actual_close_date: date | None = None
+    actual_close_date: datetime.date | None = None
     win_reason: str | None = None
     loss_reason: str | None = None
     created_by: UUID | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -403,7 +403,7 @@ class DocumentLineResponse(DocumentLineBase):
     subtotal: Decimal = Decimal("0")
     tax_amount: Decimal = Decimal("0")
     total: Decimal = Decimal("0")
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -414,10 +414,10 @@ class DocumentBase(BaseModel):
 
     document_type: DocumentType = Field(..., alias="type")
     reference: str | None = None
-    doc_date: date = Field(default_factory=date.today, alias="date")
-    due_date: date | None = None
-    validity_date: date | None = None
-    delivery_date: date | None = None
+    doc_date: datetime.date = Field(default_factory=datetime.date.today, alias="date")
+    due_date: datetime.date | None = None
+    validity_date: datetime.date | None = None
+    delivery_date: datetime.date | None = None
     billing_address: dict | None = None
     shipping_address: dict | None = None
     payment_terms: PaymentTerms | None = None
@@ -440,10 +440,10 @@ class DocumentUpdate(BaseModel):
     """Mise à jour d'un document."""
     reference: str | None = None
     status: DocumentStatus | None = None
-    date: date | None = None
-    due_date: date | None = None
-    validity_date: date | None = None
-    delivery_date: date | None = None
+    date: datetime.date | None = None
+    due_date: datetime.date | None = None
+    validity_date: datetime.date | None = None
+    delivery_date: datetime.date | None = None
     billing_address: dict | None = None
     shipping_address: dict | None = None
     payment_terms: PaymentTerms | None = None
@@ -477,11 +477,11 @@ class DocumentResponse(DocumentBase):
     pdf_url: str | None = None
     assigned_to: UUID | None = None
     validated_by: UUID | None = None
-    validated_at: datetime | None = None
+    validated_at: datetime.datetime | None = None
     lines: list[DocumentLineResponse] = Field(default_factory=list)
     created_by: UUID | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -505,7 +505,7 @@ class PaymentBase(BaseModel):
     method: PaymentMethod
     amount: Decimal
     currency: str = "EUR"
-    payment_date: date = Field(default_factory=date.today, alias="date")
+    payment_date: datetime.date = Field(default_factory=datetime.date.today, alias="date")
     reference: str | None = None
     bank_account: str | None = None
     transaction_id: str | None = None
@@ -521,9 +521,9 @@ class PaymentResponse(PaymentBase):
     """Réponse paiement."""
     id: UUID
     document_id: UUID
-    received_date: date | None = None
+    received_date: datetime.date | None = None
     created_by: UUID | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 
@@ -538,8 +538,8 @@ class ActivityBase(BaseModel):
     activity_type: ActivityType = Field(..., alias="type")
     subject: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
-    activity_date: datetime = Field(default_factory=datetime.utcnow, alias="date")
-    due_date: datetime | None = None
+    activity_date: datetime.datetime = Field(default_factory=datetime.datetime.utcnow, alias="date")
+    due_date: datetime.datetime | None = None
     duration_minutes: int | None = None
     assigned_to: UUID | None = None
 
@@ -555,8 +555,8 @@ class ActivityUpdate(BaseModel):
     """Mise à jour d'une activité."""
     subject: str | None = None
     description: str | None = None
-    date: datetime | None = None
-    due_date: datetime | None = None
+    date: datetime.datetime | None = None
+    due_date: datetime.datetime | None = None
     duration_minutes: int | None = None
     is_completed: bool | None = None
     assigned_to: UUID | None = None
@@ -569,9 +569,9 @@ class ActivityResponse(ActivityBase):
     opportunity_id: UUID | None = None
     contact_id: UUID | None = None
     is_completed: bool = False
-    completed_at: datetime | None = None
+    completed_at: datetime.datetime | None = None
     created_by: UUID | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -601,8 +601,8 @@ class PipelineStageResponse(PipelineStageBase):
     """Réponse étape."""
     id: UUID
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -663,8 +663,8 @@ class ProductResponse(ProductBase):
     """Réponse produit."""
     id: UUID
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
