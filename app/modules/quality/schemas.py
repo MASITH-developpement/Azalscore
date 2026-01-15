@@ -5,7 +5,6 @@ AZALS MODULE M7 - Schémas Pydantic Qualité
 Schémas de validation pour les API du module Qualité.
 """
 
-from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal

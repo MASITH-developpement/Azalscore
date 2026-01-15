@@ -5,7 +5,6 @@ AZALS MODULE T2 - Schémas Déclencheurs & Diffusion
 Schémas Pydantic pour validation et sérialisation.
 """
 
-from __future__ import annotations
 
 import json
 from datetime import datetime

@@ -5,7 +5,6 @@ AZALS MODULE M8 - Schémas Pydantic Maintenance
 Schémas de validation pour les API du module Maintenance (GMAO).
 """
 
-from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal

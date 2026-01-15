@@ -5,7 +5,6 @@ AZALS MODULE T5 - Schémas Pydantic Packs Pays
 Schémas de validation pour les API du module Packs Pays.
 """
 
-from __future__ import annotations
 
 from datetime import date, datetime
 from enum import Enum

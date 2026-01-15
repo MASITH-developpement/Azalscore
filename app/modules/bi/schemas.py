@@ -3,7 +3,6 @@ AZALS - Module M10: BI & Reporting
 Schémas Pydantic pour Business Intelligence
 """
 
-from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal

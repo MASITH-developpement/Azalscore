@@ -5,7 +5,6 @@ AZALS MODULE T8 - Schémas Site Web
 Schémas Pydantic pour l'API du site web.
 """
 
-from __future__ import annotations
 
 import json
 from datetime import datetime

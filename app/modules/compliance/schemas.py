@@ -5,7 +5,6 @@ AZALS MODULE M11 - Schémas Conformité
 Schémas Pydantic pour la gestion de la conformité réglementaire.
 """
 
-from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
