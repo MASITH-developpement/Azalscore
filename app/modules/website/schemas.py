@@ -147,7 +147,7 @@ class SitePageResponse(BaseModel):
     layout_config: dict[str, Any] | None
     sections: list[dict[str, Any]] | None
     status: str
-    published_at: datetime.datetime | None
+    published_at: datetime | None
     parent_id: int | None
     sort_order: int
     show_in_menu: bool
@@ -158,8 +158,8 @@ class SitePageResponse(BaseModel):
     is_homepage: bool
     is_system: bool
     requires_auth: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
     created_by: int | None
 
     @field_validator("layout_config", "sections", "translations", mode="before")
@@ -183,7 +183,7 @@ class SitePageListResponse(BaseModel):
     show_in_menu: bool
     is_homepage: bool
     view_count: int
-    updated_at: datetime.datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -264,7 +264,7 @@ class BlogPostResponse(BaseModel):
     author_avatar: str | None
     author_bio: str | None
     status: str
-    published_at: datetime.datetime | None
+    published_at: datetime | None
     language: str
     translations: dict[str, int] | None
     view_count: int
@@ -275,8 +275,8 @@ class BlogPostResponse(BaseModel):
     is_featured: bool
     is_pinned: bool
     allow_comments: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
     created_by: int | None
 
     @field_validator("gallery", "tags", "translations", mode="before")
@@ -301,7 +301,7 @@ class BlogPostListResponse(BaseModel):
     tags: list[str] | None
     author_name: str | None
     status: str
-    published_at: datetime.datetime | None
+    published_at: datetime | None
     view_count: int
     reading_time: int | None
     is_featured: bool
@@ -382,14 +382,14 @@ class TestimonialResponse(BaseModel):
     video_url: str | None
     case_study_url: str | None
     status: str
-    published_at: datetime.datetime | None
+    published_at: datetime | None
     rating: int | None
     sort_order: int
     is_featured: bool
     show_on_homepage: bool
     language: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
 
     @field_validator("modules_used", "metrics", mode="before")
     @classmethod
@@ -436,7 +436,7 @@ class ContactSubmissionUpdate(BaseModel):
     assigned_to: int | None = None
     response: str | None = None
     notes: str | None = None
-    follow_up_date: datetime.datetime | None = None
+    follow_up_date: datetime | None = None
 
 
 class ContactSubmissionResponse(BaseModel):
@@ -465,15 +465,15 @@ class ContactSubmissionResponse(BaseModel):
     status: str
     assigned_to: int | None
     response: str | None
-    responded_at: datetime.datetime | None
+    responded_at: datetime | None
     responded_by: int | None
     notes: str | None
-    follow_up_date: datetime.datetime | None
+    follow_up_date: datetime | None
     consent_marketing: bool
     consent_newsletter: bool
     consent_privacy: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
 
     @field_validator("interested_modules", "custom_fields", mode="before")
     @classmethod
@@ -520,12 +520,12 @@ class NewsletterSubscriberResponse(BaseModel):
     frequency: str
     is_active: bool
     is_verified: bool
-    verified_at: datetime.datetime | None
+    verified_at: datetime | None
     source: str | None
     emails_received: int
     emails_opened: int
     emails_clicked: int
-    created_at: datetime.datetime
+    created_at: datetime
 
     @field_validator("interests", mode="before")
     @classmethod
@@ -596,8 +596,8 @@ class SiteMediaResponse(BaseModel):
     folder: str
     tags: list[str] | None
     usage_count: int
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
 
     @field_validator("tags", mode="before")
     @classmethod
@@ -663,7 +663,7 @@ class SiteSEOResponse(BaseModel):
     head_scripts: str | None
     body_scripts: str | None
     redirects: list[dict[str, str]] | None
-    updated_at: datetime.datetime
+    updated_at: datetime
 
     @field_validator("organization_schema", "local_business_schema", "redirects", mode="before")
     @classmethod
@@ -685,7 +685,7 @@ class SiteAnalyticsResponse(BaseModel):
 
     id: int
     tenant_id: str
-    analytics_date: datetime.datetime = Field(..., alias="date")
+    analytics_date: datetime = Field(..., alias="date")
     period: str
     page_views: int
     unique_visitors: int
@@ -739,7 +739,7 @@ class AnalyticsDashboardResponse(BaseModel):
 class PublishRequest(BaseModel):
     """Demande de publication."""
     publish: bool = True
-    schedule_at: datetime.datetime | None = None
+    schedule_at: datetime | None = None
 
 
 # ============================================================================

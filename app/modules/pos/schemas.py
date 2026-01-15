@@ -56,8 +56,8 @@ class StoreResponse(StoreBase):
     """Réponse magasin."""
     id: int
     tenant_id: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -98,10 +98,10 @@ class TerminalResponse(TerminalBase):
     tenant_id: str
     store_id: int
     status: POSTerminalStatus
-    last_ping: datetime.datetime | None = None
-    last_sync: datetime.datetime | None = None
+    last_ping: datetime | None = None
+    last_sync: datetime | None = None
     current_session_id: int | None = None
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -153,7 +153,7 @@ class POSUserResponse(POSUserBase):
     tenant_id: str
     user_id: int | None = None
     is_active: bool
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -202,8 +202,8 @@ class SessionResponse(BaseModel):
     cash_total: Decimal
     card_total: Decimal
     check_total: Decimal
-    opened_at: datetime.datetime
-    closed_at: datetime.datetime | None = None
+    opened_at: datetime
+    closed_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -225,7 +225,7 @@ class CashMovementResponse(BaseModel):
     reason: str
     description: str | None = None
     performed_by_id: int
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -294,7 +294,7 @@ class PaymentResponse(BaseModel):
     card_type: str | None = None
     card_last4: str | None = None
     status: str
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -333,8 +333,8 @@ class TransactionResponse(BaseModel):
     change_given: Decimal
     lines: list[TransactionLineResponse] = []
     payments: list[PaymentResponse] = []
-    completed_at: datetime.datetime | None = None
-    created_at: datetime.datetime
+    completed_at: datetime | None = None
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -400,7 +400,7 @@ class HoldTransactionResponse(BaseModel):
     customer_name: str | None = None
     transaction_data: dict
     held_by_id: int
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -413,7 +413,7 @@ class DailyReportResponse(BaseModel):
     """Réponse rapport journalier."""
     id: int
     store_id: int
-    report_date: datetime.datetime
+    report_date: datetime
     report_number: str
     gross_sales: Decimal
     net_sales: Decimal
@@ -430,7 +430,7 @@ class DailyReportResponse(BaseModel):
     closing_cash: Decimal
     cash_variance: Decimal
     tax_breakdown: dict | None = None
-    generated_at: datetime.datetime
+    generated_at: datetime
 
     model_config = {"from_attributes": True}
 

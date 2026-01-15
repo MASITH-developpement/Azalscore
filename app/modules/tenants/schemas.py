@@ -131,12 +131,12 @@ class TenantResponse(BaseModel):
     secondary_color: str
     features: dict[str, Any] | None
     extra_data: dict[str, Any] | None
-    trial_ends_at: datetime.datetime | None
-    activated_at: datetime.datetime | None
-    suspended_at: datetime.datetime | None
-    cancelled_at: datetime.datetime | None
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    trial_ends_at: datetime | None
+    activated_at: datetime | None
+    suspended_at: datetime | None
+    cancelled_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
 
     @field_validator("features", "extra_data", mode="before")
     @classmethod
@@ -158,7 +158,7 @@ class TenantListResponse(BaseModel):
     plan: str
     country: str
     max_users: int
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -174,8 +174,8 @@ class SubscriptionCreate(BaseModel):
     price_monthly: float | None = None
     price_yearly: float | None = None
     discount_percent: float = 0
-    starts_at: datetime.datetime
-    ends_at: datetime.datetime | None = None
+    starts_at: datetime
+    ends_at: datetime | None = None
     is_trial: bool = False
     auto_renew: bool = True
     payment_method: str | None = None
@@ -198,16 +198,16 @@ class SubscriptionResponse(BaseModel):
     price_monthly: float | None
     price_yearly: float | None
     discount_percent: float
-    starts_at: datetime.datetime
-    ends_at: datetime.datetime | None
-    next_billing_at: datetime.datetime | None
+    starts_at: datetime
+    ends_at: datetime | None
+    next_billing_at: datetime | None
     is_active: bool
     is_trial: bool
     auto_renew: bool
     payment_method: str | None
-    last_payment_at: datetime.datetime | None
+    last_payment_at: datetime | None
     last_payment_amount: float | None
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -239,8 +239,8 @@ class TenantModuleResponse(BaseModel):
     status: str
     config: dict[str, Any] | None
     limits: dict[str, Any] | None
-    activated_at: datetime.datetime
-    deactivated_at: datetime.datetime | None
+    activated_at: datetime
+    deactivated_at: datetime | None
 
     @field_validator("config", "limits", mode="before")
     @classmethod
@@ -276,9 +276,9 @@ class TenantInvitationResponse(BaseModel):
     plan: str | None
     proposed_role: str
     status: str
-    expires_at: datetime.datetime
-    accepted_at: datetime.datetime | None
-    created_at: datetime.datetime
+    expires_at: datetime
+    accepted_at: datetime | None
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -293,7 +293,7 @@ class TenantUsageResponse(BaseModel):
 
     id: int
     tenant_id: str
-    usage_date: datetime.datetime = Field(..., alias="date")
+    usage_date: datetime = Field(..., alias="date")
     period: str
     active_users: int
     total_users: int
@@ -348,7 +348,7 @@ class TenantSettingsResponse(BaseModel):
     auto_backup_enabled: bool
     backup_retention_days: int
     custom_settings: dict[str, Any] | None
-    updated_at: datetime.datetime
+    updated_at: datetime
 
     @field_validator("ip_whitelist", "custom_settings", mode="before")
     @classmethod
@@ -383,8 +383,8 @@ class TenantOnboardingResponse(BaseModel):
     training_completed: bool
     progress_percent: int
     current_step: str
-    started_at: datetime.datetime
-    completed_at: datetime.datetime | None
+    started_at: datetime
+    completed_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -403,7 +403,7 @@ class TenantEventResponse(BaseModel):
     actor_id: int | None
     actor_email: str | None
     actor_ip: str | None
-    created_at: datetime.datetime
+    created_at: datetime
 
     @field_validator("event_data", mode="before")
     @classmethod

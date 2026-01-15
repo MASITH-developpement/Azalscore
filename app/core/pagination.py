@@ -109,7 +109,7 @@ def paginate_query(
 def paginate_list(
     items: list[Any],
     pagination: PaginationParams,
-    serializer: callable | None = None
+    serializer: Callable | None = None
 ) -> PaginatedResponse:
     """
     Pagine une liste Python (pour données en mémoire).

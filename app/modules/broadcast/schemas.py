@@ -115,8 +115,8 @@ class BroadcastTemplateResponse(BroadcastTemplateBase):
     id: int
     is_active: bool
     is_system: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -160,8 +160,8 @@ class RecipientListResponse(RecipientListBase):
     total_recipients: int
     active_recipients: int
     is_active: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -204,7 +204,7 @@ class RecipientMemberResponse(BaseModel):
     preferred_channel: DeliveryChannelEnum | None = None
     is_active: bool
     is_unsubscribed: bool
-    added_at: datetime.datetime
+    added_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -230,8 +230,8 @@ class ScheduledBroadcastCreate(ScheduledBroadcastBase):
     html_content: str | None = None
     cron_expression: str | None = None
     timezone: str = "Europe/Paris"
-    start_date: datetime.datetime | None = None
-    end_date: datetime.datetime | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     send_time: str | None = None
     day_of_week: int | None = Field(None, ge=0, le=6)
     day_of_month: int | None = Field(None, ge=1, le=31)
@@ -250,8 +250,8 @@ class ScheduledBroadcastUpdate(BaseModel):
     frequency: BroadcastFrequencyEnum | None = None
     cron_expression: str | None = None
     timezone: str | None = None
-    start_date: datetime.datetime | None = None
-    end_date: datetime.datetime | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     send_time: str | None = None
     day_of_week: int | None = Field(None, ge=0, le=6)
     day_of_month: int | None = Field(None, ge=1, le=31)
@@ -265,8 +265,8 @@ class ScheduledBroadcastResponse(ScheduledBroadcastBase):
     subject: str | None = None
     cron_expression: str | None = None
     timezone: str
-    start_date: datetime.datetime | None = None
-    end_date: datetime.datetime | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     send_time: str | None = None
     day_of_week: int | None = None
     day_of_month: int | None = None
@@ -277,11 +277,11 @@ class ScheduledBroadcastResponse(ScheduledBroadcastBase):
     total_delivered: int
     total_failed: int
     total_opened: int
-    last_run_at: datetime.datetime | None = None
-    next_run_at: datetime.datetime | None = None
+    last_run_at: datetime | None = None
+    next_run_at: datetime | None = None
     last_error: str | None = None
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -305,8 +305,8 @@ class BroadcastExecutionResponse(BaseModel):
     id: int
     scheduled_broadcast_id: int
     execution_number: int
-    started_at: datetime.datetime
-    completed_at: datetime.datetime | None = None
+    started_at: datetime
+    completed_at: datetime | None = None
     duration_seconds: float | None = None
     status: DeliveryStatusEnum
     total_recipients: int
@@ -339,11 +339,11 @@ class DeliveryDetailResponse(BaseModel):
     email: str | None = None
     channel: DeliveryChannelEnum
     status: DeliveryStatusEnum
-    queued_at: datetime.datetime
-    sent_at: datetime.datetime | None = None
-    delivered_at: datetime.datetime | None = None
-    opened_at: datetime.datetime | None = None
-    clicked_at: datetime.datetime | None = None
+    queued_at: datetime
+    sent_at: datetime | None = None
+    delivered_at: datetime | None = None
+    opened_at: datetime | None = None
+    clicked_at: datetime | None = None
     error_code: str | None = None
     error_message: str | None = None
     retry_count: int
@@ -385,8 +385,8 @@ class BroadcastPreferenceResponse(BaseModel):
     preferred_send_time: str | None = None
     timezone: str
     is_unsubscribed_all: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -401,7 +401,7 @@ class UnsubscribeRequest(BaseModel):
 
 class BroadcastMetricResponse(BaseModel):
     id: int
-    metric_date: datetime.datetime
+    metric_date: datetime
     period_type: str
     total_broadcasts: int
     total_executions: int
@@ -414,7 +414,7 @@ class BroadcastMetricResponse(BaseModel):
     clicked_count: int
     open_rate: float | None = None
     click_rate: float | None = None
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

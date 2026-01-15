@@ -116,8 +116,8 @@ class QCRuleResponse(QCRuleBase):
     id: int
     is_active: bool
     is_system: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -164,12 +164,12 @@ class ModuleRegistryResponse(ModuleRegistryBase):
     passed_checks: int
     failed_checks: int
     blocked_checks: int
-    last_qc_run: datetime.datetime | None = None
-    validated_at: datetime.datetime | None = None
+    last_qc_run: datetime | None = None
+    validated_at: datetime | None = None
     validated_by: int | None = None
-    production_at: datetime.datetime | None = None
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    production_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -206,8 +206,8 @@ class ValidationResponse(BaseModel):
     id: int
     module_id: int
     validation_phase: ValidationPhaseEnum
-    started_at: datetime.datetime
-    completed_at: datetime.datetime | None = None
+    started_at: datetime
+    completed_at: datetime | None = None
     started_by: int | None = None
     status: QCCheckStatusEnum
     overall_score: float | None = None
@@ -241,7 +241,7 @@ class CheckResultResponse(BaseModel):
     category: QCRuleCategoryEnum
     severity: QCRuleSeverityEnum
     status: QCCheckStatusEnum
-    executed_at: datetime.datetime | None = None
+    executed_at: datetime | None = None
     duration_ms: int | None = None
     expected_value: str | None = None
     actual_value: str | None = None
@@ -295,8 +295,8 @@ class QCTestRunResponse(BaseModel):
     validation_id: int | None = None
     test_type: TestTypeEnum
     test_suite: str | None = None
-    started_at: datetime.datetime
-    completed_at: datetime.datetime | None = None
+    started_at: datetime
+    completed_at: datetime | None = None
     duration_seconds: float | None = None
     status: QCCheckStatusEnum
     total_tests: int
@@ -322,7 +322,7 @@ TestRunResponse = QCTestRunResponse
 class QCMetricResponse(BaseModel):
     id: int
     module_id: int | None = None
-    metric_date: datetime.datetime
+    metric_date: datetime
     modules_total: int
     modules_validated: int
     modules_production: int
@@ -343,7 +343,7 @@ class QCMetricResponse(BaseModel):
     blocker_issues: int
     score_trend: str | None = None
     score_delta: float | None = None
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -375,10 +375,10 @@ class QCAlertResponse(BaseModel):
     details: dict[str, Any] | None = None
     is_read: bool
     is_resolved: bool
-    resolved_at: datetime.datetime | None = None
+    resolved_at: datetime | None = None
     resolved_by: int | None = None
     resolution_notes: str | None = None
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -435,8 +435,8 @@ class QCDashboardResponse(BaseModel):
     owner_id: int | None = None
     auto_refresh: bool
     refresh_interval: int
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -490,8 +490,8 @@ class QCTemplateResponse(BaseModel):
     category: str | None = None
     is_active: bool
     is_system: bool
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: datetime
+    updated_at: datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)

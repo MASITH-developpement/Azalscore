@@ -81,8 +81,8 @@ class UserResponse(BaseModel):
     is_verified: bool
     is_locked: bool
     mfa_enabled: bool
-    created_at: datetime.datetime
-    last_login_at: datetime.datetime | None
+    created_at: datetime
+    last_login_at: datetime | None
     roles: list[str] = []  # Codes des rôles
     groups: list[str] = []  # Codes des groupes
 
@@ -178,7 +178,7 @@ class RoleResponse(BaseModel):
     user_count: int = 0
     permissions: list[str] = []  # Codes des permissions
     incompatible_roles: list[str] = []
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -193,14 +193,14 @@ class RoleAssignment(BaseModel):
     """Attribution de rôle."""
     user_id: int
     role_code: str
-    expires_at: datetime.datetime | None = None
+    expires_at: datetime | None = None
 
 
 class RoleBulkAssignment(BaseModel):
     """Attribution de rôles en masse."""
     user_ids: list[int]
     role_codes: list[str]
-    expires_at: datetime.datetime | None = None
+    expires_at: datetime | None = None
 
 
 # ============================================================================
@@ -235,7 +235,7 @@ class PermissionResponse(BaseModel):
     is_system: bool
     is_active: bool
     is_dangerous: bool
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -292,7 +292,7 @@ class GroupResponse(BaseModel):
     is_active: bool
     user_count: int = 0
     roles: list[str] = []
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -319,9 +319,9 @@ class SessionResponse(BaseModel):
     ip_address: str | None
     user_agent: str | None
     status: str
-    created_at: datetime.datetime
-    expires_at: datetime.datetime
-    last_activity_at: datetime.datetime
+    created_at: datetime
+    expires_at: datetime
+    last_activity_at: datetime
     is_current: bool = False
 
     model_config = {"from_attributes": True}
@@ -359,10 +359,10 @@ class InvitationResponse(BaseModel):
     status: str
     roles_to_assign: list[str] = []
     groups_to_assign: list[str] = []
-    created_at: datetime.datetime
-    expires_at: datetime.datetime
+    created_at: datetime
+    expires_at: datetime
     invited_by: int
-    accepted_at: datetime.datetime | None
+    accepted_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -485,7 +485,7 @@ class AuditLogResponse(BaseModel):
     success: bool
     error_message: str | None
     details: str | None
-    created_at: datetime.datetime
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -506,5 +506,5 @@ class AuditLogFilter(BaseModel):
     entity_id: int | None = None
     actor_id: int | None = None
     success: bool | None = None
-    from_date: datetime.datetime | None = None
-    to_date: datetime.datetime | None = None
+    from_date: datetime | None = None
+    to_date: datetime | None = None
