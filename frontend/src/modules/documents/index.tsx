@@ -17,8 +17,8 @@
  * - Aucun changement de page pendant la saisie
  */
 
-import React, { useEffect, useCallback, useMemo, useState } from 'react';
-import { Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -27,7 +27,6 @@ import {
   Edit3,
   Check,
   Trash2,
-  ArrowRight,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
@@ -38,10 +37,10 @@ import {
 } from 'lucide-react';
 
 import { api } from '@core/api-client';
-import { CapabilityGuard, useHasCapability } from '@core/capabilities';
+import { useHasCapability } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
+import { Button, ConfirmDialog } from '@ui/actions';
 
 import { useTranslation } from '@/i18n';
 import {
@@ -54,9 +53,6 @@ import {
   DOCUMENT_TYPE_CONFIG,
   calculateLineTotal,
   calculateDocumentTotals,
-  createEmptyLine,
-  getDocumentCategory,
-  isDocumentEditable,
 } from './store';
 
 import type { PaginatedResponse, TableColumn, TableAction } from '@/types';
@@ -272,8 +268,9 @@ const useDocumentsList = (type: DocumentType, page: number, pageSize: number, fi
 
 /**
  * Hook pour charger un document unique
+ * Note: Préparé pour l'édition de documents existants (usage futur)
  */
-const useDocumentDetail = (type: DocumentType, id: string) => {
+const _useDocumentDetail = (type: DocumentType, id: string) => {
   const endpoint = getApiEndpoint(type);
 
   return useQuery({
@@ -762,11 +759,9 @@ const LineEditor: React.FC<LineEditorProps> = ({
 
 const DocumentForm: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   // Store
   const {
-    documentType,
     currentDocument,
     isDirty,
     setCurrentDocument,
@@ -1071,7 +1066,6 @@ const DocumentForm: React.FC = () => {
 
 const DocumentList: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   // Store
   const {
@@ -1345,10 +1339,7 @@ const DocumentsPage: React.FC = () => {
     isDirty,
     setMode,
     setDocumentType,
-    getTypeConfig,
   } = useDocumentsStore();
-
-  const typeConfig = getTypeConfig();
 
   // Avertissement avant de changer de type si le document n'est pas sauvegardé
   const handleTypeChange = (newType: DocumentType) => {

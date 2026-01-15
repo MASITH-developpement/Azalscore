@@ -80,9 +80,9 @@ export const translate = (key: string, options?: Record<string, unknown>): strin
 };
 
 // Changer la langue
-export const changeLanguage = (lang: SupportedLanguage): Promise<void> => {
+export const changeLanguage = async (lang: SupportedLanguage): Promise<void> => {
   localStorage.setItem('azals_language', lang);
-  return i18n.changeLanguage(lang) as Promise<void>;
+  await i18n.changeLanguage(lang);
 };
 
 // Obtenir la langue courante
