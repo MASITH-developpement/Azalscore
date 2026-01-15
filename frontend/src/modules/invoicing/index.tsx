@@ -808,7 +808,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
         canCreate && (
           <Button
             leftIcon={<Plus size={16} />}
-            onClick={() => navigate(`/invoicing/${type.toLowerCase()}s/new`)}
+            onClick={() => navigate('/action')}
           >
             Nouveau {typeConfig.label.toLowerCase()}
           </Button>

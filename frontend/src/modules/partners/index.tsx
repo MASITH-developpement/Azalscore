@@ -499,31 +499,31 @@ export const PartnersDashboard: React.FC = () => {
           title="Clients"
           actions={
             <Button variant="ghost" size="sm" onClick={() => navigate('/partners/clients')}>
-              Gérer
+              Voir
             </Button>
           }
         >
           <Users size={32} className="azals-text--primary" />
-          <p>Gérer vos clients et prospects</p>
+          <p>Consulter vos clients et prospects</p>
         </Card>
 
         <Card
           title="Fournisseurs"
           actions={
             <Button variant="ghost" size="sm" onClick={() => navigate('/partners/suppliers')}>
-              Gérer
+              Voir
             </Button>
           }
         >
           <Building size={32} className="azals-text--primary" />
-          <p>Gérer vos fournisseurs</p>
+          <p>Consulter vos fournisseurs</p>
         </Card>
 
         <Card
           title="Contacts"
           actions={
             <Button variant="ghost" size="sm" onClick={() => navigate('/partners/contacts')}>
-              Gérer
+              Voir
             </Button>
           }
         >

@@ -464,8 +464,13 @@ export const UsersPage: React.FC = () => {
       id: 'reset-password',
       label: 'Réinitialiser mot de passe',
       capability: 'admin.users.edit',
-      onClick: (row: AdminUser) => {
-        // Reset password logic
+      onClick: async (row: AdminUser) => {
+        try {
+          await api.post(`/v1/admin/users/${row.id}/reset-password`);
+          // Notification de succès gérée par l'API client
+        } catch (error) {
+          console.error('Erreur lors de la réinitialisation:', error);
+        }
       },
     },
   ];

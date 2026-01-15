@@ -9,6 +9,11 @@ import App from './App';
 import { initializeBranding } from './core/branding';
 
 // ============================================================
+// INITIALISATION I18N (AVANT LE RENDER)
+// ============================================================
+import './i18n';
+
+// ============================================================
 // BRANDING INITIALIZATION
 // Applique le titre "Azalscore" au bootstrap
 // ============================================================

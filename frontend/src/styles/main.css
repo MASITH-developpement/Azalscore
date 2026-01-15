@@ -1794,3 +1794,442 @@ body {
 .justify-between { justify-content: space-between; }
 .items-center { align-items: center; }
 .animate-spin { animation: spin 1s linear infinite; }
+
+/* ============================================================
+   MODULE ACTION - VUE UNIQUE DE SAISIE AZALSCORE
+   ============================================================ */
+
+.azals-action__type-selector {
+  display: flex;
+  gap: var(--azals-spacing-sm);
+  flex-wrap: wrap;
+}
+
+.azals-action__type-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-md) var(--azals-spacing-lg);
+  background: var(--azals-bg);
+  border: 2px solid var(--azals-border);
+  border-radius: var(--azals-radius-lg);
+  cursor: pointer;
+  transition: all var(--azals-transition-fast);
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+  color: var(--azals-text);
+}
+
+.azals-action__type-btn:hover {
+  border-color: var(--azals-primary-300);
+  background: var(--azals-primary-50);
+}
+
+.azals-action__type-btn--active {
+  border-color: var(--azals-primary-600);
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-700);
+}
+
+.azals-action__type-btn--active svg {
+  color: var(--azals-primary-600);
+}
+
+/* Partner Selector */
+.azals-action__partner-selector {
+  position: relative;
+}
+
+.azals-action__partner-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-md);
+  width: 100%;
+  padding: var(--azals-spacing-md);
+  background: var(--azals-bg);
+  border: 2px dashed var(--azals-border);
+  border-radius: var(--azals-radius-lg);
+  cursor: pointer;
+  transition: all var(--azals-transition-fast);
+  text-align: left;
+  color: var(--azals-text-secondary);
+}
+
+.azals-action__partner-btn:hover {
+  border-color: var(--azals-primary-300);
+  background: var(--azals-gray-50);
+}
+
+.azals-action__partner-btn--selected {
+  border-style: solid;
+  border-color: var(--azals-primary-500);
+  background: var(--azals-primary-50);
+  color: var(--azals-text);
+}
+
+.azals-action__partner-btn-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-action__partner-btn-text strong {
+  font-size: var(--azals-font-size-md);
+  color: var(--azals-text);
+}
+
+.azals-action__partner-code {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+  background: var(--azals-gray-100);
+  padding: 2px 6px;
+  border-radius: var(--azals-radius-sm);
+  margin-left: var(--azals-spacing-sm);
+}
+
+.azals-action__partner-btn svg.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Partner Dropdown */
+.azals-action__partner-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: var(--azals-spacing-xs);
+  background: var(--azals-bg);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-lg);
+  box-shadow: var(--azals-shadow-lg);
+  z-index: var(--azals-z-dropdown);
+  max-height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.azals-action__partner-search {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-md);
+  border-bottom: 1px solid var(--azals-border);
+}
+
+.azals-action__partner-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: var(--azals-font-size-sm);
+  background: transparent;
+}
+
+.azals-action__partner-search button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--azals-text-secondary);
+  padding: var(--azals-spacing-xs);
+}
+
+.azals-action__partner-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 280px;
+}
+
+.azals-action__partner-loading,
+.azals-action__partner-empty {
+  padding: var(--azals-spacing-lg);
+  text-align: center;
+  color: var(--azals-text-secondary);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-action__partner-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--azals-spacing-md);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--azals-gray-100);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--azals-transition-fast);
+}
+
+.azals-action__partner-item:hover {
+  background: var(--azals-gray-50);
+}
+
+.azals-action__partner-item-main {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+}
+
+.azals-action__partner-item-main strong {
+  color: var(--azals-text);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-action__partner-item-main .code {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+  background: var(--azals-gray-100);
+  padding: 1px 4px;
+  border-radius: var(--azals-radius-sm);
+}
+
+.azals-action__partner-item-sub {
+  display: flex;
+  gap: var(--azals-spacing-md);
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+  margin-top: var(--azals-spacing-xs);
+}
+
+.azals-action__partner-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--azals-spacing-sm);
+  width: 100%;
+  padding: var(--azals-spacing-md);
+  background: var(--azals-gray-50);
+  border: none;
+  border-top: 1px solid var(--azals-border);
+  cursor: pointer;
+  color: var(--azals-primary-600);
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+  transition: background var(--azals-transition-fast);
+}
+
+.azals-action__partner-new:hover {
+  background: var(--azals-primary-50);
+}
+
+/* Partner Preview (données injectées) */
+.azals-action__partner-preview {
+  margin-top: var(--azals-spacing-md);
+  padding: var(--azals-spacing-md);
+  background: var(--azals-gray-50);
+  border-radius: var(--azals-radius-md);
+  border: 1px solid var(--azals-gray-200);
+}
+
+.azals-action__partner-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--azals-spacing-md);
+}
+
+.azals-action__partner-preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.azals-action__partner-preview-item .label {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.azals-action__partner-preview-item .value {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text);
+}
+
+/* Lines Editor */
+.azals-action__lines {
+  width: 100%;
+}
+
+.azals-action__lines-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-action__lines-header h3 {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+}
+
+.azals-action__lines-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--azals-spacing-2xl);
+  color: var(--azals-text-secondary);
+  background: var(--azals-gray-50);
+  border-radius: var(--azals-radius-md);
+  gap: var(--azals-spacing-sm);
+}
+
+.azals-action__lines-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--azals-spacing-lg);
+}
+
+.azals-action__lines-table th {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  text-align: left;
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--azals-gray-50);
+  border-bottom: 1px solid var(--azals-border);
+}
+
+.azals-action__lines-table td {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  font-size: var(--azals-font-size-sm);
+  border-bottom: 1px solid var(--azals-border);
+  vertical-align: middle;
+}
+
+.azals-action__lines-table tr:hover {
+  background: var(--azals-gray-50);
+}
+
+.azals-action__lines-table tr.editing {
+  background: var(--azals-primary-50);
+}
+
+.azals-action__lines-table .clickable {
+  cursor: pointer;
+  padding: var(--azals-spacing-xs) var(--azals-spacing-sm);
+  border-radius: var(--azals-radius-sm);
+}
+
+.azals-action__lines-table .clickable:hover {
+  background: var(--azals-gray-100);
+}
+
+.azals-action__lines-table .text-right {
+  text-align: right;
+}
+
+.azals-action__lines-table .font-medium {
+  font-weight: 500;
+}
+
+.azals-action__lines-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--azals-spacing-xs);
+  padding-top: var(--azals-spacing-md);
+  border-top: 2px solid var(--azals-border);
+}
+
+.azals-action__lines-total-row {
+  display: flex;
+  justify-content: space-between;
+  width: 250px;
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+}
+
+.azals-action__lines-total-row--main {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-text);
+  padding-top: var(--azals-spacing-sm);
+  margin-top: var(--azals-spacing-xs);
+  border-top: 1px solid var(--azals-border);
+}
+
+/* Form Grid */
+.azals-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--azals-spacing-md);
+}
+
+.azals-form-grid .azals-field--full {
+  grid-column: span 2;
+}
+
+@media (max-width: 640px) {
+  .azals-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .azals-form-grid .azals-field--full {
+    grid-column: span 1;
+  }
+}
+
+/* Modal Actions */
+.azals-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--azals-spacing-sm);
+  margin-top: var(--azals-spacing-lg);
+  padding-top: var(--azals-spacing-lg);
+  border-top: 1px solid var(--azals-border);
+}
+
+/* Label */
+.azals-label {
+  display: block;
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+  color: var(--azals-text);
+}
+
+/* Required marker */
+.required {
+  color: var(--azals-danger);
+}
+
+/* Card title for inline use */
+.azals-card__title {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-text);
+}
+
+/* Form error with icon */
+.azals-form-error {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-danger);
+}
+
+/* ============================================================
+   MENU ACTION - Style spécial pour le bouton d'action
+   ============================================================ */
+
+.azals-menu-item[href="/action"] {
+  background: var(--azals-primary-600);
+  color: white !important;
+  margin-top: var(--azals-spacing-sm);
+  border-radius: var(--azals-radius-md);
+}
+
+.azals-menu-item[href="/action"]:hover {
+  background: var(--azals-primary-700);
+}
+
+.azals-menu-item[href="/action"] .azals-menu-item__icon {
+  color: white;
+}
+
+.azals-menu-item[href="/action"].azals-menu-item--active {
+  background: var(--azals-primary-800);
+}

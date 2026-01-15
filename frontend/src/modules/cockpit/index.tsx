@@ -334,7 +334,6 @@ export const CockpitPage: React.FC = () => {
               alerts={data.alerts.filter((a) => a.severity !== 'RED')}
               maxItems={5}
               onAcknowledge={(alert) => acknowledgeAlert.mutate(alert.id)}
-              onViewAll={() => navigate('/alerts')}
             />
           </Card>
         </section>

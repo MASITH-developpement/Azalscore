@@ -1551,7 +1551,7 @@ export const OrdersListPage: React.FC = () => {
       title="Commandes Fournisseurs"
       actions={
         <CapabilityGuard capability="purchases.create">
-          <Button leftIcon={<Plus size={16} />} onClick={() => navigate('/purchases/orders/new')}>
+          <Button leftIcon={<Plus size={16} />} onClick={() => navigate('/action')}>
             Nouvelle commande
           </Button>
         </CapabilityGuard>
@@ -2056,7 +2056,7 @@ export const InvoicesListPage: React.FC = () => {
       title="Factures Fournisseurs"
       actions={
         <CapabilityGuard capability="purchases.create">
-          <Button leftIcon={<Plus size={16} />} onClick={() => navigate('/purchases/invoices/new')}>
+          <Button leftIcon={<Plus size={16} />} onClick={() => navigate('/action')}>
             Nouvelle facture
           </Button>
         </CapabilityGuard>

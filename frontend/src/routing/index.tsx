@@ -15,6 +15,7 @@ import { useIsAuthenticated } from '@core/auth';
 // ============================================================
 
 const CockpitPage = lazy(() => import('@modules/cockpit'));
+const ActionPage = lazy(() => import('@modules/action'));
 const PartnersRoutes = lazy(() => import('@modules/partners'));
 const InvoicingRoutes = lazy(() => import('@modules/invoicing'));
 const TreasuryRoutes = lazy(() => import('@modules/treasury'));
@@ -121,6 +122,13 @@ export const AppRouter: React.FC = () => {
             <Route path="/cockpit" element={
               <CapabilityRoute capability="cockpit.view">
                 <CockpitPage />
+              </CapabilityRoute>
+            } />
+
+            {/* ACTION - Vue unique de saisie AZALSCORE */}
+            <Route path="/action" element={
+              <CapabilityRoute capability="invoicing.create">
+                <ActionPage />
               </CapabilityRoute>
             } />
 

@@ -25,6 +25,7 @@ import {
   ChevronDown,
   ChevronRight,
   Palette,
+  PlusCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
@@ -36,6 +37,7 @@ import type { MenuItem, MenuSection } from '@/types';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
+  action: PlusCircle,
   users: Users,
   invoicing: FileText,
   treasury: Wallet,
@@ -67,6 +69,13 @@ const MENU_SECTIONS: MenuSection[] = [
         icon: 'dashboard',
         path: '/cockpit',
         capability: 'cockpit.view',
+      },
+      {
+        id: 'action',
+        label: 'Nouvelle action',
+        icon: 'action',
+        path: '/action',
+        capability: 'invoicing.create',
       },
     ],
   },
