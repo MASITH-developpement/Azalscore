@@ -39,7 +39,7 @@ from app.api.tax import router as tax_router
 from app.api.treasury import router as treasury_router
 from app.core.compression import CompressionMiddleware
 from app.core.config import get_settings
-from app.core.database import check_database_connection, engine, get_db
+from app.core.database import engine, get_db
 from app.core.dependencies import get_current_user
 from app.core.guards import enforce_startup_security
 from app.core.health import router as health_router
@@ -971,21 +971,8 @@ def create_admin_user(
 app.include_router(api_v1)
 
 
-@app.get("/health")
-async def health_check():
-    """
-    Endpoint de santé.
-    Vérifie que l'API et la base de données fonctionnent.
-    Endpoint PUBLIC : pas de validation tenant.
-    """
-    db_ok = check_database_connection()
-
-    return {
-        "status": "ok" if db_ok else "degraded",
-        "api": True,
-        "database": db_ok
-    }
-
+# NOTE: /health endpoint is provided by health_router from app/core/health.py
+# which offers detailed health checks including /health/live, /health/ready, etc.
 
 # ==================== FRONTEND STATIQUE ====================
 
