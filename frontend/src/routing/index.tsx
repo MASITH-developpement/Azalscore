@@ -17,6 +17,7 @@ import { useIsAuthenticated } from '@core/auth';
 const CockpitPage = lazy(() => import('@modules/cockpit'));
 const PartnersRoutes = lazy(() => import('@modules/partners'));
 const InvoicingRoutes = lazy(() => import('@modules/invoicing'));
+const WorkspacePage = lazy(() => import('@modules/workspace'));
 const TreasuryRoutes = lazy(() => import('@modules/treasury'));
 const AccountingRoutes = lazy(() => import('@modules/accounting'));
 const PurchasesRoutes = lazy(() => import('@modules/purchases'));
@@ -114,8 +115,15 @@ export const AppRouter: React.FC = () => {
 
           {/* Routes protégées (App) */}
           <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            {/* Redirect racine vers cockpit */}
-            <Route path="/" element={<Navigate to="/cockpit" replace />} />
+            {/* Redirect racine vers workspace (logique AZALSCORE) */}
+            <Route path="/" element={<Navigate to="/workspace" replace />} />
+
+            {/* Workspace - Feuille de travail unique AZALSCORE */}
+            <Route path="/workspace" element={
+              <CapabilityRoute capability="invoicing.view">
+                <WorkspacePage />
+              </CapabilityRoute>
+            } />
 
             {/* Cockpit Dirigeant */}
             <Route path="/cockpit" element={

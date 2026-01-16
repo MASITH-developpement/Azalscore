@@ -25,6 +25,7 @@ import {
   ChevronDown,
   ChevronRight,
   Palette,
+  ClipboardEdit,
   type LucideIcon,
 } from 'lucide-react';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
@@ -36,6 +37,7 @@ import type { MenuItem, MenuSection } from '@/types';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
+  workspace: ClipboardEdit,
   users: Users,
   invoicing: FileText,
   treasury: Wallet,
@@ -61,6 +63,13 @@ const MENU_SECTIONS: MenuSection[] = [
     id: 'main',
     title: 'Principal',
     items: [
+      {
+        id: 'workspace',
+        label: 'Feuille de travail',
+        icon: 'workspace',
+        path: '/workspace',
+        capability: 'invoicing.view',
+      },
       {
         id: 'cockpit',
         label: 'Cockpit Dirigeant',

@@ -3,6 +3,9 @@
  * Design System unifié Web + Mobile
  */
 
+/* Import du style AZALSCORE Workspace */
+@import './azalscore.css';
+
 /* ============================================================
    CSS VARIABLES (DESIGN TOKENS)
    ============================================================ */

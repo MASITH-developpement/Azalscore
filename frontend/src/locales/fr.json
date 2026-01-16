@@ -1,0 +1,114 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "search": "Rechercher",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "yes": "Oui",
+    "no": "Non",
+    "error": "Erreur",
+    "success": "Succès",
+    "required": "Requis",
+    "optional": "Optionnel",
+    "none": "Aucun",
+    "all": "Tous",
+    "select": "Sélectionner"
+  },
+  "app": {
+    "name": "AZALSCORE",
+    "logout": "Déconnexion",
+    "profile": "Mon profil",
+    "settings": "Paramètres",
+    "notifications": "Notifications"
+  },
+  "workspace": {
+    "title": "Feuille de travail",
+    "documentType": "Type de document",
+    "selectDocumentType": "Sélectionnez le type de document",
+    "customer": "Client",
+    "selectCustomer": "Sélectionnez un client",
+    "noCustomer": "Aucun client sélectionné",
+    "date": "Date",
+    "dueDate": "Date d'échéance",
+    "validityDate": "Date de validité",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes visibles sur le document...",
+    "createDocument": "Créer le document",
+    "saveDocument": "Enregistrer",
+    "documentSaved": "Document enregistré",
+    "documentCreated": "Document créé"
+  },
+  "document": {
+    "types": {
+      "quote": "Devis",
+      "invoice": "Facture"
+    },
+    "statuses": {
+      "draft": "Brouillon",
+      "validated": "Validé"
+    },
+    "number": "Numéro",
+    "date": "Date",
+    "customer": "Client",
+    "total": "Total",
+    "totalHT": "Total HT",
+    "totalTVA": "Total TVA",
+    "totalTTC": "Total TTC"
+  },
+  "lines": {
+    "title": "Lignes",
+    "add": "Ajouter une ligne",
+    "empty": "Aucune ligne",
+    "emptyHint": "Cliquez sur « Ajouter une ligne » pour commencer",
+    "description": "Description",
+    "quantity": "Qté",
+    "unitPrice": "Prix unit. HT",
+    "discount": "Remise",
+    "vat": "TVA",
+    "totalHT": "Total HT",
+    "clickToEdit": "Cliquez pour éditer",
+    "deleteConfirm": "Supprimer cette ligne ?"
+  },
+  "customer": {
+    "name": "Nom / Raison sociale",
+    "code": "Code",
+    "email": "Email",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "injected": "Client sélectionné"
+  },
+  "validation": {
+    "customerRequired": "Veuillez sélectionner un client",
+    "dateRequired": "La date est requise",
+    "linesRequired": "Ajoutez au moins une ligne",
+    "descriptionRequired": "Toutes les lignes doivent avoir une description"
+  },
+  "actions": {
+    "newQuote": "Nouveau devis",
+    "newInvoice": "Nouvelle facture",
+    "validate": "Valider",
+    "validateConfirm": "Valider ce document ?",
+    "validateWarning": "Un document validé ne peut plus être modifié.",
+    "convert": "Convertir en facture",
+    "convertConfirm": "Créer une facture à partir de ce devis ?",
+    "export": "Exporter",
+    "print": "Imprimer"
+  },
+  "vat": {
+    "rate0": "0%",
+    "rate55": "5,5%",
+    "rate10": "10%",
+    "rate20": "20%"
+  },
+  "errors": {
+    "loadFailed": "Impossible de charger les données",
+    "saveFailed": "Erreur lors de l'enregistrement",
+    "networkError": "Erreur de connexion",
+    "notFound": "Document non trouvé"
+  }
+}

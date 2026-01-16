@@ -1,0 +1,677 @@
+/**
+ * AZALSCORE - CSS Feuille de travail
+ * ==================================
+ *
+ * Style minimaliste orienté saisie :
+ * - Surface blanche centrée
+ * - Largeur max ~1150px
+ * - Champs fluides (bordures basses)
+ * - Hiérarchie visuelle simple
+ * - Aucun élément décoratif inutile
+ *
+ * Ce CSS ne modifie aucune logique,
+ * n'ajoute aucun composant,
+ * n'impacte pas les performances.
+ */
+
+/* ============================================================
+   WORKSPACE - CONTENEUR PRINCIPAL
+   ============================================================ */
+
+.azals-workspace {
+  min-height: calc(100vh - 64px);
+  padding: var(--azals-spacing-lg);
+  background: var(--azals-gray-100);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ============================================================
+   FEUILLE DE TRAVAIL (SURFACE BLANCHE)
+   ============================================================ */
+
+.azals-ws-sheet {
+  width: 100%;
+  max-width: 1150px;
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: var(--azals-spacing-xl);
+}
+
+.azals-ws-section {
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+.azals-ws-section:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   MESSAGE DE SUCCÈS
+   ============================================================ */
+
+.azals-ws-success {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-md) var(--azals-spacing-lg);
+  background: var(--azals-green-light);
+  color: var(--azals-green);
+  border-radius: var(--azals-radius-md);
+  margin-bottom: var(--azals-spacing-lg);
+  max-width: 1150px;
+  width: 100%;
+  font-weight: 500;
+}
+
+/* ============================================================
+   SÉLECTEUR DE TYPE DOCUMENT
+   ============================================================ */
+
+.azals-ws-type-selector {
+  display: flex;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-xs);
+  background: var(--azals-gray-100);
+  border-radius: var(--azals-radius-md);
+  width: fit-content;
+}
+
+.azals-ws-type-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-sm) var(--azals-spacing-lg);
+  background: transparent;
+  border: none;
+  border-radius: var(--azals-radius-md);
+  cursor: pointer;
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+  color: var(--azals-text-secondary);
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-ws-type-btn:hover {
+  color: var(--azals-text);
+}
+
+.azals-ws-type-btn--active {
+  background: var(--azals-bg);
+  color: var(--azals-primary-600);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================================
+   ZONE CLIENT
+   ============================================================ */
+
+.azals-ws-customer {
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-md);
+  padding: var(--azals-spacing-md);
+}
+
+.azals-ws-customer--loading {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  color: var(--azals-text-secondary);
+  padding: var(--azals-spacing-lg);
+}
+
+.azals-ws-customer__header {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--azals-spacing-sm);
+}
+
+.azals-ws-customer__selector {
+  position: relative;
+}
+
+.azals-ws-customer__trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  background: var(--azals-bg);
+  border: none;
+  border-bottom: 2px solid var(--azals-border);
+  cursor: pointer;
+  font-size: var(--azals-font-size-md);
+  text-align: left;
+  transition: border-color var(--azals-transition-fast);
+}
+
+.azals-ws-customer__trigger:hover,
+.azals-ws-customer__trigger:focus {
+  border-bottom-color: var(--azals-primary-500);
+  outline: none;
+}
+
+.azals-ws-customer__trigger svg {
+  color: var(--azals-text-secondary);
+  transition: transform var(--azals-transition-fast);
+}
+
+.azals-ws-customer__trigger svg.rotated {
+  transform: rotate(180deg);
+}
+
+.azals-ws-customer__selected {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-md);
+  font-weight: 500;
+}
+
+.azals-ws-customer__code {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+  background: var(--azals-gray-100);
+  padding: 2px 8px;
+  border-radius: var(--azals-radius-sm);
+}
+
+.azals-ws-customer__placeholder {
+  color: var(--azals-text-secondary);
+}
+
+.azals-ws-customer__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--azals-bg);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-md);
+  box-shadow: var(--azals-shadow-lg);
+  z-index: var(--azals-z-dropdown);
+  margin-top: var(--azals-spacing-xs);
+  max-height: 300px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.azals-ws-customer__search {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  border: none;
+  border-bottom: 1px solid var(--azals-border);
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-ws-customer__search:focus {
+  outline: none;
+}
+
+.azals-ws-customer__list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.azals-ws-customer__item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--azals-font-size-sm);
+  transition: background var(--azals-transition-fast);
+}
+
+.azals-ws-customer__item:hover {
+  background: var(--azals-gray-50);
+}
+
+.azals-ws-customer__item-name {
+  font-weight: 500;
+}
+
+.azals-ws-customer__item-code {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+}
+
+.azals-ws-customer__empty {
+  padding: var(--azals-spacing-lg);
+  text-align: center;
+  color: var(--azals-text-secondary);
+  font-size: var(--azals-font-size-sm);
+}
+
+/* Informations client injectées */
+.azals-ws-customer__info {
+  margin-top: var(--azals-spacing-md);
+  padding-top: var(--azals-spacing-md);
+  border-top: 1px dashed var(--azals-border);
+}
+
+.azals-ws-customer__field {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+  margin-bottom: var(--azals-spacing-xs);
+}
+
+.azals-ws-customer__field:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   ZONE DATES
+   ============================================================ */
+
+.azals-ws-section--dates {
+  display: flex;
+  gap: var(--azals-spacing-xl);
+}
+
+.azals-ws-date {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-ws-date label {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+  font-size: var(--azals-font-size-xs);
+  font-weight: 500;
+  color: var(--azals-text-secondary);
+}
+
+/* ============================================================
+   CHAMPS DE SAISIE FLUIDES
+   ============================================================ */
+
+.azals-ws-input {
+  padding: var(--azals-spacing-sm);
+  border: none;
+  border-bottom: 1px solid var(--azals-border);
+  font-size: var(--azals-font-size-sm);
+  background: transparent;
+  transition: border-color var(--azals-transition-fast);
+  width: 100%;
+}
+
+.azals-ws-input:focus {
+  outline: none;
+  border-bottom-color: var(--azals-primary-500);
+}
+
+.azals-ws-input--number {
+  text-align: right;
+  width: 100%;
+}
+
+.azals-ws-select {
+  padding: var(--azals-spacing-xs) var(--azals-spacing-sm);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-sm);
+  font-size: var(--azals-font-size-xs);
+  background: var(--azals-bg);
+  cursor: pointer;
+}
+
+.azals-ws-select:focus {
+  outline: none;
+  border-color: var(--azals-primary-500);
+}
+
+.azals-ws-textarea {
+  width: 100%;
+  padding: var(--azals-spacing-sm);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-sm);
+  font-size: var(--azals-font-size-sm);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.azals-ws-textarea:focus {
+  outline: none;
+  border-color: var(--azals-primary-500);
+}
+
+.azals-ws-label {
+  display: block;
+  font-size: var(--azals-font-size-xs);
+  font-weight: 500;
+  color: var(--azals-text-secondary);
+  margin-bottom: var(--azals-spacing-xs);
+}
+
+/* ============================================================
+   ZONE LIGNES
+   ============================================================ */
+
+.azals-ws-lines {
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-md);
+  overflow: hidden;
+}
+
+.azals-ws-lines__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  background: var(--azals-gray-50);
+  border-bottom: 1px solid var(--azals-border);
+  font-size: var(--azals-font-size-sm);
+  font-weight: 600;
+}
+
+.azals-ws-lines__add {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+  padding: var(--azals-spacing-xs) var(--azals-spacing-sm);
+  background: var(--azals-primary-600);
+  color: white;
+  border: none;
+  border-radius: var(--azals-radius-sm);
+  font-size: var(--azals-font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--azals-transition-fast);
+}
+
+.azals-ws-lines__add:hover {
+  background: var(--azals-primary-700);
+}
+
+.azals-ws-lines__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--azals-spacing-2xl);
+  color: var(--azals-text-secondary);
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-ws-lines__hint {
+  font-size: var(--azals-font-size-xs);
+}
+
+/* Tableau de lignes */
+.azals-ws-lines__table {
+  width: 100%;
+}
+
+.azals-ws-lines__row {
+  display: flex;
+  border-bottom: 1px solid var(--azals-border);
+}
+
+.azals-ws-lines__row:last-child {
+  border-bottom: none;
+}
+
+.azals-ws-lines__row--header {
+  background: var(--azals-gray-50);
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.azals-ws-lines__row--header .azals-ws-lines__col {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-sm);
+}
+
+.azals-ws-lines__col {
+  padding: var(--azals-spacing-xs) var(--azals-spacing-sm);
+  display: flex;
+  align-items: center;
+}
+
+.azals-ws-lines__col--desc {
+  flex: 1;
+  min-width: 200px;
+}
+
+.azals-ws-lines__col--qty {
+  width: 80px;
+}
+
+.azals-ws-lines__col--price {
+  width: 120px;
+}
+
+.azals-ws-lines__col--discount {
+  width: 80px;
+  position: relative;
+}
+
+.azals-ws-lines__col--vat {
+  width: 80px;
+}
+
+.azals-ws-lines__col--total {
+  width: 120px;
+  justify-content: flex-end;
+}
+
+.azals-ws-lines__col--actions {
+  width: 40px;
+  justify-content: center;
+}
+
+.azals-ws-lines__suffix {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+  margin-left: 2px;
+}
+
+.azals-ws-lines__amount {
+  font-weight: 500;
+  font-size: var(--azals-font-size-sm);
+}
+
+.azals-ws-lines__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  border-radius: var(--azals-radius-sm);
+  cursor: pointer;
+  color: var(--azals-text-secondary);
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-ws-lines__delete:hover {
+  background: var(--azals-red-light);
+  color: var(--azals-red);
+}
+
+/* ============================================================
+   ZONE TOTAUX
+   ============================================================ */
+
+.azals-ws-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: var(--azals-spacing-md);
+  background: var(--azals-gray-50);
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-ws-totals__row {
+  display: flex;
+  justify-content: space-between;
+  width: 220px;
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+}
+
+.azals-ws-totals__row--main {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-text);
+  padding-top: var(--azals-spacing-sm);
+  margin-top: var(--azals-spacing-xs);
+  border-top: 1px solid var(--azals-border);
+}
+
+/* ============================================================
+   ERREURS
+   ============================================================ */
+
+.azals-ws-error {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-red);
+  margin-top: var(--azals-spacing-sm);
+}
+
+.azals-ws-error--submit {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  background: var(--azals-red-light);
+  border-radius: var(--azals-radius-sm);
+}
+
+/* ============================================================
+   ACTION PRINCIPALE
+   ============================================================ */
+
+.azals-ws-action {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--azals-spacing-lg);
+  border-top: 1px solid var(--azals-border);
+}
+
+.azals-ws-submit {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-md) var(--azals-spacing-xl);
+  background: var(--azals-primary-600);
+  color: white;
+  border: none;
+  border-radius: var(--azals-radius-md);
+  font-size: var(--azals-font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--azals-transition-fast);
+}
+
+.azals-ws-submit:hover:not(:disabled) {
+  background: var(--azals-primary-700);
+}
+
+.azals-ws-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .azals-workspace {
+    padding: var(--azals-spacing-md);
+  }
+
+  .azals-ws-sheet {
+    padding: var(--azals-spacing-md);
+  }
+
+  .azals-ws-section--dates {
+    flex-direction: column;
+    gap: var(--azals-spacing-md);
+  }
+
+  .azals-ws-lines__row {
+    flex-wrap: wrap;
+  }
+
+  .azals-ws-lines__col--desc {
+    width: 100%;
+    min-width: auto;
+    border-bottom: 1px solid var(--azals-gray-100);
+    padding-bottom: var(--azals-spacing-sm);
+    margin-bottom: var(--azals-spacing-xs);
+  }
+
+  .azals-ws-lines__col--qty,
+  .azals-ws-lines__col--price,
+  .azals-ws-lines__col--discount,
+  .azals-ws-lines__col--vat {
+    width: auto;
+    flex: 1;
+  }
+
+  .azals-ws-lines__col--total {
+    width: auto;
+  }
+
+  .azals-ws-lines__row--header {
+    display: none;
+  }
+
+  .azals-ws-totals {
+    align-items: stretch;
+  }
+
+  .azals-ws-totals__row {
+    width: 100%;
+  }
+
+  .azals-ws-action {
+    justify-content: stretch;
+  }
+
+  .azals-ws-submit {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   OVERRIDE DES STYLES ERP (NEUTRALISATION)
+   ============================================================ */
+
+/* Masquer l'aspect card sur le workspace */
+.azals-workspace .azals-card {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.azals-workspace .azals-card__header {
+  display: none;
+}
+
+.azals-workspace .azals-card__body {
+  padding: 0;
+}
+
+/* Simplifier le page header dans le workspace */
+.azals-workspace .azals-page__header {
+  display: none;
+}
