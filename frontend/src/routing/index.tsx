@@ -1,14 +1,13 @@
 /**
  * AZALSCORE UI Engine - Routing System
  * Routes principales de l'application
- * Accès contrôlé par capacités backend
+ * VERSION SIMPLIFIÉE - Affichage immédiat
  */
 
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { MainLayout, AuthLayout } from '@ui/layout';
-import { CapabilityGuard } from '@core/capabilities';
-import { useIsAuthenticated } from '@core/auth';
+import { useAuthStore } from '@core/auth';
 
 // ============================================================
 // LAZY LOADING DES MODULES
@@ -52,12 +51,19 @@ const LoadingFallback: React.FC = () => (
 );
 
 // ============================================================
-// PROTECTED ROUTE WRAPPER
+// PROTECTED ROUTE WRAPPER - Gère l'état loading
 // ============================================================
 
 const ProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const isAuthenticated = useIsAuthenticated();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authStatus = useAuthStore((state) => state.status);
 
+  // Si auth en cours, afficher loading
+  if (authStatus === 'loading' || authStatus === 'idle') {
+    return <LoadingFallback />;
+  }
+
+  // Si non authentifié, rediriger vers login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -66,12 +72,19 @@ const ProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) 
 };
 
 // ============================================================
-// PUBLIC ROUTE WRAPPER (redirect if authenticated)
+// PUBLIC ROUTE WRAPPER - Pas de redirection pendant loading
 // ============================================================
 
 const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const isAuthenticated = useIsAuthenticated();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authStatus = useAuthStore((state) => state.status);
 
+  // Pendant loading, afficher le contenu (pas de redirection prématurée)
+  if (authStatus === 'loading' || authStatus === 'idle') {
+    return <>{children || <Outlet />}</>;
+  }
+
+  // Si authentifié, rediriger vers cockpit
   if (isAuthenticated) {
     return <Navigate to="/cockpit" replace />;
   }
@@ -80,24 +93,7 @@ const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
 };
 
 // ============================================================
-// CAPABILITY ROUTE WRAPPER
-// ============================================================
-
-interface CapabilityRouteProps {
-  capability: string;
-  children: React.ReactNode;
-}
-
-const CapabilityRoute: React.FC<CapabilityRouteProps> = ({ capability, children }) => {
-  return (
-    <CapabilityGuard capability={capability} fallback={<Navigate to="/cockpit" replace />}>
-      {children}
-    </CapabilityGuard>
-  );
-};
-
-// ============================================================
-// MAIN ROUTER
+// MAIN ROUTER - Simplifié sans capability guards bloquants
 // ============================================================
 
 export const AppRouter: React.FC = () => {
@@ -118,105 +114,52 @@ export const AppRouter: React.FC = () => {
             <Route path="/" element={<Navigate to="/cockpit" replace />} />
 
             {/* Cockpit Dirigeant */}
-            <Route path="/cockpit" element={
-              <CapabilityRoute capability="cockpit.view">
-                <CockpitPage />
-              </CapabilityRoute>
-            } />
+            <Route path="/cockpit" element={<CockpitPage />} />
+
+            {/* ROUTE OBLIGATOIRE: /clients (alias vers partners/clients) */}
+            <Route path="/clients" element={<Navigate to="/partners/clients" replace />} />
 
             {/* Partenaires */}
-            <Route path="/partners/*" element={
-              <CapabilityRoute capability="partners.view">
-                <PartnersRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/partners/*" element={<PartnersRoutes />} />
 
             {/* Facturation */}
-            <Route path="/invoicing/*" element={
-              <CapabilityRoute capability="invoicing.view">
-                <InvoicingRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/invoicing/*" element={<InvoicingRoutes />} />
 
             {/* Trésorerie */}
-            <Route path="/treasury/*" element={
-              <CapabilityRoute capability="treasury.view">
-                <TreasuryRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/treasury/*" element={<TreasuryRoutes />} />
 
             {/* Comptabilité */}
-            <Route path="/accounting/*" element={
-              <CapabilityRoute capability="accounting.view">
-                <AccountingRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/accounting/*" element={<AccountingRoutes />} />
 
             {/* Achats */}
-            <Route path="/purchases/*" element={
-              <CapabilityRoute capability="purchases.view">
-                <PurchasesRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/purchases/*" element={<PurchasesRoutes />} />
 
             {/* Projets */}
-            <Route path="/projects/*" element={
-              <CapabilityRoute capability="projects.view">
-                <ProjectsRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/projects/*" element={<ProjectsRoutes />} />
 
-            {/* Interventions */}
-            <Route path="/interventions/*" element={
-              <CapabilityRoute capability="interventions.view">
-                <InterventionsRoutes />
-              </CapabilityRoute>
-            } />
+            {/* ROUTE OBLIGATOIRE: /interventions */}
+            <Route path="/interventions/*" element={<InterventionsRoutes />} />
 
             {/* Site Web */}
-            <Route path="/web/*" element={
-              <CapabilityRoute capability="web.view">
-                <WebRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/web/*" element={<WebRoutes />} />
 
             {/* E-commerce */}
-            <Route path="/ecommerce/*" element={
-              <CapabilityRoute capability="ecommerce.view">
-                <EcommerceRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/ecommerce/*" element={<EcommerceRoutes />} />
 
             {/* Marketplace */}
-            <Route path="/marketplace/*" element={
-              <CapabilityRoute capability="marketplace.view">
-                <MarketplaceRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/marketplace/*" element={<MarketplaceRoutes />} />
 
             {/* Paiements */}
-            <Route path="/payments/*" element={
-              <CapabilityRoute capability="payments.view">
-                <PaymentsRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/payments/*" element={<PaymentsRoutes />} />
 
             {/* Mobile */}
             <Route path="/mobile/*" element={<MobileRoutes />} />
 
             {/* Administration */}
-            <Route path="/admin/*" element={
-              <CapabilityRoute capability="admin.view">
-                <AdminRoutes />
-              </CapabilityRoute>
-            } />
+            <Route path="/admin/*" element={<AdminRoutes />} />
 
-            {/* Break-Glass (route spéciale - invisible si pas de capacité) */}
-            <Route path="/admin/break-glass" element={
-              <CapabilityRoute capability="admin.root.break_glass">
-                <BreakGlassPage />
-              </CapabilityRoute>
-            } />
+            {/* Break-Glass */}
+            <Route path="/admin/break-glass" element={<BreakGlassPage />} />
 
             {/* Profil et Paramètres */}
             <Route path="/profile" element={<ProfilePage />} />

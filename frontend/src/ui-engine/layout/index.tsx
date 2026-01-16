@@ -8,7 +8,6 @@ import { Outlet } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Menu, X, Bell, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '@core/auth';
-import { useCapabilities } from '@core/capabilities';
 import { DynamicMenu } from '@ui/menu-dynamic';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
@@ -133,12 +132,11 @@ const Sidebar: React.FC<{
 };
 
 // ============================================================
-// MAIN LAYOUT COMPONENT
+// MAIN LAYOUT COMPONENT - Ne bloque plus sur capabilities
 // ============================================================
 
 export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isLoading: isCapLoading } = useCapabilities();
 
   const toggleMenu = useCallback(() => {
     setMobileMenuOpen((prev) => !prev);
@@ -148,15 +146,7 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
     setMobileMenuOpen(false);
   }, []);
 
-  if (isCapLoading) {
-    return (
-      <div className="azals-layout__loading">
-        <div className="azals-spinner" />
-        <p>Chargement...</p>
-      </div>
-    );
-  }
-
+  // Plus de blocage sur isCapLoading - affichage immédiat
   return (
     <div className="azals-layout">
       <Header onMenuToggle={toggleMenu} isMobileMenuOpen={isMobileMenuOpen} />
