@@ -100,6 +100,9 @@ from app.modules.guardian.middleware import setup_guardian_middleware
 # Module GUARDIAN - Correction Automatique Gouvernée & Auditable
 from app.modules.guardian.router import router as guardian_router
 
+# API Incidents - Endpoint simplifié pour Guardian
+from app.api.incidents import router as incidents_router
+
 # Module M16 - Helpdesk (Support Client)
 from app.modules.helpdesk.router import router as helpdesk_router
 
