@@ -4,7 +4,7 @@ AZALS MODULE 14 - Subscriptions Schemas
 Schémas Pydantic pour validation et sérialisation.
 """
 
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -67,8 +67,8 @@ class PlanResponse(PlanBase):
     id: int
     tenant_id: str
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -117,7 +117,7 @@ class AddOnResponse(AddOnBase):
     tenant_id: str
     plan_id: int
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -158,11 +158,11 @@ class SubscriptionCreate(BaseModel):
     customer_name: str | None = None
     customer_email: EmailStr | None = None
     quantity: int = Field(1, ge=1)
-    start_date: date | None = None
-    trial_end: date | None = None
+    start_date: datetime.date | None = None
+    trial_end: datetime.date | None = None
     billing_cycle_anchor: int | None = Field(None, ge=1, le=28)
     discount_percent: Decimal | None = Field(None, ge=0, le=100)
-    discount_end_date: date | None = None
+    discount_end_date: datetime.date | None = None
     coupon_code: str | None = None
     collection_method: str = "charge_automatically"
     default_payment_method_id: str | None = None
@@ -175,7 +175,7 @@ class SubscriptionUpdate(BaseModel):
     """Mise à jour abonnement."""
     quantity: int | None = None
     discount_percent: Decimal | None = None
-    discount_end_date: date | None = None
+    discount_end_date: datetime.date | None = None
     default_payment_method_id: str | None = None
     extra_data: dict[str, Any] | None = None
     notes: str | None = None
@@ -194,24 +194,24 @@ class SubscriptionResponse(BaseModel):
     status: SubscriptionStatus
     quantity: int
     current_users: int
-    trial_start: date | None = None
-    trial_end: date | None = None
-    current_period_start: date
-    current_period_end: date
-    started_at: date
-    ended_at: date | None = None
+    trial_start: datetime.date | None = None
+    trial_end: datetime.date | None = None
+    current_period_start: datetime.date
+    current_period_end: datetime.date
+    started_at: datetime.date
+    ended_at: datetime.date | None = None
     cancel_at_period_end: bool
-    canceled_at: datetime | None = None
-    paused_at: datetime | None = None
-    resume_at: date | None = None
+    canceled_at: datetime.datetime | None = None
+    paused_at: datetime.datetime | None = None
+    resume_at: datetime.date | None = None
     billing_cycle_anchor: int
     discount_percent: Decimal
-    discount_end_date: date | None = None
+    discount_end_date: datetime.date | None = None
     mrr: Decimal
     arr: Decimal
     items: list[SubscriptionItemResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -229,7 +229,7 @@ class SubscriptionChangePlanRequest(BaseModel):
     new_plan_id: int
     new_quantity: int | None = None
     prorate: bool = True
-    effective_date: date | None = None
+    effective_date: datetime.date | None = None
     reason: str | None = None
 
 
@@ -242,7 +242,7 @@ class SubscriptionCancelRequest(BaseModel):
 
 class SubscriptionPauseRequest(BaseModel):
     """Mise en pause abonnement."""
-    resume_at: date | None = None
+    resume_at: datetime.date | None = None
     reason: str | None = None
 
 
@@ -254,8 +254,8 @@ class InvoiceLineCreate(BaseModel):
     """Création ligne facture."""
     description: str = Field(..., min_length=1, max_length=500)
     item_type: str | None = None
-    period_start: date | None = None
-    period_end: date | None = None
+    period_start: datetime.date | None = None
+    period_end: datetime.date | None = None
     quantity: Decimal = Decimal("1")
     unit_price: Decimal
     discount_amount: Decimal = Decimal("0")
@@ -267,8 +267,8 @@ class InvoiceLineResponse(BaseModel):
     id: int
     description: str
     item_type: str | None = None
-    period_start: date | None = None
-    period_end: date | None = None
+    period_start: datetime.date | None = None
+    period_end: datetime.date | None = None
     quantity: Decimal
     unit_price: Decimal
     discount_amount: Decimal
@@ -287,9 +287,9 @@ class InvoiceCreate(BaseModel):
     customer_name: str | None = None
     customer_email: EmailStr | None = None
     billing_address: dict[str, Any] | None = None
-    period_start: date
-    period_end: date
-    due_date: date | None = None
+    period_start: datetime.date
+    period_end: datetime.date
+    due_date: datetime.date | None = None
     collection_method: str = "send_invoice"
     lines: list[InvoiceLineCreate]
     notes: str | None = None
@@ -307,11 +307,11 @@ class InvoiceResponse(BaseModel):
     customer_name: str | None = None
     customer_email: str | None = None
     status: InvoiceStatus
-    period_start: date
-    period_end: date
-    due_date: date | None = None
-    finalized_at: datetime | None = None
-    paid_at: datetime | None = None
+    period_start: datetime.date
+    period_end: datetime.date
+    due_date: datetime.date | None = None
+    finalized_at: datetime.datetime | None = None
+    paid_at: datetime.datetime | None = None
     subtotal: Decimal
     discount_amount: Decimal
     tax_rate: Decimal
@@ -325,7 +325,7 @@ class InvoiceResponse(BaseModel):
     hosted_invoice_url: str | None = None
     pdf_url: str | None = None
     lines: list[InvoiceLineResponse] = []
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -365,8 +365,8 @@ class PaymentResponse(BaseModel):
     status: PaymentStatus
     payment_method_type: str | None = None
     payment_method_details: dict[str, Any] | None = None
-    created_at: datetime
-    processed_at: datetime | None = None
+    created_at: datetime.datetime
+    processed_at: datetime.datetime | None = None
     failure_code: str | None = None
     failure_message: str | None = None
     refunded_amount: Decimal
@@ -390,7 +390,7 @@ class UsageRecordCreate(BaseModel):
     quantity: Decimal = Field(..., gt=0)
     unit: str | None = None
     action: str = "increment"  # set ou increment
-    timestamp: datetime | None = None
+    timestamp: datetime.datetime | None = None
     idempotency_key: str | None = None
     extra_data: dict[str, Any] | None = None
 
@@ -403,9 +403,9 @@ class UsageRecordResponse(BaseModel):
     quantity: Decimal
     unit: str | None = None
     action: str
-    timestamp: datetime
+    timestamp: datetime.datetime
     idempotency_key: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -415,8 +415,8 @@ class UsageSummary(BaseModel):
     subscription_id: int
     item_id: int
     item_name: str
-    period_start: date
-    period_end: date
+    period_start: datetime.date
+    period_end: datetime.date
     total_usage: Decimal
     unit: str | None = None
     estimated_amount: Decimal
@@ -440,8 +440,8 @@ class CouponCreate(BaseModel):
     applies_to_plans: list[int] | None = None
     min_amount: Decimal | None = None
     first_time_only: bool = False
-    valid_from: datetime | None = None
-    valid_until: datetime | None = None
+    valid_from: datetime.datetime | None = None
+    valid_until: datetime.datetime | None = None
 
 
 class CouponUpdate(BaseModel):
@@ -449,7 +449,7 @@ class CouponUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     max_redemptions: int | None = None
-    valid_until: datetime | None = None
+    valid_until: datetime.datetime | None = None
     is_active: bool | None = None
 
 
@@ -469,10 +469,10 @@ class CouponResponse(BaseModel):
     times_redeemed: int
     applies_to_plans: list[int] | None = None
     first_time_only: bool
-    valid_from: datetime | None = None
-    valid_until: datetime | None = None
+    valid_from: datetime.datetime | None = None
+    valid_until: datetime.datetime | None = None
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -499,7 +499,7 @@ class CouponValidateResponse(BaseModel):
 
 class MetricsSnapshot(BaseModel):
     """Snapshot métriques."""
-    metric_date: date
+    metric_date: datetime.date
     mrr: Decimal
     arr: Decimal
     new_mrr: Decimal
@@ -524,8 +524,8 @@ class MetricsSnapshot(BaseModel):
 class MetricsTrend(BaseModel):
     """Tendance métriques."""
     period: str  # daily, weekly, monthly
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     data_points: list[MetricsSnapshot]
 
 
@@ -601,8 +601,8 @@ class WebhookResponse(BaseModel):
     related_object_type: str | None = None
     related_object_id: str | None = None
     is_processed: bool
-    processed_at: datetime | None = None
+    processed_at: datetime.datetime | None = None
     processing_error: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}

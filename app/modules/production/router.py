@@ -59,7 +59,7 @@ from .schemas import (
 )
 from .service import get_production_service
 
-router = APIRouter(prefix="/api/v1/production", tags=["Production (M6)"])
+router = APIRouter(prefix="/production", tags=["Production (M6)"])
 
 
 # ============================================================================

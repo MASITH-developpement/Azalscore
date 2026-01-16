@@ -5,10 +5,9 @@ AZALS MODULE M4 - Schémas Achats
 Schémas Pydantic pour la gestion des achats.
 """
 
-from __future__ import annotations
 
 import json
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -104,13 +103,13 @@ class SupplierResponse(SupplierBase):
     iban: str | None = None
     bic: str | None = None
     rating: Decimal | None = None
-    last_evaluation_date: date | None = None
+    last_evaluation_date: datetime.date | None = None
     notes: str | None = None
     tags: list[str] = Field(default_factory=list)
     is_active: bool = True
-    approved_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    approved_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -150,8 +149,8 @@ class SupplierContactResponse(SupplierContactCreate):
     id: UUID
     supplier_id: UUID
     is_active: bool = True
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -169,7 +168,7 @@ class RequisitionLineCreate(BaseModel):
     unit: str = "UNIT"
     estimated_price: Decimal | None = None
     preferred_supplier_id: UUID | None = None
-    required_date: date | None = None
+    required_date: datetime.date | None = None
     notes: str | None = None
 
 
@@ -181,7 +180,7 @@ class RequisitionLineResponse(RequisitionLineCreate):
     total: Decimal | None = None
     ordered_quantity: Decimal = Decimal("0")
     purchase_order_id: UUID | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -192,8 +191,8 @@ class RequisitionCreate(BaseModel):
     description: str | None = None
     justification: str | None = None
     priority: str = "NORMAL"
-    requested_date: date
-    required_date: date | None = None
+    requested_date: datetime.date
+    required_date: datetime.date | None = None
     budget_code: str | None = None
     department_id: UUID | None = None
     notes: str | None = None
@@ -211,18 +210,18 @@ class RequisitionResponse(BaseModel):
     justification: str | None = None
     requester_id: UUID
     department_id: UUID | None = None
-    requested_date: date
-    required_date: date | None = None
+    requested_date: datetime.date
+    required_date: datetime.date | None = None
     estimated_total: Decimal = Decimal("0")
     currency: str
     budget_code: str | None = None
     approved_by: UUID | None = None
-    approved_at: datetime | None = None
+    approved_at: datetime.datetime | None = None
     rejection_reason: str | None = None
     notes: str | None = None
     lines: list[RequisitionLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -251,7 +250,7 @@ class QuotationLineResponse(QuotationLineCreate):
     quotation_id: UUID
     line_number: int
     total: Decimal
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -260,12 +259,12 @@ class QuotationCreate(BaseModel):
     """Création d'un devis fournisseur."""
     supplier_id: UUID
     requisition_id: UUID | None = None
-    request_date: date
-    expiry_date: date | None = None
+    request_date: datetime.date
+    expiry_date: datetime.date | None = None
     currency: str = "EUR"
     payment_terms: str | None = None
     delivery_terms: str | None = None
-    delivery_date: date | None = None
+    delivery_date: datetime.date | None = None
     notes: str | None = None
     lines: list[QuotationLineCreate] = Field(default_factory=list)
 
@@ -277,21 +276,21 @@ class QuotationResponse(BaseModel):
     supplier_id: UUID
     requisition_id: UUID | None = None
     status: QuotationStatus
-    request_date: date
-    response_date: date | None = None
-    expiry_date: date | None = None
+    request_date: datetime.date
+    response_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
     currency: str
     subtotal: Decimal = Decimal("0")
     tax_amount: Decimal = Decimal("0")
     total: Decimal = Decimal("0")
     payment_terms: str | None = None
     delivery_terms: str | None = None
-    delivery_date: date | None = None
+    delivery_date: datetime.date | None = None
     reference: str | None = None
     notes: str | None = None
     lines: list[QuotationLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -310,7 +309,7 @@ class OrderLineCreate(BaseModel):
     unit_price: Decimal
     discount_percent: Decimal = Decimal("0")
     tax_rate: Decimal = Decimal("20")
-    expected_date: date | None = None
+    expected_date: datetime.date | None = None
     requisition_line_id: UUID | None = None
     notes: str | None = None
 
@@ -323,7 +322,7 @@ class OrderLineResponse(OrderLineCreate):
     total: Decimal
     received_quantity: Decimal = Decimal("0")
     invoiced_quantity: Decimal = Decimal("0")
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -333,8 +332,8 @@ class PurchaseOrderCreate(BaseModel):
     supplier_id: UUID
     requisition_id: UUID | None = None
     quotation_id: UUID | None = None
-    order_date: date
-    expected_date: date | None = None
+    order_date: datetime.date
+    expected_date: datetime.date | None = None
     delivery_address: str | None = None
     delivery_contact: str | None = None
     currency: str = "EUR"
@@ -354,9 +353,9 @@ class PurchaseOrderResponse(BaseModel):
     requisition_id: UUID | None = None
     quotation_id: UUID | None = None
     status: PurchaseOrderStatus
-    order_date: date
-    expected_date: date | None = None
-    confirmed_date: date | None = None
+    order_date: datetime.date
+    expected_date: datetime.date | None = None
+    confirmed_date: datetime.date | None = None
     delivery_address: str | None = None
     delivery_contact: str | None = None
     currency: str
@@ -372,10 +371,10 @@ class PurchaseOrderResponse(BaseModel):
     supplier_reference: str | None = None
     notes: str | None = None
     lines: list[OrderLineResponse] = Field(default_factory=list)
-    sent_at: datetime | None = None
-    confirmed_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    sent_at: datetime.datetime | None = None
+    confirmed_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -402,7 +401,7 @@ class ReceiptLineCreate(BaseModel):
     unit: str = "UNIT"
     rejection_reason: str | None = None
     lot_number: str | None = None
-    expiry_date: date | None = None
+    expiry_date: datetime.date | None = None
     notes: str | None = None
 
 
@@ -412,7 +411,7 @@ class ReceiptLineResponse(ReceiptLineCreate):
     receipt_id: UUID
     line_number: int
     serial_numbers: list[str] = Field(default_factory=list)
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -420,7 +419,7 @@ class ReceiptLineResponse(ReceiptLineCreate):
 class GoodsReceiptCreate(BaseModel):
     """Création d'une réception."""
     order_id: UUID
-    receipt_date: date
+    receipt_date: datetime.date
     delivery_note: str | None = None
     carrier: str | None = None
     tracking_number: str | None = None
@@ -437,7 +436,7 @@ class GoodsReceiptResponse(BaseModel):
     order_id: UUID
     supplier_id: UUID
     status: ReceivingStatus
-    receipt_date: date
+    receipt_date: datetime.date
     delivery_note: str | None = None
     carrier: str | None = None
     tracking_number: str | None = None
@@ -446,9 +445,9 @@ class GoodsReceiptResponse(BaseModel):
     notes: str | None = None
     lines: list[ReceiptLineResponse] = Field(default_factory=list)
     received_by: UUID | None = None
-    validated_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    validated_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -480,7 +479,7 @@ class InvoiceLineResponse(InvoiceLineCreate):
     line_number: int
     tax_amount: Decimal = Decimal("0")
     total: Decimal
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -489,10 +488,10 @@ class PurchaseInvoiceCreate(BaseModel):
     """Création d'une facture d'achat."""
     supplier_id: UUID
     order_id: UUID | None = None
-    invoice_date: date
-    due_date: date | None = None
+    invoice_date: datetime.date
+    due_date: datetime.date | None = None
     supplier_invoice_number: str | None = None
-    supplier_invoice_date: date | None = None
+    supplier_invoice_date: datetime.date | None = None
     currency: str = "EUR"
     payment_terms: str | None = None
     payment_method: str | None = None
@@ -507,10 +506,10 @@ class PurchaseInvoiceResponse(BaseModel):
     supplier_id: UUID
     order_id: UUID | None = None
     status: PurchaseInvoiceStatus
-    invoice_date: date
-    due_date: date | None = None
+    invoice_date: datetime.date
+    due_date: datetime.date | None = None
     supplier_invoice_number: str | None = None
-    supplier_invoice_date: date | None = None
+    supplier_invoice_date: datetime.date | None = None
     currency: str
     subtotal: Decimal = Decimal("0")
     discount_amount: Decimal = Decimal("0")
@@ -522,9 +521,9 @@ class PurchaseInvoiceResponse(BaseModel):
     payment_method: str | None = None
     notes: str | None = None
     lines: list[InvoiceLineResponse] = Field(default_factory=list)
-    validated_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    validated_at: datetime.datetime | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -548,7 +547,7 @@ class PaymentAllocationCreate(BaseModel):
 class SupplierPaymentCreate(BaseModel):
     """Création d'un paiement fournisseur."""
     supplier_id: UUID
-    payment_date: date
+    payment_date: datetime.date
     amount: Decimal
     currency: str = "EUR"
     payment_method: str
@@ -563,7 +562,7 @@ class SupplierPaymentResponse(BaseModel):
     id: UUID
     number: str
     supplier_id: UUID
-    payment_date: date
+    payment_date: datetime.date
     amount: Decimal
     currency: str
     payment_method: str
@@ -571,7 +570,7 @@ class SupplierPaymentResponse(BaseModel):
     bank_account_id: UUID | None = None
     journal_entry_id: UUID | None = None
     notes: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -583,9 +582,9 @@ class SupplierPaymentResponse(BaseModel):
 class SupplierEvaluationCreate(BaseModel):
     """Création d'une évaluation fournisseur."""
     supplier_id: UUID
-    evaluation_date: date
-    period_start: date
-    period_end: date
+    evaluation_date: datetime.date
+    period_start: datetime.date
+    period_end: datetime.date
     quality_score: Decimal | None = None
     price_score: Decimal | None = None
     delivery_score: Decimal | None = None
@@ -604,7 +603,7 @@ class SupplierEvaluationResponse(SupplierEvaluationCreate):
     on_time_delivery_rate: Decimal | None = None
     quality_rejection_rate: Decimal | None = None
     evaluated_by: UUID | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 

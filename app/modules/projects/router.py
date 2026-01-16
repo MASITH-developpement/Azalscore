@@ -68,7 +68,7 @@ from .schemas import (
 )
 from .service import get_projects_service
 
-router = APIRouter(prefix="/api/v1/projects", tags=["Projets (Project Management)"])
+router = APIRouter(prefix="/projects", tags=["Projets (Project Management)"])
 
 
 # ============================================================================

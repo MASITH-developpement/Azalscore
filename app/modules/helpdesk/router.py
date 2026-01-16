@@ -55,7 +55,7 @@ from .schemas import (
 )
 from .service import HelpdeskService
 
-router = APIRouter(prefix="/api/v1/helpdesk", tags=["Helpdesk"])
+router = APIRouter(prefix="/helpdesk", tags=["Helpdesk"])
 
 
 def get_service(

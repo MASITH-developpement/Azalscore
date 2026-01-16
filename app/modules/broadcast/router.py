@@ -51,7 +51,7 @@ from .schemas import (
 )
 from .service import get_broadcast_service
 
-router = APIRouter(prefix="/api/v1/broadcast", tags=["Broadcast"])
+router = APIRouter(prefix="/broadcast", tags=["Broadcast"])
 
 
 # ============================================================================

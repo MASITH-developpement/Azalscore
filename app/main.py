@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, FastAPI
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
@@ -39,7 +39,7 @@ from app.api.tax import router as tax_router
 from app.api.treasury import router as treasury_router
 from app.core.compression import CompressionMiddleware
 from app.core.config import get_settings
-from app.core.database import check_database_connection, engine, get_db
+from app.core.database import engine, get_db
 from app.core.dependencies import get_current_user
 from app.core.guards import enforce_startup_security
 from app.core.health import router as health_router
@@ -61,6 +61,9 @@ from app.modules.ai_assistant.router import router as ai_router
 
 # Module T3 - Audit & Benchmark Évolutif
 from app.modules.audit.router import router as audit_router
+
+# API Audit - UI Events endpoint
+from app.api.audit import router as audit_api_router
 
 # Module T1 - Configuration Automatique par Fonction
 from app.modules.autoconfig.router import router as autoconfig_router
@@ -99,6 +102,9 @@ from app.modules.guardian.middleware import setup_guardian_middleware
 
 # Module GUARDIAN - Correction Automatique Gouvernée & Auditable
 from app.modules.guardian.router import router as guardian_router
+
+# API Incidents - Endpoint simplifié pour Guardian
+from app.api.incidents import router as incidents_router
 
 # Module M16 - Helpdesk (Support Client)
 from app.modules.helpdesk.router import router as helpdesk_router
@@ -548,9 +554,8 @@ setup_guardian_middleware(app, environment=_settings.environment)
 # 6. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
 setup_cors(app)
 
-# Routes observabilite (PUBLIQUES - pas de tenant required)
-app.include_router(health_router)
-app.include_router(metrics_router)
+# NOTE: health_router and metrics_router sont inclus après api_v1 pour éviter
+# les problèmes de "No response returned" lors du démarrage
 
 # ==================== AUTH LEGACY (sans prefix /v1) ====================
 # Route /auth/login directement accessible pour compatibilité V0
@@ -590,6 +595,9 @@ api_v1.include_router(triggers_router)
 
 # Module T3 - Audit & Benchmark Evolutif
 api_v1.include_router(audit_router)
+
+# API Audit - UI Events (simple endpoint for frontend)
+api_v1.include_router(audit_api_router)
 
 # Module T4 - Controle Qualite Central
 api_v1.include_router(qc_router)
@@ -962,14 +970,29 @@ def create_admin_user(
 app.include_router(api_v1)
 
 
+# ==================== ROUTES OBSERVABILITE ====================
+# Routes publiques pour monitoring (pas de tenant/auth required)
+# IMPORTANT: Inclure APRÈS api_v1 pour éviter les conflits de routes
+app.include_router(health_router)
+app.include_router(metrics_router)
+
+
+# Fallback routes for health/metrics if routers don't work
+# These are simple inline routes to diagnose routing issues
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
+from app.core.database import engine
+from sqlalchemy import text
+
+
 @app.get("/health")
-async def health_check():
-    """
-    Endpoint de santé.
-    Vérifie que l'API et la base de données fonctionnent.
-    Endpoint PUBLIC : pas de validation tenant.
-    """
-    db_ok = check_database_connection()
+async def health_check_fallback():
+    """Fallback health check endpoint."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
 
     return {
         "status": "ok" if db_ok else "degraded",
@@ -977,6 +1000,31 @@ async def health_check():
         "database": db_ok
     }
 
+
+@app.get("/health/ready")
+async def health_ready_fallback():
+    """Fallback readiness probe."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception:
+        return {"status": "not_ready", "reason": "Database unavailable"}
+
+
+@app.get("/health/live")
+async def health_live_fallback():
+    """Fallback liveness probe."""
+    return {"status": "alive"}
+
+
+@app.get("/metrics")
+async def metrics_fallback():
+    """Fallback metrics endpoint."""
+    return Response(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 # ==================== FRONTEND STATIQUE ====================
 

@@ -59,7 +59,7 @@ from .schemas import (
 )
 from .service import get_bi_service
 
-router = APIRouter(prefix="/api/v1/bi", tags=["bi"])
+router = APIRouter(prefix="/bi", tags=["bi"])
 
 
 # ============================================================================

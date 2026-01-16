@@ -589,3 +589,71 @@ class FrontendErrorReport(BaseModel):
     timestamp: datetime
     correlation_id: str | None = Field(None, max_length=255)
     extra_context: dict[str, Any] | None = None
+
+
+# ============================================================================
+# INCIDENT SCHEMAS (Frontend)
+# ============================================================================
+
+class IncidentCreate(BaseModel):
+    """Schéma pour créer un incident depuis le frontend."""
+    type: str = Field(..., max_length=20)  # auth, api, business, js, network, validation
+    severity: str = Field(..., max_length=20)  # info, warning, error, critical
+
+    # Localisation
+    page: str = Field(..., max_length=500)
+    route: str = Field(..., max_length=500)
+
+    # HTTP (optionnel)
+    endpoint: str | None = Field(None, max_length=500)
+    method: str | None = Field(None, max_length=10)
+    http_status: int | None = None
+
+    # Détails
+    message: str = Field(..., min_length=1)
+    details: str | None = None
+    stack_trace: str | None = None
+
+    # Screenshot (base64)
+    screenshot_data: str | None = None
+
+    # Timestamp frontend
+    frontend_timestamp: datetime
+
+
+class IncidentResponse(GuardianBaseSchema):
+    """Réponse pour un incident."""
+    id: str  # UUID as string
+    incident_uid: str
+    tenant_id: str
+
+    type: str
+    severity: str
+
+    user_id: str | None = None
+    user_role: str | None = None
+
+    page: str
+    route: str
+
+    endpoint: str | None = None
+    method: str | None = None
+    http_status: int | None = None
+
+    message: str
+    details: str | None = None
+    stack_trace: str | None = None
+
+    screenshot_path: str | None = None
+    has_screenshot: bool
+
+    frontend_timestamp: datetime
+    guardian_actions: list[dict] | None = None
+
+    is_processed: bool
+    is_resolved: bool
+    resolved_by: str | None = None
+    resolved_at: datetime | None = None
+    resolution_notes: str | None = None
+
+    created_at: datetime

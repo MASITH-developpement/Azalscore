@@ -5,9 +5,8 @@ AZALS MODULE M8 - Schémas Pydantic Maintenance
 Schémas de validation pour les API du module Maintenance (GMAO).
 """
 
-from __future__ import annotations
 
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -145,9 +144,9 @@ class AssetCreate(AssetBase):
     model: str | None = None
     serial_number: str | None = None
     year_manufactured: int | None = None
-    purchase_date: date | None = None
-    installation_date: date | None = None
-    warranty_end_date: date | None = None
+    purchase_date: datetime.date | None = None
+    installation_date: datetime.date | None = None
+    warranty_end_date: datetime.date | None = None
     purchase_cost: Decimal | None = None
     replacement_cost: Decimal | None = None
     specifications: dict[str, Any] | None = None
@@ -189,11 +188,11 @@ class AssetResponse(AssetBase):
     model: str | None = None
     serial_number: str | None = None
     year_manufactured: int | None = None
-    purchase_date: date | None = None
-    installation_date: date | None = None
-    warranty_end_date: date | None = None
-    last_maintenance_date: date | None = None
-    next_maintenance_date: date | None = None
+    purchase_date: datetime.date | None = None
+    installation_date: datetime.date | None = None
+    warranty_end_date: datetime.date | None = None
+    last_maintenance_date: datetime.date | None = None
+    next_maintenance_date: datetime.date | None = None
     purchase_cost: Decimal | None = None
     current_value: Decimal | None = None
     operating_hours: Decimal | None = None
@@ -205,8 +204,8 @@ class AssetResponse(AssetBase):
     mtbf_hours: Decimal | None = None
     mttr_hours: Decimal | None = None
     availability_rate: Decimal | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -235,13 +234,13 @@ class MeterResponse(MeterBase):
     id: int
     asset_id: int
     current_reading: Decimal
-    last_reading_date: datetime | None = None
+    last_reading_date: datetime.datetime | None = None
     initial_reading: Decimal
     alert_threshold: Decimal | None = None
     critical_threshold: Decimal | None = None
     maintenance_trigger_value: Decimal | None = None
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -255,12 +254,12 @@ class MeterReadingCreate(BaseModel):
 class MeterReadingResponse(BaseModel):
     id: int
     meter_id: int
-    reading_date: datetime
+    reading_date: datetime.datetime
     reading_value: Decimal
     delta: Decimal | None = None
     source: str | None = None
     notes: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -289,7 +288,7 @@ class PlanTaskResponse(PlanTaskBase):
     plan_id: int
     required_parts: list[dict[str, Any]] | None = None
     check_points: list[str] | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -342,8 +341,8 @@ class MaintenancePlanResponse(MaintenancePlanBase):
     frequency_unit: str | None = None
     trigger_meter_id: int | None = None
     trigger_meter_interval: Decimal | None = None
-    last_execution_date: date | None = None
-    next_due_date: date | None = None
+    last_execution_date: datetime.date | None = None
+    next_due_date: datetime.date | None = None
     lead_time_days: int
     estimated_duration_hours: Decimal | None = None
     responsible_id: int | None = None
@@ -354,8 +353,8 @@ class MaintenancePlanResponse(MaintenancePlanBase):
     safety_instructions: str | None = None
     required_tools: list[str] | None = None
     tasks: list[PlanTaskResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -381,7 +380,7 @@ class WorkOrderTaskResponse(BaseModel):
     estimated_minutes: int | None = None
     actual_minutes: int | None = None
     status: str
-    completed_date: datetime | None = None
+    completed_date: datetime.datetime | None = None
     result: str | None = None
     issues_found: str | None = None
 
@@ -390,7 +389,7 @@ class WorkOrderTaskResponse(BaseModel):
 
 class WorkOrderLaborCreate(BaseModel):
     technician_id: int
-    work_date: date
+    work_date: datetime.date
     hours_worked: Decimal
     overtime_hours: Decimal = Decimal("0")
     labor_type: str = "REGULAR"
@@ -403,14 +402,14 @@ class WorkOrderLaborResponse(BaseModel):
     work_order_id: int
     technician_id: int
     technician_name: str | None = None
-    work_date: date
+    work_date: datetime.date
     hours_worked: Decimal
     overtime_hours: Decimal
     labor_type: str | None = None
     hourly_rate: Decimal | None = None
     total_cost: Decimal | None = None
     work_description: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -437,7 +436,7 @@ class WorkOrderPartResponse(BaseModel):
     unit_cost: Decimal | None = None
     total_cost: Decimal | None = None
     source: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -456,9 +455,9 @@ class WorkOrderCreate(WorkOrderBase):
     failure_id: int | None = None
     requester_id: int | None = None
     request_description: str | None = None
-    scheduled_start_date: datetime | None = None
-    scheduled_end_date: datetime | None = None
-    due_date: datetime | None = None
+    scheduled_start_date: datetime.datetime | None = None
+    scheduled_end_date: datetime.datetime | None = None
+    due_date: datetime.datetime | None = None
     assigned_to_id: int | None = None
     external_vendor_id: int | None = None
     work_instructions: str | None = None
@@ -475,9 +474,9 @@ class WorkOrderUpdate(BaseModel):
     description: str | None = None
     priority: WorkOrderPriorityEnum | None = None
     status: WorkOrderStatusEnum | None = None
-    scheduled_start_date: datetime | None = None
-    scheduled_end_date: datetime | None = None
-    due_date: datetime | None = None
+    scheduled_start_date: datetime.datetime | None = None
+    scheduled_end_date: datetime.datetime | None = None
+    due_date: datetime.datetime | None = None
     assigned_to_id: int | None = None
     external_vendor_id: int | None = None
     work_instructions: str | None = None
@@ -502,13 +501,13 @@ class WorkOrderResponse(WorkOrderBase):
     maintenance_plan_id: int | None = None
     failure_id: int | None = None
     requester_id: int | None = None
-    request_date: datetime | None = None
+    request_date: datetime.datetime | None = None
     request_description: str | None = None
-    scheduled_start_date: datetime | None = None
-    scheduled_end_date: datetime | None = None
-    due_date: datetime | None = None
-    actual_start_date: datetime | None = None
-    actual_end_date: datetime | None = None
+    scheduled_start_date: datetime.datetime | None = None
+    scheduled_end_date: datetime.datetime | None = None
+    due_date: datetime.datetime | None = None
+    actual_start_date: datetime.datetime | None = None
+    actual_end_date: datetime.datetime | None = None
     downtime_hours: Decimal | None = None
     assigned_to_id: int | None = None
     external_vendor_id: int | None = None
@@ -520,7 +519,7 @@ class WorkOrderResponse(WorkOrderBase):
     completed_by_id: int | None = None
     verification_required: bool
     verified_by_id: int | None = None
-    verified_date: datetime | None = None
+    verified_date: datetime.datetime | None = None
     estimated_labor_hours: Decimal | None = None
     estimated_labor_cost: Decimal | None = None
     estimated_parts_cost: Decimal | None = None
@@ -532,8 +531,8 @@ class WorkOrderResponse(WorkOrderBase):
     tasks: list[WorkOrderTaskResponse] = []
     labor_entries: list[WorkOrderLaborResponse] = []
     parts_used: list[WorkOrderPartResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -547,7 +546,7 @@ class FailureBase(BaseModel):
     asset_id: int
     failure_type: FailureTypeEnum
     description: str = Field(..., min_length=10)
-    failure_date: datetime
+    failure_date: datetime.datetime
 
 
 class FailureCreate(FailureBase):
@@ -578,9 +577,9 @@ class FailureResponse(FailureBase):
     failure_number: str
     component_id: int | None = None
     symptoms: str | None = None
-    detected_date: datetime | None = None
-    reported_date: datetime | None = None
-    resolved_date: datetime | None = None
+    detected_date: datetime.datetime | None = None
+    reported_date: datetime.datetime | None = None
+    resolved_date: datetime.datetime | None = None
     production_stopped: bool
     downtime_hours: Decimal | None = None
     production_loss_units: Decimal | None = None
@@ -594,8 +593,8 @@ class FailureResponse(FailureBase):
     meter_reading: Decimal | None = None
     status: str
     notes: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -665,8 +664,8 @@ class SparePartResponse(SparePartBase):
     product_id: int | None = None
     notes: str | None = None
     specifications: dict[str, Any] | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -682,7 +681,7 @@ class PartRequestCreate(PartRequestBase):
     spare_part_id: int | None = None
     unit: str | None = None
     priority: WorkOrderPriorityEnum = WorkOrderPriorityEnum.MEDIUM
-    required_date: date | None = None
+    required_date: datetime.date | None = None
     request_reason: str | None = None
 
 
@@ -695,18 +694,18 @@ class PartRequestResponse(PartRequestBase):
     quantity_approved: Decimal | None = None
     quantity_issued: Decimal | None = None
     priority: WorkOrderPriorityEnum
-    required_date: date | None = None
+    required_date: datetime.date | None = None
     status: PartRequestStatusEnum
     requester_id: int | None = None
-    request_date: datetime | None = None
+    request_date: datetime.datetime | None = None
     request_reason: str | None = None
     approved_by_id: int | None = None
-    approved_date: datetime | None = None
+    approved_date: datetime.datetime | None = None
     issued_by_id: int | None = None
-    issued_date: datetime | None = None
+    issued_date: datetime.datetime | None = None
     notes: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -727,9 +726,9 @@ class ContractCreate(ContractBase):
     vendor_contact: str | None = None
     vendor_phone: str | None = None
     vendor_email: str | None = None
-    start_date: date
-    end_date: date
-    renewal_date: date | None = None
+    start_date: datetime.date
+    end_date: datetime.date
+    renewal_date: datetime.date | None = None
     notice_period_days: int | None = None
     auto_renewal: bool = False
     covered_assets: list[int] | None = None
@@ -755,7 +754,7 @@ class ContractUpdate(BaseModel):
     vendor_contact: str | None = None
     vendor_phone: str | None = None
     vendor_email: str | None = None
-    renewal_date: date | None = None
+    renewal_date: datetime.date | None = None
     auto_renewal: bool | None = None
     covered_assets: list[int] | None = None
     coverage_description: str | None = None
@@ -772,9 +771,9 @@ class ContractResponse(ContractBase):
     vendor_contact: str | None = None
     vendor_phone: str | None = None
     vendor_email: str | None = None
-    start_date: date
-    end_date: date
-    renewal_date: date | None = None
+    start_date: datetime.date
+    end_date: datetime.date
+    renewal_date: datetime.date | None = None
     notice_period_days: int | None = None
     auto_renewal: bool
     covered_assets: list[int] | None = None
@@ -793,8 +792,8 @@ class ContractResponse(ContractBase):
     interventions_used: int
     manager_id: int | None = None
     notes: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -807,8 +806,8 @@ class ContractResponse(ContractBase):
 class MaintenanceKPIResponse(BaseModel):
     id: int
     asset_id: int | None = None
-    period_start: date
-    period_end: date
+    period_start: datetime.date
+    period_end: datetime.date
     period_type: str | None = None
     availability_rate: Decimal | None = None
     uptime_hours: Decimal | None = None
@@ -828,7 +827,7 @@ class MaintenanceKPIResponse(BaseModel):
     preventive_ratio: Decimal | None = None
     schedule_compliance: Decimal | None = None
     work_order_backlog: int
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 

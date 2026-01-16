@@ -5,9 +5,8 @@ AZALS MODULE M7 - Schémas Pydantic Qualité
 Schémas de validation pour les API du module Qualité.
 """
 
-from __future__ import annotations
 
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -157,7 +156,7 @@ class NonConformanceBase(BaseModel):
     description: str | None = None
     nc_type: NonConformanceTypeEnum
     severity: NonConformanceSeverityEnum
-    detected_date: date
+    detected_date: datetime.date
     detection_location: str | None = None
     detection_phase: str | None = None
 
@@ -220,17 +219,17 @@ class NonConformanceActionCreate(BaseModel):
     action_type: str = Field(..., min_length=2, max_length=50)
     description: str = Field(..., min_length=10)
     responsible_id: int | None = None
-    planned_date: date | None = None
-    due_date: date | None = None
+    planned_date: datetime.date | None = None
+    due_date: datetime.date | None = None
     comments: str | None = None
 
 
 class NonConformanceActionUpdate(BaseModel):
     description: str | None = None
     responsible_id: int | None = None
-    due_date: date | None = None
+    due_date: datetime.date | None = None
     status: str | None = None
-    completed_date: date | None = None
+    completed_date: datetime.date | None = None
     comments: str | None = None
 
 
@@ -241,15 +240,15 @@ class NonConformanceActionResponse(BaseModel):
     action_type: str
     description: str
     responsible_id: int | None = None
-    planned_date: date | None = None
-    due_date: date | None = None
-    completed_date: date | None = None
+    planned_date: datetime.date | None = None
+    due_date: datetime.date | None = None
+    completed_date: datetime.date | None = None
     status: str
     verified: bool
-    verified_date: date | None = None
+    verified_date: datetime.date | None = None
     comments: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -284,7 +283,7 @@ class NonConformanceResponse(NonConformanceBase):
     capa_required: bool
     capa_id: int | None = None
 
-    closed_date: date | None = None
+    closed_date: datetime.date | None = None
     effectiveness_verified: bool
 
     is_recurrent: bool
@@ -292,8 +291,8 @@ class NonConformanceResponse(NonConformanceBase):
 
     actions: list[NonConformanceActionResponse] = []
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -329,7 +328,7 @@ class ControlTemplateItemResponse(ControlTemplateItemBase):
     template_id: int
     upper_limit: Decimal | None = None
     lower_limit: Decimal | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -374,11 +373,11 @@ class ControlTemplateResponse(ControlTemplateBase):
     estimated_duration_minutes: int | None = None
     required_equipment: list[str] | None = None
     is_active: bool
-    valid_from: date | None = None
-    valid_until: date | None = None
+    valid_from: datetime.date | None = None
+    valid_until: datetime.date | None = None
     items: list[ControlTemplateItemResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -423,19 +422,19 @@ class ControlLineResponse(ControlLineBase):
     measured_value: Decimal | None = None
     measured_text: str | None = None
     measured_boolean: bool | None = None
-    measurement_date: datetime | None = None
+    measurement_date: datetime.datetime | None = None
     result: ControlResultEnum | None = None
     deviation: Decimal | None = None
     equipment_code: str | None = None
     comments: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ControlBase(BaseModel):
     control_type: ControlTypeEnum
-    control_date: date
+    control_date: datetime.date
 
 
 class ControlCreate(ControlBase):
@@ -457,7 +456,7 @@ class ControlCreate(ControlBase):
 
 
 class ControlUpdate(BaseModel):
-    control_date: date | None = None
+    control_date: datetime.date | None = None
     quantity_controlled: Decimal | None = None
     quantity_conforming: Decimal | None = None
     quantity_non_conforming: Decimal | None = None
@@ -485,22 +484,22 @@ class ControlResponse(ControlBase):
     quantity_non_conforming: Decimal | None = None
     supplier_id: int | None = None
     customer_id: int | None = None
-    start_time: datetime | None = None
-    end_time: datetime | None = None
+    start_time: datetime.datetime | None = None
+    end_time: datetime.datetime | None = None
     location: str | None = None
     controller_id: int | None = None
     status: ControlStatusEnum
     result: ControlResultEnum | None = None
-    result_date: datetime | None = None
+    result_date: datetime.datetime | None = None
     decision: str | None = None
     decision_by_id: int | None = None
-    decision_date: datetime | None = None
+    decision_date: datetime.datetime | None = None
     decision_comments: str | None = None
     nc_id: int | None = None
     observations: str | None = None
     lines: list[ControlLineResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -523,7 +522,7 @@ class AuditFindingCreate(AuditFindingBase):
     evidence: str | None = None
     risk_description: str | None = None
     capa_required: bool = False
-    action_due_date: date | None = None
+    action_due_date: datetime.date | None = None
 
 
 class AuditFindingUpdate(BaseModel):
@@ -534,7 +533,7 @@ class AuditFindingUpdate(BaseModel):
     evidence: str | None = None
     risk_description: str | None = None
     auditee_response: str | None = None
-    action_due_date: date | None = None
+    action_due_date: datetime.date | None = None
     status: str | None = None
     capa_id: int | None = None
 
@@ -549,15 +548,15 @@ class AuditFindingResponse(AuditFindingBase):
     capa_required: bool
     capa_id: int | None = None
     auditee_response: str | None = None
-    response_date: date | None = None
-    action_due_date: date | None = None
-    action_completed_date: date | None = None
+    response_date: datetime.date | None = None
+    action_due_date: datetime.date | None = None
+    action_completed_date: datetime.date | None = None
     status: str
     verified: bool
-    verified_date: date | None = None
+    verified_date: datetime.date | None = None
     verification_comments: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -572,8 +571,8 @@ class AuditBase(BaseModel):
 class AuditCreate(AuditBase):
     reference_version: str | None = None
     audit_scope: str | None = None
-    planned_date: date | None = None
-    planned_end_date: date | None = None
+    planned_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
     lead_auditor_id: int | None = None
     auditors: list[int] | None = None
     audited_entity: str | None = None
@@ -586,10 +585,10 @@ class AuditUpdate(BaseModel):
     title: str | None = Field(None, min_length=5, max_length=300)
     description: str | None = None
     audit_scope: str | None = None
-    planned_date: date | None = None
-    planned_end_date: date | None = None
-    actual_date: date | None = None
-    actual_end_date: date | None = None
+    planned_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    actual_date: datetime.date | None = None
+    actual_end_date: datetime.date | None = None
     status: AuditStatusEnum | None = None
     lead_auditor_id: int | None = None
     auditors: list[int] | None = None
@@ -600,7 +599,7 @@ class AuditUpdate(BaseModel):
     audit_conclusion: str | None = None
     recommendation: str | None = None
     follow_up_required: bool | None = None
-    follow_up_date: date | None = None
+    follow_up_date: datetime.date | None = None
 
 
 class AuditClose(BaseModel):
@@ -613,10 +612,10 @@ class AuditResponse(AuditBase):
     audit_number: str
     reference_version: str | None = None
     audit_scope: str | None = None
-    planned_date: date | None = None
-    planned_end_date: date | None = None
-    actual_date: date | None = None
-    actual_end_date: date | None = None
+    planned_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    actual_date: datetime.date | None = None
+    actual_end_date: datetime.date | None = None
     status: AuditStatusEnum
     lead_auditor_id: int | None = None
     auditors: list[int] | None = None
@@ -633,15 +632,15 @@ class AuditResponse(AuditBase):
     max_score: Decimal | None = None
     audit_conclusion: str | None = None
     recommendation: str | None = None
-    report_date: date | None = None
+    report_date: datetime.date | None = None
     report_file: str | None = None
     follow_up_required: bool
-    follow_up_date: date | None = None
+    follow_up_date: datetime.date | None = None
     follow_up_completed: bool
-    closed_date: date | None = None
+    closed_date: datetime.date | None = None
     findings: list[AuditFindingResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -655,11 +654,11 @@ class CAPAActionBase(BaseModel):
     action_type: str = Field(..., min_length=2, max_length=50)
     description: str = Field(..., min_length=10)
     responsible_id: int | None = None
-    due_date: date
+    due_date: datetime.date
 
 
 class CAPAActionCreate(CAPAActionBase):
-    planned_date: date | None = None
+    planned_date: datetime.date | None = None
     verification_required: bool = True
     estimated_cost: Decimal | None = None
 
@@ -667,9 +666,9 @@ class CAPAActionCreate(CAPAActionBase):
 class CAPAActionUpdate(BaseModel):
     description: str | None = None
     responsible_id: int | None = None
-    due_date: date | None = None
+    due_date: datetime.date | None = None
     status: str | None = None
-    completed_date: date | None = None
+    completed_date: datetime.date | None = None
     result: str | None = None
     evidence: str | None = None
     actual_cost: Decimal | None = None
@@ -680,20 +679,20 @@ class CAPAActionResponse(CAPAActionBase):
     id: int
     capa_id: int
     action_number: int
-    planned_date: date | None = None
-    completed_date: date | None = None
+    planned_date: datetime.date | None = None
+    completed_date: datetime.date | None = None
     status: str
     result: str | None = None
     evidence: str | None = None
     verification_required: bool
     verified: bool
-    verified_date: date | None = None
+    verified_date: datetime.date | None = None
     verification_result: str | None = None
     estimated_cost: Decimal | None = None
     actual_cost: Decimal | None = None
     comments: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -709,8 +708,8 @@ class CAPACreate(CAPABase):
     source_reference: str | None = None
     source_id: int | None = None
     priority: str = "MEDIUM"
-    open_date: date
-    target_close_date: date | None = None
+    open_date: datetime.date
+    target_close_date: datetime.date | None = None
     owner_id: int
     department: str | None = None
     problem_statement: str | None = None
@@ -723,7 +722,7 @@ class CAPAUpdate(BaseModel):
     description: str | None = None
     priority: str | None = None
     status: CAPAStatusEnum | None = None
-    target_close_date: date | None = None
+    target_close_date: datetime.date | None = None
     owner_id: int | None = None
     department: str | None = None
     problem_statement: str | None = None
@@ -751,9 +750,9 @@ class CAPAResponse(CAPABase):
     source_reference: str | None = None
     status: CAPAStatusEnum
     priority: str
-    open_date: date
-    target_close_date: date | None = None
-    actual_close_date: date | None = None
+    open_date: datetime.date
+    target_close_date: datetime.date | None = None
+    actual_close_date: datetime.date | None = None
     owner_id: int
     department: str | None = None
     problem_statement: str | None = None
@@ -765,15 +764,15 @@ class CAPAResponse(CAPABase):
     risk_level: str | None = None
     effectiveness_criteria: str | None = None
     effectiveness_verified: bool
-    effectiveness_date: date | None = None
+    effectiveness_date: datetime.date | None = None
     effectiveness_result: str | None = None
     extension_required: bool
     extension_scope: str | None = None
     extension_completed: bool
     closure_comments: str | None = None
     actions: list[CAPAActionResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -787,7 +786,7 @@ class ClaimActionBase(BaseModel):
     action_type: str = Field(..., min_length=2, max_length=50)
     description: str = Field(..., min_length=10)
     responsible_id: int | None = None
-    due_date: date | None = None
+    due_date: datetime.date | None = None
 
 
 class ClaimActionCreate(ClaimActionBase):
@@ -798,11 +797,11 @@ class ClaimActionResponse(ClaimActionBase):
     id: int
     claim_id: int
     action_number: int
-    completed_date: date | None = None
+    completed_date: datetime.date | None = None
     status: str
     result: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -811,7 +810,7 @@ class ClaimBase(BaseModel):
     title: str = Field(..., min_length=5, max_length=300)
     description: str = Field(..., min_length=10)
     customer_id: int
-    received_date: date
+    received_date: datetime.date
 
 
 class ClaimCreate(ClaimBase):
@@ -827,7 +826,7 @@ class ClaimCreate(ClaimBase):
     severity: NonConformanceSeverityEnum | None = None
     priority: str = "MEDIUM"
     owner_id: int | None = None
-    response_due_date: date | None = None
+    response_due_date: datetime.date | None = None
     claim_amount: Decimal | None = None
 
 
@@ -844,7 +843,7 @@ class ClaimUpdate(BaseModel):
     our_responsibility: bool | None = None
     nc_id: int | None = None
     capa_id: int | None = None
-    response_due_date: date | None = None
+    response_due_date: datetime.date | None = None
     response_content: str | None = None
     resolution_type: str | None = None
     resolution_description: str | None = None
@@ -889,20 +888,20 @@ class ClaimResponse(ClaimBase):
     our_responsibility: bool | None = None
     nc_id: int | None = None
     capa_id: int | None = None
-    response_due_date: date | None = None
-    response_date: date | None = None
+    response_due_date: datetime.date | None = None
+    response_date: datetime.date | None = None
     response_content: str | None = None
     resolution_type: str | None = None
     resolution_description: str | None = None
-    resolution_date: date | None = None
+    resolution_date: datetime.date | None = None
     claim_amount: Decimal | None = None
     accepted_amount: Decimal | None = None
     customer_satisfied: bool | None = None
     satisfaction_feedback: str | None = None
-    closed_date: date | None = None
+    closed_date: datetime.date | None = None
     actions: list[ClaimActionResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -913,13 +912,13 @@ class ClaimResponse(ClaimBase):
 # ============================================================================
 
 class IndicatorMeasurementBase(BaseModel):
-    measurement_date: date
+    measurement_date: datetime.date
     value: Decimal
 
 
 class IndicatorMeasurementCreate(IndicatorMeasurementBase):
-    period_start: date | None = None
-    period_end: date | None = None
+    period_start: datetime.date | None = None
+    period_end: datetime.date | None = None
     numerator: Decimal | None = None
     denominator: Decimal | None = None
     comments: str | None = None
@@ -929,8 +928,8 @@ class IndicatorMeasurementCreate(IndicatorMeasurementBase):
 class IndicatorMeasurementResponse(IndicatorMeasurementBase):
     id: int
     indicator_id: int
-    period_start: date | None = None
-    period_end: date | None = None
+    period_start: datetime.date | None = None
+    period_end: datetime.date | None = None
     numerator: Decimal | None = None
     denominator: Decimal | None = None
     target_value: Decimal | None = None
@@ -940,7 +939,7 @@ class IndicatorMeasurementResponse(IndicatorMeasurementBase):
     comments: str | None = None
     action_required: bool
     source: str | None = None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -998,8 +997,8 @@ class IndicatorResponse(IndicatorBase):
     owner_id: int | None = None
     is_active: bool
     measurements: list[IndicatorMeasurementResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -1011,37 +1010,37 @@ class IndicatorResponse(IndicatorBase):
 
 class CertificationAuditBase(BaseModel):
     audit_type: str = Field(..., min_length=2, max_length=50)
-    audit_date: date
+    audit_date: datetime.date
 
 
 class CertificationAuditCreate(CertificationAuditBase):
-    audit_end_date: date | None = None
+    audit_end_date: datetime.date | None = None
     lead_auditor: str | None = None
     audit_team: list[str] | None = None
     notes: str | None = None
 
 
 class CertificationAuditUpdate(BaseModel):
-    audit_date: date | None = None
-    audit_end_date: date | None = None
+    audit_date: datetime.date | None = None
+    audit_end_date: datetime.date | None = None
     lead_auditor: str | None = None
     result: str | None = None
     findings_count: int | None = None
     major_nc_count: int | None = None
     minor_nc_count: int | None = None
     observations_count: int | None = None
-    report_date: date | None = None
+    report_date: datetime.date | None = None
     report_file: str | None = None
-    corrective_actions_due: date | None = None
-    corrective_actions_closed: date | None = None
-    follow_up_audit_date: date | None = None
+    corrective_actions_due: datetime.date | None = None
+    corrective_actions_closed: datetime.date | None = None
+    follow_up_audit_date: datetime.date | None = None
     notes: str | None = None
 
 
 class CertificationAuditResponse(CertificationAuditBase):
     id: int
     certification_id: int
-    audit_end_date: date | None = None
+    audit_end_date: datetime.date | None = None
     lead_auditor: str | None = None
     audit_team: list[str] | None = None
     result: str | None = None
@@ -1049,15 +1048,15 @@ class CertificationAuditResponse(CertificationAuditBase):
     major_nc_count: int
     minor_nc_count: int
     observations_count: int
-    report_date: date | None = None
+    report_date: datetime.date | None = None
     report_file: str | None = None
-    corrective_actions_due: date | None = None
-    corrective_actions_closed: date | None = None
-    follow_up_audit_date: date | None = None
+    corrective_actions_due: datetime.date | None = None
+    corrective_actions_closed: datetime.date | None = None
+    follow_up_audit_date: datetime.date | None = None
     quality_audit_id: int | None = None
     notes: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -1074,7 +1073,7 @@ class CertificationCreate(CertificationBase):
     scope: str | None = None
     certification_body: str | None = None
     certification_body_accreditation: str | None = None
-    initial_certification_date: date | None = None
+    initial_certification_date: datetime.date | None = None
     manager_id: int | None = None
     annual_cost: Decimal | None = None
     notes: str | None = None
@@ -1087,12 +1086,12 @@ class CertificationUpdate(BaseModel):
     scope: str | None = None
     certification_body: str | None = None
     status: CertificationStatusEnum | None = None
-    current_certificate_date: date | None = None
-    expiry_date: date | None = None
+    current_certificate_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
     certificate_number: str | None = None
     certificate_file: str | None = None
-    next_surveillance_date: date | None = None
-    next_renewal_date: date | None = None
+    next_surveillance_date: datetime.date | None = None
+    next_renewal_date: datetime.date | None = None
     manager_id: int | None = None
     annual_cost: Decimal | None = None
     notes: str | None = None
@@ -1104,11 +1103,11 @@ class CertificationResponse(CertificationBase):
     scope: str | None = None
     certification_body: str | None = None
     certification_body_accreditation: str | None = None
-    initial_certification_date: date | None = None
-    current_certificate_date: date | None = None
-    expiry_date: date | None = None
-    next_surveillance_date: date | None = None
-    next_renewal_date: date | None = None
+    initial_certification_date: datetime.date | None = None
+    current_certificate_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
+    next_surveillance_date: datetime.date | None = None
+    next_renewal_date: datetime.date | None = None
     certificate_number: str | None = None
     certificate_file: str | None = None
     status: CertificationStatusEnum
@@ -1116,8 +1115,8 @@ class CertificationResponse(CertificationBase):
     annual_cost: Decimal | None = None
     audits: list[CertificationAuditResponse] = []
     notes: str | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)

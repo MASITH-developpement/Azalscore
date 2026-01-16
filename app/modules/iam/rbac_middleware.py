@@ -221,8 +221,8 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
 
 # Routes publiques (pas de vérification RBAC)
 PUBLIC_ROUTES: list[str] = [
-    r"^/health/?$",
-    r"^/metrics/?$",
+    r"^/health(/.*)?$",     # /health and all subpaths like /health/ready, /health/live
+    r"^/metrics(/.*)?$",    # /metrics and all subpaths like /metrics/json
     r"^/docs/?$",
     r"^/openapi\.json$",
     r"^/redoc/?$",

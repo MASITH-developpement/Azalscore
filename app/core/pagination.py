@@ -6,7 +6,7 @@ Optimisé pour performance avec count optionnel.
 """
 
 from math import ceil
-from typing import Any, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -59,7 +59,7 @@ def get_pagination_params(
 def paginate_query(
     query: SQLQuery,
     pagination: PaginationParams,
-    serializer: callable | None = None
+    serializer: Callable | None = None
 ) -> PaginatedResponse:
     """
     Applique la pagination à une query SQLAlchemy.
@@ -109,7 +109,7 @@ def paginate_query(
 def paginate_list(
     items: list[Any],
     pagination: PaginationParams,
-    serializer: callable | None = None
+    serializer: Callable | None = None
 ) -> PaginatedResponse:
     """
     Pagine une liste Python (pour données en mémoire).

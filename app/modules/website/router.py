@@ -44,7 +44,7 @@ from .schemas import (
 )
 from .service import get_website_service
 
-router = APIRouter(prefix="/api/v1/website", tags=["Website"])
+router = APIRouter(prefix="/website", tags=["Website"])
 
 
 # ============================================================================

@@ -57,7 +57,7 @@ from .schemas import (
 )
 from .service import get_inventory_service
 
-router = APIRouter(prefix="/api/v1/inventory", tags=["M5 - Inventaire"])
+router = APIRouter(prefix="/inventory", tags=["M5 - Inventaire"])
 
 
 # ============================================================================

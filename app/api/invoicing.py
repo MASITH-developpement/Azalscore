@@ -1,7 +1,7 @@
 """
 AZALS API - Invoicing (Devis, Factures, Avoirs)
 """
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -40,8 +40,8 @@ class InvoiceLineInput(BaseModel):
 class InvoiceCreate(BaseModel):
     """Schema de creation de document facturation."""
     client_id: UUID
-    date: date | None = None
-    due_date: date | None = None
+    date: datetime.date | None = None
+    due_date: datetime.date | None = None
     notes: str | None = None
     payment_terms: str | None = None
     lines: list[InvoiceLineInput] = []
@@ -55,12 +55,12 @@ class InvoiceResponse(BaseModel):
     status: str
     client_id: UUID
     client_name: str
-    date: date
-    due_date: date | None = None
+    date: datetime.date
+    due_date: datetime.date | None = None
     total_ht: Decimal
     total_ttc: Decimal
     currency: str = "EUR"
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
@@ -188,7 +188,7 @@ async def create_quote(
     doc_data = DocumentCreate(
         type=DocumentType.QUOTE,
         customer_id=data.client_id,
-        date=data.date or date.today(),
+        date=data.date or datetime.date.today(),
         due_date=data.due_date,
         notes=data.notes,
         payment_terms=data.payment_terms
@@ -398,7 +398,7 @@ async def create_invoice(
     doc_data = DocumentCreate(
         type=DocumentType.INVOICE,
         customer_id=data.client_id,
-        date=data.date or date.today(),
+        date=data.date or datetime.date.today(),
         due_date=data.due_date,
         notes=data.notes,
         payment_terms=data.payment_terms
@@ -520,7 +520,7 @@ async def create_credit(
     doc_data = DocumentCreate(
         type=DocumentType.CREDIT_NOTE,
         customer_id=data.client_id,
-        date=data.date or date.today(),
+        date=data.date or datetime.date.today(),
         due_date=data.due_date,
         notes=data.notes,
         payment_terms=data.payment_terms

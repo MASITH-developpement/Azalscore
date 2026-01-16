@@ -119,12 +119,12 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     Middleware pour collecter les métriques HTTP automatiquement.
     """
 
-    # Endpoints à exclure des métriques détaillées
-    EXCLUDED_PATHS = {'/metrics', '/health', '/favicon.ico'}
+    # Endpoints à exclure des métriques détaillées (préfixes)
+    EXCLUDED_PATH_PREFIXES = ('/metrics', '/health', '/favicon.ico')
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Skip pour certains endpoints
-        if request.url.path in self.EXCLUDED_PATHS:
+        # Skip pour certains endpoints (utilise startswith pour inclure les sous-chemins)
+        if request.url.path.startswith(self.EXCLUDED_PATH_PREFIXES):
             return await call_next(request)
 
         method = request.method

@@ -5,10 +5,9 @@ AZALS MODULE M6 - Schémas Production
 Schémas Pydantic pour la gestion de production.
 """
 
-from __future__ import annotations
 
 import json
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -111,8 +110,8 @@ class WorkCenterResponse(BaseModel):
     requires_approval: bool
     allow_parallel: bool
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
     @field_validator('operator_ids', mode='before')
@@ -128,7 +127,7 @@ class WorkCenterCapacityCreate(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     work_center_id: UUID
-    capacity_date: date = Field(..., alias="date")
+    capacity_date: datetime.date = Field(..., alias="date")
     shift: str = "DAY"
     available_hours: Decimal
     notes: str | None = None
@@ -140,13 +139,13 @@ class WorkCenterCapacityResponse(BaseModel):
 
     id: UUID
     work_center_id: UUID
-    capacity_date: date = Field(..., alias="date")
+    capacity_date: datetime.date = Field(..., alias="date")
     shift: str
     available_hours: Decimal
     planned_hours: Decimal
     actual_hours: Decimal
     notes: str | None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 
@@ -181,7 +180,7 @@ class BOMLineResponse(BaseModel):
     alternative_group: str | None
     consumption_type: ConsumptionType | None
     notes: str | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -199,8 +198,8 @@ class BOMCreate(BaseModel):
     unit: str = "UNIT"
     bom_type: BOMType = Field(default=BOMType.MANUFACTURING, alias="type")
     routing_id: UUID | None = None
-    valid_from: date | None = None
-    valid_to: date | None = None
+    valid_from: datetime.date | None = None
+    valid_to: datetime.date | None = None
     is_default: bool = False
     allow_alternatives: bool = True
     consumption_type: ConsumptionType = ConsumptionType.AUTO_ON_COMPLETE
@@ -214,8 +213,8 @@ class BOMUpdate(BaseModel):
     description: str | None = None
     status: BOMStatus | None = None
     routing_id: UUID | None = None
-    valid_from: date | None = None
-    valid_to: date | None = None
+    valid_from: datetime.date | None = None
+    valid_to: datetime.date | None = None
     is_default: bool | None = None
     allow_alternatives: bool | None = None
     consumption_type: ConsumptionType | None = None
@@ -238,8 +237,8 @@ class BOMResponse(BaseModel):
     bom_type: BOMType = Field(..., alias="type")
     status: BOMStatus
     routing_id: UUID | None
-    valid_from: date | None
-    valid_to: date | None
+    valid_from: datetime.date | None
+    valid_to: datetime.date | None
     material_cost: Decimal
     labor_cost: Decimal
     overhead_cost: Decimal
@@ -250,8 +249,8 @@ class BOMResponse(BaseModel):
     consumption_type: ConsumptionType
     is_active: bool
     lines: list[BOMLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -312,7 +311,7 @@ class RoutingOperationResponse(BaseModel):
     subcontractor_id: UUID | None
     requires_quality_check: bool
     skill_required: str | None
-    created_at: datetime
+    created_at: datetime.datetime
 
 
 
@@ -354,8 +353,8 @@ class RoutingResponse(BaseModel):
     currency: str
     is_active: bool
     operations: list[RoutingOperationResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -373,9 +372,9 @@ class MOCreate(BaseModel):
     quantity_planned: Decimal
     unit: str = "UNIT"
     priority: MOPriority = MOPriority.NORMAL
-    scheduled_start: datetime | None = None
-    scheduled_end: datetime | None = None
-    deadline: datetime | None = None
+    scheduled_start: datetime.datetime | None = None
+    scheduled_end: datetime.datetime | None = None
+    deadline: datetime.datetime | None = None
     warehouse_id: UUID | None = None
     location_id: UUID | None = None
     origin_type: str | None = None
@@ -389,9 +388,9 @@ class MOUpdate(BaseModel):
     """Mise à jour d'un ordre de fabrication."""
     name: str | None = None
     priority: MOPriority | None = None
-    scheduled_start: datetime | None = None
-    scheduled_end: datetime | None = None
-    deadline: datetime | None = None
+    scheduled_start: datetime.datetime | None = None
+    scheduled_end: datetime.datetime | None = None
+    deadline: datetime.datetime | None = None
     warehouse_id: UUID | None = None
     location_id: UUID | None = None
     responsible_id: UUID | None = None
@@ -415,15 +414,15 @@ class WorkOrderResponse(BaseModel):
     operation_time_planned: Decimal
     setup_time_actual: Decimal
     operation_time_actual: Decimal
-    scheduled_start: datetime | None
-    scheduled_end: datetime | None
-    actual_start: datetime | None
-    actual_end: datetime | None
+    scheduled_start: datetime.datetime | None
+    scheduled_end: datetime.datetime | None
+    actual_start: datetime.datetime | None
+    actual_end: datetime.datetime | None
     operator_id: UUID | None
     labor_cost: Decimal
     machine_cost: Decimal
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -445,9 +444,9 @@ class ConsumptionResponse(BaseModel):
     location_id: UUID | None
     unit_cost: Decimal
     total_cost: Decimal
-    consumed_at: datetime | None
+    consumed_at: datetime.datetime | None
     consumed_by: UUID | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -466,11 +465,11 @@ class MOResponse(BaseModel):
     unit: str
     status: MOStatus
     priority: MOPriority
-    scheduled_start: datetime | None
-    scheduled_end: datetime | None
-    actual_start: datetime | None
-    actual_end: datetime | None
-    deadline: datetime | None
+    scheduled_start: datetime.datetime | None
+    scheduled_end: datetime.datetime | None
+    actual_start: datetime.datetime | None
+    actual_end: datetime.datetime | None
+    deadline: datetime.datetime | None
     warehouse_id: UUID | None
     location_id: UUID | None
     origin_type: str | None
@@ -486,8 +485,8 @@ class MOResponse(BaseModel):
     progress_percent: Decimal
     work_orders: list[WorkOrderResponse] = Field(default_factory=list)
     consumptions: list[ConsumptionResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -505,8 +504,8 @@ class MOList(BaseModel):
 class WorkOrderUpdate(BaseModel):
     """Mise à jour d'un ordre de travail."""
     work_center_id: UUID | None = None
-    scheduled_start: datetime | None = None
-    scheduled_end: datetime | None = None
+    scheduled_start: datetime.datetime | None = None
+    scheduled_end: datetime.datetime | None = None
     operator_id: UUID | None = None
     notes: str | None = None
 
@@ -529,8 +528,8 @@ class TimeEntryCreate(BaseModel):
     work_order_id: UUID
     entry_type: str = "PRODUCTION"
     operator_id: UUID
-    start_time: datetime
-    end_time: datetime | None = None
+    start_time: datetime.datetime
+    end_time: datetime.datetime | None = None
     quantity_produced: Decimal = Decimal("0")
     quantity_scrapped: Decimal = Decimal("0")
     scrap_reason: ScrapReason | None = None
@@ -543,14 +542,14 @@ class TimeEntryResponse(BaseModel):
     work_order_id: UUID
     entry_type: str
     operator_id: UUID
-    start_time: datetime
-    end_time: datetime | None
+    start_time: datetime.datetime
+    end_time: datetime.datetime | None
     duration_minutes: Decimal | None
     quantity_produced: Decimal
     quantity_scrapped: Decimal
     scrap_reason: ScrapReason | None
     notes: str | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -611,9 +610,9 @@ class OutputResponse(BaseModel):
     quality_notes: str | None
     unit_cost: Decimal
     total_cost: Decimal
-    produced_at: datetime
+    produced_at: datetime.datetime
     produced_by: UUID | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -659,9 +658,9 @@ class ScrapResponse(BaseModel):
     work_center_id: UUID | None
     unit_cost: Decimal
     total_cost: Decimal
-    scrapped_at: datetime
+    scrapped_at: datetime.datetime
     scrapped_by: UUID | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -675,7 +674,7 @@ class PlanLineCreate(BaseModel):
     product_id: UUID
     bom_id: UUID | None = None
     quantity_demanded: Decimal
-    required_date: date | None = None
+    required_date: datetime.date | None = None
     priority: MOPriority = MOPriority.NORMAL
     notes: str | None = None
 
@@ -689,13 +688,13 @@ class PlanLineResponse(BaseModel):
     quantity_demanded: Decimal
     quantity_available: Decimal
     quantity_to_produce: Decimal
-    required_date: date | None
-    planned_start: date | None
-    planned_end: date | None
+    required_date: datetime.date | None
+    planned_start: datetime.date | None
+    planned_end: datetime.date | None
     mo_id: UUID | None
     priority: MOPriority
     notes: str | None
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -705,8 +704,8 @@ class PlanCreate(BaseModel):
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     description: str | None = None
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     planning_horizon_days: int = 30
     planning_method: str = "MRP"
     notes: str | None = None
@@ -719,20 +718,20 @@ class PlanResponse(BaseModel):
     code: str
     name: str
     description: str | None
-    start_date: date
-    end_date: date
+    start_date: datetime.date
+    end_date: datetime.date
     planning_horizon_days: int
     status: str
     planning_method: str
     total_orders: int
     total_quantity: Decimal
     total_hours: Decimal
-    generated_at: datetime | None
-    approved_at: datetime | None
+    generated_at: datetime.datetime | None
+    approved_at: datetime.datetime | None
     approved_by: UUID | None
     lines: list[PlanLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -761,13 +760,13 @@ class MaintenanceScheduleResponse(BaseModel):
     frequency_type: str
     frequency_value: int
     duration_hours: Decimal
-    last_maintenance: datetime | None
-    next_maintenance: datetime | None
+    last_maintenance: datetime.datetime | None
+    next_maintenance: datetime.datetime | None
     cycles_since_last: int
     hours_since_last: Decimal
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
