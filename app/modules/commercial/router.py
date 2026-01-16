@@ -156,7 +156,6 @@ async def create_contact(
     current_user: User = Depends(get_current_user)
 ):
     """Créer un contact pour un client."""
-    print(f"[DEBUG] commercial/router create_contact appelé avec data={data}")
     service = get_commercial_service(db, current_user.tenant_id)
 
     # Vérifier que le client existe
@@ -165,7 +164,6 @@ async def create_contact(
         raise HTTPException(status_code=404, detail="Client non trouvé")
 
     contact = service.create_contact(data)
-    print(f"[DEBUG] Contact créé avec succès: {contact.id}")
     return contact
 
 

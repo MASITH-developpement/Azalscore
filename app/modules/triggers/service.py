@@ -11,6 +11,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.encryption import decrypt_value, encrypt_value
+
 from .models import (
     AlertSeverity,
     ConditionOperator,
@@ -876,6 +878,11 @@ Message automatique AZALS
         auth_config: dict | None = None
     ) -> WebhookEndpoint:
         """Crée un endpoint webhook."""
+        # Chiffrer auth_config si présent (contient credentials sensibles)
+        encrypted_auth_config = None
+        if auth_config:
+            encrypted_auth_config = encrypt_value(json.dumps(auth_config))
+
         webhook = WebhookEndpoint(
             tenant_id=self.tenant_id,
             code=code,
@@ -885,13 +892,33 @@ Message automatique AZALS
             method=method,
             headers=json.dumps(headers) if headers else None,
             auth_type=auth_type,
-            auth_config=json.dumps(auth_config) if auth_config else None,  # TODO: Chiffrer
+            auth_config=encrypted_auth_config,
             created_by=created_by
         )
 
         self.db.add(webhook)
         self.db.commit()
         return webhook
+
+    def get_webhook_decrypted_config(self, webhook_id: int) -> dict | None:
+        """Récupère la config auth déchiffrée d'un webhook."""
+        webhook = self.db.query(WebhookEndpoint).filter(
+            WebhookEndpoint.id == webhook_id,
+            WebhookEndpoint.tenant_id == self.tenant_id
+        ).first()
+
+        if not webhook or not webhook.auth_config:
+            return None
+
+        try:
+            decrypted = decrypt_value(webhook.auth_config)
+            return json.loads(decrypted)
+        except Exception:
+            # Peut-être données anciennes non chiffrées
+            try:
+                return json.loads(webhook.auth_config)
+            except Exception:
+                return None
 
     def list_webhooks(self) -> list[WebhookEndpoint]:
         """Liste les webhooks."""
