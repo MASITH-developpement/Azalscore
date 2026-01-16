@@ -554,9 +554,8 @@ setup_guardian_middleware(app, environment=_settings.environment)
 # 6. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
 setup_cors(app)
 
-# Routes observabilite (PUBLIQUES - pas de tenant required)
-app.include_router(health_router)
-app.include_router(metrics_router)
+# NOTE: health_router and metrics_router sont inclus après api_v1 pour éviter
+# les problèmes de "No response returned" lors du démarrage
 
 # ==================== AUTH LEGACY (sans prefix /v1) ====================
 # Route /auth/login directement accessible pour compatibilité V0
@@ -971,8 +970,11 @@ def create_admin_user(
 app.include_router(api_v1)
 
 
-# NOTE: /health endpoint is provided by health_router from app/core/health.py
-# which offers detailed health checks including /health/live, /health/ready, etc.
+# ==================== ROUTES OBSERVABILITE ====================
+# Routes publiques pour monitoring (pas de tenant/auth required)
+# IMPORTANT: Inclure APRÈS api_v1 pour éviter les conflits de routes
+app.include_router(health_router)
+app.include_router(metrics_router)
 
 # ==================== FRONTEND STATIQUE ====================
 
