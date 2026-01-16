@@ -976,6 +976,56 @@ app.include_router(api_v1)
 app.include_router(health_router)
 app.include_router(metrics_router)
 
+
+# Fallback routes for health/metrics if routers don't work
+# These are simple inline routes to diagnose routing issues
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
+from app.core.database import engine
+from sqlalchemy import text
+
+
+@app.get("/health")
+async def health_check_fallback():
+    """Fallback health check endpoint."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
+
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "api": True,
+        "database": db_ok
+    }
+
+
+@app.get("/health/ready")
+async def health_ready_fallback():
+    """Fallback readiness probe."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception:
+        return {"status": "not_ready", "reason": "Database unavailable"}
+
+
+@app.get("/health/live")
+async def health_live_fallback():
+    """Fallback liveness probe."""
+    return {"status": "alive"}
+
+
+@app.get("/metrics")
+async def metrics_fallback():
+    """Fallback metrics endpoint."""
+    return Response(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST
+    )
+
 # ==================== FRONTEND STATIQUE ====================
 
 # Chemin vers le dossier UI
