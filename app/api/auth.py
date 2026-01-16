@@ -953,10 +953,6 @@ def get_user_capabilities(
     Retourne les capacites/permissions de l'utilisateur connecte.
     Utilise pour le controle d'acces cote frontend.
     """
-    print("=" * 50)
-    print("[DEBUG] get_user_capabilities CALLED!")
-    print(f"[DEBUG] User role: {current_user.role}")
-    print("=" * 50)
     # Toutes les capacites disponibles
     ALL_CAPABILITIES = [
         "cockpit.view", "cockpit.decisions.view",

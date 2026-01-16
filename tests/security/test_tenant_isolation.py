@@ -166,7 +166,7 @@ class TestTenantIsolation:
             Certification,
         )
         from app.modules.qc.models import (
-            QCModuleRegistry,
+            ModuleRegistry,
             QCRule,
             QCValidation,
             QCCheckResult,
@@ -180,7 +180,7 @@ class TestTenantIsolation:
             CustomerClaim,
             QualityIndicator,
             Certification,
-            QCModuleRegistry,
+            ModuleRegistry,
             QCRule,
             QCValidation,
             QCCheckResult,

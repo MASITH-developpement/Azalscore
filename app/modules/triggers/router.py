@@ -950,10 +950,15 @@ async def update_webhook(
     if not webhook:
         raise HTTPException(status_code=404, detail="Webhook non trouvé")
 
+    from app.core.encryption import encrypt_value
+
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        if key in ['headers', 'auth_config'] and value:
+        if key == 'headers' and value:
             value = json.dumps(value)
+        elif key == 'auth_config' and value:
+            # Chiffrer auth_config (contient credentials sensibles)
+            value = encrypt_value(json.dumps(value))
         setattr(webhook, key, value)
 
     db.commit()

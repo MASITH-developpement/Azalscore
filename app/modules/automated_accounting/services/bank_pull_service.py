@@ -21,6 +21,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.core.encryption import decrypt_value, encrypt_value
+
 from ..models import (
     BankConnection,
     BankConnectionStatus,
@@ -261,6 +263,12 @@ class BankPullService:
         # Appel au provider pour créer la connexion
         connection_data = bank_provider.create_connection(institution_id)
 
+        # Chiffrer les tokens bancaires (données sensibles PCI-DSS)
+        access_token_enc = encrypt_value(connection_data["access_token"])
+        refresh_token_enc = None
+        if connection_data.get("refresh_token"):
+            refresh_token_enc = encrypt_value(connection_data["refresh_token"])
+
         connection = BankConnection(
             id=uuid.uuid4(),
             tenant_id=self.tenant_id,
@@ -270,8 +278,8 @@ class BankPullService:
             provider=provider,
             connection_id=connection_data["connection_id"],
             status=BankConnectionStatus.ACTIVE,
-            access_token_encrypted=connection_data["access_token"],  # TODO: Chiffrer
-            refresh_token_encrypted=connection_data.get("refresh_token"),
+            access_token_encrypted=access_token_enc,
+            refresh_token_encrypted=refresh_token_enc,
             token_expires_at=connection_data.get("expires_at"),
             consent_expires_at=connection_data.get("consent_expires_at"),
             created_by=created_by,
@@ -311,10 +319,24 @@ class BankPullService:
             self.db.commit()
             logger.info(f"Bank connection deleted: {connection_id}")
 
+    def _get_decrypted_access_token(self, connection: BankConnection) -> str:
+        """Déchiffre et retourne l'access token d'une connexion."""
+        if not connection.access_token_encrypted:
+            raise ValueError("Pas de token d'accès pour cette connexion")
+        return decrypt_value(connection.access_token_encrypted)
+
+    def _get_decrypted_refresh_token(self, connection: BankConnection) -> str | None:
+        """Déchiffre et retourne le refresh token d'une connexion."""
+        if not connection.refresh_token_encrypted:
+            return None
+        return decrypt_value(connection.refresh_token_encrypted)
+
     def _sync_accounts(self, connection: BankConnection):
         """Synchronise les comptes d'une connexion."""
         provider = self.get_provider(connection.provider)
-        accounts_data = provider.get_accounts(connection.access_token_encrypted)
+        # Déchiffrer le token avant utilisation
+        decrypted_token = self._get_decrypted_access_token(connection)
+        accounts_data = provider.get_accounts(decrypted_token)
 
         for account_data in accounts_data:
             existing = self.db.query(SyncedBankAccount).filter(
@@ -494,9 +516,12 @@ class BankPullService:
         session: BankSyncSession
     ):
         """Synchronise les données d'un compte."""
+        # Déchiffrer le token avant utilisation
+        decrypted_token = self._get_decrypted_access_token(connection)
+
         # Récupère les soldes
         balances = provider.get_balances(
-            connection.access_token_encrypted,
+            decrypted_token,
             account.external_account_id
         )
 
@@ -509,7 +534,7 @@ class BankPullService:
 
         # Récupère les transactions
         transactions = provider.get_transactions(
-            connection.access_token_encrypted,
+            decrypted_token,
             account.external_account_id,
             start_date,
             end_date
@@ -565,10 +590,14 @@ class BankPullService:
             if connection.refresh_token_encrypted:
                 try:
                     provider = self.get_provider(connection.provider)
-                    new_tokens = provider.refresh_token(connection.refresh_token_encrypted)
+                    # Déchiffrer le refresh token avant utilisation
+                    decrypted_refresh = self._get_decrypted_refresh_token(connection)
+                    new_tokens = provider.refresh_token(decrypted_refresh)
 
-                    connection.access_token_encrypted = new_tokens["access_token"]
-                    connection.refresh_token_encrypted = new_tokens.get("refresh_token")
+                    # Chiffrer les nouveaux tokens avant stockage
+                    connection.access_token_encrypted = encrypt_value(new_tokens["access_token"])
+                    if new_tokens.get("refresh_token"):
+                        connection.refresh_token_encrypted = encrypt_value(new_tokens["refresh_token"])
                     connection.token_expires_at = new_tokens.get("expires_at")
                     connection.status = BankConnectionStatus.ACTIVE
 

@@ -16,6 +16,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.encryption import decrypt_value, encrypt_value
 from app.core.security import create_access_token
 
 from .models import (
@@ -1110,9 +1111,9 @@ class IAMService:
         # Générer backup codes
         backup_codes = [secrets.token_hex(4).upper() for _ in range(10)]
 
-        # Sauvegarder (temporairement, sera confirmé après vérification)
-        user.mfa_secret = secret  # TODO: Chiffrer
-        user.mfa_backup_codes = json.dumps(backup_codes)  # TODO: Chiffrer
+        # Sauvegarder avec chiffrement AES-256
+        user.mfa_secret = encrypt_value(secret)
+        user.mfa_backup_codes = encrypt_value(json.dumps(backup_codes))
         user.mfa_type = MFAType.TOTP
 
         # Générer QR code URI
@@ -1132,7 +1133,13 @@ class IAMService:
         if not user or not user.mfa_secret:
             return False
 
-        totp = pyotp.TOTP(user.mfa_secret)
+        # Déchiffrer le secret avant vérification
+        try:
+            decrypted_secret = decrypt_value(user.mfa_secret)
+        except Exception:
+            return False
+
+        totp = pyotp.TOTP(decrypted_secret)
 
         if totp.verify(code):
             user.mfa_enabled = True
@@ -1148,19 +1155,29 @@ class IAMService:
         if not user or not user.mfa_enabled or not user.mfa_secret:
             return True  # MFA non activé
 
+        # Déchiffrer le secret avant vérification
+        try:
+            decrypted_secret = decrypt_value(user.mfa_secret)
+        except Exception:
+            return False
+
         # Vérifier code TOTP
-        totp = pyotp.TOTP(user.mfa_secret)
+        totp = pyotp.TOTP(decrypted_secret)
         if totp.verify(code):
             return True
 
-        # Vérifier backup codes
+        # Vérifier backup codes (chiffrés)
         if user.mfa_backup_codes:
-            backup_codes = json.loads(user.mfa_backup_codes)
-            if code.upper() in backup_codes:
-                backup_codes.remove(code.upper())
-                user.mfa_backup_codes = json.dumps(backup_codes)
-                self.db.commit()
-                return True
+            try:
+                decrypted_codes = decrypt_value(user.mfa_backup_codes)
+                backup_codes = json.loads(decrypted_codes)
+                if code.upper() in backup_codes:
+                    backup_codes.remove(code.upper())
+                    user.mfa_backup_codes = encrypt_value(json.dumps(backup_codes))
+                    self.db.commit()
+                    return True
+            except Exception:
+                pass
 
         return False
 
