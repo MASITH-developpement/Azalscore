@@ -62,6 +62,9 @@ from app.modules.ai_assistant.router import router as ai_router
 # Module T3 - Audit & Benchmark Évolutif
 from app.modules.audit.router import router as audit_router
 
+# API Audit - UI Events endpoint
+from app.api.audit import router as audit_api_router
+
 # Module T1 - Configuration Automatique par Fonction
 from app.modules.autoconfig.router import router as autoconfig_router
 
@@ -593,6 +596,9 @@ api_v1.include_router(triggers_router)
 
 # Module T3 - Audit & Benchmark Evolutif
 api_v1.include_router(audit_router)
+
+# API Audit - UI Events (simple endpoint for frontend)
+api_v1.include_router(audit_api_router)
 
 # Module T4 - Controle Qualite Central
 api_v1.include_router(qc_router)
