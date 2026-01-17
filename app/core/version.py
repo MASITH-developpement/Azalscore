@@ -5,17 +5,17 @@ SOURCE DE VERITE UNIQUE pour la version de l'application.
 
 REGLES ABSOLUES:
 ----------------
-- Sur branche 'develop': AZALS_VERSION = "X.Y.Z-dev"
-- Sur branche 'main':    AZALS_VERSION = "X.Y.Z-prod"
+- Sur branche 'develop': version "X.Y.Z-dev"
+- Sur branche 'main':    version "X.Y.Z-prod"
 
 CETTE VERSION NE DOIT JAMAIS ETRE CALCULEE DYNAMIQUEMENT.
 Elle est la reference unique pour tous les composants de l'application.
 
 PROCESSUS DE RELEASE:
 --------------------
-1. Sur develop: version "X.Y.Z-dev" (developpement)
-2. Merge vers main: modifier en "X.Y.Z-prod" AVANT le merge
-3. Apres merge: incrementer sur develop vers "X.Y+1.Z-dev"
+1. Sur develop: utiliser suffixe -dev (developpement)
+2. Merge vers main: changer le suffixe en -prod AVANT le merge
+3. Apres merge: incrementer sur develop avec suffixe -dev
 
 SECURITE:
 ---------
