@@ -27,7 +27,7 @@ os.environ.setdefault("SECRET_KEY", "test-key-minimum-32-characters-long-for-tes
 os.environ.setdefault("BOOTSTRAP_SECRET", "test-bootstrap-minimum-32-characters-here")
 os.environ.setdefault("ENVIRONMENT", "test")
 
-from app.core.database import Base
+from app.db import Base
 from app.modules.commercial.models import (
     Customer, Contact, Opportunity, CustomerActivity,
     CustomerType, OpportunityStatus, ActivityType

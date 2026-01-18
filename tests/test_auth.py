@@ -9,7 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.main import app
-from app.core.database import Base, get_db
+from app.db import Base
+from app.core.database import get_db
 from app.core.models import User, UserRole
 from app.core.security import get_password_hash
 

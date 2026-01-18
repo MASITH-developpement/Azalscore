@@ -13,7 +13,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.main import app
-from app.core.database import Base, get_db
+from app.db import Base
+from app.core.database import get_db
 
 
 # ============================================================================

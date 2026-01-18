@@ -25,7 +25,7 @@ from sqlalchemy.pool import StaticPool
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.core.database import Base
+from app.db import Base
 from app.core.security import get_password_hash
 from app.modules.iam.models import IAMUser, IAMRole, IAMPermission
 from app.modules.iam.service import IAMService

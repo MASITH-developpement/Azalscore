@@ -28,7 +28,8 @@ os.environ["JWT_SECRET"] = "test-secret-key-for-testing-only"
 os.environ["ENVIRONMENT"] = "test"
 
 from app.main import app
-from app.core.database import Base, get_db
+from app.db import Base
+from app.core.database import get_db
 
 
 # ============================================================================

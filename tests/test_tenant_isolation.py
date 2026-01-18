@@ -26,7 +26,8 @@ os.environ["SECRET_KEY"] = "test-secret-key-for-tenant-isolation-min32chars"
 os.environ["ENVIRONMENT"] = "test"
 
 from app.main import app
-from app.core.database import Base, get_db
+from app.db import Base
+from app.core.database import get_db
 from app.core.models import User, UserRole, Item
 from app.core.security import get_password_hash, create_access_token
 

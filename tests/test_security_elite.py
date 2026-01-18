@@ -27,7 +27,8 @@ os.environ["SECRET_KEY"] = "ultra-safe-test-key-for-elite-security-tests-min32ch
 os.environ["ENVIRONMENT"] = "test"
 
 from app.main import app
-from app.core.database import Base, get_db
+from app.db import Base
+from app.core.database import get_db
 
 
 # ============================================================================
