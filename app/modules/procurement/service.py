@@ -666,6 +666,27 @@ class ProcurementService:
     # RÉCEPTIONS
     # =========================================================================
 
+    def list_goods_receipts(
+        self,
+        supplier_id: UUID | None = None,
+        order_id: UUID | None = None,
+        skip: int = 0,
+        limit: int = 50
+    ) -> tuple[list[GoodsReceipt], int]:
+        """Lister les réceptions de marchandises."""
+        query = self.db.query(GoodsReceipt).filter(
+            GoodsReceipt.tenant_id == self.tenant_id
+        )
+
+        if supplier_id:
+            query = query.filter(GoodsReceipt.supplier_id == supplier_id)
+        if order_id:
+            query = query.filter(GoodsReceipt.order_id == order_id)
+
+        total = query.count()
+        items = query.order_by(GoodsReceipt.created_at.desc()).offset(skip).limit(limit).all()
+        return items, total
+
     def create_goods_receipt(
         self,
         data: GoodsReceiptCreate,

@@ -18,6 +18,7 @@ from app.core.database import get_db
 from .models import PurchaseInvoiceStatus, PurchaseOrderStatus, RequisitionStatus, SupplierStatus, SupplierType
 from .schemas import (
     GoodsReceiptCreate,
+    GoodsReceiptList,
     GoodsReceiptResponse,
     ProcurementDashboard,
     PurchaseInvoiceCreate,
@@ -446,6 +447,22 @@ def export_orders_csv(
 # =============================================================================
 # RÉCEPTIONS
 # =============================================================================
+
+@router.get("/receipts", response_model=GoodsReceiptList)
+def list_goods_receipts(
+    supplier_id: UUID | None = None,
+    order_id: UUID | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Lister les réceptions de marchandises."""
+    service = get_procurement_service(db, tenant_id)
+    items, total = service.list_goods_receipts(supplier_id, order_id, skip, limit)
+    return GoodsReceiptList(items=items, total=total, page=skip // limit + 1, page_size=limit)
+
 
 @router.post("/receipts", response_model=GoodsReceiptResponse, status_code=status.HTTP_201_CREATED)
 def create_goods_receipt(

@@ -442,6 +442,22 @@ def get_payroll_period(
     return period
 
 
+@router.get("/payslips", response_model=list[PayslipResponse])
+def list_payslips(
+    period_id: UUID | None = None,
+    employee_id: UUID | None = None,
+    year: int | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Lister tous les bulletins de paie."""
+    service = get_hr_service(db, tenant_id)
+    return service.list_payslips(period_id, employee_id, year, skip, limit)
+
+
 @router.post("/payslips", response_model=PayslipResponse, status_code=status.HTTP_201_CREATED)
 def create_payslip(
     data: PayslipCreate,

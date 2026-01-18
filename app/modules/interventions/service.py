@@ -200,7 +200,7 @@ class InterventionsService:
 
         # Soft delete
         if not include_deleted:
-            query = query.filter(Intervention.deleted_at is None)
+            query = query.filter(Intervention.deleted_at.is_(None))
 
         # Filtres
         if statut:
@@ -242,7 +242,7 @@ class InterventionsService:
         return self.db.query(Intervention).filter(
             Intervention.id == intervention_id,
             Intervention.tenant_id == self.tenant_id,
-            Intervention.deleted_at is None
+            Intervention.deleted_at.is_(None)
         ).first()
 
     def get_intervention_by_reference(self, reference: str) -> Intervention | None:
@@ -250,7 +250,7 @@ class InterventionsService:
         return self.db.query(Intervention).filter(
             Intervention.reference == reference,
             Intervention.tenant_id == self.tenant_id,
-            Intervention.deleted_at is None
+            Intervention.deleted_at.is_(None)
         ).first()
 
     def create_intervention(
@@ -723,7 +723,7 @@ class InterventionsService:
         query = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id,
             Intervention.statut == InterventionStatut.TERMINEE,
-            Intervention.deleted_at is None
+            Intervention.deleted_at.is_(None)
         )
 
         if data.projet_id:
@@ -843,7 +843,7 @@ class InterventionsService:
         """Calcule les statistiques des interventions."""
         base_query = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id,
-            Intervention.deleted_at is None
+            Intervention.deleted_at.is_(None)
         )
 
         total = base_query.count()
@@ -868,7 +868,7 @@ class InterventionsService:
         ).filter(
             Intervention.tenant_id == self.tenant_id,
             Intervention.statut == InterventionStatut.TERMINEE,
-            Intervention.duree_reelle_minutes is not None
+            Intervention.duree_reelle_minutes.isnot(None)
         ).scalar() or 0
 
         return InterventionStats(

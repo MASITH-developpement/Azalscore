@@ -25,6 +25,16 @@ import {
   ChevronDown,
   ChevronRight,
   Palette,
+  BadgeCheck,
+  Package,
+  Factory,
+  ClipboardCheck,
+  Cog,
+  BarChart3,
+  Scale,
+  MonitorSmartphone,
+  CalendarClock,
+  HeadphonesIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
@@ -50,6 +60,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
   settings: Settings,
   admin: Shield,
   branding: Palette,
+  hr: BadgeCheck,
+  inventory: Package,
+  production: Factory,
+  quality: ClipboardCheck,
+  maintenance: Cog,
+  bi: BarChart3,
+  compliance: Scale,
+  pos: MonitorSmartphone,
+  subscriptions: CalendarClock,
+  helpdesk: HeadphonesIcon,
 };
 
 // ============================================================
@@ -110,6 +130,18 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'supplier-invoices', label: 'Factures fournisseurs', path: '/purchases/invoices' },
         ],
       },
+      {
+        id: 'hr',
+        label: 'Ressources Humaines',
+        icon: 'hr',
+        path: '/hr',
+        capability: 'hr.view',
+        children: [
+          { id: 'employees', label: 'Employés', path: '/hr/employees' },
+          { id: 'payroll', label: 'Paie', path: '/hr/payroll' },
+          { id: 'leave', label: 'Congés', path: '/hr/leave' },
+        ],
+      },
     ],
   },
   {
@@ -145,6 +177,58 @@ const MENU_SECTIONS: MenuSection[] = [
     ],
   },
   {
+    id: 'logistique',
+    title: 'Logistique & Production',
+    items: [
+      {
+        id: 'inventory',
+        label: 'Stock & Inventaire',
+        icon: 'inventory',
+        path: '/inventory',
+        capability: 'inventory.view',
+        children: [
+          { id: 'warehouses', label: 'Entrepôts', path: '/inventory/warehouses' },
+          { id: 'products', label: 'Produits', path: '/inventory/products' },
+          { id: 'movements', label: 'Mouvements', path: '/inventory/movements' },
+        ],
+      },
+      {
+        id: 'production',
+        label: 'Production',
+        icon: 'production',
+        path: '/production',
+        capability: 'production.view',
+        children: [
+          { id: 'orders', label: 'Ordres de fabrication', path: '/production/orders' },
+          { id: 'bom', label: 'Nomenclatures', path: '/production/bom' },
+          { id: 'planning', label: 'Planning', path: '/production/planning' },
+        ],
+      },
+      {
+        id: 'quality',
+        label: 'Qualité',
+        icon: 'quality',
+        path: '/quality',
+        capability: 'quality.view',
+        children: [
+          { id: 'controls', label: 'Contrôles', path: '/quality/controls' },
+          { id: 'nc', label: 'Non-conformités', path: '/quality/nc' },
+        ],
+      },
+      {
+        id: 'maintenance',
+        label: 'Maintenance (GMAO)',
+        icon: 'maintenance',
+        path: '/maintenance',
+        capability: 'maintenance.view',
+        children: [
+          { id: 'equipment', label: 'Équipements', path: '/maintenance/equipment' },
+          { id: 'work-orders', label: 'Interventions', path: '/maintenance/work-orders' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'operations',
     title: 'Opérations',
     items: [
@@ -172,22 +256,32 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'reports', label: 'Rapports', path: '/interventions/reports' },
         ],
       },
+      {
+        id: 'helpdesk',
+        label: 'Support Client',
+        icon: 'helpdesk',
+        path: '/helpdesk',
+        capability: 'helpdesk.view',
+        children: [
+          { id: 'tickets', label: 'Tickets', path: '/helpdesk/tickets' },
+          { id: 'kb', label: 'Base de connaissances', path: '/helpdesk/kb' },
+        ],
+      },
     ],
   },
   {
-    id: 'digital',
-    title: 'Digital',
+    id: 'ventes',
+    title: 'Ventes & Commerce',
     items: [
       {
-        id: 'web',
-        label: 'Site Web',
-        icon: 'web',
-        path: '/web',
-        capability: 'web.view',
+        id: 'pos',
+        label: 'Point de Vente',
+        icon: 'pos',
+        path: '/pos',
+        capability: 'pos.view',
         children: [
-          { id: 'pages', label: 'Pages', path: '/web/pages' },
-          { id: 'blog', label: 'Blog', path: '/web/blog' },
-          { id: 'seo', label: 'SEO', path: '/web/seo' },
+          { id: 'terminal', label: 'Terminal', path: '/pos/terminal' },
+          { id: 'sessions', label: 'Sessions', path: '/pos/sessions' },
         ],
       },
       {
@@ -210,6 +304,17 @@ const MENU_SECTIONS: MenuSection[] = [
         capability: 'marketplace.view',
       },
       {
+        id: 'subscriptions',
+        label: 'Abonnements',
+        icon: 'subscriptions',
+        path: '/subscriptions',
+        capability: 'subscriptions.view',
+        children: [
+          { id: 'plans', label: 'Plans', path: '/subscriptions/plans' },
+          { id: 'billing', label: 'Facturation', path: '/subscriptions/billing' },
+        ],
+      },
+      {
         id: 'payments',
         label: 'Paiements',
         icon: 'payments',
@@ -219,6 +324,54 @@ const MENU_SECTIONS: MenuSection[] = [
           { id: 'online', label: 'Paiements en ligne', path: '/payments/online' },
           { id: 'tap-to-pay', label: 'Tap-to-Pay', path: '/payments/tap-to-pay' },
           { id: 'history', label: 'Historique', path: '/payments/history' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'digital',
+    title: 'Digital & Reporting',
+    items: [
+      {
+        id: 'web',
+        label: 'Site Web',
+        icon: 'web',
+        path: '/web',
+        capability: 'web.view',
+        children: [
+          { id: 'pages', label: 'Pages', path: '/web/pages' },
+          { id: 'blog', label: 'Blog', path: '/web/blog' },
+          { id: 'seo', label: 'SEO', path: '/web/seo' },
+        ],
+      },
+      {
+        id: 'mobile',
+        label: 'Application Mobile',
+        icon: 'mobile',
+        path: '/mobile',
+        capability: 'mobile.view',
+      },
+      {
+        id: 'bi',
+        label: 'Reporting & BI',
+        icon: 'bi',
+        path: '/bi',
+        capability: 'bi.view',
+        children: [
+          { id: 'reports', label: 'Rapports', path: '/bi/reports' },
+          { id: 'dashboards', label: 'Tableaux de bord', path: '/bi/dashboards' },
+        ],
+      },
+      {
+        id: 'compliance',
+        label: 'Conformité',
+        icon: 'compliance',
+        path: '/compliance',
+        capability: 'compliance.view',
+        children: [
+          { id: 'gdpr', label: 'RGPD', path: '/compliance/gdpr' },
+          { id: 'audits', label: 'Audits', path: '/compliance/audits' },
+          { id: 'policies', label: 'Politiques', path: '/compliance/policies' },
         ],
       },
     ],

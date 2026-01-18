@@ -219,6 +219,20 @@ async def list_interventions(
     )
 
 
+# IMPORTANT: /stats doit être AVANT /{intervention_id} pour éviter le conflit de route
+@router.get(
+    "/stats",
+    response_model=InterventionStats,
+    summary="Statistiques des interventions"
+)
+async def get_stats(
+    service: InterventionsService = Depends(get_service),
+    _user: User = Depends(get_current_user)
+):
+    """Retourne les statistiques des interventions."""
+    return service.get_stats()
+
+
 @router.get(
     "/{intervention_id}",
     response_model=InterventionResponse,
@@ -716,18 +730,4 @@ async def generer_rapport_final(
         )
 
 
-# ============================================================================
-# STATISTIQUES
-# ============================================================================
-
-@router.get(
-    "/stats",
-    response_model=InterventionStats,
-    summary="Statistiques des interventions"
-)
-async def get_stats(
-    service: InterventionsService = Depends(get_service),
-    _user: User = Depends(get_current_user)
-):
-    """Retourne les statistiques des interventions."""
-    return service.get_stats()
+# Note: /stats endpoint déplacé au début du fichier pour éviter le conflit avec /{intervention_id}

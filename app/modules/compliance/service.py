@@ -505,6 +505,23 @@ class ComplianceService:
             Policy.tenant_id == self.tenant_id
         ).first()
 
+    def get_policies(
+        self,
+        is_published: bool | None = None,
+        skip: int = 0,
+        limit: int = 100
+    ) -> list[Policy]:
+        """Récupérer les politiques."""
+        query = self.db.query(Policy).filter(
+            Policy.tenant_id == self.tenant_id,
+            Policy.is_active
+        )
+
+        if is_published is not None:
+            query = query.filter(Policy.is_published == is_published)
+
+        return query.order_by(Policy.code).offset(skip).limit(limit).all()
+
     def publish_policy(self, policy_id: UUID, user_id: UUID) -> Policy | None:
         """Publier une politique."""
         policy = self.get_policy(policy_id)

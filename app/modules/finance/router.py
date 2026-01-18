@@ -600,6 +600,7 @@ def create_bank_transaction(
 
 
 @router.get("/bank-transactions")
+@router.get("/transactions")  # Alias pour compatibilité frontend
 def list_bank_transactions(
     bank_account_id: UUID | None = None,
     transaction_type: BankTransactionType | None = None,

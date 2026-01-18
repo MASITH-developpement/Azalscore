@@ -602,6 +602,28 @@ class HRService:
             query = query.filter(PayrollPeriod.year == year)
         return query.order_by(PayrollPeriod.year.desc(), PayrollPeriod.month.desc()).all()
 
+    def list_payslips(
+        self,
+        period_id: UUID | None = None,
+        employee_id: UUID | None = None,
+        year: int | None = None,
+        skip: int = 0,
+        limit: int = 50
+    ) -> list[Payslip]:
+        """Lister tous les bulletins de paie."""
+        query = self.db.query(Payslip).filter(
+            Payslip.tenant_id == self.tenant_id
+        )
+
+        if period_id:
+            query = query.filter(Payslip.period_id == period_id)
+        if employee_id:
+            query = query.filter(Payslip.employee_id == employee_id)
+        if year:
+            query = query.join(PayrollPeriod).filter(PayrollPeriod.year == year)
+
+        return query.order_by(Payslip.created_at.desc()).offset(skip).limit(limit).all()
+
     def create_payslip(self, data: PayslipCreate, user_id: UUID) -> Payslip:
         """Créer un bulletin de paie."""
         # Générer le numéro
