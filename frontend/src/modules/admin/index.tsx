@@ -531,7 +531,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
 
-  const roleOptions = roles?.items.map((r) => ({ value: r.id, label: r.name })) || [];
+  const roleOptions = roles?.data.items.map((r: Role) => ({ value: r.id, label: r.name })) || [];
 
   const fields = user
     ? [
@@ -693,7 +693,7 @@ export const RolesPage: React.FC = () => {
       <Card noPadding>
         <DataTable
           columns={columns}
-          data={data?.items || []}
+          data={data?.data.items || []}
           keyField="id"
           actions={actions}
           isLoading={isLoading}

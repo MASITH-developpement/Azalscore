@@ -3,16 +3,16 @@ AZALS - API endpoints pour validation workflow RED
 Endpoints de validation en 3 étapes pour décisions RED
 """
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 import json
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_and_tenant
-from app.services.red_workflow import RedWorkflowService
 from app.core.models import RedWorkflowStep
-
+from app.services.red_workflow import RedWorkflowService
 
 router = APIRouter(prefix="/decision/red", tags=["red-workflow"])
 
@@ -23,7 +23,7 @@ class WorkflowStepResponse(BaseModel):
     step: str
     confirmed_at: str
     message: str
-    
+
     model_config = {"from_attributes": True}
 
 
@@ -46,7 +46,7 @@ class RedReportResponse(BaseModel):
     validator_id: int
     journal_references: list[str]
     created_at: str
-    
+
     model_config = {"from_attributes": True}
 
 
@@ -67,7 +67,7 @@ def acknowledge_red_risks(
         user_id=context["user_id"],
         tenant_id=context["tenant_id"]
     )
-    
+
     return WorkflowStepResponse(
         decision_id=workflow.decision_id,
         step=workflow.step.value,
@@ -93,7 +93,7 @@ def confirm_information_completeness(
         user_id=context["user_id"],
         tenant_id=context["tenant_id"]
     )
-    
+
     return WorkflowStepResponse(
         decision_id=workflow.decision_id,
         step=workflow.step.value,
@@ -119,7 +119,7 @@ def final_red_validation(
         user_id=context["user_id"],
         tenant_id=context["tenant_id"]
     )
-    
+
     return WorkflowStepResponse(
         decision_id=workflow.decision_id,
         step=workflow.step.value,
@@ -139,7 +139,7 @@ def get_red_workflow_status(
     """
     service = RedWorkflowService(db)
     status = service.get_workflow_status(decision_id, context["tenant_id"])
-    
+
     return WorkflowStatusResponse(**status)
 
 
@@ -151,7 +151,7 @@ def get_red_decision_report(
 ):
     """
     Récupère le rapport 🔴 IMMUTABLE pour une décision RED validée.
-    
+
     Règles :
     - Accessible UNIQUEMENT après validation complète (step FINAL)
     - Rapport en lecture seule (IMMUTABLE)
@@ -160,7 +160,7 @@ def get_red_decision_report(
     """
     service = RedWorkflowService(db)
     report = service.get_red_report(decision_id, context["tenant_id"])
-    
+
     return RedReportResponse(
         id=report.id,
         decision_id=report.decision_id,

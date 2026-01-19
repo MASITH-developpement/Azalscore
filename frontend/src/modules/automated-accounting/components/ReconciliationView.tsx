@@ -361,9 +361,7 @@ const TransactionCard: React.FC<{
 
         <div className="azals-auto-accounting__transaction-actions">
           {transaction.suggested_matches.length > 0 && (
-            <StatusBadge variant="info" size="sm">
-              {transaction.suggested_matches.length} suggestion(s)
-            </StatusBadge>
+            <StatusBadge variant="info" size="sm" status={`${transaction.suggested_matches.length} suggestion(s)`} />
           )}
           <Button variant="ghost" size="sm">
             {expanded ? 'Masquer' : 'Voir suggestions'}
@@ -388,9 +386,8 @@ const TransactionCard: React.FC<{
                     <StatusBadge
                       variant={getConfidenceVariant(match.confidence_score)}
                       size="sm"
-                    >
-                      {match.confidence_score.toFixed(0)}%
-                    </StatusBadge>
+                      status={`${match.confidence_score.toFixed(0)}%`}
+                    />
                   </div>
 
                   <div className="azals-auto-accounting__match-details">
@@ -513,9 +510,8 @@ const RulesWidget: React.FC<{
                 <StatusBadge
                   variant={rule.is_active ? 'success' : 'default'}
                   size="sm"
-                >
-                  {rule.is_active ? 'Active' : 'Inactive'}
-                </StatusBadge>
+                  status={rule.is_active ? 'Active' : 'Inactive'}
+                />
               </div>
 
               <Button
@@ -523,7 +519,9 @@ const RulesWidget: React.FC<{
                 size="sm"
                 leftIcon={<X size={14} />}
                 onClick={() => onDelete(rule.id)}
-              />
+              >
+                Supprimer
+              </Button>
             </div>
           ))}
         </div>
@@ -582,7 +580,7 @@ const AddRuleModal: React.FC<{
           <label className="azals-form-label">Nom de la règle</label>
           <Input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(value) => setName(value)}
             placeholder="Ex: Loyer mensuel, Abonnement téléphone..."
           />
         </div>
@@ -592,7 +590,7 @@ const AddRuleModal: React.FC<{
             <label className="azals-form-label">Champ à analyser</label>
             <Select
               value={patternField}
-              onChange={(e) => setPatternField(e.target.value)}
+              onChange={(value) => setPatternField(value)}
               options={[
                 { value: 'description', label: 'Description' },
                 { value: 'counterparty_name', label: 'Contrepartie' },
@@ -605,7 +603,7 @@ const AddRuleModal: React.FC<{
             <label className="azals-form-label">Type de correspondance</label>
             <Select
               value={patternType}
-              onChange={(e) => setPatternType(e.target.value as 'EXACT' | 'CONTAINS' | 'REGEX')}
+              onChange={(value) => setPatternType(value as 'EXACT' | 'CONTAINS' | 'REGEX')}
               options={[
                 { value: 'CONTAINS', label: 'Contient' },
                 { value: 'EXACT', label: 'Exact' },
@@ -619,7 +617,7 @@ const AddRuleModal: React.FC<{
           <label className="azals-form-label">Valeur à rechercher</label>
           <Input
             value={patternValue}
-            onChange={(e) => setPatternValue(e.target.value)}
+            onChange={(value) => setPatternValue(value)}
             placeholder={
               patternType === 'REGEX'
                 ? 'Ex: LOYER.*\\d{2}/\\d{4}'
@@ -633,7 +631,7 @@ const AddRuleModal: React.FC<{
             <label className="azals-form-label">Action</label>
             <Select
               value={targetType}
-              onChange={(e) => setTargetType(e.target.value as 'DOCUMENT' | 'ACCOUNT' | 'JOURNAL')}
+              onChange={(value) => setTargetType(value as 'DOCUMENT' | 'ACCOUNT' | 'JOURNAL')}
               options={[
                 { value: 'ACCOUNT', label: 'Affecter au compte' },
                 { value: 'JOURNAL', label: 'Affecter au journal' },
@@ -652,7 +650,7 @@ const AddRuleModal: React.FC<{
             </label>
             <Input
               value={targetValue}
-              onChange={(e) => setTargetValue(e.target.value)}
+              onChange={(value) => setTargetValue(value)}
               placeholder={
                 targetType === 'ACCOUNT'
                   ? '613200'
@@ -668,10 +666,11 @@ const AddRuleModal: React.FC<{
           <label className="azals-form-label">Priorité (1-100)</label>
           <Input
             type="number"
-            value={priority}
-            onChange={(e) => setPriority(parseInt(e.target.value) || 10)}
-            min={1}
-            max={100}
+            value={String(priority)}
+            onChange={(value) => {
+              const num = parseInt(value) || 10;
+              setPriority(Math.min(100, Math.max(1, num)));
+            }}
           />
           <span className="azals-form-hint">
             Les règles avec une priorité plus élevée sont appliquées en premier
@@ -762,7 +761,7 @@ const ReconcileModal: React.FC<{
           <label className="azals-form-label">Notes (optionnel)</label>
           <TextArea
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(value) => setNotes(value)}
             placeholder="Commentaire sur ce rapprochement..."
             rows={2}
           />
@@ -899,7 +898,7 @@ export const ReconciliationView: React.FC = () => {
           actions={
             <Select
               value={filter}
-              onChange={(e) => setFilter(e.target.value as typeof filter)}
+              onChange={(value) => setFilter(value as typeof filter)}
               options={[
                 { value: 'all', label: 'Toutes' },
                 { value: 'with_suggestions', label: 'Avec suggestions' },

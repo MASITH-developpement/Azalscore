@@ -5,41 +5,59 @@ AZALS MODULE M5 - Router Inventaire
 API REST pour la gestion des stocks et logistique.
 """
 
-from datetime import datetime, date
-from typing import Optional, List
+from datetime import date, datetime
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.models import User
 
-from .service import get_inventory_service
-from .models import ProductStatus, MovementType, MovementStatus, InventoryStatus, PickingStatus, LotStatus
+from .models import InventoryStatus, LotStatus, MovementStatus, MovementType, PickingStatus, ProductStatus
 from .schemas import (
     # Catégories
-    CategoryCreate, CategoryUpdate, CategoryResponse,
-    # Entrepôts
-    WarehouseCreate, WarehouseUpdate, WarehouseResponse,
-    # Emplacements
-    LocationCreate, LocationResponse,
-    # Produits
-    ProductCreate, ProductUpdate, ProductResponse, ProductList,
-    # Stock
-    StockLevelResponse, LotCreate, LotResponse,
-    # Numéros de série
-    SerialCreate, SerialResponse,
-    # Mouvements
-    MovementCreate, MovementResponse, MovementList,
+    CategoryCreate,
+    CategoryResponse,
+    CategoryUpdate,
+    CountLineUpdate,
     # Inventaires
-    InventoryCountCreate, InventoryCountResponse, CountLineUpdate,
-    # Préparations
-    PickingCreate, PickingResponse, PickingLineUpdate,
+    InventoryCountCreate,
+    InventoryCountResponse,
     # Valorisation
     InventoryDashboard,
+    # Emplacements
+    LocationCreate,
+    LocationResponse,
+    LotCreate,
+    LotResponse,
+    # Mouvements
+    MovementCreate,
+    MovementList,
+    MovementResponse,
+    # Préparations
+    PickingCreate,
+    PickingLineUpdate,
+    PickingResponse,
+    # Produits
+    ProductCreate,
+    ProductList,
+    ProductResponse,
+    ProductUpdate,
+    # Numéros de série
+    SerialCreate,
+    SerialResponse,
+    # Stock
+    StockLevelResponse,
+    # Entrepôts
+    WarehouseCreate,
+    WarehouseResponse,
+    WarehouseUpdate,
 )
+from .service import get_inventory_service
 
-router = APIRouter(prefix="/api/v1/inventory", tags=["M5 - Inventaire"])
+router = APIRouter(prefix="/inventory", tags=["M5 - Inventaire"])
 
 
 # ============================================================================
@@ -50,24 +68,24 @@ router = APIRouter(prefix="/api/v1/inventory", tags=["M5 - Inventaire"])
 async def create_category(
     data: CategoryCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une catégorie de produits."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     return service.create_category(data)
 
 
-@router.get("/categories", response_model=List[CategoryResponse])
+@router.get("/categories", response_model=list[CategoryResponse])
 async def list_categories(
-    parent_id: Optional[UUID] = None,
+    parent_id: UUID | None = None,
     active_only: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les catégories."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, _ = service.list_categories(parent_id, active_only, skip, limit)
     return items
 
@@ -76,10 +94,10 @@ async def list_categories(
 async def get_category(
     category_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une catégorie."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     category = service.get_category(category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Catégorie non trouvée")
@@ -91,10 +109,10 @@ async def update_category(
     category_id: UUID,
     data: CategoryUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une catégorie."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     category = service.update_category(category_id, data)
     if not category:
         raise HTTPException(status_code=404, detail="Catégorie non trouvée")
@@ -109,23 +127,23 @@ async def update_category(
 async def create_warehouse(
     data: WarehouseCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un entrepôt."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     return service.create_warehouse(data)
 
 
-@router.get("/warehouses", response_model=List[WarehouseResponse])
+@router.get("/warehouses", response_model=list[WarehouseResponse])
 async def list_warehouses(
     active_only: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les entrepôts."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, _ = service.list_warehouses(active_only, skip, limit)
     return items
 
@@ -134,10 +152,10 @@ async def list_warehouses(
 async def get_warehouse(
     warehouse_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un entrepôt."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     warehouse = service.get_warehouse(warehouse_id)
     if not warehouse:
         raise HTTPException(status_code=404, detail="Entrepôt non trouvé")
@@ -149,26 +167,26 @@ async def update_warehouse(
     warehouse_id: UUID,
     data: WarehouseUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un entrepôt."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     warehouse = service.update_warehouse(warehouse_id, data)
     if not warehouse:
         raise HTTPException(status_code=404, detail="Entrepôt non trouvé")
     return warehouse
 
 
-@router.get("/warehouses/{warehouse_id}/stock", response_model=List[StockLevelResponse])
+@router.get("/warehouses/{warehouse_id}/stock", response_model=list[StockLevelResponse])
 async def get_warehouse_stock(
     warehouse_id: UUID,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer le stock d'un entrepôt."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, _ = service.get_warehouse_stock(warehouse_id, skip, limit)
     return items
 
@@ -182,24 +200,24 @@ async def create_location(
     warehouse_id: UUID,
     data: LocationCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un emplacement."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     return service.create_location(warehouse_id, data)
 
 
-@router.get("/locations", response_model=List[LocationResponse])
+@router.get("/locations", response_model=list[LocationResponse])
 async def list_locations(
-    warehouse_id: Optional[UUID] = None,
+    warehouse_id: UUID | None = None,
     active_only: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les emplacements."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, _ = service.list_locations(warehouse_id, active_only, skip, limit)
     return items
 
@@ -208,10 +226,10 @@ async def list_locations(
 async def get_location(
     location_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un emplacement."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     location = service.get_location(location_id)
     if not location:
         raise HTTPException(status_code=404, detail="Emplacement non trouvé")
@@ -226,26 +244,26 @@ async def get_location(
 async def create_product(
     data: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un produit."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     return service.create_product(data)
 
 
 @router.get("/products", response_model=ProductList)
 async def list_products(
-    category_id: Optional[UUID] = None,
-    status: Optional[ProductStatus] = None,
-    search: Optional[str] = None,
+    category_id: UUID | None = None,
+    status: ProductStatus | None = None,
+    search: str | None = None,
     active_only: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les produits."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, total = service.list_products(category_id, status, search, active_only, skip, limit)
     return {"items": items, "total": total}
 
@@ -254,10 +272,10 @@ async def list_products(
 async def get_product(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un produit."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     product = service.get_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
@@ -269,10 +287,10 @@ async def update_product(
     product_id: UUID,
     data: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un produit."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     product = service.update_product(product_id, data)
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
@@ -283,24 +301,24 @@ async def update_product(
 async def activate_product(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Activer un produit."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     product = service.activate_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     return product
 
 
-@router.get("/products/{product_id}/stock", response_model=List[StockLevelResponse])
+@router.get("/products/{product_id}/stock", response_model=list[StockLevelResponse])
 async def get_product_stock(
     product_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer le stock d'un produit."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     return service.get_product_stock(product_id)
 
 
@@ -312,25 +330,25 @@ async def get_product_stock(
 async def create_lot(
     data: LotCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un lot."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     return service.create_lot(data)
 
 
-@router.get("/lots", response_model=List[LotResponse])
+@router.get("/lots", response_model=list[LotResponse])
 async def list_lots(
-    product_id: Optional[UUID] = None,
-    status: Optional[LotStatus] = None,
-    expiring_before: Optional[date] = None,
+    product_id: UUID | None = None,
+    status: LotStatus | None = None,
+    expiring_before: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les lots."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, _ = service.list_lots(product_id, status, expiring_before, skip, limit)
     return items
 
@@ -339,10 +357,10 @@ async def list_lots(
 async def get_lot(
     lot_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un lot."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     lot = service.get_lot(lot_id)
     if not lot:
         raise HTTPException(status_code=404, detail="Lot non trouvé")
@@ -357,10 +375,10 @@ async def get_lot(
 async def create_serial(
     data: SerialCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un numéro de série."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     return service.create_serial(data)
 
 
@@ -368,10 +386,10 @@ async def create_serial(
 async def get_serial(
     serial_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un numéro de série."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     serial = service.get_serial(serial_id)
     if not serial:
         raise HTTPException(status_code=404, detail="Numéro de série non trouvé")
@@ -386,27 +404,27 @@ async def get_serial(
 async def create_movement(
     data: MovementCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un mouvement de stock."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     return service.create_movement(data)
 
 
 @router.get("/movements", response_model=MovementList)
 async def list_movements(
-    type: Optional[MovementType] = None,
-    status: Optional[MovementStatus] = None,
-    warehouse_id: Optional[UUID] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    type: MovementType | None = None,
+    status: MovementStatus | None = None,
+    warehouse_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les mouvements."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, total = service.list_movements(type, status, warehouse_id, date_from, date_to, skip, limit)
     return {"items": items, "total": total}
 
@@ -415,10 +433,10 @@ async def list_movements(
 async def get_movement(
     movement_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un mouvement."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     movement = service.get_movement(movement_id)
     if not movement:
         raise HTTPException(status_code=404, detail="Mouvement non trouvé")
@@ -429,10 +447,10 @@ async def get_movement(
 async def confirm_movement(
     movement_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Confirmer un mouvement (impacter les stocks)."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     movement = service.confirm_movement(movement_id)
     if not movement:
         raise HTTPException(status_code=400, detail="Impossible de confirmer ce mouvement")
@@ -443,10 +461,10 @@ async def confirm_movement(
 async def cancel_movement(
     movement_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Annuler un mouvement brouillon."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     movement = service.cancel_movement(movement_id)
     if not movement:
         raise HTTPException(status_code=400, detail="Impossible d'annuler ce mouvement")
@@ -461,24 +479,24 @@ async def cancel_movement(
 async def create_inventory_count(
     data: InventoryCountCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer un inventaire physique."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     return service.create_inventory_count(data)
 
 
-@router.get("/counts", response_model=List[InventoryCountResponse])
+@router.get("/counts", response_model=list[InventoryCountResponse])
 async def list_inventory_counts(
-    status: Optional[InventoryStatus] = None,
-    warehouse_id: Optional[UUID] = None,
+    status: InventoryStatus | None = None,
+    warehouse_id: UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les inventaires."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, _ = service.list_inventory_counts(status, warehouse_id, skip, limit)
     return items
 
@@ -487,10 +505,10 @@ async def list_inventory_counts(
 async def get_inventory_count(
     count_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer un inventaire."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     count = service.get_inventory_count(count_id)
     if not count:
         raise HTTPException(status_code=404, detail="Inventaire non trouvé")
@@ -501,10 +519,10 @@ async def get_inventory_count(
 async def start_inventory_count(
     count_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Démarrer un inventaire (générer les lignes)."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     count = service.start_inventory_count(count_id)
     if not count:
         raise HTTPException(status_code=400, detail="Impossible de démarrer cet inventaire")
@@ -517,10 +535,10 @@ async def update_count_line(
     line_id: UUID,
     data: CountLineUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour une ligne d'inventaire (compter)."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     line = service.update_count_line(count_id, line_id, data)
     if not line:
         raise HTTPException(status_code=404, detail="Ligne non trouvée")
@@ -531,10 +549,10 @@ async def update_count_line(
 async def validate_inventory_count(
     count_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Valider un inventaire (ajuster les stocks)."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     count = service.validate_inventory_count(count_id)
     if not count:
         raise HTTPException(status_code=400, detail="Impossible de valider cet inventaire")
@@ -549,25 +567,25 @@ async def validate_inventory_count(
 async def create_picking(
     data: PickingCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Créer une préparation de commande."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     return service.create_picking(data)
 
 
-@router.get("/pickings", response_model=List[PickingResponse])
+@router.get("/pickings", response_model=list[PickingResponse])
 async def list_pickings(
-    status: Optional[PickingStatus] = None,
-    warehouse_id: Optional[UUID] = None,
-    assigned_to: Optional[UUID] = None,
+    status: PickingStatus | None = None,
+    warehouse_id: UUID | None = None,
+    assigned_to: UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Lister les préparations."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     items, _ = service.list_pickings(status, warehouse_id, assigned_to, skip, limit)
     return items
 
@@ -576,10 +594,10 @@ async def list_pickings(
 async def get_picking(
     picking_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer une préparation."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     picking = service.get_picking(picking_id)
     if not picking:
         raise HTTPException(status_code=404, detail="Préparation non trouvée")
@@ -591,10 +609,10 @@ async def assign_picking(
     picking_id: UUID,
     user_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Assigner une préparation à un utilisateur."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     picking = service.assign_picking(picking_id, user_id)
     if not picking:
         raise HTTPException(status_code=404, detail="Préparation non trouvée")
@@ -605,10 +623,10 @@ async def assign_picking(
 async def start_picking(
     picking_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Démarrer une préparation."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     picking = service.start_picking(picking_id)
     if not picking:
         raise HTTPException(status_code=404, detail="Préparation non trouvée")
@@ -621,10 +639,10 @@ async def pick_line(
     line_id: UUID,
     data: PickingLineUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Valider une ligne de préparation."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     line = service.pick_line(picking_id, line_id, data)
     if not line:
         raise HTTPException(status_code=404, detail="Ligne non trouvée")
@@ -635,10 +653,10 @@ async def pick_line(
 async def complete_picking(
     picking_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Terminer une préparation."""
-    service = get_inventory_service(db, current_user["tenant_id"], current_user.get("id"))
+    service = get_inventory_service(db, current_user.tenant_id, current_user.id)
     picking = service.complete_picking(picking_id)
     if not picking:
         raise HTTPException(status_code=400, detail="Impossible de terminer cette préparation")
@@ -652,8 +670,8 @@ async def complete_picking(
 @router.get("/dashboard", response_model=InventoryDashboard)
 async def get_dashboard(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Récupérer le dashboard inventaire."""
-    service = get_inventory_service(db, current_user["tenant_id"])
+    service = get_inventory_service(db, current_user.tenant_id)
     return service.get_dashboard()

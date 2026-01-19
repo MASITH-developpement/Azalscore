@@ -16,32 +16,26 @@ SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
 
 import logging
 import re
-from typing import Dict, List, Optional, Tuple, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
-from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 
-from .rbac_matrix import (
-    StandardRole,
-    Module,
-    Action,
-    Restriction,
-    check_permission,
-    map_legacy_role_to_standard,
-    SecurityRules,
-)
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import de la fonction SAFE de gestion des erreurs
 # Note: Utilise error_response.py au lieu de middleware.py pour éviter les imports circulaires
 from app.modules.guardian.error_response import (
-    build_error_response,
-    build_safe_error_response,
-    get_error_type_for_status,
     ErrorType,
+    build_error_response,
 )
 
+from .rbac_matrix import (
+    Action,
+    Module,
+    StandardRole,
+    check_permission,
+    map_legacy_role_to_standard,
+)
 
 logger = logging.getLogger("rbac.middleware")
 
@@ -60,7 +54,7 @@ class RoutePermission:
 
 # Mapping des patterns de routes vers les permissions requises
 # Format: (method, path_pattern) -> RoutePermission
-ROUTE_PERMISSIONS: Dict[Tuple[str, str], RoutePermission] = {
+ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     # =========================================================================
     # USERS & ROLES
     # =========================================================================
@@ -226,9 +220,9 @@ ROUTE_PERMISSIONS: Dict[Tuple[str, str], RoutePermission] = {
 
 
 # Routes publiques (pas de vérification RBAC)
-PUBLIC_ROUTES: List[str] = [
-    r"^/health/?$",
-    r"^/metrics/?$",
+PUBLIC_ROUTES: list[str] = [
+    r"^/health(/.*)?$",     # /health and all subpaths like /health/ready, /health/live
+    r"^/metrics(/.*)?$",    # /metrics and all subpaths like /metrics/json
     r"^/docs/?$",
     r"^/openapi\.json$",
     r"^/redoc/?$",
@@ -248,7 +242,7 @@ PUBLIC_ROUTES: List[str] = [
 
 
 # Routes semi-publiques (authentification requise mais pas de permission spécifique)
-AUTHENTICATED_ONLY_ROUTES: List[str] = [
+AUTHENTICATED_ONLY_ROUTES: list[str] = [
     r"^/api/me/?$",
     r"^/api/users/me/?$",
     r"^/api/iam/me/?$",
@@ -358,17 +352,11 @@ class RBACMiddleware(BaseHTTPMiddleware):
 
     def _is_public_route(self, path: str) -> bool:
         """Vérifie si la route est publique."""
-        for pattern in PUBLIC_ROUTES:
-            if re.match(pattern, path):
-                return True
-        return False
+        return any(re.match(pattern, path) for pattern in PUBLIC_ROUTES)
 
     def _is_authenticated_only_route(self, path: str) -> bool:
         """Vérifie si la route nécessite seulement l'authentification."""
-        for pattern in AUTHENTICATED_ONLY_ROUTES:
-            if re.match(pattern, path):
-                return True
-        return False
+        return any(re.match(pattern, path) for pattern in AUTHENTICATED_ONLY_ROUTES)
 
     def _is_authenticated(self, request: Request) -> bool:
         """Vérifie si l'utilisateur est authentifié."""
@@ -384,7 +372,7 @@ class RBACMiddleware(BaseHTTPMiddleware):
             return request.state.user
         return None
 
-    def _get_user_role(self, user) -> Optional[StandardRole]:
+    def _get_user_role(self, user) -> StandardRole | None:
         """Récupère le rôle standard de l'utilisateur."""
         # Essayer d'abord l'attribut standard_role
         if hasattr(user, 'standard_role') and user.standard_role:
@@ -406,7 +394,7 @@ class RBACMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    def _find_route_permission(self, method: str, path: str) -> Optional[RoutePermission]:
+    def _find_route_permission(self, method: str, path: str) -> RoutePermission | None:
         """Trouve la permission requise pour une route."""
         for (route_method, pattern), permission in ROUTE_PERMISSIONS.items():
             if route_method == method and re.match(pattern, path):

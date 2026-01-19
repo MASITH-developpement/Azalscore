@@ -28,8 +28,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from app.db import Base
 from app.core.types import JSONB, UniversalUUID
+from app.db import Base
 
 # ============================================================================
 # ENUMS
@@ -521,3 +521,113 @@ class GuardianConfig(Base):
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class Incident(Base):
+    """
+    Incident frontend signalé au système GUARDIAN.
+    Table simplifiée pour capturer rapidement les incidents UI.
+    """
+    __tablename__ = "guardian_incidents"
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    incident_uid = Column(String(36), unique=True, nullable=False, index=True,
+                          default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String(255), nullable=False, index=True)
+
+    # Classification
+    type = Column(String(20), nullable=False, index=True)  # auth, api, business, js, network, validation
+    severity = Column(String(20), nullable=False, index=True)  # info, warning, error, critical
+
+    # Contexte utilisateur
+    user_id = Column(UniversalUUID(), nullable=True)
+    user_role = Column(String(50), nullable=True)
+
+    # Localisation
+    page = Column(String(500), nullable=False)
+    route = Column(String(500), nullable=False)
+
+    # HTTP (si applicable)
+    endpoint = Column(String(500), nullable=True)
+    method = Column(String(10), nullable=True)
+    http_status = Column(Integer, nullable=True)
+
+    # Détails
+    message = Column(Text, nullable=False)
+    details = Column(Text, nullable=True)
+    stack_trace = Column(Text, nullable=True)
+
+    # Capture écran (stockage référence)
+    screenshot_path = Column(String(500), nullable=True)
+    has_screenshot = Column(Boolean, default=False, nullable=False)
+
+    # Timestamp frontend
+    frontend_timestamp = Column(DateTime, nullable=False)
+
+    # Guardian actions appliquées
+    guardian_actions = Column(JSONB, nullable=True)  # [{action_type, description, success, result}]
+
+    # Statut
+    is_processed = Column(Boolean, default=False, nullable=False, index=True)
+    is_resolved = Column(Boolean, default=False, nullable=False)
+    resolved_by = Column(UniversalUUID(), nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    resolution_notes = Column(Text, nullable=True)
+
+    # Lien vers error_detection (si converti)
+    error_detection_id = Column(UniversalUUID(), nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, server_default=func.current_timestamp(), nullable=False, index=True)
+
+    __table_args__ = (
+        Index('idx_guardian_incidents_tenant_created', 'tenant_id', 'created_at'),
+        Index('idx_guardian_incidents_severity_type', 'severity', 'type'),
+        Index('idx_guardian_incidents_unprocessed', 'is_processed', 'created_at'),
+    )
+
+
+class GuardianDailyReport(Base):
+    """
+    Rapport journalier GUARDIAN par tenant.
+    Généré automatiquement, contient le résumé des incidents.
+    """
+    __tablename__ = "guardian_daily_reports"
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    report_uid = Column(String(36), unique=True, nullable=False, index=True,
+                        default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String(255), nullable=False, index=True)
+
+    # Période
+    report_date = Column(DateTime, nullable=False, index=True)
+
+    # Statistiques incidents
+    total_incidents = Column(Integer, default=0, nullable=False)
+    incidents_by_type = Column(JSONB, nullable=True)  # {auth: 5, api: 10, ...}
+    incidents_by_severity = Column(JSONB, nullable=True)  # {critical: 2, error: 5, ...}
+
+    # Statistiques corrections
+    total_corrections = Column(Integer, default=0, nullable=False)
+    successful_corrections = Column(Integer, default=0, nullable=False)
+    failed_corrections = Column(Integer, default=0, nullable=False)
+    rollbacks = Column(Integer, default=0, nullable=False)
+
+    # Actions Guardian
+    guardian_actions_count = Column(Integer, default=0, nullable=False)
+    guardian_actions_summary = Column(JSONB, nullable=True)  # [{action_type, count, success_rate}]
+
+    # Pages impactées
+    affected_pages = Column(JSONB, nullable=True)  # [{page, incident_count}]
+
+    # Contenu du rapport
+    report_content = Column(Text, nullable=True)  # Markdown ou HTML
+
+    # Métadonnées
+    generated_at = Column(DateTime, server_default=func.current_timestamp(), nullable=False)
+    sent_at = Column(DateTime, nullable=True)
+    sent_to = Column(JSONB, nullable=True)  # [email1, email2]
+
+    __table_args__ = (
+        Index('idx_guardian_reports_tenant_date', 'tenant_id', 'report_date'),
+    )

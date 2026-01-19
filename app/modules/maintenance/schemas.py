@@ -5,15 +5,13 @@ AZALS MODULE M8 - Schémas Pydantic Maintenance
 Schémas de validation pour les API du module Maintenance (GMAO).
 """
 
-from __future__ import annotations
 
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+import datetime
 from decimal import Decimal
 from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # ============================================================================
 # ENUMS
@@ -129,86 +127,86 @@ class ContractStatusEnum(str, Enum):
 class AssetBase(BaseModel):
     asset_code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     category: AssetCategoryEnum
-    asset_type: Optional[str] = None
+    asset_type: str | None = None
 
 
 class AssetCreate(AssetBase):
-    parent_id: Optional[int] = None
+    parent_id: int | None = None
     criticality: AssetCriticalityEnum = AssetCriticalityEnum.MEDIUM
-    location_id: Optional[int] = None
-    location_description: Optional[str] = None
-    building: Optional[str] = None
-    floor: Optional[str] = None
-    area: Optional[str] = None
-    manufacturer: Optional[str] = None
-    model: Optional[str] = None
-    serial_number: Optional[str] = None
-    year_manufactured: Optional[int] = None
-    purchase_date: Optional[date] = None
-    installation_date: Optional[date] = None
-    warranty_end_date: Optional[date] = None
-    purchase_cost: Optional[Decimal] = None
-    replacement_cost: Optional[Decimal] = None
-    specifications: Optional[Dict[str, Any]] = None
-    power_rating: Optional[str] = None
-    supplier_id: Optional[int] = None
-    responsible_id: Optional[int] = None
-    department: Optional[str] = None
-    maintenance_strategy: Optional[str] = None
-    notes: Optional[str] = None
+    location_id: int | None = None
+    location_description: str | None = None
+    building: str | None = None
+    floor: str | None = None
+    area: str | None = None
+    manufacturer: str | None = None
+    model: str | None = None
+    serial_number: str | None = None
+    year_manufactured: int | None = None
+    purchase_date: datetime.date | None = None
+    installation_date: datetime.date | None = None
+    warranty_end_date: datetime.date | None = None
+    purchase_cost: Decimal | None = None
+    replacement_cost: Decimal | None = None
+    specifications: dict[str, Any] | None = None
+    power_rating: str | None = None
+    supplier_id: int | None = None
+    responsible_id: int | None = None
+    department: str | None = None
+    maintenance_strategy: str | None = None
+    notes: str | None = None
 
 
 class AssetUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    category: Optional[AssetCategoryEnum] = None
-    asset_type: Optional[str] = None
-    status: Optional[AssetStatusEnum] = None
-    criticality: Optional[AssetCriticalityEnum] = None
-    parent_id: Optional[int] = None
-    location_description: Optional[str] = None
-    manufacturer: Optional[str] = None
-    model: Optional[str] = None
-    specifications: Optional[Dict[str, Any]] = None
-    responsible_id: Optional[int] = None
-    department: Optional[str] = None
-    maintenance_strategy: Optional[str] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    category: AssetCategoryEnum | None = None
+    asset_type: str | None = None
+    status: AssetStatusEnum | None = None
+    criticality: AssetCriticalityEnum | None = None
+    parent_id: int | None = None
+    location_description: str | None = None
+    manufacturer: str | None = None
+    model: str | None = None
+    specifications: dict[str, Any] | None = None
+    responsible_id: int | None = None
+    department: str | None = None
+    maintenance_strategy: str | None = None
+    notes: str | None = None
 
 
 class AssetResponse(AssetBase):
     id: int
     status: AssetStatusEnum
     criticality: AssetCriticalityEnum
-    parent_id: Optional[int] = None
-    location_id: Optional[int] = None
-    location_description: Optional[str] = None
-    building: Optional[str] = None
-    manufacturer: Optional[str] = None
-    model: Optional[str] = None
-    serial_number: Optional[str] = None
-    year_manufactured: Optional[int] = None
-    purchase_date: Optional[date] = None
-    installation_date: Optional[date] = None
-    warranty_end_date: Optional[date] = None
-    last_maintenance_date: Optional[date] = None
-    next_maintenance_date: Optional[date] = None
-    purchase_cost: Optional[Decimal] = None
-    current_value: Optional[Decimal] = None
-    operating_hours: Optional[Decimal] = None
-    specifications: Optional[Dict[str, Any]] = None
-    supplier_id: Optional[int] = None
-    responsible_id: Optional[int] = None
-    department: Optional[str] = None
-    maintenance_strategy: Optional[str] = None
-    mtbf_hours: Optional[Decimal] = None
-    mttr_hours: Optional[Decimal] = None
-    availability_rate: Optional[Decimal] = None
-    created_at: datetime
-    updated_at: datetime
-    created_by: Optional[int] = None
+    parent_id: int | None = None
+    location_id: int | None = None
+    location_description: str | None = None
+    building: str | None = None
+    manufacturer: str | None = None
+    model: str | None = None
+    serial_number: str | None = None
+    year_manufactured: int | None = None
+    purchase_date: datetime.date | None = None
+    installation_date: datetime.date | None = None
+    warranty_end_date: datetime.date | None = None
+    last_maintenance_date: datetime.date | None = None
+    next_maintenance_date: datetime.date | None = None
+    purchase_cost: Decimal | None = None
+    current_value: Decimal | None = None
+    operating_hours: Decimal | None = None
+    specifications: dict[str, Any] | None = None
+    supplier_id: int | None = None
+    responsible_id: int | None = None
+    department: str | None = None
+    maintenance_strategy: str | None = None
+    mtbf_hours: Decimal | None = None
+    mttr_hours: Decimal | None = None
+    availability_rate: Decimal | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -220,29 +218,29 @@ class AssetResponse(AssetBase):
 class MeterBase(BaseModel):
     meter_code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     meter_type: str = Field(..., min_length=2, max_length=50)
     unit: str = Field(..., min_length=1, max_length=50)
 
 
 class MeterCreate(MeterBase):
     initial_reading: Decimal = Decimal("0")
-    alert_threshold: Optional[Decimal] = None
-    critical_threshold: Optional[Decimal] = None
-    maintenance_trigger_value: Optional[Decimal] = None
+    alert_threshold: Decimal | None = None
+    critical_threshold: Decimal | None = None
+    maintenance_trigger_value: Decimal | None = None
 
 
 class MeterResponse(MeterBase):
     id: int
     asset_id: int
     current_reading: Decimal
-    last_reading_date: Optional[datetime] = None
+    last_reading_date: datetime.datetime | None = None
     initial_reading: Decimal
-    alert_threshold: Optional[Decimal] = None
-    critical_threshold: Optional[Decimal] = None
-    maintenance_trigger_value: Optional[Decimal] = None
+    alert_threshold: Decimal | None = None
+    critical_threshold: Decimal | None = None
+    maintenance_trigger_value: Decimal | None = None
     is_active: bool
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -250,18 +248,18 @@ class MeterResponse(MeterBase):
 class MeterReadingCreate(BaseModel):
     reading_value: Decimal
     source: str = "MANUAL"
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class MeterReadingResponse(BaseModel):
     id: int
     meter_id: int
-    reading_date: datetime
+    reading_date: datetime.datetime
     reading_value: Decimal
-    delta: Optional[Decimal] = None
-    source: Optional[str] = None
-    notes: Optional[str] = None
-    created_at: datetime
+    delta: Decimal | None = None
+    source: str | None = None
+    notes: str | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -272,25 +270,25 @@ class MeterReadingResponse(BaseModel):
 
 class PlanTaskBase(BaseModel):
     sequence: int
-    task_code: Optional[str] = None
+    task_code: str | None = None
     description: str = Field(..., min_length=5)
-    detailed_instructions: Optional[str] = None
-    estimated_duration_minutes: Optional[int] = None
-    required_skill: Optional[str] = None
+    detailed_instructions: str | None = None
+    estimated_duration_minutes: int | None = None
+    required_skill: str | None = None
     is_mandatory: bool = True
 
 
 class PlanTaskCreate(PlanTaskBase):
-    required_parts: Optional[List[Dict[str, Any]]] = None
-    check_points: Optional[List[str]] = None
+    required_parts: list[dict[str, Any]] | None = None
+    check_points: list[str] | None = None
 
 
 class PlanTaskResponse(PlanTaskBase):
     id: int
     plan_id: int
-    required_parts: Optional[List[Dict[str, Any]]] = None
-    check_points: Optional[List[str]] = None
-    created_at: datetime
+    required_parts: list[dict[str, Any]] | None = None
+    check_points: list[str] | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -298,66 +296,66 @@ class PlanTaskResponse(PlanTaskBase):
 class MaintenancePlanBase(BaseModel):
     plan_code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     maintenance_type: MaintenanceTypeEnum
 
 
 class MaintenancePlanCreate(MaintenancePlanBase):
-    asset_id: Optional[int] = None
-    asset_category: Optional[AssetCategoryEnum] = None
+    asset_id: int | None = None
+    asset_category: AssetCategoryEnum | None = None
     trigger_type: str = "TIME"
-    frequency_value: Optional[int] = None
-    frequency_unit: Optional[str] = None
-    trigger_meter_id: Optional[int] = None
-    trigger_meter_interval: Optional[Decimal] = None
+    frequency_value: int | None = None
+    frequency_unit: str | None = None
+    trigger_meter_id: int | None = None
+    trigger_meter_interval: Decimal | None = None
     lead_time_days: int = 7
-    estimated_duration_hours: Optional[Decimal] = None
-    responsible_id: Optional[int] = None
-    estimated_labor_cost: Optional[Decimal] = None
-    estimated_parts_cost: Optional[Decimal] = None
-    instructions: Optional[str] = None
-    safety_instructions: Optional[str] = None
-    required_tools: Optional[List[str]] = None
-    tasks: Optional[List[PlanTaskCreate]] = None
+    estimated_duration_hours: Decimal | None = None
+    responsible_id: int | None = None
+    estimated_labor_cost: Decimal | None = None
+    estimated_parts_cost: Decimal | None = None
+    instructions: str | None = None
+    safety_instructions: str | None = None
+    required_tools: list[str] | None = None
+    tasks: list[PlanTaskCreate] | None = None
 
 
 class MaintenancePlanUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    frequency_value: Optional[int] = None
-    frequency_unit: Optional[str] = None
-    lead_time_days: Optional[int] = None
-    estimated_duration_hours: Optional[Decimal] = None
-    responsible_id: Optional[int] = None
-    instructions: Optional[str] = None
-    safety_instructions: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    frequency_value: int | None = None
+    frequency_unit: str | None = None
+    lead_time_days: int | None = None
+    estimated_duration_hours: Decimal | None = None
+    responsible_id: int | None = None
+    instructions: str | None = None
+    safety_instructions: str | None = None
+    is_active: bool | None = None
 
 
 class MaintenancePlanResponse(MaintenancePlanBase):
     id: int
-    asset_id: Optional[int] = None
-    asset_category: Optional[AssetCategoryEnum] = None
+    asset_id: int | None = None
+    asset_category: AssetCategoryEnum | None = None
     trigger_type: str
-    frequency_value: Optional[int] = None
-    frequency_unit: Optional[str] = None
-    trigger_meter_id: Optional[int] = None
-    trigger_meter_interval: Optional[Decimal] = None
-    last_execution_date: Optional[date] = None
-    next_due_date: Optional[date] = None
+    frequency_value: int | None = None
+    frequency_unit: str | None = None
+    trigger_meter_id: int | None = None
+    trigger_meter_interval: Decimal | None = None
+    last_execution_date: datetime.date | None = None
+    next_due_date: datetime.date | None = None
     lead_time_days: int
-    estimated_duration_hours: Optional[Decimal] = None
-    responsible_id: Optional[int] = None
+    estimated_duration_hours: Decimal | None = None
+    responsible_id: int | None = None
     is_active: bool
-    estimated_labor_cost: Optional[Decimal] = None
-    estimated_parts_cost: Optional[Decimal] = None
-    instructions: Optional[str] = None
-    safety_instructions: Optional[str] = None
-    required_tools: Optional[List[str]] = None
-    tasks: List[PlanTaskResponse] = []
-    created_at: datetime
-    updated_at: datetime
-    created_by: Optional[int] = None
+    estimated_labor_cost: Decimal | None = None
+    estimated_parts_cost: Decimal | None = None
+    instructions: str | None = None
+    safety_instructions: str | None = None
+    required_tools: list[str] | None = None
+    tasks: list[PlanTaskResponse] = []
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -369,8 +367,8 @@ class MaintenancePlanResponse(MaintenancePlanBase):
 class WorkOrderTaskCreate(BaseModel):
     sequence: int
     description: str = Field(..., min_length=5)
-    instructions: Optional[str] = None
-    estimated_minutes: Optional[int] = None
+    instructions: str | None = None
+    estimated_minutes: int | None = None
 
 
 class WorkOrderTaskResponse(BaseModel):
@@ -378,118 +376,118 @@ class WorkOrderTaskResponse(BaseModel):
     work_order_id: int
     sequence: int
     description: str
-    instructions: Optional[str] = None
-    estimated_minutes: Optional[int] = None
-    actual_minutes: Optional[int] = None
+    instructions: str | None = None
+    estimated_minutes: int | None = None
+    actual_minutes: int | None = None
     status: str
-    completed_date: Optional[datetime] = None
-    result: Optional[str] = None
-    issues_found: Optional[str] = None
+    completed_date: datetime.datetime | None = None
+    result: str | None = None
+    issues_found: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class WorkOrderLaborCreate(BaseModel):
     technician_id: int
-    work_date: date
+    work_date: datetime.date
     hours_worked: Decimal
     overtime_hours: Decimal = Decimal("0")
     labor_type: str = "REGULAR"
-    hourly_rate: Optional[Decimal] = None
-    work_description: Optional[str] = None
+    hourly_rate: Decimal | None = None
+    work_description: str | None = None
 
 
 class WorkOrderLaborResponse(BaseModel):
     id: int
     work_order_id: int
     technician_id: int
-    technician_name: Optional[str] = None
-    work_date: date
+    technician_name: str | None = None
+    work_date: datetime.date
     hours_worked: Decimal
     overtime_hours: Decimal
-    labor_type: Optional[str] = None
-    hourly_rate: Optional[Decimal] = None
-    total_cost: Optional[Decimal] = None
-    work_description: Optional[str] = None
-    created_at: datetime
+    labor_type: str | None = None
+    hourly_rate: Decimal | None = None
+    total_cost: Decimal | None = None
+    work_description: str | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class WorkOrderPartCreate(BaseModel):
-    spare_part_id: Optional[int] = None
+    spare_part_id: int | None = None
     part_description: str = Field(..., min_length=2, max_length=300)
     quantity_used: Decimal
-    unit: Optional[str] = None
-    unit_cost: Optional[Decimal] = None
+    unit: str | None = None
+    unit_cost: Decimal | None = None
     source: str = "STOCK"
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class WorkOrderPartResponse(BaseModel):
     id: int
     work_order_id: int
-    spare_part_id: Optional[int] = None
-    part_code: Optional[str] = None
+    spare_part_id: int | None = None
+    part_code: str | None = None
     part_description: str
-    quantity_planned: Optional[Decimal] = None
+    quantity_planned: Decimal | None = None
     quantity_used: Decimal
-    unit: Optional[str] = None
-    unit_cost: Optional[Decimal] = None
-    total_cost: Optional[Decimal] = None
-    source: Optional[str] = None
-    created_at: datetime
+    unit: str | None = None
+    unit_cost: Decimal | None = None
+    total_cost: Decimal | None = None
+    source: str | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class WorkOrderBase(BaseModel):
     title: str = Field(..., min_length=5, max_length=300)
-    description: Optional[str] = None
+    description: str | None = None
     maintenance_type: MaintenanceTypeEnum
     asset_id: int
 
 
 class WorkOrderCreate(WorkOrderBase):
-    component_id: Optional[int] = None
+    component_id: int | None = None
     priority: WorkOrderPriorityEnum = WorkOrderPriorityEnum.MEDIUM
-    maintenance_plan_id: Optional[int] = None
-    failure_id: Optional[int] = None
-    requester_id: Optional[int] = None
-    request_description: Optional[str] = None
-    scheduled_start_date: Optional[datetime] = None
-    scheduled_end_date: Optional[datetime] = None
-    due_date: Optional[datetime] = None
-    assigned_to_id: Optional[int] = None
-    external_vendor_id: Optional[int] = None
-    work_instructions: Optional[str] = None
-    safety_precautions: Optional[str] = None
-    tools_required: Optional[List[str]] = None
-    location_description: Optional[str] = None
-    estimated_labor_hours: Optional[Decimal] = None
-    estimated_parts_cost: Optional[Decimal] = None
-    tasks: Optional[List[WorkOrderTaskCreate]] = None
+    maintenance_plan_id: int | None = None
+    failure_id: int | None = None
+    requester_id: int | None = None
+    request_description: str | None = None
+    scheduled_start_date: datetime.datetime | None = None
+    scheduled_end_date: datetime.datetime | None = None
+    due_date: datetime.datetime | None = None
+    assigned_to_id: int | None = None
+    external_vendor_id: int | None = None
+    work_instructions: str | None = None
+    safety_precautions: str | None = None
+    tools_required: list[str] | None = None
+    location_description: str | None = None
+    estimated_labor_hours: Decimal | None = None
+    estimated_parts_cost: Decimal | None = None
+    tasks: list[WorkOrderTaskCreate] | None = None
 
 
 class WorkOrderUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=5, max_length=300)
-    description: Optional[str] = None
-    priority: Optional[WorkOrderPriorityEnum] = None
-    status: Optional[WorkOrderStatusEnum] = None
-    scheduled_start_date: Optional[datetime] = None
-    scheduled_end_date: Optional[datetime] = None
-    due_date: Optional[datetime] = None
-    assigned_to_id: Optional[int] = None
-    external_vendor_id: Optional[int] = None
-    work_instructions: Optional[str] = None
-    safety_precautions: Optional[str] = None
-    location_description: Optional[str] = None
-    notes: Optional[str] = None
+    title: str | None = Field(None, min_length=5, max_length=300)
+    description: str | None = None
+    priority: WorkOrderPriorityEnum | None = None
+    status: WorkOrderStatusEnum | None = None
+    scheduled_start_date: datetime.datetime | None = None
+    scheduled_end_date: datetime.datetime | None = None
+    due_date: datetime.datetime | None = None
+    assigned_to_id: int | None = None
+    external_vendor_id: int | None = None
+    work_instructions: str | None = None
+    safety_precautions: str | None = None
+    location_description: str | None = None
+    notes: str | None = None
 
 
 class WorkOrderComplete(BaseModel):
     completion_notes: str = Field(..., min_length=10)
-    meter_reading_end: Optional[Decimal] = None
+    meter_reading_end: Decimal | None = None
 
 
 class WorkOrderResponse(WorkOrderBase):
@@ -497,45 +495,45 @@ class WorkOrderResponse(WorkOrderBase):
     wo_number: str
     priority: WorkOrderPriorityEnum
     status: WorkOrderStatusEnum
-    component_id: Optional[int] = None
-    source: Optional[str] = None
-    source_reference: Optional[str] = None
-    maintenance_plan_id: Optional[int] = None
-    failure_id: Optional[int] = None
-    requester_id: Optional[int] = None
-    request_date: Optional[datetime] = None
-    request_description: Optional[str] = None
-    scheduled_start_date: Optional[datetime] = None
-    scheduled_end_date: Optional[datetime] = None
-    due_date: Optional[datetime] = None
-    actual_start_date: Optional[datetime] = None
-    actual_end_date: Optional[datetime] = None
-    downtime_hours: Optional[Decimal] = None
-    assigned_to_id: Optional[int] = None
-    external_vendor_id: Optional[int] = None
-    work_instructions: Optional[str] = None
-    safety_precautions: Optional[str] = None
-    tools_required: Optional[List[str]] = None
-    location_description: Optional[str] = None
-    completion_notes: Optional[str] = None
-    completed_by_id: Optional[int] = None
+    component_id: int | None = None
+    source: str | None = None
+    source_reference: str | None = None
+    maintenance_plan_id: int | None = None
+    failure_id: int | None = None
+    requester_id: int | None = None
+    request_date: datetime.datetime | None = None
+    request_description: str | None = None
+    scheduled_start_date: datetime.datetime | None = None
+    scheduled_end_date: datetime.datetime | None = None
+    due_date: datetime.datetime | None = None
+    actual_start_date: datetime.datetime | None = None
+    actual_end_date: datetime.datetime | None = None
+    downtime_hours: Decimal | None = None
+    assigned_to_id: int | None = None
+    external_vendor_id: int | None = None
+    work_instructions: str | None = None
+    safety_precautions: str | None = None
+    tools_required: list[str] | None = None
+    location_description: str | None = None
+    completion_notes: str | None = None
+    completed_by_id: int | None = None
     verification_required: bool
-    verified_by_id: Optional[int] = None
-    verified_date: Optional[datetime] = None
-    estimated_labor_hours: Optional[Decimal] = None
-    estimated_labor_cost: Optional[Decimal] = None
-    estimated_parts_cost: Optional[Decimal] = None
-    actual_labor_hours: Optional[Decimal] = None
-    actual_labor_cost: Optional[Decimal] = None
-    actual_parts_cost: Optional[Decimal] = None
-    meter_reading_end: Optional[Decimal] = None
-    notes: Optional[str] = None
-    tasks: List[WorkOrderTaskResponse] = []
-    labor_entries: List[WorkOrderLaborResponse] = []
-    parts_used: List[WorkOrderPartResponse] = []
-    created_at: datetime
-    updated_at: datetime
-    created_by: Optional[int] = None
+    verified_by_id: int | None = None
+    verified_date: datetime.datetime | None = None
+    estimated_labor_hours: Decimal | None = None
+    estimated_labor_cost: Decimal | None = None
+    estimated_parts_cost: Decimal | None = None
+    actual_labor_hours: Decimal | None = None
+    actual_labor_cost: Decimal | None = None
+    actual_parts_cost: Decimal | None = None
+    meter_reading_end: Decimal | None = None
+    notes: str | None = None
+    tasks: list[WorkOrderTaskResponse] = []
+    labor_entries: list[WorkOrderLaborResponse] = []
+    parts_used: list[WorkOrderPartResponse] = []
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -548,56 +546,56 @@ class FailureBase(BaseModel):
     asset_id: int
     failure_type: FailureTypeEnum
     description: str = Field(..., min_length=10)
-    failure_date: datetime
+    failure_date: datetime.datetime
 
 
 class FailureCreate(FailureBase):
-    component_id: Optional[int] = None
-    symptoms: Optional[str] = None
+    component_id: int | None = None
+    symptoms: str | None = None
     production_stopped: bool = False
-    downtime_hours: Optional[Decimal] = None
-    meter_reading: Optional[Decimal] = None
-    notes: Optional[str] = None
+    downtime_hours: Decimal | None = None
+    meter_reading: Decimal | None = None
+    notes: str | None = None
 
 
 class FailureUpdate(BaseModel):
-    description: Optional[str] = None
-    symptoms: Optional[str] = None
-    production_stopped: Optional[bool] = None
-    downtime_hours: Optional[Decimal] = None
-    estimated_cost_impact: Optional[Decimal] = None
-    resolution: Optional[str] = None
-    root_cause: Optional[str] = None
-    corrective_action: Optional[str] = None
-    preventive_action: Optional[str] = None
-    status: Optional[str] = None
-    notes: Optional[str] = None
+    description: str | None = None
+    symptoms: str | None = None
+    production_stopped: bool | None = None
+    downtime_hours: Decimal | None = None
+    estimated_cost_impact: Decimal | None = None
+    resolution: str | None = None
+    root_cause: str | None = None
+    corrective_action: str | None = None
+    preventive_action: str | None = None
+    status: str | None = None
+    notes: str | None = None
 
 
 class FailureResponse(FailureBase):
     id: int
     failure_number: str
-    component_id: Optional[int] = None
-    symptoms: Optional[str] = None
-    detected_date: Optional[datetime] = None
-    reported_date: Optional[datetime] = None
-    resolved_date: Optional[datetime] = None
+    component_id: int | None = None
+    symptoms: str | None = None
+    detected_date: datetime.datetime | None = None
+    reported_date: datetime.datetime | None = None
+    resolved_date: datetime.datetime | None = None
     production_stopped: bool
-    downtime_hours: Optional[Decimal] = None
-    production_loss_units: Optional[Decimal] = None
-    estimated_cost_impact: Optional[Decimal] = None
-    reported_by_id: Optional[int] = None
-    work_order_id: Optional[int] = None
-    resolution: Optional[str] = None
-    root_cause: Optional[str] = None
-    corrective_action: Optional[str] = None
-    preventive_action: Optional[str] = None
-    meter_reading: Optional[Decimal] = None
+    downtime_hours: Decimal | None = None
+    production_loss_units: Decimal | None = None
+    estimated_cost_impact: Decimal | None = None
+    reported_by_id: int | None = None
+    work_order_id: int | None = None
+    resolution: str | None = None
+    root_cause: str | None = None
+    corrective_action: str | None = None
+    preventive_action: str | None = None
+    meter_reading: Decimal | None = None
     status: str
-    notes: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    created_by: Optional[int] = None
+    notes: str | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -609,66 +607,66 @@ class FailureResponse(FailureBase):
 class SparePartBase(BaseModel):
     part_code: str = Field(..., min_length=2, max_length=100)
     name: str = Field(..., min_length=2, max_length=300)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
 
 
 class SparePartCreate(SparePartBase):
-    manufacturer: Optional[str] = None
-    manufacturer_part_number: Optional[str] = None
-    preferred_supplier_id: Optional[int] = None
+    manufacturer: str | None = None
+    manufacturer_part_number: str | None = None
+    preferred_supplier_id: int | None = None
     unit: str = "PCE"
-    unit_cost: Optional[Decimal] = None
+    unit_cost: Decimal | None = None
     min_stock_level: Decimal = Decimal("0")
-    max_stock_level: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    reorder_quantity: Optional[Decimal] = None
-    lead_time_days: Optional[int] = None
-    criticality: Optional[AssetCriticalityEnum] = None
-    shelf_life_days: Optional[int] = None
-    product_id: Optional[int] = None
-    notes: Optional[str] = None
-    specifications: Optional[Dict[str, Any]] = None
+    max_stock_level: Decimal | None = None
+    reorder_point: Decimal | None = None
+    reorder_quantity: Decimal | None = None
+    lead_time_days: int | None = None
+    criticality: AssetCriticalityEnum | None = None
+    shelf_life_days: int | None = None
+    product_id: int | None = None
+    notes: str | None = None
+    specifications: dict[str, Any] | None = None
 
 
 class SparePartUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=300)
-    description: Optional[str] = None
-    category: Optional[str] = None
-    manufacturer: Optional[str] = None
-    preferred_supplier_id: Optional[int] = None
-    unit_cost: Optional[Decimal] = None
-    min_stock_level: Optional[Decimal] = None
-    max_stock_level: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    lead_time_days: Optional[int] = None
-    criticality: Optional[AssetCriticalityEnum] = None
-    is_active: Optional[bool] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, min_length=2, max_length=300)
+    description: str | None = None
+    category: str | None = None
+    manufacturer: str | None = None
+    preferred_supplier_id: int | None = None
+    unit_cost: Decimal | None = None
+    min_stock_level: Decimal | None = None
+    max_stock_level: Decimal | None = None
+    reorder_point: Decimal | None = None
+    lead_time_days: int | None = None
+    criticality: AssetCriticalityEnum | None = None
+    is_active: bool | None = None
+    notes: str | None = None
 
 
 class SparePartResponse(SparePartBase):
     id: int
-    manufacturer: Optional[str] = None
-    manufacturer_part_number: Optional[str] = None
-    preferred_supplier_id: Optional[int] = None
+    manufacturer: str | None = None
+    manufacturer_part_number: str | None = None
+    preferred_supplier_id: int | None = None
     unit: str
-    unit_cost: Optional[Decimal] = None
-    last_purchase_price: Optional[Decimal] = None
+    unit_cost: Decimal | None = None
+    last_purchase_price: Decimal | None = None
     min_stock_level: Decimal
-    max_stock_level: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    reorder_quantity: Optional[Decimal] = None
-    lead_time_days: Optional[int] = None
-    criticality: Optional[AssetCriticalityEnum] = None
-    shelf_life_days: Optional[int] = None
+    max_stock_level: Decimal | None = None
+    reorder_point: Decimal | None = None
+    reorder_quantity: Decimal | None = None
+    lead_time_days: int | None = None
+    criticality: AssetCriticalityEnum | None = None
+    shelf_life_days: int | None = None
     is_active: bool
-    product_id: Optional[int] = None
-    notes: Optional[str] = None
-    specifications: Optional[Dict[str, Any]] = None
-    created_at: datetime
-    updated_at: datetime
-    created_by: Optional[int] = None
+    product_id: int | None = None
+    notes: str | None = None
+    specifications: dict[str, Any] | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -679,35 +677,35 @@ class PartRequestBase(BaseModel):
 
 
 class PartRequestCreate(PartRequestBase):
-    work_order_id: Optional[int] = None
-    spare_part_id: Optional[int] = None
-    unit: Optional[str] = None
+    work_order_id: int | None = None
+    spare_part_id: int | None = None
+    unit: str | None = None
     priority: WorkOrderPriorityEnum = WorkOrderPriorityEnum.MEDIUM
-    required_date: Optional[date] = None
-    request_reason: Optional[str] = None
+    required_date: datetime.date | None = None
+    request_reason: str | None = None
 
 
 class PartRequestResponse(PartRequestBase):
     id: int
     request_number: str
-    work_order_id: Optional[int] = None
-    spare_part_id: Optional[int] = None
-    unit: Optional[str] = None
-    quantity_approved: Optional[Decimal] = None
-    quantity_issued: Optional[Decimal] = None
+    work_order_id: int | None = None
+    spare_part_id: int | None = None
+    unit: str | None = None
+    quantity_approved: Decimal | None = None
+    quantity_issued: Decimal | None = None
     priority: WorkOrderPriorityEnum
-    required_date: Optional[date] = None
+    required_date: datetime.date | None = None
     status: PartRequestStatusEnum
-    requester_id: Optional[int] = None
-    request_date: Optional[datetime] = None
-    request_reason: Optional[str] = None
-    approved_by_id: Optional[int] = None
-    approved_date: Optional[datetime] = None
-    issued_by_id: Optional[int] = None
-    issued_date: Optional[datetime] = None
-    notes: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    requester_id: int | None = None
+    request_date: datetime.datetime | None = None
+    request_reason: str | None = None
+    approved_by_id: int | None = None
+    approved_date: datetime.datetime | None = None
+    issued_by_id: int | None = None
+    issued_date: datetime.datetime | None = None
+    notes: str | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -719,84 +717,84 @@ class PartRequestResponse(PartRequestBase):
 class ContractBase(BaseModel):
     contract_code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     contract_type: ContractTypeEnum
 
 
 class ContractCreate(ContractBase):
     vendor_id: int
-    vendor_contact: Optional[str] = None
-    vendor_phone: Optional[str] = None
-    vendor_email: Optional[str] = None
-    start_date: date
-    end_date: date
-    renewal_date: Optional[date] = None
-    notice_period_days: Optional[int] = None
+    vendor_contact: str | None = None
+    vendor_phone: str | None = None
+    vendor_email: str | None = None
+    start_date: datetime.date
+    end_date: datetime.date
+    renewal_date: datetime.date | None = None
+    notice_period_days: int | None = None
     auto_renewal: bool = False
-    covered_assets: Optional[List[int]] = None
-    coverage_description: Optional[str] = None
-    exclusions: Optional[str] = None
-    response_time_hours: Optional[int] = None
-    resolution_time_hours: Optional[int] = None
-    contract_value: Optional[Decimal] = None
-    annual_cost: Optional[Decimal] = None
-    payment_frequency: Optional[str] = None
+    covered_assets: list[int] | None = None
+    coverage_description: str | None = None
+    exclusions: str | None = None
+    response_time_hours: int | None = None
+    resolution_time_hours: int | None = None
+    contract_value: Decimal | None = None
+    annual_cost: Decimal | None = None
+    payment_frequency: str | None = None
     includes_parts: bool = False
     includes_labor: bool = True
     includes_travel: bool = False
-    max_interventions: Optional[int] = None
-    manager_id: Optional[int] = None
-    notes: Optional[str] = None
+    max_interventions: int | None = None
+    manager_id: int | None = None
+    notes: str | None = None
 
 
 class ContractUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    status: Optional[ContractStatusEnum] = None
-    vendor_contact: Optional[str] = None
-    vendor_phone: Optional[str] = None
-    vendor_email: Optional[str] = None
-    renewal_date: Optional[date] = None
-    auto_renewal: Optional[bool] = None
-    covered_assets: Optional[List[int]] = None
-    coverage_description: Optional[str] = None
-    response_time_hours: Optional[int] = None
-    annual_cost: Optional[Decimal] = None
-    manager_id: Optional[int] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    status: ContractStatusEnum | None = None
+    vendor_contact: str | None = None
+    vendor_phone: str | None = None
+    vendor_email: str | None = None
+    renewal_date: datetime.date | None = None
+    auto_renewal: bool | None = None
+    covered_assets: list[int] | None = None
+    coverage_description: str | None = None
+    response_time_hours: int | None = None
+    annual_cost: Decimal | None = None
+    manager_id: int | None = None
+    notes: str | None = None
 
 
 class ContractResponse(ContractBase):
     id: int
     status: ContractStatusEnum
     vendor_id: int
-    vendor_contact: Optional[str] = None
-    vendor_phone: Optional[str] = None
-    vendor_email: Optional[str] = None
-    start_date: date
-    end_date: date
-    renewal_date: Optional[date] = None
-    notice_period_days: Optional[int] = None
+    vendor_contact: str | None = None
+    vendor_phone: str | None = None
+    vendor_email: str | None = None
+    start_date: datetime.date
+    end_date: datetime.date
+    renewal_date: datetime.date | None = None
+    notice_period_days: int | None = None
     auto_renewal: bool
-    covered_assets: Optional[List[int]] = None
-    coverage_description: Optional[str] = None
-    exclusions: Optional[str] = None
-    response_time_hours: Optional[int] = None
-    resolution_time_hours: Optional[int] = None
-    availability_guarantee: Optional[Decimal] = None
-    contract_value: Optional[Decimal] = None
-    annual_cost: Optional[Decimal] = None
-    payment_frequency: Optional[str] = None
+    covered_assets: list[int] | None = None
+    coverage_description: str | None = None
+    exclusions: str | None = None
+    response_time_hours: int | None = None
+    resolution_time_hours: int | None = None
+    availability_guarantee: Decimal | None = None
+    contract_value: Decimal | None = None
+    annual_cost: Decimal | None = None
+    payment_frequency: str | None = None
     includes_parts: bool
     includes_labor: bool
     includes_travel: bool
-    max_interventions: Optional[int] = None
+    max_interventions: int | None = None
     interventions_used: int
-    manager_id: Optional[int] = None
-    notes: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    created_by: Optional[int] = None
+    manager_id: int | None = None
+    notes: str | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -807,29 +805,29 @@ class ContractResponse(ContractBase):
 
 class MaintenanceKPIResponse(BaseModel):
     id: int
-    asset_id: Optional[int] = None
-    period_start: date
-    period_end: date
-    period_type: Optional[str] = None
-    availability_rate: Optional[Decimal] = None
-    uptime_hours: Optional[Decimal] = None
-    downtime_hours: Optional[Decimal] = None
-    mtbf_hours: Optional[Decimal] = None
-    mttr_hours: Optional[Decimal] = None
+    asset_id: int | None = None
+    period_start: datetime.date
+    period_end: datetime.date
+    period_type: str | None = None
+    availability_rate: Decimal | None = None
+    uptime_hours: Decimal | None = None
+    downtime_hours: Decimal | None = None
+    mtbf_hours: Decimal | None = None
+    mttr_hours: Decimal | None = None
     failure_count: int
     wo_total: int
     wo_preventive: int
     wo_corrective: int
     wo_completed: int
     wo_overdue: int
-    wo_on_time_rate: Optional[Decimal] = None
-    total_maintenance_cost: Optional[Decimal] = None
-    labor_cost: Optional[Decimal] = None
-    parts_cost: Optional[Decimal] = None
-    preventive_ratio: Optional[Decimal] = None
-    schedule_compliance: Optional[Decimal] = None
+    wo_on_time_rate: Decimal | None = None
+    total_maintenance_cost: Decimal | None = None
+    labor_cost: Decimal | None = None
+    parts_cost: Decimal | None = None
+    preventive_ratio: Decimal | None = None
+    schedule_compliance: Decimal | None = None
     work_order_backlog: int
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -839,42 +837,42 @@ class MaintenanceKPIResponse(BaseModel):
 # ============================================================================
 
 class PaginatedAssetResponse(BaseModel):
-    items: List[AssetResponse]
+    items: list[AssetResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedMaintenancePlanResponse(BaseModel):
-    items: List[MaintenancePlanResponse]
+    items: list[MaintenancePlanResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedWorkOrderResponse(BaseModel):
-    items: List[WorkOrderResponse]
+    items: list[WorkOrderResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedFailureResponse(BaseModel):
-    items: List[FailureResponse]
+    items: list[FailureResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedSparePartResponse(BaseModel):
-    items: List[SparePartResponse]
+    items: list[SparePartResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedContractResponse(BaseModel):
-    items: List[ContractResponse]
+    items: list[ContractResponse]
     total: int
     skip: int
     limit: int
@@ -889,35 +887,35 @@ class MaintenanceDashboard(BaseModel):
     assets_total: int = 0
     assets_active: int = 0
     assets_in_maintenance: int = 0
-    assets_by_category: Dict[str, int] = {}
+    assets_by_category: dict[str, int] = {}
 
     # Ordres de travail
     wo_total: int = 0
     wo_open: int = 0
     wo_overdue: int = 0
     wo_completed_this_month: int = 0
-    wo_by_priority: Dict[str, int] = {}
-    wo_by_status: Dict[str, int] = {}
+    wo_by_priority: dict[str, int] = {}
+    wo_by_status: dict[str, int] = {}
 
     # Pannes
     failures_this_month: int = 0
-    failures_by_type: Dict[str, int] = {}
-    mtbf_global: Optional[Decimal] = None
-    mttr_global: Optional[Decimal] = None
+    failures_by_type: dict[str, int] = {}
+    mtbf_global: Decimal | None = None
+    mttr_global: Decimal | None = None
 
     # Plans de maintenance
     plans_active: int = 0
     plans_due_soon: int = 0
 
     # Coûts
-    total_cost_this_month: Optional[Decimal] = None
-    labor_cost_this_month: Optional[Decimal] = None
-    parts_cost_this_month: Optional[Decimal] = None
+    total_cost_this_month: Decimal | None = None
+    labor_cost_this_month: Decimal | None = None
+    parts_cost_this_month: Decimal | None = None
 
     # Indicateurs
-    availability_rate: Optional[Decimal] = None
-    preventive_ratio: Optional[Decimal] = None
-    schedule_compliance: Optional[Decimal] = None
+    availability_rate: Decimal | None = None
+    preventive_ratio: Decimal | None = None
+    schedule_compliance: Decimal | None = None
 
     # Contrats
     contracts_active: int = 0

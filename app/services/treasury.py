@@ -4,7 +4,8 @@ Règle critique : trésorerie < 0 → RED automatique
 """
 
 from sqlalchemy.orm import Session
-from app.core.models import TreasuryForecast, Decision, DecisionLevel, CoreAuditJournal
+
+from app.core.models import CoreAuditJournal, Decision, DecisionLevel, TreasuryForecast
 
 
 class TreasuryService:
@@ -12,10 +13,10 @@ class TreasuryService:
     Service de calcul et gestion de trésorerie prévisionnelle.
     Déclenche automatiquement une décision RED si trésorerie négative.
     """
-    
+
     def __init__(self, db: Session):
         self.db = db
-    
+
     def calculate_forecast(
         self,
         opening_balance: int,
@@ -26,15 +27,15 @@ class TreasuryService:
     ) -> TreasuryForecast:
         """
         Calcule la trésorerie prévisionnelle.
-        
+
         Formule : forecast_balance = opening_balance + inflows - outflows
-        
+
         Si forecast_balance < 0 :
         - Crée une décision RED
         - Journalise l'événement
         """
         forecast_balance = opening_balance + inflows - outflows
-        
+
         # Créer l'enregistrement de prévision
         red_triggered_value = 1 if forecast_balance < 0 else 0
         forecast = TreasuryForecast(
@@ -49,13 +50,13 @@ class TreasuryService:
         self.db.add(forecast)
         self.db.commit()
         self.db.refresh(forecast)
-        
+
         # Décision RED automatique si trésorerie négative
         if forecast_balance < 0:
             self._trigger_red_decision(forecast.id, forecast_balance, tenant_id, user_id)
-        
+
         return forecast
-    
+
     def _trigger_red_decision(
         self,
         forecast_id: int,
@@ -76,7 +77,7 @@ class TreasuryService:
             reason=f"Negative treasury forecast: {forecast_balance}"
         )
         self.db.add(decision)
-        
+
         # Journaliser
         journal = CoreAuditJournal(
             tenant_id=tenant_id,
@@ -85,9 +86,9 @@ class TreasuryService:
             details=f"Forecast ID: {forecast_id}, Balance: {forecast_balance}"
         )
         self.db.add(journal)
-        
+
         self.db.commit()
-    
+
     def get_latest_forecast(self, tenant_id: str) -> TreasuryForecast | None:
         """Récupère la dernière prévision de trésorerie pour un tenant."""
         return self.db.query(TreasuryForecast).filter(

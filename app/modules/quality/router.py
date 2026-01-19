@@ -6,99 +6,98 @@ Endpoints FastAPI pour le module de gestion de la qualité.
 """
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
-from app.modules.quality.service import get_quality_service
+from app.core.database import get_db
 from app.modules.quality.models import (
-    NonConformanceType,
-    NonConformanceStatus,
-    NonConformanceSeverity,
-    ControlType,
-    ControlStatus,
-    ControlResult,
-    AuditType,
     AuditStatus,
-    CAPAType,
+    AuditType,
     CAPAStatus,
-    ClaimStatus,
+    CAPAType,
     CertificationStatus,
+    ClaimStatus,
+    ControlResult,
+    ControlStatus,
+    ControlType,
+    NonConformanceSeverity,
+    NonConformanceStatus,
+    NonConformanceType,
 )
 from app.modules.quality.schemas import (
-    # Non-conformités
-    NonConformanceCreate,
-    NonConformanceUpdate,
-    NonConformanceClose,
-    NonConformanceResponse,
-    NonConformanceActionCreate,
-    NonConformanceActionUpdate,
-    NonConformanceActionResponse,
-    PaginatedNCResponse,
-    # Templates
-    ControlTemplateCreate,
-    ControlTemplateUpdate,
-    ControlTemplateItemCreate,
-    ControlTemplateResponse,
-    ControlTemplateItemResponse,
-    PaginatedControlTemplateResponse,
-    # Contrôles
-    ControlCreate,
-    ControlUpdate,
-    ControlLineUpdate,
-    ControlResponse,
-    PaginatedControlResponse,
+    AuditClose,
     # Audits
     AuditCreate,
-    AuditUpdate,
-    AuditClose,
-    AuditResponse,
     AuditFindingCreate,
-    AuditFindingUpdate,
     AuditFindingResponse,
-    PaginatedAuditResponse,
+    AuditFindingUpdate,
+    AuditResponse,
+    AuditUpdate,
+    CAPAActionCreate,
+    CAPAActionResponse,
+    CAPAActionUpdate,
+    CAPAClose,
     # CAPA
     CAPACreate,
-    CAPAUpdate,
-    CAPAClose,
     CAPAResponse,
-    CAPAActionCreate,
-    CAPAActionUpdate,
-    CAPAActionResponse,
-    PaginatedCAPAResponse,
-    # Réclamations
-    ClaimCreate,
-    ClaimUpdate,
-    ClaimRespond,
-    ClaimResolve,
-    ClaimClose,
-    ClaimResponse,
-    ClaimActionCreate,
-    ClaimActionResponse,
-    PaginatedClaimResponse,
-    # Indicateurs
-    IndicatorCreate,
-    IndicatorUpdate,
-    IndicatorResponse,
-    IndicatorMeasurementCreate,
-    IndicatorMeasurementResponse,
-    PaginatedIndicatorResponse,
+    CAPAUpdate,
+    CertificationAuditCreate,
+    CertificationAuditResponse,
+    CertificationAuditUpdate,
     # Certifications
     CertificationCreate,
-    CertificationUpdate,
     CertificationResponse,
-    CertificationAuditCreate,
-    CertificationAuditUpdate,
-    CertificationAuditResponse,
+    CertificationUpdate,
+    ClaimActionCreate,
+    ClaimActionResponse,
+    ClaimClose,
+    # Réclamations
+    ClaimCreate,
+    ClaimResolve,
+    ClaimRespond,
+    ClaimResponse,
+    ClaimUpdate,
+    # Contrôles
+    ControlCreate,
+    ControlLineUpdate,
+    ControlResponse,
+    # Templates
+    ControlTemplateCreate,
+    ControlTemplateItemCreate,
+    ControlTemplateItemResponse,
+    ControlTemplateResponse,
+    ControlTemplateUpdate,
+    ControlUpdate,
+    # Indicateurs
+    IndicatorCreate,
+    IndicatorMeasurementCreate,
+    IndicatorMeasurementResponse,
+    IndicatorResponse,
+    IndicatorUpdate,
+    NonConformanceActionCreate,
+    NonConformanceActionResponse,
+    NonConformanceActionUpdate,
+    NonConformanceClose,
+    # Non-conformités
+    NonConformanceCreate,
+    NonConformanceResponse,
+    NonConformanceUpdate,
+    PaginatedAuditResponse,
+    PaginatedCAPAResponse,
     PaginatedCertificationResponse,
+    PaginatedClaimResponse,
+    PaginatedControlResponse,
+    PaginatedControlTemplateResponse,
+    PaginatedIndicatorResponse,
+    PaginatedNCResponse,
     # Dashboard
     QualityDashboard,
 )
+from app.modules.quality.service import get_quality_service
 
-router = APIRouter(prefix="/api/v1/quality", tags=["Quality Management"])
+router = APIRouter(prefix="/quality", tags=["Quality Management"])
 
 
 # ============================================================================
@@ -120,12 +119,12 @@ def create_non_conformance(
 def list_non_conformances(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    nc_type: Optional[NonConformanceType] = None,
-    status: Optional[NonConformanceStatus] = None,
-    severity: Optional[NonConformanceSeverity] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    search: Optional[str] = None,
+    nc_type: NonConformanceType | None = None,
+    status: NonConformanceStatus | None = None,
+    severity: NonConformanceSeverity | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -251,9 +250,9 @@ def create_control_template(
 def list_control_templates(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    control_type: Optional[ControlType] = None,
+    control_type: ControlType | None = None,
     active_only: bool = True,
-    search: Optional[str] = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -332,12 +331,12 @@ def create_control(
 def list_controls(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    control_type: Optional[ControlType] = None,
-    status: Optional[ControlStatus] = None,
-    result: Optional[ControlResult] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    search: Optional[str] = None,
+    control_type: ControlType | None = None,
+    status: ControlStatus | None = None,
+    result: ControlResult | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -420,7 +419,7 @@ def update_control_line(
 def complete_control(
     control_id: int,
     decision: str = Query(..., description="ACCEPT, REJECT, CONDITIONAL, REWORK"),
-    comments: Optional[str] = None,
+    comments: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -451,11 +450,11 @@ def create_audit(
 def list_audits(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    audit_type: Optional[AuditType] = None,
-    status: Optional[AuditStatus] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    search: Optional[str] = None,
+    audit_type: AuditType | None = None,
+    status: AuditStatus | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -580,11 +579,11 @@ def create_capa(
 def list_capas(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    capa_type: Optional[CAPAType] = None,
-    status: Optional[CAPAStatus] = None,
-    priority: Optional[str] = None,
-    owner_id: Optional[int] = None,
-    search: Optional[str] = None,
+    capa_type: CAPAType | None = None,
+    status: CAPAStatus | None = None,
+    priority: str | None = None,
+    owner_id: int | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -695,11 +694,11 @@ def create_claim(
 def list_claims(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    status: Optional[ClaimStatus] = None,
-    customer_id: Optional[int] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    search: Optional[str] = None,
+    status: ClaimStatus | None = None,
+    customer_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -839,9 +838,9 @@ def create_indicator(
 def list_indicators(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    category: Optional[str] = None,
+    category: str | None = None,
     active_only: bool = True,
-    search: Optional[str] = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -920,8 +919,8 @@ def create_certification(
 def list_certifications(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    status: Optional[CertificationStatus] = None,
-    search: Optional[str] = None,
+    status: CertificationStatus | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):

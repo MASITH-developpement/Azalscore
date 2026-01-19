@@ -5,26 +5,46 @@ Endpoints API pour la gestion des abonnements.
 """
 
 from datetime import date
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 
-from .models import SubscriptionStatus, InvoiceStatus
+from .models import InvoiceStatus, SubscriptionStatus
 from .schemas import (
-    PlanCreate, PlanUpdate, PlanResponse, PlanListResponse,
-    AddOnCreate, AddOnUpdate, AddOnResponse,
-    SubscriptionCreate, SubscriptionUpdate, SubscriptionResponse,
-    SubscriptionListResponse, SubscriptionChangePlanRequest,
-    SubscriptionCancelRequest, SubscriptionPauseRequest,
-    InvoiceCreate, InvoiceResponse, InvoiceListResponse,
-    PaymentCreate, PaymentResponse, RefundRequest,
-    UsageRecordCreate, UsageRecordResponse, UsageSummary,
-    CouponCreate, CouponUpdate, CouponResponse,
-    CouponValidateRequest, CouponValidateResponse,
-    MetricsSnapshot, SubscriptionDashboard, WebhookEvent
+    AddOnCreate,
+    AddOnResponse,
+    AddOnUpdate,
+    CouponCreate,
+    CouponResponse,
+    CouponUpdate,
+    CouponValidateRequest,
+    CouponValidateResponse,
+    InvoiceCreate,
+    InvoiceListResponse,
+    InvoiceResponse,
+    MetricsSnapshot,
+    PaymentCreate,
+    PaymentResponse,
+    PlanCreate,
+    PlanListResponse,
+    PlanResponse,
+    PlanUpdate,
+    RefundRequest,
+    SubscriptionCancelRequest,
+    SubscriptionChangePlanRequest,
+    SubscriptionCreate,
+    SubscriptionDashboard,
+    SubscriptionListResponse,
+    SubscriptionPauseRequest,
+    SubscriptionResponse,
+    SubscriptionUpdate,
+    UsageRecordCreate,
+    UsageRecordResponse,
+    UsageSummary,
+    WebhookEvent,
 )
 from .service import SubscriptionService
 
@@ -56,8 +76,8 @@ def create_plan(
 
 @router.get("/plans", response_model=PlanListResponse)
 def list_plans(
-    is_active: Optional[bool] = None,
-    is_public: Optional[bool] = None,
+    is_active: bool | None = None,
+    is_public: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: SubscriptionService = Depends(get_service)
@@ -123,7 +143,7 @@ def create_addon(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/plans/{plan_id}/addons", response_model=List[AddOnResponse])
+@router.get("/plans/{plan_id}/addons", response_model=list[AddOnResponse])
 def list_addons(
     plan_id: int,
     service: SubscriptionService = Depends(get_service)
@@ -163,9 +183,9 @@ def create_subscription(
 
 @router.get("", response_model=SubscriptionListResponse)
 def list_subscriptions(
-    customer_id: Optional[int] = None,
-    plan_id: Optional[int] = None,
-    status: Optional[SubscriptionStatus] = None,
+    customer_id: int | None = None,
+    plan_id: int | None = None,
+    status: SubscriptionStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service: SubscriptionService = Depends(get_service)
@@ -274,9 +294,9 @@ def create_invoice(
 
 @router.get("/invoices", response_model=InvoiceListResponse)
 def list_invoices(
-    subscription_id: Optional[int] = None,
-    customer_id: Optional[int] = None,
-    status: Optional[InvoiceStatus] = None,
+    subscription_id: int | None = None,
+    customer_id: int | None = None,
+    status: InvoiceStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service: SubscriptionService = Depends(get_service)
@@ -330,7 +350,7 @@ def void_invoice(
 @router.post("/invoices/{invoice_id}/pay", response_model=InvoiceResponse)
 def pay_invoice(
     invoice_id: int,
-    amount: Optional[float] = None,
+    amount: float | None = None,
     service: SubscriptionService = Depends(get_service)
 ):
     """Marquer une facture comme payée."""
@@ -387,11 +407,11 @@ def create_usage_record(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{subscription_id}/usage", response_model=List[UsageSummary])
+@router.get("/{subscription_id}/usage", response_model=list[UsageSummary])
 def get_usage_summary(
     subscription_id: int,
-    period_start: Optional[date] = None,
-    period_end: Optional[date] = None,
+    period_start: date | None = None,
+    period_end: date | None = None,
     service: SubscriptionService = Depends(get_service)
 ):
     """Résumé d'usage pour un abonnement."""
@@ -417,9 +437,9 @@ def create_coupon(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/coupons", response_model=List[CouponResponse])
+@router.get("/coupons", response_model=list[CouponResponse])
 def list_coupons(
-    is_active: Optional[bool] = None,
+    is_active: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service: SubscriptionService = Depends(get_service)
@@ -474,7 +494,7 @@ def validate_coupon(
 
 @router.post("/metrics/calculate", response_model=MetricsSnapshot)
 def calculate_metrics(
-    metric_date: Optional[date] = None,
+    metric_date: date | None = None,
     service: SubscriptionService = Depends(get_service)
 ):
     """Calculer et sauvegarder les métriques."""
@@ -494,7 +514,7 @@ def get_metrics(
     return metrics
 
 
-@router.get("/metrics/trend", response_model=List[MetricsSnapshot])
+@router.get("/metrics/trend", response_model=list[MetricsSnapshot])
 def get_metrics_trend(
     start_date: date,
     end_date: date,

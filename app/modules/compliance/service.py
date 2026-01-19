@@ -5,32 +5,59 @@ AZALS MODULE M11 - Service Conformité
 Service métier pour la gestion de la conformité réglementaire.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from .models import (
-    Regulation, Requirement, ComplianceAssessment, ComplianceGap,
-    ComplianceAction, Policy, PolicyAcknowledgment,
-    ComplianceTraining, TrainingCompletion,
-    ComplianceDocument, ComplianceAudit, ComplianceAuditFinding as AuditFinding,
-    ComplianceRisk, ComplianceIncident, ComplianceReport,
-    ComplianceStatus, RegulationType, RequirementPriority,
-    AssessmentStatus, RiskLevel, ActionStatus, AuditStatus, FindingSeverity, IncidentStatus
+    ActionStatus,
+    AssessmentStatus,
+    AuditStatus,
+    ComplianceAction,
+    ComplianceAssessment,
+    ComplianceAudit,
+    ComplianceDocument,
+    ComplianceGap,
+    ComplianceIncident,
+    ComplianceReport,
+    ComplianceRisk,
+    ComplianceStatus,
+    ComplianceTraining,
+    FindingSeverity,
+    IncidentStatus,
+    Policy,
+    PolicyAcknowledgment,
+    Regulation,
+    RegulationType,
+    Requirement,
+    RequirementPriority,
+    RiskLevel,
+    TrainingCompletion,
 )
-
+from .models import ComplianceAuditFinding as AuditFinding
 from .schemas import (
-    RegulationCreate, RegulationUpdate,
-    RequirementCreate, RequirementUpdate,
-    AssessmentCreate, GapCreate,
-    ActionCreate, PolicyCreate, AcknowledgmentCreate,
-    TrainingCreate, CompletionCreate, DocumentCreate, AuditCreate, FindingCreate, RiskCreate, RiskUpdate,
-    IncidentCreate, ReportCreate,
-    ComplianceMetrics
+    AcknowledgmentCreate,
+    ActionCreate,
+    AssessmentCreate,
+    AuditCreate,
+    CompletionCreate,
+    ComplianceMetrics,
+    DocumentCreate,
+    FindingCreate,
+    GapCreate,
+    IncidentCreate,
+    PolicyCreate,
+    RegulationCreate,
+    RegulationUpdate,
+    ReportCreate,
+    RequirementCreate,
+    RequirementUpdate,
+    RiskCreate,
+    RiskUpdate,
+    TrainingCreate,
 )
 
 
@@ -57,7 +84,7 @@ class ComplianceService:
         self.db.refresh(regulation)
         return regulation
 
-    def get_regulation(self, regulation_id: UUID) -> Optional[Regulation]:
+    def get_regulation(self, regulation_id: UUID) -> Regulation | None:
         """Récupérer une réglementation."""
         return self.db.query(Regulation).filter(
             Regulation.id == regulation_id,
@@ -66,11 +93,11 @@ class ComplianceService:
 
     def get_regulations(
         self,
-        regulation_type: Optional[RegulationType] = None,
+        regulation_type: RegulationType | None = None,
         is_active: bool = True,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Regulation]:
+    ) -> list[Regulation]:
         """Récupérer les réglementations."""
         query = self.db.query(Regulation).filter(
             Regulation.tenant_id == self.tenant_id,
@@ -87,7 +114,7 @@ class ComplianceService:
         regulation_id: UUID,
         data: RegulationUpdate,
         user_id: UUID
-    ) -> Optional[Regulation]:
+    ) -> Regulation | None:
         """Mettre à jour une réglementation."""
         regulation = self.get_regulation(regulation_id)
         if not regulation:
@@ -117,7 +144,7 @@ class ComplianceService:
         self.db.refresh(requirement)
         return requirement
 
-    def get_requirement(self, requirement_id: UUID) -> Optional[Requirement]:
+    def get_requirement(self, requirement_id: UUID) -> Requirement | None:
         """Récupérer une exigence."""
         return self.db.query(Requirement).filter(
             Requirement.id == requirement_id,
@@ -126,13 +153,13 @@ class ComplianceService:
 
     def get_requirements(
         self,
-        regulation_id: Optional[UUID] = None,
-        compliance_status: Optional[ComplianceStatus] = None,
-        priority: Optional[RequirementPriority] = None,
+        regulation_id: UUID | None = None,
+        compliance_status: ComplianceStatus | None = None,
+        priority: RequirementPriority | None = None,
         is_active: bool = True,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Requirement]:
+    ) -> list[Requirement]:
         """Récupérer les exigences."""
         query = self.db.query(Requirement).filter(
             Requirement.tenant_id == self.tenant_id,
@@ -153,7 +180,7 @@ class ComplianceService:
         requirement_id: UUID,
         data: RequirementUpdate,
         user_id: UUID
-    ) -> Optional[Requirement]:
+    ) -> Requirement | None:
         """Mettre à jour une exigence."""
         requirement = self.get_requirement(requirement_id)
         if not requirement:
@@ -171,9 +198,9 @@ class ComplianceService:
         self,
         requirement_id: UUID,
         status: ComplianceStatus,
-        score: Optional[Decimal] = None,
-        user_id: Optional[UUID] = None
-    ) -> Optional[Requirement]:
+        score: Decimal | None = None,
+        user_id: UUID | None = None
+    ) -> Requirement | None:
         """Évaluer la conformité d'une exigence."""
         requirement = self.get_requirement(requirement_id)
         if not requirement:
@@ -212,14 +239,14 @@ class ComplianceService:
         self.db.refresh(assessment)
         return assessment
 
-    def get_assessment(self, assessment_id: UUID) -> Optional[ComplianceAssessment]:
+    def get_assessment(self, assessment_id: UUID) -> ComplianceAssessment | None:
         """Récupérer une évaluation."""
         return self.db.query(ComplianceAssessment).filter(
             ComplianceAssessment.id == assessment_id,
             ComplianceAssessment.tenant_id == self.tenant_id
         ).first()
 
-    def start_assessment(self, assessment_id: UUID) -> Optional[ComplianceAssessment]:
+    def start_assessment(self, assessment_id: UUID) -> ComplianceAssessment | None:
         """Démarrer une évaluation."""
         assessment = self.get_assessment(assessment_id)
         if not assessment or assessment.status != AssessmentStatus.DRAFT:
@@ -235,9 +262,9 @@ class ComplianceService:
     def complete_assessment(
         self,
         assessment_id: UUID,
-        findings_summary: Optional[str] = None,
-        recommendations: Optional[str] = None
-    ) -> Optional[ComplianceAssessment]:
+        findings_summary: str | None = None,
+        recommendations: str | None = None
+    ) -> ComplianceAssessment | None:
         """Terminer une évaluation."""
         assessment = self.get_assessment(assessment_id)
         if not assessment or assessment.status != AssessmentStatus.IN_PROGRESS:
@@ -291,7 +318,7 @@ class ComplianceService:
         self,
         assessment_id: UUID,
         user_id: UUID
-    ) -> Optional[ComplianceAssessment]:
+    ) -> ComplianceAssessment | None:
         """Approuver une évaluation."""
         assessment = self.get_assessment(assessment_id)
         if not assessment or assessment.status != AssessmentStatus.COMPLETED:
@@ -334,8 +361,8 @@ class ComplianceService:
     def close_gap(
         self,
         gap_id: UUID,
-        resolution_notes: Optional[str] = None
-    ) -> Optional[ComplianceGap]:
+        resolution_notes: str | None = None
+    ) -> ComplianceGap | None:
         """Clôturer un écart."""
         gap = self.db.query(ComplianceGap).filter(
             ComplianceGap.id == gap_id,
@@ -377,14 +404,14 @@ class ComplianceService:
         self.db.refresh(action)
         return action
 
-    def get_action(self, action_id: UUID) -> Optional[ComplianceAction]:
+    def get_action(self, action_id: UUID) -> ComplianceAction | None:
         """Récupérer une action."""
         return self.db.query(ComplianceAction).filter(
             ComplianceAction.id == action_id,
             ComplianceAction.tenant_id == self.tenant_id
         ).first()
 
-    def start_action(self, action_id: UUID) -> Optional[ComplianceAction]:
+    def start_action(self, action_id: UUID) -> ComplianceAction | None:
         """Démarrer une action."""
         action = self.get_action(action_id)
         if not action or action.status != ActionStatus.OPEN:
@@ -401,9 +428,9 @@ class ComplianceService:
         self,
         action_id: UUID,
         resolution_notes: str,
-        evidence: Optional[List[str]] = None,
-        actual_cost: Optional[Decimal] = None
-    ) -> Optional[ComplianceAction]:
+        evidence: list[str] | None = None,
+        actual_cost: Decimal | None = None
+    ) -> ComplianceAction | None:
         """Terminer une action."""
         action = self.get_action(action_id)
         if not action or action.status != ActionStatus.IN_PROGRESS:
@@ -426,8 +453,8 @@ class ComplianceService:
         self,
         action_id: UUID,
         user_id: UUID,
-        verification_notes: Optional[str] = None
-    ) -> Optional[ComplianceAction]:
+        verification_notes: str | None = None
+    ) -> ComplianceAction | None:
         """Vérifier une action."""
         action = self.get_action(action_id)
         if not action or action.status != ActionStatus.COMPLETED:
@@ -446,7 +473,7 @@ class ComplianceService:
         self.db.refresh(action)
         return action
 
-    def get_overdue_actions(self) -> List[ComplianceAction]:
+    def get_overdue_actions(self) -> list[ComplianceAction]:
         """Récupérer les actions en retard."""
         return self.db.query(ComplianceAction).filter(
             ComplianceAction.tenant_id == self.tenant_id,
@@ -471,14 +498,31 @@ class ComplianceService:
         self.db.refresh(policy)
         return policy
 
-    def get_policy(self, policy_id: UUID) -> Optional[Policy]:
+    def get_policy(self, policy_id: UUID) -> Policy | None:
         """Récupérer une politique."""
         return self.db.query(Policy).filter(
             Policy.id == policy_id,
             Policy.tenant_id == self.tenant_id
         ).first()
 
-    def publish_policy(self, policy_id: UUID, user_id: UUID) -> Optional[Policy]:
+    def get_policies(
+        self,
+        is_published: bool | None = None,
+        skip: int = 0,
+        limit: int = 100
+    ) -> list[Policy]:
+        """Récupérer les politiques."""
+        query = self.db.query(Policy).filter(
+            Policy.tenant_id == self.tenant_id,
+            Policy.is_active
+        )
+
+        if is_published is not None:
+            query = query.filter(Policy.is_published == is_published)
+
+        return query.order_by(Policy.code).offset(skip).limit(limit).all()
+
+    def publish_policy(self, policy_id: UUID, user_id: UUID) -> Policy | None:
         """Publier une politique."""
         policy = self.get_policy(policy_id)
         if not policy:
@@ -496,7 +540,7 @@ class ComplianceService:
         self,
         data: AcknowledgmentCreate,
         user_id: UUID,
-        ip_address: Optional[str] = None
+        ip_address: str | None = None
     ) -> PolicyAcknowledgment:
         """Accuser réception d'une politique."""
         acknowledgment = PolicyAcknowledgment(
@@ -511,12 +555,12 @@ class ComplianceService:
         self.db.refresh(acknowledgment)
         return acknowledgment
 
-    def get_user_acknowledgments(self, user_id: UUID) -> List[PolicyAcknowledgment]:
+    def get_user_acknowledgments(self, user_id: UUID) -> list[PolicyAcknowledgment]:
         """Récupérer les accusés de réception d'un utilisateur."""
         return self.db.query(PolicyAcknowledgment).filter(
             PolicyAcknowledgment.tenant_id == self.tenant_id,
             PolicyAcknowledgment.user_id == user_id,
-            PolicyAcknowledgment.is_valid == True
+            PolicyAcknowledgment.is_valid
         ).all()
 
     # =========================================================================
@@ -535,7 +579,7 @@ class ComplianceService:
         self.db.refresh(training)
         return training
 
-    def get_training(self, training_id: UUID) -> Optional[ComplianceTraining]:
+    def get_training(self, training_id: UUID) -> ComplianceTraining | None:
         """Récupérer une formation."""
         return self.db.query(ComplianceTraining).filter(
             ComplianceTraining.id == training_id,
@@ -560,7 +604,7 @@ class ComplianceService:
     def start_training(
         self,
         completion_id: UUID
-    ) -> Optional[TrainingCompletion]:
+    ) -> TrainingCompletion | None:
         """Démarrer une formation."""
         completion = self.db.query(TrainingCompletion).filter(
             TrainingCompletion.id == completion_id,
@@ -581,8 +625,8 @@ class ComplianceService:
         self,
         completion_id: UUID,
         score: int,
-        certificate_number: Optional[str] = None
-    ) -> Optional[TrainingCompletion]:
+        certificate_number: str | None = None
+    ) -> TrainingCompletion | None:
         """Terminer une formation."""
         completion = self.db.query(TrainingCompletion).filter(
             TrainingCompletion.id == completion_id,
@@ -610,12 +654,12 @@ class ComplianceService:
         self.db.refresh(completion)
         return completion
 
-    def get_user_training_status(self, user_id: UUID) -> List[TrainingCompletion]:
+    def get_user_training_status(self, user_id: UUID) -> list[TrainingCompletion]:
         """Récupérer le statut de formation d'un utilisateur."""
         return self.db.query(TrainingCompletion).filter(
             TrainingCompletion.tenant_id == self.tenant_id,
             TrainingCompletion.user_id == user_id,
-            TrainingCompletion.is_current == True
+            TrainingCompletion.is_current
         ).all()
 
     # =========================================================================
@@ -634,7 +678,7 @@ class ComplianceService:
         self.db.refresh(document)
         return document
 
-    def get_document(self, document_id: UUID) -> Optional[ComplianceDocument]:
+    def get_document(self, document_id: UUID) -> ComplianceDocument | None:
         """Récupérer un document."""
         return self.db.query(ComplianceDocument).filter(
             ComplianceDocument.id == document_id,
@@ -645,7 +689,7 @@ class ComplianceService:
         self,
         document_id: UUID,
         user_id: UUID
-    ) -> Optional[ComplianceDocument]:
+    ) -> ComplianceDocument | None:
         """Approuver un document."""
         document = self.get_document(document_id)
         if not document:
@@ -682,14 +726,14 @@ class ComplianceService:
         self.db.refresh(audit)
         return audit
 
-    def get_audit(self, audit_id: UUID) -> Optional[ComplianceAudit]:
+    def get_audit(self, audit_id: UUID) -> ComplianceAudit | None:
         """Récupérer un audit."""
         return self.db.query(ComplianceAudit).filter(
             ComplianceAudit.id == audit_id,
             ComplianceAudit.tenant_id == self.tenant_id
         ).first()
 
-    def start_audit(self, audit_id: UUID) -> Optional[ComplianceAudit]:
+    def start_audit(self, audit_id: UUID) -> ComplianceAudit | None:
         """Démarrer un audit."""
         audit = self.get_audit(audit_id)
         if not audit or audit.status != AuditStatus.PLANNED:
@@ -705,10 +749,10 @@ class ComplianceService:
     def complete_audit(
         self,
         audit_id: UUID,
-        executive_summary: Optional[str] = None,
-        conclusions: Optional[str] = None,
-        recommendations: Optional[str] = None
-    ) -> Optional[ComplianceAudit]:
+        executive_summary: str | None = None,
+        conclusions: str | None = None,
+        recommendations: str | None = None
+    ) -> ComplianceAudit | None:
         """Terminer un audit."""
         audit = self.get_audit(audit_id)
         if not audit or audit.status != AuditStatus.IN_PROGRESS:
@@ -735,7 +779,7 @@ class ComplianceService:
         self.db.refresh(audit)
         return audit
 
-    def close_audit(self, audit_id: UUID, user_id: UUID) -> Optional[ComplianceAudit]:
+    def close_audit(self, audit_id: UUID, user_id: UUID) -> ComplianceAudit | None:
         """Clôturer un audit."""
         audit = self.get_audit(audit_id)
         if not audit or audit.status != AuditStatus.COMPLETED:
@@ -776,7 +820,7 @@ class ComplianceService:
         self,
         finding_id: UUID,
         response: str
-    ) -> Optional[AuditFinding]:
+    ) -> AuditFinding | None:
         """Répondre à une constatation."""
         finding = self.db.query(AuditFinding).filter(
             AuditFinding.id == finding_id,
@@ -793,7 +837,7 @@ class ComplianceService:
         self.db.refresh(finding)
         return finding
 
-    def close_finding(self, finding_id: UUID) -> Optional[AuditFinding]:
+    def close_finding(self, finding_id: UUID) -> AuditFinding | None:
         """Clôturer une constatation."""
         finding = self.db.query(AuditFinding).filter(
             AuditFinding.id == finding_id,
@@ -842,7 +886,7 @@ class ComplianceService:
         else:
             return RiskLevel.LOW
 
-    def get_risk(self, risk_id: UUID) -> Optional[ComplianceRisk]:
+    def get_risk(self, risk_id: UUID) -> ComplianceRisk | None:
         """Récupérer un risque."""
         return self.db.query(ComplianceRisk).filter(
             ComplianceRisk.id == risk_id,
@@ -854,7 +898,7 @@ class ComplianceService:
         risk_id: UUID,
         data: RiskUpdate,
         user_id: UUID
-    ) -> Optional[ComplianceRisk]:
+    ) -> ComplianceRisk | None:
         """Mettre à jour un risque."""
         risk = self.get_risk(risk_id)
         if not risk:
@@ -881,7 +925,7 @@ class ComplianceService:
         self,
         risk_id: UUID,
         user_id: UUID
-    ) -> Optional[ComplianceRisk]:
+    ) -> ComplianceRisk | None:
         """Accepter un risque."""
         risk = self.get_risk(risk_id)
         if not risk:
@@ -918,7 +962,7 @@ class ComplianceService:
         self.db.refresh(incident)
         return incident
 
-    def get_incident(self, incident_id: UUID) -> Optional[ComplianceIncident]:
+    def get_incident(self, incident_id: UUID) -> ComplianceIncident | None:
         """Récupérer un incident."""
         return self.db.query(ComplianceIncident).filter(
             ComplianceIncident.id == incident_id,
@@ -929,7 +973,7 @@ class ComplianceService:
         self,
         incident_id: UUID,
         assignee_id: UUID
-    ) -> Optional[ComplianceIncident]:
+    ) -> ComplianceIncident | None:
         """Assigner un incident."""
         incident = self.get_incident(incident_id)
         if not incident:
@@ -946,9 +990,9 @@ class ComplianceService:
         self,
         incident_id: UUID,
         resolution: str,
-        root_cause: Optional[str] = None,
-        lessons_learned: Optional[str] = None
-    ) -> Optional[ComplianceIncident]:
+        root_cause: str | None = None,
+        lessons_learned: str | None = None
+    ) -> ComplianceIncident | None:
         """Résoudre un incident."""
         incident = self.get_incident(incident_id)
         if not incident:
@@ -964,7 +1008,7 @@ class ComplianceService:
         self.db.refresh(incident)
         return incident
 
-    def close_incident(self, incident_id: UUID) -> Optional[ComplianceIncident]:
+    def close_incident(self, incident_id: UUID) -> ComplianceIncident | None:
         """Clôturer un incident."""
         incident = self.get_incident(incident_id)
         if not incident or incident.status != IncidentStatus.RESOLVED:
@@ -1005,7 +1049,7 @@ class ComplianceService:
         self,
         report_id: UUID,
         user_id: UUID
-    ) -> Optional[ComplianceReport]:
+    ) -> ComplianceReport | None:
         """Publier un rapport."""
         report = self.db.query(ComplianceReport).filter(
             ComplianceReport.id == report_id,
@@ -1033,7 +1077,7 @@ class ComplianceService:
         # Exigences
         requirements = self.db.query(Requirement).filter(
             Requirement.tenant_id == self.tenant_id,
-            Requirement.is_active == True
+            Requirement.is_active
         ).all()
 
         total_requirements = len(requirements)
@@ -1047,7 +1091,7 @@ class ComplianceService:
         # Écarts et actions
         open_gaps = self.db.query(ComplianceGap).filter(
             ComplianceGap.tenant_id == self.tenant_id,
-            ComplianceGap.is_open == True
+            ComplianceGap.is_open
         ).count()
 
         open_actions = self.db.query(ComplianceAction).filter(
@@ -1069,30 +1113,30 @@ class ComplianceService:
 
         open_findings = self.db.query(AuditFinding).filter(
             AuditFinding.tenant_id == self.tenant_id,
-            AuditFinding.is_closed == False
+            not AuditFinding.is_closed
         ).count()
 
         critical_findings = self.db.query(AuditFinding).filter(
             AuditFinding.tenant_id == self.tenant_id,
-            AuditFinding.is_closed == False,
+            not AuditFinding.is_closed,
             AuditFinding.severity == FindingSeverity.CRITICAL
         ).count()
 
         # Risques
         active_risks = self.db.query(ComplianceRisk).filter(
             ComplianceRisk.tenant_id == self.tenant_id,
-            ComplianceRisk.is_active == True
+            ComplianceRisk.is_active
         ).count()
 
         high_risks = self.db.query(ComplianceRisk).filter(
             ComplianceRisk.tenant_id == self.tenant_id,
-            ComplianceRisk.is_active == True,
+            ComplianceRisk.is_active,
             ComplianceRisk.risk_level == RiskLevel.HIGH
         ).count()
 
         critical_risks = self.db.query(ComplianceRisk).filter(
             ComplianceRisk.tenant_id == self.tenant_id,
-            ComplianceRisk.is_active == True,
+            ComplianceRisk.is_active,
             ComplianceRisk.risk_level == RiskLevel.CRITICAL
         ).count()
 
@@ -1108,9 +1152,9 @@ class ComplianceService:
         # Politiques
         policies_requiring_ack = self.db.query(Policy).filter(
             Policy.tenant_id == self.tenant_id,
-            Policy.is_active == True,
-            Policy.is_published == True,
-            Policy.requires_acknowledgment == True
+            Policy.is_active,
+            Policy.is_published,
+            Policy.requires_acknowledgment
         ).count()
 
         return ComplianceMetrics(

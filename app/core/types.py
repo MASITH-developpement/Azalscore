@@ -4,12 +4,13 @@ AZALS - Types SQLAlchemy Universels
 Types compatibles PostgreSQL ET SQLite pour les tests.
 """
 
-import uuid
 import json as json_lib
-from sqlalchemy import TypeDecorator, String, Text
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+import uuid
+
+from sqlalchemy import String, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSON as PG_JSON
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 
 class UniversalUUID(TypeDecorator):

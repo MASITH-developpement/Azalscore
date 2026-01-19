@@ -5,15 +5,13 @@ AZALS MODULE T6 - Schémas Pydantic Diffusion Périodique
 Schémas de validation pour les API du module Broadcast.
 """
 
-from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
-from enum import Enum
-
-from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ============================================================================
 # ENUMS
@@ -81,16 +79,16 @@ class RecipientTypeEnum(str, Enum):
 class BroadcastTemplateBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     content_type: ContentTypeEnum
-    subject_template: Optional[str] = None
-    body_template: Optional[str] = None
-    html_template: Optional[str] = None
+    subject_template: str | None = None
+    body_template: str | None = None
+    html_template: str | None = None
     default_channel: DeliveryChannelEnum = DeliveryChannelEnum.EMAIL
-    available_channels: Optional[List[str]] = None
-    variables: Optional[Dict[str, Any]] = None
-    styling: Optional[Dict[str, Any]] = None
-    data_sources: Optional[List[Dict[str, Any]]] = None
+    available_channels: list[str] | None = None
+    variables: dict[str, Any] | None = None
+    styling: dict[str, Any] | None = None
+    data_sources: list[dict[str, Any]] | None = None
     language: str = "fr"
 
 
@@ -99,18 +97,18 @@ class BroadcastTemplateCreate(BroadcastTemplateBase):
 
 
 class BroadcastTemplateUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    subject_template: Optional[str] = None
-    body_template: Optional[str] = None
-    html_template: Optional[str] = None
-    default_channel: Optional[DeliveryChannelEnum] = None
-    available_channels: Optional[List[str]] = None
-    variables: Optional[Dict[str, Any]] = None
-    styling: Optional[Dict[str, Any]] = None
-    data_sources: Optional[List[Dict[str, Any]]] = None
-    language: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    subject_template: str | None = None
+    body_template: str | None = None
+    html_template: str | None = None
+    default_channel: DeliveryChannelEnum | None = None
+    available_channels: list[str] | None = None
+    variables: dict[str, Any] | None = None
+    styling: dict[str, Any] | None = None
+    data_sources: list[dict[str, Any]] | None = None
+    language: str | None = None
+    is_active: bool | None = None
 
 
 class BroadcastTemplateResponse(BroadcastTemplateBase):
@@ -119,7 +117,7 @@ class BroadcastTemplateResponse(BroadcastTemplateBase):
     is_system: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -141,9 +139,9 @@ class BroadcastTemplateResponse(BroadcastTemplateBase):
 class RecipientListBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     is_dynamic: bool = False
-    query_config: Optional[Dict[str, Any]] = None
+    query_config: dict[str, Any] | None = None
 
 
 class RecipientListCreate(RecipientListBase):
@@ -151,10 +149,10 @@ class RecipientListCreate(RecipientListBase):
 
 
 class RecipientListUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    query_config: Optional[Dict[str, Any]] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    query_config: dict[str, Any] | None = None
+    is_active: bool | None = None
 
 
 class RecipientListResponse(RecipientListBase):
@@ -164,7 +162,7 @@ class RecipientListResponse(RecipientListBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -185,25 +183,25 @@ class RecipientListResponse(RecipientListBase):
 
 class RecipientMemberCreate(BaseModel):
     recipient_type: RecipientTypeEnum
-    user_id: Optional[int] = None
-    group_id: Optional[int] = None
-    role_code: Optional[str] = None
-    external_email: Optional[str] = None
-    external_name: Optional[str] = None
-    preferred_channel: Optional[DeliveryChannelEnum] = None
-    preferred_language: Optional[str] = None
+    user_id: int | None = None
+    group_id: int | None = None
+    role_code: str | None = None
+    external_email: str | None = None
+    external_name: str | None = None
+    preferred_channel: DeliveryChannelEnum | None = None
+    preferred_language: str | None = None
 
 
 class RecipientMemberResponse(BaseModel):
     id: int
     list_id: int
     recipient_type: RecipientTypeEnum
-    user_id: Optional[int] = None
-    group_id: Optional[int] = None
-    role_code: Optional[str] = None
-    external_email: Optional[str] = None
-    external_name: Optional[str] = None
-    preferred_channel: Optional[DeliveryChannelEnum] = None
+    user_id: int | None = None
+    group_id: int | None = None
+    role_code: str | None = None
+    external_email: str | None = None
+    external_name: str | None = None
+    preferred_channel: DeliveryChannelEnum | None = None
     is_active: bool
     is_unsubscribed: bool
     added_at: datetime
@@ -218,73 +216,73 @@ class RecipientMemberResponse(BaseModel):
 class ScheduledBroadcastBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=50)
     name: str = Field(..., min_length=2, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     content_type: ContentTypeEnum
     frequency: BroadcastFrequencyEnum
     delivery_channel: DeliveryChannelEnum = DeliveryChannelEnum.EMAIL
 
 
 class ScheduledBroadcastCreate(ScheduledBroadcastBase):
-    template_id: Optional[int] = None
-    recipient_list_id: Optional[int] = None
-    subject: Optional[str] = None
-    body_content: Optional[str] = None
-    html_content: Optional[str] = None
-    cron_expression: Optional[str] = None
+    template_id: int | None = None
+    recipient_list_id: int | None = None
+    subject: str | None = None
+    body_content: str | None = None
+    html_content: str | None = None
+    cron_expression: str | None = None
     timezone: str = "Europe/Paris"
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    send_time: Optional[str] = None
-    day_of_week: Optional[int] = Field(None, ge=0, le=6)
-    day_of_month: Optional[int] = Field(None, ge=1, le=31)
-    data_query: Optional[Dict[str, Any]] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    send_time: str | None = None
+    day_of_week: int | None = Field(None, ge=0, le=6)
+    day_of_month: int | None = Field(None, ge=1, le=31)
+    data_query: dict[str, Any] | None = None
 
 
 class ScheduledBroadcastUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    description: Optional[str] = None
-    template_id: Optional[int] = None
-    recipient_list_id: Optional[int] = None
-    subject: Optional[str] = None
-    body_content: Optional[str] = None
-    html_content: Optional[str] = None
-    delivery_channel: Optional[DeliveryChannelEnum] = None
-    frequency: Optional[BroadcastFrequencyEnum] = None
-    cron_expression: Optional[str] = None
-    timezone: Optional[str] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    send_time: Optional[str] = None
-    day_of_week: Optional[int] = Field(None, ge=0, le=6)
-    day_of_month: Optional[int] = Field(None, ge=1, le=31)
-    data_query: Optional[Dict[str, Any]] = None
+    name: str | None = Field(None, min_length=2, max_length=200)
+    description: str | None = None
+    template_id: int | None = None
+    recipient_list_id: int | None = None
+    subject: str | None = None
+    body_content: str | None = None
+    html_content: str | None = None
+    delivery_channel: DeliveryChannelEnum | None = None
+    frequency: BroadcastFrequencyEnum | None = None
+    cron_expression: str | None = None
+    timezone: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    send_time: str | None = None
+    day_of_week: int | None = Field(None, ge=0, le=6)
+    day_of_month: int | None = Field(None, ge=1, le=31)
+    data_query: dict[str, Any] | None = None
 
 
 class ScheduledBroadcastResponse(ScheduledBroadcastBase):
     id: int
-    template_id: Optional[int] = None
-    recipient_list_id: Optional[int] = None
-    subject: Optional[str] = None
-    cron_expression: Optional[str] = None
+    template_id: int | None = None
+    recipient_list_id: int | None = None
+    subject: str | None = None
+    cron_expression: str | None = None
     timezone: str
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    send_time: Optional[str] = None
-    day_of_week: Optional[int] = None
-    day_of_month: Optional[int] = None
-    data_query: Optional[Dict[str, Any]] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    send_time: str | None = None
+    day_of_week: int | None = None
+    day_of_month: int | None = None
+    data_query: dict[str, Any] | None = None
     status: BroadcastStatusEnum
     is_active: bool
     total_sent: int
     total_delivered: int
     total_failed: int
     total_opened: int
-    last_run_at: Optional[datetime] = None
-    next_run_at: Optional[datetime] = None
-    last_error: Optional[str] = None
+    last_run_at: datetime | None = None
+    next_run_at: datetime | None = None
+    last_error: str | None = None
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[int] = None
+    created_by: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -308,8 +306,8 @@ class BroadcastExecutionResponse(BaseModel):
     scheduled_broadcast_id: int
     execution_number: int
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    duration_seconds: Optional[float] = None
+    completed_at: datetime | None = None
+    duration_seconds: float | None = None
     status: DeliveryStatusEnum
     total_recipients: int
     sent_count: int
@@ -318,9 +316,9 @@ class BroadcastExecutionResponse(BaseModel):
     bounced_count: int
     opened_count: int
     clicked_count: int
-    error_message: Optional[str] = None
+    error_message: str | None = None
     triggered_by: str
-    triggered_user: Optional[int] = None
+    triggered_user: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -337,19 +335,19 @@ class DeliveryDetailResponse(BaseModel):
     id: int
     execution_id: int
     recipient_type: RecipientTypeEnum
-    user_id: Optional[int] = None
-    email: Optional[str] = None
+    user_id: int | None = None
+    email: str | None = None
     channel: DeliveryChannelEnum
     status: DeliveryStatusEnum
     queued_at: datetime
-    sent_at: Optional[datetime] = None
-    delivered_at: Optional[datetime] = None
-    opened_at: Optional[datetime] = None
-    clicked_at: Optional[datetime] = None
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
+    sent_at: datetime | None = None
+    delivered_at: datetime | None = None
+    opened_at: datetime | None = None
+    clicked_at: datetime | None = None
+    error_code: str | None = None
+    error_message: str | None = None
     retry_count: int
-    tracking_id: Optional[str] = None
+    tracking_id: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -368,7 +366,7 @@ class BroadcastPreferenceCreate(BaseModel):
     preferred_format: str = "HTML"
     digest_frequency: BroadcastFrequencyEnum = BroadcastFrequencyEnum.DAILY
     report_frequency: BroadcastFrequencyEnum = BroadcastFrequencyEnum.WEEKLY
-    preferred_send_time: Optional[str] = None
+    preferred_send_time: str | None = None
     timezone: str = "Europe/Paris"
 
 
@@ -384,7 +382,7 @@ class BroadcastPreferenceResponse(BaseModel):
     preferred_format: str
     digest_frequency: BroadcastFrequencyEnum
     report_frequency: BroadcastFrequencyEnum
-    preferred_send_time: Optional[str] = None
+    preferred_send_time: str | None = None
     timezone: str
     is_unsubscribed_all: bool
     created_at: datetime
@@ -394,7 +392,7 @@ class BroadcastPreferenceResponse(BaseModel):
 
 
 class UnsubscribeRequest(BaseModel):
-    broadcast_id: Optional[int] = None  # None = unsubscribe all
+    broadcast_id: int | None = None  # None = unsubscribe all
 
 
 # ============================================================================
@@ -411,11 +409,11 @@ class BroadcastMetricResponse(BaseModel):
     delivered_count: int
     failed_count: int
     bounced_count: int
-    delivery_rate: Optional[float] = None
+    delivery_rate: float | None = None
     opened_count: int
     clicked_count: int
-    open_rate: Optional[float] = None
-    click_rate: Optional[float] = None
+    open_rate: float | None = None
+    click_rate: float | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -428,7 +426,7 @@ class DashboardStatsResponse(BaseModel):
     messages_sent_this_week: int
     delivery_rate: float
     open_rate: float
-    upcoming_broadcasts: List[Dict[str, Any]]
+    upcoming_broadcasts: list[dict[str, Any]]
 
 
 # ============================================================================
@@ -436,42 +434,42 @@ class DashboardStatsResponse(BaseModel):
 # ============================================================================
 
 class PaginatedTemplatesResponse(BaseModel):
-    items: List[BroadcastTemplateResponse]
+    items: list[BroadcastTemplateResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedRecipientListsResponse(BaseModel):
-    items: List[RecipientListResponse]
+    items: list[RecipientListResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedMembersResponse(BaseModel):
-    items: List[RecipientMemberResponse]
+    items: list[RecipientMemberResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedBroadcastsResponse(BaseModel):
-    items: List[ScheduledBroadcastResponse]
+    items: list[ScheduledBroadcastResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedExecutionsResponse(BaseModel):
-    items: List[BroadcastExecutionResponse]
+    items: list[BroadcastExecutionResponse]
     total: int
     skip: int
     limit: int
 
 
 class PaginatedDeliveryDetailsResponse(BaseModel):
-    items: List[DeliveryDetailResponse]
+    items: list[DeliveryDetailResponse]
     total: int
     skip: int
     limit: int

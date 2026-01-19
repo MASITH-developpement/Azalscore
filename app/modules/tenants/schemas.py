@@ -5,13 +5,12 @@ AZALS MODULE T9 - Schémas Tenants
 Schémas Pydantic pour l'API des tenants.
 """
 
-from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
+from datetime import datetime
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ============================================================================
 # ENUMS
@@ -52,54 +51,54 @@ class TenantCreate(BaseModel):
     """Création d'un tenant."""
     tenant_id: str = Field(..., min_length=3, max_length=50, pattern="^[a-z0-9_-]+$")
     name: str = Field(..., min_length=1, max_length=255)
-    legal_name: Optional[str] = None
-    siret: Optional[str] = None
-    vat_number: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
+    legal_name: str | None = None
+    siret: str | None = None
+    vat_number: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
     country: str = "FR"
     email: str = Field(..., min_length=5, max_length=255)
-    phone: Optional[str] = None
-    website: Optional[str] = None
+    phone: str | None = None
+    website: str | None = None
     plan: str = "STARTER"
     timezone: str = "Europe/Paris"
     language: str = "fr"
     currency: str = "EUR"
     max_users: int = 5
     max_storage_gb: int = 10
-    logo_url: Optional[str] = None
+    logo_url: str | None = None
     primary_color: str = "#1976D2"
     secondary_color: str = "#424242"
-    features: Optional[Dict[str, Any]] = None
-    extra_data: Optional[Dict[str, Any]] = None
+    features: dict[str, Any] | None = None
+    extra_data: dict[str, Any] | None = None
 
 
 class TenantUpdate(BaseModel):
     """Mise à jour d'un tenant."""
-    name: Optional[str] = None
-    legal_name: Optional[str] = None
-    siret: Optional[str] = None
-    vat_number: Optional[str] = None
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    postal_code: Optional[str] = None
-    country: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    timezone: Optional[str] = None
-    language: Optional[str] = None
-    currency: Optional[str] = None
-    max_users: Optional[int] = None
-    max_storage_gb: Optional[int] = None
-    logo_url: Optional[str] = None
-    primary_color: Optional[str] = None
-    secondary_color: Optional[str] = None
-    features: Optional[Dict[str, Any]] = None
-    extra_data: Optional[Dict[str, Any]] = None
+    name: str | None = None
+    legal_name: str | None = None
+    siret: str | None = None
+    vat_number: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    website: str | None = None
+    timezone: str | None = None
+    language: str | None = None
+    currency: str | None = None
+    max_users: int | None = None
+    max_storage_gb: int | None = None
+    logo_url: str | None = None
+    primary_color: str | None = None
+    secondary_color: str | None = None
+    features: dict[str, Any] | None = None
+    extra_data: dict[str, Any] | None = None
 
 
 class TenantResponse(BaseModel):
@@ -107,17 +106,17 @@ class TenantResponse(BaseModel):
     id: int
     tenant_id: str
     name: str
-    legal_name: Optional[str]
-    siret: Optional[str]
-    vat_number: Optional[str]
-    address_line1: Optional[str]
-    address_line2: Optional[str]
-    city: Optional[str]
-    postal_code: Optional[str]
+    legal_name: str | None
+    siret: str | None
+    vat_number: str | None
+    address_line1: str | None
+    address_line2: str | None
+    city: str | None
+    postal_code: str | None
     country: str
     email: str
-    phone: Optional[str]
-    website: Optional[str]
+    phone: str | None
+    website: str | None
     status: str
     plan: str
     timezone: str
@@ -127,15 +126,15 @@ class TenantResponse(BaseModel):
     max_users: int
     max_storage_gb: int
     storage_used_gb: float
-    logo_url: Optional[str]
+    logo_url: str | None
     primary_color: str
     secondary_color: str
-    features: Optional[Dict[str, Any]]
-    extra_data: Optional[Dict[str, Any]]
-    trial_ends_at: Optional[datetime]
-    activated_at: Optional[datetime]
-    suspended_at: Optional[datetime]
-    cancelled_at: Optional[datetime]
+    features: dict[str, Any] | None
+    extra_data: dict[str, Any] | None
+    trial_ends_at: datetime | None
+    activated_at: datetime | None
+    suspended_at: datetime | None
+    cancelled_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -172,22 +171,22 @@ class SubscriptionCreate(BaseModel):
     """Création d'un abonnement."""
     plan: str
     billing_cycle: str = "MONTHLY"
-    price_monthly: Optional[float] = None
-    price_yearly: Optional[float] = None
+    price_monthly: float | None = None
+    price_yearly: float | None = None
     discount_percent: float = 0
     starts_at: datetime
-    ends_at: Optional[datetime] = None
+    ends_at: datetime | None = None
     is_trial: bool = False
     auto_renew: bool = True
-    payment_method: Optional[str] = None
+    payment_method: str | None = None
 
 
 class SubscriptionUpdate(BaseModel):
     """Mise à jour d'un abonnement."""
-    plan: Optional[str] = None
-    billing_cycle: Optional[str] = None
-    auto_renew: Optional[bool] = None
-    payment_method: Optional[str] = None
+    plan: str | None = None
+    billing_cycle: str | None = None
+    auto_renew: bool | None = None
+    payment_method: str | None = None
 
 
 class SubscriptionResponse(BaseModel):
@@ -196,18 +195,18 @@ class SubscriptionResponse(BaseModel):
     tenant_id: str
     plan: str
     billing_cycle: str
-    price_monthly: Optional[float]
-    price_yearly: Optional[float]
+    price_monthly: float | None
+    price_yearly: float | None
     discount_percent: float
     starts_at: datetime
-    ends_at: Optional[datetime]
-    next_billing_at: Optional[datetime]
+    ends_at: datetime | None
+    next_billing_at: datetime | None
     is_active: bool
     is_trial: bool
     auto_renew: bool
-    payment_method: Optional[str]
-    last_payment_at: Optional[datetime]
-    last_payment_amount: Optional[float]
+    payment_method: str | None
+    last_payment_at: datetime | None
+    last_payment_amount: float | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -220,9 +219,9 @@ class SubscriptionResponse(BaseModel):
 class ModuleActivation(BaseModel):
     """Activation d'un module."""
     module_code: str = Field(..., min_length=2, max_length=10)
-    module_name: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
-    limits: Optional[Dict[str, Any]] = None
+    module_name: str | None = None
+    config: dict[str, Any] | None = None
+    limits: dict[str, Any] | None = None
 
 
 class ModuleDeactivation(BaseModel):
@@ -235,13 +234,13 @@ class TenantModuleResponse(BaseModel):
     id: int
     tenant_id: str
     module_code: str
-    module_name: Optional[str]
-    module_version: Optional[str]
+    module_name: str | None
+    module_version: str | None
     status: str
-    config: Optional[Dict[str, Any]]
-    limits: Optional[Dict[str, Any]]
+    config: dict[str, Any] | None
+    limits: dict[str, Any] | None
     activated_at: datetime
-    deactivated_at: Optional[datetime]
+    deactivated_at: datetime | None
 
     @field_validator("config", "limits", mode="before")
     @classmethod
@@ -260,8 +259,8 @@ class TenantModuleResponse(BaseModel):
 class TenantInvitationCreate(BaseModel):
     """Création d'invitation tenant."""
     email: str = Field(..., min_length=5, max_length=255)
-    tenant_id: Optional[str] = None
-    tenant_name: Optional[str] = None
+    tenant_id: str | None = None
+    tenant_name: str | None = None
     plan: str = "STARTER"
     proposed_role: str = "TENANT_ADMIN"
     expires_in_days: int = 7
@@ -272,13 +271,13 @@ class TenantInvitationResponse(BaseModel):
     id: int
     token: str
     email: str
-    tenant_id: Optional[str]
-    tenant_name: Optional[str]
-    plan: Optional[str]
+    tenant_id: str | None
+    tenant_name: str | None
+    plan: str | None
     proposed_role: str
     status: str
     expires_at: datetime
-    accepted_at: Optional[datetime]
+    accepted_at: datetime | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -303,7 +302,7 @@ class TenantUsageResponse(BaseModel):
     files_count: int
     api_calls: int
     api_errors: int
-    module_usage: Optional[Dict[str, int]]
+    module_usage: dict[str, int] | None
 
     @field_validator("module_usage", mode="before")
     @classmethod
@@ -319,18 +318,18 @@ class TenantUsageResponse(BaseModel):
 
 class TenantSettingsUpdate(BaseModel):
     """Mise à jour des paramètres."""
-    two_factor_required: Optional[bool] = None
-    session_timeout_minutes: Optional[int] = None
-    password_expiry_days: Optional[int] = None
-    ip_whitelist: Optional[List[str]] = None
-    notify_admin_on_signup: Optional[bool] = None
-    notify_admin_on_error: Optional[bool] = None
-    daily_digest_enabled: Optional[bool] = None
-    webhook_url: Optional[str] = None
-    api_rate_limit: Optional[int] = None
-    auto_backup_enabled: Optional[bool] = None
-    backup_retention_days: Optional[int] = None
-    custom_settings: Optional[Dict[str, Any]] = None
+    two_factor_required: bool | None = None
+    session_timeout_minutes: int | None = None
+    password_expiry_days: int | None = None
+    ip_whitelist: list[str] | None = None
+    notify_admin_on_signup: bool | None = None
+    notify_admin_on_error: bool | None = None
+    daily_digest_enabled: bool | None = None
+    webhook_url: str | None = None
+    api_rate_limit: int | None = None
+    auto_backup_enabled: bool | None = None
+    backup_retention_days: int | None = None
+    custom_settings: dict[str, Any] | None = None
 
 
 class TenantSettingsResponse(BaseModel):
@@ -340,15 +339,15 @@ class TenantSettingsResponse(BaseModel):
     two_factor_required: bool
     session_timeout_minutes: int
     password_expiry_days: int
-    ip_whitelist: Optional[List[str]]
+    ip_whitelist: list[str] | None
     notify_admin_on_signup: bool
     notify_admin_on_error: bool
     daily_digest_enabled: bool
-    webhook_url: Optional[str]
+    webhook_url: str | None
     api_rate_limit: int
     auto_backup_enabled: bool
     backup_retention_days: int
-    custom_settings: Optional[Dict[str, Any]]
+    custom_settings: dict[str, Any] | None
     updated_at: datetime
 
     @field_validator("ip_whitelist", "custom_settings", mode="before")
@@ -385,7 +384,7 @@ class TenantOnboardingResponse(BaseModel):
     progress_percent: int
     current_step: str
     started_at: datetime
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -399,11 +398,11 @@ class TenantEventResponse(BaseModel):
     id: int
     tenant_id: str
     event_type: str
-    event_data: Optional[Dict[str, Any]]
-    description: Optional[str]
-    actor_id: Optional[int]
-    actor_email: Optional[str]
-    actor_ip: Optional[str]
+    event_data: dict[str, Any] | None
+    description: str | None
+    actor_id: int | None
+    actor_email: str | None
+    actor_ip: str | None
     created_at: datetime
 
     @field_validator("event_data", mode="before")
@@ -423,11 +422,11 @@ class TenantEventResponse(BaseModel):
 class TenantDashboardResponse(BaseModel):
     """Dashboard tenant."""
     tenant: TenantResponse
-    subscription: Optional[SubscriptionResponse]
-    modules: List[TenantModuleResponse]
-    onboarding: Optional[TenantOnboardingResponse]
-    usage_today: Optional[TenantUsageResponse]
-    recent_events: List[TenantEventResponse]
+    subscription: SubscriptionResponse | None
+    modules: list[TenantModuleResponse]
+    onboarding: TenantOnboardingResponse | None
+    usage_today: TenantUsageResponse | None
+    recent_events: list[TenantEventResponse]
 
 
 # ============================================================================
@@ -440,8 +439,8 @@ class ProvisionTenantRequest(BaseModel):
     admin_email: str
     admin_first_name: str
     admin_last_name: str
-    admin_password: Optional[str] = None  # Auto-généré si absent
-    modules: List[str] = ["T0", "T1", "T2", "T3", "T4"]
+    admin_password: str | None = None  # Auto-généré si absent
+    modules: list[str] = ["T0", "T1", "T2", "T3", "T4"]
     country_pack: str = "FR"
     send_welcome_email: bool = True
 
@@ -451,8 +450,8 @@ class ProvisionTenantResponse(BaseModel):
     tenant: TenantResponse
     admin_user_id: int
     admin_email: str
-    temporary_password: Optional[str]
-    activated_modules: List[str]
+    temporary_password: str | None
+    activated_modules: list[str]
     onboarding_url: str
 
 
@@ -468,7 +467,7 @@ class PlatformStatsResponse(BaseModel):
     suspended_tenants: int
     total_users: int
     storage_used_gb: float
-    tenants_by_plan: Dict[str, int]
-    tenants_by_country: Dict[str, int]
+    tenants_by_plan: dict[str, int]
+    tenants_by_country: dict[str, int]
     new_tenants_this_month: int
     revenue_this_month: float

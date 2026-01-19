@@ -418,6 +418,88 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 };
 
 // ============================================================
+// STATUS BADGE (alias pour compatibilité)
+// ============================================================
+
+interface StatusBadgeProps {
+  status?: string;
+  children?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'success' | 'warning' | 'danger' | 'info' | 'default';
+}
+
+export const StatusBadge: React.FC<StatusBadgeProps> = ({
+  status,
+  children,
+  size = 'md',
+  variant = 'default',
+}) => {
+  return (
+    <span
+      className={clsx(
+        'azals-status-badge',
+        `azals-status-badge--${variant}`,
+        `azals-status-badge--${size}`
+      )}
+    >
+      {children ?? status}
+    </span>
+  );
+};
+
+// ============================================================
+// STAT CARD
+// ============================================================
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon?: React.ReactNode;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: number;
+  variant?: 'default' | 'success' | 'warning' | 'danger';
+  onClick?: () => void;
+}
+
+export const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  subtitle,
+  icon,
+  trend,
+  trendValue,
+  variant = 'default',
+  onClick,
+}) => {
+  const TrendIcon =
+    trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+
+  return (
+    <div
+      className={clsx('azals-stat-card', `azals-stat-card--${variant}`, {
+        'azals-stat-card--clickable': !!onClick,
+      })}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
+      {icon && <div className="azals-stat-card__icon">{icon}</div>}
+      <div className="azals-stat-card__content">
+        <span className="azals-stat-card__title">{title}</span>
+        <span className="azals-stat-card__value">{value}</span>
+        {subtitle && <span className="azals-stat-card__subtitle">{subtitle}</span>}
+      </div>
+      {trend && (
+        <div className={clsx('azals-stat-card__trend', `azals-stat-card__trend--${trend}`)}>
+          <TrendIcon size={16} />
+          {trendValue !== undefined && <span>{trendValue}%</span>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================
 // EXPORTS
 // ============================================================
 
@@ -427,6 +509,8 @@ export default {
   AlertCard,
   AlertList,
   SeverityBadge,
+  StatusBadge,
+  StatCard,
   WidgetContainer,
   StatusIndicator,
   MetricComparison,

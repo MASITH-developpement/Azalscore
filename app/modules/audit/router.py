@@ -6,32 +6,43 @@ Endpoints API pour l'audit et les benchmarks.
 """
 
 from datetime import datetime
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, BackgroundTasks
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.core.database import get_db
+from app.core.models import User
 
-from .models import (
-    AuditAction, AuditLevel, AuditCategory, ComplianceFramework
-)
+from .models import AuditAction, AuditCategory, AuditLevel, ComplianceFramework
 from .schemas import (
-    AuditLogResponseSchema, AuditLogListResponseSchema,
+    AuditDashboardResponseSchema,
+    AuditLogListResponseSchema,
+    AuditLogResponseSchema,
     AuditSessionResponseSchema,
-    MetricCreateSchema, MetricResponseSchema, MetricValueSchema, MetricValueResponseSchema,
-    BenchmarkCreateSchema, BenchmarkResponseSchema, BenchmarkResultResponseSchema,
-    ComplianceCheckCreateSchema, ComplianceCheckResponseSchema, ComplianceUpdateSchema,
+    AuditStatsSchema,
+    BenchmarkCreateSchema,
+    BenchmarkResponseSchema,
+    BenchmarkResultResponseSchema,
+    ComplianceCheckCreateSchema,
+    ComplianceCheckResponseSchema,
     ComplianceSummarySchema,
-    RetentionRuleCreateSchema, RetentionRuleResponseSchema,
-    ExportCreateSchema, ExportResponseSchema,
-    DashboardCreateSchema, DashboardResponseSchema, DashboardDataResponseSchema,
-    AuditStatsSchema, AuditDashboardResponseSchema
+    ComplianceUpdateSchema,
+    DashboardCreateSchema,
+    DashboardDataResponseSchema,
+    DashboardResponseSchema,
+    ExportCreateSchema,
+    ExportResponseSchema,
+    MetricCreateSchema,
+    MetricResponseSchema,
+    MetricValueResponseSchema,
+    MetricValueSchema,
+    RetentionRuleCreateSchema,
+    RetentionRuleResponseSchema,
 )
 from .service import get_audit_service
 
-
-router = APIRouter(prefix="/api/v1/audit", tags=["Audit & Benchmark"])
+router = APIRouter(prefix="/audit", tags=["Audit & Benchmark"])
 
 
 def get_service(request: Request, db: Session = Depends(get_db)):
@@ -48,21 +59,21 @@ def get_service(request: Request, db: Session = Depends(get_db)):
 async def search_audit_logs(
     request: Request,
     db: Session = Depends(get_db),
-    action: Optional[AuditAction] = Query(None),
-    level: Optional[AuditLevel] = Query(None),
-    category: Optional[AuditCategory] = Query(None),
-    module: Optional[str] = Query(None),
-    entity_type: Optional[str] = Query(None),
-    entity_id: Optional[str] = Query(None),
-    user_id: Optional[int] = Query(None),
-    session_id: Optional[str] = Query(None),
-    success: Optional[bool] = Query(None),
-    from_date: Optional[datetime] = Query(None),
-    to_date: Optional[datetime] = Query(None),
-    search_text: Optional[str] = Query(None),
+    action: AuditAction | None = Query(None),
+    level: AuditLevel | None = Query(None),
+    category: AuditCategory | None = Query(None),
+    module: str | None = Query(None),
+    entity_type: str | None = Query(None),
+    entity_id: str | None = Query(None),
+    user_id: int | None = Query(None),
+    session_id: str | None = Query(None),
+    success: bool | None = Query(None),
+    from_date: datetime | None = Query(None),
+    to_date: datetime | None = Query(None),
+    search_text: str | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Recherche dans les logs d'audit.
@@ -101,7 +112,7 @@ async def get_audit_log(
     log_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un log d'audit par ID.
@@ -116,14 +127,14 @@ async def get_audit_log(
     return AuditLogResponseSchema.from_orm_custom(log)
 
 
-@router.get("/logs/entity/{entity_type}/{entity_id}", response_model=List[AuditLogResponseSchema])
+@router.get("/logs/entity/{entity_type}/{entity_id}", response_model=list[AuditLogResponseSchema])
 async def get_entity_history(
     entity_type: str,
     entity_id: str,
     request: Request,
     db: Session = Depends(get_db),
     limit: int = Query(50, ge=1, le=200),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère l'historique d'une entité.
@@ -134,15 +145,15 @@ async def get_entity_history(
     return [AuditLogResponseSchema.from_orm_custom(log) for log in logs]
 
 
-@router.get("/logs/user/{user_id}", response_model=List[AuditLogResponseSchema])
+@router.get("/logs/user/{user_id}", response_model=list[AuditLogResponseSchema])
 async def get_user_activity(
     user_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    from_date: Optional[datetime] = Query(None),
-    to_date: Optional[datetime] = Query(None),
+    from_date: datetime | None = Query(None),
+    to_date: datetime | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère l'activité d'un utilisateur.
@@ -157,12 +168,12 @@ async def get_user_activity(
 # SESSIONS
 # ============================================================================
 
-@router.get("/sessions", response_model=List[AuditSessionResponseSchema])
+@router.get("/sessions", response_model=list[AuditSessionResponseSchema])
 async def list_active_sessions(
     request: Request,
     db: Session = Depends(get_db),
-    user_id: Optional[int] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    user_id: int | None = Query(None),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les sessions actives.
@@ -178,8 +189,8 @@ async def terminate_session(
     session_id: str,
     request: Request,
     db: Session = Depends(get_db),
-    reason: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    reason: str | None = Query(None),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Termine une session.
@@ -203,7 +214,7 @@ async def create_metric(
     data: MetricCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée une définition de métrique.
@@ -225,12 +236,12 @@ async def create_metric(
     return metric
 
 
-@router.get("/metrics", response_model=List[MetricResponseSchema])
+@router.get("/metrics", response_model=list[MetricResponseSchema])
 async def list_metrics(
     request: Request,
     db: Session = Depends(get_db),
-    module: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    module: str | None = Query(None),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les métriques définies.
@@ -245,7 +256,7 @@ async def record_metric_value(
     data: MetricValueSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Enregistre une valeur de métrique.
@@ -266,15 +277,15 @@ async def record_metric_value(
     return MetricValueResponseSchema.from_orm_custom(value)
 
 
-@router.get("/metrics/{metric_code}/values", response_model=List[MetricValueResponseSchema])
+@router.get("/metrics/{metric_code}/values", response_model=list[MetricValueResponseSchema])
 async def get_metric_values(
     metric_code: str,
     request: Request,
     db: Session = Depends(get_db),
-    from_date: Optional[datetime] = Query(None),
-    to_date: Optional[datetime] = Query(None),
+    from_date: datetime | None = Query(None),
+    to_date: datetime | None = Query(None),
     limit: int = Query(1000, ge=1, le=10000),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les valeurs d'une métrique.
@@ -294,7 +305,7 @@ async def create_benchmark(
     data: BenchmarkCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un benchmark.
@@ -310,17 +321,17 @@ async def create_benchmark(
         module=data.module,
         config=data.config,
         baseline=data.baseline,
-        created_by=current_user.get('user_id')
+        created_by=current_user.id
     )
     return BenchmarkResponseSchema.from_orm_custom(benchmark)
 
 
-@router.get("/benchmarks", response_model=List[BenchmarkResponseSchema])
+@router.get("/benchmarks", response_model=list[BenchmarkResponseSchema])
 async def list_benchmarks(
     request: Request,
     db: Session = Depends(get_db),
-    benchmark_type: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    benchmark_type: str | None = Query(None),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les benchmarks.
@@ -336,7 +347,7 @@ async def run_benchmark(
     benchmark_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Exécute un benchmark.
@@ -347,20 +358,20 @@ async def run_benchmark(
     try:
         result = service.run_benchmark(
             benchmark_id=benchmark_id,
-            executed_by=current_user.get('user_id')
+            executed_by=current_user.id
         )
         return BenchmarkResultResponseSchema.from_orm_custom(result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/benchmarks/{benchmark_id}/results", response_model=List[BenchmarkResultResponseSchema])
+@router.get("/benchmarks/{benchmark_id}/results", response_model=list[BenchmarkResultResponseSchema])
 async def get_benchmark_results(
     benchmark_id: int,
     request: Request,
     db: Session = Depends(get_db),
     limit: int = Query(10, ge=1, le=100),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les résultats d'un benchmark.
@@ -380,7 +391,7 @@ async def create_compliance_check(
     data: ComplianceCheckCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un contrôle de conformité.
@@ -401,13 +412,13 @@ async def create_compliance_check(
     return ComplianceCheckResponseSchema.from_orm_custom(check)
 
 
-@router.get("/compliance/checks", response_model=List[ComplianceCheckResponseSchema])
+@router.get("/compliance/checks", response_model=list[ComplianceCheckResponseSchema])
 async def list_compliance_checks(
     request: Request,
     db: Session = Depends(get_db),
-    framework: Optional[ComplianceFramework] = Query(None),
-    status: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    framework: ComplianceFramework | None = Query(None),
+    status: str | None = Query(None),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les contrôles de conformité.
@@ -418,7 +429,7 @@ async def list_compliance_checks(
 
     query = db.query(ComplianceCheck).filter(
         ComplianceCheck.tenant_id == tenant_id,
-        ComplianceCheck.is_active == True
+        ComplianceCheck.is_active
     )
 
     if framework:
@@ -436,7 +447,7 @@ async def update_compliance_check(
     data: ComplianceUpdateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Met à jour le statut d'un contrôle.
@@ -449,7 +460,7 @@ async def update_compliance_check(
         status=data.status,
         actual_result=data.actual_result,
         evidence=data.evidence,
-        checked_by=current_user.get('user_id')
+        checked_by=current_user.id
     )
 
     if not check:
@@ -462,8 +473,8 @@ async def update_compliance_check(
 async def get_compliance_summary(
     request: Request,
     db: Session = Depends(get_db),
-    framework: Optional[ComplianceFramework] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    framework: ComplianceFramework | None = Query(None),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un résumé de conformité.
@@ -483,7 +494,7 @@ async def create_retention_rule(
     data: RetentionRuleCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée une règle de rétention.
@@ -504,11 +515,11 @@ async def create_retention_rule(
     return rule
 
 
-@router.get("/retention/rules", response_model=List[RetentionRuleResponseSchema])
+@router.get("/retention/rules", response_model=list[RetentionRuleResponseSchema])
 async def list_retention_rules(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les règles de rétention.
@@ -528,7 +539,7 @@ async def list_retention_rules(
 async def apply_retention_rules(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Applique les règles de rétention.
@@ -549,7 +560,7 @@ async def create_export(
     request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée une demande d'export.
@@ -560,7 +571,7 @@ async def create_export(
     export = service.create_export(
         export_type=data.export_type,
         format=data.format,
-        requested_by=current_user.get('user_id'),
+        requested_by=current_user.id,
         date_from=data.date_from,
         date_to=data.date_to,
         filters=data.filters
@@ -572,13 +583,13 @@ async def create_export(
     return ExportResponseSchema.from_orm_custom(export)
 
 
-@router.get("/exports", response_model=List[ExportResponseSchema])
+@router.get("/exports", response_model=list[ExportResponseSchema])
 async def list_exports(
     request: Request,
     db: Session = Depends(get_db),
-    status: Optional[str] = Query(None),
+    status: str | None = Query(None),
     limit: int = Query(20, ge=1, le=100),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les exports.
@@ -603,7 +614,7 @@ async def get_export(
     export_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère un export par ID.
@@ -628,7 +639,7 @@ async def process_export(
     export_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Traite un export.
@@ -652,7 +663,7 @@ async def create_dashboard(
     data: DashboardCreateSchema,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Crée un tableau de bord.
@@ -664,7 +675,7 @@ async def create_dashboard(
         code=data.code,
         name=data.name,
         widgets=[w.model_dump() for w in data.widgets],
-        owner_id=current_user.get('user_id'),
+        owner_id=current_user.id,
         description=data.description,
         layout=data.layout,
         refresh_interval=data.refresh_interval
@@ -672,11 +683,11 @@ async def create_dashboard(
     return DashboardResponseSchema.from_orm_custom(dashboard)
 
 
-@router.get("/dashboards", response_model=List[DashboardResponseSchema])
+@router.get("/dashboards", response_model=list[DashboardResponseSchema])
 async def list_dashboards(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Liste les tableaux de bord.
@@ -684,13 +695,13 @@ async def list_dashboards(
     """
     from .models import AuditDashboard
     tenant_id = request.state.tenant_id
-    user_id = current_user.get('user_id')
+    user_id = current_user.id
 
     dashboards = db.query(AuditDashboard).filter(
         AuditDashboard.tenant_id == tenant_id,
-        AuditDashboard.is_active == True
+        AuditDashboard.is_active
     ).filter(
-        (AuditDashboard.owner_id == user_id) | (AuditDashboard.is_public == True)
+        (AuditDashboard.owner_id == user_id) | (AuditDashboard.is_public)
     ).all()
 
     return [DashboardResponseSchema.from_orm_custom(d) for d in dashboards]
@@ -701,7 +712,7 @@ async def get_dashboard_data(
     dashboard_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les données d'un tableau de bord.
@@ -724,7 +735,7 @@ async def get_dashboard_data(
 async def get_audit_stats(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère les statistiques d'audit.
@@ -738,7 +749,7 @@ async def get_audit_stats(
 async def get_audit_dashboard(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Récupère le dashboard d'audit complet.

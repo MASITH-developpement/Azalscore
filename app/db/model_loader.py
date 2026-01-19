@@ -19,15 +19,14 @@ NE JAMAIS:
 - Bypasser ce loader
 """
 
-import pkgutil
 import importlib
 import logging
-from typing import Set
+import pkgutil
 
 logger = logging.getLogger(__name__)
 
 # Registre des modules charges pour eviter les doublons
-_loaded_modules: Set[str] = set()
+_loaded_modules: set[str] = set()
 _models_loaded: bool = False
 
 
@@ -109,7 +108,7 @@ def _load_module_models() -> None:
         return
 
     # Parcourir recursivement tous les sous-modules
-    for importer, module_name, is_pkg in pkgutil.walk_packages(
+    for _importer, module_name, _is_pkg in pkgutil.walk_packages(
         path=app.modules.__path__,
         prefix=app.modules.__name__ + "."
     ):
@@ -142,7 +141,7 @@ def get_loaded_table_count() -> int:
     return len(Base.metadata.tables)
 
 
-def get_loaded_modules() -> Set[str]:
+def get_loaded_modules() -> set[str]:
     """
     Retourne l'ensemble des modules charges.
     Utile pour le debug.

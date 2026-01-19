@@ -1,22 +1,23 @@
 """
 AZALS API - Invoicing (Devis, Factures, Avoirs)
 """
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
-from uuid import UUID
-from pydantic import BaseModel, Field
-from datetime import date, datetime
+import datetime
 from decimal import Decimal
+from uuid import UUID
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.core.models import User
-
-from app.modules.commercial.models import DocumentType, DocumentStatus
+from app.modules.commercial.models import DocumentStatus, DocumentType
 from app.modules.commercial.schemas import (
-    DocumentCreate, DocumentUpdate, DocumentResponse, DocumentList,
-    DocumentLineCreate, DocumentLineResponse, PaymentCreate, PaymentResponse
+    DocumentCreate,
+    DocumentLineCreate,
+    DocumentLineResponse,
+    DocumentUpdate,
 )
 from app.modules.commercial.service import get_commercial_service
 
@@ -33,17 +34,17 @@ class InvoiceLineInput(BaseModel):
     quantity: Decimal = Field(default=Decimal("1"))
     unit_price: Decimal
     vat_rate: Decimal = Field(default=Decimal("20"))
-    discount_percent: Optional[Decimal] = None
+    discount_percent: Decimal | None = None
 
 
 class InvoiceCreate(BaseModel):
     """Schema de creation de document facturation."""
     client_id: UUID
-    date: Optional[date] = None
-    due_date: Optional[date] = None
-    notes: Optional[str] = None
-    payment_terms: Optional[str] = None
-    lines: List[InvoiceLineInput] = []
+    date: datetime.date | None = None
+    due_date: datetime.date | None = None
+    notes: str | None = None
+    payment_terms: str | None = None
+    lines: list[InvoiceLineInput] = []
 
 
 class InvoiceResponse(BaseModel):
@@ -54,26 +55,26 @@ class InvoiceResponse(BaseModel):
     status: str
     client_id: UUID
     client_name: str
-    date: date
-    due_date: Optional[date] = None
+    date: datetime.date
+    due_date: datetime.date | None = None
     total_ht: Decimal
     total_ttc: Decimal
     currency: str = "EUR"
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 
 
 class InvoiceDetailResponse(InvoiceResponse):
     """Response avec lignes."""
-    lines: List[DocumentLineResponse] = []
-    notes: Optional[str] = None
-    payment_terms: Optional[str] = None
+    lines: list[DocumentLineResponse] = []
+    notes: str | None = None
+    payment_terms: str | None = None
 
 
 class InvoiceListResponse(BaseModel):
     """Liste paginee."""
-    items: List[InvoiceResponse]
+    items: list[InvoiceResponse]
     total: int
     page: int
     page_size: int
@@ -103,9 +104,9 @@ def get_document_type(type_name: str) -> DocumentType:
 
 @router.get("/quotes", response_model=InvoiceListResponse)
 async def list_quotes(
-    status: Optional[str] = None,
-    client_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    client_id: UUID | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -134,8 +135,8 @@ async def list_quotes(
             client_name=item.customer.name if item.customer else "N/A",
             date=item.date,
             due_date=item.due_date,
-            total_ht=item.total_ht,
-            total_ttc=item.total_ttc,
+            total_ht=item.subtotal,  # subtotal = Total HT
+            total_ttc=item.total,    # total = Total TTC
             currency=item.currency,
             created_at=item.created_at
         ))
@@ -164,8 +165,8 @@ async def get_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at,
         lines=doc.lines,
@@ -187,7 +188,7 @@ async def create_quote(
     doc_data = DocumentCreate(
         type=DocumentType.QUOTE,
         customer_id=data.client_id,
-        date=data.date or date.today(),
+        date=data.date or datetime.date.today(),
         due_date=data.due_date,
         notes=data.notes,
         payment_terms=data.payment_terms
@@ -201,8 +202,8 @@ async def create_quote(
             description=line.description,
             quantity=line.quantity,
             unit_price=line.unit_price,
-            vat_rate=line.vat_rate,
-            discount_percent=line.discount_percent
+            tax_rate=float(line.vat_rate) if line.vat_rate else 20.0,
+            discount_percent=float(line.discount_percent) if line.discount_percent else 0.0
         )
         service.add_document_line(doc.id, line_data)
 
@@ -218,8 +219,8 @@ async def create_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -256,8 +257,8 @@ async def update_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -301,8 +302,8 @@ async def send_quote(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -314,9 +315,9 @@ async def send_quote(
 
 @router.get("/invoices", response_model=InvoiceListResponse)
 async def list_invoices(
-    status: Optional[str] = None,
-    client_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    client_id: UUID | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -345,8 +346,8 @@ async def list_invoices(
             client_name=item.customer.name if item.customer else "N/A",
             date=item.date,
             due_date=item.due_date,
-            total_ht=item.total_ht,
-            total_ttc=item.total_ttc,
+            total_ht=item.subtotal,  # subtotal = Total HT
+            total_ttc=item.total,    # total = Total TTC
             currency=item.currency,
             created_at=item.created_at
         ))
@@ -375,8 +376,8 @@ async def get_invoice(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at,
         lines=doc.lines,
@@ -397,7 +398,7 @@ async def create_invoice(
     doc_data = DocumentCreate(
         type=DocumentType.INVOICE,
         customer_id=data.client_id,
-        date=data.date or date.today(),
+        date=data.date or datetime.date.today(),
         due_date=data.due_date,
         notes=data.notes,
         payment_terms=data.payment_terms
@@ -426,8 +427,8 @@ async def create_invoice(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -454,8 +455,8 @@ async def send_invoice(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -467,9 +468,9 @@ async def send_invoice(
 
 @router.get("/credits", response_model=InvoiceListResponse)
 async def list_credits(
-    status: Optional[str] = None,
-    client_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    client_id: UUID | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -498,8 +499,8 @@ async def list_credits(
             client_name=item.customer.name if item.customer else "N/A",
             date=item.date,
             due_date=item.due_date,
-            total_ht=item.total_ht,
-            total_ttc=item.total_ttc,
+            total_ht=item.subtotal,  # subtotal = Total HT
+            total_ttc=item.total,    # total = Total TTC
             currency=item.currency,
             created_at=item.created_at
         ))
@@ -519,7 +520,7 @@ async def create_credit(
     doc_data = DocumentCreate(
         type=DocumentType.CREDIT_NOTE,
         customer_id=data.client_id,
-        date=data.date or date.today(),
+        date=data.date or datetime.date.today(),
         due_date=data.due_date,
         notes=data.notes,
         payment_terms=data.payment_terms
@@ -548,8 +549,8 @@ async def create_credit(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )
@@ -576,8 +577,8 @@ async def send_credit(
         client_name=doc.customer.name if doc.customer else "N/A",
         date=doc.date,
         due_date=doc.due_date,
-        total_ht=doc.total_ht,
-        total_ttc=doc.total_ttc,
+        total_ht=doc.subtotal,  # subtotal = Total HT dans le modèle
+        total_ttc=doc.total,    # total = Total TTC dans le modèle
         currency=doc.currency,
         created_at=doc.created_at
     )

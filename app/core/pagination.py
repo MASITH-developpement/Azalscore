@@ -5,12 +5,12 @@ Pagination standardisée avec métadonnées complètes.
 Optimisé pour performance avec count optionnel.
 """
 
-from typing import TypeVar, Generic, List, Optional, Any
-from pydantic import BaseModel, Field, ConfigDict
-from fastapi import Query
-from sqlalchemy.orm import Query as SQLQuery
 from math import ceil
+from typing import Any, Callable, Generic, TypeVar
 
+from fastapi import Query
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.orm import Query as SQLQuery
 
 T = TypeVar('T')
 
@@ -31,11 +31,11 @@ class PaginatedResponse(BaseModel, Generic[T]):
     """Réponse paginée standardisée."""
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    items: List[T]
-    total: Optional[int] = None
+    items: list[T]
+    total: int | None = None
     page: int
     page_size: int
-    pages: Optional[int] = None
+    pages: int | None = None
     has_next: bool
     has_prev: bool
 
@@ -59,7 +59,7 @@ def get_pagination_params(
 def paginate_query(
     query: SQLQuery,
     pagination: PaginationParams,
-    serializer: Optional[callable] = None
+    serializer: Callable | None = None
 ) -> PaginatedResponse:
     """
     Applique la pagination à une query SQLAlchemy.
@@ -107,9 +107,9 @@ def paginate_query(
 
 
 def paginate_list(
-    items: List[Any],
+    items: list[Any],
     pagination: PaginationParams,
-    serializer: Optional[callable] = None
+    serializer: Callable | None = None
 ) -> PaginatedResponse:
     """
     Pagine une liste Python (pour données en mémoire).
@@ -157,8 +157,8 @@ class PaginationLimits:
 
 # Helper pour créer des réponses de pagination personnalisées
 def create_pagination_response(
-    items: List[Any],
-    total: Optional[int],
+    items: list[Any],
+    total: int | None,
     skip: int,
     limit: int
 ) -> dict:

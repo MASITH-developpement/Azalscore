@@ -6,38 +6,50 @@ Endpoints REST pour le module Packs Pays.
 """
 
 from datetime import date
-from typing import Optional, List
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.auth import get_current_user
-from app.modules.country_packs.service import get_country_pack_service, CountryPackService
-from app.modules.country_packs.models import (
-    TaxType, DocumentType, BankFormat, PackStatus
-)
+from app.core.database import get_db
+from app.modules.country_packs.models import BankFormat, DocumentType, PackStatus, TaxType
 from app.modules.country_packs.schemas import (
+    BankConfigCreate,
+    BankConfigResponse,
     # Country Pack
-    CountryPackCreate, CountryPackUpdate, CountryPackResponse,
-    PaginatedCountryPacksResponse,
-    # Tax Rate
-    TaxRateCreate, TaxRateUpdate, TaxRateResponse, DocumentTemplateCreate, DocumentTemplateResponse,
-    BankConfigCreate, BankConfigResponse,
-    # Holiday
-    PublicHolidayCreate, PublicHolidayResponse, HolidayWithDate,
-    # Legal Requirement
-    LegalRequirementCreate, LegalRequirementResponse,
-    # Tenant Settings
-    TenantCountryActivate, TenantCountrySettingsResponse,
+    CountryPackCreate,
+    CountryPackResponse,
+    CountryPackUpdate,
+    CountrySummary,
+    CurrencyFormatRequest,
+    CurrencyFormatResponse,
+    DateFormatRequest,
+    DateFormatResponse,
+    DocumentTemplateCreate,
+    DocumentTemplateResponse,
+    HolidayWithDate,
     # Utils
-    IBANValidationRequest, IBANValidationResponse,
-    CurrencyFormatRequest, CurrencyFormatResponse,
-    DateFormatRequest, DateFormatResponse,
-    CountrySummary
+    IBANValidationRequest,
+    IBANValidationResponse,
+    # Legal Requirement
+    LegalRequirementCreate,
+    LegalRequirementResponse,
+    PaginatedCountryPacksResponse,
+    # Holiday
+    PublicHolidayCreate,
+    PublicHolidayResponse,
+    # Tax Rate
+    TaxRateCreate,
+    TaxRateResponse,
+    TaxRateUpdate,
+    # Tenant Settings
+    TenantCountryActivate,
+    TenantCountrySettingsResponse,
 )
+from app.modules.country_packs.service import CountryPackService, get_country_pack_service
 
-router = APIRouter(prefix="/api/v1/country-packs", tags=["Country Packs"])
+router = APIRouter(prefix="/country-packs", tags=["Country Packs"])
 
 
 def get_service(
@@ -82,7 +94,7 @@ def create_country_pack(
 
 @router.get("/", response_model=PaginatedCountryPacksResponse)
 def list_country_packs(
-    status: Optional[PackStatus] = None,
+    status: PackStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     service: CountryPackService = Depends(get_service)
@@ -184,10 +196,10 @@ def create_tax_rate(
     return tax
 
 
-@router.get("/tax-rates", response_model=List[TaxRateResponse])
+@router.get("/tax-rates", response_model=list[TaxRateResponse])
 def list_tax_rates(
-    country_pack_id: Optional[int] = None,
-    tax_type: Optional[TaxType] = None,
+    country_pack_id: int | None = None,
+    tax_type: TaxType | None = None,
     is_active: bool = True,
     service: CountryPackService = Depends(get_service)
 ):
@@ -199,7 +211,7 @@ def list_tax_rates(
     )
 
 
-@router.get("/tax-rates/vat/{country_code}", response_model=List[TaxRateResponse])
+@router.get("/tax-rates/vat/{country_code}", response_model=list[TaxRateResponse])
 def get_vat_rates(country_code: str, service: CountryPackService = Depends(get_service)):
     """Récupère les taux de TVA pour un pays."""
     return service.get_vat_rates(country_code)
@@ -262,10 +274,10 @@ def create_document_template(
     return template
 
 
-@router.get("/templates", response_model=List[DocumentTemplateResponse])
+@router.get("/templates", response_model=list[DocumentTemplateResponse])
 def list_document_templates(
-    country_pack_id: Optional[int] = None,
-    document_type: Optional[DocumentType] = None,
+    country_pack_id: int | None = None,
+    document_type: DocumentType | None = None,
     is_active: bool = True,
     service: CountryPackService = Depends(get_service)
 ):
@@ -315,10 +327,10 @@ def create_bank_config(
     return config
 
 
-@router.get("/bank-configs", response_model=List[BankConfigResponse])
+@router.get("/bank-configs", response_model=list[BankConfigResponse])
 def list_bank_configs(
-    country_pack_id: Optional[int] = None,
-    bank_format: Optional[BankFormat] = None,
+    country_pack_id: int | None = None,
+    bank_format: BankFormat | None = None,
     service: CountryPackService = Depends(get_service)
 ):
     """Liste les configurations bancaires."""
@@ -367,11 +379,11 @@ def create_holiday(
     return holiday
 
 
-@router.get("/holidays", response_model=List[PublicHolidayResponse])
+@router.get("/holidays", response_model=list[PublicHolidayResponse])
 def list_holidays(
-    country_pack_id: Optional[int] = None,
-    year: Optional[int] = None,
-    region: Optional[str] = None,
+    country_pack_id: int | None = None,
+    year: int | None = None,
+    region: str | None = None,
     service: CountryPackService = Depends(get_service)
 ):
     """Liste les jours fériés."""
@@ -382,7 +394,7 @@ def list_holidays(
     )
 
 
-@router.get("/holidays/{country_code}/year/{year}", response_model=List[HolidayWithDate])
+@router.get("/holidays/{country_code}/year/{year}", response_model=list[HolidayWithDate])
 def get_holidays_for_year(
     country_code: str,
     year: int,
@@ -430,10 +442,10 @@ def create_legal_requirement(
     return req
 
 
-@router.get("/legal-requirements", response_model=List[LegalRequirementResponse])
+@router.get("/legal-requirements", response_model=list[LegalRequirementResponse])
 def list_legal_requirements(
-    country_pack_id: Optional[int] = None,
-    category: Optional[str] = None,
+    country_pack_id: int | None = None,
+    category: str | None = None,
     service: CountryPackService = Depends(get_service)
 ):
     """Liste les exigences légales."""
@@ -463,7 +475,7 @@ def activate_country_for_tenant(
     return settings
 
 
-@router.get("/tenant/countries", response_model=List[TenantCountrySettingsResponse])
+@router.get("/tenant/countries", response_model=list[TenantCountrySettingsResponse])
 def get_tenant_countries(
     active_only: bool = True,
     service: CountryPackService = Depends(get_service)

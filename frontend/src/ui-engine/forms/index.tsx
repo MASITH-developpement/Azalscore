@@ -449,6 +449,184 @@ export const useFormState = <T extends FieldValues>(
 };
 
 // ============================================================
+// STANDALONE INPUT COMPONENTS (pour usage direct)
+// ============================================================
+
+interface InputProps {
+  value: string | number;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: 'text' | 'email' | 'password' | 'number';
+  disabled?: boolean;
+  error?: boolean;
+  className?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  min?: number;
+  max?: number;
+}
+
+export const Input: React.FC<InputProps> = ({
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  disabled,
+  error,
+  className,
+  leftIcon,
+  rightIcon,
+  min,
+  max,
+}) => {
+  if (leftIcon || rightIcon) {
+    return (
+      <div className={clsx('azals-input-wrapper', className)}>
+        {leftIcon && <span className="azals-input__icon azals-input__icon--left">{leftIcon}</span>}
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          min={min}
+          max={max}
+          className={clsx('azals-input', { 'azals-input--error': error, 'azals-input--with-icon': leftIcon || rightIcon })}
+        />
+        {rightIcon && <span className="azals-input__icon azals-input__icon--right">{rightIcon}</span>}
+      </div>
+    );
+  }
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      min={min}
+      max={max}
+      className={clsx('azals-input', className, { 'azals-input--error': error })}
+    />
+  );
+};
+
+interface TextAreaProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  rows?: number;
+  error?: boolean;
+  className?: string;
+}
+
+export const TextArea: React.FC<TextAreaProps> = ({
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  rows = 4,
+  error,
+  className,
+}) => {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      rows={rows}
+      className={clsx('azals-textarea', className, { 'azals-textarea--error': error })}
+    />
+  );
+};
+
+interface SelectProps {
+  value: string | number;
+  onChange: (value: string) => void;
+  options: SelectOption[];
+  placeholder?: string;
+  disabled?: boolean;
+  error?: boolean;
+  className?: string;
+}
+
+export const Select: React.FC<SelectProps> = ({
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled,
+  error,
+  className,
+}) => {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className={clsx('azals-select', className, { 'azals-select--error': error })}
+    >
+      {placeholder && <option value="">{placeholder}</option>}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+};
+
+// ============================================================
+// MODAL (re-export from actions for convenience)
+// ============================================================
+
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  size = 'md',
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="azals-modal-overlay" onClick={onClose}>
+      <div
+        className={clsx('azals-modal', `azals-modal--${size}`)}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="azals-modal__header">
+          <h2 className="azals-modal__title">{title}</h2>
+          <button
+            className="azals-btn azals-btn--ghost azals-btn--icon-only"
+            onClick={onClose}
+            aria-label="Fermer"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="azals-modal__body">{children}</div>
+        {footer && <div className="azals-modal__footer">{footer}</div>}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
 // EXPORTS
 // ============================================================
 

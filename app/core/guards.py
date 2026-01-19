@@ -18,11 +18,8 @@ Ce module DOIT etre appele:
 """
 
 import os
-import sys
 import subprocess
-from typing import Optional, Tuple
 from dataclasses import dataclass
-
 
 # =============================================================================
 # EXCEPTIONS DE SECURITE
@@ -52,7 +49,7 @@ class BranchEnvironmentError(SecurityGuardError):
 # DETECTION DE LA BRANCHE GIT
 # =============================================================================
 
-def get_current_git_branch() -> Optional[str]:
+def get_current_git_branch() -> str | None:
     """
     Detecte la branche git courante.
     Retourne None si la detection echoue (pas un repo git, etc).
@@ -92,7 +89,7 @@ class SecurityStatus:
     """Etat de securite de l'application."""
     environment: str
     version: str
-    branch: Optional[str]
+    branch: str | None
     is_locked: bool
     warnings: list
     errors: list

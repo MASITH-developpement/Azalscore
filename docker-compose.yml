@@ -1,6 +1,8 @@
 # AZALS - ERP Décisionnel Critique
 # Docker Compose - Orchestration des services
 
+#version: '3.8'
+
 services:
   # Service PostgreSQL - Base de données principale
   postgres:
@@ -12,8 +14,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-azals}
       POSTGRES_USER: ${POSTGRES_USER:-azals_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
+#    ports:
+#      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,7 +26,7 @@ services:
     networks:
       - azals_network
 
-  # Service API FastAPI
+  # 🔹 API FastAPI AZALSCORE
   api:
     build:
       context: .
@@ -38,8 +40,11 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
-    ports:
-      - "8000:8000"
+    # Port expose en interne pour nginx, pas directement sur l'hote
+    expose:
+      - "8000"
+    # ports:
+    #   - "8000:8000"  # Decommenter pour acces direct (dev)
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,6 +57,24 @@ services:
     networks:
       - azals_network
     restart: unless-stopped
+
+  # 🤖 SELF-HEALING IA (AUTONOME)
+  ai-self-healing:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai
+    container_name: ai-self-healing
+    volumes:
+      - .:/app
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - azals_network
+    restart: always
 
 volumes:
   postgres_data:

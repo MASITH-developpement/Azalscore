@@ -12,24 +12,26 @@ Déclencheurs de synchronisation:
 """
 
 import logging
-from abc import ABC, abstractmethod
-from datetime import datetime, date, timedelta
-from decimal import Decimal
-from typing import Optional, Dict, Any, List, Tuple
-from uuid import UUID
 import uuid
+from abc import ABC, abstractmethod
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+
+from app.core.encryption import decrypt_value, encrypt_value
 
 from ..models import (
-    BankConnection, SyncedBankAccount, SyncedTransaction,
-    BankSyncSession, BankConnectionStatus, SyncType, SyncStatus,
-    ReconciliationStatusAuto
-)
-from ..schemas import (
-    BankConnectionCreate, BankSyncTrigger,
-    SyncedAccountResponse, SyncedTransactionResponse
+    BankConnection,
+    BankConnectionStatus,
+    BankSyncSession,
+    ReconciliationStatusAuto,
+    SyncedBankAccount,
+    SyncedTransaction,
+    SyncStatus,
+    SyncType,
 )
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,7 @@ class BankProvider(ABC):
         pass
 
     @abstractmethod
-    def create_connection(self, institution_id: str, **kwargs) -> Dict[str, Any]:
+    def create_connection(self, institution_id: str, **kwargs) -> dict[str, Any]:
         """Crée une connexion à une institution bancaire.
 
         Returns:
@@ -58,7 +60,7 @@ class BankProvider(ABC):
         pass
 
     @abstractmethod
-    def get_accounts(self, access_token: str) -> List[Dict[str, Any]]:
+    def get_accounts(self, access_token: str) -> list[dict[str, Any]]:
         """Récupère les comptes liés à une connexion.
 
         Returns:
@@ -73,7 +75,7 @@ class BankProvider(ABC):
         account_id: str,
         start_date: date,
         end_date: date
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Récupère les transactions d'un compte.
 
         Returns:
@@ -82,7 +84,7 @@ class BankProvider(ABC):
         pass
 
     @abstractmethod
-    def get_balances(self, access_token: str, account_id: str) -> Dict[str, Any]:
+    def get_balances(self, access_token: str, account_id: str) -> dict[str, Any]:
         """Récupère les soldes d'un compte.
 
         Returns:
@@ -91,7 +93,7 @@ class BankProvider(ABC):
         pass
 
     @abstractmethod
-    def refresh_token(self, refresh_token: str) -> Dict[str, Any]:
+    def refresh_token(self, refresh_token: str) -> dict[str, Any]:
         """Rafraîchit le token d'accès.
 
         Returns:
@@ -111,7 +113,7 @@ class MockBankProvider(BankProvider):
     def provider_name(self) -> str:
         return "mock"
 
-    def create_connection(self, institution_id: str, **kwargs) -> Dict[str, Any]:
+    def create_connection(self, institution_id: str, **kwargs) -> dict[str, Any]:
         return {
             "connection_id": f"mock_conn_{uuid.uuid4().hex[:8]}",
             "access_token": f"mock_access_{uuid.uuid4().hex}",
@@ -119,7 +121,7 @@ class MockBankProvider(BankProvider):
             "expires_at": datetime.utcnow() + timedelta(days=90),
         }
 
-    def get_accounts(self, access_token: str) -> List[Dict[str, Any]]:
+    def get_accounts(self, access_token: str) -> list[dict[str, Any]]:
         return [
             {
                 "account_id": "mock_acc_001",
@@ -145,7 +147,7 @@ class MockBankProvider(BankProvider):
         account_id: str,
         start_date: date,
         end_date: date
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         # Génère des transactions fictives
         transactions = []
         current_date = start_date
@@ -179,7 +181,7 @@ class MockBankProvider(BankProvider):
 
         return transactions
 
-    def get_balances(self, access_token: str, account_id: str) -> Dict[str, Any]:
+    def get_balances(self, access_token: str, account_id: str) -> dict[str, Any]:
         return {
             "current": Decimal("15432.67"),
             "available": Decimal("15000.00"),
@@ -188,7 +190,7 @@ class MockBankProvider(BankProvider):
             "updated_at": datetime.utcnow().isoformat(),
         }
 
-    def refresh_token(self, refresh_token: str) -> Dict[str, Any]:
+    def refresh_token(self, refresh_token: str) -> dict[str, Any]:
         return {
             "access_token": f"mock_access_{uuid.uuid4().hex}",
             "refresh_token": f"mock_refresh_{uuid.uuid4().hex}",
@@ -214,7 +216,7 @@ class BankPullService:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
-        self._providers: Dict[str, BankProvider] = {}
+        self._providers: dict[str, BankProvider] = {}
         self._init_providers()
 
     def _init_providers(self):
@@ -242,7 +244,7 @@ class BankPullService:
         institution_id: str,
         institution_name: str,
         created_by: UUID,
-        institution_logo_url: Optional[str] = None
+        institution_logo_url: str | None = None
     ) -> BankConnection:
         """Crée une nouvelle connexion bancaire.
 
@@ -261,6 +263,12 @@ class BankPullService:
         # Appel au provider pour créer la connexion
         connection_data = bank_provider.create_connection(institution_id)
 
+        # Chiffrer les tokens bancaires (données sensibles PCI-DSS)
+        access_token_enc = encrypt_value(connection_data["access_token"])
+        refresh_token_enc = None
+        if connection_data.get("refresh_token"):
+            refresh_token_enc = encrypt_value(connection_data["refresh_token"])
+
         connection = BankConnection(
             id=uuid.uuid4(),
             tenant_id=self.tenant_id,
@@ -270,8 +278,8 @@ class BankPullService:
             provider=provider,
             connection_id=connection_data["connection_id"],
             status=BankConnectionStatus.ACTIVE,
-            access_token_encrypted=connection_data["access_token"],  # TODO: Chiffrer
-            refresh_token_encrypted=connection_data.get("refresh_token"),
+            access_token_encrypted=access_token_enc,
+            refresh_token_encrypted=refresh_token_enc,
             token_expires_at=connection_data.get("expires_at"),
             consent_expires_at=connection_data.get("consent_expires_at"),
             created_by=created_by,
@@ -290,13 +298,13 @@ class BankPullService:
 
         return connection
 
-    def get_connections(self) -> List[BankConnection]:
+    def get_connections(self) -> list[BankConnection]:
         """Récupère toutes les connexions bancaires du tenant."""
         return self.db.query(BankConnection).filter(
             BankConnection.tenant_id == self.tenant_id
         ).all()
 
-    def get_connection(self, connection_id: UUID) -> Optional[BankConnection]:
+    def get_connection(self, connection_id: UUID) -> BankConnection | None:
         """Récupère une connexion spécifique."""
         return self.db.query(BankConnection).filter(
             BankConnection.id == connection_id,
@@ -311,10 +319,24 @@ class BankPullService:
             self.db.commit()
             logger.info(f"Bank connection deleted: {connection_id}")
 
+    def _get_decrypted_access_token(self, connection: BankConnection) -> str:
+        """Déchiffre et retourne l'access token d'une connexion."""
+        if not connection.access_token_encrypted:
+            raise ValueError("Pas de token d'accès pour cette connexion")
+        return decrypt_value(connection.access_token_encrypted)
+
+    def _get_decrypted_refresh_token(self, connection: BankConnection) -> str | None:
+        """Déchiffre et retourne le refresh token d'une connexion."""
+        if not connection.refresh_token_encrypted:
+            return None
+        return decrypt_value(connection.refresh_token_encrypted)
+
     def _sync_accounts(self, connection: BankConnection):
         """Synchronise les comptes d'une connexion."""
         provider = self.get_provider(connection.provider)
-        accounts_data = provider.get_accounts(connection.access_token_encrypted)
+        # Déchiffrer le token avant utilisation
+        decrypted_token = self._get_decrypted_access_token(connection)
+        accounts_data = provider.get_accounts(decrypted_token)
 
         for account_data in accounts_data:
             existing = self.db.query(SyncedBankAccount).filter(
@@ -359,10 +381,10 @@ class BankPullService:
 
     def sync_all(
         self,
-        triggered_by: Optional[UUID] = None,
+        triggered_by: UUID | None = None,
         sync_type: SyncType = SyncType.MANUAL,
         days_back: int = 30
-    ) -> List[BankSyncSession]:
+    ) -> list[BankSyncSession]:
         """Synchronise toutes les connexions actives.
 
         Args:
@@ -396,11 +418,11 @@ class BankPullService:
     def sync_connection(
         self,
         connection_id: UUID,
-        triggered_by: Optional[UUID] = None,
+        triggered_by: UUID | None = None,
         sync_type: SyncType = SyncType.MANUAL,
         days_back: int = 30,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        start_date: date | None = None,
+        end_date: date | None = None
     ) -> BankSyncSession:
         """Synchronise une connexion bancaire spécifique.
 
@@ -450,7 +472,7 @@ class BankPullService:
             # Synchronise chaque compte
             accounts = self.db.query(SyncedBankAccount).filter(
                 SyncedBankAccount.connection_id == connection_id,
-                SyncedBankAccount.is_sync_enabled == True
+                SyncedBankAccount.is_sync_enabled
             ).all()
 
             for account in accounts:
@@ -494,9 +516,12 @@ class BankPullService:
         session: BankSyncSession
     ):
         """Synchronise les données d'un compte."""
+        # Déchiffrer le token avant utilisation
+        decrypted_token = self._get_decrypted_access_token(connection)
+
         # Récupère les soldes
         balances = provider.get_balances(
-            connection.access_token_encrypted,
+            decrypted_token,
             account.external_account_id
         )
 
@@ -509,7 +534,7 @@ class BankPullService:
 
         # Récupère les transactions
         transactions = provider.get_transactions(
-            connection.access_token_encrypted,
+            decrypted_token,
             account.external_account_id,
             start_date,
             end_date
@@ -565,10 +590,14 @@ class BankPullService:
             if connection.refresh_token_encrypted:
                 try:
                     provider = self.get_provider(connection.provider)
-                    new_tokens = provider.refresh_token(connection.refresh_token_encrypted)
+                    # Déchiffrer le refresh token avant utilisation
+                    decrypted_refresh = self._get_decrypted_refresh_token(connection)
+                    new_tokens = provider.refresh_token(decrypted_refresh)
 
-                    connection.access_token_encrypted = new_tokens["access_token"]
-                    connection.refresh_token_encrypted = new_tokens.get("refresh_token")
+                    # Chiffrer les nouveaux tokens avant stockage
+                    connection.access_token_encrypted = encrypt_value(new_tokens["access_token"])
+                    if new_tokens.get("refresh_token"):
+                        connection.refresh_token_encrypted = encrypt_value(new_tokens["refresh_token"])
                     connection.token_expires_at = new_tokens.get("expires_at")
                     connection.status = BankConnectionStatus.ACTIVE
 
@@ -590,8 +619,8 @@ class BankPullService:
 
     def get_synced_accounts(
         self,
-        connection_id: Optional[UUID] = None
-    ) -> List[SyncedBankAccount]:
+        connection_id: UUID | None = None
+    ) -> list[SyncedBankAccount]:
         """Récupère les comptes synchronisés."""
         query = self.db.query(SyncedBankAccount).filter(
             SyncedBankAccount.tenant_id == self.tenant_id
@@ -604,13 +633,13 @@ class BankPullService:
 
     def get_transactions(
         self,
-        account_id: Optional[UUID] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-        reconciliation_status: Optional[ReconciliationStatusAuto] = None,
+        account_id: UUID | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        reconciliation_status: ReconciliationStatusAuto | None = None,
         limit: int = 100,
         offset: int = 0
-    ) -> Tuple[List[SyncedTransaction], int]:
+    ) -> tuple[list[SyncedTransaction], int]:
         """Récupère les transactions synchronisées.
 
         Returns:
@@ -640,7 +669,7 @@ class BankPullService:
 
         return transactions, total
 
-    def get_total_balance(self) -> Dict[str, Any]:
+    def get_total_balance(self) -> dict[str, Any]:
         """Calcule le solde total de tous les comptes.
 
         Returns:
@@ -686,9 +715,9 @@ class BankPullService:
 
     def get_sync_history(
         self,
-        connection_id: Optional[UUID] = None,
+        connection_id: UUID | None = None,
         limit: int = 10
-    ) -> List[BankSyncSession]:
+    ) -> list[BankSyncSession]:
         """Récupère l'historique des synchronisations."""
         query = self.db.query(BankSyncSession).filter(
             BankSyncSession.tenant_id == self.tenant_id
@@ -701,7 +730,7 @@ class BankPullService:
             BankSyncSession.created_at.desc()
         ).limit(limit).all()
 
-    def get_unreconciled_transactions(self, limit: int = 100) -> List[SyncedTransaction]:
+    def get_unreconciled_transactions(self, limit: int = 100) -> list[SyncedTransaction]:
         """Récupère les transactions non rapprochées."""
         return self.db.query(SyncedTransaction).filter(
             SyncedTransaction.tenant_id == self.tenant_id,

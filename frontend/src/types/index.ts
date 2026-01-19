@@ -3,6 +3,8 @@
  * Aucune logique métier - Types uniquement
  */
 
+import React from 'react';
+
 // ============================================================
 // TYPES D'AUTHENTIFICATION
 // ============================================================
@@ -13,6 +15,7 @@ export interface User {
   name: string;
   tenant_id: string;
   roles: string[];
+  role?: string; // Alias pour compatibilité - premier rôle
   capabilities: string[];
   is_active: boolean;
   requires_2fa: boolean;
@@ -83,6 +86,7 @@ export interface ApiRequestConfig {
   skipAuth?: boolean;
   timeout?: number;
   retries?: number;
+  headers?: Record<string, string>;
 }
 
 // ============================================================
@@ -158,9 +162,9 @@ export interface DashboardWidget {
 // ============================================================
 
 export interface TableColumn<T> {
-  id: string;
-  header: string;
-  accessor: keyof T | ((row: T) => unknown);
+  id: string | keyof T;
+  header: string | React.ReactNode;
+  accessor?: keyof T | ((row: T) => unknown);
   sortable?: boolean;
   filterable?: boolean;
   width?: string;
@@ -168,10 +172,13 @@ export interface TableColumn<T> {
   render?: (value: unknown, row: T) => React.ReactNode;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IconType = string | React.ReactNode | React.ForwardRefExoticComponent<any> | React.FC<any>;
+
 export interface TableAction<T> {
   id: string;
   label: string;
-  icon?: string;
+  icon?: IconType;
   capability?: string;
   onClick: (row: T) => void;
   isDisabled?: (row: T) => boolean;

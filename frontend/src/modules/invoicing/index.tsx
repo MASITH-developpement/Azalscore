@@ -178,7 +178,8 @@ const useDocuments = (
       const response = await api.get<PaginatedResponse<Document>>(
         `/v1/commercial/documents?${queryParams}`
       );
-      return response.data;
+      // api.get retourne déjà response.data
+      return response as unknown as PaginatedResponse<Document>;
     },
   });
 };
@@ -188,7 +189,8 @@ const useDocument = (id: string) => {
     queryKey: ['document', id],
     queryFn: async () => {
       const response = await api.get<Document>(`/v1/commercial/documents/${id}`);
-      return response.data;
+      // api.get retourne déjà response.data
+      return response as unknown as Document;
     },
     enabled: !!id && id !== 'new',
   });
@@ -198,10 +200,12 @@ const useCustomers = () => {
   return useQuery({
     queryKey: ['customers', 'list'],
     queryFn: async () => {
+      // Utiliser /v1/partners/clients au lieu de /v1/commercial/customers
       const response = await api.get<PaginatedResponse<Customer>>(
-        '/v1/commercial/customers?page_size=500&is_active=true'
+        '/v1/partners/clients?page_size=500&is_active=true'
       );
-      return response.data.items;
+      // api.get retourne déjà response.data
+      return (response as unknown as PaginatedResponse<Customer>).items;
     },
   });
 };
@@ -220,7 +224,8 @@ const useCreateDocument = () => {
       lines: Omit<LineFormData, 'id'>[];
     }) => {
       const response = await api.post<Document>('/v1/commercial/documents', data);
-      return response.data;
+      // api.post retourne déjà response.data
+      return response as unknown as Document;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents', data.type] });
@@ -234,10 +239,11 @@ const useUpdateDocument = () => {
   return useMutation({
     mutationFn: async ({ id, data }: {
       id: string;
-      data: Partial<Document> & { lines?: LineFormData[] };
+      data: Omit<Partial<Document>, 'lines'> & { lines?: LineFormData[] };
     }) => {
       const response = await api.put<Document>(`/v1/commercial/documents/${id}`, data);
-      return response.data;
+      // api.put retourne déjà response.data
+      return response as unknown as Document;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents', data.type] });
@@ -266,7 +272,8 @@ const useValidateDocument = () => {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const response = await api.post<Document>(`/v1/commercial/documents/${id}/validate`);
-      return response.data;
+      // api.post retourne déjà response.data
+      return response as unknown as Document;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents', data.type] });
@@ -281,7 +288,8 @@ const useConvertQuoteToInvoice = () => {
   return useMutation({
     mutationFn: async ({ quoteId }: { quoteId: string }) => {
       const response = await api.post<Document>(`/v1/commercial/quotes/${quoteId}/convert`);
-      return response.data;
+      // api.post retourne déjà response.data
+      return response as unknown as Document;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents', 'QUOTE'] });
@@ -304,7 +312,8 @@ const useExportDocuments = () => {
         `/v1/commercial/documents/export?${queryParams}`,
         { responseType: 'blob' } as any
       );
-      return response.data;
+      // api.get retourne déjà response.data
+      return response as unknown as Blob;
     },
   });
 };
@@ -722,7 +731,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
       sortable: true,
       render: (value, row) => (
         <Link to={`/invoicing/${type.toLowerCase()}s/${row.id}`} className="azals-link">
-          {value}
+          {value as string}
         </Link>
       ),
     },

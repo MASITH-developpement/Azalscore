@@ -6,22 +6,14 @@ Endpoint /metrics pour scraping Prometheus.
 """
 
 import time
-from typing import Callable
+from collections.abc import Callable
 from functools import wraps
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    Info,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-    REGISTRY
-)
+
 from fastapi import APIRouter, Request, Response
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, Gauge, Histogram, Info, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
-
 
 # ============================================================================
 # MÉTRIQUES GLOBALES
@@ -127,12 +119,12 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     Middleware pour collecter les métriques HTTP automatiquement.
     """
 
-    # Endpoints à exclure des métriques détaillées
-    EXCLUDED_PATHS = {'/metrics', '/health', '/favicon.ico'}
+    # Endpoints à exclure des métriques détaillées (préfixes)
+    EXCLUDED_PATH_PREFIXES = ('/metrics', '/health', '/favicon.ico')
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Skip pour certains endpoints
-        if request.url.path in self.EXCLUDED_PATHS:
+        # Skip pour certains endpoints (utilise startswith pour inclure les sous-chemins)
+        if request.url.path.startswith(self.EXCLUDED_PATH_PREFIXES):
             return await call_next(request)
 
         method = request.method

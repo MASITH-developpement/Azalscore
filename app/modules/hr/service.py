@@ -5,28 +5,59 @@ AZALS MODULE M3 - Service RH
 Service métier pour la gestion des ressources humaines.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
 from uuid import UUID
 
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
+
 from .models import (
-    Department, Position, Employee, Contract, LeaveRequest, LeaveBalance,
-    PayrollPeriod, Payslip, PayslipLine, HRTimeEntry,
-    Skill, EmployeeSkill, Training, TrainingParticipant,
-    Evaluation, HRDocument,
-    ContractType, EmployeeStatus, LeaveType, LeaveStatus,
-    PayrollStatus, DocumentType,
-    EvaluationStatus, TrainingType, TrainingStatus
+    Contract,
+    ContractType,
+    Department,
+    DocumentType,
+    Employee,
+    EmployeeSkill,
+    EmployeeStatus,
+    Evaluation,
+    EvaluationStatus,
+    HRDocument,
+    HRTimeEntry,
+    LeaveBalance,
+    LeaveRequest,
+    LeaveStatus,
+    LeaveType,
+    PayrollPeriod,
+    PayrollStatus,
+    Payslip,
+    PayslipLine,
+    Position,
+    Skill,
+    Training,
+    TrainingParticipant,
+    TrainingStatus,
+    TrainingType,
 )
 from .schemas import (
-    DepartmentCreate, DepartmentUpdate, PositionCreate, PositionUpdate,
-    EmployeeCreate, EmployeeUpdate, ContractCreate,
-    LeaveRequestCreate, PayrollPeriodCreate, PayslipCreate, TimeEntryCreate, SkillCreate, EmployeeSkillCreate,
-    TrainingCreate, EvaluationCreate, EvaluationUpdate, HRDocumentCreate,
-    HRDashboard
+    ContractCreate,
+    DepartmentCreate,
+    DepartmentUpdate,
+    EmployeeCreate,
+    EmployeeSkillCreate,
+    EmployeeUpdate,
+    EvaluationCreate,
+    EvaluationUpdate,
+    HRDashboard,
+    HRDocumentCreate,
+    LeaveRequestCreate,
+    PayrollPeriodCreate,
+    PayslipCreate,
+    PositionCreate,
+    PositionUpdate,
+    SkillCreate,
+    TimeEntryCreate,
+    TrainingCreate,
 )
 
 
@@ -57,21 +88,21 @@ class HRService:
         self.db.refresh(dept)
         return dept
 
-    def get_department(self, dept_id: UUID) -> Optional[Department]:
+    def get_department(self, dept_id: UUID) -> Department | None:
         """Récupérer un département."""
         return self.db.query(Department).filter(
             Department.id == dept_id,
             Department.tenant_id == self.tenant_id
         ).first()
 
-    def list_departments(self, is_active: bool = True) -> List[Department]:
+    def list_departments(self, is_active: bool = True) -> list[Department]:
         """Lister les départements."""
         return self.db.query(Department).filter(
             Department.tenant_id == self.tenant_id,
             Department.is_active == is_active
         ).order_by(Department.name).all()
 
-    def update_department(self, dept_id: UUID, data: DepartmentUpdate) -> Optional[Department]:
+    def update_department(self, dept_id: UUID, data: DepartmentUpdate) -> Department | None:
         """Mettre à jour un département."""
         dept = self.get_department(dept_id)
         if not dept:
@@ -106,7 +137,7 @@ class HRService:
         self.db.refresh(position)
         return position
 
-    def get_position(self, position_id: UUID) -> Optional[Position]:
+    def get_position(self, position_id: UUID) -> Position | None:
         """Récupérer un poste."""
         return self.db.query(Position).filter(
             Position.id == position_id,
@@ -115,9 +146,9 @@ class HRService:
 
     def list_positions(
         self,
-        department_id: Optional[UUID] = None,
+        department_id: UUID | None = None,
         is_active: bool = True
-    ) -> List[Position]:
+    ) -> list[Position]:
         """Lister les postes."""
         query = self.db.query(Position).filter(
             Position.tenant_id == self.tenant_id,
@@ -127,7 +158,7 @@ class HRService:
             query = query.filter(Position.department_id == department_id)
         return query.order_by(Position.title).all()
 
-    def update_position(self, position_id: UUID, data: PositionUpdate) -> Optional[Position]:
+    def update_position(self, position_id: UUID, data: PositionUpdate) -> Position | None:
         """Mettre à jour un poste."""
         position = self.get_position(position_id)
         if not position:
@@ -185,14 +216,14 @@ class HRService:
         self.db.refresh(employee)
         return employee
 
-    def get_employee(self, employee_id: UUID) -> Optional[Employee]:
+    def get_employee(self, employee_id: UUID) -> Employee | None:
         """Récupérer un employé."""
         return self.db.query(Employee).filter(
             Employee.id == employee_id,
             Employee.tenant_id == self.tenant_id
         ).first()
 
-    def get_employee_by_number(self, employee_number: str) -> Optional[Employee]:
+    def get_employee_by_number(self, employee_number: str) -> Employee | None:
         """Récupérer un employé par numéro."""
         return self.db.query(Employee).filter(
             Employee.employee_number == employee_number,
@@ -201,14 +232,14 @@ class HRService:
 
     def list_employees(
         self,
-        department_id: Optional[UUID] = None,
-        status: Optional[EmployeeStatus] = None,
-        manager_id: Optional[UUID] = None,
-        search: Optional[str] = None,
+        department_id: UUID | None = None,
+        status: EmployeeStatus | None = None,
+        manager_id: UUID | None = None,
+        search: str | None = None,
         is_active: bool = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Employee], int]:
+    ) -> tuple[list[Employee], int]:
         """Lister les employés."""
         query = self.db.query(Employee).filter(
             Employee.tenant_id == self.tenant_id,
@@ -235,7 +266,7 @@ class HRService:
         items = query.order_by(Employee.last_name, Employee.first_name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_employee(self, employee_id: UUID, data: EmployeeUpdate) -> Optional[Employee]:
+    def update_employee(self, employee_id: UUID, data: EmployeeUpdate) -> Employee | None:
         """Mettre à jour un employé."""
         employee = self.get_employee(employee_id)
         if not employee:
@@ -251,8 +282,8 @@ class HRService:
         self,
         employee_id: UUID,
         end_date: date,
-        reason: Optional[str] = None
-    ) -> Optional[Employee]:
+        reason: str | None = None
+    ) -> Employee | None:
         """Terminer le contrat d'un employé."""
         employee = self.get_employee(employee_id)
         if not employee:
@@ -262,7 +293,7 @@ class HRService:
         # Mettre à jour le contrat actuel
         current_contract = self.db.query(Contract).filter(
             Contract.employee_id == employee_id,
-            Contract.is_current == True
+            Contract.is_current
         ).first()
         if current_contract:
             current_contract.is_current = False
@@ -281,7 +312,7 @@ class HRService:
         # Désactiver les anciens contrats
         self.db.query(Contract).filter(
             Contract.employee_id == data.employee_id,
-            Contract.is_current == True
+            Contract.is_current
         ).update({"is_current": False})
 
         contract = Contract(
@@ -331,14 +362,14 @@ class HRService:
         self.db.refresh(contract)
         return contract
 
-    def get_contract(self, contract_id: UUID) -> Optional[Contract]:
+    def get_contract(self, contract_id: UUID) -> Contract | None:
         """Récupérer un contrat."""
         return self.db.query(Contract).filter(
             Contract.id == contract_id,
             Contract.tenant_id == self.tenant_id
         ).first()
 
-    def list_employee_contracts(self, employee_id: UUID) -> List[Contract]:
+    def list_employee_contracts(self, employee_id: UUID) -> list[Contract]:
         """Lister les contrats d'un employé."""
         return self.db.query(Contract).filter(
             Contract.employee_id == employee_id,
@@ -396,9 +427,7 @@ class HRService:
         current = start_date
         while current <= end_date:
             if current.weekday() < 5:  # Lundi à Vendredi
-                if current == start_date and start_half_day:
-                    days += Decimal("0.5")
-                elif current == end_date and end_half_day:
+                if current == start_date and start_half_day or current == end_date and end_half_day:
                     days += Decimal("0.5")
                 else:
                     days += Decimal("1")
@@ -439,7 +468,7 @@ class HRService:
         self,
         leave_id: UUID,
         approver_id: UUID
-    ) -> Optional[LeaveRequest]:
+    ) -> LeaveRequest | None:
         """Approuver une demande de congé."""
         leave = self.db.query(LeaveRequest).filter(
             LeaveRequest.id == leave_id,
@@ -470,7 +499,7 @@ class HRService:
         leave_id: UUID,
         approver_id: UUID,
         reason: str
-    ) -> Optional[LeaveRequest]:
+    ) -> LeaveRequest | None:
         """Rejeter une demande de congé."""
         leave = self.db.query(LeaveRequest).filter(
             LeaveRequest.id == leave_id,
@@ -499,8 +528,8 @@ class HRService:
     def get_employee_leave_balance(
         self,
         employee_id: UUID,
-        year: Optional[int] = None
-    ) -> List[LeaveBalance]:
+        year: int | None = None
+    ) -> list[LeaveBalance]:
         """Récupérer les soldes de congés d'un employé."""
         if year is None:
             year = date.today().year
@@ -512,13 +541,13 @@ class HRService:
 
     def list_leave_requests(
         self,
-        employee_id: Optional[UUID] = None,
-        status: Optional[LeaveStatus] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        employee_id: UUID | None = None,
+        status: LeaveStatus | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[LeaveRequest], int]:
+    ) -> tuple[list[LeaveRequest], int]:
         """Lister les demandes de congé."""
         query = self.db.query(LeaveRequest).filter(
             LeaveRequest.tenant_id == self.tenant_id
@@ -557,14 +586,14 @@ class HRService:
         self.db.refresh(period)
         return period
 
-    def get_payroll_period(self, period_id: UUID) -> Optional[PayrollPeriod]:
+    def get_payroll_period(self, period_id: UUID) -> PayrollPeriod | None:
         """Récupérer une période de paie."""
         return self.db.query(PayrollPeriod).filter(
             PayrollPeriod.id == period_id,
             PayrollPeriod.tenant_id == self.tenant_id
         ).first()
 
-    def list_payroll_periods(self, year: Optional[int] = None) -> List[PayrollPeriod]:
+    def list_payroll_periods(self, year: int | None = None) -> list[PayrollPeriod]:
         """Lister les périodes de paie."""
         query = self.db.query(PayrollPeriod).filter(
             PayrollPeriod.tenant_id == self.tenant_id
@@ -572,6 +601,28 @@ class HRService:
         if year:
             query = query.filter(PayrollPeriod.year == year)
         return query.order_by(PayrollPeriod.year.desc(), PayrollPeriod.month.desc()).all()
+
+    def list_payslips(
+        self,
+        period_id: UUID | None = None,
+        employee_id: UUID | None = None,
+        year: int | None = None,
+        skip: int = 0,
+        limit: int = 50
+    ) -> list[Payslip]:
+        """Lister tous les bulletins de paie."""
+        query = self.db.query(Payslip).filter(
+            Payslip.tenant_id == self.tenant_id
+        )
+
+        if period_id:
+            query = query.filter(Payslip.period_id == period_id)
+        if employee_id:
+            query = query.filter(Payslip.employee_id == employee_id)
+        if year:
+            query = query.join(PayrollPeriod).filter(PayrollPeriod.year == year)
+
+        return query.order_by(Payslip.created_at.desc()).offset(skip).limit(limit).all()
 
     def create_payslip(self, data: PayslipCreate, user_id: UUID) -> Payslip:
         """Créer un bulletin de paie."""
@@ -644,7 +695,7 @@ class HRService:
         self.db.refresh(payslip)
         return payslip
 
-    def validate_payslip(self, payslip_id: UUID, user_id: UUID) -> Optional[Payslip]:
+    def validate_payslip(self, payslip_id: UUID, user_id: UUID) -> Payslip | None:
         """Valider un bulletin de paie."""
         payslip = self.db.query(Payslip).filter(
             Payslip.id == payslip_id,
@@ -665,8 +716,8 @@ class HRService:
     def get_employee_payslips(
         self,
         employee_id: UUID,
-        year: Optional[int] = None
-    ) -> List[Payslip]:
+        year: int | None = None
+    ) -> list[Payslip]:
         """Récupérer les bulletins d'un employé."""
         query = self.db.query(Payslip).filter(
             Payslip.employee_id == employee_id,
@@ -705,10 +756,10 @@ class HRService:
 
     def list_time_entries(
         self,
-        employee_id: Optional[UUID] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
-    ) -> List[HRTimeEntry]:
+        employee_id: UUID | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None
+    ) -> list[HRTimeEntry]:
         """Lister les entrées de temps."""
         query = self.db.query(HRTimeEntry).filter(
             HRTimeEntry.tenant_id == self.tenant_id
@@ -739,11 +790,11 @@ class HRService:
         self.db.refresh(skill)
         return skill
 
-    def list_skills(self, category: Optional[str] = None) -> List[Skill]:
+    def list_skills(self, category: str | None = None) -> list[Skill]:
         """Lister les compétences."""
         query = self.db.query(Skill).filter(
             Skill.tenant_id == self.tenant_id,
-            Skill.is_active == True
+            Skill.is_active
         )
         if category:
             query = query.filter(Skill.category == category)
@@ -770,7 +821,7 @@ class HRService:
         self.db.refresh(emp_skill)
         return emp_skill
 
-    def get_employee_skills(self, employee_id: UUID) -> List[EmployeeSkill]:
+    def get_employee_skills(self, employee_id: UUID) -> list[EmployeeSkill]:
         """Récupérer les compétences d'un employé."""
         return self.db.query(EmployeeSkill).filter(
             EmployeeSkill.employee_id == employee_id,
@@ -805,7 +856,7 @@ class HRService:
         self.db.refresh(training)
         return training
 
-    def get_training(self, training_id: UUID) -> Optional[Training]:
+    def get_training(self, training_id: UUID) -> Training | None:
         """Récupérer une formation."""
         return self.db.query(Training).filter(
             Training.id == training_id,
@@ -814,9 +865,9 @@ class HRService:
 
     def list_trainings(
         self,
-        status: Optional[TrainingStatus] = None,
-        training_type: Optional[TrainingType] = None
-    ) -> List[Training]:
+        status: TrainingStatus | None = None,
+        training_type: TrainingType | None = None
+    ) -> list[Training]:
         """Lister les formations."""
         query = self.db.query(Training).filter(
             Training.tenant_id == self.tenant_id
@@ -863,7 +914,7 @@ class HRService:
         self.db.refresh(evaluation)
         return evaluation
 
-    def get_evaluation(self, evaluation_id: UUID) -> Optional[Evaluation]:
+    def get_evaluation(self, evaluation_id: UUID) -> Evaluation | None:
         """Récupérer une évaluation."""
         return self.db.query(Evaluation).filter(
             Evaluation.id == evaluation_id,
@@ -874,7 +925,7 @@ class HRService:
         self,
         evaluation_id: UUID,
         data: EvaluationUpdate
-    ) -> Optional[Evaluation]:
+    ) -> Evaluation | None:
         """Mettre à jour une évaluation."""
         evaluation = self.get_evaluation(evaluation_id)
         if not evaluation:
@@ -888,10 +939,10 @@ class HRService:
 
     def list_evaluations(
         self,
-        employee_id: Optional[UUID] = None,
-        status: Optional[EvaluationStatus] = None,
-        evaluator_id: Optional[UUID] = None
-    ) -> List[Evaluation]:
+        employee_id: UUID | None = None,
+        status: EvaluationStatus | None = None,
+        evaluator_id: UUID | None = None
+    ) -> list[Evaluation]:
         """Lister les évaluations."""
         query = self.db.query(Evaluation).filter(
             Evaluation.tenant_id == self.tenant_id
@@ -932,8 +983,8 @@ class HRService:
     def get_employee_documents(
         self,
         employee_id: UUID,
-        doc_type: Optional[DocumentType] = None
-    ) -> List[HRDocument]:
+        doc_type: DocumentType | None = None
+    ) -> list[HRDocument]:
         """Récupérer les documents d'un employé."""
         query = self.db.query(HRDocument).filter(
             HRDocument.employee_id == employee_id,
@@ -955,7 +1006,7 @@ class HRService:
         # Effectifs
         total = self.db.query(Employee).filter(
             Employee.tenant_id == self.tenant_id,
-            Employee.is_active == True
+            Employee.is_active
         ).count()
 
         active = self.db.query(Employee).filter(
@@ -983,13 +1034,13 @@ class HRService:
         cdi = self.db.query(Employee).filter(
             Employee.tenant_id == self.tenant_id,
             Employee.contract_type == ContractType.CDI,
-            Employee.is_active == True
+            Employee.is_active
         ).count()
 
         cdd = self.db.query(Employee).filter(
             Employee.tenant_id == self.tenant_id,
             Employee.contract_type == ContractType.CDD,
-            Employee.is_active == True
+            Employee.is_active
         ).count()
 
         probation_soon = self.db.query(Employee).filter(
@@ -1036,7 +1087,7 @@ class HRService:
         # Salaire moyen
         avg_salary = self.db.query(func.avg(Employee.gross_salary)).filter(
             Employee.tenant_id == self.tenant_id,
-            Employee.is_active == True,
+            Employee.is_active,
             Employee.gross_salary.isnot(None)
         ).scalar() or Decimal("0")
 
@@ -1046,7 +1097,7 @@ class HRService:
             func.count(Employee.id)
         ).join(Employee, Employee.department_id == Department.id).filter(
             Employee.tenant_id == self.tenant_id,
-            Employee.is_active == True
+            Employee.is_active
         ).group_by(Department.name).all()
 
         by_department = {d[0]: d[1] for d in dept_counts}
@@ -1057,7 +1108,7 @@ class HRService:
             func.count(Employee.id)
         ).filter(
             Employee.tenant_id == self.tenant_id,
-            Employee.is_active == True,
+            Employee.is_active,
             Employee.contract_type.isnot(None)
         ).group_by(Employee.contract_type).all()
 

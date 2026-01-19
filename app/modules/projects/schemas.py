@@ -5,22 +5,29 @@ AZALS MODULE M9 - Schémas Projets
 Schémas Pydantic pour la gestion de projets.
 """
 
-from __future__ import annotations
-
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from uuid import UUID
+import datetime
 import json
+from decimal import Decimal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import (
-    ProjectStatus, ProjectPriority, TaskStatus, TaskPriority,
-    MilestoneStatus, RiskStatus, RiskImpact, RiskProbability,
-    IssueStatus, IssuePriority, TeamMemberRole, TimeEntryStatus,
-    ExpenseStatus, BudgetType
+    BudgetType,
+    ExpenseStatus,
+    IssuePriority,
+    IssueStatus,
+    MilestoneStatus,
+    ProjectPriority,
+    ProjectStatus,
+    RiskImpact,
+    RiskProbability,
+    RiskStatus,
+    TaskPriority,
+    TaskStatus,
+    TeamMemberRole,
+    TimeEntryStatus,
 )
-
 
 # ============================================================================
 # SCHÉMAS PROJET
@@ -30,9 +37,9 @@ class ProjectBase(BaseModel):
     """Base pour les projets."""
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    description: str | None = None
+    category: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
     @field_validator('tags', mode='before')
     @classmethod
@@ -45,45 +52,45 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     """Création d'un projet."""
     priority: ProjectPriority = ProjectPriority.MEDIUM
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    project_manager_id: Optional[UUID] = None
-    sponsor_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
-    budget_type: Optional[BudgetType] = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    project_manager_id: UUID | None = None
+    sponsor_id: UUID | None = None
+    customer_id: UUID | None = None
+    budget_type: BudgetType | None = None
     planned_budget: Decimal = Decimal("0")
     currency: str = "EUR"
     planned_hours: float = 0
     is_billable: bool = False
-    billing_rate: Optional[Decimal] = None
-    parent_project_id: Optional[UUID] = None
-    template_id: Optional[UUID] = None
+    billing_rate: Decimal | None = None
+    parent_project_id: UUID | None = None
+    template_id: UUID | None = None
     settings: dict = Field(default_factory=dict)
 
 
 class ProjectUpdate(BaseModel):
     """Mise à jour d'un projet."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
-    status: Optional[ProjectStatus] = None
-    priority: Optional[ProjectPriority] = None
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    actual_start_date: Optional[date] = None
-    actual_end_date: Optional[date] = None
-    project_manager_id: Optional[UUID] = None
-    sponsor_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
-    planned_budget: Optional[Decimal] = None
-    planned_hours: Optional[float] = None
-    progress_percent: Optional[float] = None
-    health_status: Optional[str] = None
-    is_billable: Optional[bool] = None
-    billing_rate: Optional[Decimal] = None
-    settings: Optional[dict] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    category: str | None = None
+    tags: list[str] | None = None
+    status: ProjectStatus | None = None
+    priority: ProjectPriority | None = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    actual_start_date: datetime.date | None = None
+    actual_end_date: datetime.date | None = None
+    project_manager_id: UUID | None = None
+    sponsor_id: UUID | None = None
+    customer_id: UUID | None = None
+    planned_budget: Decimal | None = None
+    planned_hours: float | None = None
+    progress_percent: float | None = None
+    health_status: str | None = None
+    is_billable: bool | None = None
+    billing_rate: Decimal | None = None
+    settings: dict | None = None
+    is_active: bool | None = None
 
 
 class ProjectResponse(ProjectBase):
@@ -91,36 +98,36 @@ class ProjectResponse(ProjectBase):
     id: UUID
     status: ProjectStatus = ProjectStatus.DRAFT
     priority: ProjectPriority = ProjectPriority.MEDIUM
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    actual_start_date: Optional[date] = None
-    actual_end_date: Optional[date] = None
-    project_manager_id: Optional[UUID] = None
-    sponsor_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
-    budget_type: Optional[BudgetType] = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    actual_start_date: datetime.date | None = None
+    actual_end_date: datetime.date | None = None
+    project_manager_id: UUID | None = None
+    sponsor_id: UUID | None = None
+    customer_id: UUID | None = None
+    budget_type: BudgetType | None = None
     planned_budget: Decimal = Decimal("0")
     actual_cost: Decimal = Decimal("0")
     currency: str = "EUR"
     planned_hours: float = 0
     actual_hours: float = 0
     progress_percent: float = 0
-    health_status: Optional[str] = None
-    parent_project_id: Optional[UUID] = None
+    health_status: str | None = None
+    parent_project_id: UUID | None = None
     is_billable: bool = False
-    billing_rate: Optional[Decimal] = None
+    billing_rate: Decimal | None = None
     is_active: bool = True
-    created_by: Optional[UUID] = None
-    created_at: datetime
-    updated_at: datetime
-    completed_at: Optional[datetime] = None
+    created_by: UUID | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    completed_at: datetime.datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectList(BaseModel):
     """Liste de projets."""
-    items: List[ProjectResponse]
+    items: list[ProjectResponse]
     total: int
     page: int = 1
     page_size: int = 20
@@ -134,8 +141,8 @@ class ProjectSummary(BaseModel):
     status: ProjectStatus
     priority: ProjectPriority
     progress_percent: float
-    health_status: Optional[str] = None
-    planned_end_date: Optional[date] = None
+    health_status: str | None = None
+    planned_end_date: datetime.date | None = None
     tasks_total: int = 0
     tasks_completed: int = 0
     team_size: int = 0
@@ -148,48 +155,48 @@ class ProjectSummary(BaseModel):
 class PhaseBase(BaseModel):
     """Base pour les phases."""
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     order: int = 0
-    color: Optional[str] = None
+    color: str | None = None
 
 
 class PhaseCreate(PhaseBase):
     """Création d'une phase."""
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
     planned_hours: float = 0
     planned_budget: Decimal = Decimal("0")
 
 
 class PhaseUpdate(BaseModel):
     """Mise à jour d'une phase."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    order: Optional[int] = None
-    color: Optional[str] = None
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    actual_start_date: Optional[date] = None
-    actual_end_date: Optional[date] = None
-    status: Optional[TaskStatus] = None
-    progress_percent: Optional[float] = None
+    name: str | None = None
+    description: str | None = None
+    order: int | None = None
+    color: str | None = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    actual_start_date: datetime.date | None = None
+    actual_end_date: datetime.date | None = None
+    status: TaskStatus | None = None
+    progress_percent: float | None = None
 
 
 class PhaseResponse(PhaseBase):
     """Réponse phase."""
     id: UUID
     project_id: UUID
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    actual_start_date: Optional[date] = None
-    actual_end_date: Optional[date] = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    actual_start_date: datetime.date | None = None
+    actual_end_date: datetime.date | None = None
     progress_percent: float = 0
     status: TaskStatus = TaskStatus.TODO
     planned_hours: float = 0
     actual_hours: float = 0
     planned_budget: Decimal = Decimal("0")
     actual_cost: Decimal = Decimal("0")
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -208,9 +215,9 @@ class TaskDependencyCreate(BaseModel):
 class TaskBase(BaseModel):
     """Base pour les tâches."""
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    task_type: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    description: str | None = None
+    task_type: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
     @field_validator('tags', mode='before')
     @classmethod
@@ -222,81 +229,81 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     """Création d'une tâche."""
-    phase_id: Optional[UUID] = None
-    parent_task_id: Optional[UUID] = None
-    code: Optional[str] = None
+    phase_id: UUID | None = None
+    parent_task_id: UUID | None = None
+    code: str | None = None
     priority: TaskPriority = TaskPriority.MEDIUM
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    due_date: Optional[date] = None
-    assignee_id: Optional[UUID] = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    due_date: datetime.date | None = None
+    assignee_id: UUID | None = None
     estimated_hours: float = 0
     order: int = 0
-    wbs_code: Optional[str] = None
+    wbs_code: str | None = None
     is_milestone: bool = False
     is_critical: bool = False
     is_billable: bool = True
-    dependencies: List[TaskDependencyCreate] = Field(default_factory=list)
+    dependencies: list[TaskDependencyCreate] = Field(default_factory=list)
 
 
 class TaskUpdate(BaseModel):
     """Mise à jour d'une tâche."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    phase_id: Optional[UUID] = None
-    parent_task_id: Optional[UUID] = None
-    task_type: Optional[str] = None
-    tags: Optional[List[str]] = None
-    status: Optional[TaskStatus] = None
-    priority: Optional[TaskPriority] = None
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    due_date: Optional[date] = None
-    assignee_id: Optional[UUID] = None
-    estimated_hours: Optional[float] = None
-    remaining_hours: Optional[float] = None
-    progress_percent: Optional[float] = None
-    order: Optional[int] = None
-    is_critical: Optional[bool] = None
-    is_billable: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    phase_id: UUID | None = None
+    parent_task_id: UUID | None = None
+    task_type: str | None = None
+    tags: list[str] | None = None
+    status: TaskStatus | None = None
+    priority: TaskPriority | None = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    due_date: datetime.date | None = None
+    assignee_id: UUID | None = None
+    estimated_hours: float | None = None
+    remaining_hours: float | None = None
+    progress_percent: float | None = None
+    order: int | None = None
+    is_critical: bool | None = None
+    is_billable: bool | None = None
 
 
 class TaskResponse(TaskBase):
     """Réponse tâche."""
     id: UUID
     project_id: UUID
-    phase_id: Optional[UUID] = None
-    parent_task_id: Optional[UUID] = None
-    code: Optional[str] = None
+    phase_id: UUID | None = None
+    parent_task_id: UUID | None = None
+    code: str | None = None
     status: TaskStatus = TaskStatus.TODO
     priority: TaskPriority = TaskPriority.MEDIUM
-    planned_start_date: Optional[date] = None
-    planned_end_date: Optional[date] = None
-    actual_start_date: Optional[date] = None
-    actual_end_date: Optional[date] = None
-    due_date: Optional[date] = None
-    assignee_id: Optional[UUID] = None
-    reporter_id: Optional[UUID] = None
+    planned_start_date: datetime.date | None = None
+    planned_end_date: datetime.date | None = None
+    actual_start_date: datetime.date | None = None
+    actual_end_date: datetime.date | None = None
+    due_date: datetime.date | None = None
+    assignee_id: UUID | None = None
+    reporter_id: UUID | None = None
     estimated_hours: float = 0
     actual_hours: float = 0
     remaining_hours: float = 0
     progress_percent: float = 0
     order: int = 0
-    wbs_code: Optional[str] = None
+    wbs_code: str | None = None
     is_milestone: bool = False
     is_critical: bool = False
     is_billable: bool = True
-    created_by: Optional[UUID] = None
-    created_at: datetime
-    updated_at: datetime
-    completed_at: Optional[datetime] = None
+    created_by: UUID | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    completed_at: datetime.datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class TaskList(BaseModel):
     """Liste de tâches."""
-    items: List[TaskResponse]
+    items: list[TaskResponse]
     total: int
     page: int = 1
     page_size: int = 20
@@ -309,47 +316,47 @@ class TaskList(BaseModel):
 class MilestoneBase(BaseModel):
     """Base pour les jalons."""
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    target_date: date
+    description: str | None = None
+    target_date: datetime.date
     is_key_milestone: bool = False
     is_customer_visible: bool = True
 
 
 class MilestoneCreate(MilestoneBase):
     """Création d'un jalon."""
-    phase_id: Optional[UUID] = None
-    deliverables: List[str] = Field(default_factory=list)
-    acceptance_criteria: Optional[str] = None
+    phase_id: UUID | None = None
+    deliverables: list[str] = Field(default_factory=list)
+    acceptance_criteria: str | None = None
 
 
 class MilestoneUpdate(BaseModel):
     """Mise à jour d'un jalon."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    target_date: Optional[date] = None
-    actual_date: Optional[date] = None
-    status: Optional[MilestoneStatus] = None
-    is_key_milestone: Optional[bool] = None
-    is_customer_visible: Optional[bool] = None
-    deliverables: Optional[List[str]] = None
-    acceptance_criteria: Optional[str] = None
-    validation_notes: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
+    target_date: datetime.date | None = None
+    actual_date: datetime.date | None = None
+    status: MilestoneStatus | None = None
+    is_key_milestone: bool | None = None
+    is_customer_visible: bool | None = None
+    deliverables: list[str] | None = None
+    acceptance_criteria: str | None = None
+    validation_notes: str | None = None
 
 
 class MilestoneResponse(MilestoneBase):
     """Réponse jalon."""
     id: UUID
     project_id: UUID
-    phase_id: Optional[UUID] = None
+    phase_id: UUID | None = None
     status: MilestoneStatus = MilestoneStatus.PENDING
-    actual_date: Optional[date] = None
-    deliverables: List[str] = Field(default_factory=list)
-    acceptance_criteria: Optional[str] = None
-    validated_by: Optional[UUID] = None
-    validated_at: Optional[datetime] = None
-    validation_notes: Optional[str] = None
-    created_by: Optional[UUID] = None
-    created_at: datetime
+    actual_date: datetime.date | None = None
+    deliverables: list[str] = Field(default_factory=list)
+    acceptance_criteria: str | None = None
+    validated_by: UUID | None = None
+    validated_at: datetime.datetime | None = None
+    validation_notes: str | None = None
+    created_by: UUID | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -362,17 +369,17 @@ class TeamMemberBase(BaseModel):
     """Base pour les membres d'équipe."""
     user_id: UUID
     role: TeamMemberRole = TeamMemberRole.MEMBER
-    role_description: Optional[str] = None
+    role_description: str | None = None
 
 
 class TeamMemberCreate(TeamMemberBase):
     """Ajout d'un membre."""
-    employee_id: Optional[UUID] = None
+    employee_id: UUID | None = None
     allocation_percent: float = 100
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    hourly_rate: Optional[Decimal] = None
-    daily_rate: Optional[Decimal] = None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
+    hourly_rate: Decimal | None = None
+    daily_rate: Decimal | None = None
     is_billable: bool = True
     can_log_time: bool = True
     can_view_budget: bool = False
@@ -382,38 +389,38 @@ class TeamMemberCreate(TeamMemberBase):
 
 class TeamMemberUpdate(BaseModel):
     """Mise à jour d'un membre."""
-    role: Optional[TeamMemberRole] = None
-    role_description: Optional[str] = None
-    allocation_percent: Optional[float] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    hourly_rate: Optional[Decimal] = None
-    daily_rate: Optional[Decimal] = None
-    is_billable: Optional[bool] = None
-    can_log_time: Optional[bool] = None
-    can_view_budget: Optional[bool] = None
-    can_manage_tasks: Optional[bool] = None
-    can_approve_time: Optional[bool] = None
-    is_active: Optional[bool] = None
+    role: TeamMemberRole | None = None
+    role_description: str | None = None
+    allocation_percent: float | None = None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
+    hourly_rate: Decimal | None = None
+    daily_rate: Decimal | None = None
+    is_billable: bool | None = None
+    can_log_time: bool | None = None
+    can_view_budget: bool | None = None
+    can_manage_tasks: bool | None = None
+    can_approve_time: bool | None = None
+    is_active: bool | None = None
 
 
 class TeamMemberResponse(TeamMemberBase):
     """Réponse membre."""
     id: UUID
     project_id: UUID
-    employee_id: Optional[UUID] = None
+    employee_id: UUID | None = None
     allocation_percent: float = 100
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    hourly_rate: Optional[Decimal] = None
-    daily_rate: Optional[Decimal] = None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
+    hourly_rate: Decimal | None = None
+    daily_rate: Decimal | None = None
     is_billable: bool = True
     can_log_time: bool = True
     can_view_budget: bool = False
     can_manage_tasks: bool = False
     can_approve_time: bool = False
     is_active: bool = True
-    created_at: datetime
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -425,71 +432,71 @@ class TeamMemberResponse(TeamMemberBase):
 class RiskBase(BaseModel):
     """Base pour les risques."""
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
     probability: RiskProbability
     impact: RiskImpact
 
 
 class RiskCreate(RiskBase):
     """Création d'un risque."""
-    code: Optional[str] = None
-    owner_id: Optional[UUID] = None
-    response_strategy: Optional[str] = None
-    mitigation_plan: Optional[str] = None
-    contingency_plan: Optional[str] = None
-    triggers: List[str] = Field(default_factory=list)
-    estimated_impact_min: Optional[Decimal] = None
-    estimated_impact_max: Optional[Decimal] = None
-    review_date: Optional[date] = None
+    code: str | None = None
+    owner_id: UUID | None = None
+    response_strategy: str | None = None
+    mitigation_plan: str | None = None
+    contingency_plan: str | None = None
+    triggers: list[str] = Field(default_factory=list)
+    estimated_impact_min: Decimal | None = None
+    estimated_impact_max: Decimal | None = None
+    review_date: datetime.date | None = None
 
 
 class RiskUpdate(BaseModel):
     """Mise à jour d'un risque."""
-    title: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[str] = None
-    status: Optional[RiskStatus] = None
-    probability: Optional[RiskProbability] = None
-    impact: Optional[RiskImpact] = None
-    owner_id: Optional[UUID] = None
-    response_strategy: Optional[str] = None
-    mitigation_plan: Optional[str] = None
-    contingency_plan: Optional[str] = None
-    triggers: Optional[List[str]] = None
-    monitoring_notes: Optional[str] = None
-    review_date: Optional[date] = None
+    title: str | None = None
+    description: str | None = None
+    category: str | None = None
+    status: RiskStatus | None = None
+    probability: RiskProbability | None = None
+    impact: RiskImpact | None = None
+    owner_id: UUID | None = None
+    response_strategy: str | None = None
+    mitigation_plan: str | None = None
+    contingency_plan: str | None = None
+    triggers: list[str] | None = None
+    monitoring_notes: str | None = None
+    review_date: datetime.date | None = None
 
 
 class RiskResponse(RiskBase):
     """Réponse risque."""
     id: UUID
     project_id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     status: RiskStatus = RiskStatus.IDENTIFIED
-    risk_score: Optional[float] = None
-    estimated_impact_min: Optional[Decimal] = None
-    estimated_impact_max: Optional[Decimal] = None
-    identified_date: date
-    review_date: Optional[date] = None
-    occurred_date: Optional[date] = None
-    closed_date: Optional[date] = None
-    owner_id: Optional[UUID] = None
-    response_strategy: Optional[str] = None
-    mitigation_plan: Optional[str] = None
-    contingency_plan: Optional[str] = None
-    triggers: List[str] = Field(default_factory=list)
-    monitoring_notes: Optional[str] = None
-    created_by: Optional[UUID] = None
-    created_at: datetime
-    updated_at: datetime
+    risk_score: float | None = None
+    estimated_impact_min: Decimal | None = None
+    estimated_impact_max: Decimal | None = None
+    identified_date: datetime.date
+    review_date: datetime.date | None = None
+    occurred_date: datetime.date | None = None
+    closed_date: datetime.date | None = None
+    owner_id: UUID | None = None
+    response_strategy: str | None = None
+    mitigation_plan: str | None = None
+    contingency_plan: str | None = None
+    triggers: list[str] = Field(default_factory=list)
+    monitoring_notes: str | None = None
+    created_by: UUID | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class RiskList(BaseModel):
     """Liste de risques."""
-    items: List[RiskResponse]
+    items: list[RiskResponse]
     total: int
 
 
@@ -500,66 +507,66 @@ class RiskList(BaseModel):
 class IssueBase(BaseModel):
     """Base pour les issues."""
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
     priority: IssuePriority = IssuePriority.MEDIUM
 
 
 class IssueCreate(IssueBase):
     """Création d'une issue."""
-    task_id: Optional[UUID] = None
-    code: Optional[str] = None
-    assignee_id: Optional[UUID] = None
-    due_date: Optional[date] = None
-    impact_description: Optional[str] = None
-    affected_areas: List[str] = Field(default_factory=list)
-    related_risk_id: Optional[UUID] = None
+    task_id: UUID | None = None
+    code: str | None = None
+    assignee_id: UUID | None = None
+    due_date: datetime.date | None = None
+    impact_description: str | None = None
+    affected_areas: list[str] = Field(default_factory=list)
+    related_risk_id: UUID | None = None
 
 
 class IssueUpdate(BaseModel):
     """Mise à jour d'une issue."""
-    title: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[str] = None
-    status: Optional[IssueStatus] = None
-    priority: Optional[IssuePriority] = None
-    assignee_id: Optional[UUID] = None
-    due_date: Optional[date] = None
-    impact_description: Optional[str] = None
-    affected_areas: Optional[List[str]] = None
-    resolution: Optional[str] = None
-    resolution_type: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    category: str | None = None
+    status: IssueStatus | None = None
+    priority: IssuePriority | None = None
+    assignee_id: UUID | None = None
+    due_date: datetime.date | None = None
+    impact_description: str | None = None
+    affected_areas: list[str] | None = None
+    resolution: str | None = None
+    resolution_type: str | None = None
 
 
 class IssueResponse(IssueBase):
     """Réponse issue."""
     id: UUID
     project_id: UUID
-    task_id: Optional[UUID] = None
-    code: Optional[str] = None
+    task_id: UUID | None = None
+    code: str | None = None
     status: IssueStatus = IssueStatus.OPEN
-    reporter_id: Optional[UUID] = None
-    assignee_id: Optional[UUID] = None
-    reported_date: date
-    due_date: Optional[date] = None
-    resolved_date: Optional[date] = None
-    closed_date: Optional[date] = None
-    impact_description: Optional[str] = None
-    affected_areas: List[str] = Field(default_factory=list)
-    resolution: Optional[str] = None
-    resolution_type: Optional[str] = None
+    reporter_id: UUID | None = None
+    assignee_id: UUID | None = None
+    reported_date: datetime.date
+    due_date: datetime.date | None = None
+    resolved_date: datetime.date | None = None
+    closed_date: datetime.date | None = None
+    impact_description: str | None = None
+    affected_areas: list[str] = Field(default_factory=list)
+    resolution: str | None = None
+    resolution_type: str | None = None
     is_escalated: bool = False
-    related_risk_id: Optional[UUID] = None
-    created_by: Optional[UUID] = None
-    created_at: datetime
-    updated_at: datetime
+    related_risk_id: UUID | None = None
+    created_by: UUID | None = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class IssueList(BaseModel):
     """Liste d'issues."""
-    items: List[IssueResponse]
+    items: list[IssueResponse]
     total: int
 
 
@@ -571,58 +578,58 @@ class TimeEntryBase(BaseModel):
     """Base pour les saisies de temps."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    entry_date: date = Field(..., alias="date")
+    entry_date: datetime.date = Field(..., alias="date")
     hours: float = Field(..., gt=0)
-    description: Optional[str] = None
-    activity_type: Optional[str] = None
+    description: str | None = None
+    activity_type: str | None = None
 
 
 class TimeEntryCreate(TimeEntryBase):
     """Création d'une saisie."""
-    task_id: Optional[UUID] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    task_id: UUID | None = None
+    start_time: datetime.datetime | None = None
+    end_time: datetime.datetime | None = None
     is_billable: bool = True
     is_overtime: bool = False
 
 
 class TimeEntryUpdate(BaseModel):
     """Mise à jour d'une saisie."""
-    date: Optional[date] = None
-    hours: Optional[float] = None
-    description: Optional[str] = None
-    activity_type: Optional[str] = None
-    task_id: Optional[UUID] = None
-    is_billable: Optional[bool] = None
-    is_overtime: Optional[bool] = None
+    date: datetime.date | None = None
+    hours: float | None = None
+    description: str | None = None
+    activity_type: str | None = None
+    task_id: UUID | None = None
+    is_billable: bool | None = None
+    is_overtime: bool | None = None
 
 
 class TimeEntryResponse(TimeEntryBase):
     """Réponse saisie."""
     id: UUID
     project_id: UUID
-    task_id: Optional[UUID] = None
+    task_id: UUID | None = None
     user_id: UUID
-    employee_id: Optional[UUID] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    employee_id: UUID | None = None
+    start_time: datetime.datetime | None = None
+    end_time: datetime.datetime | None = None
     status: TimeEntryStatus = TimeEntryStatus.DRAFT
     is_billable: bool = True
-    billing_rate: Optional[Decimal] = None
-    billing_amount: Optional[Decimal] = None
+    billing_rate: Decimal | None = None
+    billing_amount: Decimal | None = None
     is_invoiced: bool = False
     is_overtime: bool = False
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
-    rejection_reason: Optional[str] = None
-    created_at: datetime
+    approved_by: UUID | None = None
+    approved_at: datetime.datetime | None = None
+    rejection_reason: str | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class TimeEntryList(BaseModel):
     """Liste de saisies."""
-    items: List[TimeEntryResponse]
+    items: list[TimeEntryResponse]
     total: int
     total_hours: float = 0
     billable_hours: float = 0
@@ -635,58 +642,58 @@ class TimeEntryList(BaseModel):
 class ExpenseBase(BaseModel):
     """Base pour les dépenses."""
     description: str = Field(..., min_length=1)
-    category: Optional[str] = None
+    category: str | None = None
     amount: Decimal = Field(..., gt=0)
-    expense_date: date
+    expense_date: datetime.date
 
 
 class ExpenseCreate(ExpenseBase):
     """Création d'une dépense."""
-    task_id: Optional[UUID] = None
-    budget_line_id: Optional[UUID] = None
-    reference: Optional[str] = None
+    task_id: UUID | None = None
+    budget_line_id: UUID | None = None
+    reference: str | None = None
     currency: str = "EUR"
     quantity: float = 1
-    unit_price: Optional[Decimal] = None
-    vendor: Optional[str] = None
+    unit_price: Decimal | None = None
+    vendor: str | None = None
     is_billable: bool = True
-    receipt_url: Optional[str] = None
-    attachments: List[str] = Field(default_factory=list)
+    receipt_url: str | None = None
+    attachments: list[str] = Field(default_factory=list)
 
 
 class ExpenseUpdate(BaseModel):
     """Mise à jour d'une dépense."""
-    description: Optional[str] = None
-    category: Optional[str] = None
-    amount: Optional[Decimal] = None
-    expense_date: Optional[date] = None
-    vendor: Optional[str] = None
-    is_billable: Optional[bool] = None
-    receipt_url: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
+    amount: Decimal | None = None
+    expense_date: datetime.date | None = None
+    vendor: str | None = None
+    is_billable: bool | None = None
+    receipt_url: str | None = None
 
 
 class ExpenseResponse(ExpenseBase):
     """Réponse dépense."""
     id: UUID
     project_id: UUID
-    task_id: Optional[UUID] = None
-    budget_line_id: Optional[UUID] = None
-    reference: Optional[str] = None
+    task_id: UUID | None = None
+    budget_line_id: UUID | None = None
+    reference: str | None = None
     currency: str = "EUR"
     quantity: float = 1
-    unit_price: Optional[Decimal] = None
-    due_date: Optional[date] = None
-    paid_date: Optional[date] = None
+    unit_price: Decimal | None = None
+    due_date: datetime.date | None = None
+    paid_date: datetime.date | None = None
     status: ExpenseStatus = ExpenseStatus.DRAFT
-    submitted_by: Optional[UUID] = None
-    vendor: Optional[str] = None
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
+    submitted_by: UUID | None = None
+    vendor: str | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime.datetime | None = None
     is_billable: bool = True
     is_invoiced: bool = False
-    receipt_url: Optional[str] = None
-    attachments: List[str] = Field(default_factory=list)
-    created_at: datetime
+    receipt_url: str | None = None
+    attachments: list[str] = Field(default_factory=list)
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -698,37 +705,37 @@ class ExpenseResponse(ExpenseBase):
 class DocumentBase(BaseModel):
     """Base pour les documents."""
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
 
 
 class DocumentCreate(DocumentBase):
     """Création d'un document."""
-    file_name: Optional[str] = None
-    file_url: Optional[str] = None
-    file_size: Optional[int] = None
-    file_type: Optional[str] = None
+    file_name: str | None = None
+    file_url: str | None = None
+    file_size: int | None = None
+    file_type: str | None = None
     version: str = "1.0"
     is_public: bool = False
     access_level: str = "team"
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class DocumentResponse(DocumentBase):
     """Réponse document."""
     id: UUID
     project_id: UUID
-    file_name: Optional[str] = None
-    file_url: Optional[str] = None
-    file_size: Optional[int] = None
-    file_type: Optional[str] = None
+    file_name: str | None = None
+    file_url: str | None = None
+    file_size: int | None = None
+    file_type: str | None = None
     version: str = "1.0"
     is_latest: bool = True
     is_public: bool = False
     access_level: str = "team"
-    uploaded_by: Optional[UUID] = None
-    created_at: datetime
-    tags: List[str] = Field(default_factory=list)
+    uploaded_by: UUID | None = None
+    created_at: datetime.datetime
+    tags: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -739,25 +746,25 @@ class DocumentResponse(DocumentBase):
 
 class BudgetLineCreate(BaseModel):
     """Création d'une ligne de budget."""
-    code: Optional[str] = None
+    code: str | None = None
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
     budget_amount: Decimal = Decimal("0")
-    phase_id: Optional[UUID] = None
-    quantity: Optional[float] = None
-    unit: Optional[str] = None
-    unit_price: Optional[Decimal] = None
+    phase_id: UUID | None = None
+    quantity: float | None = None
+    unit: str | None = None
+    unit_price: Decimal | None = None
     order: int = 0
-    parent_line_id: Optional[UUID] = None
-    account_code: Optional[str] = None
+    parent_line_id: UUID | None = None
+    account_code: str | None = None
 
 
 class BudgetBase(BaseModel):
     """Base pour les budgets."""
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    fiscal_year: Optional[str] = None
+    description: str | None = None
+    fiscal_year: str | None = None
     budget_type: BudgetType = BudgetType.MIXED
 
 
@@ -765,40 +772,40 @@ class BudgetCreate(BudgetBase):
     """Création d'un budget."""
     total_budget: Decimal = Decimal("0")
     currency: str = "EUR"
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    lines: List[BudgetLineCreate] = Field(default_factory=list)
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
+    lines: list[BudgetLineCreate] = Field(default_factory=list)
 
 
 class BudgetUpdate(BaseModel):
     """Mise à jour d'un budget."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    total_budget: Optional[Decimal] = None
-    total_forecast: Optional[Decimal] = None
-    is_locked: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    total_budget: Decimal | None = None
+    total_forecast: Decimal | None = None
+    is_locked: bool | None = None
 
 
 class BudgetLineResponse(BaseModel):
     """Réponse ligne de budget."""
     id: UUID
     budget_id: UUID
-    phase_id: Optional[UUID] = None
-    code: Optional[str] = None
+    phase_id: UUID | None = None
+    code: str | None = None
     name: str
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
     budget_amount: Decimal = Decimal("0")
     committed_amount: Decimal = Decimal("0")
     actual_amount: Decimal = Decimal("0")
     forecast_amount: Decimal = Decimal("0")
-    quantity: Optional[float] = None
-    unit: Optional[str] = None
-    unit_price: Optional[Decimal] = None
+    quantity: float | None = None
+    unit: str | None = None
+    unit_price: Decimal | None = None
     order: int = 0
-    parent_line_id: Optional[UUID] = None
-    account_code: Optional[str] = None
-    created_at: datetime
+    parent_line_id: UUID | None = None
+    account_code: str | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -814,15 +821,15 @@ class BudgetResponse(BudgetBase):
     total_forecast: Decimal = Decimal("0")
     currency: str = "EUR"
     is_approved: bool = False
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
+    approved_by: UUID | None = None
+    approved_at: datetime.datetime | None = None
     is_active: bool = True
     is_locked: bool = False
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    lines: List[BudgetLineResponse] = Field(default_factory=list)
-    created_by: Optional[UUID] = None
-    created_at: datetime
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
+    lines: list[BudgetLineResponse] = Field(default_factory=list)
+    created_by: UUID | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -834,22 +841,22 @@ class BudgetResponse(BudgetBase):
 class TemplateBase(BaseModel):
     """Base pour les templates."""
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = None
+    description: str | None = None
+    category: str | None = None
 
 
 class TemplateCreate(TemplateBase):
     """Création d'un template."""
     default_priority: ProjectPriority = ProjectPriority.MEDIUM
-    default_budget_type: Optional[BudgetType] = None
-    estimated_duration_days: Optional[int] = None
-    phases_template: List[dict] = Field(default_factory=list)
-    tasks_template: List[dict] = Field(default_factory=list)
-    milestones_template: List[dict] = Field(default_factory=list)
-    risks_template: List[dict] = Field(default_factory=list)
-    roles_template: List[dict] = Field(default_factory=list)
-    budget_template: List[dict] = Field(default_factory=list)
-    checklist: List[str] = Field(default_factory=list)
+    default_budget_type: BudgetType | None = None
+    estimated_duration_days: int | None = None
+    phases_template: list[dict] = Field(default_factory=list)
+    tasks_template: list[dict] = Field(default_factory=list)
+    milestones_template: list[dict] = Field(default_factory=list)
+    risks_template: list[dict] = Field(default_factory=list)
+    roles_template: list[dict] = Field(default_factory=list)
+    budget_template: list[dict] = Field(default_factory=list)
+    checklist: list[str] = Field(default_factory=list)
     settings: dict = Field(default_factory=dict)
     is_public: bool = False
 
@@ -858,20 +865,20 @@ class TemplateResponse(TemplateBase):
     """Réponse template."""
     id: UUID
     default_priority: ProjectPriority = ProjectPriority.MEDIUM
-    default_budget_type: Optional[BudgetType] = None
-    estimated_duration_days: Optional[int] = None
-    phases_template: List[dict] = Field(default_factory=list)
-    tasks_template: List[dict] = Field(default_factory=list)
-    milestones_template: List[dict] = Field(default_factory=list)
-    risks_template: List[dict] = Field(default_factory=list)
-    roles_template: List[dict] = Field(default_factory=list)
-    budget_template: List[dict] = Field(default_factory=list)
-    checklist: List[str] = Field(default_factory=list)
+    default_budget_type: BudgetType | None = None
+    estimated_duration_days: int | None = None
+    phases_template: list[dict] = Field(default_factory=list)
+    tasks_template: list[dict] = Field(default_factory=list)
+    milestones_template: list[dict] = Field(default_factory=list)
+    risks_template: list[dict] = Field(default_factory=list)
+    roles_template: list[dict] = Field(default_factory=list)
+    budget_template: list[dict] = Field(default_factory=list)
+    checklist: list[str] = Field(default_factory=list)
     settings: dict = Field(default_factory=dict)
     is_active: bool = True
     is_public: bool = False
-    created_by: Optional[UUID] = None
-    created_at: datetime
+    created_by: UUID | None = None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -888,10 +895,10 @@ class CommentBase(BaseModel):
 
 class CommentCreate(CommentBase):
     """Création d'un commentaire."""
-    task_id: Optional[UUID] = None
-    parent_comment_id: Optional[UUID] = None
-    mentions: List[UUID] = Field(default_factory=list)
-    attachments: List[str] = Field(default_factory=list)
+    task_id: UUID | None = None
+    parent_comment_id: UUID | None = None
+    mentions: list[UUID] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
     is_internal: bool = True
 
 
@@ -899,14 +906,14 @@ class CommentResponse(CommentBase):
     """Réponse commentaire."""
     id: UUID
     project_id: UUID
-    task_id: Optional[UUID] = None
-    parent_comment_id: Optional[UUID] = None
-    mentions: List[UUID] = Field(default_factory=list)
-    attachments: List[str] = Field(default_factory=list)
+    task_id: UUID | None = None
+    parent_comment_id: UUID | None = None
+    mentions: list[UUID] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
     is_internal: bool = True
     author_id: UUID
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     is_edited: bool = False
 
     model_config = ConfigDict(from_attributes=True)
@@ -945,7 +952,7 @@ class BurndownData(BaseModel):
     """Données de burndown chart."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    chart_date: date = Field(..., alias="date")
+    chart_date: datetime.date = Field(..., alias="date")
     planned_remaining: float
     actual_remaining: float
     completed: float
@@ -955,9 +962,9 @@ class ProjectDashboard(BaseModel):
     """Dashboard projet."""
     project: ProjectResponse
     stats: ProjectStats
-    recent_tasks: List[TaskResponse] = Field(default_factory=list)
-    upcoming_milestones: List[MilestoneResponse] = Field(default_factory=list)
-    high_risks: List[RiskResponse] = Field(default_factory=list)
-    open_issues: List[IssueResponse] = Field(default_factory=list)
-    burndown: List[BurndownData] = Field(default_factory=list)
+    recent_tasks: list[TaskResponse] = Field(default_factory=list)
+    upcoming_milestones: list[MilestoneResponse] = Field(default_factory=list)
+    high_risks: list[RiskResponse] = Field(default_factory=list)
+    open_issues: list[IssueResponse] = Field(default_factory=list)
+    burndown: list[BurndownData] = Field(default_factory=list)
     health_indicators: dict = Field(default_factory=dict)

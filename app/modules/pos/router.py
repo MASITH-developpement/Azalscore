@@ -5,26 +5,41 @@ Endpoints API pour le Point de Vente.
 """
 
 from datetime import date
-from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 
-from .models import POSTerminalStatus, POSSessionStatus, POSTransactionStatus
+from .models import POSSessionStatus, POSTerminalStatus, POSTransactionStatus
 from .schemas import (
-    StoreCreate, StoreUpdate, StoreResponse,
-    TerminalCreate, TerminalUpdate, TerminalResponse,
-    POSUserCreate, POSUserUpdate, POSUserResponse, POSUserLogin,
-    SessionOpenRequest, SessionCloseRequest, SessionResponse,
-    CashMovementCreate, CashMovementResponse,
-    TransactionCreate, TransactionResponse, TransactionListResponse,
-    PaymentCreate,
-    QuickKeyCreate, QuickKeyResponse,
-    HoldTransactionCreate, HoldTransactionResponse,
+    CashMovementCreate,
+    CashMovementResponse,
     DailyReportResponse,
-    POSDashboard, TerminalDashboard
+    HoldTransactionCreate,
+    HoldTransactionResponse,
+    PaymentCreate,
+    POSDashboard,
+    POSUserCreate,
+    POSUserLogin,
+    POSUserResponse,
+    POSUserUpdate,
+    QuickKeyCreate,
+    QuickKeyResponse,
+    SessionCloseRequest,
+    SessionOpenRequest,
+    SessionResponse,
+    StoreCreate,
+    StoreResponse,
+    StoreUpdate,
+    TerminalCreate,
+    TerminalDashboard,
+    TerminalResponse,
+    TerminalUpdate,
+    TransactionCreate,
+    TransactionListResponse,
+    TransactionResponse,
 )
 from .service import POSService
 
@@ -54,9 +69,9 @@ def create_store(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/stores", response_model=List[StoreResponse])
+@router.get("/stores", response_model=list[StoreResponse])
 def list_stores(
-    is_active: Optional[bool] = None,
+    is_active: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: POSService = Depends(get_service)
@@ -116,10 +131,10 @@ def create_terminal(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/terminals", response_model=List[TerminalResponse])
+@router.get("/terminals", response_model=list[TerminalResponse])
 def list_terminals(
-    store_id: Optional[int] = None,
-    status: Optional[POSTerminalStatus] = None,
+    store_id: int | None = None,
+    status: POSTerminalStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: POSService = Depends(get_service)
@@ -207,10 +222,10 @@ def create_pos_user(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/users", response_model=List[POSUserResponse])
+@router.get("/users", response_model=list[POSUserResponse])
 def list_pos_users(
-    is_active: Optional[bool] = None,
-    is_manager: Optional[bool] = None,
+    is_active: bool | None = None,
+    is_manager: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: POSService = Depends(get_service)
@@ -274,12 +289,12 @@ def open_session(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/sessions", response_model=List[SessionResponse])
+@router.get("/sessions", response_model=list[SessionResponse])
 def list_sessions(
-    terminal_id: Optional[int] = None,
-    status: Optional[POSSessionStatus] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    terminal_id: int | None = None,
+    status: POSSessionStatus | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: POSService = Depends(get_service)
@@ -354,7 +369,7 @@ def add_cash_movement(
 
 @router.get(
     "/sessions/{session_id}/cash-movements",
-    response_model=List[CashMovementResponse]
+    response_model=list[CashMovementResponse]
 )
 def list_cash_movements(
     session_id: int,
@@ -388,11 +403,11 @@ def create_transaction(
 
 @router.get("/transactions", response_model=TransactionListResponse)
 def list_transactions(
-    session_id: Optional[int] = None,
-    status: Optional[POSTransactionStatus] = None,
-    customer_id: Optional[int] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    session_id: int | None = None,
+    status: POSTransactionStatus | None = None,
+    customer_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     service: POSService = Depends(get_service)
@@ -471,7 +486,7 @@ def refund_transaction(
     session_id: int = Query(..., description="Session pour le remboursement"),
     cashier_id: int = Query(..., description="ID caissier"),
     reason: str = Query(..., min_length=1),
-    line_items: List[dict] = None,
+    line_items: list[dict] = None,
     service: POSService = Depends(get_service)
 ):
     """Créer un remboursement."""
@@ -499,9 +514,9 @@ def create_quick_key(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/quick-keys", response_model=List[QuickKeyResponse])
+@router.get("/quick-keys", response_model=list[QuickKeyResponse])
 def list_quick_keys(
-    store_id: Optional[int] = None,
+    store_id: int | None = None,
     page: int = Query(1, ge=1),
     service: POSService = Depends(get_service)
 ):
@@ -541,9 +556,9 @@ def hold_transaction(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/hold", response_model=List[HoldTransactionResponse])
+@router.get("/hold", response_model=list[HoldTransactionResponse])
 def list_held_transactions(
-    session_id: Optional[int] = None,
+    session_id: int | None = None,
     service: POSService = Depends(get_service)
 ):
     """Lister les transactions en attente."""
@@ -599,11 +614,11 @@ def get_daily_report(
     return report
 
 
-@router.get("/reports/daily", response_model=List[DailyReportResponse])
+@router.get("/reports/daily", response_model=list[DailyReportResponse])
 def list_daily_reports(
-    store_id: Optional[int] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    store_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(30, ge=1, le=100),
     service: POSService = Depends(get_service)
@@ -621,7 +636,7 @@ def list_daily_reports(
 
 @router.get("/dashboard", response_model=POSDashboard)
 def get_pos_dashboard(
-    store_id: Optional[int] = None,
+    store_id: int | None = None,
     service: POSService = Depends(get_service)
 ):
     """Dashboard POS global."""

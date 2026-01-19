@@ -15,14 +15,15 @@ import type { ActionButton } from '@/types';
 // TYPES
 // ============================================================
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost' | 'success';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
-interface ButtonProps {
+export interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
   isDisabled?: boolean;
+  disabled?: boolean; // Alias pour isDisabled
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
@@ -41,6 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
   size = 'md',
   isLoading,
   isDisabled,
+  disabled,
   leftIcon,
   rightIcon,
   fullWidth,
@@ -50,9 +52,10 @@ export const Button: React.FC<ButtonProps> = ({
   className,
 }) => {
   const [isExecuting, setIsExecuting] = useState(false);
+  const isButtonDisabled = isDisabled ?? disabled;
 
   const handleClick = useCallback(async () => {
-    if (!onClick || isLoading || isDisabled || isExecuting) return;
+    if (!onClick || isLoading || isButtonDisabled || isExecuting) return;
 
     const result = onClick();
     if (result instanceof Promise) {
@@ -63,7 +66,7 @@ export const Button: React.FC<ButtonProps> = ({
         setIsExecuting(false);
       }
     }
-  }, [onClick, isLoading, isDisabled, isExecuting]);
+  }, [onClick, isLoading, isButtonDisabled, isExecuting]);
 
   const loading = isLoading || isExecuting;
 
@@ -71,7 +74,7 @@ export const Button: React.FC<ButtonProps> = ({
     <button
       type={type}
       onClick={handleClick}
-      disabled={isDisabled || loading}
+      disabled={isButtonDisabled || loading}
       className={clsx(
         'azals-btn',
         `azals-btn--${variant}`,
@@ -228,7 +231,7 @@ export const ButtonGroup: React.FC<ButtonGroupProps> = ({
 
 interface ConfirmDialogProps {
   title: string;
-  message: string;
+  message: React.ReactNode;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
   confirmLabel?: string;

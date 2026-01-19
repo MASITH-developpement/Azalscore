@@ -6,32 +6,51 @@ Endpoints API pour la gestion des ressources humaines.
 """
 
 from datetime import date
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.core.database import get_db
-from app.core.auth import get_current_user, get_tenant_id
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
-from .models import (
-    EmployeeStatus, LeaveStatus,
-    TrainingType, TrainingStatus,
-    EvaluationStatus, DocumentType
-)
+from app.core.auth import get_current_user, get_tenant_id
+from app.core.database import get_db
+
+from .models import DocumentType, EmployeeStatus, EvaluationStatus, LeaveStatus, TrainingStatus, TrainingType
 from .schemas import (
-    DepartmentCreate, DepartmentUpdate, DepartmentResponse,
-    PositionCreate, PositionUpdate, PositionResponse,
-    EmployeeCreate, EmployeeUpdate, EmployeeResponse, EmployeeList,
-    ContractCreate, ContractResponse,
-    LeaveRequestCreate, LeaveRequestResponse, LeaveBalanceResponse,
-    PayrollPeriodCreate, PayrollPeriodResponse, PayslipCreate, PayslipResponse,
-    TimeEntryCreate, TimeEntryResponse,
-    SkillCreate, SkillResponse, EmployeeSkillCreate, EmployeeSkillResponse,
-    TrainingCreate, TrainingResponse, TrainingParticipantCreate, TrainingParticipantResponse,
-    EvaluationCreate, EvaluationUpdate, EvaluationResponse,
-    HRDocumentCreate, HRDocumentResponse,
-    HRDashboard
+    ContractCreate,
+    ContractResponse,
+    DepartmentCreate,
+    DepartmentResponse,
+    DepartmentUpdate,
+    EmployeeCreate,
+    EmployeeList,
+    EmployeeResponse,
+    EmployeeSkillCreate,
+    EmployeeSkillResponse,
+    EmployeeUpdate,
+    EvaluationCreate,
+    EvaluationResponse,
+    EvaluationUpdate,
+    HRDashboard,
+    HRDocumentCreate,
+    HRDocumentResponse,
+    LeaveBalanceResponse,
+    LeaveRequestCreate,
+    LeaveRequestResponse,
+    PayrollPeriodCreate,
+    PayrollPeriodResponse,
+    PayslipCreate,
+    PayslipResponse,
+    PositionCreate,
+    PositionResponse,
+    PositionUpdate,
+    SkillCreate,
+    SkillResponse,
+    TimeEntryCreate,
+    TimeEntryResponse,
+    TrainingCreate,
+    TrainingParticipantCreate,
+    TrainingParticipantResponse,
+    TrainingResponse,
 )
 from .service import get_hr_service
 
@@ -54,7 +73,7 @@ def create_department(
     return service.create_department(data)
 
 
-@router.get("/departments", response_model=List[DepartmentResponse])
+@router.get("/departments", response_model=list[DepartmentResponse])
 def list_departments(
     is_active: bool = True,
     db: Session = Depends(get_db),
@@ -113,9 +132,9 @@ def create_position(
     return service.create_position(data)
 
 
-@router.get("/positions", response_model=List[PositionResponse])
+@router.get("/positions", response_model=list[PositionResponse])
 def list_positions(
-    department_id: Optional[UUID] = None,
+    department_id: UUID | None = None,
     is_active: bool = True,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
@@ -178,10 +197,10 @@ def create_employee(
 
 @router.get("/employees", response_model=EmployeeList)
 def list_employees(
-    department_id: Optional[UUID] = None,
-    status: Optional[EmployeeStatus] = None,
-    manager_id: Optional[UUID] = None,
-    search: Optional[str] = None,
+    department_id: UUID | None = None,
+    status: EmployeeStatus | None = None,
+    manager_id: UUID | None = None,
+    search: str | None = None,
     is_active: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -238,7 +257,7 @@ def update_employee(
 def terminate_employee(
     employee_id: UUID,
     end_date: date,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -282,7 +301,7 @@ def get_contract(
     return contract
 
 
-@router.get("/employees/{employee_id}/contracts", response_model=List[ContractResponse])
+@router.get("/employees/{employee_id}/contracts", response_model=list[ContractResponse])
 def list_employee_contracts(
     employee_id: UUID,
     db: Session = Depends(get_db),
@@ -313,10 +332,10 @@ def create_leave_request(
 
 @router.get("/leave-requests")
 def list_leave_requests(
-    employee_id: Optional[UUID] = None,
-    leave_status: Optional[LeaveStatus] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    employee_id: UUID | None = None,
+    leave_status: LeaveStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -367,10 +386,10 @@ def reject_leave_request(
     return leave
 
 
-@router.get("/employees/{employee_id}/leave-balance", response_model=List[LeaveBalanceResponse])
+@router.get("/employees/{employee_id}/leave-balance", response_model=list[LeaveBalanceResponse])
 def get_employee_leave_balance(
     employee_id: UUID,
-    year: Optional[int] = None,
+    year: int | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -396,9 +415,9 @@ def create_payroll_period(
     return service.create_payroll_period(data)
 
 
-@router.get("/payroll-periods", response_model=List[PayrollPeriodResponse])
+@router.get("/payroll-periods", response_model=list[PayrollPeriodResponse])
 def list_payroll_periods(
-    year: Optional[int] = None,
+    year: int | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -421,6 +440,22 @@ def get_payroll_period(
     if not period:
         raise HTTPException(status_code=404, detail="Payroll period not found")
     return period
+
+
+@router.get("/payslips", response_model=list[PayslipResponse])
+def list_payslips(
+    period_id: UUID | None = None,
+    employee_id: UUID | None = None,
+    year: int | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user = Depends(get_current_user)
+):
+    """Lister tous les bulletins de paie."""
+    service = get_hr_service(db, tenant_id)
+    return service.list_payslips(period_id, employee_id, year, skip, limit)
 
 
 @router.post("/payslips", response_model=PayslipResponse, status_code=status.HTTP_201_CREATED)
@@ -453,10 +488,10 @@ def validate_payslip(
     return payslip
 
 
-@router.get("/employees/{employee_id}/payslips", response_model=List[PayslipResponse])
+@router.get("/employees/{employee_id}/payslips", response_model=list[PayslipResponse])
 def get_employee_payslips(
     employee_id: UUID,
-    year: Optional[int] = None,
+    year: int | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -483,11 +518,11 @@ def create_time_entry(
     return service.create_time_entry(employee_id, data)
 
 
-@router.get("/time-entries", response_model=List[TimeEntryResponse])
+@router.get("/time-entries", response_model=list[TimeEntryResponse])
 def list_time_entries(
-    employee_id: Optional[UUID] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    employee_id: UUID | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -513,9 +548,9 @@ def create_skill(
     return service.create_skill(data)
 
 
-@router.get("/skills", response_model=List[SkillResponse])
+@router.get("/skills", response_model=list[SkillResponse])
 def list_skills(
-    category: Optional[str] = None,
+    category: str | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -538,7 +573,7 @@ def add_employee_skill(
     return service.add_employee_skill(employee_id, data)
 
 
-@router.get("/employees/{employee_id}/skills", response_model=List[EmployeeSkillResponse])
+@router.get("/employees/{employee_id}/skills", response_model=list[EmployeeSkillResponse])
 def get_employee_skills(
     employee_id: UUID,
     db: Session = Depends(get_db),
@@ -566,10 +601,10 @@ def create_training(
     return service.create_training(data, current_user.id)
 
 
-@router.get("/trainings", response_model=List[TrainingResponse])
+@router.get("/trainings", response_model=list[TrainingResponse])
 def list_trainings(
-    training_status: Optional[TrainingStatus] = None,
-    training_type: Optional[TrainingType] = None,
+    training_status: TrainingStatus | None = None,
+    training_type: TrainingType | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -623,11 +658,11 @@ def create_evaluation(
     return service.create_evaluation(data)
 
 
-@router.get("/evaluations", response_model=List[EvaluationResponse])
+@router.get("/evaluations", response_model=list[EvaluationResponse])
 def list_evaluations(
-    employee_id: Optional[UUID] = None,
-    evaluation_status: Optional[EvaluationStatus] = None,
-    evaluator_id: Optional[UUID] = None,
+    employee_id: UUID | None = None,
+    evaluation_status: EvaluationStatus | None = None,
+    evaluator_id: UUID | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)
@@ -684,10 +719,10 @@ def create_document(
     return service.create_document(data, current_user.id)
 
 
-@router.get("/employees/{employee_id}/documents", response_model=List[HRDocumentResponse])
+@router.get("/employees/{employee_id}/documents", response_model=list[HRDocumentResponse])
 def get_employee_documents(
     employee_id: UUID,
-    doc_type: Optional[DocumentType] = None,
+    doc_type: DocumentType | None = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant_id),
     current_user = Depends(get_current_user)

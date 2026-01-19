@@ -13,10 +13,10 @@ OBJECTIFS:
 """
 
 import uuid
-from typing import Optional
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.logging_config import get_logger
@@ -32,8 +32,8 @@ def create_error_response(
     error: str,
     message: str,
     code: int,
-    path: Optional[str] = None,
-    trace_id: Optional[str] = None
+    path: str | None = None,
+    trace_id: str | None = None
 ) -> dict:
     """
     Cree une reponse d'erreur standardisee.
@@ -285,10 +285,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
     )
 
     # Determiner le type d'erreur selon le code
-    if 400 <= status_code < 500:
-        error_type = "client_error"
-    else:
-        error_type = "server_error"
+    error_type = "client_error" if 400 <= status_code < 500 else "server_error"
 
     return JSONResponse(
         status_code=status_code,
@@ -347,7 +344,7 @@ class AzalsHTTPException(HTTPException):
         status_code: int,
         error: str,
         message: str,
-        detail: Optional[str] = None
+        detail: str | None = None
     ):
         super().__init__(status_code=status_code, detail=detail or message)
         self.error = error

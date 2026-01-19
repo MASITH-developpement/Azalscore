@@ -5,33 +5,49 @@ AZALS MODULE T8 - Service Site Web
 Logique métier pour le site web officiel.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 import uuid
+from datetime import datetime, timedelta
+from typing import Any
+
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from .models import (
-    SitePage, BlogPost, Testimonial, ContactSubmission,
-    NewsletterSubscriber, SiteMedia, SiteSEO, SiteAnalytics,
-    PageType, PublishStatus, ContentType, FormCategory,
-    SubmissionStatus, MediaType
+    BlogPost,
+    ContactSubmission,
+    ContentType,
+    FormCategory,
+    MediaType,
+    NewsletterSubscriber,
+    PageType,
+    PublishStatus,
+    SiteAnalytics,
+    SiteMedia,
+    SitePage,
+    SiteSEO,
+    SubmissionStatus,
+    Testimonial,
 )
 from .schemas import (
-    SitePageCreate, SitePageUpdate,
-    BlogPostCreate, BlogPostUpdate,
-    TestimonialCreate, TestimonialUpdate,
-    ContactSubmissionCreate, ContactSubmissionUpdate,
+    BlogPostCreate,
+    BlogPostUpdate,
+    ContactSubmissionCreate,
+    ContactSubmissionUpdate,
     NewsletterSubscribeRequest,
-    SiteMediaCreate, SiteMediaUpdate,
-    SiteSEOUpdate
+    SiteMediaCreate,
+    SiteMediaUpdate,
+    SitePageCreate,
+    SitePageUpdate,
+    SiteSEOUpdate,
+    TestimonialCreate,
+    TestimonialUpdate,
 )
 
 
 class WebsiteService:
     """Service de gestion du site web."""
 
-    def __init__(self, db: Session, tenant_id: str, user_id: Optional[int] = None):
+    def __init__(self, db: Session, tenant_id: str, user_id: int | None = None):
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
@@ -78,38 +94,38 @@ class WebsiteService:
         self.db.refresh(page)
         return page
 
-    def get_page(self, page_id: int) -> Optional[SitePage]:
+    def get_page(self, page_id: int) -> SitePage | None:
         """Récupérer une page par ID."""
         return self.db.query(SitePage).filter(
             SitePage.tenant_id == self.tenant_id,
             SitePage.id == page_id
         ).first()
 
-    def get_page_by_slug(self, slug: str) -> Optional[SitePage]:
+    def get_page_by_slug(self, slug: str) -> SitePage | None:
         """Récupérer une page par slug."""
         return self.db.query(SitePage).filter(
             SitePage.tenant_id == self.tenant_id,
             SitePage.slug == slug
         ).first()
 
-    def get_homepage(self) -> Optional[SitePage]:
+    def get_homepage(self) -> SitePage | None:
         """Récupérer la page d'accueil."""
         return self.db.query(SitePage).filter(
             SitePage.tenant_id == self.tenant_id,
-            SitePage.is_homepage == True,
+            SitePage.is_homepage,
             SitePage.status == PublishStatus.PUBLISHED
         ).first()
 
     def list_pages(
         self,
-        page_type: Optional[str] = None,
-        status: Optional[str] = None,
-        parent_id: Optional[int] = None,
-        show_in_menu: Optional[bool] = None,
-        language: Optional[str] = None,
+        page_type: str | None = None,
+        status: str | None = None,
+        parent_id: int | None = None,
+        show_in_menu: bool | None = None,
+        language: str | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> List[SitePage]:
+    ) -> list[SitePage]:
         """Lister les pages."""
         query = self.db.query(SitePage).filter(
             SitePage.tenant_id == self.tenant_id
@@ -128,7 +144,7 @@ class WebsiteService:
 
         return query.order_by(SitePage.sort_order).offset(skip).limit(limit).all()
 
-    def update_page(self, page_id: int, data: SitePageUpdate) -> Optional[SitePage]:
+    def update_page(self, page_id: int, data: SitePageUpdate) -> SitePage | None:
         """Mettre à jour une page."""
         page = self.get_page(page_id)
         if not page or page.is_system:
@@ -145,7 +161,7 @@ class WebsiteService:
         self.db.refresh(page)
         return page
 
-    def publish_page(self, page_id: int, publish: bool = True) -> Optional[SitePage]:
+    def publish_page(self, page_id: int, publish: bool = True) -> SitePage | None:
         """Publier/dépublier une page."""
         page = self.get_page(page_id)
         if not page:
@@ -179,21 +195,21 @@ class WebsiteService:
         ).update({"view_count": SitePage.view_count + 1})
         self.db.commit()
 
-    def get_menu_pages(self, language: str = "fr") -> List[SitePage]:
+    def get_menu_pages(self, language: str = "fr") -> list[SitePage]:
         """Récupérer les pages pour le menu."""
         return self.db.query(SitePage).filter(
             SitePage.tenant_id == self.tenant_id,
             SitePage.status == PublishStatus.PUBLISHED,
-            SitePage.show_in_menu == True,
+            SitePage.show_in_menu,
             SitePage.language == language
         ).order_by(SitePage.sort_order).all()
 
-    def get_footer_pages(self, language: str = "fr") -> List[SitePage]:
+    def get_footer_pages(self, language: str = "fr") -> list[SitePage]:
         """Récupérer les pages pour le footer."""
         return self.db.query(SitePage).filter(
             SitePage.tenant_id == self.tenant_id,
             SitePage.status == PublishStatus.PUBLISHED,
-            SitePage.show_in_footer == True,
+            SitePage.show_in_footer,
             SitePage.language == language
         ).order_by(SitePage.sort_order).all()
 
@@ -201,7 +217,7 @@ class WebsiteService:
         """Retirer le flag homepage des autres pages."""
         self.db.query(SitePage).filter(
             SitePage.tenant_id == self.tenant_id,
-            SitePage.is_homepage == True
+            SitePage.is_homepage
         ).update({"is_homepage": False})
 
     # ========================================================================
@@ -247,14 +263,14 @@ class WebsiteService:
         self.db.refresh(post)
         return post
 
-    def get_blog_post(self, post_id: int) -> Optional[BlogPost]:
+    def get_blog_post(self, post_id: int) -> BlogPost | None:
         """Récupérer un article par ID."""
         return self.db.query(BlogPost).filter(
             BlogPost.tenant_id == self.tenant_id,
             BlogPost.id == post_id
         ).first()
 
-    def get_blog_post_by_slug(self, slug: str) -> Optional[BlogPost]:
+    def get_blog_post_by_slug(self, slug: str) -> BlogPost | None:
         """Récupérer un article par slug."""
         return self.db.query(BlogPost).filter(
             BlogPost.tenant_id == self.tenant_id,
@@ -263,15 +279,15 @@ class WebsiteService:
 
     def list_blog_posts(
         self,
-        content_type: Optional[str] = None,
-        category: Optional[str] = None,
-        tag: Optional[str] = None,
-        status: Optional[str] = None,
-        is_featured: Optional[bool] = None,
-        language: Optional[str] = None,
+        content_type: str | None = None,
+        category: str | None = None,
+        tag: str | None = None,
+        status: str | None = None,
+        is_featured: bool | None = None,
+        language: str | None = None,
         skip: int = 0,
         limit: int = 20
-    ) -> List[BlogPost]:
+    ) -> list[BlogPost]:
         """Lister les articles."""
         query = self.db.query(BlogPost).filter(
             BlogPost.tenant_id == self.tenant_id
@@ -296,7 +312,7 @@ class WebsiteService:
             BlogPost.published_at.desc()
         ).offset(skip).limit(limit).all()
 
-    def update_blog_post(self, post_id: int, data: BlogPostUpdate) -> Optional[BlogPost]:
+    def update_blog_post(self, post_id: int, data: BlogPostUpdate) -> BlogPost | None:
         """Mettre à jour un article."""
         post = self.get_blog_post(post_id)
         if not post:
@@ -318,7 +334,7 @@ class WebsiteService:
         self.db.refresh(post)
         return post
 
-    def publish_blog_post(self, post_id: int, publish: bool = True) -> Optional[BlogPost]:
+    def publish_blog_post(self, post_id: int, publish: bool = True) -> BlogPost | None:
         """Publier/dépublier un article."""
         post = self.get_blog_post(post_id)
         if not post:
@@ -352,7 +368,7 @@ class WebsiteService:
         ).update({"view_count": BlogPost.view_count + 1})
         self.db.commit()
 
-    def get_blog_categories(self) -> List[Dict[str, Any]]:
+    def get_blog_categories(self) -> list[dict[str, Any]]:
         """Récupérer les catégories avec compteurs."""
         results = self.db.query(
             BlogPost.category,
@@ -398,7 +414,7 @@ class WebsiteService:
         self.db.refresh(testimonial)
         return testimonial
 
-    def get_testimonial(self, testimonial_id: int) -> Optional[Testimonial]:
+    def get_testimonial(self, testimonial_id: int) -> Testimonial | None:
         """Récupérer un témoignage."""
         return self.db.query(Testimonial).filter(
             Testimonial.tenant_id == self.tenant_id,
@@ -407,13 +423,13 @@ class WebsiteService:
 
     def list_testimonials(
         self,
-        industry: Optional[str] = None,
-        is_featured: Optional[bool] = None,
-        show_on_homepage: Optional[bool] = None,
-        status: Optional[str] = None,
+        industry: str | None = None,
+        is_featured: bool | None = None,
+        show_on_homepage: bool | None = None,
+        status: str | None = None,
         skip: int = 0,
         limit: int = 20
-    ) -> List[Testimonial]:
+    ) -> list[Testimonial]:
         """Lister les témoignages."""
         query = self.db.query(Testimonial).filter(
             Testimonial.tenant_id == self.tenant_id
@@ -430,7 +446,7 @@ class WebsiteService:
 
         return query.order_by(Testimonial.sort_order).offset(skip).limit(limit).all()
 
-    def update_testimonial(self, testimonial_id: int, data: TestimonialUpdate) -> Optional[Testimonial]:
+    def update_testimonial(self, testimonial_id: int, data: TestimonialUpdate) -> Testimonial | None:
         """Mettre à jour un témoignage."""
         testimonial = self.get_testimonial(testimonial_id)
         if not testimonial:
@@ -444,7 +460,7 @@ class WebsiteService:
         self.db.refresh(testimonial)
         return testimonial
 
-    def publish_testimonial(self, testimonial_id: int, publish: bool = True) -> Optional[Testimonial]:
+    def publish_testimonial(self, testimonial_id: int, publish: bool = True) -> Testimonial | None:
         """Publier/dépublier un témoignage."""
         testimonial = self.get_testimonial(testimonial_id)
         if not testimonial:
@@ -477,9 +493,9 @@ class WebsiteService:
     def create_contact_submission(
         self,
         data: ContactSubmissionCreate,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        referrer: Optional[str] = None
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        referrer: str | None = None
     ) -> ContactSubmission:
         """Créer une soumission de contact."""
         submission = ContactSubmission(
@@ -519,7 +535,7 @@ class WebsiteService:
 
         return submission
 
-    def get_contact_submission(self, submission_id: int) -> Optional[ContactSubmission]:
+    def get_contact_submission(self, submission_id: int) -> ContactSubmission | None:
         """Récupérer une soumission."""
         return self.db.query(ContactSubmission).filter(
             ContactSubmission.tenant_id == self.tenant_id,
@@ -528,12 +544,12 @@ class WebsiteService:
 
     def list_contact_submissions(
         self,
-        form_category: Optional[str] = None,
-        status: Optional[str] = None,
-        assigned_to: Optional[int] = None,
+        form_category: str | None = None,
+        status: str | None = None,
+        assigned_to: int | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> List[ContactSubmission]:
+    ) -> list[ContactSubmission]:
         """Lister les soumissions."""
         query = self.db.query(ContactSubmission).filter(
             ContactSubmission.tenant_id == self.tenant_id
@@ -552,7 +568,7 @@ class WebsiteService:
         self,
         submission_id: int,
         data: ContactSubmissionUpdate
-    ) -> Optional[ContactSubmission]:
+    ) -> ContactSubmission | None:
         """Mettre à jour une soumission."""
         submission = self.get_contact_submission(submission_id)
         if not submission:
@@ -576,7 +592,7 @@ class WebsiteService:
         self.db.refresh(submission)
         return submission
 
-    def mark_submission_read(self, submission_id: int) -> Optional[ContactSubmission]:
+    def mark_submission_read(self, submission_id: int) -> ContactSubmission | None:
         """Marquer comme lu."""
         submission = self.get_contact_submission(submission_id)
         if not submission:
@@ -589,7 +605,7 @@ class WebsiteService:
 
         return submission
 
-    def get_contact_stats(self) -> Dict[str, Any]:
+    def get_contact_stats(self) -> dict[str, Any]:
         """Statistiques des contacts."""
         stats = {}
 
@@ -625,8 +641,8 @@ class WebsiteService:
     def _auto_subscribe_newsletter(
         self,
         email: str,
-        first_name: Optional[str],
-        last_name: Optional[str]
+        first_name: str | None,
+        last_name: str | None
     ) -> None:
         """Auto-inscription newsletter."""
         existing = self.db.query(NewsletterSubscriber).filter(
@@ -693,7 +709,7 @@ class WebsiteService:
         self.db.refresh(subscriber)
         return subscriber
 
-    def verify_newsletter(self, token: str) -> Optional[NewsletterSubscriber]:
+    def verify_newsletter(self, token: str) -> NewsletterSubscriber | None:
         """Vérifier l'email d'un abonné."""
         subscriber = self.db.query(NewsletterSubscriber).filter(
             NewsletterSubscriber.tenant_id == self.tenant_id,
@@ -709,7 +725,7 @@ class WebsiteService:
 
         return subscriber
 
-    def unsubscribe_newsletter(self, token: str) -> Optional[NewsletterSubscriber]:
+    def unsubscribe_newsletter(self, token: str) -> NewsletterSubscriber | None:
         """Se désabonner de la newsletter."""
         subscriber = self.db.query(NewsletterSubscriber).filter(
             NewsletterSubscriber.tenant_id == self.tenant_id,
@@ -726,11 +742,11 @@ class WebsiteService:
 
     def list_newsletter_subscribers(
         self,
-        is_active: Optional[bool] = None,
-        is_verified: Optional[bool] = None,
+        is_active: bool | None = None,
+        is_verified: bool | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[NewsletterSubscriber]:
+    ) -> list[NewsletterSubscriber]:
         """Lister les abonnés."""
         query = self.db.query(NewsletterSubscriber).filter(
             NewsletterSubscriber.tenant_id == self.tenant_id
@@ -743,7 +759,7 @@ class WebsiteService:
 
         return query.order_by(NewsletterSubscriber.created_at.desc()).offset(skip).limit(limit).all()
 
-    def get_newsletter_stats(self) -> Dict[str, Any]:
+    def get_newsletter_stats(self) -> dict[str, Any]:
         """Statistiques newsletter."""
         total = self.db.query(NewsletterSubscriber).filter(
             NewsletterSubscriber.tenant_id == self.tenant_id
@@ -751,12 +767,12 @@ class WebsiteService:
 
         active = self.db.query(NewsletterSubscriber).filter(
             NewsletterSubscriber.tenant_id == self.tenant_id,
-            NewsletterSubscriber.is_active == True
+            NewsletterSubscriber.is_active
         ).count()
 
         verified = self.db.query(NewsletterSubscriber).filter(
             NewsletterSubscriber.tenant_id == self.tenant_id,
-            NewsletterSubscriber.is_verified == True
+            NewsletterSubscriber.is_verified
         ).count()
 
         # Nouveaux cette semaine
@@ -807,7 +823,7 @@ class WebsiteService:
         self.db.refresh(media)
         return media
 
-    def get_media(self, media_id: int) -> Optional[SiteMedia]:
+    def get_media(self, media_id: int) -> SiteMedia | None:
         """Récupérer un média."""
         return self.db.query(SiteMedia).filter(
             SiteMedia.tenant_id == self.tenant_id,
@@ -816,12 +832,12 @@ class WebsiteService:
 
     def list_media(
         self,
-        media_type: Optional[str] = None,
-        folder: Optional[str] = None,
-        tag: Optional[str] = None,
+        media_type: str | None = None,
+        folder: str | None = None,
+        tag: str | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> List[SiteMedia]:
+    ) -> list[SiteMedia]:
         """Lister les médias."""
         query = self.db.query(SiteMedia).filter(
             SiteMedia.tenant_id == self.tenant_id
@@ -836,7 +852,7 @@ class WebsiteService:
 
         return query.order_by(SiteMedia.created_at.desc()).offset(skip).limit(limit).all()
 
-    def update_media(self, media_id: int, data: SiteMediaUpdate) -> Optional[SiteMedia]:
+    def update_media(self, media_id: int, data: SiteMediaUpdate) -> SiteMedia | None:
         """Mettre à jour un média."""
         media = self.get_media(media_id)
         if not media:
@@ -864,7 +880,7 @@ class WebsiteService:
     # SEO
     # ========================================================================
 
-    def get_seo_config(self) -> Optional[SiteSEO]:
+    def get_seo_config(self) -> SiteSEO | None:
         """Récupérer la configuration SEO."""
         return self.db.query(SiteSEO).filter(
             SiteSEO.tenant_id == self.tenant_id
@@ -895,7 +911,7 @@ class WebsiteService:
         self,
         date: datetime,
         period: str = "daily",
-        data: Dict[str, Any] = None
+        data: dict[str, Any] = None
     ) -> SiteAnalytics:
         """Enregistrer des données analytics."""
         data = data or {}
@@ -927,7 +943,7 @@ class WebsiteService:
         start_date: datetime,
         end_date: datetime,
         period: str = "daily"
-    ) -> List[SiteAnalytics]:
+    ) -> list[SiteAnalytics]:
         """Récupérer les analytics pour une période."""
         return self.db.query(SiteAnalytics).filter(
             SiteAnalytics.tenant_id == self.tenant_id,
@@ -936,7 +952,7 @@ class WebsiteService:
             SiteAnalytics.date <= end_date
         ).order_by(SiteAnalytics.date).all()
 
-    def get_analytics_dashboard(self, days: int = 30) -> Dict[str, Any]:
+    def get_analytics_dashboard(self, days: int = 30) -> dict[str, Any]:
         """Dashboard analytics."""
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
@@ -957,14 +973,14 @@ class WebsiteService:
         avg_bounce_rate = sum(bounce_rates) / len(bounce_rates) if bounce_rates else None
 
         # Agréger traffic sources
-        traffic_sources: Dict[str, int] = {}
+        traffic_sources: dict[str, int] = {}
         for a in analytics:
             if a.traffic_sources:
                 for source, count in a.traffic_sources.items():
                     traffic_sources[source] = traffic_sources.get(source, 0) + count
 
         # Top pages
-        pages: Dict[str, int] = {}
+        pages: dict[str, int] = {}
         for a in analytics:
             if a.top_pages:
                 for page in a.top_pages:
@@ -973,7 +989,7 @@ class WebsiteService:
         top_pages = [{"url": k, "views": v} for k, v in sorted(pages.items(), key=lambda x: -x[1])[:10]]
 
         # Top posts
-        posts: Dict[str, int] = {}
+        posts: dict[str, int] = {}
         for a in analytics:
             if a.top_posts:
                 for post in a.top_posts:
@@ -1012,7 +1028,7 @@ class WebsiteService:
     # PUBLIC CONFIG
     # ========================================================================
 
-    def get_public_site_config(self, language: str = "fr") -> Dict[str, Any]:
+    def get_public_site_config(self, language: str = "fr") -> dict[str, Any]:
         """Configuration publique du site."""
         seo = self.get_seo_config()
         menu_pages = self.get_menu_pages(language)
@@ -1056,6 +1072,6 @@ class WebsiteService:
         }
 
 
-def get_website_service(db: Session, tenant_id: str, user_id: Optional[int] = None) -> WebsiteService:
+def get_website_service(db: Session, tenant_id: str, user_id: int | None = None) -> WebsiteService:
     """Factory pour le service website."""
     return WebsiteService(db, tenant_id, user_id)

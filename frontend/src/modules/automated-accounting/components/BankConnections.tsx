@@ -360,9 +360,8 @@ const ConnectionCard: React.FC<{
           <StatusBadge
             variant={getConnectionStatusVariant(connection.status)}
             size="sm"
-          >
-            {getConnectionStatusLabel(connection.status)}
-          </StatusBadge>
+            status={getConnectionStatusLabel(connection.status)}
+          />
           {isExpiringSoon && (
             <span className="azals-auto-accounting__bank-expiring">
               <AlertTriangle size={14} />
@@ -484,15 +483,14 @@ const RecentSyncsWidget: React.FC<{ syncs: SyncSession[] }> = ({ syncs }) => {
             <StatusBadge
               variant={getSyncStatusVariant(sync.status)}
               size="sm"
-            >
-              {sync.status === 'COMPLETED'
+              status={sync.status === 'COMPLETED'
                 ? 'Terminé'
                 : sync.status === 'FAILED'
                 ? 'Échec'
                 : sync.status === 'IN_PROGRESS'
                 ? 'En cours'
                 : 'En attente'}
-            </StatusBadge>
+            />
 
             <div className="azals-auto-accounting__sync-details">
               <span className="azals-auto-accounting__sync-time">
@@ -566,7 +564,7 @@ const AddConnectionModal: React.FC<{
           <label className="azals-form-label">Rechercher une banque</label>
           <Input
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(value) => setSearchTerm(value)}
             placeholder="Nom de la banque ou pays..."
             leftIcon={<Building2 size={16} />}
           />
@@ -704,9 +702,9 @@ export const BankConnections: React.FC = () => {
 
   const handleCreateConnection = async (providerId: string) => {
     try {
-      const result = await createConnection.mutateAsync({ providerId });
+      const result = await createConnection.mutateAsync({ providerId }) as { authorization_url?: string };
       // Si la banque retourne une URL d'autorisation, rediriger
-      if (result.authorization_url) {
+      if (result?.authorization_url) {
         window.location.href = result.authorization_url;
       } else {
         setShowAddModal(false);

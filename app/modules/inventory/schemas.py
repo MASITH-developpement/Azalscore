@@ -5,21 +5,27 @@ AZALS MODULE M5 - Schémas Inventaire
 Schémas Pydantic pour la gestion des stocks et logistique.
 """
 
-from __future__ import annotations
 
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from uuid import UUID
 import json
+import datetime
+from decimal import Decimal
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import (
-    ProductType, ProductStatus, WarehouseType, LocationType,
-    MovementType, MovementStatus, InventoryStatus, LotStatus,
-    ValuationMethod, PickingStatus
+    InventoryStatus,
+    LocationType,
+    LotStatus,
+    MovementStatus,
+    MovementType,
+    PickingStatus,
+    ProductStatus,
+    ProductType,
+    ValuationMethod,
+    WarehouseType,
 )
-
 
 # ============================================================================
 # CATÉGORIES
@@ -29,28 +35,28 @@ class CategoryCreate(BaseModel):
     """Création d'une catégorie."""
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-    parent_id: Optional[UUID] = None
+    description: str | None = None
+    parent_id: UUID | None = None
     default_valuation: ValuationMethod = ValuationMethod.AVG
     sort_order: int = 0
 
 
 class CategoryUpdate(BaseModel):
     """Mise à jour d'une catégorie."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    parent_id: Optional[UUID] = None
-    default_valuation: Optional[ValuationMethod] = None
-    sort_order: Optional[int] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    parent_id: UUID | None = None
+    default_valuation: ValuationMethod | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
 
 
 class CategoryResponse(CategoryCreate):
     """Réponse catégorie."""
     id: UUID
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -66,45 +72,45 @@ class WarehouseCreate(BaseModel):
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     warehouse_type: WarehouseType = Field(default=WarehouseType.INTERNAL, alias="type")
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    postal_code: Optional[str] = None
-    city: Optional[str] = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    postal_code: str | None = None
+    city: str | None = None
     country: str = "France"
-    manager_name: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
+    manager_name: str | None = None
+    phone: str | None = None
+    email: str | None = None
     is_default: bool = False
     allow_negative: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class WarehouseUpdate(BaseModel):
     """Mise à jour d'un entrepôt."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    name: Optional[str] = None
-    warehouse_type: Optional[WarehouseType] = Field(default=None, alias="type")
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    postal_code: Optional[str] = None
-    city: Optional[str] = None
-    country: Optional[str] = None
-    manager_name: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    is_default: Optional[bool] = None
-    allow_negative: Optional[bool] = None
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    warehouse_type: WarehouseType | None = Field(default=None, alias="type")
+    address_line1: str | None = None
+    address_line2: str | None = None
+    postal_code: str | None = None
+    city: str | None = None
+    country: str | None = None
+    manager_name: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    is_default: bool | None = None
+    allow_negative: bool | None = None
+    notes: str | None = None
+    is_active: bool | None = None
 
 
 class WarehouseResponse(WarehouseCreate):
     """Réponse entrepôt."""
     id: UUID
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -119,37 +125,37 @@ class LocationCreate(BaseModel):
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
     location_type: LocationType = Field(default=LocationType.STORAGE, alias="type")
-    aisle: Optional[str] = None
-    rack: Optional[str] = None
-    level: Optional[str] = None
-    position: Optional[str] = None
-    max_weight_kg: Optional[Decimal] = None
-    max_volume_m3: Optional[Decimal] = None
+    aisle: str | None = None
+    rack: str | None = None
+    level: str | None = None
+    position: str | None = None
+    max_weight_kg: Decimal | None = None
+    max_volume_m3: Decimal | None = None
     is_default: bool = False
     requires_lot: bool = False
     requires_serial: bool = False
-    barcode: Optional[str] = None
-    notes: Optional[str] = None
+    barcode: str | None = None
+    notes: str | None = None
 
 
 class LocationUpdate(BaseModel):
     """Mise à jour d'un emplacement."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    name: Optional[str] = None
-    location_type: Optional[LocationType] = Field(default=None, alias="type")
-    aisle: Optional[str] = None
-    rack: Optional[str] = None
-    level: Optional[str] = None
-    position: Optional[str] = None
-    max_weight_kg: Optional[Decimal] = None
-    max_volume_m3: Optional[Decimal] = None
-    is_default: Optional[bool] = None
-    requires_lot: Optional[bool] = None
-    requires_serial: Optional[bool] = None
-    barcode: Optional[str] = None
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    location_type: LocationType | None = Field(default=None, alias="type")
+    aisle: str | None = None
+    rack: str | None = None
+    level: str | None = None
+    position: str | None = None
+    max_weight_kg: Decimal | None = None
+    max_volume_m3: Decimal | None = None
+    is_default: bool | None = None
+    requires_lot: bool | None = None
+    requires_serial: bool | None = None
+    barcode: str | None = None
+    notes: str | None = None
+    is_active: bool | None = None
 
 
 class LocationResponse(LocationCreate):
@@ -157,8 +163,8 @@ class LocationResponse(LocationCreate):
     id: UUID
     warehouse_id: UUID
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -172,81 +178,81 @@ class ProductCreate(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=500)
-    description: Optional[str] = None
+    description: str | None = None
     product_type: ProductType = Field(default=ProductType.STOCKABLE, alias="type")
-    category_id: Optional[UUID] = None
-    barcode: Optional[str] = None
-    ean13: Optional[str] = None
-    sku: Optional[str] = None
+    category_id: UUID | None = None
+    barcode: str | None = None
+    ean13: str | None = None
+    sku: str | None = None
     unit: str = "UNIT"
-    purchase_unit: Optional[str] = None
+    purchase_unit: str | None = None
     purchase_unit_factor: Decimal = Decimal("1")
-    sale_unit: Optional[str] = None
+    sale_unit: str | None = None
     sale_unit_factor: Decimal = Decimal("1")
     standard_cost: Decimal = Decimal("0")
-    sale_price: Optional[Decimal] = None
+    sale_price: Decimal | None = None
     currency: str = "EUR"
     valuation_method: ValuationMethod = ValuationMethod.AVG
     min_stock: Decimal = Decimal("0")
-    max_stock: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    reorder_quantity: Optional[Decimal] = None
+    max_stock: Decimal | None = None
+    reorder_point: Decimal | None = None
+    reorder_quantity: Decimal | None = None
     lead_time_days: int = 0
-    weight_kg: Optional[Decimal] = None
-    volume_m3: Optional[Decimal] = None
-    length_cm: Optional[Decimal] = None
-    width_cm: Optional[Decimal] = None
-    height_cm: Optional[Decimal] = None
+    weight_kg: Decimal | None = None
+    volume_m3: Decimal | None = None
+    length_cm: Decimal | None = None
+    width_cm: Decimal | None = None
+    height_cm: Decimal | None = None
     track_lot: bool = False
     track_serial: bool = False
     track_expiry: bool = False
     expiry_warning_days: int = 30
-    default_warehouse_id: Optional[UUID] = None
-    default_location_id: Optional[UUID] = None
-    default_supplier_id: Optional[UUID] = None
-    tags: List[str] = Field(default_factory=list)
-    image_url: Optional[str] = None
-    notes: Optional[str] = None
+    default_warehouse_id: UUID | None = None
+    default_location_id: UUID | None = None
+    default_supplier_id: UUID | None = None
+    tags: list[str] = Field(default_factory=list)
+    image_url: str | None = None
+    notes: str | None = None
 
 
 class ProductUpdate(BaseModel):
     """Mise à jour d'un produit."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    product_type: Optional[ProductType] = Field(default=None, alias="type")
-    status: Optional[ProductStatus] = None
-    category_id: Optional[UUID] = None
-    barcode: Optional[str] = None
-    ean13: Optional[str] = None
-    sku: Optional[str] = None
-    unit: Optional[str] = None
-    purchase_unit: Optional[str] = None
-    purchase_unit_factor: Optional[Decimal] = None
-    sale_unit: Optional[str] = None
-    sale_unit_factor: Optional[Decimal] = None
-    standard_cost: Optional[Decimal] = None
-    sale_price: Optional[Decimal] = None
-    valuation_method: Optional[ValuationMethod] = None
-    min_stock: Optional[Decimal] = None
-    max_stock: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    reorder_quantity: Optional[Decimal] = None
-    lead_time_days: Optional[int] = None
-    weight_kg: Optional[Decimal] = None
-    volume_m3: Optional[Decimal] = None
-    track_lot: Optional[bool] = None
-    track_serial: Optional[bool] = None
-    track_expiry: Optional[bool] = None
-    expiry_warning_days: Optional[int] = None
-    default_warehouse_id: Optional[UUID] = None
-    default_location_id: Optional[UUID] = None
-    default_supplier_id: Optional[UUID] = None
-    tags: Optional[List[str]] = None
-    image_url: Optional[str] = None
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: str | None = None
+    description: str | None = None
+    product_type: ProductType | None = Field(default=None, alias="type")
+    status: ProductStatus | None = None
+    category_id: UUID | None = None
+    barcode: str | None = None
+    ean13: str | None = None
+    sku: str | None = None
+    unit: str | None = None
+    purchase_unit: str | None = None
+    purchase_unit_factor: Decimal | None = None
+    sale_unit: str | None = None
+    sale_unit_factor: Decimal | None = None
+    standard_cost: Decimal | None = None
+    sale_price: Decimal | None = None
+    valuation_method: ValuationMethod | None = None
+    min_stock: Decimal | None = None
+    max_stock: Decimal | None = None
+    reorder_point: Decimal | None = None
+    reorder_quantity: Decimal | None = None
+    lead_time_days: int | None = None
+    weight_kg: Decimal | None = None
+    volume_m3: Decimal | None = None
+    track_lot: bool | None = None
+    track_serial: bool | None = None
+    track_expiry: bool | None = None
+    expiry_warning_days: int | None = None
+    default_warehouse_id: UUID | None = None
+    default_location_id: UUID | None = None
+    default_supplier_id: UUID | None = None
+    tags: list[str] | None = None
+    image_url: str | None = None
+    notes: str | None = None
+    is_active: bool | None = None
 
 
 class ProductResponse(BaseModel):
@@ -256,31 +262,31 @@ class ProductResponse(BaseModel):
     id: UUID
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     product_type: ProductType = Field(..., alias="type")
     status: ProductStatus
-    category_id: Optional[UUID]
-    barcode: Optional[str]
-    ean13: Optional[str]
-    sku: Optional[str]
+    category_id: UUID | None
+    barcode: str | None
+    ean13: str | None
+    sku: str | None
     unit: str
     standard_cost: Decimal
     average_cost: Decimal
-    sale_price: Optional[Decimal]
+    sale_price: Decimal | None
     currency: str
     valuation_method: ValuationMethod
     min_stock: Decimal
-    max_stock: Optional[Decimal]
-    reorder_point: Optional[Decimal]
+    max_stock: Decimal | None
+    reorder_point: Decimal | None
     lead_time_days: int
-    weight_kg: Optional[Decimal]
+    weight_kg: Decimal | None
     track_lot: bool
     track_serial: bool
     track_expiry: bool
-    tags: List[str]
+    tags: list[str]
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
     @field_validator('tags', mode='before')
@@ -293,7 +299,7 @@ class ProductResponse(BaseModel):
 
 class ProductList(BaseModel):
     """Liste de produits."""
-    items: List[ProductResponse]
+    items: list[ProductResponse]
     total: int
 
 
@@ -306,7 +312,7 @@ class StockLevelResponse(BaseModel):
     id: UUID
     product_id: UUID
     warehouse_id: UUID
-    location_id: Optional[UUID]
+    location_id: UUID | None
     quantity_on_hand: Decimal
     quantity_reserved: Decimal
     quantity_available: Decimal
@@ -314,21 +320,21 @@ class StockLevelResponse(BaseModel):
     quantity_outgoing: Decimal
     total_value: Decimal
     average_cost: Decimal
-    last_movement_at: Optional[datetime]
-    last_count_at: Optional[datetime]
-    updated_at: datetime
+    last_movement_at: datetime.datetime | None
+    last_count_at: datetime.datetime | None
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class StockLevelUpdate(BaseModel):
     """Mise à jour niveau de stock."""
-    quantity_on_hand: Optional[Decimal] = None
-    quantity_reserved: Optional[Decimal] = None
-    quantity_incoming: Optional[Decimal] = None
-    quantity_outgoing: Optional[Decimal] = None
-    last_movement_at: Optional[datetime] = None
-    last_count_at: Optional[datetime] = None
+    quantity_on_hand: Decimal | None = None
+    quantity_reserved: Decimal | None = None
+    quantity_incoming: Decimal | None = None
+    quantity_outgoing: Decimal | None = None
+    last_movement_at: datetime.datetime | None = None
+    last_count_at: datetime.datetime | None = None
 
 
 class StockByProduct(BaseModel):
@@ -340,7 +346,7 @@ class StockByProduct(BaseModel):
     total_reserved: Decimal
     total_available: Decimal
     total_value: Decimal
-    warehouses: List[Dict[str, Any]]
+    warehouses: list[dict[str, Any]]
 
 
 # ============================================================================
@@ -351,21 +357,21 @@ class LotCreate(BaseModel):
     """Création d'un lot."""
     product_id: UUID
     number: str = Field(..., min_length=1, max_length=100)
-    production_date: Optional[date] = None
-    expiry_date: Optional[date] = None
-    reception_date: Optional[date] = None
-    supplier_id: Optional[UUID] = None
-    supplier_lot: Optional[str] = None
+    production_date: datetime.date | None = None
+    expiry_date: datetime.date | None = None
+    reception_date: datetime.date | None = None
+    supplier_id: UUID | None = None
+    supplier_lot: str | None = None
     initial_quantity: Decimal
-    unit_cost: Optional[Decimal] = None
-    notes: Optional[str] = None
+    unit_cost: Decimal | None = None
+    notes: str | None = None
 
 
 class LotUpdate(BaseModel):
     """Mise à jour d'un lot."""
-    status: Optional[LotStatus] = None
-    expiry_date: Optional[date] = None
-    notes: Optional[str] = None
+    status: LotStatus | None = None
+    expiry_date: datetime.date | None = None
+    notes: str | None = None
 
 
 class LotResponse(BaseModel):
@@ -374,17 +380,17 @@ class LotResponse(BaseModel):
     product_id: UUID
     number: str
     status: LotStatus
-    production_date: Optional[date]
-    expiry_date: Optional[date]
-    reception_date: Optional[date]
-    supplier_id: Optional[UUID]
-    supplier_lot: Optional[str]
+    production_date: datetime.date | None
+    expiry_date: datetime.date | None
+    reception_date: datetime.date | None
+    supplier_id: UUID | None
+    supplier_lot: str | None
     initial_quantity: Decimal
     current_quantity: Decimal
-    unit_cost: Optional[Decimal]
-    notes: Optional[str]
-    created_at: datetime
-    updated_at: datetime
+    unit_cost: Decimal | None
+    notes: str | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -397,43 +403,43 @@ class SerialCreate(BaseModel):
     """Création d'un numéro de série."""
     product_id: UUID
     number: str = Field(..., min_length=1, max_length=100)
-    lot_id: Optional[UUID] = None
-    warehouse_id: Optional[UUID] = None
-    location_id: Optional[UUID] = None
-    supplier_id: Optional[UUID] = None
-    reception_date: Optional[date] = None
-    warranty_end_date: Optional[date] = None
-    unit_cost: Optional[Decimal] = None
-    notes: Optional[str] = None
+    lot_id: UUID | None = None
+    warehouse_id: UUID | None = None
+    location_id: UUID | None = None
+    supplier_id: UUID | None = None
+    reception_date: datetime.date | None = None
+    warranty_end_date: datetime.date | None = None
+    unit_cost: Decimal | None = None
+    notes: str | None = None
 
 
 class SerialUpdate(BaseModel):
     """Mise à jour d'un numéro de série."""
-    status: Optional[LotStatus] = None
-    warehouse_id: Optional[UUID] = None
-    location_id: Optional[UUID] = None
-    warranty_end_date: Optional[date] = None
-    notes: Optional[str] = None
+    status: LotStatus | None = None
+    warehouse_id: UUID | None = None
+    location_id: UUID | None = None
+    warranty_end_date: datetime.date | None = None
+    notes: str | None = None
 
 
 class SerialResponse(BaseModel):
     """Réponse numéro de série."""
     id: UUID
     product_id: UUID
-    lot_id: Optional[UUID]
+    lot_id: UUID | None
     number: str
     status: LotStatus
-    warehouse_id: Optional[UUID]
-    location_id: Optional[UUID]
-    supplier_id: Optional[UUID]
-    reception_date: Optional[date]
-    customer_id: Optional[UUID]
-    sale_date: Optional[date]
-    warranty_end_date: Optional[date]
-    unit_cost: Optional[Decimal]
-    notes: Optional[str]
-    created_at: datetime
-    updated_at: datetime
+    warehouse_id: UUID | None
+    location_id: UUID | None
+    supplier_id: UUID | None
+    reception_date: datetime.date | None
+    customer_id: UUID | None
+    sale_date: datetime.date | None
+    warranty_end_date: datetime.date | None
+    unit_cost: Decimal | None
+    notes: str | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -447,12 +453,12 @@ class MovementLineCreate(BaseModel):
     product_id: UUID
     quantity: Decimal
     unit: str = "UNIT"
-    lot_id: Optional[UUID] = None
-    serial_id: Optional[UUID] = None
-    from_location_id: Optional[UUID] = None
-    to_location_id: Optional[UUID] = None
-    unit_cost: Optional[Decimal] = None
-    notes: Optional[str] = None
+    lot_id: UUID | None = None
+    serial_id: UUID | None = None
+    from_location_id: UUID | None = None
+    to_location_id: UUID | None = None
+    unit_cost: Decimal | None = None
+    notes: str | None = None
 
 
 class MovementLineResponse(MovementLineCreate):
@@ -460,8 +466,8 @@ class MovementLineResponse(MovementLineCreate):
     id: UUID
     movement_id: UUID
     line_number: int
-    total_cost: Optional[Decimal]
-    created_at: datetime
+    total_cost: Decimal | None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -471,17 +477,17 @@ class MovementCreate(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
 
     movement_type: MovementType = Field(..., alias="type")
-    movement_date: datetime
-    from_warehouse_id: Optional[UUID] = None
-    from_location_id: Optional[UUID] = None
-    to_warehouse_id: Optional[UUID] = None
-    to_location_id: Optional[UUID] = None
-    reference_type: Optional[str] = None
-    reference_id: Optional[UUID] = None
-    reference_number: Optional[str] = None
-    reason: Optional[str] = None
-    notes: Optional[str] = None
-    lines: List[MovementLineCreate] = Field(default_factory=list)
+    movement_date: datetime.datetime
+    from_warehouse_id: UUID | None = None
+    from_location_id: UUID | None = None
+    to_warehouse_id: UUID | None = None
+    to_location_id: UUID | None = None
+    reference_type: str | None = None
+    reference_id: UUID | None = None
+    reference_number: str | None = None
+    reason: str | None = None
+    notes: str | None = None
+    lines: list[MovementLineCreate] = Field(default_factory=list)
 
 
 class MovementResponse(BaseModel):
@@ -492,29 +498,29 @@ class MovementResponse(BaseModel):
     number: str
     movement_type: MovementType = Field(..., alias="type")
     status: MovementStatus
-    movement_date: datetime
-    from_warehouse_id: Optional[UUID]
-    from_location_id: Optional[UUID]
-    to_warehouse_id: Optional[UUID]
-    to_location_id: Optional[UUID]
-    reference_type: Optional[str]
-    reference_id: Optional[UUID]
-    reference_number: Optional[str]
-    reason: Optional[str]
-    notes: Optional[str]
+    movement_date: datetime.datetime
+    from_warehouse_id: UUID | None
+    from_location_id: UUID | None
+    to_warehouse_id: UUID | None
+    to_location_id: UUID | None
+    reference_type: str | None
+    reference_id: UUID | None
+    reference_number: str | None
+    reason: str | None
+    notes: str | None
     total_items: int
     total_quantity: Decimal
     total_value: Decimal
-    confirmed_at: Optional[datetime]
-    lines: List[MovementLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    confirmed_at: datetime.datetime | None
+    lines: list[MovementLineResponse] = Field(default_factory=list)
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
 class MovementList(BaseModel):
     """Liste de mouvements."""
-    items: List[MovementResponse]
+    items: list[MovementResponse]
     total: int
 
 
@@ -525,17 +531,17 @@ class MovementList(BaseModel):
 class CountLineCreate(BaseModel):
     """Création d'une ligne d'inventaire."""
     product_id: UUID
-    location_id: Optional[UUID] = None
-    lot_id: Optional[UUID] = None
+    location_id: UUID | None = None
+    lot_id: UUID | None = None
     theoretical_quantity: Decimal = Decimal("0")
-    counted_quantity: Optional[Decimal] = None
-    notes: Optional[str] = None
+    counted_quantity: Decimal | None = None
+    notes: str | None = None
 
 
 class CountLineUpdate(BaseModel):
     """Mise à jour d'une ligne d'inventaire."""
     counted_quantity: Decimal
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CountLineResponse(BaseModel):
@@ -543,17 +549,17 @@ class CountLineResponse(BaseModel):
     id: UUID
     count_id: UUID
     product_id: UUID
-    location_id: Optional[UUID]
-    lot_id: Optional[UUID]
+    location_id: UUID | None
+    lot_id: UUID | None
     theoretical_quantity: Decimal
-    counted_quantity: Optional[Decimal]
-    discrepancy: Optional[Decimal]
-    unit_cost: Optional[Decimal]
-    discrepancy_value: Optional[Decimal]
-    counted_at: Optional[datetime]
-    counted_by: Optional[UUID]
-    notes: Optional[str]
-    created_at: datetime
+    counted_quantity: Decimal | None
+    discrepancy: Decimal | None
+    unit_cost: Decimal | None
+    discrepancy_value: Decimal | None
+    counted_at: datetime.datetime | None
+    counted_by: UUID | None
+    notes: str | None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -561,11 +567,11 @@ class CountLineResponse(BaseModel):
 class InventoryCountCreate(BaseModel):
     """Création d'un inventaire."""
     name: str = Field(..., min_length=1, max_length=200)
-    warehouse_id: Optional[UUID] = None
-    location_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
-    planned_date: date
-    notes: Optional[str] = None
+    warehouse_id: UUID | None = None
+    location_id: UUID | None = None
+    category_id: UUID | None = None
+    planned_date: datetime.date
+    notes: str | None = None
 
 
 class InventoryCountResponse(BaseModel):
@@ -574,21 +580,21 @@ class InventoryCountResponse(BaseModel):
     number: str
     name: str
     status: InventoryStatus
-    warehouse_id: Optional[UUID]
-    location_id: Optional[UUID]
-    category_id: Optional[UUID]
-    planned_date: date
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
+    warehouse_id: UUID | None
+    location_id: UUID | None
+    category_id: UUID | None
+    planned_date: datetime.date
+    started_at: datetime.datetime | None
+    completed_at: datetime.datetime | None
     total_items: int
     counted_items: int
     discrepancy_items: int
     total_discrepancy_value: Decimal
-    notes: Optional[str]
-    validated_at: Optional[datetime]
-    lines: List[CountLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    notes: str | None
+    validated_at: datetime.datetime | None
+    lines: list[CountLineResponse] = Field(default_factory=list)
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -600,19 +606,19 @@ class InventoryCountResponse(BaseModel):
 class PickingLineCreate(BaseModel):
     """Création d'une ligne de préparation."""
     product_id: UUID
-    location_id: Optional[UUID] = None
+    location_id: UUID | None = None
     quantity_demanded: Decimal
     unit: str = "UNIT"
-    lot_id: Optional[UUID] = None
-    serial_id: Optional[UUID] = None
+    lot_id: UUID | None = None
+    serial_id: UUID | None = None
 
 
 class PickingLineUpdate(BaseModel):
     """Mise à jour d'une ligne de préparation."""
     quantity_picked: Decimal
-    lot_id: Optional[UUID] = None
-    serial_id: Optional[UUID] = None
-    notes: Optional[str] = None
+    lot_id: UUID | None = None
+    serial_id: UUID | None = None
+    notes: str | None = None
 
 
 class PickingLineResponse(BaseModel):
@@ -620,16 +626,16 @@ class PickingLineResponse(BaseModel):
     id: UUID
     picking_id: UUID
     product_id: UUID
-    location_id: Optional[UUID]
+    location_id: UUID | None
     quantity_demanded: Decimal
     quantity_picked: Decimal
     unit: str
-    lot_id: Optional[UUID]
-    serial_id: Optional[UUID]
+    lot_id: UUID | None
+    serial_id: UUID | None
     is_picked: bool
-    picked_at: Optional[datetime]
-    notes: Optional[str]
-    created_at: datetime
+    picked_at: datetime.datetime | None
+    notes: str | None
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -640,13 +646,13 @@ class PickingCreate(BaseModel):
 
     picking_type: MovementType = Field(default=MovementType.OUT, alias="type")
     warehouse_id: UUID
-    reference_type: Optional[str] = None
-    reference_id: Optional[UUID] = None
-    reference_number: Optional[str] = None
-    scheduled_date: Optional[datetime] = None
+    reference_type: str | None = None
+    reference_id: UUID | None = None
+    reference_number: str | None = None
+    scheduled_date: datetime.datetime | None = None
     priority: str = "NORMAL"
-    notes: Optional[str] = None
-    lines: List[PickingLineCreate] = Field(default_factory=list)
+    notes: str | None = None
+    lines: list[PickingLineCreate] = Field(default_factory=list)
 
 
 class PickingResponse(BaseModel):
@@ -658,20 +664,20 @@ class PickingResponse(BaseModel):
     picking_type: MovementType = Field(..., alias="type")
     status: PickingStatus
     warehouse_id: UUID
-    reference_type: Optional[str]
-    reference_id: Optional[UUID]
-    reference_number: Optional[str]
-    scheduled_date: Optional[datetime]
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    assigned_to: Optional[UUID]
+    reference_type: str | None
+    reference_id: UUID | None
+    reference_number: str | None
+    scheduled_date: datetime.datetime | None
+    started_at: datetime.datetime | None
+    completed_at: datetime.datetime | None
+    assigned_to: UUID | None
     total_lines: int
     picked_lines: int
     priority: str
-    notes: Optional[str]
-    lines: List[PickingLineResponse] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    notes: str | None
+    lines: list[PickingLineResponse] = Field(default_factory=list)
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 
@@ -682,8 +688,8 @@ class PickingResponse(BaseModel):
 class ValuationResponse(BaseModel):
     """Réponse valorisation."""
     id: UUID
-    valuation_date: date
-    warehouse_id: Optional[UUID]
+    valuation_date: datetime.date
+    warehouse_id: UUID | None
     total_products: int
     total_quantity: Decimal
     total_value: Decimal
@@ -691,8 +697,8 @@ class ValuationResponse(BaseModel):
     value_lifo: Decimal
     value_avg: Decimal
     value_standard: Decimal
-    details: List[Dict[str, Any]]
-    created_at: datetime
+    details: list[dict[str, Any]]
+    created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -737,9 +743,9 @@ class InventoryDashboard(BaseModel):
     in_progress_counts: int = 0
 
     # Top produits
-    top_products_by_value: List[Dict[str, Any]] = Field(default_factory=list)
-    top_products_by_movement: List[Dict[str, Any]] = Field(default_factory=list)
+    top_products_by_value: list[dict[str, Any]] = Field(default_factory=list)
+    top_products_by_movement: list[dict[str, Any]] = Field(default_factory=list)
 
     # Réapprovisionnement
     products_to_reorder: int = 0
-    reorder_alerts: List[Dict[str, Any]] = Field(default_factory=list)
+    reorder_alerts: list[dict[str, Any]] = Field(default_factory=list)

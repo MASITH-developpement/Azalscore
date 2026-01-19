@@ -124,12 +124,17 @@ const useExpertDashboard = () => {
   });
 };
 
+interface ValidationQueueResponse {
+  items: ValidationQueueItem[];
+  total: number;
+}
+
 const useValidationQueue = (
   page = 1,
   pageSize = 20,
   filters: Record<string, string> = {}
 ) => {
-  return useQuery({
+  return useQuery<ValidationQueueResponse>({
     queryKey: ['accounting', 'expert', 'validation-queue', page, pageSize, filters],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -137,7 +142,7 @@ const useValidationQueue = (
         page_size: pageSize.toString(),
         ...filters,
       });
-      const response = await api.get(
+      const response = await api.get<ValidationQueueResponse>(
         `/accounting/expert/validation-queue?${params}`
       );
       return response.data;
@@ -439,9 +444,8 @@ const PeriodsWidget: React.FC<{
               <StatusBadge
                 variant={getPeriodStatusVariant(period.status)}
                 size="sm"
-              >
-                {getPeriodStatusLabel(period.status)}
-              </StatusBadge>
+                status={getPeriodStatusLabel(period.status)}
+              />
             </div>
 
             <div className="azals-auto-accounting__period-stats">
@@ -542,9 +546,8 @@ const ValidationModal: React.FC<{
                 <StatusBadge
                   variant={getConfidenceVariant(item.ai_confidence)}
                   size="sm"
-                >
-                  {item.ai_confidence_score.toFixed(0)}%
-                </StatusBadge>
+                  status={`${item.ai_confidence_score.toFixed(0)}%`}
+                />
               </div>
             ))}
           </div>
@@ -556,7 +559,7 @@ const ValidationModal: React.FC<{
           </label>
           <TextArea
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(value) => setComment(value)}
             placeholder={
               action === 'VALIDATE'
                 ? 'Commentaire optionnel...'
@@ -673,6 +676,7 @@ export const ExpertDashboard: React.FC = () => {
           onChange={handleSelectAll}
         />
       ),
+      accessor: 'id',
       width: '40px',
       render: (_, row) => (
         <input
@@ -689,22 +693,24 @@ export const ExpertDashboard: React.FC = () => {
       accessor: 'ai_confidence',
       width: '100px',
       render: (value, row) => (
-        <StatusBadge variant={getConfidenceVariant(value as string)} size="sm">
-          {row.ai_confidence_score.toFixed(0)}%
-        </StatusBadge>
+        <StatusBadge
+          variant={getConfidenceVariant(value as string)}
+          size="sm"
+          status={`${row.ai_confidence_score.toFixed(0)}%`}
+        />
       ),
     },
     {
       id: 'issue_type',
       header: 'Problème',
       accessor: 'issue_type',
-      render: (value) => getIssueTypeLabel(value as string),
+      render: (value) => <span>{getIssueTypeLabel(value as string)}</span>,
     },
     {
       id: 'reference',
       header: 'Référence',
       accessor: 'reference',
-      render: (value, row) => value || row.partner_name || '-',
+      render: (value, row) => <span>{(value as string) || row.partner_name || '-'}</span>,
     },
     {
       id: 'amount_total',
@@ -717,7 +723,7 @@ export const ExpertDashboard: React.FC = () => {
       id: 'suggested_account',
       header: 'Compte suggéré',
       accessor: 'suggested_account',
-      render: (value) => value || '-',
+      render: (value) => <span>{(value as string) || '-'}</span>,
     },
     {
       id: 'document_date',
@@ -731,14 +737,14 @@ export const ExpertDashboard: React.FC = () => {
     {
       id: 'view',
       label: 'Voir',
-      icon: Eye,
+      icon: <Eye size={16} />,
       onClick: (row: ValidationQueueItem) =>
         navigate(`/auto-accounting/documents/${row.document_id}`),
     },
     {
       id: 'validate',
       label: 'Valider',
-      icon: Check,
+      icon: <Check size={16} />,
       onClick: (row: ValidationQueueItem) => {
         setSelectedIds([row.id]);
         setValidationAction('VALIDATE');
@@ -747,7 +753,7 @@ export const ExpertDashboard: React.FC = () => {
     {
       id: 'reject',
       label: 'Rejeter',
-      icon: X,
+      icon: <X size={16} />,
       variant: 'danger' as const,
       onClick: (row: ValidationQueueItem) => {
         setSelectedIds([row.id]);
@@ -823,8 +829,8 @@ export const ExpertDashboard: React.FC = () => {
               )}
               <Select
                 value={confidenceFilter || ''}
-                onChange={(e) => {
-                  setConfidenceFilter(e.target.value || null);
+                onChange={(value) => {
+                  setConfidenceFilter(value || null);
                   setPage(1);
                 }}
                 options={[
@@ -848,11 +854,9 @@ export const ExpertDashboard: React.FC = () => {
               pageSize: 20,
               total: validationQueue?.total || dashboard?.validation_queue_total || 0,
               onPageChange: setPage,
+              onPageSizeChange: () => {},
             }}
             emptyMessage="Aucune écriture en attente de validation"
-            onRowClick={(row) =>
-              navigate(`/auto-accounting/documents/${row.document_id}`)
-            }
           />
         </Card>
       </section>

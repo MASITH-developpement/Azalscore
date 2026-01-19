@@ -11,6 +11,7 @@ import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
 import { DynamicMenu } from '@ui/menu-dynamic';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
+import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
 
 // ============================================================
 // TYPES
@@ -171,6 +172,7 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       <ErrorToaster />
+      <GuardianPanelContainer />
     </div>
   );
 };
@@ -211,6 +213,10 @@ interface PageWrapperProps {
   subtitle?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
+  backAction?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 export const PageWrapper: React.FC<PageWrapperProps> = ({
@@ -218,10 +224,19 @@ export const PageWrapper: React.FC<PageWrapperProps> = ({
   subtitle,
   actions,
   children,
+  backAction,
 }) => {
   return (
     <div className="azals-page">
       <header className="azals-page__header">
+        {backAction && (
+          <button
+            className="azals-page__back-btn azals-btn azals-btn--ghost"
+            onClick={backAction.onClick}
+          >
+            ← {backAction.label}
+          </button>
+        )}
         <div className="azals-page__header-text">
           <h1 className="azals-page__title">{title}</h1>
           {subtitle && <p className="azals-page__subtitle">{subtitle}</p>}
@@ -245,6 +260,9 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   noPadding?: boolean;
+  icon?: React.ReactNode;
+  style?: React.CSSProperties;
+  onClick?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -254,11 +272,20 @@ export const Card: React.FC<CardProps> = ({
   children,
   className,
   noPadding,
+  icon,
+  style,
+  onClick,
 }) => {
   return (
-    <div className={clsx('azals-card', className)}>
-      {(title || actions) && (
+    <div
+      className={clsx('azals-card', className, { 'azals-card--clickable': !!onClick })}
+      style={style}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
+      {(title || actions || icon) && (
         <div className="azals-card__header">
+          {icon && <div className="azals-card__icon">{icon}</div>}
           <div className="azals-card__header-text">
             {title && <h2 className="azals-card__title">{title}</h2>}
             {subtitle && <p className="azals-card__subtitle">{subtitle}</p>}
@@ -283,18 +310,23 @@ export const Card: React.FC<CardProps> = ({
 
 interface GridProps {
   cols?: 1 | 2 | 3 | 4;
+  columns?: 1 | 2 | 3 | 4; // Alias pour cols
   gap?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
+  className?: string;
 }
 
 export const Grid: React.FC<GridProps> = ({
-  cols = 1,
+  cols,
+  columns,
   gap = 'md',
   children,
+  className,
 }) => {
+  const colCount = cols ?? columns ?? 1;
   return (
     <div
-      className={clsx('azals-grid', `azals-grid--cols-${cols}`, `azals-grid--gap-${gap}`)}
+      className={clsx('azals-grid', `azals-grid--cols-${colCount}`, `azals-grid--gap-${gap}`, className)}
     >
       {children}
     </div>

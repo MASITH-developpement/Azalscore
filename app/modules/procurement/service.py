@@ -5,26 +5,45 @@ AZALS MODULE M4 - Service Achats
 Service métier pour la gestion des achats.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
 from uuid import UUID
 
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
+
 from .models import (
-    Supplier, SupplierContact, PurchaseRequisition, PurchaseRequisitionLine,
-    PurchaseOrder, PurchaseOrderLine,
-    GoodsReceipt, GoodsReceiptLine, PurchaseInvoice, PurchaseInvoiceLine,
-    SupplierPayment, PaymentAllocation, SupplierEvaluation,
-    SupplierStatus, SupplierType, RequisitionStatus,
-    PurchaseOrderStatus, ReceivingStatus, PurchaseInvoiceStatus
+    GoodsReceipt,
+    GoodsReceiptLine,
+    PaymentAllocation,
+    PurchaseInvoice,
+    PurchaseInvoiceLine,
+    PurchaseInvoiceStatus,
+    PurchaseOrder,
+    PurchaseOrderLine,
+    PurchaseOrderStatus,
+    PurchaseRequisition,
+    PurchaseRequisitionLine,
+    ReceivingStatus,
+    RequisitionStatus,
+    Supplier,
+    SupplierContact,
+    SupplierEvaluation,
+    SupplierPayment,
+    SupplierStatus,
+    SupplierType,
 )
 from .schemas import (
-    SupplierCreate, SupplierUpdate, SupplierContactCreate,
-    RequisitionCreate, PurchaseOrderCreate,
-    GoodsReceiptCreate, PurchaseInvoiceCreate, SupplierPaymentCreate,
-    SupplierEvaluationCreate, ProcurementDashboard
+    GoodsReceiptCreate,
+    ProcurementDashboard,
+    PurchaseInvoiceCreate,
+    PurchaseOrderCreate,
+    RequisitionCreate,
+    SupplierContactCreate,
+    SupplierCreate,
+    SupplierEvaluationCreate,
+    SupplierPaymentCreate,
+    SupplierUpdate,
 )
 
 
@@ -82,14 +101,14 @@ class ProcurementService:
         self.db.refresh(supplier)
         return supplier
 
-    def get_supplier(self, supplier_id: UUID) -> Optional[Supplier]:
+    def get_supplier(self, supplier_id: UUID) -> Supplier | None:
         """Récupérer un fournisseur."""
         return self.db.query(Supplier).filter(
             Supplier.id == supplier_id,
             Supplier.tenant_id == self.tenant_id
         ).first()
 
-    def get_supplier_by_code(self, code: str) -> Optional[Supplier]:
+    def get_supplier_by_code(self, code: str) -> Supplier | None:
         """Récupérer un fournisseur par code."""
         return self.db.query(Supplier).filter(
             Supplier.code == code,
@@ -98,14 +117,14 @@ class ProcurementService:
 
     def list_suppliers(
         self,
-        status: Optional[SupplierStatus] = None,
-        supplier_type: Optional[SupplierType] = None,
-        category: Optional[str] = None,
-        search: Optional[str] = None,
+        status: SupplierStatus | None = None,
+        supplier_type: SupplierType | None = None,
+        category: str | None = None,
+        search: str | None = None,
         is_active: bool = True,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[Supplier], int]:
+    ) -> tuple[list[Supplier], int]:
         """Lister les fournisseurs."""
         query = self.db.query(Supplier).filter(
             Supplier.tenant_id == self.tenant_id,
@@ -131,7 +150,7 @@ class ProcurementService:
         items = query.order_by(Supplier.name).offset(skip).limit(limit).all()
         return items, total
 
-    def update_supplier(self, supplier_id: UUID, data: SupplierUpdate) -> Optional[Supplier]:
+    def update_supplier(self, supplier_id: UUID, data: SupplierUpdate) -> Supplier | None:
         """Mettre à jour un fournisseur."""
         supplier = self.get_supplier(supplier_id)
         if not supplier:
@@ -143,7 +162,7 @@ class ProcurementService:
         self.db.refresh(supplier)
         return supplier
 
-    def approve_supplier(self, supplier_id: UUID, user_id: UUID) -> Optional[Supplier]:
+    def approve_supplier(self, supplier_id: UUID, user_id: UUID) -> Supplier | None:
         """Approuver un fournisseur."""
         supplier = self.get_supplier(supplier_id)
         if not supplier:
@@ -179,12 +198,12 @@ class ProcurementService:
         self.db.refresh(contact)
         return contact
 
-    def get_supplier_contacts(self, supplier_id: UUID) -> List[SupplierContact]:
+    def get_supplier_contacts(self, supplier_id: UUID) -> list[SupplierContact]:
         """Récupérer les contacts d'un fournisseur."""
         return self.db.query(SupplierContact).filter(
             SupplierContact.supplier_id == supplier_id,
             SupplierContact.tenant_id == self.tenant_id,
-            SupplierContact.is_active == True
+            SupplierContact.is_active
         ).all()
 
     # =========================================================================
@@ -248,7 +267,7 @@ class ProcurementService:
         self.db.refresh(requisition)
         return requisition
 
-    def get_requisition(self, requisition_id: UUID) -> Optional[PurchaseRequisition]:
+    def get_requisition(self, requisition_id: UUID) -> PurchaseRequisition | None:
         """Récupérer une demande d'achat."""
         return self.db.query(PurchaseRequisition).filter(
             PurchaseRequisition.id == requisition_id,
@@ -257,11 +276,11 @@ class ProcurementService:
 
     def list_requisitions(
         self,
-        status: Optional[RequisitionStatus] = None,
-        requester_id: Optional[UUID] = None,
+        status: RequisitionStatus | None = None,
+        requester_id: UUID | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[PurchaseRequisition], int]:
+    ) -> tuple[list[PurchaseRequisition], int]:
         """Lister les demandes d'achat."""
         query = self.db.query(PurchaseRequisition).filter(
             PurchaseRequisition.tenant_id == self.tenant_id
@@ -280,7 +299,7 @@ class ProcurementService:
         self,
         requisition_id: UUID,
         user_id: UUID
-    ) -> Optional[PurchaseRequisition]:
+    ) -> PurchaseRequisition | None:
         """Approuver une demande d'achat."""
         requisition = self.get_requisition(requisition_id)
         if not requisition or requisition.status != RequisitionStatus.SUBMITTED:
@@ -297,7 +316,7 @@ class ProcurementService:
         requisition_id: UUID,
         user_id: UUID,
         reason: str
-    ) -> Optional[PurchaseRequisition]:
+    ) -> PurchaseRequisition | None:
         """Rejeter une demande d'achat."""
         requisition = self.get_requisition(requisition_id)
         if not requisition or requisition.status != RequisitionStatus.SUBMITTED:
@@ -310,7 +329,7 @@ class ProcurementService:
         self.db.refresh(requisition)
         return requisition
 
-    def submit_requisition(self, requisition_id: UUID) -> Optional[PurchaseRequisition]:
+    def submit_requisition(self, requisition_id: UUID) -> PurchaseRequisition | None:
         """Soumettre une demande d'achat."""
         requisition = self.get_requisition(requisition_id)
         if not requisition or requisition.status != RequisitionStatus.DRAFT:
@@ -399,7 +418,7 @@ class ProcurementService:
         self.db.refresh(order)
         return order
 
-    def get_purchase_order(self, order_id: UUID) -> Optional[PurchaseOrder]:
+    def get_purchase_order(self, order_id: UUID) -> PurchaseOrder | None:
         """Récupérer une commande d'achat."""
         return self.db.query(PurchaseOrder).filter(
             PurchaseOrder.id == order_id,
@@ -408,13 +427,13 @@ class ProcurementService:
 
     def list_purchase_orders(
         self,
-        supplier_id: Optional[UUID] = None,
-        status: Optional[PurchaseOrderStatus] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        supplier_id: UUID | None = None,
+        status: PurchaseOrderStatus | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[PurchaseOrder], int]:
+    ) -> tuple[list[PurchaseOrder], int]:
         """Lister les commandes d'achat."""
         query = self.db.query(PurchaseOrder).filter(
             PurchaseOrder.tenant_id == self.tenant_id
@@ -433,7 +452,7 @@ class ProcurementService:
         items = query.order_by(PurchaseOrder.order_date.desc()).offset(skip).limit(limit).all()
         return items, total
 
-    def send_purchase_order(self, order_id: UUID) -> Optional[PurchaseOrder]:
+    def send_purchase_order(self, order_id: UUID) -> PurchaseOrder | None:
         """Envoyer une commande au fournisseur."""
         order = self.get_purchase_order(order_id)
         if not order or order.status != PurchaseOrderStatus.DRAFT:
@@ -447,9 +466,9 @@ class ProcurementService:
     def confirm_purchase_order(
         self,
         order_id: UUID,
-        supplier_reference: Optional[str] = None,
-        confirmed_date: Optional[date] = None
-    ) -> Optional[PurchaseOrder]:
+        supplier_reference: str | None = None,
+        confirmed_date: date | None = None
+    ) -> PurchaseOrder | None:
         """Confirmer une commande (par le fournisseur)."""
         order = self.get_purchase_order(order_id)
         if not order or order.status != PurchaseOrderStatus.SENT:
@@ -471,7 +490,7 @@ class ProcurementService:
         self,
         order_id: UUID,
         user_id: UUID
-    ) -> Optional[PurchaseOrder]:
+    ) -> PurchaseOrder | None:
         """Valider une commande d'achat (DRAFT → VALIDATED/SENT)."""
         order = self.get_purchase_order(order_id)
         if not order or order.status != PurchaseOrderStatus.DRAFT:
@@ -488,7 +507,7 @@ class ProcurementService:
         order_id: UUID,
         data: PurchaseOrderCreate,
         user_id: UUID
-    ) -> Optional[PurchaseOrder]:
+    ) -> PurchaseOrder | None:
         """Mettre à jour une commande d'achat (DRAFT uniquement)."""
         order = self.get_purchase_order(order_id)
         if not order or order.status != PurchaseOrderStatus.DRAFT:
@@ -568,7 +587,7 @@ class ProcurementService:
         self.db.commit()
         return True
 
-    def get_order_lines(self, order_id: UUID) -> List[PurchaseOrderLine]:
+    def get_order_lines(self, order_id: UUID) -> list[PurchaseOrderLine]:
         """Récupérer les lignes d'une commande."""
         return self.db.query(PurchaseOrderLine).filter(
             PurchaseOrderLine.order_id == order_id,
@@ -579,9 +598,9 @@ class ProcurementService:
         self,
         order_id: UUID,
         user_id: UUID,
-        invoice_date: Optional[date] = None,
-        supplier_invoice_number: Optional[str] = None
-    ) -> Optional[PurchaseInvoice]:
+        invoice_date: date | None = None,
+        supplier_invoice_number: str | None = None
+    ) -> PurchaseInvoice | None:
         """Créer une facture à partir d'une commande validée."""
         order = self.get_purchase_order(order_id)
         if not order or order.status == PurchaseOrderStatus.DRAFT:
@@ -646,6 +665,27 @@ class ProcurementService:
     # =========================================================================
     # RÉCEPTIONS
     # =========================================================================
+
+    def list_goods_receipts(
+        self,
+        supplier_id: UUID | None = None,
+        order_id: UUID | None = None,
+        skip: int = 0,
+        limit: int = 50
+    ) -> tuple[list[GoodsReceipt], int]:
+        """Lister les réceptions de marchandises."""
+        query = self.db.query(GoodsReceipt).filter(
+            GoodsReceipt.tenant_id == self.tenant_id
+        )
+
+        if supplier_id:
+            query = query.filter(GoodsReceipt.supplier_id == supplier_id)
+        if order_id:
+            query = query.filter(GoodsReceipt.order_id == order_id)
+
+        total = query.count()
+        items = query.order_by(GoodsReceipt.created_at.desc()).offset(skip).limit(limit).all()
+        return items, total
 
     def create_goods_receipt(
         self,
@@ -716,7 +756,7 @@ class ProcurementService:
         self,
         receipt_id: UUID,
         user_id: UUID
-    ) -> Optional[GoodsReceipt]:
+    ) -> GoodsReceipt | None:
         """Valider une réception."""
         receipt = self.db.query(GoodsReceipt).filter(
             GoodsReceipt.id == receipt_id,
@@ -828,7 +868,7 @@ class ProcurementService:
         self.db.refresh(invoice)
         return invoice
 
-    def get_purchase_invoice(self, invoice_id: UUID) -> Optional[PurchaseInvoice]:
+    def get_purchase_invoice(self, invoice_id: UUID) -> PurchaseInvoice | None:
         """Récupérer une facture d'achat."""
         return self.db.query(PurchaseInvoice).filter(
             PurchaseInvoice.id == invoice_id,
@@ -837,13 +877,13 @@ class ProcurementService:
 
     def list_purchase_invoices(
         self,
-        supplier_id: Optional[UUID] = None,
-        status: Optional[PurchaseInvoiceStatus] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        supplier_id: UUID | None = None,
+        status: PurchaseInvoiceStatus | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[PurchaseInvoice], int]:
+    ) -> tuple[list[PurchaseInvoice], int]:
         """Lister les factures d'achat."""
         query = self.db.query(PurchaseInvoice).filter(
             PurchaseInvoice.tenant_id == self.tenant_id
@@ -866,7 +906,7 @@ class ProcurementService:
         self,
         invoice_id: UUID,
         user_id: UUID
-    ) -> Optional[PurchaseInvoice]:
+    ) -> PurchaseInvoice | None:
         """Valider une facture d'achat."""
         invoice = self.get_purchase_invoice(invoice_id)
         if not invoice or invoice.status != PurchaseInvoiceStatus.DRAFT:
@@ -897,7 +937,7 @@ class ProcurementService:
         invoice_id: UUID,
         data: PurchaseInvoiceCreate,
         user_id: UUID
-    ) -> Optional[PurchaseInvoice]:
+    ) -> PurchaseInvoice | None:
         """Mettre à jour une facture d'achat (DRAFT uniquement)."""
         invoice = self.get_purchase_invoice(invoice_id)
         if not invoice or invoice.status != PurchaseInvoiceStatus.DRAFT:
@@ -979,7 +1019,7 @@ class ProcurementService:
         self.db.commit()
         return True
 
-    def get_invoice_lines(self, invoice_id: UUID) -> List[PurchaseInvoiceLine]:
+    def get_invoice_lines(self, invoice_id: UUID) -> list[PurchaseInvoiceLine]:
         """Récupérer les lignes d'une facture."""
         return self.db.query(PurchaseInvoiceLine).filter(
             PurchaseInvoiceLine.invoice_id == invoice_id,
@@ -992,10 +1032,10 @@ class ProcurementService:
 
     def export_orders_csv(
         self,
-        supplier_id: Optional[UUID] = None,
-        status: Optional[PurchaseOrderStatus] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        supplier_id: UUID | None = None,
+        status: PurchaseOrderStatus | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None
     ) -> str:
         """Exporter les commandes en CSV."""
         orders, _ = self.list_purchase_orders(
@@ -1020,10 +1060,10 @@ class ProcurementService:
 
     def export_invoices_csv(
         self,
-        supplier_id: Optional[UUID] = None,
-        status: Optional[PurchaseInvoiceStatus] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        supplier_id: UUID | None = None,
+        status: PurchaseInvoiceStatus | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None
     ) -> str:
         """Exporter les factures en CSV."""
         invoices, _ = self.list_purchase_invoices(
@@ -1185,7 +1225,7 @@ class ProcurementService:
         active_suppliers = self.db.query(Supplier).filter(
             Supplier.tenant_id == self.tenant_id,
             Supplier.status == SupplierStatus.APPROVED,
-            Supplier.is_active == True
+            Supplier.is_active
         ).count()
 
         pending_approvals = self.db.query(Supplier).filter(

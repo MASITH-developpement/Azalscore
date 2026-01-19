@@ -5,27 +5,56 @@ AZALS MODULE M2 - Service Finance
 Service métier pour la comptabilité et la trésorerie.
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
 from uuid import UUID
 
+from sqlalchemy import and_, func, or_
+from sqlalchemy.orm import Session
+
 from .models import (
-    Account, Journal, FiscalYear, FiscalPeriod, JournalEntry, JournalEntryLine,
-    BankAccount, BankStatement, BankStatementLine, BankTransaction,
-    CashForecast, CashFlowCategory, FinancialReport,
-    AccountType, JournalType, EntryStatus, FiscalYearStatus,
-    BankTransactionType, ReconciliationStatus, ForecastPeriod
+    Account,
+    AccountType,
+    BankAccount,
+    BankStatement,
+    BankStatementLine,
+    BankTransaction,
+    BankTransactionType,
+    CashFlowCategory,
+    CashForecast,
+    EntryStatus,
+    FinancialReport,
+    FiscalPeriod,
+    FiscalYear,
+    FiscalYearStatus,
+    ForecastPeriod,
+    Journal,
+    JournalEntry,
+    JournalEntryLine,
+    JournalType,
+    ReconciliationStatus,
 )
 from .schemas import (
-    AccountCreate, AccountUpdate, JournalCreate, JournalUpdate,
-    FiscalYearCreate, EntryCreate, EntryUpdate, BankAccountCreate, BankAccountUpdate, BankStatementCreate,
-    BankTransactionCreate, CashForecastCreate, CashForecastUpdate,
-    CashFlowCategoryCreate, FinancialReportCreate,
-    TrialBalance, BalanceSheetItem, IncomeStatement, IncomeStatementItem,
-    FinanceDashboard
+    AccountCreate,
+    AccountUpdate,
+    BalanceSheetItem,
+    BankAccountCreate,
+    BankAccountUpdate,
+    BankStatementCreate,
+    BankTransactionCreate,
+    CashFlowCategoryCreate,
+    CashForecastCreate,
+    CashForecastUpdate,
+    EntryCreate,
+    EntryUpdate,
+    FinanceDashboard,
+    FinancialReportCreate,
+    FiscalYearCreate,
+    IncomeStatement,
+    IncomeStatementItem,
+    JournalCreate,
+    JournalUpdate,
+    TrialBalance,
 )
 
 
@@ -59,14 +88,14 @@ class FinanceService:
         self.db.refresh(account)
         return account
 
-    def get_account(self, account_id: UUID) -> Optional[Account]:
+    def get_account(self, account_id: UUID) -> Account | None:
         """Récupérer un compte par ID."""
         return self.db.query(Account).filter(
             Account.id == account_id,
             Account.tenant_id == self.tenant_id
         ).first()
 
-    def get_account_by_code(self, code: str) -> Optional[Account]:
+    def get_account_by_code(self, code: str) -> Account | None:
         """Récupérer un compte par code."""
         return self.db.query(Account).filter(
             Account.code == code,
@@ -75,13 +104,13 @@ class FinanceService:
 
     def list_accounts(
         self,
-        account_type: Optional[AccountType] = None,
-        parent_id: Optional[UUID] = None,
+        account_type: AccountType | None = None,
+        parent_id: UUID | None = None,
         is_active: bool = True,
-        search: Optional[str] = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Account], int]:
+    ) -> tuple[list[Account], int]:
         """Lister les comptes avec filtres."""
         query = self.db.query(Account).filter(
             Account.tenant_id == self.tenant_id,
@@ -104,7 +133,7 @@ class FinanceService:
         items = query.order_by(Account.code).offset(skip).limit(limit).all()
         return items, total
 
-    def update_account(self, account_id: UUID, data: AccountUpdate) -> Optional[Account]:
+    def update_account(self, account_id: UUID, data: AccountUpdate) -> Account | None:
         """Mettre à jour un compte."""
         account = self.get_account(account_id)
         if not account:
@@ -121,8 +150,8 @@ class FinanceService:
     def get_account_balance(
         self,
         account_id: UUID,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        start_date: date | None = None,
+        end_date: date | None = None
     ) -> dict:
         """Calculer le solde d'un compte."""
         query = self.db.query(
@@ -169,7 +198,7 @@ class FinanceService:
         self.db.refresh(journal)
         return journal
 
-    def get_journal(self, journal_id: UUID) -> Optional[Journal]:
+    def get_journal(self, journal_id: UUID) -> Journal | None:
         """Récupérer un journal par ID."""
         return self.db.query(Journal).filter(
             Journal.id == journal_id,
@@ -178,9 +207,9 @@ class FinanceService:
 
     def list_journals(
         self,
-        journal_type: Optional[JournalType] = None,
+        journal_type: JournalType | None = None,
         is_active: bool = True
-    ) -> List[Journal]:
+    ) -> list[Journal]:
         """Lister les journaux."""
         query = self.db.query(Journal).filter(
             Journal.tenant_id == self.tenant_id,
@@ -192,7 +221,7 @@ class FinanceService:
 
         return query.order_by(Journal.code).all()
 
-    def update_journal(self, journal_id: UUID, data: JournalUpdate) -> Optional[Journal]:
+    def update_journal(self, journal_id: UUID, data: JournalUpdate) -> Journal | None:
         """Mettre à jour un journal."""
         journal = self.get_journal(journal_id)
         if not journal:
@@ -272,23 +301,20 @@ class FinanceService:
             self.db.add(period)
 
             # Passer au mois suivant
-            if month == 12:
-                current_date = date(year + 1, 1, 1)
-            else:
-                current_date = date(year, month + 1, 1)
+            current_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
 
             period_number += 1
 
         self.db.commit()
 
-    def get_fiscal_year(self, fiscal_year_id: UUID) -> Optional[FiscalYear]:
+    def get_fiscal_year(self, fiscal_year_id: UUID) -> FiscalYear | None:
         """Récupérer un exercice par ID."""
         return self.db.query(FiscalYear).filter(
             FiscalYear.id == fiscal_year_id,
             FiscalYear.tenant_id == self.tenant_id
         ).first()
 
-    def get_current_fiscal_year(self) -> Optional[FiscalYear]:
+    def get_current_fiscal_year(self) -> FiscalYear | None:
         """Récupérer l'exercice en cours."""
         today = date.today()
         return self.db.query(FiscalYear).filter(
@@ -298,20 +324,20 @@ class FinanceService:
             FiscalYear.status == FiscalYearStatus.OPEN
         ).first()
 
-    def list_fiscal_years(self) -> List[FiscalYear]:
+    def list_fiscal_years(self) -> list[FiscalYear]:
         """Lister les exercices."""
         return self.db.query(FiscalYear).filter(
             FiscalYear.tenant_id == self.tenant_id
         ).order_by(FiscalYear.start_date.desc()).all()
 
-    def get_fiscal_periods(self, fiscal_year_id: UUID) -> List[FiscalPeriod]:
+    def get_fiscal_periods(self, fiscal_year_id: UUID) -> list[FiscalPeriod]:
         """Récupérer les périodes d'un exercice."""
         return self.db.query(FiscalPeriod).filter(
             FiscalPeriod.fiscal_year_id == fiscal_year_id,
             FiscalPeriod.tenant_id == self.tenant_id
         ).order_by(FiscalPeriod.number).all()
 
-    def close_fiscal_period(self, period_id: UUID, user_id: UUID) -> Optional[FiscalPeriod]:
+    def close_fiscal_period(self, period_id: UUID, user_id: UUID) -> FiscalPeriod | None:
         """Clôturer une période."""
         period = self.db.query(FiscalPeriod).filter(
             FiscalPeriod.id == period_id,
@@ -342,7 +368,7 @@ class FinanceService:
         self.db.refresh(period)
         return period
 
-    def close_fiscal_year(self, fiscal_year_id: UUID, user_id: UUID) -> Optional[FiscalYear]:
+    def close_fiscal_year(self, fiscal_year_id: UUID, user_id: UUID) -> FiscalYear | None:
         """Clôturer un exercice."""
         fiscal_year = self.get_fiscal_year(fiscal_year_id)
         if not fiscal_year or fiscal_year.status == FiscalYearStatus.CLOSED:
@@ -351,7 +377,7 @@ class FinanceService:
         # Vérifier que toutes les périodes sont clôturées
         open_periods = self.db.query(FiscalPeriod).filter(
             FiscalPeriod.fiscal_year_id == fiscal_year_id,
-            FiscalPeriod.is_closed == False
+            not FiscalPeriod.is_closed
         ).count()
 
         if open_periods > 0:
@@ -441,7 +467,7 @@ class FinanceService:
         self.db.refresh(entry)
         return entry
 
-    def get_entry(self, entry_id: UUID) -> Optional[JournalEntry]:
+    def get_entry(self, entry_id: UUID) -> JournalEntry | None:
         """Récupérer une écriture par ID."""
         return self.db.query(JournalEntry).filter(
             JournalEntry.id == entry_id,
@@ -450,14 +476,14 @@ class FinanceService:
 
     def list_entries(
         self,
-        journal_id: Optional[UUID] = None,
-        fiscal_year_id: Optional[UUID] = None,
-        status: Optional[EntryStatus] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        journal_id: UUID | None = None,
+        fiscal_year_id: UUID | None = None,
+        status: EntryStatus | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[JournalEntry], int]:
+    ) -> tuple[list[JournalEntry], int]:
         """Lister les écritures avec filtres."""
         query = self.db.query(JournalEntry).filter(
             JournalEntry.tenant_id == self.tenant_id
@@ -478,7 +504,7 @@ class FinanceService:
         items = query.order_by(JournalEntry.date.desc(), JournalEntry.number.desc()).offset(skip).limit(limit).all()
         return items, total
 
-    def update_entry(self, entry_id: UUID, data: EntryUpdate) -> Optional[JournalEntry]:
+    def update_entry(self, entry_id: UUID, data: EntryUpdate) -> JournalEntry | None:
         """Mettre à jour une écriture (brouillon uniquement)."""
         entry = self.get_entry(entry_id)
         if not entry or entry.status != EntryStatus.DRAFT:
@@ -492,7 +518,7 @@ class FinanceService:
         self.db.refresh(entry)
         return entry
 
-    def validate_entry(self, entry_id: UUID, user_id: UUID) -> Optional[JournalEntry]:
+    def validate_entry(self, entry_id: UUID, user_id: UUID) -> JournalEntry | None:
         """Valider une écriture."""
         entry = self.get_entry(entry_id)
         if not entry or entry.status != EntryStatus.DRAFT:
@@ -506,7 +532,7 @@ class FinanceService:
         self.db.refresh(entry)
         return entry
 
-    def post_entry(self, entry_id: UUID, user_id: UUID) -> Optional[JournalEntry]:
+    def post_entry(self, entry_id: UUID, user_id: UUID) -> JournalEntry | None:
         """Comptabiliser une écriture."""
         entry = self.get_entry(entry_id)
         if not entry or entry.status not in [EntryStatus.DRAFT, EntryStatus.VALIDATED]:
@@ -532,7 +558,7 @@ class FinanceService:
         self.db.refresh(entry)
         return entry
 
-    def cancel_entry(self, entry_id: UUID) -> Optional[JournalEntry]:
+    def cancel_entry(self, entry_id: UUID) -> JournalEntry | None:
         """Annuler une écriture."""
         entry = self.get_entry(entry_id)
         if not entry or entry.status == EntryStatus.CANCELLED:
@@ -552,7 +578,7 @@ class FinanceService:
         self.db.refresh(entry)
         return entry
 
-    def get_entry_lines(self, entry_id: UUID) -> List[JournalEntryLine]:
+    def get_entry_lines(self, entry_id: UUID) -> list[JournalEntryLine]:
         """Récupérer les lignes d'une écriture."""
         return self.db.query(JournalEntryLine).filter(
             JournalEntryLine.entry_id == entry_id,
@@ -583,21 +609,21 @@ class FinanceService:
         self.db.refresh(bank_account)
         return bank_account
 
-    def get_bank_account(self, bank_account_id: UUID) -> Optional[BankAccount]:
+    def get_bank_account(self, bank_account_id: UUID) -> BankAccount | None:
         """Récupérer un compte bancaire par ID."""
         return self.db.query(BankAccount).filter(
             BankAccount.id == bank_account_id,
             BankAccount.tenant_id == self.tenant_id
         ).first()
 
-    def list_bank_accounts(self, is_active: bool = True) -> List[BankAccount]:
+    def list_bank_accounts(self, is_active: bool = True) -> list[BankAccount]:
         """Lister les comptes bancaires."""
         return self.db.query(BankAccount).filter(
             BankAccount.tenant_id == self.tenant_id,
             BankAccount.is_active == is_active
         ).order_by(BankAccount.name).all()
 
-    def update_bank_account(self, bank_account_id: UUID, data: BankAccountUpdate) -> Optional[BankAccount]:
+    def update_bank_account(self, bank_account_id: UUID, data: BankAccountUpdate) -> BankAccount | None:
         """Mettre à jour un compte bancaire."""
         bank_account = self.get_bank_account(bank_account_id)
         if not bank_account:
@@ -660,7 +686,7 @@ class FinanceService:
         self.db.refresh(statement)
         return statement
 
-    def get_bank_statement(self, statement_id: UUID) -> Optional[BankStatement]:
+    def get_bank_statement(self, statement_id: UUID) -> BankStatement | None:
         """Récupérer un relevé par ID."""
         return self.db.query(BankStatement).filter(
             BankStatement.id == statement_id,
@@ -669,10 +695,10 @@ class FinanceService:
 
     def list_bank_statements(
         self,
-        bank_account_id: Optional[UUID] = None,
+        bank_account_id: UUID | None = None,
         skip: int = 0,
         limit: int = 20
-    ) -> Tuple[List[BankStatement], int]:
+    ) -> tuple[list[BankStatement], int]:
         """Lister les relevés bancaires."""
         query = self.db.query(BankStatement).filter(
             BankStatement.tenant_id == self.tenant_id
@@ -689,7 +715,7 @@ class FinanceService:
         self,
         line_id: UUID,
         entry_line_id: UUID
-    ) -> Optional[BankStatementLine]:
+    ) -> BankStatementLine | None:
         """Rapprocher une ligne de relevé avec une écriture."""
         line = self.db.query(BankStatementLine).filter(
             BankStatementLine.id == line_id,
@@ -751,13 +777,13 @@ class FinanceService:
 
     def list_bank_transactions(
         self,
-        bank_account_id: Optional[UUID] = None,
-        transaction_type: Optional[BankTransactionType] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        bank_account_id: UUID | None = None,
+        transaction_type: BankTransactionType | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         skip: int = 0,
         limit: int = 50
-    ) -> Tuple[List[BankTransaction], int]:
+    ) -> tuple[list[BankTransaction], int]:
         """Lister les transactions bancaires."""
         query = self.db.query(BankTransaction).filter(
             BankTransaction.tenant_id == self.tenant_id
@@ -801,7 +827,7 @@ class FinanceService:
         self.db.refresh(forecast)
         return forecast
 
-    def get_cash_forecast(self, forecast_id: UUID) -> Optional[CashForecast]:
+    def get_cash_forecast(self, forecast_id: UUID) -> CashForecast | None:
         """Récupérer une prévision par ID."""
         return self.db.query(CashForecast).filter(
             CashForecast.id == forecast_id,
@@ -810,10 +836,10 @@ class FinanceService:
 
     def list_cash_forecasts(
         self,
-        period: Optional[ForecastPeriod] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
-    ) -> List[CashForecast]:
+        period: ForecastPeriod | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None
+    ) -> list[CashForecast]:
         """Lister les prévisions."""
         query = self.db.query(CashForecast).filter(
             CashForecast.tenant_id == self.tenant_id
@@ -828,7 +854,7 @@ class FinanceService:
 
         return query.order_by(CashForecast.date).all()
 
-    def update_cash_forecast(self, forecast_id: UUID, data: CashForecastUpdate) -> Optional[CashForecast]:
+    def update_cash_forecast(self, forecast_id: UUID, data: CashForecastUpdate) -> CashForecast | None:
         """Mettre à jour une prévision."""
         forecast = self.get_cash_forecast(forecast_id)
         if not forecast:
@@ -872,11 +898,11 @@ class FinanceService:
         self.db.refresh(category)
         return category
 
-    def list_cash_flow_categories(self, is_receipt: Optional[bool] = None) -> List[CashFlowCategory]:
+    def list_cash_flow_categories(self, is_receipt: bool | None = None) -> list[CashFlowCategory]:
         """Lister les catégories de flux."""
         query = self.db.query(CashFlowCategory).filter(
             CashFlowCategory.tenant_id == self.tenant_id,
-            CashFlowCategory.is_active == True
+            CashFlowCategory.is_active
         )
 
         if is_receipt is not None:
@@ -892,7 +918,7 @@ class FinanceService:
         self,
         start_date: date,
         end_date: date,
-        fiscal_year_id: Optional[UUID] = None
+        fiscal_year_id: UUID | None = None
     ) -> TrialBalance:
         """Générer la balance générale."""
         query = self.db.query(
@@ -906,7 +932,7 @@ class FinanceService:
             JournalEntry, JournalEntryLine.entry_id == JournalEntry.id
         ).filter(
             Account.tenant_id == self.tenant_id,
-            Account.is_active == True
+            Account.is_active
         )
 
         # Filtrer par dates et statut
@@ -978,7 +1004,7 @@ class FinanceService:
         ).filter(
             Account.tenant_id == self.tenant_id,
             Account.type == AccountType.REVENUE,
-            Account.is_active == True
+            Account.is_active
         ).filter(
             or_(
                 JournalEntry.id.is_(None),
@@ -1015,7 +1041,7 @@ class FinanceService:
         ).filter(
             Account.tenant_id == self.tenant_id,
             Account.type == AccountType.EXPENSE,
-            Account.is_active == True
+            Account.is_active
         ).filter(
             or_(
                 JournalEntry.id.is_(None),
@@ -1091,11 +1117,11 @@ class FinanceService:
 
     def list_financial_reports(
         self,
-        report_type: Optional[str] = None,
-        fiscal_year_id: Optional[UUID] = None,
+        report_type: str | None = None,
+        fiscal_year_id: UUID | None = None,
         skip: int = 0,
         limit: int = 20
-    ) -> Tuple[List[FinancialReport], int]:
+    ) -> tuple[list[FinancialReport], int]:
         """Lister les rapports financiers."""
         query = self.db.query(FinancialReport).filter(
             FinancialReport.tenant_id == self.tenant_id

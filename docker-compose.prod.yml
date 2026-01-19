@@ -3,8 +3,6 @@
 # ======================================================
 # Usage: docker-compose -f docker-compose.prod.yml up -d
 
-version: '3.8'
-
 services:
   # ============================================================
   # PostgreSQL - Base de données principale
@@ -16,10 +14,8 @@ services:
     env_file:
       - .env.production
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-azals}
-      POSTGRES_USER: ${POSTGRES_USER:-azals_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # Performance tuning
+      # Toutes les variables POSTGRES_* sont lues depuis .env.production
+      # Seules les options Docker-spécifiques sont définies ici
       POSTGRES_INITDB_ARGS: "--data-checksums"
     ports:
       - "127.0.0.1:5432:5432"  # Bind uniquement localhost en prod
@@ -27,7 +23,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-azals_user} -d ${POSTGRES_DB:-azals}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -75,23 +71,15 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     image: azals/api:${VERSION:-latest}
-    container_name: azals_api
     restart: always
     env_file:
       - .env.production
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: redis://redis:6379/0
-      DEBUG: "false"
-      SECRET_KEY: ${SECRET_KEY}
-      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
-      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-20}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      LOG_JSON: "true"
-      ENVIRONMENT: production
+    # Toutes les variables sont lues depuis .env.production :
+    # DATABASE_URL, SECRET_KEY, CORS_ORIGINS, ENCRYPTION_KEY, REDIS_URL, etc.
     ports:
       - "8000:8000"
+    volumes:
+      - backups_data:/app/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -107,25 +95,40 @@ services:
       - azals_internal
       - azals_external
     deploy:
-      mode: replicated
-      replicas: ${API_REPLICAS:-2}
       resources:
         limits:
           memory: 1G
         reservations:
           memory: 256M
-      update_config:
-        parallelism: 1
-        delay: 10s
-        failure_action: rollback
-      rollback_config:
-        parallelism: 1
-        delay: 10s
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "5"
+
+  # ============================================================
+  # Frontend - React SPA (Production Build)
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    image: azals/frontend:${VERSION:-latest}
+    container_name: azals_frontend
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - azals_internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
 
   # ============================================================
   # Nginx - Reverse Proxy & Load Balancer
@@ -144,6 +147,7 @@ services:
       - nginx_logs:/var/log/nginx
     depends_on:
       - api
+      - frontend
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s
@@ -197,11 +201,9 @@ services:
     image: grafana/grafana:10.0.0
     container_name: azals_grafana
     restart: always
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+    env_file:
+      - .env.production
+    # Variables Grafana mappées depuis .env.production (GF_* requises par Grafana)
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
@@ -289,6 +291,8 @@ volumes:
   loki_data:
     driver: local
   nginx_logs:
+    driver: local
+  backups_data:
     driver: local
 
 # ============================================================

@@ -5,29 +5,42 @@ AZALS MODULE T0 - Service IAM
 Logique métier pour la gestion des identités et accès.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
-import secrets
 import json
+import secrets
 import uuid
-import pyotp
+from datetime import datetime, timedelta
+
 import bcrypt
-from sqlalchemy.orm import Session
+import pyotp
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.encryption import decrypt_value, encrypt_value
 from app.core.security import create_access_token
+
 from .models import (
-    IAMUser, IAMRole, IAMPermission, IAMGroup, IAMSession,
-    IAMTokenBlacklist, IAMInvitation, IAMPasswordPolicy,
-    IAMPasswordHistory, IAMAuditLog, IAMRateLimit,
-    user_roles, role_permissions, user_groups, group_roles,
-    SessionStatus, InvitationStatus, MFAType, PermissionAction
+    IAMAuditLog,
+    IAMGroup,
+    IAMInvitation,
+    IAMPasswordHistory,
+    IAMPasswordPolicy,
+    IAMPermission,
+    IAMRateLimit,
+    IAMRole,
+    IAMSession,
+    IAMTokenBlacklist,
+    IAMUser,
+    InvitationStatus,
+    MFAType,
+    PermissionAction,
+    SessionStatus,
+    group_roles,
+    role_permissions,
+    user_groups,
+    user_roles,
 )
-from .schemas import (
-    UserCreate, UserUpdate, RoleCreate, RoleUpdate,
-    PermissionCreate, GroupCreate
-)
+from .schemas import GroupCreate, PermissionCreate, RoleCreate, RoleUpdate, UserCreate, UserUpdate
 
 settings = get_settings()
 
@@ -46,7 +59,7 @@ class IAMService:
     def create_user(
         self,
         data: UserCreate,
-        created_by: Optional[int] = None
+        created_by: int | None = None
     ) -> IAMUser:
         """Crée un nouvel utilisateur."""
         # Vérifier email unique
@@ -104,14 +117,14 @@ class IAMService:
         self.db.commit()
         return user
 
-    def get_user(self, user_id: int) -> Optional[IAMUser]:
+    def get_user(self, user_id: int) -> IAMUser | None:
         """Récupère un utilisateur par ID."""
         return self.db.query(IAMUser).filter(
             IAMUser.tenant_id == self.tenant_id,
             IAMUser.id == user_id
         ).first()
 
-    def get_user_by_email(self, email: str) -> Optional[IAMUser]:
+    def get_user_by_email(self, email: str) -> IAMUser | None:
         """Récupère un utilisateur par email."""
         return self.db.query(IAMUser).filter(
             IAMUser.tenant_id == self.tenant_id,
@@ -122,10 +135,10 @@ class IAMService:
         self,
         page: int = 1,
         page_size: int = 20,
-        is_active: Optional[bool] = None,
-        search: Optional[str] = None,
-        role_code: Optional[str] = None
-    ) -> Tuple[List[IAMUser], int]:
+        is_active: bool | None = None,
+        search: str | None = None,
+        role_code: str | None = None
+    ) -> tuple[list[IAMUser], int]:
         """Liste les utilisateurs avec pagination et filtres."""
         query = self.db.query(IAMUser).filter(
             IAMUser.tenant_id == self.tenant_id
@@ -161,7 +174,7 @@ class IAMService:
         self,
         user_id: int,
         data: UserUpdate,
-        updated_by: Optional[int] = None
+        updated_by: int | None = None
     ) -> IAMUser:
         """Met à jour un utilisateur."""
         user = self.get_user(user_id)
@@ -190,7 +203,7 @@ class IAMService:
         self.db.commit()
         return user
 
-    def delete_user(self, user_id: int, deleted_by: Optional[int] = None) -> bool:
+    def delete_user(self, user_id: int, deleted_by: int | None = None) -> bool:
         """Supprime un utilisateur (soft delete via is_active)."""
         user = self.get_user(user_id)
         if not user:
@@ -226,8 +239,8 @@ class IAMService:
         self,
         user_id: int,
         reason: str,
-        duration_minutes: Optional[int] = None,
-        locked_by: Optional[int] = None
+        duration_minutes: int | None = None,
+        locked_by: int | None = None
     ) -> IAMUser:
         """Verrouille un utilisateur."""
         user = self.get_user(user_id)
@@ -251,7 +264,7 @@ class IAMService:
         self.db.commit()
         return user
 
-    def unlock_user(self, user_id: int, unlocked_by: Optional[int] = None) -> IAMUser:
+    def unlock_user(self, user_id: int, unlocked_by: int | None = None) -> IAMUser:
         """Déverrouille un utilisateur."""
         user = self.get_user(user_id)
         if not user:
@@ -276,7 +289,7 @@ class IAMService:
     def create_role(
         self,
         data: RoleCreate,
-        created_by: Optional[int] = None
+        created_by: int | None = None
     ) -> IAMRole:
         """Crée un nouveau rôle."""
         # Vérifier code unique
@@ -321,28 +334,28 @@ class IAMService:
         self.db.commit()
         return role
 
-    def get_role(self, role_id: int) -> Optional[IAMRole]:
+    def get_role(self, role_id: int) -> IAMRole | None:
         """Récupère un rôle par ID."""
         return self.db.query(IAMRole).filter(
             IAMRole.tenant_id == self.tenant_id,
             IAMRole.id == role_id
         ).first()
 
-    def get_role_by_code(self, code: str) -> Optional[IAMRole]:
+    def get_role_by_code(self, code: str) -> IAMRole | None:
         """Récupère un rôle par code."""
         return self.db.query(IAMRole).filter(
             IAMRole.tenant_id == self.tenant_id,
             IAMRole.code == code
         ).first()
 
-    def list_roles(self, include_inactive: bool = False) -> List[IAMRole]:
+    def list_roles(self, include_inactive: bool = False) -> list[IAMRole]:
         """Liste tous les rôles."""
         query = self.db.query(IAMRole).filter(
             IAMRole.tenant_id == self.tenant_id
         )
 
         if not include_inactive:
-            query = query.filter(IAMRole.is_active == True)
+            query = query.filter(IAMRole.is_active)
 
         return query.order_by(IAMRole.level, IAMRole.code).all()
 
@@ -350,7 +363,7 @@ class IAMService:
         self,
         role_id: int,
         data: RoleUpdate,
-        updated_by: Optional[int] = None
+        updated_by: int | None = None
     ) -> IAMRole:
         """Met à jour un rôle."""
         role = self.get_role(role_id)
@@ -380,7 +393,7 @@ class IAMService:
         self.db.commit()
         return role
 
-    def delete_role(self, role_id: int, deleted_by: Optional[int] = None) -> bool:
+    def delete_role(self, role_id: int, deleted_by: int | None = None) -> bool:
         """Supprime un rôle."""
         role = self.get_role(role_id)
         if not role:
@@ -422,8 +435,8 @@ class IAMService:
         self,
         user_id: int,
         role_code: str,
-        granted_by: Optional[int] = None,
-        expires_at: Optional[datetime] = None
+        granted_by: int | None = None,
+        expires_at: datetime | None = None
     ) -> bool:
         """Attribue un rôle à un utilisateur."""
         user = self.get_user(user_id)
@@ -443,7 +456,7 @@ class IAMService:
                 current_count = self.db.query(user_roles).filter(
                     user_roles.c.role_id == role.id,
                     user_roles.c.tenant_id == self.tenant_id,
-                    user_roles.c.is_active == True
+                    user_roles.c.is_active
                 ).count()
                 if current_count >= max_assignments:
                     raise ValueError(
@@ -470,7 +483,7 @@ class IAMService:
             current_count = self.db.query(user_roles).filter(
                 user_roles.c.role_id == role.id,
                 user_roles.c.tenant_id == self.tenant_id,
-                user_roles.c.is_active == True
+                user_roles.c.is_active
             ).count()
             if current_count >= role.max_users:
                 raise ValueError(f"Limite de {role.max_users} utilisateurs atteinte pour ce rôle")
@@ -507,7 +520,7 @@ class IAMService:
         self,
         user_id: int,
         role_code: str,
-        revoked_by: Optional[int] = None
+        revoked_by: int | None = None
     ) -> bool:
         """Retire un rôle à un utilisateur."""
         role = self.get_role_by_code(role_code)
@@ -552,7 +565,7 @@ class IAMService:
     def create_permission(
         self,
         data: PermissionCreate,
-        created_by: Optional[int] = None
+        created_by: int | None = None
     ) -> IAMPermission:
         """Crée une nouvelle permission."""
         # Vérifier code unique
@@ -580,18 +593,18 @@ class IAMService:
         self.db.commit()
         return permission
 
-    def get_permission_by_code(self, code: str) -> Optional[IAMPermission]:
+    def get_permission_by_code(self, code: str) -> IAMPermission | None:
         """Récupère une permission par code."""
         return self.db.query(IAMPermission).filter(
             IAMPermission.tenant_id == self.tenant_id,
             IAMPermission.code == code
         ).first()
 
-    def list_permissions(self, module: Optional[str] = None) -> List[IAMPermission]:
+    def list_permissions(self, module: str | None = None) -> list[IAMPermission]:
         """Liste les permissions."""
         query = self.db.query(IAMPermission).filter(
             IAMPermission.tenant_id == self.tenant_id,
-            IAMPermission.is_active == True
+            IAMPermission.is_active
         )
 
         if module:
@@ -629,7 +642,7 @@ class IAMService:
         self,
         user_id: int,
         permission_code: str
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Vérifie si un utilisateur a une permission.
         Retourne (granted, source) où source indique d'où vient la permission.
@@ -668,7 +681,7 @@ class IAMService:
 
         return False, None
 
-    def get_user_permissions(self, user_id: int) -> List[str]:
+    def get_user_permissions(self, user_id: int) -> list[str]:
         """Récupère toutes les permissions d'un utilisateur."""
         user = self.get_user(user_id)
         if not user:
@@ -690,7 +703,7 @@ class IAMService:
                         for perm in role.permissions:
                             permissions.add(perm.code)
 
-        return sorted(list(permissions))
+        return sorted(permissions)
 
     # ========================================================================
     # GESTION GROUPES
@@ -699,7 +712,7 @@ class IAMService:
     def create_group(
         self,
         data: GroupCreate,
-        created_by: Optional[int] = None
+        created_by: int | None = None
     ) -> IAMGroup:
         """Crée un nouveau groupe."""
         existing = self.db.query(IAMGroup).filter(
@@ -733,32 +746,32 @@ class IAMService:
         self.db.commit()
         return group
 
-    def get_group(self, group_id: int) -> Optional[IAMGroup]:
+    def get_group(self, group_id: int) -> IAMGroup | None:
         """Récupère un groupe par ID."""
         return self.db.query(IAMGroup).filter(
             IAMGroup.tenant_id == self.tenant_id,
             IAMGroup.id == group_id
         ).first()
 
-    def get_group_by_code(self, code: str) -> Optional[IAMGroup]:
+    def get_group_by_code(self, code: str) -> IAMGroup | None:
         """Récupère un groupe par code."""
         return self.db.query(IAMGroup).filter(
             IAMGroup.tenant_id == self.tenant_id,
             IAMGroup.code == code
         ).first()
 
-    def list_groups(self) -> List[IAMGroup]:
+    def list_groups(self) -> list[IAMGroup]:
         """Liste tous les groupes."""
         return self.db.query(IAMGroup).filter(
             IAMGroup.tenant_id == self.tenant_id,
-            IAMGroup.is_active == True
+            IAMGroup.is_active
         ).order_by(IAMGroup.name).all()
 
     def add_user_to_group(
         self,
         user_id: int,
         group_code: str,
-        added_by: Optional[int] = None
+        added_by: int | None = None
     ) -> bool:
         """Ajoute un utilisateur à un groupe."""
         group = self.get_group_by_code(group_code)
@@ -794,7 +807,7 @@ class IAMService:
         self,
         user_id: int,
         group_code: str,
-        removed_by: Optional[int] = None
+        removed_by: int | None = None
     ) -> bool:
         """Retire un utilisateur d'un groupe."""
         group = self.get_group_by_code(group_code)
@@ -850,9 +863,9 @@ class IAMService:
         self,
         email: str,
         password: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
-    ) -> Tuple[Optional[IAMUser], Optional[str]]:
+        ip_address: str | None = None,
+        user_agent: str | None = None
+    ) -> tuple[IAMUser | None, str | None]:
         """
         Authentifie un utilisateur.
         Retourne (user, error_message).
@@ -918,10 +931,10 @@ class IAMService:
     def create_session(
         self,
         user: IAMUser,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
         remember_me: bool = False
-    ) -> Tuple[str, str, IAMSession]:
+    ) -> tuple[str, str, IAMSession]:
         """
         Crée une session et génère les tokens.
         Retourne (access_token, refresh_token, session).
@@ -968,8 +981,8 @@ class IAMService:
     def refresh_tokens(
         self,
         refresh_token: str,
-        ip_address: Optional[str] = None
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        ip_address: str | None = None
+    ) -> tuple[str | None, str | None, str | None]:
         """
         Rafraîchit les tokens.
         Retourne (new_access_token, new_refresh_token, error).
@@ -1083,7 +1096,7 @@ class IAMService:
     # MFA
     # ========================================================================
 
-    def setup_mfa(self, user_id: int) -> Tuple[str, str, List[str]]:
+    def setup_mfa(self, user_id: int) -> tuple[str, str, list[str]]:
         """
         Configure MFA pour un utilisateur.
         Retourne (secret, qr_uri, backup_codes).
@@ -1098,9 +1111,9 @@ class IAMService:
         # Générer backup codes
         backup_codes = [secrets.token_hex(4).upper() for _ in range(10)]
 
-        # Sauvegarder (temporairement, sera confirmé après vérification)
-        user.mfa_secret = secret  # TODO: Chiffrer
-        user.mfa_backup_codes = json.dumps(backup_codes)  # TODO: Chiffrer
+        # Sauvegarder avec chiffrement AES-256
+        user.mfa_secret = encrypt_value(secret)
+        user.mfa_backup_codes = encrypt_value(json.dumps(backup_codes))
         user.mfa_type = MFAType.TOTP
 
         # Générer QR code URI
@@ -1120,7 +1133,13 @@ class IAMService:
         if not user or not user.mfa_secret:
             return False
 
-        totp = pyotp.TOTP(user.mfa_secret)
+        # Déchiffrer le secret avant vérification
+        try:
+            decrypted_secret = decrypt_value(user.mfa_secret)
+        except Exception:
+            return False
+
+        totp = pyotp.TOTP(decrypted_secret)
 
         if totp.verify(code):
             user.mfa_enabled = True
@@ -1136,19 +1155,29 @@ class IAMService:
         if not user or not user.mfa_enabled or not user.mfa_secret:
             return True  # MFA non activé
 
+        # Déchiffrer le secret avant vérification
+        try:
+            decrypted_secret = decrypt_value(user.mfa_secret)
+        except Exception:
+            return False
+
         # Vérifier code TOTP
-        totp = pyotp.TOTP(user.mfa_secret)
+        totp = pyotp.TOTP(decrypted_secret)
         if totp.verify(code):
             return True
 
-        # Vérifier backup codes
+        # Vérifier backup codes (chiffrés)
         if user.mfa_backup_codes:
-            backup_codes = json.loads(user.mfa_backup_codes)
-            if code.upper() in backup_codes:
-                backup_codes.remove(code.upper())
-                user.mfa_backup_codes = json.dumps(backup_codes)
-                self.db.commit()
-                return True
+            try:
+                decrypted_codes = decrypt_value(user.mfa_backup_codes)
+                backup_codes = json.loads(decrypted_codes)
+                if code.upper() in backup_codes:
+                    backup_codes.remove(code.upper())
+                    user.mfa_backup_codes = encrypt_value(json.dumps(backup_codes))
+                    self.db.commit()
+                    return True
+            except Exception:
+                pass
 
         return False
 
@@ -1183,7 +1212,7 @@ class IAMService:
         user_id: int,
         current_password: str,
         new_password: str
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Change le mot de passe d'un utilisateur."""
         user = self.get_user(user_id)
         if not user:
@@ -1227,8 +1256,8 @@ class IAMService:
     def create_invitation(
         self,
         email: str,
-        role_codes: Optional[List[str]] = None,
-        group_codes: Optional[List[str]] = None,
+        role_codes: list[str] | None = None,
+        group_codes: list[str] | None = None,
         expires_in_hours: int = 72,
         invited_by: int = None
     ) -> IAMInvitation:
@@ -1264,9 +1293,9 @@ class IAMService:
         self,
         token: str,
         password: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None
-    ) -> Tuple[Optional[IAMUser], Optional[str]]:
+        first_name: str | None = None,
+        last_name: str | None = None
+    ) -> tuple[IAMUser | None, str | None]:
         """Accepte une invitation et crée le compte."""
         invitation = self.db.query(IAMInvitation).filter(
             IAMInvitation.token == token,
@@ -1348,7 +1377,7 @@ class IAMService:
         self,
         password: str,
         policy: IAMPasswordPolicy
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Valide un mot de passe selon la politique."""
         import re
 
@@ -1384,11 +1413,7 @@ class IAMService:
             IAMPasswordHistory.user_id == user_id
         ).order_by(IAMPasswordHistory.created_at.desc()).limit(history_count).all()
 
-        for entry in history:
-            if self._verify_password(new_password, entry.password_hash):
-                return False
-
-        return True
+        return all(not self._verify_password(new_password, entry.password_hash) for entry in history)
 
     def _save_password_history(self, user_id: int, password_hash: str) -> None:
         """Sauvegarde un mot de passe dans l'historique."""
@@ -1465,8 +1490,8 @@ class IAMService:
         self,
         action: str,
         entity_type: str,
-        entity_id: Optional[int],
-        actor_id: Optional[int],
+        entity_id: int | None,
+        actor_id: int | None,
         old_values: dict = None,
         new_values: dict = None,
         details: dict = None,

@@ -7,17 +7,17 @@ Schémas Pydantic pour les validations et les API.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import (
-    InterventionStatut,
-    InterventionPriorite,
-    TypeIntervention,
     CanalDemande,
+    InterventionPriorite,
+    InterventionStatut,
+    TypeIntervention,
 )
-
 
 # ============================================================================
 # DONNEUR D'ORDRE SCHEMAS
@@ -27,12 +27,12 @@ class DonneurOrdreBase(BaseModel):
     """Base donneur d'ordre."""
     code: str = Field(..., max_length=50)
     nom: str = Field(..., max_length=255)
-    type: Optional[str] = Field(None, max_length=50)
-    client_id: Optional[UUID] = None
-    fournisseur_id: Optional[UUID] = None
-    email: Optional[str] = Field(None, max_length=255)
-    telephone: Optional[str] = Field(None, max_length=50)
-    adresse: Optional[str] = None
+    type: str | None = Field(None, max_length=50)
+    client_id: UUID | None = None
+    fournisseur_id: UUID | None = None
+    email: str | None = Field(None, max_length=255)
+    telephone: str | None = Field(None, max_length=50)
+    adresse: str | None = None
 
 
 class DonneurOrdreCreate(DonneurOrdreBase):
@@ -42,12 +42,12 @@ class DonneurOrdreCreate(DonneurOrdreBase):
 
 class DonneurOrdreUpdate(BaseModel):
     """Mise à jour donneur d'ordre."""
-    nom: Optional[str] = Field(None, max_length=255)
-    type: Optional[str] = Field(None, max_length=50)
-    email: Optional[str] = Field(None, max_length=255)
-    telephone: Optional[str] = Field(None, max_length=50)
-    adresse: Optional[str] = None
-    is_active: Optional[bool] = None
+    nom: str | None = Field(None, max_length=255)
+    type: str | None = Field(None, max_length=50)
+    email: str | None = Field(None, max_length=255)
+    telephone: str | None = Field(None, max_length=50)
+    adresse: str | None = None
+    is_active: bool | None = None
 
 
 class DonneurOrdreResponse(DonneurOrdreBase):
@@ -68,23 +68,23 @@ class DonneurOrdreResponse(DonneurOrdreBase):
 class InterventionBase(BaseModel):
     """Base intervention."""
     client_id: UUID  # OBLIGATOIRE
-    donneur_ordre_id: Optional[UUID] = None  # OPTIONNEL
-    projet_id: Optional[UUID] = None  # OPTIONNEL
+    donneur_ordre_id: UUID | None = None  # OPTIONNEL
+    projet_id: UUID | None = None  # OPTIONNEL
 
     type_intervention: TypeIntervention = TypeIntervention.AUTRE
     priorite: InterventionPriorite = InterventionPriorite.NORMAL
-    reference_externe: Optional[str] = Field(None, max_length=100)
-    canal_demande: Optional[CanalDemande] = None
+    reference_externe: str | None = Field(None, max_length=100)
+    canal_demande: CanalDemande | None = None
 
-    titre: Optional[str] = Field(None, max_length=500)
-    description: Optional[str] = None
-    notes_internes: Optional[str] = None
+    titre: str | None = Field(None, max_length=500)
+    description: str | None = None
+    notes_internes: str | None = None
 
     # Adresse
-    adresse_ligne1: Optional[str] = Field(None, max_length=255)
-    adresse_ligne2: Optional[str] = Field(None, max_length=255)
-    ville: Optional[str] = Field(None, max_length=100)
-    code_postal: Optional[str] = Field(None, max_length=20)
+    adresse_ligne1: str | None = Field(None, max_length=255)
+    adresse_ligne2: str | None = Field(None, max_length=255)
+    ville: str | None = Field(None, max_length=100)
+    code_postal: str | None = Field(None, max_length=20)
     pays: str = "France"
 
 
@@ -95,9 +95,9 @@ class InterventionCreate(InterventionBase):
     La référence (INT-YYYY-XXXX) est générée automatiquement.
     Le statut initial est A_PLANIFIER.
     """
-    date_prevue_debut: Optional[datetime] = None
-    date_prevue_fin: Optional[datetime] = None
-    intervenant_id: Optional[UUID] = None
+    date_prevue_debut: datetime | None = None
+    date_prevue_fin: datetime | None = None
+    intervenant_id: UUID | None = None
 
 
 class InterventionUpdate(BaseModel):
@@ -107,20 +107,20 @@ class InterventionUpdate(BaseModel):
     ATTENTION: La référence n'est PAS modifiable.
     Le statut ne peut être changé que via les actions terrain.
     """
-    donneur_ordre_id: Optional[UUID] = None
-    projet_id: Optional[UUID] = None
-    type_intervention: Optional[TypeIntervention] = None
-    priorite: Optional[InterventionPriorite] = None
-    reference_externe: Optional[str] = Field(None, max_length=100)
-    canal_demande: Optional[CanalDemande] = None
-    titre: Optional[str] = Field(None, max_length=500)
-    description: Optional[str] = None
-    notes_internes: Optional[str] = None
-    adresse_ligne1: Optional[str] = Field(None, max_length=255)
-    adresse_ligne2: Optional[str] = Field(None, max_length=255)
-    ville: Optional[str] = Field(None, max_length=100)
-    code_postal: Optional[str] = Field(None, max_length=20)
-    pays: Optional[str] = None
+    donneur_ordre_id: UUID | None = None
+    projet_id: UUID | None = None
+    type_intervention: TypeIntervention | None = None
+    priorite: InterventionPriorite | None = None
+    reference_externe: str | None = Field(None, max_length=100)
+    canal_demande: CanalDemande | None = None
+    titre: str | None = Field(None, max_length=500)
+    description: str | None = None
+    notes_internes: str | None = None
+    adresse_ligne1: str | None = Field(None, max_length=255)
+    adresse_ligne2: str | None = Field(None, max_length=255)
+    ville: str | None = Field(None, max_length=100)
+    code_postal: str | None = Field(None, max_length=20)
+    pays: str | None = None
 
 
 class InterventionPlanifier(BaseModel):
@@ -145,52 +145,52 @@ class InterventionResponse(BaseModel):
     reference: str  # INT-YYYY-XXXX (NON MODIFIABLE)
 
     client_id: UUID
-    donneur_ordre_id: Optional[UUID] = None
-    projet_id: Optional[UUID] = None
-    devis_id: Optional[UUID] = None
-    facture_client_id: Optional[UUID] = None
-    commande_fournisseur_id: Optional[UUID] = None
+    donneur_ordre_id: UUID | None = None
+    projet_id: UUID | None = None
+    devis_id: UUID | None = None
+    facture_client_id: UUID | None = None
+    commande_fournisseur_id: UUID | None = None
 
     type_intervention: TypeIntervention
     priorite: InterventionPriorite
-    reference_externe: Optional[str] = None
-    canal_demande: Optional[CanalDemande] = None
+    reference_externe: str | None = None
+    canal_demande: CanalDemande | None = None
 
-    titre: Optional[str] = None
-    description: Optional[str] = None
+    titre: str | None = None
+    description: str | None = None
 
-    date_prevue_debut: Optional[datetime] = None
-    date_prevue_fin: Optional[datetime] = None
-    intervenant_id: Optional[UUID] = None
-    planning_event_id: Optional[UUID] = None
+    date_prevue_debut: datetime | None = None
+    date_prevue_fin: datetime | None = None
+    intervenant_id: UUID | None = None
+    planning_event_id: UUID | None = None
 
-    date_arrivee_site: Optional[datetime] = None
-    date_demarrage: Optional[datetime] = None
-    date_fin: Optional[datetime] = None
-    duree_reelle_minutes: Optional[int] = None
+    date_arrivee_site: datetime | None = None
+    date_demarrage: datetime | None = None
+    date_fin: datetime | None = None
+    duree_reelle_minutes: int | None = None
 
-    geoloc_arrivee_lat: Optional[Decimal] = None
-    geoloc_arrivee_lng: Optional[Decimal] = None
+    geoloc_arrivee_lat: Decimal | None = None
+    geoloc_arrivee_lng: Decimal | None = None
 
     statut: InterventionStatut
 
-    adresse_ligne1: Optional[str] = None
-    adresse_ligne2: Optional[str] = None
-    ville: Optional[str] = None
-    code_postal: Optional[str] = None
+    adresse_ligne1: str | None = None
+    adresse_ligne2: str | None = None
+    ville: str | None = None
+    code_postal: str | None = None
     pays: str = "France"
 
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
     created_at: datetime
     updated_at: datetime
-    deleted_at: Optional[datetime] = None
+    deleted_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class InterventionListResponse(BaseModel):
     """Liste paginée d'interventions."""
-    items: List[InterventionResponse]
+    items: list[InterventionResponse]
     total: int
     page: int
     page_size: int
@@ -207,8 +207,8 @@ class ArriveeRequest(BaseModel):
     Horodate l'arrivée sur site avec géolocalisation.
     Transition statut: PLANIFIEE -> EN_COURS
     """
-    latitude: Optional[Decimal] = Field(None, ge=-90, le=90)
-    longitude: Optional[Decimal] = Field(None, ge=-180, le=180)
+    latitude: Decimal | None = Field(None, ge=-90, le=90)
+    longitude: Decimal | None = Field(None, ge=-180, le=180)
 
 
 class DemarrageRequest(BaseModel):
@@ -230,23 +230,23 @@ class FinInterventionRequest(BaseModel):
     Transition statut: EN_COURS -> TERMINEE
     Déclenche la génération du rapport d'intervention.
     """
-    resume_actions: Optional[str] = None
-    anomalies: Optional[str] = None
-    recommandations: Optional[str] = None
+    resume_actions: str | None = None
+    anomalies: str | None = None
+    recommandations: str | None = None
 
 
 class SignatureRapportRequest(BaseModel):
     """Signature du rapport par le client."""
     signature_client: str  # Base64 du hash/blob sécurisé
     nom_signataire: str = Field(..., max_length=255)
-    latitude: Optional[Decimal] = Field(None, ge=-90, le=90)
-    longitude: Optional[Decimal] = Field(None, ge=-180, le=180)
+    latitude: Decimal | None = Field(None, ge=-90, le=90)
+    longitude: Decimal | None = Field(None, ge=-180, le=180)
 
 
 class PhotoRequest(BaseModel):
     """Ajout de photo au rapport."""
     url: str
-    caption: Optional[str] = None
+    caption: str | None = None
 
 
 # ============================================================================
@@ -255,9 +255,9 @@ class PhotoRequest(BaseModel):
 
 class RapportInterventionBase(BaseModel):
     """Base rapport intervention."""
-    resume_actions: Optional[str] = None
-    anomalies: Optional[str] = None
-    recommandations: Optional[str] = None
+    resume_actions: str | None = None
+    anomalies: str | None = None
+    recommandations: str | None = None
 
 
 class RapportInterventionUpdate(RapportInterventionBase):
@@ -276,18 +276,18 @@ class RapportInterventionResponse(BaseModel):
     intervention_id: UUID
     reference_intervention: str
     client_id: UUID
-    donneur_ordre_id: Optional[UUID] = None
+    donneur_ordre_id: UUID | None = None
 
-    resume_actions: Optional[str] = None
-    anomalies: Optional[str] = None
-    recommandations: Optional[str] = None
-    photos: List[Dict[str, Any]] = []
+    resume_actions: str | None = None
+    anomalies: str | None = None
+    recommandations: str | None = None
+    photos: list[dict[str, Any]] = []
 
-    signature_client: Optional[str] = None
-    date_signature: Optional[datetime] = None
-    nom_signataire: Optional[str] = None
-    geoloc_signature_lat: Optional[Decimal] = None
-    geoloc_signature_lng: Optional[Decimal] = None
+    signature_client: str | None = None
+    date_signature: datetime | None = None
+    nom_signataire: str | None = None
+    geoloc_signature_lat: Decimal | None = None
+    geoloc_signature_lng: Decimal | None = None
 
     is_signed: bool
     is_locked: bool
@@ -307,17 +307,17 @@ class RapportFinalResponse(BaseModel):
     id: UUID
     tenant_id: str
     reference: str
-    projet_id: Optional[UUID] = None
-    donneur_ordre_id: Optional[UUID] = None
+    projet_id: UUID | None = None
+    donneur_ordre_id: UUID | None = None
 
-    interventions_references: List[str]
+    interventions_references: list[str]
     temps_total_minutes: int
-    synthese: Optional[str] = None
+    synthese: str | None = None
 
     date_generation: datetime
     is_locked: bool
 
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -325,9 +325,9 @@ class RapportFinalResponse(BaseModel):
 
 class RapportFinalGenerateRequest(BaseModel):
     """Demande de génération de rapport final."""
-    projet_id: Optional[UUID] = None
-    donneur_ordre_id: Optional[UUID] = None
-    synthese: Optional[str] = None
+    projet_id: UUID | None = None
+    donneur_ordre_id: UUID | None = None
+    synthese: str | None = None
 
     @field_validator('donneur_ordre_id')
     @classmethod
