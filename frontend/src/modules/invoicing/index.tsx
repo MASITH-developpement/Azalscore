@@ -23,9 +23,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, FileText, Check, Download, Eye, Edit, Trash2,
   ArrowRight, RefreshCw, Filter, Search, X, FileSpreadsheet,
-  AlertCircle, CheckCircle2, Clock
+  AlertCircle, CheckCircle2, Clock, UserPlus, Copy, ShoppingCart
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
@@ -37,7 +38,7 @@ import type { PaginatedResponse, TableColumn, TableAction } from '@/types';
 // TYPES - Alignés avec le backend
 // ============================================================
 
-type DocumentType = 'QUOTE' | 'INVOICE';
+type DocumentType = 'QUOTE' | 'INVOICE' | 'ORDER';
 type DocumentStatus = 'DRAFT' | 'VALIDATED';
 
 interface DocumentLine {
@@ -124,7 +125,14 @@ const STATUS_CONFIG: Record<DocumentStatus, { label: string; color: string; icon
 
 const TYPE_CONFIG: Record<DocumentType, { label: string; labelPlural: string; prefix: string }> = {
   QUOTE: { label: 'Devis', labelPlural: 'Devis', prefix: 'DEV' },
+  ORDER: { label: 'Commande', labelPlural: 'Commandes', prefix: 'CMD' },
   INVOICE: { label: 'Facture', labelPlural: 'Factures', prefix: 'FAC' },
+};
+
+// Workflow de transformation: type source → type cible
+const TRANSFORM_WORKFLOW: Partial<Record<DocumentType, { target: DocumentType; label: string; icon: React.ReactNode }>> = {
+  QUOTE: { target: 'ORDER', label: 'Transformer en commande', icon: <ShoppingCart size={14} /> },
+  ORDER: { target: 'INVOICE', label: 'Transformer en facture', icon: <FileText size={14} /> },
 };
 
 const TVA_RATES = [
@@ -144,6 +152,13 @@ const formatCurrency = (amount: number, currency = 'EUR'): string => {
 const formatDate = (dateStr: string): string => {
   return new Date(dateStr).toLocaleDateString('fr-FR');
 };
+
+// Configuration pour la création de client inline
+const CUSTOMER_CREATE_FIELDS: FieldConfig[] = [
+  { key: 'name', label: 'Nom', type: 'text', required: true },
+  { key: 'email', label: 'Email', type: 'email' },
+  { key: 'phone', label: 'Téléphone', type: 'tel' },
+];
 
 // ============================================================
 // API HOOKS
@@ -294,6 +309,69 @@ const useConvertQuoteToInvoice = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents', 'QUOTE'] });
       queryClient.invalidateQueries({ queryKey: ['documents', 'INVOICE'] });
+    },
+  });
+};
+
+// Hook pour dupliquer un document
+const useDuplicateDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ document }: { document: Document }) => {
+      // Créer un nouveau document avec les mêmes données mais nouvelle date
+      const payload = {
+        type: document.type,
+        customer_id: document.customer_id,
+        date: new Date().toISOString().split('T')[0],
+        due_date: document.due_date,
+        validity_date: document.validity_date,
+        notes: document.notes ? `(Copie) ${document.notes}` : '(Copie)',
+        lines: document.lines.map(l => ({
+          description: l.description,
+          quantity: l.quantity,
+          unit: l.unit,
+          unit_price: l.unit_price,
+          discount_percent: l.discount_percent,
+          tax_rate: l.tax_rate,
+        })),
+      };
+      const response = await api.post<Document>('/v1/commercial/documents', payload);
+      return response as unknown as Document;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['documents', data.type] });
+    },
+  });
+};
+
+// Hook pour transformer un document (Devis → Commande ou Commande → Facture)
+const useTransformDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ document, targetType }: { document: Document; targetType: DocumentType }) => {
+      const payload = {
+        type: targetType,
+        customer_id: document.customer_id,
+        date: new Date().toISOString().split('T')[0],
+        parent_id: document.id,
+        notes: document.notes,
+        lines: document.lines.map(l => ({
+          description: l.description,
+          quantity: l.quantity,
+          unit: l.unit,
+          unit_price: l.unit_price,
+          discount_percent: l.discount_percent,
+          tax_rate: l.tax_rate,
+        })),
+      };
+      const response = await api.post<Document>('/v1/commercial/documents', payload);
+      return response as unknown as Document;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['documents', variables.document.type] });
+      queryClient.invalidateQueries({ queryKey: ['documents', data.type] });
     },
   });
 };
@@ -694,11 +772,15 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
   const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
   const [validateTarget, setValidateTarget] = useState<Document | null>(null);
   const [convertTarget, setConvertTarget] = useState<Document | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<Document | null>(null);
+  const [transformTarget, setTransformTarget] = useState<Document | null>(null);
 
   const { data, isLoading, refetch } = useDocuments(type, page, pageSize, filters);
   const deleteDocument = useDeleteDocument();
   const validateDocument = useValidateDocument();
   const convertQuote = useConvertQuoteToInvoice();
+  const duplicateDocument = useDuplicateDocument();
+  const transformDocument = useTransformDocument();
   const exportDocuments = useExportDocuments();
 
   const typeConfig = TYPE_CONFIG[type];
@@ -763,6 +845,9 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
     },
   ];
 
+  // Configuration de transformation pour ce type
+  const transformConfig = TRANSFORM_WORKFLOW[type];
+
   const actions: TableAction<Document>[] = [
     {
       id: 'view',
@@ -778,12 +863,28 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
       isHidden: (row) => row.status !== 'DRAFT' || !canEdit,
     },
     {
+      id: 'duplicate',
+      label: 'Dupliquer',
+      icon: 'copy',
+      onClick: (row) => setDuplicateTarget(row),
+      isHidden: () => !canCreate,
+    },
+    {
       id: 'validate',
       label: 'Valider',
       icon: 'check',
       onClick: (row) => setValidateTarget(row),
       isHidden: (row) => row.status !== 'DRAFT' || !canValidate,
     },
+    // Action de transformation (Devis → Commande ou Commande → Facture)
+    ...(transformConfig ? [{
+      id: 'transform',
+      label: transformConfig.label,
+      icon: 'arrow-right',
+      onClick: (row: Document) => setTransformTarget(row),
+      isHidden: (row: Document) => row.status !== 'VALIDATED',
+    }] : []),
+    // Legacy: Convertir devis en facture (directement)
     ...(type === 'QUOTE' ? [{
       id: 'convert',
       label: 'Convertir en facture',
@@ -900,6 +1001,68 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
           }}
           onCancel={() => setConvertTarget(null)}
           isLoading={convertQuote.isPending}
+        />
+      )}
+
+      {/* Duplicate Confirmation */}
+      {duplicateTarget && (
+        <ConfirmDialog
+          title="Dupliquer le document"
+          message={
+            <>
+              <p>Voulez-vous dupliquer le {typeConfig.label.toLowerCase()} <strong>{duplicateTarget.number}</strong> ?</p>
+              <p className="text-muted mt-2">
+                <Copy size={14} className="inline mr-1" />
+                Un nouveau {typeConfig.label.toLowerCase()} brouillon sera créé avec les mêmes lignes et la date du jour.
+              </p>
+            </>
+          }
+          confirmLabel="Dupliquer"
+          onConfirm={async () => {
+            const newDoc = await duplicateDocument.mutateAsync({ document: duplicateTarget });
+            setDuplicateTarget(null);
+            navigate(`/invoicing/${type.toLowerCase()}s/${newDoc.id}`);
+          }}
+          onCancel={() => setDuplicateTarget(null)}
+          isLoading={duplicateDocument.isPending}
+        />
+      )}
+
+      {/* Transform Confirmation */}
+      {transformTarget && transformConfig && (
+        <ConfirmDialog
+          title={transformConfig.label}
+          message={
+            <>
+              <p>Voulez-vous transformer le {typeConfig.label.toLowerCase()} <strong>{transformTarget.number}</strong> ?</p>
+              <p className="text-muted mt-2">
+                {transformConfig.icon}
+                <span className="ml-1">
+                  Un nouveau document de type {TYPE_CONFIG[transformConfig.target].label.toLowerCase()} sera créé.
+                </span>
+              </p>
+              <div className="azals-transform-workflow mt-3">
+                <span className="azals-transform-workflow__step azals-transform-workflow__step--active">
+                  {typeConfig.label}
+                </span>
+                <ArrowRight size={16} className="azals-transform-workflow__arrow" />
+                <span className="azals-transform-workflow__step azals-transform-workflow__step--target">
+                  {TYPE_CONFIG[transformConfig.target].label}
+                </span>
+              </div>
+            </>
+          }
+          confirmLabel={`Créer ${TYPE_CONFIG[transformConfig.target].label.toLowerCase()}`}
+          onConfirm={async () => {
+            const newDoc = await transformDocument.mutateAsync({
+              document: transformTarget,
+              targetType: transformConfig.target
+            });
+            setTransformTarget(null);
+            navigate(`/invoicing/${transformConfig.target.toLowerCase()}s/${newDoc.id}`);
+          }}
+          onCancel={() => setTransformTarget(null)}
+          isLoading={transformDocument.isPending}
         />
       )}
     </PageWrapper>
@@ -1044,22 +1207,23 @@ const DocumentFormPage: React.FC<DocumentFormPageProps> = ({ type }) => {
 
           <Grid cols={2} gap="md">
             <div className="azals-form-field">
-              <label htmlFor="customer">Client *</label>
-              <select
-                id="customer"
+              <SmartSelector
+                items={(customers || []).map(c => ({ ...c, id: c.id, name: c.name }))}
                 value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                className={`azals-select ${errors.customer ? 'azals-select--error' : ''}`}
+                onChange={(value) => setCustomerId(value)}
+                label="Client *"
+                placeholder="Sélectionner un client..."
+                displayField="name"
+                secondaryField="code"
+                entityName="client"
+                entityIcon={<UserPlus size={16} />}
+                createEndpoint="/v1/partners/clients"
+                createFields={CUSTOMER_CREATE_FIELDS}
+                queryKeys={['customers', 'clients']}
                 disabled={isEdit}
-              >
-                <option value="">Sélectionner un client</option>
-                {customers?.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name} ({customer.code})
-                  </option>
-                ))}
-              </select>
-              {errors.customer && <span className="azals-form-error">{errors.customer}</span>}
+                error={errors.customer}
+                allowCreate={!isEdit}
+              />
             </div>
 
             <div className="azals-form-field">
@@ -1475,12 +1639,15 @@ const InvoicingDashboard: React.FC = () => {
 // ============================================================
 
 export const QuotesPage: React.FC = () => <DocumentListPage type="QUOTE" />;
+export const OrdersPage: React.FC = () => <DocumentListPage type="ORDER" />;
 export const InvoicesPage: React.FC = () => <DocumentListPage type="INVOICE" />;
 
 export const QuoteFormPage: React.FC = () => <DocumentFormPage type="QUOTE" />;
+export const OrderFormPage: React.FC = () => <DocumentFormPage type="ORDER" />;
 export const InvoiceFormPage: React.FC = () => <DocumentFormPage type="INVOICE" />;
 
 export const QuoteDetailPage: React.FC = () => <DocumentDetailPage type="QUOTE" />;
+export const OrderDetailPage: React.FC = () => <DocumentDetailPage type="ORDER" />;
 export const InvoiceDetailPageComponent: React.FC = () => <DocumentDetailPage type="INVOICE" />;
 
 // ============================================================
@@ -1495,6 +1662,11 @@ export const InvoicingRoutes: React.FC = () => (
     <Route path="quotes/new" element={<QuoteFormPage />} />
     <Route path="quotes/:id" element={<QuoteDetailPage />} />
     <Route path="quotes/:id/edit" element={<QuoteFormPage />} />
+
+    <Route path="orders" element={<OrdersPage />} />
+    <Route path="orders/new" element={<OrderFormPage />} />
+    <Route path="orders/:id" element={<OrderDetailPage />} />
+    <Route path="orders/:id/edit" element={<OrderFormPage />} />
 
     <Route path="invoices" element={<InvoicesPage />} />
     <Route path="invoices/new" element={<InvoiceFormPage />} />

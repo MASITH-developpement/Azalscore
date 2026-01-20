@@ -28,8 +28,10 @@ import {
   AlertCircle,
   Clock,
   RefreshCw,
+  Building2,
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
@@ -191,6 +193,14 @@ const TVA_RATES = [
   { value: 5.5, label: '5.5%' },
   { value: 10, label: '10%' },
   { value: 20, label: '20%' },
+];
+
+// Configuration pour création inline de fournisseur
+const SUPPLIER_CREATE_FIELDS: FieldConfig[] = [
+  { key: 'name', label: 'Nom', type: 'text', required: true },
+  { key: 'contact_name', label: 'Contact', type: 'text' },
+  { key: 'email', label: 'Email', type: 'email' },
+  { key: 'phone', label: 'Téléphone', type: 'tel' },
 ];
 
 const formatCurrency = (value: number, currency = 'EUR'): string => {
@@ -1696,19 +1706,22 @@ export const OrderFormPage: React.FC = () => {
         <Card title="Informations générales">
           <Grid cols={3} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Fournisseur *</label>
-              <select
-                className="azals-select"
+              <SmartSelector
+                items={(suppliers || []).map(s => ({ ...s, id: s.id, name: s.name }))}
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-                required
+                onChange={(value) => setSupplierId(value)}
+                label="Fournisseur *"
+                placeholder="Sélectionner un fournisseur..."
+                displayField="name"
+                secondaryField="code"
+                entityName="fournisseur"
+                entityIcon={<Building2 size={16} />}
+                createEndpoint="/v1/purchases/suppliers"
+                createFields={SUPPLIER_CREATE_FIELDS}
+                queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
-              >
-                <option value="">Sélectionner un fournisseur</option>
-                {(suppliers || []).map((s) => (
-                  <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-                ))}
-              </select>
+                allowCreate={canEdit}
+              />
             </div>
             <div className="azals-field">
               <label className="azals-field__label">Date *</label>
@@ -2201,19 +2214,22 @@ export const InvoiceFormPage: React.FC = () => {
         <Card title="Informations générales">
           <Grid cols={3} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Fournisseur *</label>
-              <select
-                className="azals-select"
+              <SmartSelector
+                items={(suppliers || []).map(s => ({ ...s, id: s.id, name: s.name }))}
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-                required
+                onChange={(value) => setSupplierId(value)}
+                label="Fournisseur *"
+                placeholder="Sélectionner un fournisseur..."
+                displayField="name"
+                secondaryField="code"
+                entityName="fournisseur"
+                entityIcon={<Building2 size={16} />}
+                createEndpoint="/v1/purchases/suppliers"
+                createFields={SUPPLIER_CREATE_FIELDS}
+                queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
-              >
-                <option value="">Sélectionner un fournisseur</option>
-                {(suppliers || []).map((s) => (
-                  <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-                ))}
-              </select>
+                allowCreate={canEdit}
+              />
             </div>
             <div className="azals-field">
               <label className="azals-field__label">Date *</label>

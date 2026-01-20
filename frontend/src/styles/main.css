@@ -259,6 +259,49 @@ body {
   color: var(--azals-danger);
 }
 
+.azals-header__dropdown-item--active {
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-600);
+}
+
+/* ============================================================
+   MODE DEMO - Header rouge sang (ERP)
+   ============================================================ */
+
+.azals-header--demo {
+  background: #8B0000 !important;
+  border-bottom-color: #660000 !important;
+}
+
+.azals-header--demo .azals-header__logo-text {
+  color: white !important;
+}
+
+.azals-header--demo .azals-header__menu-toggle {
+  color: white !important;
+}
+
+.azals-header--demo .azals-header__icon-btn {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.azals-header--demo .azals-header__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+}
+
+.azals-header--demo .azals-header__user-btn {
+  color: white !important;
+}
+
+.azals-header--demo .azals-header__user-name {
+  color: white !important;
+}
+
+.azals-layout--demo .azals-layout__body {
+  padding-top: 32px; /* Espace pour la bannière */
+}
+
 /* Sidebar */
 .azals-sidebar {
   width: 260px;

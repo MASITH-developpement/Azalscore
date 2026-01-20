@@ -146,6 +146,8 @@ export interface DashboardKPI {
   trend_value?: number;
   severity?: AlertSeverity;
   period?: string;
+  icon?: React.ReactNode;
+  variant?: 'default' | 'success' | 'warning' | 'danger';
 }
 
 export interface DashboardWidget {

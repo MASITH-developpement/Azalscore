@@ -1,0 +1,8 @@
+forbidden:
+  - auth
+  - permissions
+  - accounting
+  - schema
+rollback:
+  on_error: true
+  min_coverage: 80

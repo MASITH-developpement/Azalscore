@@ -10,7 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id
+from app.core.dependencies import get_current_user, get_tenant_id
+from app.core.models import User
 
 from .models import POSSessionStatus, POSTerminalStatus, POSTransactionStatus
 from .schemas import (
@@ -48,8 +49,10 @@ router = APIRouter(prefix="/pos", tags=["POS - Point de Vente"])
 
 def get_service(
     db: Session = Depends(get_db),
-    tenant_id: str = Depends(get_tenant_id)
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
 ) -> POSService:
+    """Service POS avec authentification obligatoire."""
     return POSService(db, tenant_id)
 
 

@@ -425,6 +425,36 @@ async def create_invoice_from_order(
     return invoice
 
 
+@router.post("/orders/{order_id}/affaire")
+async def create_affaire_from_order(
+    order_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Créer une affaire (projet) à partir d'une commande."""
+    service = get_commercial_service(db, current_user.tenant_id)
+    document = service.get_document(order_id)
+    if not document or document.document_type != DocumentType.ORDER:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+
+    # Créer le projet via le module projects
+    from app.modules.projects.service import ProjectsService
+    from app.modules.projects.schemas import ProjectCreate
+
+    projects_service = ProjectsService(db, current_user.tenant_id)
+    project_data = ProjectCreate(
+        code=f"AFF-{document.number}",
+        name=f"Affaire - {document.customer_name or 'Client'}",
+        description=f"Affaire créée depuis la commande {document.number}",
+        client_id=document.customer_id,
+        budget=float(document.total_ttc) if document.total_ttc else None,
+        status="ACTIVE"
+    )
+    project = projects_service.create_project(project_data, current_user.id)
+
+    return {"id": str(project.id), "reference": project.code}
+
+
 @router.post("/documents/{document_id}/lines", response_model=DocumentLineResponse, status_code=status.HTTP_201_CREATED)
 async def add_document_line(
     document_id: UUID,

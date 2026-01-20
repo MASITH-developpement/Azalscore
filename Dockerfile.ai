@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dépendances IA
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copier tout le projet
+COPY . .
+
+# Lancer l’orchestrateur AU BON ENDROIT
+CMD ["python", "ai-control-plane/agents/ai_orchestrator.py"]

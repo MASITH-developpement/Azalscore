@@ -452,6 +452,12 @@ class GoodsReceiptResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class GoodsReceiptList(BaseModel):
+    """Liste de réceptions."""
+    items: list[GoodsReceiptResponse]
+    total: int
+
+
 # ============================================================================
 # SCHÉMAS FACTURES D'ACHAT
 # ============================================================================

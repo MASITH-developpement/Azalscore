@@ -158,7 +158,7 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
         details: incident.details,
         stack_trace: incident.stack_trace,
         screenshot_data: incident.screenshot_data,
-        timestamp: incident.timestamp.toISOString(),
+        frontend_timestamp: incident.timestamp.toISOString(),
       }),
     });
 

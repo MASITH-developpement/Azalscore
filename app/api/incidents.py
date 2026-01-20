@@ -140,7 +140,7 @@ async def create_incident(
             http_status=data.http_status,
             message=data.message,
             details=data.details,
-            timestamp=data.timestamp,
+            timestamp=data.frontend_timestamp,
             created_at=datetime.utcnow(),
             has_screenshot=False,
         )

@@ -1,107 +1,202 @@
-/**
- * AZALSCORE Module - Administration
- * Utilisateurs, Rôles, Capacités, Tenants, Modules, Logs
- * Données fournies par API - AUCUNE logique métier
- */
-
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Users,
-  Shield,
-  Building2,
-  Puzzle,
-  FileText,
-  Plus,
-  Edit,
-  Trash2,
-  Key,
-  Lock,
-  Unlock,
-  AlertTriangle,
-  Palette,
-} from 'lucide-react';
 import { api } from '@core/api-client';
-import { CapabilityGuard, useCanBreakGlass } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { DynamicForm } from '@ui/forms';
-import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
-import { KPICard } from '@ui/dashboards';
-import { z } from 'zod';
-import type { PaginatedResponse, TableColumn, DashboardKPI, User, Tenant, ModuleInfo } from '@/types';
+import { Button, Modal } from '@ui/actions';
+import { Select, Input } from '@ui/forms';
+import { StatCard } from '@ui/dashboards';
+import { Users, Building, Shield, Database, Activity, AlertTriangle } from 'lucide-react';
+import type { TableColumn } from '@/types';
 
-// ============================================================
+// ============================================================================
+// LOCAL COMPONENTS
+// ============================================================================
+
+const Badge: React.FC<{ color: string; children: React.ReactNode }> = ({ color, children }) => (
+  <span className={`azals-badge azals-badge--${color}`}>{children}</span>
+);
+
+interface TabNavProps {
+  tabs: { id: string; label: string }[];
+  activeTab: string;
+  onChange: (id: string) => void;
+}
+
+const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
+  <nav className="azals-tab-nav">
+    {tabs.map((tab) => (
+      <button
+        key={tab.id}
+        className={`azals-tab-nav__item ${activeTab === tab.id ? 'azals-tab-nav__item--active' : ''}`}
+        onClick={() => onChange(tab.id)}
+      >
+        {tab.label}
+      </button>
+    ))}
+  </nav>
+);
+
+// ============================================================================
 // TYPES
-// ============================================================
+// ============================================================================
 
-interface AdminUser extends User {
-  created_at: string;
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role_id?: string;
+  role_name?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
   last_login?: string;
-  login_count: number;
+  created_at: string;
 }
 
 interface Role {
   id: string;
-  name: string;
-  description: string;
-  capabilities: string[];
-  user_count: number;
-  is_system: boolean;
-}
-
-interface Capability {
   code: string;
   name: string;
-  description: string;
-  module: string;
-  is_sensitive: boolean;
+  description?: string;
+  permissions: string[];
+  is_system: boolean;
+  user_count: number;
+}
+
+interface Tenant {
+  id: string;
+  code: string;
+  name: string;
+  domain?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'SUSPENDED';
+  plan: 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+  modules_enabled: string[];
+  user_count: number;
+  storage_used: number;
+  created_at: string;
 }
 
 interface AuditLog {
   id: string;
   timestamp: string;
-  user_id: string;
-  user_email: string;
+  user_id?: string;
+  user_name?: string;
   action: string;
   resource_type: string;
   resource_id?: string;
-  details?: Record<string, unknown>;
-  ip_address: string;
+  details?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
 }
 
-interface AdminStats {
+interface BackupConfig {
+  id: string;
+  name: string;
+  type: 'FULL' | 'INCREMENTAL' | 'DIFFERENTIAL';
+  schedule: string;
+  retention_days: number;
+  destination: 'LOCAL' | 'S3' | 'GCS' | 'AZURE';
+  last_backup?: string;
+  last_status?: 'SUCCESS' | 'FAILED' | 'IN_PROGRESS';
+  is_active: boolean;
+}
+
+interface AdminDashboard {
   total_users: number;
   active_users: number;
-  total_roles: number;
   total_tenants: number;
-  active_modules: number;
+  active_tenants: number;
+  total_roles: number;
+  storage_used_gb: number;
+  api_calls_today: number;
+  errors_today: number;
 }
 
-// ============================================================
-// API HOOKS
-// ============================================================
+// ============================================================================
+// CONSTANTES
+// ============================================================================
 
-const useAdminStats = () => {
+const USER_STATUSES = [
+  { value: 'ACTIVE', label: 'Actif', color: 'green' },
+  { value: 'INACTIVE', label: 'Inactif', color: 'gray' },
+  { value: 'SUSPENDED', label: 'Suspendu', color: 'red' },
+  { value: 'PENDING', label: 'En attente', color: 'orange' }
+];
+
+const TENANT_STATUSES = [
+  { value: 'ACTIVE', label: 'Actif', color: 'green' },
+  { value: 'INACTIVE', label: 'Inactif', color: 'gray' },
+  { value: 'TRIAL', label: 'Essai', color: 'blue' },
+  { value: 'SUSPENDED', label: 'Suspendu', color: 'red' }
+];
+
+const TENANT_PLANS = [
+  { value: 'FREE', label: 'Gratuit' },
+  { value: 'STARTER', label: 'Starter' },
+  { value: 'PROFESSIONAL', label: 'Professionnel' },
+  { value: 'ENTERPRISE', label: 'Enterprise' }
+];
+
+const BACKUP_TYPES = [
+  { value: 'FULL', label: 'Complete' },
+  { value: 'INCREMENTAL', label: 'Incrementale' },
+  { value: 'DIFFERENTIAL', label: 'Differentielle' }
+];
+
+const BACKUP_DESTINATIONS = [
+  { value: 'LOCAL', label: 'Local' },
+  { value: 'S3', label: 'AWS S3' },
+  { value: 'GCS', label: 'Google Cloud' },
+  { value: 'AZURE', label: 'Azure Blob' }
+];
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+const formatDate = (date: string): string => {
+  return new Date(date).toLocaleDateString('fr-FR');
+};
+
+const formatDateTime = (date: string): string => {
+  return new Date(date).toLocaleString('fr-FR');
+};
+
+const getStatusInfo = (statuses: any[], status: string) => {
+  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
+};
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
+// ============================================================================
+// API HOOKS
+// ============================================================================
+
+const useAdminDashboard = () => {
   return useQuery({
-    queryKey: ['admin', 'stats'],
+    queryKey: ['admin', 'dashboard'],
     queryFn: async () => {
-      const response = await api.get<AdminStats>('/v1/admin/stats');
-      return response.data;
-    },
+      return api.get<AdminDashboard>('/v1/iam/dashboard').then(r => r.data);
+    }
   });
 };
 
-const useUsers = (page = 1, pageSize = 25) => {
+const useUsers = (filters?: { status?: string; role_id?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'users', page, pageSize],
+    queryKey: ['admin', 'users', filters],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<AdminUser>>(
-        `/v1/admin/users?page=${page}&page_size=${pageSize}`
-      );
-      return response.data;
-    },
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.role_id) params.append('role_id', filters.role_id);
+      const queryString = params.toString();
+      return api.get<User[]>(`/v1/iam/users${queryString ? `?${queryString}` : ''}`).then(r => r.data);
+    }
   });
 };
 
@@ -109,1005 +204,440 @@ const useRoles = () => {
   return useQuery({
     queryKey: ['admin', 'roles'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Role>>('/v1/admin/roles');
-      return response;
-    },
+      return api.get<Role[]>('/v1/iam/roles').then(r => r.data);
+    }
   });
 };
 
-const useCapabilitiesList = () => {
+const useTenants = (filters?: { status?: string; plan?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'capabilities'],
+    queryKey: ['admin', 'tenants', filters],
     queryFn: async () => {
-      const response = await api.get<Capability[]>('/v1/admin/capabilities');
-      return response.data;
-    },
+      return api.get<Tenant[]>('/v1/tenants').then(r => r.data);
+    }
   });
 };
 
-const useTenants = (page = 1, pageSize = 25) => {
+const useAuditLogs = (filters?: { resource_type?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'tenants', page, pageSize],
+    queryKey: ['admin', 'audit-logs', filters],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Tenant>>(
-        `/v1/admin/tenants?page=${page}&page_size=${pageSize}`
-      );
-      return response.data;
-    },
+      const params = new URLSearchParams();
+      if (filters?.resource_type) params.append('resource_type', filters.resource_type);
+      const queryString = params.toString();
+      return api.get<AuditLog[]>(`/v1/audit/logs${queryString ? `?${queryString}` : ''}`).then(r => r.data);
+    }
   });
 };
 
-const useModules = () => {
+const useBackupConfigs = () => {
   return useQuery({
-    queryKey: ['admin', 'modules'],
+    queryKey: ['admin', 'backups'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<ModuleInfo>>('/v1/admin/modules');
-      return response.data;
-    },
-  });
-};
-
-const useAuditLogs = (page = 1, pageSize = 50) => {
-  return useQuery({
-    queryKey: ['admin', 'logs', page, pageSize],
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<AuditLog>>(
-        `/v1/admin/audit-logs?page=${page}&page_size=${pageSize}`
-      );
-      return response.data;
-    },
+      return api.get<BackupConfig[]>('/v1/backup/config').then(r => r.data);
+    }
   });
 };
 
 const useCreateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<AdminUser>) => {
-      const response = await api.post<AdminUser>('/v1/admin/users', data);
-      return response.data;
+    mutationFn: async (data: Partial<User> & { password: string }) => {
+      return api.post('/v1/iam/users', data).then(r => r.data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
   });
 };
 
-const useUpdateUser = () => {
+const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<AdminUser> }) => {
-      const response = await api.put<AdminUser>(`/v1/admin/users/${id}`, data);
-      return response.data;
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      return api.patch(`/v1/iam/users/${id}`, { status }).then(r => r.data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
   });
 };
 
-const useToggleUserActive = () => {
+const useRunBackup = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      await api.post(`/v1/admin/users/${id}/${active ? 'activate' : 'deactivate'}`);
+    mutationFn: async (id: string) => {
+      return api.post(`/v1/backup/${id}/run`).then(r => r.data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'backups'] })
   });
 };
 
-// ============================================================
-// ADMIN DASHBOARD
-// ============================================================
+// ============================================================================
+// COMPOSANTS
+// ============================================================================
 
-export const AdminDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const { data: stats, isLoading } = useAdminStats();
-  const canBreakGlass = useCanBreakGlass();
-
-  const kpis: DashboardKPI[] = stats
-    ? [
-        {
-          id: 'users',
-          label: 'Utilisateurs',
-          value: stats.total_users,
-          trend: 'stable',
-        },
-        {
-          id: 'active_users',
-          label: 'Utilisateurs actifs',
-          value: stats.active_users,
-        },
-        {
-          id: 'roles',
-          label: 'Rôles',
-          value: stats.total_roles,
-        },
-        {
-          id: 'modules',
-          label: 'Modules actifs',
-          value: stats.active_modules,
-        },
-      ]
-    : [];
-
-  return (
-    <PageWrapper title="Administration" subtitle="Gestion du système">
-      {isLoading ? (
-        <div className="azals-loading">
-          <div className="azals-spinner" />
-        </div>
-      ) : (
-        <>
-          <section className="azals-section">
-            <Grid cols={4} gap="md">
-              {kpis.map((kpi) => (
-                <KPICard key={kpi.id} kpi={kpi} />
-              ))}
-            </Grid>
-          </section>
-
-          <section className="azals-section">
-            <Grid cols={3} gap="md">
-              <Card
-                title="Utilisateurs"
-                className="azals-admin-card"
-                actions={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/admin/users')}
-                  >
-                    Gérer
-                  </Button>
-                }
-              >
-                <div className="azals-admin-card__icon">
-                  <Users size={32} />
-                </div>
-                <p>Gérer les comptes utilisateurs, leurs rôles et permissions.</p>
-              </Card>
-
-              <Card
-                title="Rôles & Capacités"
-                className="azals-admin-card"
-                actions={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/admin/roles')}
-                  >
-                    Gérer
-                  </Button>
-                }
-              >
-                <div className="azals-admin-card__icon">
-                  <Shield size={32} />
-                </div>
-                <p>Définir les rôles et attribuer les capacités d'accès.</p>
-              </Card>
-
-              <Card
-                title="Tenants"
-                className="azals-admin-card"
-                actions={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/admin/tenants')}
-                  >
-                    Gérer
-                  </Button>
-                }
-              >
-                <div className="azals-admin-card__icon">
-                  <Building2 size={32} />
-                </div>
-                <p>Gérer les organisations clientes et leurs paramètres.</p>
-              </Card>
-
-              <Card
-                title="Modules"
-                className="azals-admin-card"
-                actions={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/admin/modules')}
-                  >
-                    Gérer
-                  </Button>
-                }
-              >
-                <div className="azals-admin-card__icon">
-                  <Puzzle size={32} />
-                </div>
-                <p>Activer ou désactiver les modules du système.</p>
-              </Card>
-
-              <Card
-                title="Journaux d'audit"
-                className="azals-admin-card"
-                actions={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/admin/logs')}
-                  >
-                    Consulter
-                  </Button>
-                }
-              >
-                <div className="azals-admin-card__icon">
-                  <FileText size={32} />
-                </div>
-                <p>Consulter l'historique des actions système.</p>
-              </Card>
-
-              <Card
-                title="Personnalisation"
-                className="azals-admin-card"
-                actions={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/admin/branding')}
-                  >
-                    Configurer
-                  </Button>
-                }
-              >
-                <div className="azals-admin-card__icon">
-                  <Palette size={32} />
-                </div>
-                <p>Modifier le favicon, logo et identité visuelle.</p>
-              </Card>
-
-              {/* Break-Glass - Visible UNIQUEMENT si capacité présente */}
-              {canBreakGlass && (
-                <Card
-                  title="Break-Glass Souverain"
-                  className="azals-admin-card azals-admin-card--danger"
-                  actions={
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => navigate('/admin/break-glass')}
-                    >
-                      Accéder
-                    </Button>
-                  }
-                >
-                  <div className="azals-admin-card__icon azals-admin-card__icon--danger">
-                    <AlertTriangle size={32} />
-                  </div>
-                  <p>Procédure d'urgence - Accès réservé au créateur.</p>
-                </Card>
-              )}
-            </Grid>
-          </section>
-        </>
-      )}
-    </PageWrapper>
-  );
-};
-
-// ============================================================
-// USERS MANAGEMENT
-// ============================================================
-
-export const UsersPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const { data, isLoading, refetch } = useUsers(page, pageSize);
-  const { data: rolesData } = useRoles(); // Pre-fetch roles for modal
-  const toggleActive = useToggleUserActive();
-
-  const columns: TableColumn<AdminUser>[] = [
-    {
-      id: 'email',
-      header: 'Email',
-      accessor: 'email',
-      sortable: true,
-    },
-    {
-      id: 'name',
-      header: 'Nom',
-      accessor: 'name',
-      sortable: true,
-    },
-    {
-      id: 'roles',
-      header: 'Rôles',
-      accessor: 'roles',
-      render: (value) => (value as string[]).join(', '),
-    },
-    {
-      id: 'is_active',
-      header: 'Statut',
-      accessor: 'is_active',
-      render: (value) =>
-        value ? (
-          <span className="azals-badge azals-badge--green">Actif</span>
-        ) : (
-          <span className="azals-badge azals-badge--red">Inactif</span>
-        ),
-    },
-    {
-      id: 'last_login',
-      header: 'Dernière connexion',
-      accessor: 'last_login',
-      render: (value) =>
-        value ? new Date(value as string).toLocaleString('fr-FR') : 'Jamais',
-    },
-  ];
-
-  const actions = [
-    {
-      id: 'edit',
-      label: 'Modifier',
-      capability: 'admin.users.edit',
-      onClick: (row: AdminUser) => navigate(`/admin/users/${row.id}/edit`),
-    },
-    {
-      id: 'toggle',
-      label: 'Activer/Désactiver',
-      capability: 'admin.users.edit',
-      onClick: (row: AdminUser) =>
-        toggleActive.mutate({ id: row.id, active: !row.is_active }),
-    },
-    {
-      id: 'reset-password',
-      label: 'Réinitialiser mot de passe',
-      capability: 'admin.users.edit',
-      onClick: (row: AdminUser) => {
-        // Reset password logic
-      },
-    },
-  ];
-
-  return (
-    <PageWrapper
-      title="Utilisateurs"
-      actions={
-        <CapabilityGuard capability="admin.users.create">
-          <Button leftIcon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>
-            Nouvel utilisateur
-          </Button>
-        </CapabilityGuard>
-      }
-    >
-      <Card noPadding>
-        <DataTable
-          columns={columns}
-          data={data?.items || []}
-          keyField="id"
-          actions={actions}
-          isLoading={isLoading}
-          pagination={{
-            page,
-            pageSize,
-            total: data?.total || 0,
-            onPageChange: setPage,
-            onPageSizeChange: setPageSize,
-          }}
-          onRefresh={refetch}
-        />
-      </Card>
-
-      {showCreateModal && (
-        <UserFormModal onClose={() => setShowCreateModal(false)} />
-      )}
-    </PageWrapper>
-  );
-};
-
-// ============================================================
-// USER FORM MODAL
-// ============================================================
-
-const userCreateSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
-  role: z.string().min(1, 'Un rôle est requis'),
-});
-
-const userEditSchema = z.object({
-  email: z.string().email('Email invalide'),
-  role: z.string().min(1, 'Un rôle est requis'),
-});
-
-interface UserFormModalProps {
-  user?: AdminUser;
-  onClose: () => void;
-}
-
-const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose }) => {
-  const { data: roles, isLoading: rolesLoading } = useRoles();
+const UsersView: React.FC = () => {
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterRole, setFilterRole] = useState<string>('');
+  const { data: users = [], isLoading } = useUsers({
+    status: filterStatus || undefined,
+    role_id: filterRole || undefined
+  });
+  const { data: roles = [] } = useRoles();
   const createUser = useCreateUser();
-  const updateUser = useUpdateUser();
+  const updateStatus = useUpdateUserStatus();
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState<Partial<User> & { password: string }>({ password: '' });
 
-  const roleOptions = roles?.data.items.map((r: Role) => ({ value: r.id, label: r.name })) || [];
-
-  const fields = user
-    ? [
-        {
-          name: 'email',
-          label: 'Email',
-          type: 'email' as const,
-          required: true,
-          disabled: true,
-        },
-        {
-          name: 'role',
-          label: 'Rôle',
-          type: 'select' as const,
-          required: true,
-          placeholder: rolesLoading ? 'Chargement...' : 'Sélectionner un rôle',
-          options: roleOptions,
-        },
-      ]
-    : [
-        {
-          name: 'email',
-          label: 'Email',
-          type: 'email' as const,
-          required: true,
-        },
-        {
-          name: 'password',
-          label: 'Mot de passe',
-          type: 'password' as const,
-          required: true,
-          placeholder: 'Minimum 8 caractères',
-        },
-        {
-          name: 'role',
-          label: 'Rôle',
-          type: 'select' as const,
-          required: true,
-          placeholder: rolesLoading ? 'Chargement...' : 'Sélectionner un rôle',
-          options: roleOptions,
-        },
-      ];
-
-  const handleSubmit = async (data: z.infer<typeof userCreateSchema> | z.infer<typeof userEditSchema>) => {
-    if (user) {
-      const payload = {
-        roles: [(data as z.infer<typeof userEditSchema>).role],
-      };
-      await updateUser.mutateAsync({ id: user.id, data: payload });
-    } else {
-      const createData = data as z.infer<typeof userCreateSchema>;
-      const payload = {
-        email: createData.email,
-        password: createData.password,
-        roles: [createData.role],
-      };
-      await createUser.mutateAsync(payload);
-    }
-    onClose();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await createUser.mutateAsync(formData);
+    setShowModal(false);
+    setFormData({ password: '' });
   };
 
-  // Transform user data for form (roles array -> single role)
-  const defaultValues = user
-    ? {
-        email: user.email,
-        role: user.roles?.[0] || '',
-      }
-    : undefined;
-
-  return (
-    <Modal
-      isOpen
-      onClose={onClose}
-      title={user ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'}
-      size="md"
-    >
-      <DynamicForm
-        fields={fields}
-        schema={user ? userEditSchema : userCreateSchema}
-        defaultValues={defaultValues}
-        onSubmit={handleSubmit}
-        onCancel={onClose}
-        isLoading={createUser.isPending || updateUser.isPending || rolesLoading}
-        submitLabel={user ? 'Enregistrer' : 'Créer'}
+  const columns: TableColumn<User>[] = [
+    { id: 'username', header: 'Utilisateur', accessor: 'username' },
+    { id: 'email', header: 'Email', accessor: 'email' },
+    { id: 'last_name', header: 'Nom', accessor: 'last_name', render: (v, row) =>
+      `${(row as User).first_name || ''} ${(row as User).last_name || ''}`.trim() || '-'
+    },
+    { id: 'role_name', header: 'Role', accessor: 'role_name', render: (v) => (v as string) || '-' },
+    { id: 'last_login', header: 'Derniere connexion', accessor: 'last_login', render: (v) => (v as string) ? formatDateTime(v as string) : 'Jamais' },
+    { id: 'status', header: 'Statut', accessor: 'status', render: (v, row) => (
+      <Select
+        value={v as string}
+        onChange={(val) => updateStatus.mutate({ id: (row as User).id, status: val })}
+        options={USER_STATUSES}
+        className="w-32"
       />
-    </Modal>
-  );
-};
-
-// ============================================================
-// ROLES MANAGEMENT
-// ============================================================
-
-export const RolesPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { data, isLoading } = useRoles();
-
-  const columns: TableColumn<Role>[] = [
-    {
-      id: 'name',
-      header: 'Nom',
-      accessor: 'name',
-    },
-    {
-      id: 'description',
-      header: 'Description',
-      accessor: 'description',
-    },
-    {
-      id: 'capabilities',
-      header: 'Capacités',
-      accessor: 'capabilities',
-      render: (value) => `${(value as string[]).length} capacités`,
-    },
-    {
-      id: 'user_count',
-      header: 'Utilisateurs',
-      accessor: 'user_count',
-    },
-    {
-      id: 'is_system',
-      header: 'Type',
-      accessor: 'is_system',
-      render: (value) =>
-        value ? (
-          <span className="azals-badge azals-badge--blue">Système</span>
-        ) : (
-          <span className="azals-badge azals-badge--gray">Personnalisé</span>
-        ),
-    },
-  ];
-
-  const actions = [
-    {
-      id: 'view',
-      label: 'Voir les capacités',
-      onClick: (row: Role) => navigate(`/admin/roles/${row.id}`),
-    },
-    {
-      id: 'edit',
-      label: 'Modifier',
-      capability: 'admin.roles.edit',
-      onClick: (row: Role) => navigate(`/admin/roles/${row.id}/edit`),
-      isHidden: (row: Role) => row.is_system,
-    },
+    )}
   ];
 
   return (
-    <PageWrapper
-      title="Rôles & Capacités"
-      actions={
-        <CapabilityGuard capability="admin.roles.create">
-          <Button leftIcon={<Plus size={16} />} onClick={() => navigate('/admin/roles/new')}>
-            Nouveau rôle
-          </Button>
-        </CapabilityGuard>
-      }
-    >
-      <Card noPadding>
-        <DataTable
-          columns={columns}
-          data={data?.data.items || []}
-          keyField="id"
-          actions={actions}
-          isLoading={isLoading}
-        />
-      </Card>
-    </PageWrapper>
-  );
-};
-
-// ============================================================
-// AUDIT LOGS
-// ============================================================
-
-export const AuditLogsPage: React.FC = () => {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
-
-  const { data, isLoading, refetch } = useAuditLogs(page, pageSize);
-
-  const columns: TableColumn<AuditLog>[] = [
-    {
-      id: 'timestamp',
-      header: 'Date/Heure',
-      accessor: 'timestamp',
-      sortable: true,
-      render: (value) => new Date(value as string).toLocaleString('fr-FR'),
-    },
-    {
-      id: 'user_email',
-      header: 'Utilisateur',
-      accessor: 'user_email',
-    },
-    {
-      id: 'action',
-      header: 'Action',
-      accessor: 'action',
-    },
-    {
-      id: 'resource_type',
-      header: 'Ressource',
-      accessor: 'resource_type',
-    },
-    {
-      id: 'ip_address',
-      header: 'Adresse IP',
-      accessor: 'ip_address',
-    },
-  ];
-
-  return (
-    <PageWrapper title="Journaux d'audit">
-      <Card noPadding>
-        <DataTable
-          columns={columns}
-          data={data?.items || []}
-          keyField="id"
-          isLoading={isLoading}
-          pagination={{
-            page,
-            pageSize,
-            total: data?.total || 0,
-            onPageChange: setPage,
-            onPageSizeChange: setPageSize,
-          }}
-          onRefresh={refetch}
-          emptyMessage="Aucun événement"
-        />
-      </Card>
-    </PageWrapper>
-  );
-};
-
-// ============================================================
-// BRANDING SETTINGS
-// ============================================================
-
-interface BrandingConfig {
-  title: string;
-  favicon_url: string;
-  logo_url: string | null;
-  primary_color: string;
-  secondary_color: string;
-  enable_tenant_branding: boolean;
-}
-
-const useBrandingConfig = () => {
-  return useQuery({
-    queryKey: ['admin', 'branding'],
-    queryFn: async () => {
-      const response = await api.get<BrandingConfig>('/v1/branding');
-      return response.data;
-    },
-  });
-};
-
-export const BrandingPage: React.FC = () => {
-  const queryClient = useQueryClient();
-  const { data: config, isLoading } = useBrandingConfig();
-  const [faviconFile, setFaviconFile] = useState<File | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFaviconFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setFaviconPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setLogoPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const uploadFavicon = async () => {
-    if (!faviconFile) return;
-    setUploading(true);
-    setMessage(null);
-    try {
-      const formData = new FormData();
-      formData.append('file', faviconFile);
-      await api.post('/v1/branding/favicon', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setMessage({ type: 'success', text: 'Favicon mis à jour. Rechargez la page pour voir les changements.' });
-      setFaviconFile(null);
-      setFaviconPreview(null);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de l\'upload du favicon' });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const uploadLogo = async () => {
-    if (!logoFile) return;
-    setUploading(true);
-    setMessage(null);
-    try {
-      const formData = new FormData();
-      formData.append('file', logoFile);
-      await api.post('/v1/branding/logo', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setMessage({ type: 'success', text: 'Logo mis à jour avec succès.' });
-      setLogoFile(null);
-      setLogoPreview(null);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de l\'upload du logo' });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const resetFavicon = async () => {
-    setUploading(true);
-    setMessage(null);
-    try {
-      await api.delete('/v1/branding/favicon');
-      setMessage({ type: 'success', text: 'Favicon réinitialisé par défaut.' });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de la réinitialisation' });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const resetLogo = async () => {
-    setUploading(true);
-    setMessage(null);
-    try {
-      await api.delete('/v1/branding/logo');
-      setMessage({ type: 'success', text: 'Logo supprimé.' });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'branding'] });
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Erreur lors de la suppression' });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <PageWrapper title="Personnalisation">
-        <Card><p>Chargement...</p></Card>
-      </PageWrapper>
-    );
-  }
-
-  return (
-    <PageWrapper title="Personnalisation" subtitle="Favicon, logo et identité visuelle">
-      {message && (
-        <div style={{
-          padding: '12px 16px',
-          marginBottom: '16px',
-          borderRadius: '8px',
-          backgroundColor: message.type === 'success' ? '#dcfce7' : '#fee2e2',
-          color: message.type === 'success' ? '#166534' : '#991b1b',
-          border: `1px solid ${message.type === 'success' ? '#86efac' : '#fecaca'}`,
-        }}>
-          {message.text}
+    <Card>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Utilisateurs</h3>
+        <div className="flex gap-2">
+          <Select
+            value={filterRole}
+            onChange={(val) => setFilterRole(val)}
+            options={[{ value: '', label: 'Tous les roles' }, ...roles.map(r => ({ value: r.id, label: r.name }))]}
+            className="w-40"
+          />
+          <Select
+            value={filterStatus}
+            onChange={(val) => setFilterStatus(val)}
+            options={[{ value: '', label: 'Tous statuts' }, ...USER_STATUSES]}
+            className="w-32"
+          />
+          <Button onClick={() => setShowModal(true)}>Nouvel utilisateur</Button>
         </div>
-      )}
+      </div>
+      <DataTable columns={columns} data={users} isLoading={isLoading} keyField="id" />
 
-      <Grid cols={2} gap="lg">
-        {/* Favicon */}
-        <Card>
-          <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>
-            Favicon (icône onglet)
-          </h3>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '8px',
-              backgroundColor: '#f3f4f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px dashed #d1d5db',
-            }}>
-              <img
-                src={faviconPreview || config?.favicon_url || '/static/favicon.png'}
-                alt="Favicon"
-                style={{ maxWidth: '48px', maxHeight: '48px' }}
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel utilisateur">
+        <form onSubmit={handleSubmit}>
+          <Grid cols={2}>
+            <div className="azals-field">
+              <label>Prenom</label>
+              <Input
+                value={formData.first_name || ''}
+                onChange={(v) => setFormData({ ...formData, first_name: v })}
               />
             </div>
-            <div>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>
-                Favicon actuel
-              </p>
-              <p style={{ fontSize: '12px', color: '#9ca3af' }}>
-                Format: PNG, ICO, JPG • Max: 2 MB
-              </p>
+            <div className="azals-field">
+              <label>Nom</label>
+              <Input
+                value={formData.last_name || ''}
+                onChange={(v) => setFormData({ ...formData, last_name: v })}
+              />
             </div>
-          </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <input
-              type="file"
-              accept=".png,.ico,.jpg,.jpeg,.svg"
-              onChange={handleFaviconChange}
-              style={{ display: 'none' }}
-              id="favicon-upload"
-            />
-            <label
-              htmlFor="favicon-upload"
-              style={{
-                display: 'inline-block',
-                padding: '8px 16px',
-                backgroundColor: '#1e40af',
-                color: 'white',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                marginRight: '8px',
-              }}
-            >
-              Choisir un fichier
-            </label>
-            {faviconFile && (
-              <span style={{ fontSize: '14px', color: '#374151' }}>
-                {faviconFile.name}
-              </span>
-            )}
-          </div>
-
-          <ButtonGroup>
-            <Button
-              onClick={uploadFavicon}
-              disabled={!faviconFile || uploading}
-              variant="primary"
-            >
-              {uploading ? 'Upload...' : 'Enregistrer le favicon'}
-            </Button>
-            <Button
-              onClick={resetFavicon}
-              disabled={uploading}
-              variant="secondary"
-            >
-              Réinitialiser
-            </Button>
-          </ButtonGroup>
-        </Card>
-
-        {/* Logo */}
-        <Card>
-          <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>
-            Logo entreprise
-          </h3>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-            <div style={{
-              width: '120px',
-              height: '60px',
-              borderRadius: '8px',
-              backgroundColor: '#f3f4f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px dashed #d1d5db',
-            }}>
-              {(logoPreview || config?.logo_url) ? (
-                <img
-                  src={logoPreview || config?.logo_url || ''}
-                  alt="Logo"
-                  style={{ maxWidth: '100px', maxHeight: '50px' }}
-                />
-              ) : (
-                <span style={{ color: '#9ca3af', fontSize: '12px' }}>Aucun logo</span>
-              )}
+          </Grid>
+          <Grid cols={2}>
+            <div className="azals-field">
+              <label>Nom d'utilisateur</label>
+              <Input
+                value={formData.username || ''}
+                onChange={(v) => setFormData({ ...formData, username: v })}
+              />
             </div>
-            <div>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>
-                Logo actuel
-              </p>
-              <p style={{ fontSize: '12px', color: '#9ca3af' }}>
-                Format: PNG, JPG, SVG • Max: 2 MB
-              </p>
+            <div className="azals-field">
+              <label>Email</label>
+              <Input
+                type="email"
+                value={formData.email || ''}
+                onChange={(v) => setFormData({ ...formData, email: v })}
+              />
             </div>
+          </Grid>
+          <Grid cols={2}>
+            <div className="azals-field">
+              <label>Mot de passe</label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(v) => setFormData({ ...formData, password: v })}
+              />
+            </div>
+            <div className="azals-field">
+              <label>Role</label>
+              <Select
+                value={formData.role_id || ''}
+                onChange={(val) => setFormData({ ...formData, role_id: val })}
+                options={[{ value: '', label: 'Selectionner...' }, ...roles.map(r => ({ value: r.id, label: r.name }))]}
+              />
+            </div>
+          </Grid>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Annuler</Button>
+            <Button type="submit" isLoading={createUser.isPending}>Creer</Button>
           </div>
+        </form>
+      </Modal>
+    </Card>
+  );
+};
 
-          <div style={{ marginBottom: '16px' }}>
-            <input
-              type="file"
-              accept=".png,.jpg,.jpeg,.svg"
-              onChange={handleLogoChange}
-              style={{ display: 'none' }}
-              id="logo-upload"
-            />
-            <label
-              htmlFor="logo-upload"
-              style={{
-                display: 'inline-block',
-                padding: '8px 16px',
-                backgroundColor: '#1e40af',
-                color: 'white',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                marginRight: '8px',
-              }}
-            >
-              Choisir un fichier
-            </label>
-            {logoFile && (
-              <span style={{ fontSize: '14px', color: '#374151' }}>
-                {logoFile.name}
-              </span>
-            )}
+const RolesView: React.FC = () => {
+  const { data: roles = [], isLoading } = useRoles();
+
+  const columns: TableColumn<Role>[] = [
+    { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
+    { id: 'name', header: 'Nom', accessor: 'name' },
+    { id: 'description', header: 'Description', accessor: 'description', render: (v) => (v as string) || '-' },
+    { id: 'permissions', header: 'Permissions', accessor: 'permissions', render: (v) => <Badge color="purple">{(v as string[])?.length || 0}</Badge> },
+    { id: 'user_count', header: 'Utilisateurs', accessor: 'user_count', render: (v) => <Badge color="blue">{v as number}</Badge> },
+    { id: 'is_system', header: 'Systeme', accessor: 'is_system', render: (v) => (
+      <Badge color={(v as boolean) ? 'orange' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
+    )}
+  ];
+
+  return (
+    <Card>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Roles</h3>
+        <Button>Nouveau role</Button>
+      </div>
+      <DataTable columns={columns} data={roles} isLoading={isLoading} keyField="id" />
+    </Card>
+  );
+};
+
+const TenantsView: React.FC = () => {
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterPlan, setFilterPlan] = useState<string>('');
+  const { data: tenants = [], isLoading } = useTenants({
+    status: filterStatus || undefined,
+    plan: filterPlan || undefined
+  });
+
+  const columns: TableColumn<Tenant>[] = [
+    { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
+    { id: 'name', header: 'Nom', accessor: 'name' },
+    { id: 'domain', header: 'Domaine', accessor: 'domain', render: (v) => (v as string) || '-' },
+    { id: 'plan', header: 'Plan', accessor: 'plan', render: (v) => {
+      const info = TENANT_PLANS.find(p => p.value === (v as string));
+      return <Badge color="blue">{info?.label || (v as string)}</Badge>;
+    }},
+    { id: 'user_count', header: 'Utilisateurs', accessor: 'user_count' },
+    { id: 'storage_used', header: 'Stockage', accessor: 'storage_used', render: (v) => formatBytes(v as number) },
+    { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
+      const info = getStatusInfo(TENANT_STATUSES, v as string);
+      return <Badge color={info.color as any}>{info.label}</Badge>;
+    }}
+  ];
+
+  return (
+    <Card>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Tenants</h3>
+        <div className="flex gap-2">
+          <Select
+            value={filterPlan}
+            onChange={(val) => setFilterPlan(val)}
+            options={[{ value: '', label: 'Tous les plans' }, ...TENANT_PLANS]}
+            className="w-36"
+          />
+          <Select
+            value={filterStatus}
+            onChange={(val) => setFilterStatus(val)}
+            options={[{ value: '', label: 'Tous statuts' }, ...TENANT_STATUSES]}
+            className="w-32"
+          />
+          <Button>Nouveau tenant</Button>
+        </div>
+      </div>
+      <DataTable columns={columns} data={tenants} isLoading={isLoading} keyField="id" />
+    </Card>
+  );
+};
+
+const AuditView: React.FC = () => {
+  const [filterType, setFilterType] = useState<string>('');
+  const { data: logs = [], isLoading } = useAuditLogs({
+    resource_type: filterType || undefined
+  });
+
+  const resourceTypes = [...new Set(logs.map(l => l.resource_type))].map(t => ({ value: t, label: t }));
+
+  const columns: TableColumn<AuditLog>[] = [
+    { id: 'timestamp', header: 'Date', accessor: 'timestamp', render: (v) => formatDateTime(v as string) },
+    { id: 'user_name', header: 'Utilisateur', accessor: 'user_name', render: (v) => (v as string) || 'Systeme' },
+    { id: 'action', header: 'Action', accessor: 'action' },
+    { id: 'resource_type', header: 'Type', accessor: 'resource_type', render: (v) => <Badge color="blue">{v as string}</Badge> },
+    { id: 'resource_id', header: 'ID Ressource', accessor: 'resource_id', render: (v) => (v as string) ? <code className="font-mono text-xs">{v as string}</code> : '-' },
+    { id: 'ip_address', header: 'IP', accessor: 'ip_address', render: (v) => (v as string) || '-' }
+  ];
+
+  return (
+    <Card>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Journal d'audit</h3>
+        <Select
+          value={filterType}
+          onChange={(val) => setFilterType(val)}
+          options={[{ value: '', label: 'Tous les types' }, ...resourceTypes]}
+          className="w-48"
+        />
+      </div>
+      <DataTable columns={columns} data={logs} isLoading={isLoading} keyField="id" />
+    </Card>
+  );
+};
+
+const BackupsView: React.FC = () => {
+  const { data: backups = [], isLoading } = useBackupConfigs();
+  const runBackup = useRunBackup();
+
+  const columns: TableColumn<BackupConfig>[] = [
+    { id: 'name', header: 'Nom', accessor: 'name' },
+    { id: 'type', header: 'Type', accessor: 'type', render: (v) => {
+      const info = BACKUP_TYPES.find(t => t.value === (v as string));
+      return info?.label || (v as string);
+    }},
+    { id: 'schedule', header: 'Planification', accessor: 'schedule' },
+    { id: 'destination', header: 'Destination', accessor: 'destination', render: (v) => {
+      const info = BACKUP_DESTINATIONS.find(d => d.value === (v as string));
+      return info?.label || (v as string);
+    }},
+    { id: 'retention_days', header: 'Retention', accessor: 'retention_days', render: (v) => `${v as number} jours` },
+    { id: 'last_backup', header: 'Derniere', accessor: 'last_backup', render: (v) => (v as string) ? formatDateTime(v as string) : '-' },
+    { id: 'last_status', header: 'Statut', accessor: 'last_status', render: (v) => {
+      if (!v) return '-';
+      const colors: Record<string, string> = { SUCCESS: 'green', FAILED: 'red', IN_PROGRESS: 'orange' };
+      return <Badge color={(colors[v as string] || 'gray') as any}>{v as string}</Badge>;
+    }},
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (v, row) => (
+      (row as BackupConfig).is_active ? (
+        <Button size="sm" onClick={() => runBackup.mutate((row as BackupConfig).id)}>Lancer</Button>
+      ) : null
+    )}
+  ];
+
+  return (
+    <Card>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Sauvegardes</h3>
+        <Button>Nouvelle config</Button>
+      </div>
+      <DataTable columns={columns} data={backups} isLoading={isLoading} keyField="id" />
+    </Card>
+  );
+};
+
+// ============================================================================
+// MODULE PRINCIPAL
+// ============================================================================
+
+type View = 'dashboard' | 'users' | 'roles' | 'tenants' | 'audit' | 'backups';
+
+const AdminModule: React.FC = () => {
+  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const { data: dashboard } = useAdminDashboard();
+
+  const tabs = [
+    { id: 'dashboard', label: 'Tableau de bord' },
+    { id: 'users', label: 'Utilisateurs' },
+    { id: 'roles', label: 'Roles' },
+    { id: 'tenants', label: 'Tenants' },
+    { id: 'audit', label: 'Audit' },
+    { id: 'backups', label: 'Sauvegardes' }
+  ];
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'users':
+        return <UsersView />;
+      case 'roles':
+        return <RolesView />;
+      case 'tenants':
+        return <TenantsView />;
+      case 'audit':
+        return <AuditView />;
+      case 'backups':
+        return <BackupsView />;
+      default:
+        return (
+          <div className="space-y-4">
+            <Grid cols={4}>
+              <StatCard
+                title="Utilisateurs actifs"
+                value={`${dashboard?.active_users || 0} / ${dashboard?.total_users || 0}`}
+                icon={<Users size={20} />}
+                variant="default"
+                onClick={() => setCurrentView('users')}
+              />
+              <StatCard
+                title="Tenants actifs"
+                value={`${dashboard?.active_tenants || 0} / ${dashboard?.total_tenants || 0}`}
+                icon={<Building size={20} />}
+                variant="default"
+                onClick={() => setCurrentView('tenants')}
+              />
+              <StatCard
+                title="Roles"
+                value={String(dashboard?.total_roles || 0)}
+                icon={<Shield size={20} />}
+                variant="success"
+                onClick={() => setCurrentView('roles')}
+              />
+              <StatCard
+                title="Stockage utilise"
+                value={`${dashboard?.storage_used_gb || 0} GB`}
+                icon={<Database size={20} />}
+                variant="warning"
+              />
+            </Grid>
+            <Grid cols={2}>
+              <StatCard
+                title="Appels API (aujourd'hui)"
+                value={String(dashboard?.api_calls_today || 0)}
+                icon={<Activity size={20} />}
+                variant="default"
+              />
+              <StatCard
+                title="Erreurs (aujourd'hui)"
+                value={String(dashboard?.errors_today || 0)}
+                icon={<AlertTriangle size={20} />}
+                variant={dashboard?.errors_today ? 'danger' : 'success'}
+                onClick={() => setCurrentView('audit')}
+              />
+            </Grid>
           </div>
+        );
+    }
+  };
 
-          <ButtonGroup>
-            <Button
-              onClick={uploadLogo}
-              disabled={!logoFile || uploading}
-              variant="primary"
-            >
-              {uploading ? 'Upload...' : 'Enregistrer le logo'}
-            </Button>
-            <Button
-              onClick={resetLogo}
-              disabled={uploading || !config?.logo_url}
-              variant="secondary"
-            >
-              Supprimer
-            </Button>
-          </ButtonGroup>
-        </Card>
-      </Grid>
-
-      {/* Info */}
-      <Card style={{ marginTop: '24px' }}>
-        <h3 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 600 }}>
-          Informations
-        </h3>
-        <ul style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.8', paddingLeft: '20px' }}>
-          <li>Le <strong>favicon</strong> apparaît dans l'onglet du navigateur (recommandé: 32x32 ou 64x64 pixels)</li>
-          <li>Le <strong>logo</strong> peut être utilisé dans l'interface et les documents (recommandé: format horizontal)</li>
-          <li>Les changements de favicon nécessitent un rechargement complet de la page (Ctrl+Shift+R)</li>
-          <li>Formats supportés: PNG, JPG, ICO, SVG</li>
-        </ul>
-      </Card>
+  return (
+    <PageWrapper title="Administration" subtitle="Gestion des utilisateurs, roles et systeme">
+      <TabNav
+        tabs={tabs}
+        activeTab={currentView}
+        onChange={(id) => setCurrentView(id as View)}
+      />
+      <div className="mt-4">
+        {renderContent()}
+      </div>
     </PageWrapper>
   );
 };
 
-// ============================================================
-// MODULE ROUTER
-// ============================================================
-
-export const AdminRoutes: React.FC = () => (
-  <Routes>
-    <Route index element={<AdminDashboard />} />
-    <Route path="users" element={<UsersPage />} />
-    <Route path="roles" element={<RolesPage />} />
-    <Route path="logs" element={<AuditLogsPage />} />
-    <Route path="branding" element={<BrandingPage />} />
-  </Routes>
-);
-
-export default AdminRoutes;
+export default AdminModule;

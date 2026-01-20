@@ -76,8 +76,9 @@ services:
       - .env.production
     # Toutes les variables sont lues depuis .env.production :
     # DATABASE_URL, SECRET_KEY, CORS_ORIGINS, ENCRYPTION_KEY, REDIS_URL, etc.
-    ports:
-      - "8000:8000"
+    # Port 8000 interne uniquement - accès via nginx sur port 80
+    expose:
+      - "8000"
     volumes:
       - backups_data:/app/backups
     depends_on:
@@ -117,7 +118,7 @@ services:
     container_name: azals_frontend
     restart: always
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/healthz"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3

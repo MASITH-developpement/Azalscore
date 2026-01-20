@@ -129,7 +129,7 @@ class InventoryService:
         """Créer un entrepôt."""
         warehouse = Warehouse(
             tenant_id=self.tenant_id,
-            **data.model_dump()
+            **data.model_dump(by_alias=True)
         )
         self.db.add(warehouse)
 
@@ -214,7 +214,7 @@ class InventoryService:
         location = Location(
             tenant_id=self.tenant_id,
             warehouse_id=warehouse_id,
-            **data.model_dump()
+            **data.model_dump(by_alias=True)
         )
         self.db.add(location)
         self.db.commit()
@@ -257,7 +257,7 @@ class InventoryService:
         product = Product(
             tenant_id=self.tenant_id,
             created_by=self.user_id,
-            **data.model_dump()
+            **data.model_dump(by_alias=True)
         )
         self.db.add(product)
         self.db.commit()

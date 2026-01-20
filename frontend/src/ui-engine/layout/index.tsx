@@ -6,12 +6,14 @@
 import React, { useState, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Menu, X, Bell, User, LogOut, Settings } from 'lucide-react';
+import { Menu, X, Bell, User, LogOut, Settings, LayoutList, Database, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
 import { DynamicMenu } from '@ui/menu-dynamic';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
+import { setInterfaceMode } from '../../utils/interfaceMode';
+import { isDemoMode, setDemoMode } from '../../utils/demoMode';
 
 // ============================================================
 // TYPES
@@ -36,8 +38,10 @@ const Header: React.FC<{
     await logout();
   }, [logout]);
 
+  const demoMode = isDemoMode();
+
   return (
-    <header className="azals-header">
+    <header className={clsx('azals-header', { 'azals-header--demo': demoMode })}>
       <div className="azals-header__left">
         <button
           className="azals-header__menu-toggle"
@@ -80,6 +84,21 @@ const Header: React.FC<{
                 <Settings size={16} />
                 <span>Paramètres</span>
               </a>
+              <hr className="azals-header__dropdown-divider" />
+              <button
+                className="azals-header__dropdown-item"
+                onClick={() => setInterfaceMode('azalscore')}
+              >
+                <LayoutList size={16} />
+                <span>Mode AZALSCORE</span>
+              </button>
+              <button
+                className={clsx('azals-header__dropdown-item', { 'azals-header__dropdown-item--active': demoMode })}
+                onClick={() => setDemoMode(!demoMode)}
+              >
+                <Database size={16} />
+                <span>{demoMode ? 'Désactiver démo' : 'Activer démo'}</span>
+              </button>
               <hr className="azals-header__dropdown-divider" />
               <button
                 className="azals-header__dropdown-item azals-header__dropdown-item--danger"
@@ -139,6 +158,7 @@ const Sidebar: React.FC<{
 export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isLoading: isCapLoading } = useCapabilities();
+  const demoMode = isDemoMode();
 
   const toggleMenu = useCallback(() => {
     setMobileMenuOpen((prev) => !prev);
@@ -158,8 +178,16 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="azals-layout">
+    <div className={clsx('azals-layout', { 'azals-layout--demo': demoMode })}>
       <Header onMenuToggle={toggleMenu} isMobileMenuOpen={isMobileMenuOpen} />
+
+      {/* Bannière mode démo */}
+      {demoMode && (
+        <div className="azals-demo-banner">
+          <AlertTriangle size={16} className="azals-demo-banner__icon" />
+          MODE DEMONSTRATION - Lecture seule - Aucun enregistrement possible
+        </div>
+      )}
 
       <div className="azals-layout__body">
         <Sidebar isOpen={isMobileMenuOpen} onClose={closeMenu} />
