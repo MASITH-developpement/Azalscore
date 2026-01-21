@@ -3,6 +3,9 @@ AZALS MODULE T2 - Router Déclencheurs & Diffusion
 ==================================================
 
 Endpoints API pour le système de déclencheurs.
+
+REFACTORISATION: Utilise require_entity et update_model
+de app.core.routines pour eliminer la duplication.
 """
 
 from datetime import datetime
@@ -13,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.models import User
+from app.core.routines import require_entity, update_model
 
 from .models import AlertSeverity, NotificationStatus, TriggerStatus, TriggerType
 from .schemas import (
@@ -130,12 +134,7 @@ async def get_trigger(
     Nécessite: triggers.read
     """
     service = get_service(request, db)
-    trigger = service.get_trigger(trigger_id)
-
-    if not trigger:
-        raise HTTPException(status_code=404, detail="Trigger non trouvé")
-
-    return trigger
+    return require_entity(service.get_trigger(trigger_id), "Trigger", trigger_id)
 
 
 @router.put("/{trigger_id}", response_model=TriggerResponseSchema)
@@ -172,10 +171,7 @@ async def delete_trigger(
     Nécessite: triggers.delete
     """
     service = get_service(request, db)
-
-    if not service.delete_trigger(trigger_id, deleted_by=current_user.id):
-        raise HTTPException(status_code=404, detail="Trigger non trouvé")
-
+    require_entity(service.delete_trigger(trigger_id, deleted_by=current_user.id), "Trigger", trigger_id)
     return {"message": "Trigger supprimé", "trigger_id": trigger_id}
 
 
@@ -232,17 +228,12 @@ async def fire_trigger_manually(
     Nécessite: triggers.admin
     """
     service = get_service(request, db)
-    trigger = service.get_trigger(trigger_id)
-
-    if not trigger:
-        raise HTTPException(status_code=404, detail="Trigger non trouvé")
-
-    event = service.fire_trigger(
+    trigger = require_entity(service.get_trigger(trigger_id), "Trigger", trigger_id)
+    return service.fire_trigger(
         trigger=trigger,
         triggered_value=data.triggered_value,
         condition_details=data.condition_details
     )
-    return event
 
 
 # ============================================================================
@@ -263,9 +254,7 @@ async def create_subscription(
     service = get_service(request, db)
 
     # Vérifier que le trigger existe
-    trigger = service.get_trigger(data.trigger_id)
-    if not trigger:
-        raise HTTPException(status_code=404, detail="Trigger non trouvé")
+    require_entity(service.get_trigger(data.trigger_id), "Trigger", data.trigger_id)
 
     # Vérifier qu'au moins une cible est définie
     if not any([data.user_id, data.role_code, data.group_code, data.email_external]):
@@ -337,10 +326,7 @@ async def delete_subscription(
     Nécessite: triggers.unsubscribe
     """
     service = get_service(request, db)
-
-    if not service.unsubscribe(subscription_id):
-        raise HTTPException(status_code=404, detail="Abonnement non trouvé")
-
+    require_entity(service.unsubscribe(subscription_id), "Abonnement", subscription_id)
     return {"message": "Abonnement supprimé", "subscription_id": subscription_id}
 
 
@@ -388,12 +374,7 @@ async def get_event(
     Nécessite: triggers.events.read
     """
     service = get_service(request, db)
-    event = service.get_event(event_id)
-
-    if not event:
-        raise HTTPException(status_code=404, detail="Événement non trouvé")
-
-    return event
+    return require_entity(service.get_event(event_id), "Événement", event_id)
 
 
 @router.post("/events/{event_id}/resolve", response_model=EventResponseSchema)
@@ -485,12 +466,7 @@ async def mark_notification_read(
     Marque une notification comme lue.
     """
     service = get_service(request, db)
-    notification = service.mark_notification_read(notification_id)
-
-    if not notification:
-        raise HTTPException(status_code=404, detail="Notification non trouvée")
-
-    return notification
+    return require_entity(service.mark_notification_read(notification_id), "Notification", notification_id)
 
 
 @router.post("/notifications/read-all")
@@ -593,10 +569,7 @@ async def get_template(
         NotificationTemplate.tenant_id == tenant_id
     ).first()
 
-    if not template:
-        raise HTTPException(status_code=404, detail="Template non trouvé")
-
-    return template
+    return require_entity(template, "Template", template_id)
 
 
 @router.put("/templates/{template_id}", response_model=TemplateResponseSchema)
@@ -620,18 +593,16 @@ async def update_template(
         NotificationTemplate.id == template_id,
         NotificationTemplate.tenant_id == tenant_id
     ).first()
-
-    if not template:
-        raise HTTPException(status_code=404, detail="Template non trouvé")
+    template = require_entity(template, "Template", template_id)
 
     if template.is_system:
         raise HTTPException(status_code=403, detail="Impossible de modifier un template système")
 
-    update_data = data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        if key == 'available_variables' and value:
-            value = json.dumps(value)
-        setattr(template, key, value)
+    update_model(
+        template,
+        data.model_dump(exclude_unset=True),
+        serializers={"available_variables": json.dumps}
+    )
 
     db.commit()
     db.refresh(template)
@@ -656,9 +627,7 @@ async def delete_template(
         NotificationTemplate.id == template_id,
         NotificationTemplate.tenant_id == tenant_id
     ).first()
-
-    if not template:
-        raise HTTPException(status_code=404, detail="Template non trouvé")
+    template = require_entity(template, "Template", template_id)
 
     if template.is_system:
         raise HTTPException(status_code=403, detail="Impossible de supprimer un template système")
@@ -736,10 +705,7 @@ async def get_scheduled_report(
         ScheduledReport.tenant_id == tenant_id
     ).first()
 
-    if not report:
-        raise HTTPException(status_code=404, detail="Rapport non trouvé")
-
-    return report
+    return require_entity(report, "Rapport", report_id)
 
 
 @router.put("/reports/{report_id}", response_model=ScheduledReportResponseSchema)
@@ -763,18 +729,19 @@ async def update_scheduled_report(
         ScheduledReport.id == report_id,
         ScheduledReport.tenant_id == tenant_id
     ).first()
+    report = require_entity(report, "Rapport", report_id)
 
-    if not report:
-        raise HTTPException(status_code=404, detail="Rapport non trouvé")
+    def serialize_recipients(v):
+        return json.dumps(v.model_dump() if hasattr(v, 'model_dump') else v)
 
-    update_data = data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        if key in ['report_config', 'recipients'] and value:
-            if key == 'recipients':
-                value = json.dumps(value.model_dump() if hasattr(value, 'model_dump') else value)
-            else:
-                value = json.dumps(value)
-        setattr(report, key, value)
+    update_model(
+        report,
+        data.model_dump(exclude_unset=True),
+        serializers={
+            "report_config": json.dumps,
+            "recipients": serialize_recipients
+        }
+    )
 
     db.commit()
     db.refresh(report)
@@ -799,9 +766,7 @@ async def delete_scheduled_report(
         ScheduledReport.id == report_id,
         ScheduledReport.tenant_id == tenant_id
     ).first()
-
-    if not report:
-        raise HTTPException(status_code=404, detail="Rapport non trouvé")
+    report = require_entity(report, "Rapport", report_id)
 
     db.delete(report)
     db.commit()
@@ -919,10 +884,7 @@ async def get_webhook(
         WebhookEndpoint.tenant_id == tenant_id
     ).first()
 
-    if not webhook:
-        raise HTTPException(status_code=404, detail="Webhook non trouvé")
-
-    return webhook
+    return require_entity(webhook, "Webhook", webhook_id)
 
 
 @router.put("/webhooks/{webhook_id}", response_model=WebhookResponseSchema)
@@ -946,20 +908,21 @@ async def update_webhook(
         WebhookEndpoint.id == webhook_id,
         WebhookEndpoint.tenant_id == tenant_id
     ).first()
-
-    if not webhook:
-        raise HTTPException(status_code=404, detail="Webhook non trouvé")
+    webhook = require_entity(webhook, "Webhook", webhook_id)
 
     from app.core.encryption import encrypt_value
 
-    update_data = data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        if key == 'headers' and value:
-            value = json.dumps(value)
-        elif key == 'auth_config' and value:
-            # Chiffrer auth_config (contient credentials sensibles)
-            value = encrypt_value(json.dumps(value))
-        setattr(webhook, key, value)
+    def encrypt_auth_config(v):
+        return encrypt_value(json.dumps(v))
+
+    update_model(
+        webhook,
+        data.model_dump(exclude_unset=True),
+        serializers={
+            "headers": json.dumps,
+            "auth_config": encrypt_auth_config
+        }
+    )
 
     db.commit()
     db.refresh(webhook)
@@ -984,9 +947,7 @@ async def delete_webhook(
         WebhookEndpoint.id == webhook_id,
         WebhookEndpoint.tenant_id == tenant_id
     ).first()
-
-    if not webhook:
-        raise HTTPException(status_code=404, detail="Webhook non trouvé")
+    webhook = require_entity(webhook, "Webhook", webhook_id)
 
     db.delete(webhook)
     db.commit()
@@ -1012,9 +973,7 @@ async def test_webhook(
         WebhookEndpoint.id == webhook_id,
         WebhookEndpoint.tenant_id == tenant_id
     ).first()
-
-    if not webhook:
-        raise HTTPException(status_code=404, detail="Webhook non trouvé")
+    require_entity(webhook, "Webhook", webhook_id)
 
     # TODO: Implémenter le test réel avec httpx
     # Pour l'instant, simulation
