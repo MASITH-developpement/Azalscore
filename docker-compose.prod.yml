@@ -1,24 +1,22 @@
 # AZALS - ERP Décisionnel Critique
 # Docker Compose Production - Multi-Tenant + Monitoring
 # ======================================================
-# Usage: docker-compose -f docker-compose.prod.yml up -d
+# Toutes les variables sont définies dans .env.production
 
 services:
   # ============================================================
   # PostgreSQL - Base de données principale
   # ============================================================
   postgres:
-    image: postgres:15-alpine
+    image: postgres:${POSTGRES_VERSION:-15-alpine}
     container_name: azals_postgres
     restart: always
     env_file:
       - .env.production
     environment:
-      # Toutes les variables POSTGRES_* sont lues depuis .env.production
-      # Seules les options Docker-spécifiques sont définies ici
       POSTGRES_INITDB_ARGS: "--data-checksums"
     ports:
-      - "127.0.0.1:5432:5432"  # Bind uniquement localhost en prod
+      - "${POSTGRES_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
@@ -33,20 +31,20 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: ${POSTGRES_MEMORY_LIMIT:-2G}
         reservations:
-          memory: 512M
+          memory: ${POSTGRES_MEMORY_RESERVATION:-512M}
 
   # ============================================================
   # Redis - Cache et Rate Limiting
   # ============================================================
   redis:
-    image: redis:7-alpine
+    image: redis:${REDIS_VERSION:-7-alpine}
     container_name: azals_redis
     restart: always
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory ${REDIS_MAXMEMORY:-256mb} --maxmemory-policy allkeys-lru
     ports:
-      - "127.0.0.1:6379:6379"
+      - "${REDIS_BIND:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -59,9 +57,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: ${REDIS_MEMORY_LIMIT:-512M}
         reservations:
-          memory: 64M
+          memory: ${REDIS_MEMORY_RESERVATION:-64M}
 
   # ============================================================
   # AZALS API - Application FastAPI
@@ -71,12 +69,10 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     image: azals/api:${VERSION:-latest}
+    container_name: api
     restart: always
     env_file:
       - .env.production
-    # Toutes les variables sont lues depuis .env.production :
-    # DATABASE_URL, SECRET_KEY, CORS_ORIGINS, ENCRYPTION_KEY, REDIS_URL, etc.
-    # Port 8000 interne uniquement - accès via nginx sur port 80
     expose:
       - "8000"
     volumes:
@@ -93,19 +89,23 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - azals_internal
-      - azals_external
+      azals_internal:
+        aliases:
+          - api
+      azals_external:
+        aliases:
+          - api
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: ${API_MEMORY_LIMIT:-2G}
         reservations:
-          memory: 256M
+          memory: ${API_MEMORY_RESERVATION:-512M}
     logging:
       driver: "json-file"
       options:
-        max-size: "100m"
-        max-file: "5"
+        max-size: ${LOG_MAX_SIZE:-100m}
+        max-file: ${LOG_MAX_FILES:-5}
 
   # ============================================================
   # Frontend - React SPA (Production Build)
@@ -127,20 +127,20 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: ${FRONTEND_MEMORY_LIMIT:-128M}
         reservations:
-          memory: 32M
+          memory: ${FRONTEND_MEMORY_RESERVATION:-32M}
 
   # ============================================================
   # Nginx - Reverse Proxy & Load Balancer
   # ============================================================
   nginx:
-    image: nginx:alpine
+    image: nginx:${NGINX_VERSION:-alpine}
     container_name: azals_nginx
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "${NGINX_BIND:-127.0.0.1}:${NGINX_HTTP_PORT:-8080}:80"
+      - "${NGINX_BIND:-127.0.0.1}:${NGINX_HTTPS_PORT:-8443}:443"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
@@ -160,24 +160,24 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: ${NGINX_MEMORY_LIMIT:-256M}
         reservations:
-          memory: 64M
+          memory: ${NGINX_MEMORY_RESERVATION:-64M}
 
   # ============================================================
   # Prometheus - Collecte des métriques
   # ============================================================
   prometheus:
-    image: prom/prometheus:v2.45.0
+    image: prom/prometheus:${PROMETHEUS_VERSION:-v2.45.0}
     container_name: azals_prometheus
     restart: always
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}'
       - '--web.enable-lifecycle'
     ports:
-      - "127.0.0.1:9090:9090"
+      - "${PROMETHEUS_BIND:-0.0.0.0}:${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - ./infra/prometheus:/etc/prometheus:ro
       - prometheus_data:/prometheus
@@ -191,22 +191,21 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: ${PROMETHEUS_MEMORY_LIMIT:-512M}
         reservations:
-          memory: 128M
+          memory: ${PROMETHEUS_MEMORY_RESERVATION:-128M}
 
   # ============================================================
   # Grafana - Visualisation des métriques
   # ============================================================
   grafana:
-    image: grafana/grafana:10.0.0
+    image: grafana/grafana:${GRAFANA_VERSION:-10.0.0}
     container_name: azals_grafana
     restart: always
     env_file:
       - .env.production
-    # Variables Grafana mappées depuis .env.production (GF_* requises par Grafana)
     ports:
-      - "127.0.0.1:3000:3000"
+      - "${GRAFANA_BIND:-0.0.0.0}:${GRAFANA_PORT:-3000}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -223,20 +222,20 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: ${GRAFANA_MEMORY_LIMIT:-256M}
         reservations:
-          memory: 64M
+          memory: ${GRAFANA_MEMORY_RESERVATION:-64M}
 
   # ============================================================
   # Loki - Agrégation des logs
   # ============================================================
   loki:
-    image: grafana/loki:2.8.0
+    image: grafana/loki:${LOKI_VERSION:-2.8.0}
     container_name: azals_loki
     restart: always
     command: -config.file=/etc/loki/local-config.yaml
     ports:
-      - "127.0.0.1:3100:3100"
+      - "${LOKI_BIND:-127.0.0.1}:${LOKI_PORT:-3100}:3100"
     volumes:
       - ./infra/loki:/etc/loki:ro
       - loki_data:/loki
@@ -250,15 +249,15 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: ${LOKI_MEMORY_LIMIT:-256M}
         reservations:
-          memory: 64M
+          memory: ${LOKI_MEMORY_RESERVATION:-64M}
 
   # ============================================================
   # Promtail - Collecte des logs vers Loki
   # ============================================================
   promtail:
-    image: grafana/promtail:2.8.0
+    image: grafana/promtail:${PROMTAIL_VERSION:-2.8.0}
     container_name: azals_promtail
     restart: always
     volumes:
@@ -273,9 +272,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: ${PROMTAIL_MEMORY_LIMIT:-128M}
         reservations:
-          memory: 32M
+          memory: ${PROMTAIL_MEMORY_RESERVATION:-32M}
 
 # ============================================================
 # VOLUMES
@@ -302,6 +301,5 @@ volumes:
 networks:
   azals_internal:
     driver: bridge
-    internal: true  # Pas d'accès externe direct
   azals_external:
     driver: bridge

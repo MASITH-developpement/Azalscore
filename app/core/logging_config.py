@@ -132,7 +132,8 @@ class ColoredFormatter(logging.Formatter):
 def setup_logging(
     level: str = "INFO",
     json_format: bool = False,
-    log_file: str | None = None
+    log_file: str | None = None,
+    verbose: bool = False
 ) -> None:
     """
     Configure le logging pour l'application.
@@ -141,8 +142,16 @@ def setup_logging(
         level: Niveau de log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         json_format: Utiliser le format JSON (production)
         log_file: Fichier de log optionnel
+        verbose: Mode verbose (log tout, meme les librairies)
     """
+    import os
     settings = get_settings()
+
+    # Mode verbose force depuis env
+    verbose = verbose or os.environ.get("LOG_VERBOSE", "false").lower() == "true"
+
+    # Determiner le niveau effectif
+    effective_level = "DEBUG" if verbose else level
 
     # Déterminer le format selon l'environnement
     formatter = JSONFormatter() if json_format or settings.is_production else ColoredFormatter()
@@ -160,16 +169,32 @@ def setup_logging(
 
     # Configuration root logger
     logging.basicConfig(
-        level=getattr(logging, level.upper()),
+        level=getattr(logging, effective_level.upper()),
         handlers=handlers,
         force=True
     )
 
-    # Réduire le bruit des librairies
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy.engine").setLevel(
-        logging.DEBUG if settings.debug else logging.WARNING
-    )
+    # Configuration des loggers selon mode verbose
+    if verbose:
+        # Mode verbose: tout logger en DEBUG
+        logging.getLogger("uvicorn").setLevel(logging.DEBUG)
+        logging.getLogger("uvicorn.access").setLevel(logging.DEBUG)
+        logging.getLogger("uvicorn.error").setLevel(logging.DEBUG)
+        logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
+        logging.getLogger("sqlalchemy.pool").setLevel(logging.DEBUG)
+        logging.getLogger("fastapi").setLevel(logging.DEBUG)
+        logging.getLogger("httpx").setLevel(logging.DEBUG)
+        logging.getLogger("httpcore").setLevel(logging.DEBUG)
+        _logger = logging.getLogger(__name__)
+        _logger.info("[VERBOSE] Mode verbose active - tous les logs sont en DEBUG")
+    else:
+        # Mode normal: reduire le bruit des librairies
+        logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+        logging.getLogger("sqlalchemy.engine").setLevel(
+            logging.DEBUG if settings.debug else logging.WARNING
+        )
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:

@@ -99,6 +99,7 @@ from app.modules.field_service.router import router as field_service_router
 # Module M2 - Finance (Comptabilité & Trésorerie)
 from app.modules.finance.router import router as finance_router
 from app.modules.guardian.middleware import setup_guardian_middleware
+from app.core.request_logging import setup_request_logging
 
 # Module GUARDIAN - Correction Automatique Gouvernée & Auditable
 from app.modules.guardian.router import router as guardian_router
@@ -553,6 +554,9 @@ setup_guardian_middleware(app, environment=_settings.environment)
 
 # 6. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
 setup_cors(app)
+
+# 7. Request Logging (si LOG_VERBOSE=true ou LOG_REQUESTS=true)
+setup_request_logging(app)
 
 # NOTE: health_router and metrics_router sont inclus après api_v1 pour éviter
 # les problèmes de "No response returned" lors du démarrage

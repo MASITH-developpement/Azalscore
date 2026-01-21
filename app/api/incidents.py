@@ -104,7 +104,8 @@ async def create_incident(
         )
 
         return IncidentResponse(
-            id=str(incident.incident_uid),
+            id=str(incident.id),
+            incident_uid=str(incident.incident_uid),
             tenant_id=tenant_id,
             type=incident.type,
             severity=incident.severity,
@@ -115,9 +116,11 @@ async def create_incident(
             http_status=incident.http_status,
             message=incident.message,
             details=incident.details,
-            timestamp=incident.frontend_timestamp,
+            frontend_timestamp=incident.frontend_timestamp,
             created_at=incident.created_at,
             has_screenshot=has_screenshot,
+            is_processed=incident.is_processed if hasattr(incident, 'is_processed') else False,
+            is_resolved=incident.is_resolved if hasattr(incident, 'is_resolved') else False,
         )
 
     except Exception as e:
@@ -128,8 +131,10 @@ async def create_incident(
             exc_info=True
         )
 
+        fallback_id = str(uuid_module.uuid4())
         return IncidentResponse(
-            id=str(uuid_module.uuid4()),
+            id=fallback_id,
+            incident_uid=fallback_id,
             tenant_id=tenant_id,
             type=data.type,
             severity=data.severity,
@@ -140,9 +145,11 @@ async def create_incident(
             http_status=data.http_status,
             message=data.message,
             details=data.details,
-            timestamp=data.frontend_timestamp,
+            frontend_timestamp=data.frontend_timestamp,
             created_at=datetime.utcnow(),
             has_screenshot=False,
+            is_processed=False,
+            is_resolved=False,
         )
 
 

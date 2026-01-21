@@ -13,7 +13,7 @@ import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { tokenManager } from '@core/api-client';
+import { tokenManager, setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
 import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import './styles/unified-layout.css';
@@ -57,6 +57,7 @@ const queryClient = new QueryClient({
 // ============================================================
 
 const Login: React.FC = () => {
+  const [tenant, setTenant] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -66,12 +67,34 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validation
+    if (!tenant.trim()) {
+      setError('Veuillez saisir l\'identifiant de votre société');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Veuillez saisir votre email');
+      return;
+    }
+    if (!password) {
+      setError('Veuillez saisir votre mot de passe');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Définir le tenant AVANT le login
+      const normalizedTenant = tenant.toLowerCase().trim();
+      setTenantId(normalizedTenant);
+      console.log('[LOGIN] Tenant défini:', normalizedTenant);
+
       // Utiliser la fonction login du store qui gère tout (tokens + user data)
       await login({ email, password });
+      console.log('[LOGIN] Connexion réussie');
     } catch (err) {
+      console.error('[LOGIN] Erreur:', err);
       setError(err instanceof Error ? err.message : 'Identifiants invalides');
     } finally {
       setLoading(false);
@@ -86,26 +109,41 @@ const Login: React.FC = () => {
         <form onSubmit={handleSubmit} className="azals-login__form">
           {error && <div className="azals-login__error">{error}</div>}
           <div className="azals-login__field">
+            <label htmlFor="tenant">Société</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
+              id="tenant"
+              type="text"
+              value={tenant}
+              onChange={(e) => setTenant(e.target.value)}
+              placeholder="identifiant-societe"
+              autoComplete="organization"
               autoFocus
             />
           </div>
           <div className="azals-login__field">
+            <label htmlFor="email">Email</label>
             <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="votre@email.com"
+              autoComplete="email"
+            />
+          </div>
+          <div className="azals-login__field">
+            <label htmlFor="password">Mot de passe</label>
+            <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mot de passe"
-              required
+              placeholder="••••••••"
+              autoComplete="current-password"
             />
           </div>
           <button type="submit" className="azals-login__submit" disabled={loading}>
-            {loading ? 'Connexion...' : 'Connexion'}
+            {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
       </div>

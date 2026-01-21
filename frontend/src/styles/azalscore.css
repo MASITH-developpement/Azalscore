@@ -126,6 +126,18 @@ body {
   font-size: 14px;
 }
 
+.azals-login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.azals-login__field label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--azals-text);
+}
+
 .azals-login__field input {
   width: 100%;
   padding: 12px 16px;
@@ -134,6 +146,7 @@ body {
   font-size: 15px;
   outline: none;
   transition: border-color 0.15s;
+  box-sizing: border-box;
 }
 
 .azals-login__field input:focus {

@@ -63,11 +63,23 @@ class Settings(BaseSettings):
     cors_origins: str | None = Field(default=None, description="Origins CORS séparées par des virgules")
 
     # Rate Limiting
-    rate_limit_per_minute: int = Field(default=100, ge=10, le=1000)
+    rate_limit_per_minute: int = Field(default=100, ge=10, le=1000, description="Limite globale de requêtes par minute")
     auth_rate_limit_per_minute: int = Field(default=5, ge=1, le=20, description="Rate limit strict pour auth")
 
     # Redis (pour rate limiting distribué)
     redis_url: str | None = Field(default=None, description="URL Redis pour cache et rate limiting")
+    redis_timeout: int = Field(default=5, ge=1, le=30, description="Timeout connexion Redis en secondes")
+    redis_health_timeout: int = Field(default=2, ge=1, le=10, description="Timeout health check Redis en secondes")
+
+    # CORS
+    cors_max_age: int = Field(default=3600, ge=60, le=86400, description="Durée cache CORS en secondes")
+
+    # Timeouts API
+    api_timeout_ms: int = Field(default=30000, ge=1000, le=300000, description="Timeout API par défaut en ms")
+
+    # Application URL (pour emails, redirections)
+    app_url: str = Field(default="https://localhost", description="URL publique de l'application")
+    app_domain: str = Field(default="localhost", description="Domaine principal de l'application")
 
     # ENCRYPTION_KEY - OBLIGATOIRE EN PRODUCTION pour chiffrement AES-256 au repos
     encryption_key: str | None = Field(
