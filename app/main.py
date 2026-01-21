@@ -104,6 +104,9 @@ from app.core.request_logging import setup_request_logging
 # Module GUARDIAN - Correction Automatique Gouvernée & Auditable
 from app.modules.guardian.router import router as guardian_router
 
+# Module GUARDIAN AI - Monitoring IA automatisé (Mode A/B/C)
+from app.modules.guardian.ai_router import router as guardian_ai_router
+
 # API Incidents - Endpoint simplifié pour Guardian
 from app.api.incidents import router as incidents_router
 
@@ -684,6 +687,9 @@ api_v1.include_router(ai_router)
 
 # Module GUARDIAN - Correction Automatique Gouvernee & Auditable
 api_v1.include_router(guardian_router)
+
+# Module GUARDIAN AI - Monitoring IA automatisé (Mode A/B/C)
+api_v1.include_router(guardian_ai_router)
 
 # API Incidents - Endpoint simplifie pour frontend Guardian
 api_v1.include_router(incidents_router)

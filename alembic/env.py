@@ -28,7 +28,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Import the database Base and all models
-from app.core.database import Base
+# IMPORTANT: Import Base from app.db (not app.core.database) for unified metadata
+from app.db import Base
 
 # Import all models to ensure they're registered with Base.metadata
 # Core models
@@ -89,6 +90,15 @@ try:
     from app.modules.automated_accounting.models import (
         AccountingRule, BankAccount, BankTransaction,
         AccountingEntry, Reconciliation
+    )
+except ImportError:
+    pass  # Module may not exist
+
+# AI Guardian models (Mode A/B/C)
+try:
+    from app.modules.guardian.ai_models import (
+        AIIncident, AIModuleScore, AIAuditReport,
+        AISLAMetric, AIConfig
     )
 except ImportError:
     pass  # Module may not exist
