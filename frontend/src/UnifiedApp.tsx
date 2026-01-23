@@ -18,6 +18,8 @@ import { useAuthStore } from '@core/auth';
 import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import './styles/unified-layout.css';
 import './styles/azalscore.css';
+import './styles/top-menu.css';
+import './styles/command-palette.css';
 
 // ============================================================
 // LAZY LOADING DES MODULES
@@ -37,6 +39,17 @@ const PurchasesModule = lazy(() => import('./modules/purchases'));
 const ProjectsModule = lazy(() => import('./modules/projects'));
 const VehiculesModule = lazy(() => import('./modules/vehicles'));
 const AffairesModule = lazy(() => import('./modules/affaires'));
+const ProductionModule = lazy(() => import('./modules/production'));
+const MaintenanceModule = lazy(() => import('./modules/maintenance'));
+const QualityModule = lazy(() => import('./modules/quality'));
+const POSModule = lazy(() => import('./modules/pos'));
+const EcommerceModule = lazy(() => import('./modules/ecommerce'));
+const MarketplaceModule = lazy(() => import('./modules/marketplace'));
+const SubscriptionsModule = lazy(() => import('./modules/subscriptions'));
+const HelpdeskModule = lazy(() => import('./modules/helpdesk'));
+const BIModule = lazy(() => import('./modules/bi'));
+const ComplianceModule = lazy(() => import('./modules/compliance'));
+const WebModule = lazy(() => import('./modules/web'));
 
 // ============================================================
 // QUERY CLIENT
@@ -195,6 +208,36 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
         return <HRModule />;
       case 'vehicules':
         return <VehiculesModule />;
+
+      // Logistique & Production
+      case 'production':
+        return <ProductionModule />;
+      case 'maintenance':
+        return <MaintenanceModule />;
+      case 'quality':
+        return <QualityModule />;
+
+      // Commerce
+      case 'pos':
+        return <POSModule />;
+      case 'ecommerce':
+        return <EcommerceModule />;
+      case 'marketplace':
+        return <MarketplaceModule />;
+      case 'subscriptions':
+        return <SubscriptionsModule />;
+
+      // Services
+      case 'helpdesk':
+        return <HelpdeskModule />;
+
+      // Digital
+      case 'web':
+        return <WebModule />;
+      case 'bi':
+        return <BIModule />;
+      case 'compliance':
+        return <ComplianceModule />;
 
       // Finance
       case 'compta':

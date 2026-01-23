@@ -1,0 +1,222 @@
+/**
+ * AZALSCORE UI Engine - Top Menu Styles
+ * Menu horizontal minimaliste (Mode AZALSCORE)
+ */
+
+.azals-topmenu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.azals-topmenu__container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ============================================================
+   MENU ITEMS
+   ============================================================ */
+
+.azals-topmenu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.azals-topmenu__item:hover {
+  color: var(--color-text-primary);
+  background: var(--color-background-hover);
+}
+
+.azals-topmenu__item--active {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.azals-topmenu__icon {
+  flex-shrink: 0;
+}
+
+.azals-topmenu__chevron {
+  margin-left: 0.25rem;
+  opacity: 0.6;
+}
+
+/* ============================================================
+   DROPDOWN
+   ============================================================ */
+
+.azals-topmenu__dropdown-wrapper {
+  position: relative;
+}
+
+.azals-topmenu__dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 200px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem;
+  z-index: 1000;
+  animation: azals-dropdown-enter 0.15s ease;
+}
+
+.azals-topmenu__dropdown--wide {
+  min-width: 400px;
+}
+
+@keyframes azals-dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.azals-topmenu__dropdown-item {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: background 0.15s ease;
+}
+
+.azals-topmenu__dropdown-item:hover {
+  background: var(--color-background-hover);
+}
+
+/* ============================================================
+   DROPDOWN SECTIONS (pour Vue d'ensemble)
+   ============================================================ */
+
+.azals-topmenu__dropdown-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.azals-topmenu__dropdown-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.azals-topmenu__dropdown-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-tertiary);
+  padding: 0.5rem 0.75rem 0.25rem;
+  margin: 0;
+}
+
+/* ============================================================
+   HINT (palette de commandes)
+   ============================================================ */
+
+.azals-topmenu__hint {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.azals-topmenu__hint kbd {
+  padding: 0.125rem 0.375rem;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .azals-topmenu__hint {
+    display: flex;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE (Mobile)
+   ============================================================ */
+
+@media (max-width: 767px) {
+  .azals-topmenu {
+    padding: 0.5rem 1rem;
+  }
+
+  .azals-topmenu__container {
+    gap: 0.25rem;
+  }
+
+  .azals-topmenu__item {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .azals-topmenu__item span:not(.azals-topmenu__label-desktop) {
+    display: none;
+  }
+
+  .azals-topmenu__label-desktop {
+    display: none !important;
+  }
+
+  .azals-topmenu__dropdown {
+    left: auto;
+    right: 0;
+  }
+
+  .azals-topmenu__dropdown--wide {
+    min-width: 280px;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .azals-topmenu__dropdown-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   MODE ERP (menu horizontal plus large)
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-topmenu {
+  background: var(--color-background-secondary);
+}
+
+[data-ui-mode="erp"] .azals-topmenu__container {
+  gap: 0.25rem;
+}
+
+[data-ui-mode="erp"] .azals-topmenu__item {
+  font-size: 0.8125rem;
+}

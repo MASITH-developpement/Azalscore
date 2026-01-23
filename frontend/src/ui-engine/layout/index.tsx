@@ -3,16 +3,18 @@
  * Structure de mise en page responsive Web + Mobile
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Menu, X, Bell, User, LogOut, Settings, LayoutList, Database, AlertTriangle } from 'lucide-react';
+import { Menu, X, Bell, User, LogOut, Settings, LayoutList, Monitor, Database, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@core/auth';
 import { useCapabilities } from '@core/capabilities';
 import { DynamicMenu } from '@ui/menu-dynamic';
+import { TopMenu } from '@ui/top-menu';
+import { CommandPalette } from '@ui/command-palette';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
-import { setInterfaceMode } from '../../utils/interfaceMode';
+import { useUIMode } from '@ui/hooks/useUIMode';
 import { isDemoMode, setDemoMode } from '../../utils/demoMode';
 
 // ============================================================
@@ -33,6 +35,7 @@ const Header: React.FC<{
 }> = ({ onMenuToggle, isMobileMenuOpen }) => {
   const { user, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { mode, setMode, isAzalscore, isERP } = useUIMode();
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -53,6 +56,7 @@ const Header: React.FC<{
 
         <div className="azals-header__logo">
           <span className="azals-header__logo-text">AZALSCORE</span>
+          {isERP && <span className="azals-header__mode-badge">ERP</span>}
         </div>
       </div>
 
@@ -85,13 +89,22 @@ const Header: React.FC<{
                 <span>Paramètres</span>
               </a>
               <hr className="azals-header__dropdown-divider" />
+              <div className="azals-header__dropdown-label">Mode d'interface</div>
               <button
-                className="azals-header__dropdown-item"
-                onClick={() => setInterfaceMode('azalscore')}
+                className={clsx('azals-header__dropdown-item', { 'azals-header__dropdown-item--active': isAzalscore })}
+                onClick={() => setMode('azalscore')}
               >
                 <LayoutList size={16} />
                 <span>Mode AZALSCORE</span>
               </button>
+              <button
+                className={clsx('azals-header__dropdown-item', { 'azals-header__dropdown-item--active': isERP })}
+                onClick={() => setMode('erp')}
+              >
+                <Monitor size={16} />
+                <span>Mode ERP</span>
+              </button>
+              <hr className="azals-header__dropdown-divider" />
               <button
                 className={clsx('azals-header__dropdown-item', { 'azals-header__dropdown-item--active': demoMode })}
                 onClick={() => setDemoMode(!demoMode)}
@@ -157,7 +170,9 @@ const Sidebar: React.FC<{
 
 export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const { isLoading: isCapLoading } = useCapabilities();
+  const { mode, isAzalscore } = useUIMode();
   const demoMode = isDemoMode();
 
   const toggleMenu = useCallback(() => {
@@ -168,9 +183,38 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
     setMobileMenuOpen(false);
   }, []);
 
+  const openCommandPalette = useCallback(() => {
+    setCommandPaletteOpen(true);
+  }, []);
+
+  const closeCommandPalette = useCallback(() => {
+    setCommandPaletteOpen(false);
+  }, []);
+
+  // Raccourcis clavier pour la Command Palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + K ou /
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        openCommandPalette();
+      } else if (e.key === '/' && !isCommandPaletteOpen) {
+        // Ignorer si focus dans un input
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+        e.preventDefault();
+        openCommandPalette();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openCommandPalette, isCommandPaletteOpen]);
+
   if (isCapLoading) {
     return (
-      <div className="azals-layout__loading">
+      <div className="azals-layout__loading" data-ui-mode={mode}>
         <div className="azals-spinner" />
         <p>Chargement...</p>
       </div>
@@ -178,7 +222,10 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className={clsx('azals-layout', { 'azals-layout--demo': demoMode })}>
+    <div
+      className={clsx('azals-layout', { 'azals-layout--demo': demoMode })}
+      data-ui-mode={mode}
+    >
       <Header onMenuToggle={toggleMenu} isMobileMenuOpen={isMobileMenuOpen} />
 
       {/* Bannière mode démo */}
@@ -189,8 +236,12 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
 
+      {/* Top Menu (Mode AZALSCORE uniquement) */}
+      {isAzalscore && <TopMenu onCommandPaletteOpen={openCommandPalette} />}
+
       <div className="azals-layout__body">
-        <Sidebar isOpen={isMobileMenuOpen} onClose={closeMenu} />
+        {/* Sidebar (Mode ERP uniquement) */}
+        {!isAzalscore && <Sidebar isOpen={isMobileMenuOpen} onClose={closeMenu} />}
 
         <main className="azals-main">
           <div className="azals-main__content">
@@ -198,6 +249,9 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
+
+      {/* Command Palette */}
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
 
       <ErrorToaster />
       <GuardianPanelContainer />

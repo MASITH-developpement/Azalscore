@@ -4,6 +4,23 @@
  */
 
 /* ============================================================
+   IMPORTS - UI STANDARDS
+   ============================================================ */
+
+@import './standards/_variables.css';
+@import './standards/base-view.css';
+@import './standards/tabs.css';
+@import './standards/mode-erp.css';
+@import './standards/mode-azalscore.css';
+
+/* ============================================================
+   IMPORTS - UI COMPONENTS
+   ============================================================ */
+
+@import './top-menu.css';
+@import './command-palette.css';
+
+/* ============================================================
    CSS VARIABLES (DESIGN TOKENS)
    ============================================================ */
 
@@ -262,6 +279,33 @@ body {
 .azals-header__dropdown-item--active {
   background: var(--azals-primary-50);
   color: var(--azals-primary-600);
+}
+
+.azals-header__dropdown-label {
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  padding-bottom: var(--azals-spacing-xs);
+}
+
+.azals-header__dropdown-divider {
+  border: none;
+  border-top: 1px solid var(--azals-border);
+  margin: var(--azals-spacing-xs) 0;
+}
+
+.azals-header__mode-badge {
+  display: none;
+  margin-left: var(--azals-spacing-sm);
+  padding: 0.125rem 0.5rem;
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-gray-600);
+  background: var(--azals-gray-200);
+  border-radius: var(--azals-radius-full);
 }
 
 /* ============================================================
