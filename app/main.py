@@ -37,6 +37,7 @@ from app.api.protected import router as protected_router
 from app.api.red_workflow import router as red_workflow_router
 from app.api.tax import router as tax_router
 from app.api.treasury import router as treasury_router
+from app.api.workflows import router as workflows_router
 from app.core.compression import CompressionMiddleware
 from app.core.config import get_settings
 from app.core.database import engine, get_db
@@ -48,8 +49,10 @@ from app.core.logging_config import get_logger, setup_logging
 from app.core.metrics import MetricsMiddleware, init_metrics
 from app.core.metrics import router as metrics_router
 from app.core.middleware import TenantMiddleware
+from app.core.auth_middleware import AuthMiddleware
 from app.core.models import User
 from app.core.security_middleware import setup_cors
+from app.core.error_middleware import ErrorHandlingMiddleware
 from app.core.version import AZALS_VERSION
 
 # IMPORTANT: Importer Base depuis app.db (avec UUIDMixin), PAS depuis app.core.database
@@ -58,6 +61,9 @@ from app.db.model_loader import load_all_models, verify_models_loaded
 
 # Module IA - Assistant IA Transverse Opérationnelle
 from app.modules.ai_assistant.router import router as ai_router
+
+# Module IA - Orchestration IA AZALSCORE (Theo, Guardian, GPT, Claude)
+from app.ai.api import router as ai_orchestration_router
 
 # Module T3 - Audit & Benchmark Évolutif
 from app.modules.audit.router import router as audit_router
@@ -140,6 +146,9 @@ from app.modules.pos.router import router as pos_router
 
 # Module M4 - Achats (Procurement)
 from app.modules.procurement.router import router as procurement_router
+
+# Module M4 - Achats (Purchases) - Backend complet
+from app.modules.purchases.router import router as purchases_router
 
 # Module M6 - Production (Manufacturing)
 from app.modules.production.router import router as production_router
@@ -249,8 +258,8 @@ async def lifespan(app: FastAPI):
                     conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
                     conn.commit()
                     logger.info("PostgreSQL extensions pgcrypto et uuid-ossp activees")
-                except Exception:
-                    pass  # Ignore if already exists or not PostgreSQL
+                except Exception as e:
+                    logger.debug(f"PostgreSQL extension creation skipped (may already exist or not PostgreSQL): {e}")
 
             # =========================================================================
             # GESTION CONFORMITE UUID - DETECTION ET RESET AUTOMATIQUE
@@ -533,25 +542,47 @@ register_error_handlers(app)
 
 # Middleware stack (ordre important: dernier ajouté = premier exécuté)
 # En Starlette, les middlewares s'exécutent dans l'ordre INVERSE d'ajout
-# Donc on ajoute dans l'ordre: compression -> metrics -> rbac -> tenant -> CORS
-# Pour que l'exécution soit: CORS -> tenant -> rbac -> metrics -> compression
+# Donc on ajoute dans l'ordre: error_handling -> rate_limit -> csrf -> compression -> metrics -> rbac -> tenant -> CORS
+# Pour que l'exécution soit: CORS -> tenant -> rbac -> metrics -> compression -> csrf -> rate_limit -> error_handling
 
-# 1. Compression (s'exécute en dernier)
+# 1. Error Handling (s'exécute en tout dernier - capture toutes les erreurs)
+app.add_middleware(ErrorHandlingMiddleware)
+
+# 2. Platform Rate Limiting - Protection DDoS et abuse API
+# SÉCURITÉ P1: Limites globales par IP (1000/min), par tenant (5000/min), plateforme (50000/min)
+from app.core.rate_limiter import setup_platform_rate_limiting
+if _settings.environment == "production":
+    setup_platform_rate_limiting(app, ip_limit=1000, tenant_limit=5000, global_limit=50000)
+else:
+    # Limites plus permissives en dev/staging
+    setup_platform_rate_limiting(app, ip_limit=10000, tenant_limit=50000, global_limit=500000)
+
+# 3. CSRF Protection - Anti Cross-Site Request Forgery
+# SÉCURITÉ: Vérifie les tokens CSRF pour POST/PUT/DELETE/PATCH
+from app.core.csrf_middleware import setup_csrf_middleware
+# En mode audit pour le moment (enforce=False), activer en production après tests
+setup_csrf_middleware(app, enforce=False)
+
+# 4. Compression
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
 
-# 2. Metrics
+# 3. Metrics
 app.add_middleware(MetricsMiddleware)
 
-# 3. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
+# 4. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
 # Note: Le middleware RBAC vérifie les permissions après authentification
 # Pour la bêta, les routes non configurées génèrent un warning mais passent
 # En production, activer deny-by-default dans rbac_middleware.py
 app.add_middleware(RBACMiddleware)
 
-# 4. TenantMiddleware - Validation X-Tenant-ID
+# 5. AuthMiddleware - Parse JWT et définit request.state.user
+# IMPORTANT: Doit s'exécuter AVANT RBAC pour que request.state.user soit disponible
+app.add_middleware(AuthMiddleware)
+
+# 6. TenantMiddleware - Validation X-Tenant-ID
 app.add_middleware(TenantMiddleware)
 
-# 5. GUARDIAN Middleware - Interception automatique des erreurs
+# 7. GUARDIAN Middleware - Interception automatique des erreurs
 # S'exécute après Tenant pour avoir accès au tenant_id
 setup_guardian_middleware(app, environment=_settings.environment)
 
@@ -637,6 +668,9 @@ api_v1.include_router(hr_module_router)
 # Module M4 - Achats (Procurement)
 api_v1.include_router(procurement_router)
 
+# Module M4 - Achats (Purchases) - Backend complet
+api_v1.include_router(purchases_router)
+
 # Module M5 - Stock (Inventaire + Logistique)
 api_v1.include_router(inventory_router)
 
@@ -685,6 +719,9 @@ api_v1.include_router(mobile_router)
 # Module IA - Assistant IA Transverse Operationnelle
 api_v1.include_router(ai_router)
 
+# Module IA - Orchestration IA AZALSCORE (Theo, ChatGPT, Claude, Guardian)
+api_v1.include_router(ai_orchestration_router)
+
 # Module GUARDIAN - Correction Automatique Gouvernee & Auditable
 api_v1.include_router(guardian_router)
 
@@ -705,6 +742,9 @@ api_v1.include_router(backup_router)
 
 # Module MARKETPLACE - Site marchand & provisioning automatique
 api_v1.include_router(marketplace_router)
+
+# API WORKFLOWS - Orchestration DAG déclarative (AZALSCORE)
+api_v1.include_router(workflows_router)
 
 # Routes protegees par tenant uniquement (pas JWT pour compatibilite)
 api_v1.include_router(items_router)
@@ -912,6 +952,50 @@ def get_admin_users(
     }
 
 
+@api_v1.get("/admin/users/{user_id}")
+def get_admin_user(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retourne les détails d'un utilisateur par son ID."""
+    from uuid import UUID
+    from fastapi import HTTPException
+
+    # SÉCURITÉ: Vérification du rôle admin obligatoire
+    require_admin_role(current_user)
+
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID utilisateur invalide")
+
+    user = db.query(User).filter(
+        User.tenant_id == current_user.tenant_id,
+        User.id == user_uuid
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "name": getattr(user, 'full_name', user.email),
+        "first_name": getattr(user, 'first_name', None),
+        "last_name": getattr(user, 'last_name', None),
+        "roles": [user.role.value if hasattr(user.role, 'value') else str(user.role)],
+        "is_active": user.is_active == 1,
+        "is_locked": getattr(user, 'is_locked', 0) == 1,
+        "created_at": str(user.created_at) if user.created_at else None,
+        "last_login": str(getattr(user, 'last_login_at', None)) if getattr(user, 'last_login_at', None) else None,
+        "login_count": getattr(user, 'login_count', 0) or 0,
+        "totp_enabled": getattr(user, 'totp_enabled', 0) == 1,
+        "must_change_password": getattr(user, 'must_change_password', 0) == 1,
+        "tenant_id": user.tenant_id,
+    }
+
+
 @api_v1.post("/admin/users")
 def create_admin_user(
     data: dict,
@@ -1001,7 +1085,8 @@ async def health_check_fallback():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         db_ok = True
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Health check database connection failed: {e}")
         db_ok = False
 
     return {
@@ -1018,7 +1103,8 @@ async def health_ready_fallback():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return {"status": "ready"}
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Readiness probe database check failed: {e}")
         return {"status": "not_ready", "reason": "Database unavailable"}
 
 
