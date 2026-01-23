@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -6,8 +7,23 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
-import { Users, Building, Shield, Database, Activity, AlertTriangle } from 'lucide-react';
+import { BaseViewStandard } from '@ui/standards';
+import { PermissionsManager } from '@ui/simple';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
+import {
+  Users, Building, Shield, Database, Activity, AlertTriangle,
+  User, Key, Clock, Sparkles, ArrowLeft, Edit3, Lock, Unlock
+} from 'lucide-react';
 import type { TableColumn } from '@/types';
+import type { AdminUser, Role } from './types';
+import {
+  USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
+  hasTwoFactorEnabled, mustChangePassword, formatDateTime
+} from './types';
+import {
+  UserInfoTab, UserPermissionsTab, UserActivityTab,
+  UserHistoryTab, UserIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,7 +54,7 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
+// TYPES INTERNES
 // ============================================================================
 
 interface User {
@@ -52,16 +68,6 @@ interface User {
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
   last_login?: string;
   created_at: string;
-}
-
-interface Role {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  permissions: string[];
-  is_system: boolean;
-  user_count: number;
 }
 
 interface Tenant {
@@ -159,7 +165,7 @@ const formatDate = (date: string): string => {
   return new Date(date).toLocaleDateString('fr-FR');
 };
 
-const formatDateTime = (date: string): string => {
+const formatDateTimeFn = (date: string): string => {
   return new Date(date).toLocaleString('fr-FR');
 };
 
@@ -182,8 +188,25 @@ const useAdminDashboard = () => {
   return useQuery({
     queryKey: ['admin', 'dashboard'],
     queryFn: async () => {
-      return api.get<AdminDashboard>('/v1/iam/dashboard').then(r => r.data);
-    }
+      try {
+        return await api.get<AdminDashboard>('/v1/cockpit/dashboard', {
+          headers: { 'X-Silent-Error': 'true' }
+        }).then(r => r.data);
+      } catch {
+        // Retourner des valeurs par défaut si l'endpoint n'existe pas
+        return {
+          total_users: 0,
+          active_users: 0,
+          total_tenants: 1,
+          active_tenants: 1,
+          total_roles: 0,
+          storage_used_gb: 0,
+          api_calls_today: 0,
+          errors_today: 0
+        };
+      }
+    },
+    retry: false
   });
 };
 
@@ -191,12 +214,37 @@ const useUsers = (filters?: { status?: string; role_id?: string }) => {
   return useQuery({
     queryKey: ['admin', 'users', filters],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.role_id) params.append('role_id', filters.role_id);
-      const queryString = params.toString();
-      return api.get<User[]>(`/v1/iam/users${queryString ? `?${queryString}` : ''}`).then(r => r.data);
-    }
+      try {
+        const params = new URLSearchParams();
+        if (filters?.status) params.append('is_active', filters.status === 'active' ? 'true' : 'false');
+        if (filters?.role_id) params.append('role_code', filters.role_id);
+        const queryString = params.toString();
+        const res = await api.get<{ items: User[]; total: number }>(`/v1/iam/users${queryString ? `?${queryString}` : ''}`, {
+          headers: { 'X-Silent-Error': 'true' }
+        });
+        return res.data.items || [];
+      } catch {
+        return [];
+      }
+    },
+    retry: false
+  });
+};
+
+const useUser = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ['admin', 'user', id],
+    queryFn: async () => {
+      try {
+        return await api.get<AdminUser>(`/v1/iam/users/${id}`, {
+          headers: { 'X-Silent-Error': 'true' }
+        }).then(r => r.data);
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!id,
+    retry: false
   });
 };
 
@@ -204,8 +252,15 @@ const useRoles = () => {
   return useQuery({
     queryKey: ['admin', 'roles'],
     queryFn: async () => {
-      return api.get<Role[]>('/v1/iam/roles').then(r => r.data);
-    }
+      try {
+        return await api.get<Role[]>('/v1/iam/roles', {
+          headers: { 'X-Silent-Error': 'true' }
+        }).then(r => r.data);
+      } catch {
+        return []; // Retourne liste vide si pas de permission
+      }
+    },
+    retry: false
   });
 };
 
@@ -255,7 +310,10 @@ const useUpdateUserStatus = () => {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       return api.patch(`/v1/iam/users/${id}`, { status }).then(r => r.data);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user'] });
+    }
   });
 };
 
@@ -270,10 +328,165 @@ const useRunBackup = () => {
 };
 
 // ============================================================================
-// COMPOSANTS
+// USER DETAIL VIEW (BaseViewStandard)
+// ============================================================================
+
+const UserDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: user, isLoading, error } = useUser(id);
+  const updateStatus = useUpdateUserStatus();
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement..." subtitle="Utilisateur">
+        <div className="azals-loading">Chargement...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <PageWrapper title="Erreur" subtitle="Utilisateur non trouve">
+        <Card>
+          <p className="text-red-600">Impossible de charger l'utilisateur</p>
+          <Button onClick={() => navigate('/admin')} className="mt-4">Retour</Button>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  const statusConfig = USER_STATUS_CONFIG[user.status];
+
+  const tabs: TabDefinition<AdminUser>[] = [
+    { id: 'info', label: 'Informations', icon: <User size={16} />, component: UserInfoTab },
+    { id: 'permissions', label: 'Permissions', icon: <Shield size={16} />, component: UserPermissionsTab },
+    { id: 'activity', label: 'Activite', icon: <Activity size={16} />, component: UserActivityTab, badge: user.sessions?.filter(s => s.is_active).length },
+    { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: UserHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: UserIATab }
+  ];
+
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'status',
+      label: 'Statut',
+      value: statusConfig.label,
+      valueColor: statusConfig.color
+    },
+    {
+      id: 'role',
+      label: 'Role',
+      value: user.role_name || 'Non assigne',
+      valueColor: user.role_name ? 'purple' : 'gray'
+    },
+    {
+      id: '2fa',
+      label: '2FA',
+      value: hasTwoFactorEnabled(user) ? 'Active' : 'Desactive',
+      valueColor: hasTwoFactorEnabled(user) ? 'green' : 'orange'
+    },
+    {
+      id: 'logins',
+      label: 'Connexions',
+      value: String(user.login_count),
+      valueColor: 'blue'
+    }
+  ];
+
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'security',
+      title: 'Securite',
+      items: [
+        { id: 'status', label: 'Statut', value: statusConfig.label },
+        { id: '2fa', label: 'Double authentification', value: hasTwoFactorEnabled(user) ? 'Oui' : 'Non' },
+        { id: 'pwd', label: 'Changement MDP requis', value: mustChangePassword(user) ? 'Oui' : 'Non' },
+        { id: 'failures', label: 'Echecs de connexion', value: String(user.failed_login_count) }
+      ]
+    },
+    {
+      id: 'activity',
+      title: 'Activite',
+      items: [
+        { id: 'logins', label: 'Connexions totales', value: String(user.login_count) },
+        { id: 'last', label: 'Derniere connexion', value: user.last_login ? formatDateTime(user.last_login) : 'Jamais' },
+        { id: 'sessions', label: 'Sessions actives', value: String(user.sessions?.filter(s => s.is_active).length || 0) }
+      ]
+    },
+    {
+      id: 'dates',
+      title: 'Dates',
+      items: [
+        { id: 'created', label: 'Creation', value: formatDateTime(user.created_at) },
+        { id: 'updated', label: 'Modification', value: formatDateTime(user.updated_at) }
+      ]
+    }
+  ];
+
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      variant: 'secondary',
+      onClick: () => navigate('/admin')
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit3 size={16} />,
+      variant: 'secondary',
+      onClick: () => console.log('Edit user')
+    }
+  ];
+
+  const primaryActions: ActionDefinition[] = isUserLocked(user)
+    ? [
+        {
+          id: 'unlock',
+          label: 'Debloquer',
+          icon: <Unlock size={16} />,
+          variant: 'primary',
+          onClick: () => updateStatus.mutate({ id: user.id, status: 'ACTIVE' })
+        }
+      ]
+    : [];
+
+  const secondaryActions: ActionDefinition[] = !isUserLocked(user) && isUserActive(user)
+    ? [
+        {
+          id: 'suspend',
+          label: 'Suspendre',
+          icon: <Lock size={16} />,
+          variant: 'danger',
+          onClick: () => updateStatus.mutate({ id: user.id, status: 'SUSPENDED' })
+        }
+      ]
+    : [];
+
+  return (
+    <BaseViewStandard<AdminUser>
+      title={getUserFullName(user)}
+      subtitle={`@${user.username}`}
+      status={{ label: statusConfig.label, color: statusConfig.color }}
+      data={user}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+      secondaryActions={secondaryActions}
+    />
+  );
+};
+
+// ============================================================================
+// COMPOSANTS LISTE
 // ============================================================================
 
 const UsersView: React.FC = () => {
+  const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterRole, setFilterRole] = useState<string>('');
   const { data: users = [], isLoading } = useUsers({
@@ -293,6 +506,10 @@ const UsersView: React.FC = () => {
     setFormData({ password: '' });
   };
 
+  const handleRowClick = (user: User) => {
+    navigate(`/admin/users/${user.id}`);
+  };
+
   const columns: TableColumn<User>[] = [
     { id: 'username', header: 'Utilisateur', accessor: 'username' },
     { id: 'email', header: 'Email', accessor: 'email' },
@@ -300,14 +517,18 @@ const UsersView: React.FC = () => {
       `${(row as User).first_name || ''} ${(row as User).last_name || ''}`.trim() || '-'
     },
     { id: 'role_name', header: 'Role', accessor: 'role_name', render: (v) => (v as string) || '-' },
-    { id: 'last_login', header: 'Derniere connexion', accessor: 'last_login', render: (v) => (v as string) ? formatDateTime(v as string) : 'Jamais' },
+    { id: 'last_login', header: 'Derniere connexion', accessor: 'last_login', render: (v) => (v as string) ? formatDateTimeFn(v as string) : 'Jamais' },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v, row) => (
-      <Select
-        value={v as string}
-        onChange={(val) => updateStatus.mutate({ id: (row as User).id, status: val })}
-        options={USER_STATUSES}
-        className="w-32"
-      />
+      <div onClick={(e) => e.stopPropagation()}>
+        <Select
+          value={v as string}
+          onChange={(val) => {
+            updateStatus.mutate({ id: (row as User).id, status: val });
+          }}
+          options={USER_STATUSES}
+          className="w-32"
+        />
+      </div>
     )}
   ];
 
@@ -331,7 +552,13 @@ const UsersView: React.FC = () => {
           <Button onClick={() => setShowModal(true)}>Nouvel utilisateur</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={users} isLoading={isLoading} keyField="id" />
+      <DataTable
+        columns={columns}
+        data={users}
+        isLoading={isLoading}
+        keyField="id"
+        onRowClick={handleRowClick}
+      />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel utilisateur">
         <form onSubmit={handleSubmit}>
@@ -479,7 +706,7 @@ const AuditView: React.FC = () => {
   const resourceTypes = [...new Set(logs.map(l => l.resource_type))].map(t => ({ value: t, label: t }));
 
   const columns: TableColumn<AuditLog>[] = [
-    { id: 'timestamp', header: 'Date', accessor: 'timestamp', render: (v) => formatDateTime(v as string) },
+    { id: 'timestamp', header: 'Date', accessor: 'timestamp', render: (v) => formatDateTimeFn(v as string) },
     { id: 'user_name', header: 'Utilisateur', accessor: 'user_name', render: (v) => (v as string) || 'Systeme' },
     { id: 'action', header: 'Action', accessor: 'action' },
     { id: 'resource_type', header: 'Type', accessor: 'resource_type', render: (v) => <Badge color="blue">{v as string}</Badge> },
@@ -519,7 +746,7 @@ const BackupsView: React.FC = () => {
       return info?.label || (v as string);
     }},
     { id: 'retention_days', header: 'Retention', accessor: 'retention_days', render: (v) => `${v as number} jours` },
-    { id: 'last_backup', header: 'Derniere', accessor: 'last_backup', render: (v) => (v as string) ? formatDateTime(v as string) : '-' },
+    { id: 'last_backup', header: 'Derniere', accessor: 'last_backup', render: (v) => (v as string) ? formatDateTimeFn(v as string) : '-' },
     { id: 'last_status', header: 'Statut', accessor: 'last_status', render: (v) => {
       if (!v) return '-';
       const colors: Record<string, string> = { SUCCESS: 'green', FAILED: 'red', IN_PROGRESS: 'orange' };
@@ -547,15 +774,16 @@ const BackupsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'users' | 'roles' | 'tenants' | 'audit' | 'backups';
+type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'audit' | 'backups';
 
-const AdminModule: React.FC = () => {
+const AdminDashboardView: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const { data: dashboard } = useAdminDashboard();
 
   const tabs = [
     { id: 'dashboard', label: 'Tableau de bord' },
     { id: 'users', label: 'Utilisateurs' },
+    { id: 'permissions', label: 'Permissions' },
     { id: 'roles', label: 'Roles' },
     { id: 'tenants', label: 'Tenants' },
     { id: 'audit', label: 'Audit' },
@@ -566,6 +794,8 @@ const AdminModule: React.FC = () => {
     switch (currentView) {
       case 'users':
         return <UsersView />;
+      case 'permissions':
+        return <PermissionsManager />;
       case 'roles':
         return <RolesView />;
       case 'tenants':
@@ -637,6 +867,15 @@ const AdminModule: React.FC = () => {
         {renderContent()}
       </div>
     </PageWrapper>
+  );
+};
+
+const AdminModule: React.FC = () => {
+  return (
+    <Routes>
+      <Route path="users/:id" element={<UserDetailView />} />
+      <Route path="*" element={<AdminDashboardView />} />
+    </Routes>
   );
 };
 
