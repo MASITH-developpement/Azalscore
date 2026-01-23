@@ -137,6 +137,43 @@ def delete_backup(
     service.db.commit()
 
 
+@router.post("/{backup_id}/run", response_model=BackupResponse, status_code=201)
+def run_backup(
+    backup_id: str,
+    service = Depends(get_service),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Lancer une nouvelle sauvegarde basée sur une sauvegarde existante.
+
+    Crée une nouvelle sauvegarde en réutilisant les paramètres d'une sauvegarde
+    précédente (type, attachments, etc.). Utile pour re-exécuter manuellement
+    une sauvegarde sans reconfigurer tous les paramètres.
+    """
+    # Récupérer le backup existant comme référence
+    existing_backup = service.get_backup(backup_id)
+    if not existing_backup:
+        raise HTTPException(status_code=404, detail="Sauvegarde de référence non trouvée")
+
+    # Créer une nouvelle sauvegarde basée sur les paramètres du backup existant
+    new_backup_data = BackupCreate(
+        backup_type=existing_backup.backup_type,
+        include_attachments=existing_backup.include_attachments,
+        notes=f"Re-exécution de {existing_backup.reference}"
+    )
+
+    try:
+        new_backup = service.create_backup(
+            new_backup_data,
+            triggered_by=current_user.email or "api"
+        )
+        return new_backup
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la création de la sauvegarde: {str(e)}")
+
+
 # ============================================================================
 # RESTAURATION
 # ============================================================================
