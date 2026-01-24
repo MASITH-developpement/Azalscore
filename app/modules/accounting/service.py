@@ -19,8 +19,8 @@ from .models import (
     EntryStatus,
     FiscalYear,
     FiscalYearStatus,
-    JournalEntry,
-    JournalEntryLine,
+    AccountingJournalEntry,
+    AccountingJournalEntryLine,
 )
 from .schemas import (
     AccountingSummary,
@@ -136,10 +136,10 @@ class AccountingService:
             raise ValueError("Seuls les exercices ouverts peuvent être clôturés")
 
         # Vérifier que toutes les écritures sont validées
-        draft_entries = self.db.query(JournalEntry).filter(
-            JournalEntry.tenant_id == self.tenant_id,
-            JournalEntry.fiscal_year_id == fiscal_year_id,
-            JournalEntry.status == EntryStatus.DRAFT
+        draft_entries = self.db.query(AccountingJournalEntry).filter(
+            AccountingJournalEntry.tenant_id == self.tenant_id,
+            AccountingJournalEntry.fiscal_year_id == fiscal_year_id,
+            AccountingJournalEntry.status == EntryStatus.DRAFT
         ).count()
 
         if draft_entries > 0:
@@ -245,7 +245,7 @@ class AccountingService:
     # JOURNAL ENTRIES
     # ========================================================================
 
-    def create_journal_entry(self, data: JournalEntryCreate, user_id: UUID) -> JournalEntry:
+    def create_journal_entry(self, data: JournalEntryCreate, user_id: UUID) -> AccountingJournalEntry:
         """Créer une écriture comptable."""
         # Vérifier que l'exercice existe et est ouvert
         fiscal_year = self.get_fiscal_year(data.fiscal_year_id)
@@ -274,7 +274,7 @@ class AccountingService:
         is_balanced = (total_debit == total_credit)
 
         # Créer l'écriture
-        entry = JournalEntry(
+        entry = AccountingJournalEntry(
             tenant_id=self.tenant_id,
             created_by=user_id,
             entry_number=entry_number,
@@ -299,7 +299,7 @@ class AccountingService:
 
         # Créer les lignes
         for idx, line_data in enumerate(data.lines, start=1):
-            line = JournalEntryLine(
+            line = AccountingJournalEntryLine(
                 tenant_id=self.tenant_id,
                 entry_id=entry.id,
                 line_number=idx,
@@ -311,13 +311,13 @@ class AccountingService:
         self.db.refresh(entry)
         return entry
 
-    def get_journal_entry(self, entry_id: UUID) -> Optional[JournalEntry]:
+    def get_journal_entry(self, entry_id: UUID) -> Optional[AccountingJournalEntry]:
         """Récupérer une écriture comptable avec ses lignes."""
-        return self.db.query(JournalEntry).options(
-            selectinload(JournalEntry.lines)
+        return self.db.query(AccountingJournalEntry).options(
+            selectinload(AccountingJournalEntry.lines)
         ).filter(
-            JournalEntry.tenant_id == self.tenant_id,
-            JournalEntry.id == entry_id
+            AccountingJournalEntry.tenant_id == self.tenant_id,
+            AccountingJournalEntry.id == entry_id
         ).first()
 
     def list_journal_entries(
@@ -329,30 +329,30 @@ class AccountingService:
         search: Optional[str] = None,
         page: int = 1,
         per_page: int = 50
-    ) -> Tuple[List[JournalEntry], int]:
+    ) -> Tuple[List[AccountingJournalEntry], int]:
         """Lister les écritures comptables."""
-        query = self.db.query(JournalEntry).options(
-            selectinload(JournalEntry.lines)
+        query = self.db.query(AccountingJournalEntry).options(
+            selectinload(AccountingJournalEntry.lines)
         ).filter(
-            JournalEntry.tenant_id == self.tenant_id
+            AccountingJournalEntry.tenant_id == self.tenant_id
         )
 
         if fiscal_year_id:
-            query = query.filter(JournalEntry.fiscal_year_id == fiscal_year_id)
+            query = query.filter(AccountingJournalEntry.fiscal_year_id == fiscal_year_id)
 
         if journal_code:
-            query = query.filter(JournalEntry.journal_code == journal_code)
+            query = query.filter(AccountingJournalEntry.journal_code == journal_code)
 
         if status_filter:
-            query = query.filter(JournalEntry.status == status_filter)
+            query = query.filter(AccountingJournalEntry.status == status_filter)
 
         if period:
-            query = query.filter(JournalEntry.period == period)
+            query = query.filter(AccountingJournalEntry.period == period)
 
         if search:
             query = query.filter(
                 or_(
-                    JournalEntry.entry_number.ilike(f"%{search}%"),
+                    AccountingJournalEntry.entry_number.ilike(f"%{search}%"),
                     JournalEntry.piece_number.ilike(f"%{search}%"),
                     JournalEntry.label.ilike(f"%{search}%")
                 )
@@ -360,13 +360,13 @@ class AccountingService:
 
         total = query.count()
 
-        items = query.order_by(desc(JournalEntry.entry_date), desc(JournalEntry.entry_number)).offset(
+        items = query.order_by(desc(AccountingJournalEntry.entry_date), desc(AccountingJournalEntry.entry_number)).offset(
             (page - 1) * per_page
         ).limit(per_page).all()
 
         return items, total
 
-    def update_journal_entry(self, entry_id: UUID, data: JournalEntryUpdate) -> Optional[JournalEntry]:
+    def update_journal_entry(self, entry_id: UUID, data: JournalEntryUpdate) -> Optional[AccountingJournalEntry]:
         """Mettre à jour une écriture comptable."""
         entry = self.get_journal_entry(entry_id)
         if not entry:
@@ -379,13 +379,13 @@ class AccountingService:
         # Si les lignes sont mises à jour, recalculer les totaux
         if data.lines is not None:
             # Supprimer les anciennes lignes
-            self.db.query(JournalEntryLine).filter(
-                JournalEntryLine.entry_id == entry_id
+            self.db.query(AccountingJournalEntryLine).filter(
+                AccountingJournalEntryLine.entry_id == entry_id
             ).delete()
 
             # Créer les nouvelles lignes
             for idx, line_data in enumerate(data.lines, start=1):
-                line = JournalEntryLine(
+                line = AccountingJournalEntryLine(
                     tenant_id=self.tenant_id,
                     entry_id=entry.id,
                     line_number=idx,
@@ -408,7 +408,7 @@ class AccountingService:
         self.db.refresh(entry)
         return entry
 
-    def post_journal_entry(self, entry_id: UUID, user_id: UUID) -> JournalEntry:
+    def post_journal_entry(self, entry_id: UUID, user_id: UUID) -> AccountingJournalEntry:
         """Comptabiliser une écriture (DRAFT → POSTED)."""
         entry = self.get_journal_entry(entry_id)
         if not entry:
@@ -431,7 +431,7 @@ class AccountingService:
         self.db.refresh(entry)
         return entry
 
-    def validate_journal_entry(self, entry_id: UUID, user_id: UUID) -> JournalEntry:
+    def validate_journal_entry(self, entry_id: UUID, user_id: UUID) -> AccountingJournalEntry:
         """Valider définitivement une écriture (POSTED → VALIDATED)."""
         entry = self.get_journal_entry(entry_id)
         if not entry:
@@ -448,7 +448,7 @@ class AccountingService:
         self.db.refresh(entry)
         return entry
 
-    def cancel_journal_entry(self, entry_id: UUID) -> JournalEntry:
+    def cancel_journal_entry(self, entry_id: UUID) -> AccountingJournalEntry:
         """Annuler une écriture."""
         entry = self.get_journal_entry(entry_id)
         if not entry:
@@ -483,19 +483,19 @@ class AccountingService:
         ).join(
             JournalEntryLine,
             and_(
-                ChartOfAccounts.account_number == JournalEntryLine.account_number,
-                ChartOfAccounts.tenant_id == JournalEntryLine.tenant_id
+                ChartOfAccounts.account_number == AccountingJournalEntryLine.account_number,
+                ChartOfAccounts.tenant_id == AccountingJournalEntryLine.tenant_id
             )
         ).join(
             JournalEntry,
-            JournalEntryLine.entry_id == JournalEntry.id
+            AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
         ).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
-            JournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
+            AccountingJournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
         )
 
         if fiscal_year_id:
-            query = query.filter(JournalEntry.fiscal_year_id == fiscal_year_id)
+            query = query.filter(AccountingJournalEntry.fiscal_year_id == fiscal_year_id)
 
         results = query.group_by(ChartOfAccounts.account_type).all()
 
@@ -546,12 +546,12 @@ class AccountingService:
         ).outerjoin(
             JournalEntryLine,
             and_(
-                ChartOfAccounts.account_number == JournalEntryLine.account_number,
-                ChartOfAccounts.tenant_id == JournalEntryLine.tenant_id
+                ChartOfAccounts.account_number == AccountingJournalEntryLine.account_number,
+                ChartOfAccounts.tenant_id == AccountingJournalEntryLine.tenant_id
             )
         ).outerjoin(
             JournalEntry,
-            JournalEntryLine.entry_id == JournalEntry.id
+            AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
         ).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
             ChartOfAccounts.is_active == True
@@ -561,13 +561,13 @@ class AccountingService:
             query = query.filter(ChartOfAccounts.account_number == account_number)
 
         if fiscal_year_id:
-            query = query.filter(JournalEntry.fiscal_year_id == fiscal_year_id)
+            query = query.filter(AccountingJournalEntry.fiscal_year_id == fiscal_year_id)
 
         # Filtrer seulement les écritures validées
         query = query.filter(
             or_(
-                JournalEntry.id.is_(None),  # Comptes sans mouvements
-                JournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
+                AccountingJournalEntry.id.is_(None),  # Comptes sans mouvements
+                AccountingJournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
             )
         )
 
@@ -637,18 +637,18 @@ class AccountingService:
                 func.sum(JournalEntryLine.credit).label('period_credit')
             ).join(
                 JournalEntry,
-                JournalEntryLine.entry_id == JournalEntry.id
+                AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
             ).filter(
-                JournalEntryLine.tenant_id == self.tenant_id,
-                JournalEntryLine.account_number == account.account_number,
-                JournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
+                AccountingJournalEntryLine.tenant_id == self.tenant_id,
+                AccountingJournalEntryLine.account_number == account.account_number,
+                AccountingJournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
             )
 
             if fiscal_year_id:
-                movements_query = movements_query.filter(JournalEntry.fiscal_year_id == fiscal_year_id)
+                movements_query = movements_query.filter(AccountingJournalEntry.fiscal_year_id == fiscal_year_id)
 
             if period:
-                movements_query = movements_query.filter(JournalEntry.period == period)
+                movements_query = movements_query.filter(AccountingJournalEntry.period == period)
 
             result = movements_query.first()
             period_debit = result.period_debit or Decimal("0.00")
@@ -680,10 +680,10 @@ class AccountingService:
         year = entry_date.year
 
         # Compter les écritures existantes pour ce journal et cette année
-        count = self.db.query(JournalEntry).filter(
-            JournalEntry.tenant_id == self.tenant_id,
-            JournalEntry.journal_code == journal_code,
-            extract('year', JournalEntry.entry_date) == year
+        count = self.db.query(AccountingJournalEntry).filter(
+            AccountingJournalEntry.tenant_id == self.tenant_id,
+            AccountingJournalEntry.journal_code == journal_code,
+            extract('year', AccountingJournalEntry.entry_date) == year
         ).count()
 
         next_number = count + 1

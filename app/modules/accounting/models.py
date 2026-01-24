@@ -84,7 +84,7 @@ class FiscalYear(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relations
-    journal_entries = relationship("JournalEntry", back_populates="fiscal_year", lazy="dynamic")
+    journal_entries = relationship("AccountingJournalEntry", back_populates="fiscal_year", lazy="dynamic")
 
     # Index
     __table_args__ = (
@@ -131,12 +131,12 @@ class ChartOfAccounts(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relations
-    debit_entries = relationship("JournalEntryLine",
-                                foreign_keys="JournalEntryLine.account_number",
+    debit_entries = relationship("AccountingJournalEntryLine",
+                                foreign_keys="AccountingJournalEntryLine.account_number",
                                 back_populates="account",
                                 lazy="dynamic",
-                                primaryjoin="and_(ChartOfAccounts.account_number==JournalEntryLine.account_number, "
-                                           "ChartOfAccounts.tenant_id==JournalEntryLine.tenant_id)")
+                                primaryjoin="and_(ChartOfAccounts.account_number==AccountingJournalEntryLine.account_number, "
+                                           "ChartOfAccounts.tenant_id==AccountingJournalEntryLine.tenant_id)")
 
     # Index
     __table_args__ = (
@@ -147,7 +147,7 @@ class ChartOfAccounts(Base):
     )
 
 
-class JournalEntry(Base):
+class AccountingJournalEntry(Base):
     """Écriture comptable (en-tête de pièce)."""
     __tablename__ = "accounting_journal_entries"
 
@@ -206,7 +206,7 @@ class JournalEntry(Base):
 
     # Relations
     fiscal_year = relationship("FiscalYear", back_populates="journal_entries")
-    lines = relationship("JournalEntryLine", back_populates="entry", cascade="all, delete-orphan")
+    lines = relationship("AccountingJournalEntryLine", back_populates="entry", cascade="all, delete-orphan")
 
     # Index
     __table_args__ = (
@@ -223,7 +223,7 @@ class JournalEntry(Base):
     )
 
 
-class JournalEntryLine(Base):
+class AccountingJournalEntryLine(Base):
     """Ligne d'écriture comptable."""
     __tablename__ = "accounting_journal_entry_lines"
 
@@ -262,11 +262,11 @@ class JournalEntryLine(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relations
-    entry = relationship("JournalEntry", back_populates="lines")
+    entry = relationship("AccountingJournalEntry", back_populates="lines")
     account = relationship("ChartOfAccounts",
                           foreign_keys=[account_number, tenant_id],
-                          primaryjoin="and_(JournalEntryLine.account_number==ChartOfAccounts.account_number, "
-                                     "JournalEntryLine.tenant_id==ChartOfAccounts.tenant_id)",
+                          primaryjoin="and_(AccountingJournalEntryLine.account_number==ChartOfAccounts.account_number, "
+                                     "AccountingJournalEntryLine.tenant_id==ChartOfAccounts.tenant_id)",
                           viewonly=True)
 
     # Index
