@@ -354,3 +354,18 @@ export const useTheo = () => {
 export const useTheoOpen = () => useTheoStore((state) => state.isOpen);
 export const useTheoState = () => useTheoStore((state) => state.state);
 export const useTheoMessages = () => useTheoStore((state) => state.messages);
+
+// ============================================================
+// RE-EXPORT VOICE MODULE
+// ============================================================
+
+export {
+  useTheoVoice,
+  useTheoVoiceStore,
+  useVoiceState,
+  useIsListening,
+  useIsSpeaking,
+  useCurrentTranscript,
+} from './voice';
+
+export type { VoiceState, CompanionId, VoiceMessage } from './voice';

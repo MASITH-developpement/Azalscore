@@ -1076,6 +1076,17 @@ def create_admin_user(
 app.include_router(api_v1)
 
 
+# ==================== THEO VOICE API ====================
+# WebSocket et REST endpoints pour Théo (assistant vocal)
+try:
+    from app.theo.api import theo_router, theo_rest_router
+    app.include_router(theo_router)
+    app.include_router(theo_rest_router, prefix="/v1")
+    print("[THEO] Voice API routes registered")
+except ImportError as e:
+    print(f"[THEO] Voice API not available: {e}")
+
+
 # ==================== ROUTES OBSERVABILITE ====================
 # Routes publiques pour monitoring (pas de tenant/auth required)
 # IMPORTANT: Inclure APRÈS api_v1 pour éviter les conflits de routes
