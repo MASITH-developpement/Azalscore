@@ -73,7 +73,7 @@ class Supplier(Base):
     # Identification
     code = Column(String(50), nullable=False, index=True)  # Code fournisseur unique
     name = Column(String(255), nullable=False, index=True)  # Raison sociale
-    supplier_type = Column(Enum(SupplierType), default=SupplierType.BOTH)
+    supplier_type = Column(Enum(SupplierType, name='purchases_suppliertype'), default=SupplierType.BOTH)
 
     # Contact principal
     contact_name = Column(String(255))  # Nom contact principal
@@ -100,7 +100,7 @@ class Supplier(Base):
     credit_limit = Column(Numeric(15, 2))
 
     # Statut
-    status = Column(Enum(SupplierStatus), default=SupplierStatus.PENDING, nullable=False, index=True)
+    status = Column(Enum(SupplierStatus, name='purchases_supplierstatus'), default=SupplierStatus.PENDING, nullable=False, index=True)
 
     # Classification
     tags = Column(Text)  # Tags JSON string
@@ -122,9 +122,9 @@ class Supplier(Base):
 
     # Index
     __table_args__ = (
-        Index('idx_suppliers_tenant_id', 'tenant_id'),
-        Index('idx_suppliers_code', 'tenant_id', 'code', unique=True),
-        Index('idx_suppliers_status', 'status'),
+        Index('idx_purchases_suppliers_tenant_id', 'tenant_id'),
+        Index('idx_purchases_suppliers_code', 'tenant_id', 'code', unique=True),
+        Index('idx_purchases_suppliers_status', 'status'),
     )
 
 
@@ -146,7 +146,7 @@ class PurchaseOrder(Base):
     received_date = Column(DateTime)  # Date réception effective
 
     # Statut
-    status = Column(Enum(OrderStatus), default=OrderStatus.DRAFT, nullable=False, index=True)
+    status = Column(Enum(OrderStatus, name='purchases_orderstatus'), default=OrderStatus.DRAFT, nullable=False, index=True)
 
     # Référence externe
     reference = Column(String(100))  # Référence fournisseur (si fournie)
@@ -182,11 +182,11 @@ class PurchaseOrder(Base):
 
     # Index
     __table_args__ = (
-        Index('idx_orders_tenant_id', 'tenant_id'),
-        Index('idx_orders_number', 'tenant_id', 'number', unique=True),
-        Index('idx_orders_supplier', 'supplier_id'),
-        Index('idx_orders_status', 'status'),
-        Index('idx_orders_date', 'date'),
+        Index('idx_purchases_orders_tenant_id', 'tenant_id'),
+        Index('idx_purchases_orders_number', 'tenant_id', 'number', unique=True),
+        Index('idx_purchases_orders_supplier', 'supplier_id'),
+        Index('idx_purchases_orders_status', 'status'),
+        Index('idx_purchases_orders_date', 'date'),
     )
 
 
@@ -234,8 +234,8 @@ class PurchaseOrderLine(Base):
 
     # Index
     __table_args__ = (
-        Index('idx_order_lines_tenant_id', 'tenant_id'),
-        Index('idx_order_lines_order', 'order_id'),
+        Index('idx_purchases_order_lines_tenant_id', 'tenant_id'),
+        Index('idx_purchases_order_lines_order', 'order_id'),
     )
 
 
@@ -258,7 +258,7 @@ class PurchaseInvoice(Base):
     payment_date = Column(DateTime)  # Date paiement effectif
 
     # Statut
-    status = Column(Enum(InvoiceStatus), default=InvoiceStatus.DRAFT, nullable=False, index=True)
+    status = Column(Enum(InvoiceStatus, name='purchases_invoicestatus'), default=InvoiceStatus.DRAFT, nullable=False, index=True)
 
     # Référence
     reference = Column(String(100))  # Référence interne
@@ -294,12 +294,12 @@ class PurchaseInvoice(Base):
 
     # Index
     __table_args__ = (
-        Index('idx_invoices_tenant_id', 'tenant_id'),
-        Index('idx_invoices_number', 'tenant_id', 'number', unique=True),
-        Index('idx_invoices_supplier', 'supplier_id'),
-        Index('idx_invoices_order', 'order_id'),
-        Index('idx_invoices_status', 'status'),
-        Index('idx_invoices_date', 'invoice_date'),
+        Index('idx_purchases_invoices_tenant_id', 'tenant_id'),
+        Index('idx_purchases_invoices_number', 'tenant_id', 'number', unique=True),
+        Index('idx_purchases_invoices_supplier', 'supplier_id'),
+        Index('idx_purchases_invoices_order', 'order_id'),
+        Index('idx_purchases_invoices_status', 'status'),
+        Index('idx_purchases_invoices_date', 'invoice_date'),
     )
 
 
@@ -344,6 +344,6 @@ class PurchaseInvoiceLine(Base):
 
     # Index
     __table_args__ = (
-        Index('idx_invoice_lines_tenant_id', 'tenant_id'),
-        Index('idx_invoice_lines_invoice', 'invoice_id'),
+        Index('idx_purchases_invoice_lines_tenant_id', 'tenant_id'),
+        Index('idx_purchases_invoice_lines_invoice', 'invoice_id'),
     )

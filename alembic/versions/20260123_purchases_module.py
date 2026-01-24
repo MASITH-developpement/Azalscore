@@ -37,7 +37,7 @@ def upgrade() -> None:
         sa.Column('code', sa.String(50), nullable=False),
         sa.Column('name', sa.String(255), nullable=False),
         sa.Column('supplier_type', sa.Enum('GOODS', 'SERVICES', 'BOTH', 'RAW_MATERIALS', 'EQUIPMENT',
-                                            name='suppliertype'), nullable=True),
+                                            name='purchases_suppliertype'), nullable=True),
 
         # Contact
         sa.Column('contact_name', sa.String(255), nullable=True),
@@ -65,7 +65,7 @@ def upgrade() -> None:
 
         # Statut
         sa.Column('status', sa.Enum('PROSPECT', 'PENDING', 'APPROVED', 'BLOCKED', 'INACTIVE',
-                                     name='supplierstatus'), nullable=False, server_default='PENDING'),
+                                     name='purchases_supplierstatus'), nullable=False, server_default='PENDING'),
 
         # Classification
         sa.Column('tags', sa.Text(), nullable=True),
@@ -83,9 +83,9 @@ def upgrade() -> None:
                   onupdate=sa.text('CURRENT_TIMESTAMP')),
 
         sa.PrimaryKeyConstraint('id'),
-        sa.Index('idx_suppliers_tenant_id', 'tenant_id'),
-        sa.Index('idx_suppliers_code', 'tenant_id', 'code', unique=True),
-        sa.Index('idx_suppliers_status', 'status'),
+        sa.Index('idx_purchases_suppliers_tenant_id', 'tenant_id'),
+        sa.Index('idx_purchases_suppliers_code', 'tenant_id', 'code', unique=True),
+        sa.Index('idx_purchases_suppliers_status', 'status'),
     )
 
     # ==========================================================================
@@ -107,7 +107,7 @@ def upgrade() -> None:
 
         # Statut
         sa.Column('status', sa.Enum('DRAFT', 'SENT', 'CONFIRMED', 'PARTIAL', 'RECEIVED', 'INVOICED', 'CANCELLED',
-                                     name='orderstatus'), nullable=False, server_default='DRAFT'),
+                                     name='purchases_orderstatus'), nullable=False, server_default='DRAFT'),
 
         # Référence
         sa.Column('reference', sa.String(100), nullable=True),
@@ -140,11 +140,11 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
         sa.ForeignKeyConstraint(['supplier_id'], ['purchases_suppliers.id']),
         sa.ForeignKeyConstraint(['validated_by'], ['users.id']),
-        sa.Index('idx_orders_tenant_id', 'tenant_id'),
-        sa.Index('idx_orders_number', 'tenant_id', 'number', unique=True),
-        sa.Index('idx_orders_supplier', 'supplier_id'),
-        sa.Index('idx_orders_status', 'status'),
-        sa.Index('idx_orders_date', 'date'),
+        sa.Index('idx_purchases_orders_tenant_id', 'tenant_id'),
+        sa.Index('idx_purchases_orders_number', 'tenant_id', 'number', unique=True),
+        sa.Index('idx_purchases_orders_supplier', 'supplier_id'),
+        sa.Index('idx_purchases_orders_status', 'status'),
+        sa.Index('idx_purchases_orders_date', 'date'),
     )
 
     # ==========================================================================
@@ -187,8 +187,8 @@ def upgrade() -> None:
 
         sa.PrimaryKeyConstraint('id'),
         sa.ForeignKeyConstraint(['order_id'], ['purchases_orders.id'], ondelete='CASCADE'),
-        sa.Index('idx_order_lines_tenant_id', 'tenant_id'),
-        sa.Index('idx_order_lines_order', 'order_id'),
+        sa.Index('idx_purchases_order_lines_tenant_id', 'tenant_id'),
+        sa.Index('idx_purchases_order_lines_order', 'order_id'),
     )
 
     # ==========================================================================
@@ -211,7 +211,7 @@ def upgrade() -> None:
 
         # Statut
         sa.Column('status', sa.Enum('DRAFT', 'VALIDATED', 'PAID', 'CANCELLED',
-                                     name='invoicestatus'), nullable=False, server_default='DRAFT'),
+                                     name='purchases_invoicestatus'), nullable=False, server_default='DRAFT'),
 
         # Référence
         sa.Column('reference', sa.String(100), nullable=True),
@@ -245,12 +245,12 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['supplier_id'], ['purchases_suppliers.id']),
         sa.ForeignKeyConstraint(['order_id'], ['purchases_orders.id']),
         sa.ForeignKeyConstraint(['validated_by'], ['users.id']),
-        sa.Index('idx_invoices_tenant_id', 'tenant_id'),
-        sa.Index('idx_invoices_number', 'tenant_id', 'number', unique=True),
-        sa.Index('idx_invoices_supplier', 'supplier_id'),
-        sa.Index('idx_invoices_order', 'order_id'),
-        sa.Index('idx_invoices_status', 'status'),
-        sa.Index('idx_invoices_date', 'invoice_date'),
+        sa.Index('idx_purchases_invoices_tenant_id', 'tenant_id'),
+        sa.Index('idx_purchases_invoices_number', 'tenant_id', 'number', unique=True),
+        sa.Index('idx_purchases_invoices_supplier', 'supplier_id'),
+        sa.Index('idx_purchases_invoices_order', 'order_id'),
+        sa.Index('idx_purchases_invoices_status', 'status'),
+        sa.Index('idx_purchases_invoices_date', 'invoice_date'),
     )
 
     # ==========================================================================
@@ -290,8 +290,8 @@ def upgrade() -> None:
 
         sa.PrimaryKeyConstraint('id'),
         sa.ForeignKeyConstraint(['invoice_id'], ['purchases_invoices.id'], ondelete='CASCADE'),
-        sa.Index('idx_invoice_lines_tenant_id', 'tenant_id'),
-        sa.Index('idx_invoice_lines_invoice', 'invoice_id'),
+        sa.Index('idx_purchases_invoice_lines_tenant_id', 'tenant_id'),
+        sa.Index('idx_purchases_invoice_lines_invoice', 'invoice_id'),
     )
 
 
@@ -304,7 +304,7 @@ def downgrade() -> None:
     op.drop_table('purchases_suppliers')
 
     # Drop enums
-    op.execute('DROP TYPE IF EXISTS suppliertype')
-    op.execute('DROP TYPE IF EXISTS supplierstatus')
-    op.execute('DROP TYPE IF EXISTS orderstatus')
-    op.execute('DROP TYPE IF EXISTS invoicestatus')
+    op.execute('DROP TYPE IF EXISTS purchases_suppliertype')
+    op.execute('DROP TYPE IF EXISTS purchases_supplierstatus')
+    op.execute('DROP TYPE IF EXISTS purchases_orderstatus')
+    op.execute('DROP TYPE IF EXISTS purchases_invoicestatus')
