@@ -62,7 +62,7 @@ class SupplierType(str, enum.Enum):
 # MODÈLES
 # ============================================================================
 
-class Supplier(Base):
+class PurchaseSupplier(Base):
     """Fournisseur."""
     __tablename__ = "purchases_suppliers"
 
@@ -176,7 +176,7 @@ class PurchaseOrder(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relations
-    supplier = relationship("Supplier", back_populates="orders")
+    supplier = relationship("PurchaseSupplier", back_populates="orders")
     lines = relationship("PurchaseOrderLine", back_populates="order", cascade="all, delete-orphan")
     invoices = relationship("PurchaseInvoice", back_populates="order")
 
@@ -288,7 +288,7 @@ class PurchaseInvoice(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relations
-    supplier = relationship("Supplier", back_populates="invoices")
+    supplier = relationship("PurchaseSupplier", back_populates="invoices")
     order = relationship("PurchaseOrder", back_populates="invoices")
     lines = relationship("PurchaseInvoiceLine", back_populates="invoice", cascade="all, delete-orphan")
 

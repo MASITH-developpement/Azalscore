@@ -20,7 +20,7 @@ from .models import (
     PurchaseInvoiceLine,
     PurchaseOrder,
     PurchaseOrderLine,
-    Supplier,
+    PurchaseSupplier,
     SupplierStatus,
 )
 from .schemas import (
@@ -47,14 +47,14 @@ class PurchasesService:
     # GESTION DES FOURNISSEURS
     # ========================================================================
 
-    def create_supplier(self, data: SupplierCreate, user_id: UUID) -> Supplier:
+    def create_supplier(self, data: SupplierCreate, user_id: UUID) -> PurchaseSupplier:
         """Créer un fournisseur."""
         # Vérifier si le code existe déjà
         existing = self.get_supplier_by_code(data.code)
         if existing:
             raise ValueError(f"Un fournisseur avec le code {data.code} existe déjà")
 
-        supplier = Supplier(
+        supplier = PurchaseSupplier(
             tenant_id=self.tenant_id,
             created_by=user_id,
             **data.model_dump(exclude_unset=False)
@@ -64,26 +64,26 @@ class PurchasesService:
         self.db.refresh(supplier)
         return supplier
 
-    def get_supplier(self, supplier_id: UUID) -> Optional[Supplier]:
+    def get_supplier(self, supplier_id: UUID) -> Optional[PurchaseSupplier]:
         """Récupérer un fournisseur par ID."""
-        return self.db.query(Supplier).filter(
-            Supplier.tenant_id == self.tenant_id,
-            Supplier.id == supplier_id
+        return self.db.query(PurchaseSupplier).filter(
+            PurchaseSupplier.tenant_id == self.tenant_id,
+            PurchaseSupplier.id == supplier_id
         ).first()
 
-    def get_supplier_by_code(self, code: str) -> Optional[Supplier]:
+    def get_supplier_by_code(self, code: str) -> Optional[PurchaseSupplier]:
         """Récupérer un fournisseur par code."""
-        return self.db.query(Supplier).filter(
-            Supplier.tenant_id == self.tenant_id,
-            Supplier.code == code
+        return self.db.query(PurchaseSupplier).filter(
+            PurchaseSupplier.tenant_id == self.tenant_id,
+            PurchaseSupplier.code == code
         ).first()
 
     def get_next_supplier_code(self) -> str:
         """Générer le prochain code fournisseur auto-incrémenté (FRS001, FRS002, etc.)."""
-        last_supplier = self.db.query(Supplier).filter(
-            Supplier.tenant_id == self.tenant_id,
-            Supplier.code.like("FRS%")
-        ).order_by(desc(Supplier.code)).first()
+        last_supplier = self.db.query(PurchaseSupplier).filter(
+            PurchaseSupplier.tenant_id == self.tenant_id,
+            PurchaseSupplier.code.like("FRS%")
+        ).order_by(desc(PurchaseSupplier.code)).first()
 
         if last_supplier and last_supplier.code.startswith("FRS"):
             try:
@@ -103,27 +103,27 @@ class PurchasesService:
         is_active: Optional[bool] = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[Supplier], int]:
+    ) -> Tuple[List[PurchaseSupplier], int]:
         """Lister les fournisseurs avec filtres."""
-        query = self.db.query(Supplier).filter(Supplier.tenant_id == self.tenant_id)
+        query = self.db.query(PurchaseSupplier).filter(PurchaseSupplier.tenant_id == self.tenant_id)
 
         if status:
-            query = query.filter(Supplier.status == status)
+            query = query.filter(PurchaseSupplier.status == status)
         if is_active is not None:
-            query = query.filter(Supplier.is_active == is_active)
+            query = query.filter(PurchaseSupplier.is_active == is_active)
         if search:
             search_filter = or_(
-                Supplier.name.ilike(f"%{search}%"),
-                Supplier.code.ilike(f"%{search}%"),
-                Supplier.email.ilike(f"%{search}%")
+                PurchaseSupplier.name.ilike(f"%{search}%"),
+                PurchaseSupplier.code.ilike(f"%{search}%"),
+                PurchaseSupplier.email.ilike(f"%{search}%")
             )
             query = query.filter(search_filter)
 
         total = query.count()
-        items = query.order_by(Supplier.name).offset((page - 1) * page_size).limit(page_size).all()
+        items = query.order_by(PurchaseSupplier.name).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_supplier(self, supplier_id: UUID, data: SupplierUpdate) -> Optional[Supplier]:
+    def update_supplier(self, supplier_id: UUID, data: SupplierUpdate) -> Optional[PurchaseSupplier]:
         """Mettre à jour un fournisseur."""
         supplier = self.get_supplier(supplier_id)
         if not supplier:
@@ -490,19 +490,19 @@ class PurchasesService:
     def get_summary(self) -> PurchasesSummary:
         """Obtenir le résumé du module achats."""
         # Fournisseurs
-        total_suppliers = self.db.query(Supplier).filter(
-            Supplier.tenant_id == self.tenant_id
+        total_suppliers = self.db.query(PurchaseSupplier).filter(
+            PurchaseSupplier.tenant_id == self.tenant_id
         ).count()
 
-        active_suppliers = self.db.query(Supplier).filter(
-            Supplier.tenant_id == self.tenant_id,
-            Supplier.status == SupplierStatus.APPROVED,
-            Supplier.is_active == True
+        active_suppliers = self.db.query(PurchaseSupplier).filter(
+            PurchaseSupplier.tenant_id == self.tenant_id,
+            PurchaseSupplier.status == SupplierStatus.APPROVED,
+            PurchaseSupplier.is_active == True
         ).count()
 
-        pending_suppliers = self.db.query(Supplier).filter(
-            Supplier.tenant_id == self.tenant_id,
-            Supplier.status == SupplierStatus.PENDING
+        pending_suppliers = self.db.query(PurchaseSupplier).filter(
+            PurchaseSupplier.tenant_id == self.tenant_id,
+            PurchaseSupplier.status == SupplierStatus.PENDING
         ).count()
 
         # Commandes
@@ -575,15 +575,15 @@ class PurchasesService:
 
         # Top fournisseurs
         top_suppliers_data = self.db.query(
-            Supplier.id,
-            Supplier.name,
+            PurchaseSupplier.id,
+            PurchaseSupplier.name,
             func.sum(PurchaseOrder.total_ttc).label("total")
         ).join(
-            PurchaseOrder, PurchaseOrder.supplier_id == Supplier.id
+            PurchaseOrder, PurchaseOrder.supplier_id == PurchaseSupplier.id
         ).filter(
-            Supplier.tenant_id == self.tenant_id
+            PurchaseSupplier.tenant_id == self.tenant_id
         ).group_by(
-            Supplier.id, Supplier.name
+            PurchaseSupplier.id, PurchaseSupplier.name
         ).order_by(
             desc("total")
         ).limit(5).all()
