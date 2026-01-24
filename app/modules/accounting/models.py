@@ -50,7 +50,7 @@ class AccountType(str, enum.Enum):
 # MODÈLES
 # ============================================================================
 
-class FiscalYear(Base):
+class AccountingFiscalYear(Base):
     """Exercice comptable."""
     __tablename__ = "accounting_fiscal_years"
 
@@ -205,7 +205,7 @@ class AccountingJournalEntry(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relations
-    fiscal_year = relationship("FiscalYear", back_populates="journal_entries")
+    fiscal_year = relationship("AccountingFiscalYear", back_populates="journal_entries")
     lines = relationship("AccountingJournalEntryLine", back_populates="entry", cascade="all, delete-orphan")
 
     # Index

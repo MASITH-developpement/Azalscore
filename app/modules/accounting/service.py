@@ -14,10 +14,11 @@ from sqlalchemy import and_, desc, extract, func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from .models import (
+    AccountingFiscalYear,
     AccountType,
     ChartOfAccounts,
     EntryStatus,
-    FiscalYear,
+
     FiscalYearStatus,
     AccountingJournalEntry,
     AccountingJournalEntryLine,
@@ -46,12 +47,12 @@ class AccountingService:
     # FISCAL YEARS
     # ========================================================================
 
-    def create_fiscal_year(self, data: FiscalYearCreate, user_id: UUID) -> FiscalYear:
+    def create_fiscal_year(self, data: FiscalYearCreate, user_id: UUID) -> AccountingFiscalYear:
         """Créer un exercice comptable."""
         # Vérifier que le code est unique
-        existing = self.db.query(FiscalYear).filter(
-            FiscalYear.tenant_id == self.tenant_id,
-            FiscalYear.code == data.code
+        existing = self.db.query(AccountingFiscalYear).filter(
+            AccountingFiscalYear.tenant_id == self.tenant_id,
+            AccountingFiscalYear.code == data.code
         ).first()
 
         if existing:
@@ -61,7 +62,7 @@ class AccountingService:
         if data.end_date <= data.start_date:
             raise ValueError("La date de fin doit être postérieure à la date de début")
 
-        fiscal_year = FiscalYear(
+        fiscal_year = AccountingFiscalYear(
             tenant_id=self.tenant_id,
             created_by=user_id,
             **data.model_dump()
@@ -72,18 +73,18 @@ class AccountingService:
         self.db.refresh(fiscal_year)
         return fiscal_year
 
-    def get_fiscal_year(self, fiscal_year_id: UUID) -> Optional[FiscalYear]:
+    def get_fiscal_year(self, fiscal_year_id: UUID) -> Optional[AccountingFiscalYear]:
         """Récupérer un exercice comptable."""
-        return self.db.query(FiscalYear).filter(
-            FiscalYear.tenant_id == self.tenant_id,
-            FiscalYear.id == fiscal_year_id
+        return self.db.query(AccountingFiscalYear).filter(
+            AccountingFiscalYear.tenant_id == self.tenant_id,
+            AccountingFiscalYear.id == fiscal_year_id
         ).first()
 
-    def get_active_fiscal_year(self) -> Optional[FiscalYear]:
+    def get_active_fiscal_year(self) -> Optional[AccountingFiscalYear]:
         """Récupérer l'exercice comptable actif."""
-        return self.db.query(FiscalYear).filter(
-            FiscalYear.tenant_id == self.tenant_id,
-            FiscalYear.status == FiscalYearStatus.OPEN,
+        return self.db.query(AccountingFiscalYear).filter(
+            AccountingFiscalYear.tenant_id == self.tenant_id,
+            AccountingFiscalYear.status == FiscalYearStatus.OPEN,
             FiscalYear.is_active == True
         ).first()
 
@@ -92,14 +93,14 @@ class AccountingService:
         status_filter: Optional[FiscalYearStatus] = None,
         page: int = 1,
         per_page: int = 20
-    ) -> Tuple[List[FiscalYear], int]:
+    ) -> Tuple[List[AccountingFiscalYear], int]:
         """Lister les exercices comptables."""
-        query = self.db.query(FiscalYear).filter(
-            FiscalYear.tenant_id == self.tenant_id
+        query = self.db.query(AccountingFiscalYear).filter(
+            AccountingFiscalYear.tenant_id == self.tenant_id
         )
 
         if status_filter:
-            query = query.filter(FiscalYear.status == status_filter)
+            query = query.filter(AccountingFiscalYear.status == status_filter)
 
         total = query.count()
 
@@ -109,7 +110,7 @@ class AccountingService:
 
         return items, total
 
-    def update_fiscal_year(self, fiscal_year_id: UUID, data: FiscalYearUpdate) -> Optional[FiscalYear]:
+    def update_fiscal_year(self, fiscal_year_id: UUID, data: FiscalYearUpdate) -> Optional[AccountingFiscalYear]:
         """Mettre à jour un exercice comptable."""
         fiscal_year = self.get_fiscal_year(fiscal_year_id)
         if not fiscal_year:
@@ -126,7 +127,7 @@ class AccountingService:
         self.db.refresh(fiscal_year)
         return fiscal_year
 
-    def close_fiscal_year(self, fiscal_year_id: UUID, user_id: UUID) -> FiscalYear:
+    def close_fiscal_year(self, fiscal_year_id: UUID, user_id: UUID) -> AccountingFiscalYear:
         """Clôturer un exercice comptable."""
         fiscal_year = self.get_fiscal_year(fiscal_year_id)
         if not fiscal_year:
