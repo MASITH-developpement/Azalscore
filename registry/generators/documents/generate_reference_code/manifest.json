@@ -1,0 +1,43 @@
+{
+  "id": "azalscore.generators.documents.generate_reference_code",
+  "name": "Génère un code de référence unique",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un code de référence unique",
+  "inputs": {
+    "entity_type": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "date": {
+      "type": "string",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "reference_code": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "documents",
+    "references"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

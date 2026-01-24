@@ -236,19 +236,19 @@ async def upload_document(
         tmp.write(content)
         tmp_path = tmp.name
 
-    try:
-        document = service.create_document(
-            document_type=document_type,
-            source=DocumentSource.UPLOAD,
-            file_path=tmp_path,
-            original_filename=file.filename,
-            created_by=current_user.id if current_user else None
-        )
-        return DocumentResponse.from_orm(document)
-    finally:
-        # Nettoie le fichier temporaire
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+    document = service.create_document(
+        document_type=document_type,
+        source=DocumentSource.UPLOAD,
+        file_path=tmp_path,
+        original_filename=file.filename,
+        created_by=current_user.id if current_user else None
+    )
+
+    # Nettoie le fichier temporaire
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+
+    return DocumentResponse.from_orm(document)
 
 
 @router.patch(

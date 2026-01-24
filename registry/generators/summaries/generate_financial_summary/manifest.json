@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.generators.summaries.generate_financial_summary",
+  "name": "Génère un résumé financier",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un résumé financier",
+  "inputs": {
+    "accounts": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "period": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "total_revenue": {
+      "type": "number",
+      "description": ""
+    },
+    "total_expenses": {
+      "type": "number",
+      "description": ""
+    },
+    "net_income": {
+      "type": "number",
+      "description": ""
+    },
+    "key_ratios": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "summaries",
+    "aggregates"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

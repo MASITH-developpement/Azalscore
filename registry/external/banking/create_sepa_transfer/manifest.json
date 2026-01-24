@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.external.banking.create_sepa_transfer",
+  "name": "Crée un virement SEPA",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Crée un virement SEPA",
+  "inputs": {
+    "iban": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "amount": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "reference": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "transfer_id": {
+      "type": "string",
+      "description": ""
+    },
+    "status": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "banking",
+    "sepa"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

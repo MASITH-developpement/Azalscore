@@ -27,22 +27,17 @@ from ..models import (
 from ..schemas import ProposedEntryLine
 
 # Import des modèles Finance existants
-try:
-    from app.modules.finance.models import (
-        Account,
-        EntryStatus,
-        FiscalPeriod,
-        FiscalYear,
-        Journal,
-        JournalEntry,
-        JournalEntryLine,
-        JournalType,
-    )
-    FINANCE_MODULE_AVAILABLE = True
-except ImportError:
-    FINANCE_MODULE_AVAILABLE = False
-    logger = logging.getLogger(__name__)
-    logger.warning("Finance module not available - using standalone mode")
+from app.modules.finance.models import (
+    Account,
+    EntryStatus,
+    FiscalPeriod,
+    FiscalYear,
+    Journal,
+    JournalEntry,
+    JournalEntryLine,
+    JournalType,
+)
+FINANCE_MODULE_AVAILABLE = True
 
 logger = logging.getLogger(__name__)
 
@@ -512,17 +507,12 @@ class AutoAccountingService:
         }
 
         for entry_id in auto_entry_ids:
-            try:
-                self.validate_entry(
-                    auto_entry_id=entry_id,
-                    validated_by=validated_by,
-                    approved=True
-                )
-                results["validated"] += 1
-            except Exception as e:
-                results["failed"] += 1
-                results["failed_ids"].append(str(entry_id))
-                results["errors"][str(entry_id)] = str(e)
+            self.validate_entry(
+                auto_entry_id=entry_id,
+                validated_by=validated_by,
+                approved=True
+            )
+            results["validated"] += 1
 
         return results
 
@@ -646,95 +636,90 @@ class AutoAccountingService:
         if not FINANCE_MODULE_AVAILABLE:
             return None
 
-        try:
-            # Récupère le journal
-            journal_code = document.ai_suggested_journal or "PURCHASES"
-            journal = self.db.query(Journal).filter(
-                Journal.tenant_id == self.tenant_id,
-                Journal.code == journal_code
+        # Récupère le journal
+        journal_code = document.ai_suggested_journal or "PURCHASES"
+        journal = self.db.query(Journal).filter(
+            Journal.tenant_id == self.tenant_id,
+            Journal.code == journal_code
+        ).first()
+
+        if not journal:
+            logger.error(f"Journal {journal_code} not found")
+            return None
+
+        # Récupère l'exercice fiscal en cours
+        today = date.today()
+        fiscal_year = self.db.query(FiscalYear).filter(
+            FiscalYear.tenant_id == self.tenant_id,
+            FiscalYear.start_date <= today,
+            FiscalYear.end_date >= today
+        ).first()
+
+        if not fiscal_year:
+            logger.error("No active fiscal year found")
+            return None
+
+        # Génère le numéro de pièce
+        entry_number = self._generate_entry_number(journal)
+
+        # Crée l'écriture
+        journal_entry = JournalEntry(
+            id=uuid.uuid4(),
+            tenant_id=self.tenant_id,
+            journal_id=journal.id,
+            fiscal_year_id=fiscal_year.id,
+            number=entry_number,
+            date=document.document_date or date.today(),
+            reference=document.reference,
+            description=f"Auto: {document.partner_name or 'Document'} - {document.reference or ''}",
+            status=EntryStatus.POSTED,
+            source_type="document",
+            source_id=document.id,
+            created_by=None,  # Système
+            created_at=datetime.utcnow(),
+            posted_by=None,
+            posted_at=datetime.utcnow()
+        )
+        self.db.add(journal_entry)
+
+        # Crée les lignes
+        total_debit = Decimal("0")
+        total_credit = Decimal("0")
+
+        for i, line in enumerate(proposed_lines):
+            # Récupère le compte
+            account = self.db.query(Account).filter(
+                Account.tenant_id == self.tenant_id,
+                Account.code == line.account_code
             ).first()
 
-            if not journal:
-                logger.error(f"Journal {journal_code} not found")
-                return None
+            if not account:
+                logger.warning(f"Account {line.account_code} not found, creating...")
+                # Crée le compte si nécessaire
+                account = self._create_account_if_needed(line.account_code, line.account_name)
 
-            # Récupère l'exercice fiscal en cours
-            today = date.today()
-            fiscal_year = self.db.query(FiscalYear).filter(
-                FiscalYear.tenant_id == self.tenant_id,
-                FiscalYear.start_date <= today,
-                FiscalYear.end_date >= today
-            ).first()
-
-            if not fiscal_year:
-                logger.error("No active fiscal year found")
-                return None
-
-            # Génère le numéro de pièce
-            entry_number = self._generate_entry_number(journal)
-
-            # Crée l'écriture
-            journal_entry = JournalEntry(
+            entry_line = JournalEntryLine(
                 id=uuid.uuid4(),
                 tenant_id=self.tenant_id,
-                journal_id=journal.id,
-                fiscal_year_id=fiscal_year.id,
-                number=entry_number,
-                date=document.document_date or date.today(),
-                reference=document.reference,
-                description=f"Auto: {document.partner_name or 'Document'} - {document.reference or ''}",
-                status=EntryStatus.POSTED,
-                source_type="document",
-                source_id=document.id,
-                created_by=None,  # Système
-                created_at=datetime.utcnow(),
-                posted_by=None,
-                posted_at=datetime.utcnow()
+                entry_id=journal_entry.id,
+                account_id=account.id if account else None,
+                line_number=i + 1,
+                debit=line.debit,
+                credit=line.credit,
+                label=line.label,
+                partner_id=document.partner_id,
+                created_at=datetime.utcnow()
             )
-            self.db.add(journal_entry)
+            self.db.add(entry_line)
 
-            # Crée les lignes
-            total_debit = Decimal("0")
-            total_credit = Decimal("0")
+            total_debit += line.debit
+            total_credit += line.credit
 
-            for i, line in enumerate(proposed_lines):
-                # Récupère le compte
-                account = self.db.query(Account).filter(
-                    Account.tenant_id == self.tenant_id,
-                    Account.code == line.account_code
-                ).first()
+        # Met à jour les totaux
+        journal_entry.total_debit = total_debit
+        journal_entry.total_credit = total_credit
 
-                if not account:
-                    logger.warning(f"Account {line.account_code} not found, creating...")
-                    # Crée le compte si nécessaire
-                    account = self._create_account_if_needed(line.account_code, line.account_name)
-
-                entry_line = JournalEntryLine(
-                    id=uuid.uuid4(),
-                    tenant_id=self.tenant_id,
-                    entry_id=journal_entry.id,
-                    account_id=account.id if account else None,
-                    line_number=i + 1,
-                    debit=line.debit,
-                    credit=line.credit,
-                    label=line.label,
-                    partner_id=document.partner_id,
-                    created_at=datetime.utcnow()
-                )
-                self.db.add(entry_line)
-
-                total_debit += line.debit
-                total_credit += line.credit
-
-            # Met à jour les totaux
-            journal_entry.total_debit = total_debit
-            journal_entry.total_credit = total_credit
-
-            return journal_entry
-
-        except Exception as e:
-            logger.error(f"Failed to create journal entry: {e}")
-            return None
+        return journal_entry
 
     def _generate_entry_number(self, journal: "Journal") -> str:
         """Génère le numéro de pièce."""

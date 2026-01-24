@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -6,8 +7,25 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 import type { TableColumn } from '@/types';
-import { Store, Hourglass, Package, ClipboardList, ShoppingCart, Banknote, DollarSign, Wallet, BarChart3 } from 'lucide-react';
+import {
+  Store, Hourglass, Package, ClipboardList, ShoppingCart, Banknote,
+  DollarSign, Wallet, BarChart3, User, Clock, Sparkles, ArrowLeft, Edit, Trash2
+} from 'lucide-react';
+import type {
+  Seller, MarketplaceProduct, MarketplaceOrder, Payout, MarketplaceStats
+} from './types';
+import {
+  SELLER_STATUS_CONFIG, PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYOUT_STATUS_CONFIG,
+  formatCurrency as formatCurrencyHelper, formatDate as formatDateHelper, formatPercent as formatPercentHelper,
+  formatRating, isSellerActive, isSellerPending
+} from './types';
+import {
+  SellerInfoTab, SellerProductsTab, SellerOrdersTab,
+  SellerPayoutsTab, SellerHistoryTab, SellerIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -42,149 +60,46 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
   </nav>
 );
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface Seller {
-  id: string;
-  code: string;
-  name: string;
-  email: string;
-  phone?: string;
-  company_name?: string;
-  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
-  commission_rate: number;
-  products_count: number;
-  total_sales: number;
-  total_revenue: number;
-  rating?: number;
-  joined_at: string;
-  is_verified: boolean;
-}
-
-interface MarketplaceProduct {
-  id: string;
-  seller_id: string;
-  seller_name: string;
-  name: string;
-  sku: string;
-  price: number;
-  currency: string;
-  stock: number;
-  status: 'DRAFT' | 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
-  category: string;
-  created_at: string;
-}
-
-interface MarketplaceOrder {
-  id: string;
-  number: string;
-  seller_id: string;
-  seller_name: string;
-  customer_name: string;
-  status: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'DISPUTED';
-  total: number;
-  commission: number;
-  net_amount: number;
-  currency: string;
-  created_at: string;
-}
-
-interface Payout {
-  id: string;
-  seller_id: string;
-  seller_name: string;
-  amount: number;
-  currency: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  period_start: string;
-  period_end: string;
-  created_at: string;
-  paid_at?: string;
-}
-
-interface MarketplaceStats {
-  total_sellers: number;
-  active_sellers: number;
-  pending_sellers: number;
-  total_products: number;
-  active_products: number;
-  pending_products: number;
-  orders_today: number;
-  orders_this_month: number;
-  revenue_today: number;
-  revenue_this_month: number;
-  commission_this_month: number;
-  pending_payouts: number;
-}
+// Types are imported from ./types
 
 // ============================================================================
-// CONSTANTES
+// CONSTANTES (pour les selects)
 // ============================================================================
 
-const SELLER_STATUS = [
-  { value: 'PENDING', label: 'En attente' },
-  { value: 'ACTIVE', label: 'Actif' },
-  { value: 'SUSPENDED', label: 'Suspendu' },
-  { value: 'REJECTED', label: 'Refuse' }
-];
+const SELLER_STATUS = Object.entries(SELLER_STATUS_CONFIG).map(([value, config]) => ({
+  value,
+  label: config.label
+}));
 
-const PRODUCT_STATUS = [
-  { value: 'DRAFT', label: 'Brouillon' },
-  { value: 'PENDING', label: 'En attente' },
-  { value: 'ACTIVE', label: 'Actif' },
-  { value: 'REJECTED', label: 'Refuse' },
-  { value: 'SUSPENDED', label: 'Suspendu' }
-];
+const PRODUCT_STATUS = Object.entries(PRODUCT_STATUS_CONFIG).map(([value, config]) => ({
+  value,
+  label: config.label
+}));
 
-const ORDER_STATUS = [
-  { value: 'PENDING', label: 'En attente' },
-  { value: 'CONFIRMED', label: 'Confirmee' },
-  { value: 'SHIPPED', label: 'Expediee' },
-  { value: 'DELIVERED', label: 'Livree' },
-  { value: 'CANCELLED', label: 'Annulee' },
-  { value: 'DISPUTED', label: 'Litige' }
-];
+const ORDER_STATUS = Object.entries(ORDER_STATUS_CONFIG).map(([value, config]) => ({
+  value,
+  label: config.label
+}));
 
-const PAYOUT_STATUS = [
-  { value: 'PENDING', label: 'En attente' },
-  { value: 'PROCESSING', label: 'En cours' },
-  { value: 'COMPLETED', label: 'Effectue' },
-  { value: 'FAILED', label: 'Echoue' }
-];
+const PAYOUT_STATUS = Object.entries(PAYOUT_STATUS_CONFIG).map(([value, config]) => ({
+  value,
+  label: config.label
+}));
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'orange',
-  ACTIVE: 'green',
-  SUSPENDED: 'red',
-  REJECTED: 'red',
-  DRAFT: 'gray',
-  CONFIRMED: 'blue',
-  SHIPPED: 'purple',
-  DELIVERED: 'green',
-  CANCELLED: 'red',
-  DISPUTED: 'orange',
-  PROCESSING: 'blue',
-  COMPLETED: 'green',
-  FAILED: 'red'
+  ...Object.fromEntries(Object.entries(SELLER_STATUS_CONFIG).map(([k, v]) => [k, v.color])),
+  ...Object.fromEntries(Object.entries(PRODUCT_STATUS_CONFIG).map(([k, v]) => [k, v.color])),
+  ...Object.fromEntries(Object.entries(ORDER_STATUS_CONFIG).map(([k, v]) => [k, v.color])),
+  ...Object.fromEntries(Object.entries(PAYOUT_STATUS_CONFIG).map(([k, v]) => [k, v.color]))
 };
 
 // ============================================================================
-// HELPERS
+// HELPERS (re-export from types)
 // ============================================================================
 
-const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatPercent = (value: number): string => {
-  return `${value.toFixed(1)}%`;
-};
+const formatCurrency = formatCurrencyHelper;
+const formatDate = formatDateHelper;
+const formatPercent = formatPercentHelper;
 
 // ============================================================================
 // API HOOKS
@@ -280,16 +195,194 @@ const useApproveProduct = () => {
   });
 };
 
+const useSeller = (id: string) => {
+  return useQuery({
+    queryKey: ['marketplace', 'seller', id],
+    queryFn: async () => {
+      return api.get<Seller>(`/v1/marketplace/sellers/${id}`).then(r => r.data);
+    },
+    enabled: !!id
+  });
+};
+
+// ============================================================================
+// DETAIL VIEW - SELLER
+// ============================================================================
+
+const SellerDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: seller, isLoading, error } = useSeller(id!);
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">Chargement du vendeur...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !seller) {
+    return (
+      <PageWrapper title="Erreur">
+        <Card>
+          <p className="text-danger">Impossible de charger le vendeur.</p>
+          <Button variant="secondary" onClick={() => navigate('/marketplace')} className="mt-4">
+            Retour
+          </Button>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  const tabs: TabDefinition<Seller>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <User size={16} />,
+      component: SellerInfoTab
+    },
+    {
+      id: 'products',
+      label: 'Produits',
+      icon: <Package size={16} />,
+      badge: seller.products_count,
+      component: SellerProductsTab
+    },
+    {
+      id: 'orders',
+      label: 'Commandes',
+      icon: <ShoppingCart size={16} />,
+      badge: seller.orders_count,
+      component: SellerOrdersTab
+    },
+    {
+      id: 'payouts',
+      label: 'Paiements',
+      icon: <Wallet size={16} />,
+      component: SellerPayoutsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: SellerHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: SellerIATab
+    }
+  ];
+
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'products',
+      label: 'Produits',
+      value: String(seller.products_count),
+      valueColor: 'blue'
+    },
+    {
+      id: 'sales',
+      label: 'Ventes',
+      value: String(seller.total_sales),
+      valueColor: 'green'
+    },
+    {
+      id: 'revenue',
+      label: 'CA Total',
+      value: formatCurrency(seller.total_revenue),
+      valueColor: 'green'
+    },
+    {
+      id: 'commission',
+      label: 'Commission',
+      value: formatPercent(seller.commission_rate),
+      valueColor: 'orange'
+    }
+  ];
+
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'summary',
+      title: 'Resume',
+      items: [
+        { id: 'code', label: 'Code', value: seller.code },
+        { id: 'status', label: 'Statut', value: SELLER_STATUS_CONFIG[seller.status].label },
+        { id: 'verified', label: 'Verifie', value: seller.is_verified ? 'Oui' : 'Non' }
+      ]
+    },
+    {
+      id: 'performance',
+      title: 'Performance',
+      items: [
+        { id: 'products', label: 'Produits', value: String(seller.products_count), highlight: true },
+        { id: 'sales', label: 'Ventes', value: String(seller.total_sales) },
+        { id: 'rating', label: 'Note', value: formatRating(seller.rating) }
+      ]
+    },
+    {
+      id: 'financial',
+      title: 'Financier',
+      items: [
+        { id: 'revenue', label: 'CA Total', value: formatCurrency(seller.total_revenue), highlight: true },
+        { id: 'commission', label: 'Commission', value: formatPercent(seller.commission_rate) },
+        { id: 'pending', label: 'A verser', value: formatCurrency(seller.pending_payout || 0) }
+      ]
+    }
+  ];
+
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      variant: 'secondary',
+      onClick: () => navigate('/marketplace')
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit size={16} />,
+      variant: 'primary',
+      onClick: () => console.log('Edit seller', seller.id)
+    }
+  ];
+
+  return (
+    <BaseViewStandard<Seller>
+      title={seller.name}
+      subtitle={seller.company_name || seller.email}
+      status={{
+        label: SELLER_STATUS_CONFIG[seller.status].label,
+        color: SELLER_STATUS_CONFIG[seller.status].color as 'gray' | 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'yellow' | 'cyan'
+      }}
+      data={seller}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
 // ============================================================================
 // COMPOSANTS
 // ============================================================================
 
 const SellersView: React.FC = () => {
+  const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>('');
   const { data: sellers = [], isLoading } = useSellers({
     status: filterStatus || undefined
   });
   const updateStatus = useUpdateSellerStatus();
+
+  const handleViewSeller = (seller: Seller) => {
+    navigate(`/marketplace/sellers/${seller.id}`);
+  };
 
   const columns: TableColumn<Seller>[] = [
     { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -307,6 +400,7 @@ const SellersView: React.FC = () => {
     }},
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
       <div className="flex gap-1">
+        <Button size="sm" variant="secondary" onClick={() => handleViewSeller(row as Seller)}>Voir</Button>
         {(row as Seller).status === 'PENDING' && (
           <>
             <Button size="sm" variant="success" onClick={() => updateStatus.mutate({ id: (row as Seller).id, status: 'ACTIVE' })}>Approuver</Button>
@@ -336,7 +430,7 @@ const SellersView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={sellers} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={sellers} isLoading={isLoading} keyField="id" onRowClick={handleViewSeller} />
     </Card>
   );
 };
@@ -520,7 +614,7 @@ const PayoutsView: React.FC = () => {
 
 type View = 'dashboard' | 'sellers' | 'products' | 'orders' | 'payouts';
 
-const MarketplaceModule: React.FC = () => {
+const MarketplaceDashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const { data: stats } = useMarketplaceStats();
 
@@ -632,4 +726,15 @@ const MarketplaceModule: React.FC = () => {
   );
 };
 
-export default MarketplaceModule;
+// ============================================================================
+// ROUTES
+// ============================================================================
+
+const MarketplaceRoutes: React.FC = () => (
+  <Routes>
+    <Route index element={<MarketplaceDashboard />} />
+    <Route path="sellers/:id" element={<SellerDetailView />} />
+  </Routes>
+);
+
+export default MarketplaceRoutes;

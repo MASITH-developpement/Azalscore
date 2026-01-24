@@ -33,7 +33,7 @@ API_CONTAINER = "azals_api"
 
 CHECK_INTERVAL = 10
 MAX_LOG_LINES = 250
-AI_MODEL = "gpt-4.1"
+AI_MODEL = "claude-sonnet-4-5-20250929"
 
 LOG_FILE = PROJECT_ROOT / "azalscore_guardian.log"
 
@@ -150,8 +150,8 @@ def detect_anomalies(logs):
 # =====================================================
 
 def ask_ai(logs, errors, warnings):
-    from openai import OpenAI
-    client = OpenAI()
+    from anthropic import Anthropic
+    client = Anthropic()
 
     prompt = f"""
 Tu es un expert Python / FastAPI.
@@ -177,12 +177,15 @@ LOGS :
 {logs}
 """
 
-    r = client.responses.create(
+    r = client.messages.create(
         model=AI_MODEL,
-        input=prompt
+        max_tokens=4096,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
 
-    return r.output_text.strip()
+    return r.content[0].text.strip()
 
 
 # =====================================================

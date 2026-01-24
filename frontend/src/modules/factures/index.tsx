@@ -1,6 +1,6 @@
 /**
  * AZALSCORE Module - FACTURES & AVOIRS
- * Gestion de la facturation clients
+ * Gestion de la facturation clients avec BaseViewStandard
  * Flux : CRM → DEV → COM/ODS → AFF → [FAC/AVO] → CPT
  * Numérotation : FAC-YY-MM-XXXX / AVO-YY-MM-XXXX
  */
@@ -11,143 +11,47 @@ import {
   FileText, Plus, Edit, Trash2, Search, Check, X, Send,
   Euro, Calendar, Building2, CreditCard, ChevronRight,
   Download, Printer, Clock, CheckCircle2, AlertTriangle,
-  ArrowLeftRight, Ban
+  ArrowLeftRight, Ban, Package, History, FileArchive, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import {
+  BaseViewStandard,
+  type TabDefinition,
+  type InfoBarItem,
+  type SidebarSection,
+  type ActionDefinition,
+  type StatusDefinition,
+  type SemanticColor,
+} from '@ui/standards';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
-// ============================================================
-// TYPES
-// ============================================================
-
-type FactureType = 'INVOICE' | 'CREDIT_NOTE';
-type FactureStatus = 'DRAFT' | 'VALIDATED' | 'SENT' | 'PAID' | 'PARTIAL' | 'OVERDUE' | 'CANCELLED';
-type PaymentMethod = 'BANK_TRANSFER' | 'CHECK' | 'CREDIT_CARD' | 'CASH' | 'DIRECT_DEBIT' | 'OTHER';
-
-interface DocumentLine {
-  id: string;
-  line_number: number;
-  product_code?: string;
-  description: string;
-  quantity: number;
-  unit?: string;
-  unit_price: number;
-  discount_percent: number;
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  total: number;
-}
-
-interface Payment {
-  id: string;
-  reference?: string;
-  method: PaymentMethod;
-  amount: number;
-  date: string;
-  notes?: string;
-}
-
-interface Facture {
-  id: string;
-  type: FactureType;
-  number: string; // FAC-YY-MM-XXXX ou AVO-YY-MM-XXXX
-  reference?: string;
-  status: FactureStatus;
-  customer_id: string;
-  customer_name?: string;
-  customer_code?: string;
-  parent_id?: string; // Commande ou intervention source
-  parent_number?: string;
-  date: string;
-  due_date?: string;
-  billing_address?: Record<string, string>;
-  subtotal: number;
-  discount_amount: number;
-  discount_percent: number;
-  tax_amount: number;
-  total: number;
-  currency: string;
-  payment_terms?: string;
-  payment_method?: PaymentMethod;
-  paid_amount: number;
-  remaining_amount: number;
-  lines: DocumentLine[];
-  payments?: Payment[];
-  notes?: string;
-  internal_notes?: string;
-  pdf_url?: string;
-  validated_by?: string;
-  validated_at?: string;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface FactureFormData {
-  customer_id: string;
-  type: FactureType;
-  reference?: string;
-  due_date?: string;
-  payment_terms?: string;
-  notes?: string;
-}
-
-interface PaymentFormData {
-  method: PaymentMethod;
-  amount: number;
-  date: string;
-  reference?: string;
-  notes?: string;
-}
-
-// ============================================================
-// CONSTANTS
-// ============================================================
-
-const TYPE_CONFIG: Record<FactureType, { label: string; prefix: string; color: string }> = {
-  INVOICE: { label: 'Facture', prefix: 'FAC', color: 'blue' },
-  CREDIT_NOTE: { label: 'Avoir', prefix: 'AVO', color: 'orange' },
-};
-
-const STATUS_CONFIG: Record<FactureStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  DRAFT: { label: 'Brouillon', color: 'gray', icon: <Edit size={14} /> },
-  VALIDATED: { label: 'Validée', color: 'blue', icon: <Check size={14} /> },
-  SENT: { label: 'Envoyée', color: 'purple', icon: <Send size={14} /> },
-  PAID: { label: 'Payée', color: 'green', icon: <CheckCircle2 size={14} /> },
-  PARTIAL: { label: 'Partielle', color: 'yellow', icon: <Clock size={14} /> },
-  OVERDUE: { label: 'En retard', color: 'red', icon: <AlertTriangle size={14} /> },
-  CANCELLED: { label: 'Annulée', color: 'gray', icon: <Ban size={14} /> },
-};
-
-const PAYMENT_METHODS: Record<PaymentMethod, string> = {
-  BANK_TRANSFER: 'Virement',
-  CHECK: 'Chèque',
-  CREDIT_CARD: 'Carte bancaire',
-  CASH: 'Espèces',
-  DIRECT_DEBIT: 'Prélèvement',
-  OTHER: 'Autre',
-};
-
-// ============================================================
-// HELPERS
-// ============================================================
-
-const formatCurrency = (value: number, currency = 'EUR'): string =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value);
-
-const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('fr-FR');
+// Import types et composants tabs
+import type {
+  Facture, FactureFormData, Customer, FactureType, FactureStatus,
+  PaymentMethod, Payment, PaymentFormData, DocumentLine
+} from './types';
+import {
+  STATUS_CONFIG, TYPE_CONFIG, PAYMENT_METHODS,
+  formatCurrency, formatDate, isOverdue, getDaysUntilDue
+} from './types';
+import {
+  FactureInfoTab,
+  FactureLinesTab,
+  FactureFinancialTab,
+  FactureDocsTab,
+  FactureHistoryTab,
+  FactureIATab,
+} from './components';
 
 // ============================================================
 // API HOOKS
 // ============================================================
 
-const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType; status?: string }) => {
+const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType; status?: string; search?: string }) => {
   return useQuery({
     queryKey: ['commercial', 'documents', 'factures', page, pageSize, filters],
     queryFn: async () => {
@@ -155,15 +59,13 @@ const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType
         page: String(page),
         page_size: String(pageSize),
       });
-      // Fetch both invoices and credit notes
       if (filters?.type) {
         params.append('type', filters.type);
       } else {
-        // Par défaut: factures et avoirs
         params.append('type', 'INVOICE');
       }
       if (filters?.status) params.append('status', filters.status);
-
+      if (filters?.search) params.append('search', filters.search);
       const response = await api.get<PaginatedResponse<Facture>>(`/v1/commercial/documents?${params}`);
       return response.data;
     },
@@ -192,11 +94,13 @@ const useFacturePayments = (documentId: string) => {
   });
 };
 
-const useCustomers = () => {
+const useCustomers = (search?: string) => {
   return useQuery({
-    queryKey: ['commercial', 'customers', 'all'],
+    queryKey: ['commercial', 'customers', 'search', search],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<{ id: string; code: string; name: string }>>('/v1/commercial/customers?page_size=100');
+      const params = new URLSearchParams({ page: '1', page_size: '50' });
+      if (search) params.append('search', search);
+      const response = await api.get<PaginatedResponse<Customer>>(`/v1/commercial/customers?${params}`);
       return response.data.items;
     },
   });
@@ -209,9 +113,7 @@ const useCreateFacture = () => {
       const response = await api.post<Facture>('/v1/commercial/documents', data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -222,9 +124,7 @@ const useValidateFacture = () => {
       const response = await api.post<Facture>(`/v1/commercial/documents/${id}/validate`);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -235,9 +135,7 @@ const useSendFacture = () => {
       const response = await api.post<Facture>(`/v1/commercial/documents/${id}/send`);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -251,9 +149,7 @@ const useCreatePayment = () => {
       });
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -261,13 +157,10 @@ const useCreateAvoir = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (factureId: string) => {
-      // Créer un avoir à partir d'une facture
       const response = await api.post<Facture>(`/v1/commercial/documents/${factureId}/credit-note`);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -335,21 +228,22 @@ interface FactureNavState {
 }
 
 // ============================================================
-// LIST
+// LIST VIEW
 // ============================================================
 
-const FacturesListInternal: React.FC<{
+const FactureListView: React.FC<{
   onSelectFacture: (id: string) => void;
   onCreateFacture: (type: FactureType) => void;
 }> = ({ onSelectFacture, onCreateFacture }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [filters, setFilters] = useState<{ type?: FactureType; status?: string }>({});
+  const [filters, setFilters] = useState<{ type?: FactureType; status?: string; search?: string }>({});
   const [activeTab, setActiveTab] = useState<'INVOICE' | 'CREDIT_NOTE' | 'ALL'>('INVOICE');
 
   const { data, isLoading, refetch } = useFacturesList(page, pageSize, {
     type: activeTab === 'ALL' ? undefined : activeTab,
     status: filters.status,
+    search: filters.search,
   });
 
   const columns: TableColumn<Facture>[] = [
@@ -361,7 +255,7 @@ const FacturesListInternal: React.FC<{
       render: (value, row) => (
         <div>
           <span className="azals-link" onClick={() => onSelectFacture(row.id)}>{value as string}</span>
-          {row.type === 'CREDIT_NOTE' && <TypeBadge type={row.type} />}
+          {row.type === 'CREDIT_NOTE' && <span className="ml-2"><TypeBadge type={row.type} /></span>}
         </div>
       ),
     },
@@ -389,10 +283,10 @@ const FacturesListInternal: React.FC<{
       accessor: 'due_date',
       render: (value, row) => {
         if (!value) return '-';
-        const isOverdue = new Date(value as string) < new Date() && !['PAID', 'CANCELLED'].includes(row.status);
+        const factureIsOverdue = isOverdue(row);
         return (
-          <span className={isOverdue ? 'text-danger' : ''}>
-            {isOverdue && <AlertTriangle size={14} className="mr-1" />}
+          <span className={factureIsOverdue ? 'text-danger' : ''}>
+            {factureIsOverdue && <AlertTriangle size={14} className="mr-1" />}
             {formatDate(value as string)}
           </span>
         );
@@ -422,7 +316,7 @@ const FacturesListInternal: React.FC<{
       accessor: 'remaining_amount',
       align: 'right',
       render: (value, row) => {
-        if (row.status === 'PAID' || row.status === 'CANCELLED') return '-';
+        if (row.status === 'PAID' || row.status === 'CANCELLED' || row.type === 'CREDIT_NOTE') return '-';
         return <span className="text-warning">{formatCurrency(value as number)}</span>;
       },
     },
@@ -472,7 +366,13 @@ const FacturesListInternal: React.FC<{
         <div className="azals-filter-bar">
           <div className="azals-filter-bar__search">
             <Search size={16} />
-            <input type="text" placeholder="Rechercher..." className="azals-input" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={filters.search || ''}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              className="azals-input"
+            />
           </div>
           <select
             className="azals-select"
@@ -507,10 +407,10 @@ const FacturesListInternal: React.FC<{
 };
 
 // ============================================================
-// DETAIL
+// DETAIL VIEW - BaseViewStandard
 // ============================================================
 
-const FactureDetailInternal: React.FC<{
+const FactureDetailView: React.FC<{
   factureId: string;
   onBack: () => void;
   onEdit: () => void;
@@ -522,281 +422,305 @@ const FactureDetailInternal: React.FC<{
   const sendFacture = useSendFacture();
   const createAvoir = useCreateAvoir();
 
-  const handleValidate = async () => {
-    if (window.confirm('Valider cette facture ?')) {
-      await validateFacture.mutateAsync(factureId);
+  // Merge payments into facture data
+  const factureWithPayments = useMemo(() => {
+    if (!facture) return null;
+    return { ...facture, payments: payments || facture.payments };
+  }, [facture, payments]);
+
+  const isCreditNote = facture?.type === 'CREDIT_NOTE';
+  const isFactureOverdue = facture ? isOverdue(facture) : false;
+
+  // Tab definitions
+  const tabs: TabDefinition<Facture>[] = useMemo(() => [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <FileText size={18} />,
+      component: FactureInfoTab,
+    },
+    {
+      id: 'lines',
+      label: 'Lignes',
+      icon: <Package size={18} />,
+      badge: facture?.lines?.length || 0,
+      component: FactureLinesTab,
+    },
+    {
+      id: 'financial',
+      label: 'Financier',
+      icon: <Euro size={18} />,
+      component: FactureFinancialTab,
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileArchive size={18} />,
+      component: FactureDocsTab,
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <History size={18} />,
+      component: FactureHistoryTab,
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={18} />,
+      isIA: true,
+      component: FactureIATab,
+    },
+  ], [facture?.lines?.length]);
+
+  // Status mapping
+  const statusDef: StatusDefinition | undefined = facture ? {
+    label: STATUS_CONFIG[facture.status].label,
+    color: STATUS_CONFIG[facture.status].color as SemanticColor,
+  } : undefined;
+
+  // Info bar items (KPIs)
+  const infoBarItems: InfoBarItem[] = useMemo(() => {
+    if (!facture) return [];
+    const daysUntilDue = getDaysUntilDue(facture.due_date);
+
+    return [
+      {
+        id: 'type',
+        label: 'Type',
+        value: TYPE_CONFIG[facture.type].label,
+        icon: <FileText size={16} />,
+      },
+      {
+        id: 'date',
+        label: 'Date',
+        value: formatDate(facture.date),
+        icon: <Calendar size={16} />,
+      },
+      {
+        id: 'due',
+        label: 'Échéance',
+        value: facture.due_date ? formatDate(facture.due_date) : 'Non définie',
+        valueColor: isFactureOverdue ? 'negative' : (daysUntilDue !== null && daysUntilDue <= 7 ? 'warning' : undefined),
+        icon: <Clock size={16} />,
+      },
+      {
+        id: 'total',
+        label: 'Total TTC',
+        value: `${isCreditNote ? '-' : ''}${formatCurrency(facture.total, facture.currency)}`,
+        valueColor: isCreditNote ? 'negative' : undefined,
+        icon: <Euro size={16} />,
+      },
+    ];
+  }, [facture, isFactureOverdue, isCreditNote]);
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = useMemo(() => {
+    if (!facture) return [];
+    return [
+      {
+        id: 'totaux',
+        title: 'Récapitulatif',
+        items: [
+          { id: 'subtotal', label: 'Sous-total HT', value: isCreditNote ? -facture.subtotal : facture.subtotal, format: 'currency' },
+          ...(facture.discount_amount > 0 ? [{
+            id: 'discount',
+            label: `Remise (${facture.discount_percent}%)`,
+            value: -facture.discount_amount,
+            format: 'currency' as const,
+          }] : []),
+          { id: 'tax', label: 'TVA', value: isCreditNote ? -facture.tax_amount : facture.tax_amount, format: 'currency' },
+        ],
+        total: { label: 'Total TTC', value: isCreditNote ? -facture.total : facture.total },
+      },
+      ...(!isCreditNote ? [{
+        id: 'paiement',
+        title: 'Paiement',
+        items: [
+          { id: 'paid', label: 'Montant payé', value: facture.paid_amount, format: 'currency' as const },
+          { id: 'remaining', label: 'Reste à payer', value: facture.remaining_amount, format: 'currency' as const },
+        ],
+      }] : []),
+      {
+        id: 'client',
+        title: 'Client',
+        items: [
+          { id: 'name', label: 'Nom', value: facture.customer_name || '-' },
+          { id: 'code', label: 'Code', value: facture.customer_code || '-', secondary: true },
+        ],
+      },
+    ];
+  }, [facture, isCreditNote]);
+
+  // Header actions
+  const headerActions: ActionDefinition[] = useMemo(() => {
+    if (!facture) return [];
+    const actions: ActionDefinition[] = [];
+
+    if (facture.status === 'DRAFT') {
+      actions.push({
+        id: 'edit',
+        label: 'Modifier',
+        icon: <Edit size={16} />,
+        variant: 'ghost',
+        onClick: onEdit,
+      });
     }
-  };
 
-  const handleSend = async () => {
-    if (window.confirm('Marquer comme envoyée ?')) {
-      await sendFacture.mutateAsync(factureId);
+    actions.push({
+      id: 'pdf',
+      label: 'PDF',
+      icon: <Download size={16} />,
+      variant: 'ghost',
+    });
+
+    actions.push({
+      id: 'print',
+      label: 'Imprimer',
+      icon: <Printer size={16} />,
+      variant: 'ghost',
+    });
+
+    return actions;
+  }, [facture, onEdit]);
+
+  // Primary actions (footer)
+  const primaryActions: ActionDefinition[] = useMemo(() => {
+    if (!facture) return [];
+    const actions: ActionDefinition[] = [];
+    const isInvoice = facture.type === 'INVOICE';
+
+    // Encaisser
+    if (isInvoice && ['VALIDATED', 'SENT', 'PARTIAL', 'OVERDUE'].includes(facture.status)) {
+      actions.push({
+        id: 'payment',
+        label: 'Encaisser',
+        icon: <CreditCard size={16} />,
+        variant: 'primary',
+        onClick: onAddPayment,
+      });
     }
-  };
 
-  const handleCreateAvoir = async () => {
-    if (window.confirm('Créer un avoir pour cette facture ?')) {
-      try {
-        const avoir = await createAvoir.mutateAsync(factureId);
-        window.dispatchEvent(new CustomEvent('azals:navigate', {
-          detail: { view: 'factures', params: { id: avoir.id } }
-        }));
-      } catch (error) {
-        console.error('Erreur création avoir:', error);
-      }
+    // Comptabiliser
+    if (facture.status === 'PAID') {
+      actions.push({
+        id: 'comptabiliser',
+        label: 'Comptabiliser',
+        icon: <ChevronRight size={16} />,
+        variant: 'secondary',
+        onClick: () => {
+          window.dispatchEvent(new CustomEvent('azals:navigate', {
+            detail: { view: 'comptabilite', params: { factureId, action: 'comptabiliser' } }
+          }));
+        },
+      });
     }
-  };
 
-  const handleComptabiliser = () => {
-    window.dispatchEvent(new CustomEvent('azals:navigate', {
-      detail: { view: 'comptabilite', params: { factureId, action: 'comptabiliser' } }
-    }));
-  };
+    // Envoyer
+    if (facture.status === 'VALIDATED') {
+      actions.push({
+        id: 'send',
+        label: 'Marquer envoyée',
+        icon: <Send size={16} />,
+        variant: 'secondary',
+        loading: sendFacture.isPending,
+        onClick: async () => {
+          if (window.confirm('Marquer comme envoyée ?')) {
+            await sendFacture.mutateAsync(factureId);
+          }
+        },
+      });
+    }
 
-  if (isLoading) {
-    return <PageWrapper title="Chargement..."><div className="azals-loading">Chargement...</div></PageWrapper>;
-  }
+    // Valider
+    if (facture.status === 'DRAFT') {
+      actions.push({
+        id: 'validate',
+        label: 'Valider',
+        icon: <Check size={16} />,
+        variant: 'primary',
+        loading: validateFacture.isPending,
+        onClick: async () => {
+          if (window.confirm('Valider ce document ?')) {
+            await validateFacture.mutateAsync(factureId);
+          }
+        },
+      });
+    }
 
-  if (!facture) {
+    return actions;
+  }, [facture, factureId, validateFacture, sendFacture, onAddPayment]);
+
+  // Secondary actions (footer)
+  const secondaryActions: ActionDefinition[] = useMemo(() => {
+    if (!facture) return [];
+    const actions: ActionDefinition[] = [];
+
+    // Créer avoir
+    if (facture.type === 'INVOICE' && facture.status === 'PAID') {
+      actions.push({
+        id: 'avoir',
+        label: 'Créer avoir',
+        icon: <ArrowLeftRight size={16} />,
+        variant: 'ghost',
+        loading: createAvoir.isPending,
+        onClick: async () => {
+          if (window.confirm('Créer un avoir pour cette facture ?')) {
+            const avoir = await createAvoir.mutateAsync(factureId);
+            window.dispatchEvent(new CustomEvent('azals:navigate', {
+              detail: { view: 'factures', params: { id: avoir.id } }
+            }));
+          }
+        },
+      });
+    }
+
+    actions.push({
+      id: 'back',
+      label: 'Retour à la liste',
+      variant: 'ghost',
+      onClick: onBack,
+    });
+
+    return actions;
+  }, [facture, factureId, createAvoir, onBack]);
+
+  if (!facture && !isLoading) {
     return (
-      <PageWrapper title="Facture non trouvée">
-        <Card><p>Cette facture n'existe pas.</p><Button onClick={onBack}>Retour</Button></Card>
+      <PageWrapper title="Document non trouvé">
+        <Card>
+          <p>Ce document n'existe pas.</p>
+          <Button onClick={onBack}>Retour</Button>
+        </Card>
       </PageWrapper>
     );
   }
 
-  const isInvoice = facture.type === 'INVOICE';
-  const canEdit = facture.status === 'DRAFT';
-  const canValidate = facture.status === 'DRAFT';
-  const canSend = facture.status === 'VALIDATED';
-  const canPay = isInvoice && ['VALIDATED', 'SENT', 'PARTIAL', 'OVERDUE'].includes(facture.status);
-  const canCreateAvoir = isInvoice && facture.status === 'PAID';
-  const canComptabiliser = facture.status === 'PAID';
-
   return (
-    <PageWrapper
-      title={facture.number}
-      subtitle={`${TYPE_CONFIG[facture.type].label} - ${facture.customer_name}`}
+    <BaseViewStandard<Facture>
+      title={facture?.number || 'Chargement...'}
+      subtitle={`${facture ? TYPE_CONFIG[facture.type].label : ''} - ${facture?.customer_name || ''}`}
+      status={statusDef}
+      data={factureWithPayments!}
+      view="detail"
+      tabs={tabs}
+      defaultTab="info"
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+      secondaryActions={secondaryActions}
       backAction={{ label: 'Retour', onClick: onBack }}
-      actions={
-        <ButtonGroup>
-          {canPay && (
-            <Button leftIcon={<CreditCard size={16} />} onClick={onAddPayment}>
-              Encaisser
-            </Button>
-          )}
-          {canComptabiliser && (
-            <Button variant="secondary" leftIcon={<ChevronRight size={16} />} onClick={handleComptabiliser}>
-              Comptabiliser
-            </Button>
-          )}
-          {canCreateAvoir && (
-            <Button variant="secondary" leftIcon={<ArrowLeftRight size={16} />} onClick={handleCreateAvoir} isLoading={createAvoir.isPending}>
-              Créer avoir
-            </Button>
-          )}
-          {canSend && (
-            <Button variant="secondary" leftIcon={<Send size={16} />} onClick={handleSend} isLoading={sendFacture.isPending}>
-              Marquer envoyée
-            </Button>
-          )}
-          {canValidate && (
-            <Button variant="secondary" leftIcon={<Check size={16} />} onClick={handleValidate} isLoading={validateFacture.isPending}>
-              Valider
-            </Button>
-          )}
-          {canEdit && (
-            <Button variant="ghost" leftIcon={<Edit size={16} />} onClick={onEdit}>Modifier</Button>
-          )}
-          <Button variant="ghost" leftIcon={<Download size={16} />}>PDF</Button>
-          <Button variant="ghost" leftIcon={<Printer size={16} />}>Imprimer</Button>
-        </ButtonGroup>
-      }
-    >
-      <Grid cols={4} gap="md" className="mb-4">
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Type</span>
-            <TypeBadge type={facture.type} />
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Statut</span>
-            <StatusBadge status={facture.status} />
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Échéance</span>
-            <span className="azals-stat__value">{facture.due_date ? formatDate(facture.due_date) : '-'}</span>
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Total TTC</span>
-            <span className={`azals-stat__value azals-stat__value--large ${facture.type === 'CREDIT_NOTE' ? 'text-danger' : ''}`}>
-              {facture.type === 'CREDIT_NOTE' && '-'}
-              {formatCurrency(facture.total)}
-            </span>
-          </div>
-        </Card>
-      </Grid>
-
-      {facture.parent_number && (
-        <div className="azals-alert azals-alert--info mb-4">
-          <FileText size={20} />
-          <div>
-            <strong>Document source</strong>
-            <p>{facture.parent_number}</p>
-          </div>
-        </div>
-      )}
-
-      <Grid cols={2} gap="lg" className="mb-4">
-        <Card title="Client">
-          <dl className="azals-dl">
-            <dt><Building2 size={14} /> Client</dt>
-            <dd>
-              <strong>{facture.customer_name}</strong>
-              {facture.customer_code && <span className="text-muted"> ({facture.customer_code})</span>}
-            </dd>
-            {facture.billing_address && (
-              <>
-                <dt>Adresse facturation</dt>
-                <dd>
-                  {facture.billing_address.line1 && <div>{facture.billing_address.line1}</div>}
-                  {facture.billing_address.city && <div>{facture.billing_address.postal_code} {facture.billing_address.city}</div>}
-                </dd>
-              </>
-            )}
-          </dl>
-        </Card>
-
-        <Card title="Paiement">
-          <dl className="azals-dl">
-            <dt>Conditions</dt><dd>{facture.payment_terms || 'Net 30'}</dd>
-            <dt>Mode de paiement</dt><dd>{facture.payment_method ? PAYMENT_METHODS[facture.payment_method] : '-'}</dd>
-            {isInvoice && (
-              <>
-                <dt>Payé</dt><dd>{formatCurrency(facture.paid_amount)}</dd>
-                <dt>Reste dû</dt>
-                <dd className={facture.remaining_amount > 0 ? 'text-warning' : 'text-success'}>
-                  {formatCurrency(facture.remaining_amount)}
-                </dd>
-              </>
-            )}
-          </dl>
-        </Card>
-      </Grid>
-
-      <Card title="Lignes">
-        {facture.lines && facture.lines.length > 0 ? (
-          <table className="azals-table azals-table--simple">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Description</th>
-                <th className="text-right">Qté</th>
-                <th className="text-right">P.U. HT</th>
-                <th className="text-right">Total HT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {facture.lines.map(line => (
-                <tr key={line.id}>
-                  <td>{line.line_number}</td>
-                  <td>
-                    {line.product_code && <span className="text-muted">[{line.product_code}] </span>}
-                    {line.description}
-                  </td>
-                  <td className="text-right">{line.quantity} {line.unit}</td>
-                  <td className="text-right">{formatCurrency(line.unit_price)}</td>
-                  <td className="text-right">{formatCurrency(line.subtotal)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={4} className="text-right"><strong>Sous-total HT</strong></td>
-                <td className="text-right">{formatCurrency(facture.subtotal)}</td>
-              </tr>
-              <tr>
-                <td colSpan={4} className="text-right">TVA</td>
-                <td className="text-right">{formatCurrency(facture.tax_amount)}</td>
-              </tr>
-              <tr className="azals-table__total">
-                <td colSpan={4} className="text-right"><strong>Total TTC</strong></td>
-                <td className="text-right"><strong>{formatCurrency(facture.total)}</strong></td>
-              </tr>
-            </tfoot>
-          </table>
-        ) : (
-          <p className="text-muted text-center py-4">Aucune ligne</p>
-        )}
-      </Card>
-
-      {payments && payments.length > 0 && (
-        <Card title="Paiements reçus" className="mt-4">
-          <table className="azals-table azals-table--simple">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Référence</th>
-                <th>Mode</th>
-                <th className="text-right">Montant</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map(p => (
-                <tr key={p.id}>
-                  <td>{formatDate(p.date)}</td>
-                  <td>{p.reference || '-'}</td>
-                  <td>{PAYMENT_METHODS[p.method]}</td>
-                  <td className="text-right text-success">{formatCurrency(p.amount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-      )}
-
-      {canPay && facture.remaining_amount > 0 && (
-        <Card className="mt-4">
-          <div className="azals-action-card">
-            <div>
-              <h4>Encaissement</h4>
-              <p className="text-muted">Reste à encaisser: {formatCurrency(facture.remaining_amount)}</p>
-            </div>
-            <Button leftIcon={<CreditCard size={16} />} onClick={onAddPayment}>
-              Enregistrer un paiement
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {canComptabiliser && (
-        <Card className="mt-4">
-          <div className="azals-action-card">
-            <div>
-              <h4>Prochaine étape</h4>
-              <p className="text-muted">Cette facture est soldée, vous pouvez la comptabiliser</p>
-            </div>
-            <Button leftIcon={<ChevronRight size={16} />} onClick={handleComptabiliser}>
-              Comptabiliser
-            </Button>
-          </div>
-        </Card>
-      )}
-    </PageWrapper>
+      isLoading={isLoading}
+    />
   );
 };
 
 // ============================================================
-// PAYMENT FORM
+// PAYMENT FORM VIEW
 // ============================================================
 
-const PaymentFormInternal: React.FC<{
+const PaymentFormView: React.FC<{
   factureId: string;
   onBack: () => void;
   onSaved: () => void;
@@ -880,8 +804,8 @@ const PaymentFormInternal: React.FC<{
                 value={form.method}
                 onChange={(e) => setForm({ ...form, method: e.target.value as PaymentMethod })}
               >
-                {Object.entries(PAYMENT_METHODS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                {Object.entries(PAYMENT_METHODS).map(([key, config]) => (
+                  <option key={key} value={key}>{config.label}</option>
                 ))}
               </select>
             </div>
@@ -923,13 +847,13 @@ const PaymentFormInternal: React.FC<{
 export const FacturesModule: React.FC = () => {
   const [navState, setNavState] = useState<FactureNavState>({ view: 'list' });
 
+  // Écouter les événements de navigation
   React.useEffect(() => {
     const handleNavigate = (event: CustomEvent) => {
       const { params } = event.detail || {};
       if (params?.id) {
         setNavState({ view: 'detail', factureId: params.id });
       } else if (params?.interventionId && params?.action === 'new') {
-        // Créer facture depuis intervention
         setNavState({ view: 'form', factureType: 'INVOICE', isNew: true });
       }
     };
@@ -947,7 +871,7 @@ export const FacturesModule: React.FC = () => {
   switch (navState.view) {
     case 'detail':
       return (
-        <FactureDetailInternal
+        <FactureDetailView
           factureId={navState.factureId!}
           onBack={navigateToList}
           onEdit={() => navigateToForm(navState.factureType || 'INVOICE', navState.factureId)}
@@ -956,7 +880,7 @@ export const FacturesModule: React.FC = () => {
       );
     case 'payment':
       return (
-        <PaymentFormInternal
+        <PaymentFormView
           factureId={navState.factureId!}
           onBack={() => navigateToDetail(navState.factureId!)}
           onSaved={() => navigateToDetail(navState.factureId!)}
@@ -964,7 +888,7 @@ export const FacturesModule: React.FC = () => {
       );
     default:
       return (
-        <FacturesListInternal
+        <FactureListView
           onSelectFacture={navigateToDetail}
           onCreateFacture={navigateToForm}
         />

@@ -95,10 +95,7 @@ class DashboardService:
         """
         # Synchronise la banque si demandé (mode PULL à l'ouverture)
         if sync_bank:
-            try:
-                self.bank_service.sync_all(sync_type="ON_DEMAND")
-            except Exception as e:
-                logger.warning(f"Bank sync failed: {e}")
+            self.bank_service.sync_all(sync_type="ON_DEMAND")
 
         # Position de trésorerie
         cash_position = self._get_cash_position()

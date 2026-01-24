@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.generators.templates.generate_email_content",
+  "name": "Génère le contenu d'un email depuis un template",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère le contenu d'un email depuis un template",
+  "inputs": {
+    "template_id": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "variables": {
+      "type": "object",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "subject": {
+      "type": "string",
+      "description": ""
+    },
+    "body": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "templates",
+    "placeholders"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

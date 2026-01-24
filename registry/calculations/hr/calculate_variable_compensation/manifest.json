@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.hr.calculate_variable_compensation",
+  "name": "Calcule la rémunération variable",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la rémunération variable",
+  "inputs": {
+    "targets": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "actual_results": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "variable_amount": {
+      "type": "number",
+      "description": ""
+    },
+    "target_achievement": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "performance"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

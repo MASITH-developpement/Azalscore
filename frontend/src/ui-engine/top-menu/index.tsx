@@ -127,7 +127,7 @@ const OverviewDropdown: React.FC = () => {
       items: [
         { label: 'Projets', path: '/projects', capability: 'projects.view' },
         { label: 'Interventions', path: '/interventions', capability: 'interventions.view' },
-        { label: 'Stock', path: '/stock', capability: 'inventory.view' },
+        { label: 'Inventaire', path: '/inventory', capability: 'inventory.view' },
       ],
     },
   ];

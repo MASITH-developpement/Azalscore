@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -6,8 +7,23 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
-import { Monitor, DollarSign, Receipt, ShoppingCart } from 'lucide-react';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import type { TableColumn } from '@/types';
+import {
+  Monitor, DollarSign, Receipt, ShoppingCart, Sparkles, Clock,
+  Banknote, ArrowLeft, Edit, Printer, Play, CheckCircle2
+} from 'lucide-react';
+import type { POSSession as POSSessionType } from './types';
+import {
+  formatCurrency as formatCurrencyTyped, formatDateTime as formatDateTimeTyped,
+  formatSessionDuration, SESSION_STATUS_CONFIG,
+  isSessionOpen, isSessionClosed, hasCashDifference
+} from './types';
+import {
+  SessionInfoTab, SessionTransactionsTab, SessionCashTab,
+  SessionHistoryTab, SessionIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -234,6 +250,16 @@ const useCloseSession = () => {
   });
 };
 
+const useSession = (id: string) => {
+  return useQuery({
+    queryKey: ['pos', 'sessions', id],
+    queryFn: async () => {
+      return api.get<POSSessionType>(`/v1/pos/sessions/${id}`).then(r => r.data);
+    },
+    enabled: !!id
+  });
+};
+
 // ============================================================================
 // COMPOSANTS
 // ============================================================================
@@ -297,6 +323,7 @@ const TerminalsView: React.FC = () => {
 };
 
 const SessionsView: React.FC = () => {
+  const navigate = useNavigate();
   const { data: stores = [] } = useStores();
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterStore, setFilterStore] = useState<string>('');
@@ -327,12 +354,17 @@ const SessionsView: React.FC = () => {
       const info = getStatusInfo(SESSION_STATUSES, v as string);
       return <Badge color={info.color}>{info.label}</Badge>;
     }},
-    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
-      (row as POSSession).status === 'OPEN' ? (
-        <Button size="sm" onClick={() => closeSession.mutate({ id: (row as POSSession).id, closing_balance: 0 })}>
-          Cloturer
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (v, row) => (
+      <div className="flex gap-1">
+        <Button size="sm" variant="secondary" onClick={() => navigate(`/pos/sessions/${v}`)}>
+          Detail
         </Button>
-      ) : null
+        {(row as POSSession).status === 'OPEN' && (
+          <Button size="sm" onClick={() => closeSession.mutate({ id: (row as POSSession).id, closing_balance: 0 })}>
+            Cloturer
+          </Button>
+        )}
+      </div>
     )}
   ];
 
@@ -438,6 +470,219 @@ const TransactionsView: React.FC = () => {
 };
 
 // ============================================================================
+// SESSION DETAIL VIEW
+// ============================================================================
+
+const SessionDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: session, isLoading, error } = useSession(id || '');
+  const closeSession = useCloseSession();
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="flex items-center justify-center h-64">
+          <div className="azals-spinner" />
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !session) {
+    return (
+      <PageWrapper title="Erreur">
+        <Card>
+          <div className="text-center py-8">
+            <p className="text-red-600">Session non trouvee</p>
+            <Button variant="secondary" onClick={() => navigate('/pos')} className="mt-4">
+              <ArrowLeft size={16} className="mr-2" />
+              Retour
+            </Button>
+          </div>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  // Tabs definition
+  const tabs: TabDefinition<POSSessionType>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Monitor size={16} />,
+      component: SessionInfoTab
+    },
+    {
+      id: 'transactions',
+      label: 'Transactions',
+      icon: <Receipt size={16} />,
+      badge: session.total_transactions > 0 ? session.total_transactions : undefined,
+      component: SessionTransactionsTab
+    },
+    {
+      id: 'cash',
+      label: 'Caisse',
+      icon: <Banknote size={16} />,
+      component: SessionCashTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: SessionHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: SessionIATab
+    }
+  ];
+
+  // Info bar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'sales',
+      label: 'Ventes',
+      value: formatCurrencyTyped(session.total_sales),
+      valueColor: 'green'
+    },
+    {
+      id: 'transactions',
+      label: 'Transactions',
+      value: String(session.total_transactions),
+      valueColor: 'blue'
+    },
+    {
+      id: 'basket',
+      label: 'Panier moyen',
+      value: formatCurrencyTyped(session.average_basket),
+      valueColor: 'purple'
+    },
+    {
+      id: 'duration',
+      label: 'Duree',
+      value: formatSessionDuration(session),
+      valueColor: 'gray'
+    }
+  ];
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'terminal',
+      title: 'Terminal',
+      items: [
+        { id: 'terminal_name', label: 'Nom', value: session.terminal_name || '-' },
+        { id: 'store', label: 'Magasin', value: session.store_name || '-' },
+        { id: 'cashier', label: 'Caissier', value: session.cashier_name || '-' }
+      ]
+    },
+    {
+      id: 'totals',
+      title: 'Totaux',
+      items: [
+        { id: 'gross_sales', label: 'Ventes brutes', value: formatCurrencyTyped(session.total_sales) },
+        { id: 'returns', label: 'Retours', value: formatCurrencyTyped(session.total_returns) },
+        {
+          id: 'net_sales',
+          label: 'Ventes nettes',
+          value: formatCurrencyTyped(session.net_sales),
+          highlight: true
+        }
+      ]
+    },
+    {
+      id: 'cash',
+      title: 'Caisse',
+      items: [
+        { id: 'opening', label: 'Ouverture', value: formatCurrencyTyped(session.opening_balance) },
+        { id: 'cash_payments', label: 'Especes', value: formatCurrencyTyped(session.cash_payments) },
+        {
+          id: 'difference',
+          label: 'Ecart',
+          value: session.cash_difference !== undefined ? formatCurrencyTyped(session.cash_difference) : '-',
+          highlight: !hasCashDifference(session)
+        }
+      ]
+    }
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      variant: 'secondary',
+      onClick: () => navigate('/pos')
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit size={16} />,
+      variant: 'secondary',
+      onClick: () => console.log('Edit session')
+    },
+    {
+      id: 'print',
+      label: 'Imprimer',
+      icon: <Printer size={16} />,
+      variant: 'secondary',
+      onClick: () => window.print()
+    }
+  ];
+
+  // Primary actions (footer)
+  const primaryActions: ActionDefinition[] = [];
+
+  if (isSessionOpen(session)) {
+    primaryActions.push({
+      id: 'close',
+      label: 'Cloturer la session',
+      icon: <CheckCircle2 size={16} />,
+      variant: 'primary',
+      onClick: () => {
+        closeSession.mutate({ id: session.id, closing_balance: 0 });
+      }
+    });
+  }
+
+  // Secondary actions
+  const secondaryActions: ActionDefinition[] = [];
+
+  if (isSessionClosed(session)) {
+    secondaryActions.push({
+      id: 'ticket',
+      label: 'Ticket de cloture',
+      icon: <Receipt size={16} />,
+      variant: 'secondary',
+      onClick: () => console.log('Print closing ticket')
+    });
+  }
+
+  return (
+    <BaseViewStandard<POSSessionType>
+      title={`Session ${session.code}`}
+      subtitle={session.terminal_name || session.terminal_code}
+      status={{
+        label: SESSION_STATUS_CONFIG[session.status]?.label || session.status,
+        color: (SESSION_STATUS_CONFIG[session.status]?.color || 'gray') as SemanticColor
+      }}
+      data={session}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+      secondaryActions={secondaryActions}
+    />
+  );
+};
+
+// ============================================================================
 // MODULE PRINCIPAL
 // ============================================================================
 
@@ -534,4 +779,17 @@ const POSModule: React.FC = () => {
   );
 };
 
-export default POSModule;
+// ============================================================================
+// ROUTES WRAPPER
+// ============================================================================
+
+const POSRoutes: React.FC = () => {
+  return (
+    <Routes>
+      <Route index element={<POSModule />} />
+      <Route path="sessions/:id" element={<SessionDetailView />} />
+    </Routes>
+  );
+};
+
+export default POSRoutes;

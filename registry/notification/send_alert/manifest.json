@@ -1,0 +1,72 @@
+{
+  "id": "azalscore.notification.send_alert",
+  "name": "Envoi d'alerte",
+  "category": "notification",
+  "version": "1.0.0",
+  "description": "Envoie une alerte système (email, notification, webhook selon configuration)",
+  "inputs": {
+    "alert_type": {
+      "type": "string",
+      "required": true,
+      "description": "Type d'alerte (low_margin, payment_due, stock_alert, etc.)"
+    },
+    "severity": {
+      "type": "string",
+      "required": false,
+      "description": "Niveau de sévérité (info, warning, critical)",
+      "default": "warning"
+    },
+    "title": {
+      "type": "string",
+      "required": true,
+      "description": "Titre de l'alerte"
+    },
+    "message": {
+      "type": "string",
+      "required": true,
+      "description": "Message de l'alerte"
+    },
+    "data": {
+      "type": "object",
+      "required": false,
+      "description": "Données contextuelles de l'alerte"
+    },
+    "recipients": {
+      "type": "array",
+      "required": false,
+      "description": "Liste des destinataires (emails ou user IDs)"
+    }
+  },
+  "outputs": {
+    "alert_id": {
+      "type": "string",
+      "description": "Identifiant unique de l'alerte créée"
+    },
+    "sent_at": {
+      "type": "string",
+      "description": "Timestamp d'envoi (ISO 8601)"
+    },
+    "channels": {
+      "type": "array",
+      "description": "Canaux utilisés pour l'envoi (email, webhook, notification)"
+    },
+    "status": {
+      "type": "string",
+      "description": "Statut de l'envoi (sent, pending, failed)"
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": "azalscore.notification.log_alert"
+  },
+  "dependencies": [],
+  "tags": ["notification", "alert", "email", "webhook"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

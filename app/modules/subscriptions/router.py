@@ -71,10 +71,7 @@ def create_plan(
     service: SubscriptionService = Depends(get_service)
 ):
     """Créer un plan d'abonnement."""
-    try:
-        return service.create_plan(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_plan(data)
 
 
 @router.get("/plans", response_model=PlanListResponse)
@@ -123,11 +120,8 @@ def delete_plan(
     service: SubscriptionService = Depends(get_service)
 ):
     """Désactiver un plan."""
-    try:
-        if not service.delete_plan(plan_id):
-            raise HTTPException(status_code=404, detail="Plan introuvable")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    if not service.delete_plan(plan_id):
+        raise HTTPException(status_code=404, detail="Plan introuvable")
 
 
 # ============================================================================
@@ -140,10 +134,7 @@ def create_addon(
     service: SubscriptionService = Depends(get_service)
 ):
     """Créer un add-on."""
-    try:
-        return service.create_addon(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_addon(data)
 
 
 @router.get("/plans/{plan_id}/addons", response_model=list[AddOnResponse])
@@ -178,10 +169,7 @@ def create_subscription(
     service: SubscriptionService = Depends(get_service)
 ):
     """Créer un abonnement."""
-    try:
-        return service.create_subscription(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_subscription(data)
 
 
 @router.get("", response_model=SubscriptionListResponse)
@@ -235,10 +223,7 @@ def change_subscription_plan(
     service: SubscriptionService = Depends(get_service)
 ):
     """Changer de plan d'abonnement."""
-    try:
-        return service.change_plan(subscription_id, data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.change_plan(subscription_id, data)
 
 
 @router.post("/{subscription_id}/cancel", response_model=SubscriptionResponse)
@@ -248,10 +233,7 @@ def cancel_subscription(
     service: SubscriptionService = Depends(get_service)
 ):
     """Annuler un abonnement."""
-    try:
-        return service.cancel_subscription(subscription_id, data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.cancel_subscription(subscription_id, data)
 
 
 @router.post("/{subscription_id}/pause", response_model=SubscriptionResponse)
@@ -261,10 +243,7 @@ def pause_subscription(
     service: SubscriptionService = Depends(get_service)
 ):
     """Mettre en pause un abonnement."""
-    try:
-        return service.pause_subscription(subscription_id, data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.pause_subscription(subscription_id, data)
 
 
 @router.post("/{subscription_id}/resume", response_model=SubscriptionResponse)
@@ -273,10 +252,7 @@ def resume_subscription(
     service: SubscriptionService = Depends(get_service)
 ):
     """Reprendre un abonnement en pause."""
-    try:
-        return service.resume_subscription(subscription_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.resume_subscription(subscription_id)
 
 
 # ============================================================================
@@ -289,10 +265,7 @@ def create_invoice(
     service: SubscriptionService = Depends(get_service)
 ):
     """Créer une facture manuelle."""
-    try:
-        return service.create_invoice(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_invoice(data)
 
 
 @router.get("/invoices", response_model=InvoiceListResponse)
@@ -332,10 +305,7 @@ def finalize_invoice(
     service: SubscriptionService = Depends(get_service)
 ):
     """Finaliser une facture."""
-    try:
-        return service.finalize_invoice(invoice_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.finalize_invoice(invoice_id)
 
 
 @router.post("/invoices/{invoice_id}/void", response_model=InvoiceResponse)
@@ -344,10 +314,7 @@ def void_invoice(
     service: SubscriptionService = Depends(get_service)
 ):
     """Annuler une facture."""
-    try:
-        return service.void_invoice(invoice_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.void_invoice(invoice_id)
 
 
 @router.post("/invoices/{invoice_id}/pay", response_model=InvoiceResponse)
@@ -357,12 +324,9 @@ def pay_invoice(
     service: SubscriptionService = Depends(get_service)
 ):
     """Marquer une facture comme payée."""
-    try:
-        from decimal import Decimal
-        payment_amount = Decimal(str(amount)) if amount else None
-        return service.mark_invoice_paid(invoice_id, payment_amount)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    from decimal import Decimal
+    payment_amount = Decimal(str(amount)) if amount else None
+    return service.mark_invoice_paid(invoice_id, payment_amount)
 
 
 # ============================================================================
@@ -375,10 +339,7 @@ def create_payment(
     service: SubscriptionService = Depends(get_service)
 ):
     """Créer un paiement."""
-    try:
-        return service.create_payment(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_payment(data)
 
 
 @router.post("/payments/{payment_id}/refund", response_model=PaymentResponse)
@@ -388,10 +349,7 @@ def refund_payment(
     service: SubscriptionService = Depends(get_service)
 ):
     """Rembourser un paiement."""
-    try:
-        return service.refund_payment(payment_id, data.amount, data.reason)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.refund_payment(payment_id, data.amount, data.reason)
 
 
 # ============================================================================
@@ -404,10 +362,7 @@ def create_usage_record(
     service: SubscriptionService = Depends(get_service)
 ):
     """Enregistrer usage (pour abonnements metered)."""
-    try:
-        return service.create_usage_record(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_usage_record(data)
 
 
 @router.get("/{subscription_id}/usage", response_model=list[UsageSummary])
@@ -418,10 +373,7 @@ def get_usage_summary(
     service: SubscriptionService = Depends(get_service)
 ):
     """Résumé d'usage pour un abonnement."""
-    try:
-        return service.get_usage_summary(subscription_id, period_start, period_end)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.get_usage_summary(subscription_id, period_start, period_end)
 
 
 # ============================================================================
@@ -434,10 +386,7 @@ def create_coupon(
     service: SubscriptionService = Depends(get_service)
 ):
     """Créer un coupon."""
-    try:
-        return service.create_coupon(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_coupon(data)
 
 
 @router.get("/coupons", response_model=list[CouponResponse])

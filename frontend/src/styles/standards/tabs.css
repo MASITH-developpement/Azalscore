@@ -1,0 +1,300 @@
+/**
+ * AZALSCORE UI Standards - Tabs Styles
+ * Styles pour le composant TabsStandard
+ */
+
+/* ============================================================
+   TABS CONTAINER
+   ============================================================ */
+
+.azals-std-tabs {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ============================================================
+   TAB LIST (Navigation)
+   ============================================================ */
+
+.azals-std-tabs__list {
+  display: flex;
+  gap: var(--azals-std-tab-gap);
+  padding: 0 var(--azals-std-card-padding);
+  background: var(--azals-bg-secondary);
+  border-bottom: 1px solid var(--azals-border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.azals-std-tabs__list::-webkit-scrollbar {
+  height: 4px;
+}
+
+.azals-std-tabs__list::-webkit-scrollbar-track {
+  background: var(--azals-gray-100);
+}
+
+.azals-std-tabs__list::-webkit-scrollbar-thumb {
+  background: var(--azals-gray-300);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   TAB BUTTON
+   ============================================================ */
+
+.azals-std-tabs__tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--azals-std-gap-sm);
+  height: var(--azals-std-tab-height);
+  padding: var(--azals-std-tab-padding);
+  font-size: var(--azals-std-tab-font-size);
+  font-weight: 500;
+  color: var(--azals-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--azals-std-transition-fast);
+  white-space: nowrap;
+  position: relative;
+}
+
+.azals-std-tabs__tab:hover:not(:disabled) {
+  color: var(--azals-text);
+  background: var(--azals-gray-100);
+}
+
+.azals-std-tabs__tab:focus-visible {
+  outline: 2px solid var(--azals-primary-500);
+  outline-offset: -2px;
+}
+
+/* Tab actif */
+.azals-std-tabs__tab--active {
+  color: var(--azals-primary-600);
+  border-bottom-color: var(--azals-primary-600);
+}
+
+.azals-std-tabs__tab--active:hover {
+  color: var(--azals-primary-700);
+  background: var(--azals-primary-50);
+}
+
+/* Tab masqué (visuellement caché mais dans le DOM) */
+.azals-std-tabs__tab--hidden {
+  display: none;
+}
+
+/* Tab désactivé */
+.azals-std-tabs__tab:disabled {
+  color: var(--azals-gray-400);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ============================================================
+   TAB ICON
+   ============================================================ */
+
+.azals-std-tabs__icon {
+  width: var(--azals-std-tab-icon-size);
+  height: var(--azals-std-tab-icon-size);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   TAB BADGE
+   ============================================================ */
+
+.azals-std-tabs__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-text-secondary);
+  background: var(--azals-gray-200);
+  border-radius: var(--azals-radius-full);
+  margin-left: var(--azals-std-gap-xs);
+}
+
+.azals-std-tabs__tab--active .azals-std-tabs__badge {
+  color: white;
+  background: var(--azals-primary-500);
+}
+
+/* Badge d'alerte */
+.azals-std-tabs__badge--alert {
+  color: white;
+  background: var(--azals-danger);
+}
+
+/* Badge de succès */
+.azals-std-tabs__badge--success {
+  color: white;
+  background: var(--azals-success);
+}
+
+/* ============================================================
+   TAB IA (avec emphase variable selon mode)
+   ============================================================ */
+
+.azals-std-tabs__tab--ia {
+  background: var(--azals-std-ia-bg);
+  border-radius: var(--azals-std-radius-md) var(--azals-std-radius-md) 0 0;
+  transform: scale(var(--azals-std-ia-scale));
+  transform-origin: bottom center;
+}
+
+.azals-std-tabs__tab--ia .azals-std-tabs__icon {
+  color: var(--azals-primary-500);
+}
+
+.azals-std-tabs__tab--ia:hover {
+  background: var(--azals-primary-100);
+}
+
+/* Mode AZALSCORE: IA proéminente */
+[data-ui-mode="azalscore"] .azals-std-tabs__tab--ia,
+:root:not([data-ui-mode]) .azals-std-tabs__tab--ia {
+  background: linear-gradient(135deg, var(--azals-primary-50), var(--azals-primary-100));
+  border: 1px solid var(--azals-primary-200);
+  border-bottom: none;
+  margin: 0 var(--azals-std-gap-sm);
+}
+
+[data-ui-mode="azalscore"] .azals-std-tabs__tab--ia:hover,
+:root:not([data-ui-mode]) .azals-std-tabs__tab--ia:hover {
+  background: linear-gradient(135deg, var(--azals-primary-100), var(--azals-primary-200));
+}
+
+/* ============================================================
+   TAB PANEL (Contenu)
+   ============================================================ */
+
+.azals-std-tabs__panel {
+  display: none;
+  padding: var(--azals-std-card-padding);
+  animation: azals-std-tabs-fade-in 200ms ease;
+}
+
+.azals-std-tabs__panel--active {
+  display: block;
+}
+
+@keyframes azals-std-tabs-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   TAB SCROLL BUTTONS (pour mobile)
+   ============================================================ */
+
+.azals-std-tabs__scroll-container {
+  position: relative;
+  width: 100%;
+}
+
+.azals-std-tabs__scroll-btn {
+  position: absolute;
+  top: 0;
+  bottom: 1px;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, var(--azals-bg-secondary), transparent);
+  border: none;
+  cursor: pointer;
+  z-index: var(--azals-std-z-tabs);
+  color: var(--azals-text-secondary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--azals-std-transition-fast);
+}
+
+.azals-std-tabs__scroll-btn--left {
+  left: 0;
+  background: linear-gradient(90deg, var(--azals-bg-secondary), transparent);
+}
+
+.azals-std-tabs__scroll-btn--right {
+  right: 0;
+  background: linear-gradient(-90deg, var(--azals-bg-secondary), transparent);
+}
+
+.azals-std-tabs__scroll-btn--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.azals-std-tabs__scroll-btn:hover {
+  color: var(--azals-text);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .azals-std-tabs__list {
+    padding: 0 var(--azals-std-gap-md);
+  }
+
+  .azals-std-tabs__tab {
+    padding: 0 0.75rem;
+    font-size: var(--azals-font-size-sm);
+  }
+
+  .azals-std-tabs__icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .azals-std-tabs__panel {
+    padding: var(--azals-std-gap-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .azals-std-tabs__tab {
+    padding: 0 0.5rem;
+  }
+
+  /* Sur mobile, afficher uniquement les icônes si le label est long */
+  .azals-std-tabs__tab--compact .azals-std-tabs__label {
+    display: none;
+  }
+}
+
+/* ============================================================
+   KEYBOARD NAVIGATION
+   ============================================================ */
+
+.azals-std-tabs__list:focus-within {
+  outline: none;
+}
+
+.azals-std-tabs__tab:focus {
+  outline: none;
+}
+
+.azals-std-tabs__tab:focus-visible {
+  outline: 2px solid var(--azals-primary-400);
+  outline-offset: -2px;
+  border-radius: var(--azals-std-radius-sm);
+}

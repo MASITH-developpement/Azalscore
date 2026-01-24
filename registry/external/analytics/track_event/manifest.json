@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.external.analytics.track_event",
+  "name": "Track un événement analytics",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Track un événement analytics",
+  "inputs": {
+    "event_name": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "properties": {
+      "type": "object",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "success": {
+      "type": "boolean",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "analytics",
+    "tracking"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

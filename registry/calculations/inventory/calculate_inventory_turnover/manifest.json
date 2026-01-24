@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_inventory_turnover",
+  "name": "Calcule le taux de rotation des stocks",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le taux de rotation des stocks",
+  "inputs": {
+    "cost_of_goods_sold": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "average_inventory": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "turnover_ratio": {
+      "type": "number",
+      "description": ""
+    },
+    "days_in_inventory": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "metrics"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

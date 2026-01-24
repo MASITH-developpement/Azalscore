@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_stock_movement",
+  "name": "Calcule le mouvement de stock",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le mouvement de stock",
+  "inputs": {
+    "initial_stock": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "entries": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "exits": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "final_stock": {
+      "type": "number",
+      "description": ""
+    },
+    "total_entries": {
+      "type": "number",
+      "description": ""
+    },
+    "total_exits": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "movements"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

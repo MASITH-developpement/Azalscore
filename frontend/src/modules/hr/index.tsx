@@ -1,3 +1,8 @@
+/**
+ * AZALSCORE Module - HR
+ * Gestion des Ressources Humaines
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
@@ -6,8 +11,28 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import type { TableColumn } from '@/types';
-import { Users, Calendar, Clock, AlertTriangle, Plus, Minus, Building, BarChart3 } from 'lucide-react';
+import {
+  Users, Calendar, Clock, AlertTriangle, Plus, Minus, Building, BarChart3,
+  User, FileText, Euro, History, Sparkles, ArrowLeft, Edit, Eye, Briefcase
+} from 'lucide-react';
+
+import type {
+  Department, Position, Employee, LeaveRequest, Timesheet, HRDashboard
+} from './types';
+import {
+  formatDate, formatCurrency, getFullName, getSeniorityFormatted, getSeniority,
+  CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG, LEAVE_TYPE_CONFIG, LEAVE_STATUS_CONFIG,
+  TIMESHEET_STATUS_CONFIG,
+  isActive, isOnLeave, isContractExpiringSoon, isOnProbation,
+  getRemainingLeave, getTotalRemainingLeave
+} from './types';
+import {
+  EmployeeInfoTab, EmployeeContractTab, EmployeeLeavesTab,
+  EmployeeDocsTab, EmployeeHistoryTab, EmployeeIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -41,101 +66,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
     ))}
   </div>
 );
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface Department {
-  id: string;
-  code: string;
-  name: string;
-  manager_id?: string;
-  manager_name?: string;
-  parent_id?: string;
-  is_active: boolean;
-}
-
-interface Position {
-  id: string;
-  code: string;
-  title: string;
-  department_id?: string;
-  department_name?: string;
-  level: number;
-  min_salary?: number;
-  max_salary?: number;
-  is_active: boolean;
-}
-
-interface Employee {
-  id: string;
-  employee_number: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  department_id?: string;
-  department_name?: string;
-  position_id?: string;
-  position_title?: string;
-  manager_id?: string;
-  manager_name?: string;
-  hire_date: string;
-  contract_type: 'CDI' | 'CDD' | 'INTERIM' | 'APPRENTICE' | 'INTERN';
-  contract_end_date?: string;
-  status: 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
-  salary?: number;
-  created_at: string;
-}
-
-interface LeaveRequest {
-  id: string;
-  employee_id: string;
-  employee_name?: string;
-  type: 'PAID' | 'UNPAID' | 'SICK' | 'MATERNITY' | 'PATERNITY' | 'OTHER';
-  start_date: string;
-  end_date: string;
-  days: number;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
-  reason?: string;
-  approved_by_id?: string;
-  approved_by_name?: string;
-  created_at: string;
-}
-
-interface Timesheet {
-  id: string;
-  employee_id: string;
-  employee_name?: string;
-  period_start: string;
-  period_end: string;
-  total_hours: number;
-  overtime_hours: number;
-  status: 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
-  entries: TimesheetEntry[];
-}
-
-interface TimesheetEntry {
-  id: string;
-  date: string;
-  hours_worked: number;
-  overtime: number;
-  project_id?: string;
-  project_name?: string;
-  notes?: string;
-}
-
-interface HRDashboard {
-  total_employees: number;
-  active_employees: number;
-  on_leave: number;
-  pending_leave_requests: number;
-  contracts_expiring_soon: number;
-  new_hires_month: number;
-  terminations_month: number;
-  departments_count: number;
-}
 
 // ============================================================================
 // CONSTANTES
@@ -183,20 +113,8 @@ const TIMESHEET_STATUSES = [
 // HELPERS
 // ============================================================================
 
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-const getStatusInfo = (statuses: any[], status: string) => {
+const getStatusInfo = (statuses: { value: string; label: string; color: string }[], status: string) => {
   return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
-};
-
-const navigateTo = (view: string, params?: Record<string, any>) => {
-  window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
 };
 
 const buildUrlWithParams = (baseUrl: string, params?: Record<string, string | undefined>): string => {
@@ -248,6 +166,16 @@ const useEmployees = (filters?: { department_id?: string; status?: string; contr
       const response = await api.get<{ items: Employee[] }>(url).then(r => r.data);
       return response?.items || [];
     }
+  });
+};
+
+const useEmployee = (id: string) => {
+  return useQuery({
+    queryKey: ['hr', 'employee', id],
+    queryFn: async () => {
+      return api.get<Employee>(`/v1/hr/employees/${id}`).then(r => r.data);
+    },
+    enabled: !!id
   });
 };
 
@@ -314,10 +242,158 @@ const useRejectLeave = () => {
 };
 
 // ============================================================================
-// COMPOSANTS
+// VUE DETAIL - EMPLOYEE
 // ============================================================================
 
-const EmployeesView: React.FC = () => {
+interface EmployeeDetailViewProps {
+  employeeId: string;
+  onBack: () => void;
+  onEdit?: () => void;
+}
+
+const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({ employeeId, onBack, onEdit }) => {
+  const { data: employee, isLoading, error } = useEmployee(employeeId);
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading">
+        <div className="azals-loading__spinner" />
+        <p>Chargement du dossier employe...</p>
+      </div>
+    );
+  }
+
+  if (error || !employee) {
+    return (
+      <div className="azals-error">
+        <p>Erreur lors du chargement du dossier.</p>
+        <Button onClick={onBack} leftIcon={<ArrowLeft size={16} />}>Retour</Button>
+      </div>
+    );
+  }
+
+  // Configuration des onglets
+  const tabs: TabDefinition<Employee>[] = [
+    { id: 'info', label: 'Informations', icon: <User size={16} />, component: EmployeeInfoTab },
+    { id: 'contract', label: 'Contrat', icon: <FileText size={16} />, component: EmployeeContractTab },
+    { id: 'leaves', label: 'Conges', icon: <Calendar size={16} />, badge: employee.leave_requests?.filter(r => r.status === 'PENDING').length, component: EmployeeLeavesTab },
+    { id: 'docs', label: 'Documents', icon: <FileText size={16} />, badge: employee.documents?.length, component: EmployeeDocsTab },
+    { id: 'history', label: 'Historique', icon: <History size={16} />, component: EmployeeHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: EmployeeIATab }
+  ];
+
+  // Configuration InfoBar
+  const statusConfig = EMPLOYEE_STATUS_CONFIG[employee.status];
+  const contractConfig = CONTRACT_TYPE_CONFIG[employee.contract_type];
+
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'department',
+      label: 'Departement',
+      value: employee.department_name || '-',
+      icon: <Building size={16} />
+    },
+    {
+      id: 'position',
+      label: 'Poste',
+      value: employee.position_title || '-',
+      icon: <Briefcase size={16} />
+    },
+    {
+      id: 'seniority',
+      label: 'Anciennete',
+      value: getSeniorityFormatted(employee),
+      icon: <Clock size={16} />
+    },
+    {
+      id: 'leave-balance',
+      label: 'Conges restants',
+      value: `${getTotalRemainingLeave(employee)}j`,
+      valueColor: getTotalRemainingLeave(employee) > 20 ? 'orange' : 'green'
+    }
+  ];
+
+  // Configuration Sidebar
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'status',
+      title: 'Statut',
+      items: [
+        { id: 'status', label: 'Statut', value: statusConfig.label },
+        { id: 'contract', label: 'Contrat', value: contractConfig.label },
+        { id: 'hire-date', label: 'Embauche', value: formatDate(employee.hire_date) }
+      ]
+    },
+    {
+      id: 'leaves',
+      title: 'Conges',
+      items: [
+        { id: 'cp', label: 'CP restants', value: `${getRemainingLeave(employee, 'PAID')}j`, highlight: getRemainingLeave(employee, 'PAID') > 20 },
+        { id: 'total', label: 'Total restant', value: `${getTotalRemainingLeave(employee)}j` }
+      ]
+    },
+    {
+      id: 'salary',
+      title: 'Remuneration',
+      items: [
+        { id: 'salary', label: 'Salaire mensuel', value: employee.salary ? formatCurrency(employee.salary) : '-', format: 'currency' }
+      ]
+    }
+  ];
+
+  // Actions header
+  const headerActions: ActionDefinition[] = [
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost', onClick: onBack },
+    ...(onEdit ? [{ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' as const, onClick: onEdit }] : [])
+  ];
+
+  // Actions primaires
+  const primaryActions: ActionDefinition[] = [
+    {
+      id: 'new-leave',
+      label: 'Demande de conge',
+      icon: <Calendar size={16} />,
+      variant: 'secondary'
+    }
+  ];
+
+  // Mapping couleurs
+  const statusColorMap: Record<string, SemanticColor> = {
+    gray: 'gray',
+    blue: 'blue',
+    orange: 'orange',
+    green: 'green',
+    red: 'red'
+  };
+
+  return (
+    <BaseViewStandard<Employee>
+      title={getFullName(employee)}
+      subtitle={`${employee.employee_number} - ${employee.position_title || 'N/A'}`}
+      status={{
+        label: statusConfig.label,
+        color: statusColorMap[statusConfig.color] || 'gray'
+      }}
+      data={employee}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+    />
+  );
+};
+
+// ============================================================================
+// VUES LISTE
+// ============================================================================
+
+interface EmployeesViewProps {
+  onSelectEmployee: (id: string) => void;
+}
+
+const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
   const [filterDepartment, setFilterDepartment] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterContract, setFilterContract] = useState<string>('');
@@ -339,8 +415,15 @@ const EmployeesView: React.FC = () => {
   };
 
   const columns: TableColumn<Employee>[] = [
-    { id: 'employee_number', header: 'N', accessor: 'employee_number', render: (v) => <code className="font-mono">{v as string}</code> },
-    { id: 'last_name', header: 'Nom', accessor: 'last_name', render: (v, row) => `${(row as Employee).last_name} ${(row as Employee).first_name}` },
+    { id: 'employee_number', header: 'N', accessor: 'employee_number', render: (v, row) => (
+      <button
+        className="font-mono text-blue-600 hover:underline"
+        onClick={() => onSelectEmployee(row.id)}
+      >
+        {v as string}
+      </button>
+    )},
+    { id: 'last_name', header: 'Nom', accessor: 'last_name', render: (_, row) => getFullName(row as Employee) },
     { id: 'department_name', header: 'Departement', accessor: 'department_name', render: (v) => (v as string) || '-' },
     { id: 'position_title', header: 'Poste', accessor: 'position_title', render: (v) => (v as string) || '-' },
     { id: 'contract_type', header: 'Contrat', accessor: 'contract_type', render: (v) => {
@@ -350,8 +433,13 @@ const EmployeesView: React.FC = () => {
     { id: 'hire_date', header: 'Embauche', accessor: 'hire_date', render: (v) => formatDate(v as string) },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const info = getStatusInfo(EMPLOYEE_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
-    }}
+      return <Badge color={info.color}>{info.label}</Badge>;
+    }},
+    { id: 'actions', header: '', accessor: 'id', render: (_, row) => (
+      <Button size="sm" variant="ghost" onClick={() => onSelectEmployee(row.id)}>
+        <Eye size={14} />
+      </Button>
+    )}
   ];
 
   return (
@@ -516,7 +604,7 @@ const LeaveRequestsView: React.FC = () => {
     { id: 'reason', header: 'Motif', accessor: 'reason', render: (v) => (v as string) || '-' },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const info = getStatusInfo(LEAVE_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
       (row as LeaveRequest).status === 'PENDING' ? (
@@ -644,7 +732,7 @@ const TimesheetsView: React.FC = () => {
     { id: 'overtime_hours', header: 'Heures sup.', accessor: 'overtime_hours' },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const info = getStatusInfo(TIMESHEET_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }}
   ];
 
@@ -668,10 +756,11 @@ const TimesheetsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'employees' | 'departments' | 'leave' | 'timesheets';
+type View = 'dashboard' | 'employees' | 'departments' | 'leave' | 'timesheets' | 'employee-detail';
 
 const HRModule: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const { data: dashboard } = useHRDashboard();
 
   const tabs = [
@@ -682,10 +771,30 @@ const HRModule: React.FC = () => {
     { id: 'timesheets', label: 'Temps' }
   ];
 
+  const handleSelectEmployee = (id: string) => {
+    setSelectedEmployeeId(id);
+    setCurrentView('employee-detail');
+  };
+
+  const handleBackFromDetail = () => {
+    setSelectedEmployeeId(null);
+    setCurrentView('employees');
+  };
+
+  // Vue detail d'un employe
+  if (currentView === 'employee-detail' && selectedEmployeeId) {
+    return (
+      <EmployeeDetailView
+        employeeId={selectedEmployeeId}
+        onBack={handleBackFromDetail}
+      />
+    );
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case 'employees':
-        return <EmployeesView />;
+        return <EmployeesView onSelectEmployee={handleSelectEmployee} />;
       case 'departments':
         return <DepartmentsView />;
       case 'leave':

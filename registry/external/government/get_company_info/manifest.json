@@ -1,0 +1,42 @@
+{
+  "id": "azalscore.external.government.get_company_info",
+  "name": "Récupère les infos d'une entreprise via INSEE",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Récupère les infos d'une entreprise via INSEE",
+  "inputs": {
+    "siret": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "company_data": {
+      "type": "object",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "government",
+    "insee"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

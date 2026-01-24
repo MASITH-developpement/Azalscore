@@ -353,19 +353,14 @@ class ReconciliationService:
         }
 
         for transaction in pending_transactions:
-            try:
-                match_result = self.reconcile_transaction(transaction.id, auto_mode=True)
+            match_result = self.reconcile_transaction(transaction.id, auto_mode=True)
 
-                if match_result.get("auto_reconciled"):
-                    results["auto_matched"] += 1
-                elif match_result.get("suggestions"):
-                    results["suggestions_found"] += 1
-                else:
-                    results["no_match"] += 1
-
-            except Exception as e:
-                logger.error(f"Error reconciling transaction {transaction.id}: {e}")
-                results["errors"] += 1
+            if match_result.get("auto_reconciled"):
+                results["auto_matched"] += 1
+            elif match_result.get("suggestions"):
+                results["suggestions_found"] += 1
+            else:
+                results["no_match"] += 1
 
         self.db.commit()
         return results

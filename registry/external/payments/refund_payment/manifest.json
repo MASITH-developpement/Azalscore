@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.external.payments.refund_payment",
+  "name": "Rembourse un paiement Stripe",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Rembourse un paiement Stripe",
+  "inputs": {
+    "payment_intent_id": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "amount": {
+      "type": "number",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "refund_id": {
+      "type": "string",
+      "description": ""
+    },
+    "status": {
+      "type": "string",
+      "description": ""
+    },
+    "amount_refunded": {
+      "type": "number",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "payments",
+    "stripe"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

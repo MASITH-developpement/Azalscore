@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.transformers.text.extract_initials",
+  "name": "Extrait les initiales d'un nom",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Extrait les initiales d'un nom",
+  "inputs": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "initials": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "text",
+    "extraction"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,0 +1,60 @@
+{
+  "id": "azalscore.calculations.projects.calculate_earned_value",
+  "name": "Calcule la valeur acquise (EVM)",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la valeur acquise (EVM)",
+  "inputs": {
+    "planned_value": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "earned_value": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "actual_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "cost_variance": {
+      "type": "number",
+      "description": ""
+    },
+    "schedule_variance": {
+      "type": "number",
+      "description": ""
+    },
+    "cpi": {
+      "type": "number",
+      "description": ""
+    },
+    "spi": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "projects",
+    "progress"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

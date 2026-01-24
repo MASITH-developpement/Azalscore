@@ -57,10 +57,7 @@ async def create_supplier(
     """Créer un nouveau fournisseur."""
     service = get_purchases_service(db, current_user.tenant_id)
 
-    try:
-        return service.create_supplier(data, current_user.id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_supplier(data, current_user.id)
 
 
 @router.get("/suppliers", response_model=PaginatedSuppliers)
@@ -125,12 +122,9 @@ async def delete_supplier(
 ):
     """Supprimer un fournisseur (soft delete)."""
     service = get_purchases_service(db, current_user.tenant_id)
-    try:
-        success = service.delete_supplier(supplier_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Fournisseur non trouvé")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    success = service.delete_supplier(supplier_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Fournisseur non trouvé")
 
 
 # ============================================================================
@@ -146,10 +140,7 @@ async def create_order(
     """Créer une nouvelle commande d'achat."""
     service = get_purchases_service(db, current_user.tenant_id)
 
-    try:
-        return service.create_order(data, current_user.id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_order(data, current_user.id)
 
 
 @router.get("/orders", response_model=PaginatedOrders)
@@ -200,13 +191,10 @@ async def update_order(
 ):
     """Mettre à jour une commande d'achat."""
     service = get_purchases_service(db, current_user.tenant_id)
-    try:
-        order = service.update_order(order_id, data)
-        if not order:
-            raise HTTPException(status_code=404, detail="Commande non trouvée")
-        return order
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    order = service.update_order(order_id, data)
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+    return order
 
 
 @router.post("/orders/{order_id}/validate", response_model=PurchaseOrderResponse)
@@ -217,13 +205,10 @@ async def validate_order(
 ):
     """Valider une commande d'achat (DRAFT → SENT)."""
     service = get_purchases_service(db, current_user.tenant_id)
-    try:
-        order = service.validate_order(order_id, current_user.id)
-        if not order:
-            raise HTTPException(status_code=404, detail="Commande non trouvée")
-        return order
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    order = service.validate_order(order_id, current_user.id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+    return order
 
 
 @router.post("/orders/{order_id}/cancel", response_model=PurchaseOrderResponse)
@@ -234,13 +219,10 @@ async def cancel_order(
 ):
     """Annuler une commande d'achat."""
     service = get_purchases_service(db, current_user.tenant_id)
-    try:
-        order = service.cancel_order(order_id)
-        if not order:
-            raise HTTPException(status_code=404, detail="Commande non trouvée")
-        return order
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    order = service.cancel_order(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+    return order
 
 
 @router.delete("/orders/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -275,10 +257,7 @@ async def create_invoice(
     """Créer une nouvelle facture fournisseur."""
     service = get_purchases_service(db, current_user.tenant_id)
 
-    try:
-        return service.create_invoice(data, current_user.id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_invoice(data, current_user.id)
 
 
 @router.get("/invoices", response_model=PaginatedInvoices)
@@ -330,13 +309,10 @@ async def update_invoice(
 ):
     """Mettre à jour une facture fournisseur."""
     service = get_purchases_service(db, current_user.tenant_id)
-    try:
-        invoice = service.update_invoice(invoice_id, data)
-        if not invoice:
-            raise HTTPException(status_code=404, detail="Facture non trouvée")
-        return invoice
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    invoice = service.update_invoice(invoice_id, data)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Facture non trouvée")
+    return invoice
 
 
 @router.post("/invoices/{invoice_id}/validate", response_model=PurchaseInvoiceResponse)
@@ -347,13 +323,10 @@ async def validate_invoice(
 ):
     """Valider une facture fournisseur (DRAFT → VALIDATED)."""
     service = get_purchases_service(db, current_user.tenant_id)
-    try:
-        invoice = service.validate_invoice(invoice_id, current_user.id)
-        if not invoice:
-            raise HTTPException(status_code=404, detail="Facture non trouvée")
-        return invoice
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    invoice = service.validate_invoice(invoice_id, current_user.id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Facture non trouvée")
+    return invoice
 
 
 @router.delete("/invoices/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.generators.certificates.generate_certificate",
+  "name": "Génère un certificat",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un certificat",
+  "inputs": {
+    "recipient": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "certificate": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "certificates",
+    "documents"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

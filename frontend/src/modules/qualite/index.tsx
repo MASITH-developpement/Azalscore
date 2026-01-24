@@ -1,13 +1,41 @@
-import React, { useState } from 'react';
+/**
+ * AZALSCORE Module - QUALITE
+ * Gestion de la qualite, non-conformites et controles
+ */
+
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, AlertCircle, Search, CheckCircle } from 'lucide-react';
+import {
+  AlertTriangle, AlertCircle, Search, CheckCircle,
+  Plus, Edit, FileText, Clock, Shield
+} from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input, TextArea } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import type { TableColumn } from '@/types';
+import type {
+  NonConformance, QCRule, QCInspection, QCParameter, QualityDashboard,
+  NCType, NCOrigin, NCSeverity, NCStatus, QCType, InspectionStatus
+} from './types';
+import {
+  formatDate, getNCAge, getNCAgeDays, isNCOverdue, canEditNC, canCloseNC, getDocumentCount,
+  NC_TYPE_CONFIG, NC_ORIGIN_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG,
+  QC_TYPE_CONFIG, INSPECTION_STATUS_CONFIG,
+  NC_TYPES, NC_ORIGINS, SEVERITIES, NC_STATUSES, QC_TYPES, INSPECTION_STATUSES
+} from './types';
+import {
+  NCInfoTab,
+  NCAnalysisTab,
+  NCDocumentsTab,
+  NCHistoryTab,
+  NCStatsTab,
+  NCIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,158 +66,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
-// ============================================================================
-
-interface NonConformance {
-  id: string;
-  number: string;
-  type: 'INTERNAL' | 'SUPPLIER' | 'CUSTOMER';
-  origin: 'PRODUCTION' | 'RECEPTION' | 'FIELD' | 'AUDIT';
-  product_id?: string;
-  product_name?: string;
-  lot_number?: string;
-  description: string;
-  severity: 'MINOR' | 'MAJOR' | 'CRITICAL';
-  status: 'OPEN' | 'IN_ANALYSIS' | 'ACTION_PLANNED' | 'CLOSED' | 'CANCELLED';
-  root_cause?: string;
-  corrective_action?: string;
-  responsible_id?: string;
-  responsible_name?: string;
-  detected_date: string;
-  closed_date?: string;
-  created_at: string;
-}
-
-interface QCRule {
-  id: string;
-  code: string;
-  name: string;
-  type: 'INCOMING' | 'IN_PROCESS' | 'FINAL';
-  product_id?: string;
-  product_name?: string;
-  category_id?: string;
-  category_name?: string;
-  parameters: QCParameter[];
-  is_active: boolean;
-}
-
-interface QCParameter {
-  id: string;
-  name: string;
-  type: 'NUMERIC' | 'BOOLEAN' | 'TEXT' | 'SELECT';
-  unit?: string;
-  min_value?: number;
-  max_value?: number;
-  target_value?: number;
-  options?: string[];
-  is_critical: boolean;
-}
-
-interface QCInspection {
-  id: string;
-  number: string;
-  rule_id: string;
-  rule_name?: string;
-  type: 'INCOMING' | 'IN_PROCESS' | 'FINAL';
-  reference_type: 'RECEIPT' | 'PRODUCTION_ORDER' | 'PICKING';
-  reference_id: string;
-  reference_number?: string;
-  product_id: string;
-  product_name?: string;
-  lot_number?: string;
-  quantity_inspected: number;
-  quantity_accepted: number;
-  quantity_rejected: number;
-  status: 'PENDING' | 'IN_PROGRESS' | 'PASSED' | 'FAILED' | 'PARTIAL';
-  results: QCResult[];
-  inspector_id?: string;
-  inspector_name?: string;
-  inspection_date: string;
-  created_at: string;
-}
-
-interface QCResult {
-  id: string;
-  parameter_id: string;
-  parameter_name?: string;
-  value: string | number | boolean;
-  is_conformant: boolean;
-  comment?: string;
-}
-
-interface QualityDashboard {
-  open_non_conformances: number;
-  pending_inspections: number;
-  inspections_today: number;
-  pass_rate: number;
-  critical_nc_count: number;
-  nc_by_type: { type: string; count: number }[];
-  nc_by_origin: { origin: string; count: number }[];
-}
-
-// ============================================================================
-// CONSTANTES
-// ============================================================================
-
-const NC_TYPES = [
-  { value: 'INTERNAL', label: 'Interne' },
-  { value: 'SUPPLIER', label: 'Fournisseur' },
-  { value: 'CUSTOMER', label: 'Client' }
-];
-
-const NC_ORIGINS = [
-  { value: 'PRODUCTION', label: 'Production' },
-  { value: 'RECEPTION', label: 'Réception' },
-  { value: 'FIELD', label: 'Terrain' },
-  { value: 'AUDIT', label: 'Audit' }
-];
-
-const SEVERITIES = [
-  { value: 'MINOR', label: 'Mineure', color: 'yellow' },
-  { value: 'MAJOR', label: 'Majeure', color: 'orange' },
-  { value: 'CRITICAL', label: 'Critique', color: 'red' }
-];
-
-const NC_STATUSES = [
-  { value: 'OPEN', label: 'Ouverte', color: 'red' },
-  { value: 'IN_ANALYSIS', label: 'En analyse', color: 'orange' },
-  { value: 'ACTION_PLANNED', label: 'Action planifiée', color: 'blue' },
-  { value: 'CLOSED', label: 'Clôturée', color: 'green' },
-  { value: 'CANCELLED', label: 'Annulée', color: 'gray' }
-];
-
-const QC_TYPES = [
-  { value: 'INCOMING', label: 'Réception' },
-  { value: 'IN_PROCESS', label: 'En cours' },
-  { value: 'FINAL', label: 'Final' }
-];
-
-const INSPECTION_STATUSES = [
-  { value: 'PENDING', label: 'En attente', color: 'gray' },
-  { value: 'IN_PROGRESS', label: 'En cours', color: 'blue' },
-  { value: 'PASSED', label: 'Conforme', color: 'green' },
-  { value: 'FAILED', label: 'Non conforme', color: 'red' },
-  { value: 'PARTIAL', label: 'Partiel', color: 'orange' }
-];
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const getStatusInfo = (statuses: any[], status: string) => {
-  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
-};
-
-const navigateTo = (view: string, params?: Record<string, any>) => {
-  window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
-};
-
-// ============================================================================
 // API HOOKS
 // ============================================================================
 
@@ -213,6 +89,16 @@ const useNonConformances = (filters?: { type?: string; status?: string; severity
       const query = params.toString();
       return api.get<NonConformance[]>(`/v1/quality/non-conformances${query ? `?${query}` : ''}`).then(r => r.data);
     }
+  });
+};
+
+const useNonConformance = (id: string) => {
+  return useQuery({
+    queryKey: ['quality', 'non-conformances', id],
+    queryFn: async () => {
+      return api.get<NonConformance>(`/v1/quality/non-conformances/${id}`).then(r => r.data);
+    },
+    enabled: !!id,
   });
 };
 
@@ -243,7 +129,7 @@ const useCreateNonConformance = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<NonConformance>) => {
-      return api.post('/v1/quality/non-conformances', data).then(r => r.data);
+      return api.post<NonConformance>('/v1/quality/non-conformances', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });
@@ -259,21 +145,204 @@ const useUpdateNCStatus = () => {
   });
 };
 
-const useCreateInspection = () => {
+const useCloseNC = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<QCInspection>) => {
-      return api.post('/v1/qc/inspections', data).then(r => r.data);
+    mutationFn: async (id: string) => {
+      return api.post(`/v1/quality/non-conformances/${id}/close`).then(r => r.data);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['qc'] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });
 };
 
 // ============================================================================
-// COMPOSANTS
+// HELPERS
 // ============================================================================
 
-const NonConformancesView: React.FC = () => {
+const getStatusInfo = (statuses: any[], status: string) => {
+  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
+};
+
+// ============================================================================
+// NC DETAIL VIEW (BaseViewStandard)
+// ============================================================================
+
+const NCDetailView: React.FC<{
+  ncId: string;
+  onBack: () => void;
+  onEdit: (id: string) => void;
+}> = ({ ncId, onBack, onEdit }) => {
+  const { data: nc, isLoading } = useNonConformance(ncId);
+  const updateStatus = useUpdateNCStatus();
+  const closeNC = useCloseNC();
+
+  if (isLoading) {
+    return <PageWrapper title="Chargement..."><div className="azals-loading">Chargement...</div></PageWrapper>;
+  }
+
+  if (!nc) {
+    return (
+      <PageWrapper title="NC non trouvee">
+        <Card><p>Cette non-conformite n'existe pas.</p><Button onClick={onBack}>Retour</Button></Card>
+      </PageWrapper>
+    );
+  }
+
+  const typeConfig = NC_TYPE_CONFIG[nc.type];
+  const severityConfig = SEVERITY_CONFIG[nc.severity];
+  const statusConfig = NC_STATUS_CONFIG[nc.status];
+  const canEdit = canEditNC(nc);
+  const canClose = canCloseNC(nc);
+
+  const handleClose = async () => {
+    if (window.confirm('Cloturer cette non-conformite ?')) {
+      await closeNC.mutateAsync(ncId);
+    }
+  };
+
+  // Tab definitions
+  const tabs: TabDefinition<NonConformance>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <FileText size={16} />,
+      component: NCInfoTab,
+    },
+    {
+      id: 'analysis',
+      label: 'Analyse',
+      icon: <Search size={16} />,
+      component: NCAnalysisTab,
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      badge: getDocumentCount(nc),
+      component: NCDocumentsTab,
+    },
+    {
+      id: 'stats',
+      label: 'Metriques',
+      icon: <Clock size={16} />,
+      component: NCStatsTab,
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: NCHistoryTab,
+    },
+    {
+      id: 'ia',
+      label: 'IA',
+      icon: <Shield size={16} />,
+      component: NCIATab,
+    },
+  ];
+
+  // InfoBar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'severity',
+      label: 'Gravite',
+      value: severityConfig.label,
+      valueColor: severityConfig.color as SemanticColor,
+    },
+    {
+      id: 'status',
+      label: 'Statut',
+      value: statusConfig.label,
+      valueColor: statusConfig.color as SemanticColor,
+    },
+    {
+      id: 'age',
+      label: 'Age',
+      value: getNCAge(nc),
+      valueColor: getNCAgeDays(nc) > 30 ? 'orange' as SemanticColor : undefined,
+    },
+    {
+      id: 'type',
+      label: 'Type',
+      value: typeConfig.label,
+    },
+  ];
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'nc',
+      title: 'Non-conformite',
+      items: [
+        { id: 'number', label: 'Numero', value: nc.number },
+        { id: 'detected', label: 'Detectee le', value: formatDate(nc.detected_date) },
+        { id: 'target', label: 'Objectif', value: formatDate(nc.target_date), highlight: isNCOverdue(nc) },
+      ],
+    },
+    {
+      id: 'product',
+      title: 'Produit',
+      items: [
+        { id: 'product', label: 'Produit', value: nc.product_name || '-' },
+        { id: 'lot', label: 'N° lot', value: nc.lot_number || '-' },
+      ],
+    },
+    {
+      id: 'responsible',
+      title: 'Responsables',
+      items: [
+        { id: 'detected_by', label: 'Detecte par', value: nc.detected_by_name || '-' },
+        { id: 'responsible', label: 'Responsable', value: nc.responsible_name || 'Non assigne', highlight: !nc.responsible_name },
+      ],
+    },
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      variant: 'ghost',
+      onClick: onBack,
+    },
+    ...(canClose ? [{
+      id: 'close',
+      label: 'Cloturer',
+      icon: <CheckCircle size={16} />,
+      onClick: handleClose,
+    }] : []),
+    ...(canEdit ? [{
+      id: 'edit',
+      label: 'Modifier',
+      variant: 'ghost' as const,
+      icon: <Edit size={16} />,
+      onClick: () => onEdit(ncId),
+    }] : []),
+  ];
+
+  return (
+    <BaseViewStandard<NonConformance>
+      title={`NC ${nc.number}`}
+      subtitle={nc.description?.substring(0, 60) + (nc.description && nc.description.length > 60 ? '...' : '')}
+      status={{
+        label: statusConfig.label,
+        color: statusConfig.color as SemanticColor,
+      }}
+      data={nc}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
+// ============================================================================
+// LIST VIEWS
+// ============================================================================
+
+const NonConformancesView: React.FC<{ onSelectNC: (id: string) => void }> = ({ onSelectNC }) => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterSeverity, setFilterSeverity] = useState<string>('');
@@ -289,13 +358,18 @@ const NonConformancesView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createNC.mutateAsync(formData);
+    const result = await createNC.mutateAsync(formData);
     setShowModal(false);
     setFormData({});
+    onSelectNC(result.id);
   };
 
   const columns: TableColumn<NonConformance>[] = [
-    { id: 'number', header: 'N', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
+    { id: 'number', header: 'N', accessor: 'number', render: (v, row) => (
+      <span className="azals-link" onClick={() => onSelectNC(row.id)}>
+        <code className="font-mono">{v as string}</code>
+      </span>
+    )},
     { id: 'detected_date', header: 'Date', accessor: 'detected_date', render: (v) => formatDate(v as string) },
     { id: 'type', header: 'Type', accessor: 'type', render: (v) => {
       const info = NC_TYPES.find(t => t.value === v);
@@ -305,30 +379,15 @@ const NonConformancesView: React.FC = () => {
       const info = NC_ORIGINS.find(o => o.value === v);
       return info?.label || (v as string);
     }},
-    { id: 'product_name', header: 'Produit', accessor: 'product_name', render: (v, row: NonConformance) => (v as string) ? (
-      <button
-        className="text-blue-600 hover:underline"
-        onClick={() => navigateTo('stock', { view: 'products', id: row.product_id })}
-      >
-        {v as string}
-      </button>
-    ) : '-' },
+    { id: 'product_name', header: 'Produit', accessor: 'product_name', render: (v) => (v as string) || '-' },
     { id: 'severity', header: 'Gravite', accessor: 'severity', render: (v) => {
       const info = getStatusInfo(SEVERITIES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const info = getStatusInfo(NC_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
-    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row: NonConformance) => (
-      <Select
-        value={row.status}
-        onChange={(v) => updateStatus.mutate({ id: row.id, status: v })}
-        options={NC_STATUSES}
-        className="w-36"
-      />
-    )}
   ];
 
   return (
@@ -366,7 +425,7 @@ const NonConformancesView: React.FC = () => {
               <label>Type</label>
               <Select
                 value={formData.type || ''}
-                onChange={(v) => setFormData({ ...formData, type: v as NonConformance['type'] })}
+                onChange={(v) => setFormData({ ...formData, type: v as NCType })}
                 options={NC_TYPES}
               />
             </div>
@@ -374,7 +433,7 @@ const NonConformancesView: React.FC = () => {
               <label>Origine</label>
               <Select
                 value={formData.origin || ''}
-                onChange={(v) => setFormData({ ...formData, origin: v as NonConformance['origin'] })}
+                onChange={(v) => setFormData({ ...formData, origin: v as NCOrigin })}
                 options={NC_ORIGINS}
               />
             </div>
@@ -384,7 +443,7 @@ const NonConformancesView: React.FC = () => {
               <label>Gravite</label>
               <Select
                 value={formData.severity || ''}
-                onChange={(v) => setFormData({ ...formData, severity: v as NonConformance['severity'] })}
+                onChange={(v) => setFormData({ ...formData, severity: v as NCSeverity })}
                 options={SEVERITIES}
               />
             </div>
@@ -412,22 +471,6 @@ const NonConformancesView: React.FC = () => {
               value={formData.description || ''}
               onChange={(v) => setFormData({ ...formData, description: v })}
               rows={3}
-            />
-          </div>
-          <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Cause racine (optionnel)</label>
-            <TextArea
-              value={formData.root_cause || ''}
-              onChange={(v) => setFormData({ ...formData, root_cause: v })}
-              rows={2}
-            />
-          </div>
-          <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Action corrective (optionnel)</label>
-            <TextArea
-              value={formData.corrective_action || ''}
-              onChange={(v) => setFormData({ ...formData, corrective_action: v })}
-              rows={2}
             />
           </div>
           <div className="flex justify-end gap-2 mt-4">
@@ -497,14 +540,14 @@ const InspectionsView: React.FC = () => {
     { id: 'product_name', header: 'Produit', accessor: 'product_name' },
     { id: 'lot_number', header: 'Lot', accessor: 'lot_number', render: (v) => (v as string) || '-' },
     { id: 'quantity_inspected', header: 'Qte inspectee', accessor: 'quantity_inspected' },
-    { id: 'quantity_accepted', header: 'Acceptee', accessor: 'quantity_accepted', render: (v, row: QCInspection) => (
+    { id: 'quantity_accepted', header: 'Acceptee', accessor: 'quantity_accepted', render: (v, row) => (
       <span className={(v as number) === row.quantity_inspected ? 'text-green-600' : 'text-orange-600'}>
         {v as number}
       </span>
     )},
     { id: 'status', header: 'Resultat', accessor: 'status', render: (v) => {
       const info = getStatusInfo(INSPECTION_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'inspector_name', header: 'Inspecteur', accessor: 'inspector_name', render: (v) => (v as string) || '-' }
   ];
@@ -538,10 +581,15 @@ const InspectionsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'non-conformances' | 'rules' | 'inspections';
+type View = 'dashboard' | 'non-conformances' | 'nc-detail' | 'rules' | 'inspections';
+
+interface NavState {
+  view: View;
+  ncId?: string;
+}
 
 const QualiteModule: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [navState, setNavState] = useState<NavState>({ view: 'dashboard' });
   const { data: dashboard } = useQualityDashboard();
 
   const tabs = [
@@ -551,10 +599,29 @@ const QualiteModule: React.FC = () => {
     { id: 'inspections', label: 'Inspections' }
   ];
 
+  const navigateToNCDetail = useCallback((id: string) => {
+    setNavState({ view: 'nc-detail', ncId: id });
+  }, []);
+
+  const navigateToNCList = useCallback(() => {
+    setNavState({ view: 'non-conformances' });
+  }, []);
+
+  // NC Detail view
+  if (navState.view === 'nc-detail' && navState.ncId) {
+    return (
+      <NCDetailView
+        ncId={navState.ncId}
+        onBack={navigateToNCList}
+        onEdit={(id) => console.log('Edit NC', id)}
+      />
+    );
+  }
+
   const renderContent = () => {
-    switch (currentView) {
+    switch (navState.view) {
       case 'non-conformances':
-        return <NonConformancesView />;
+        return <NonConformancesView onSelectNC={navigateToNCDetail} />;
       case 'rules':
         return <QCRulesView />;
       case 'inspections':
@@ -568,7 +635,7 @@ const QualiteModule: React.FC = () => {
                 value={String(dashboard?.open_non_conformances || 0)}
                 icon={<AlertTriangle className="w-5 h-5" />}
                 variant="danger"
-                onClick={() => setCurrentView('non-conformances')}
+                onClick={() => setNavState({ view: 'non-conformances' })}
               />
               <StatCard
                 title="NC critiques"
@@ -581,7 +648,7 @@ const QualiteModule: React.FC = () => {
                 value={String(dashboard?.pending_inspections || 0)}
                 icon={<Search className="w-5 h-5" />}
                 variant="warning"
-                onClick={() => setCurrentView('inspections')}
+                onClick={() => setNavState({ view: 'inspections' })}
               />
               <StatCard
                 title="Taux de conformite"
@@ -633,8 +700,8 @@ const QualiteModule: React.FC = () => {
     <PageWrapper title="Qualite" subtitle="Gestion de la qualite et controles">
       <TabNav
         tabs={tabs}
-        activeTab={currentView}
-        onChange={(id) => setCurrentView(id as View)}
+        activeTab={navState.view === 'nc-detail' ? 'non-conformances' : navState.view}
+        onChange={(id) => setNavState({ view: id as View })}
       />
       <div className="mt-4">
         {renderContent()}

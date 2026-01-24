@@ -1,3 +1,8 @@
+/**
+ * AZALSCORE Module - Payments
+ * Gestion des paiements et transactions
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
@@ -6,8 +11,34 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/standards';
 import type { TableColumn } from '@/types';
-import { DollarSign, BarChart2, Clock, AlertCircle, Calendar, TrendingUp, RotateCcw } from 'lucide-react';
+import {
+  DollarSign, BarChart2, Clock, AlertCircle, Calendar, TrendingUp, RotateCcw,
+  CreditCard, FileText, History, Sparkles, ArrowLeft, Info, Receipt
+} from 'lucide-react';
+
+// Import types from types.ts
+import type {
+  Payment, Refund, SavedPaymentMethod, PaymentStats,
+  PaymentMethod as PaymentMethodType, PaymentStatus
+} from './types';
+import {
+  formatCurrency, formatDate, formatDateTime,
+  PAYMENT_METHODS, PAYMENT_STATUS, REFUND_STATUS,
+  PAYMENT_STATUS_CONFIG, METHOD_CONFIG,
+  getMethodLabel, getMethodIcon
+} from './types';
+
+// Import tab components
+import {
+  PaymentInfoTab,
+  PaymentDetailsTab,
+  PaymentRefundsTab,
+  PaymentDocumentsTab,
+  PaymentHistoryTab,
+  PaymentIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,95 +69,8 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
+// CONSTANTES LOCALES
 // ============================================================================
-
-interface Payment {
-  id: string;
-  reference: string;
-  amount: number;
-  currency: string;
-  method: 'CARD' | 'BANK_TRANSFER' | 'TAP_TO_PAY' | 'CASH' | 'CHECK' | 'OTHER';
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
-  customer_id?: string;
-  customer_name?: string;
-  customer_email?: string;
-  invoice_id?: string;
-  invoice_number?: string;
-  description?: string;
-  metadata?: Record<string, any>;
-  error_message?: string;
-  processed_at?: string;
-  created_at: string;
-}
-
-interface Refund {
-  id: string;
-  payment_id: string;
-  payment_reference: string;
-  amount: number;
-  currency: string;
-  reason: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  processed_at?: string;
-  created_at: string;
-}
-
-interface PaymentMethod {
-  id: string;
-  customer_id: string;
-  customer_name: string;
-  type: 'CARD' | 'BANK_ACCOUNT' | 'SEPA';
-  last_four?: string;
-  brand?: string;
-  expiry_month?: number;
-  expiry_year?: number;
-  is_default: boolean;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface PaymentStats {
-  total_today: number;
-  transactions_today: number;
-  total_this_week: number;
-  transactions_this_week: number;
-  total_this_month: number;
-  transactions_this_month: number;
-  pending_count: number;
-  failed_count: number;
-  refunded_amount_month: number;
-  average_transaction: number;
-}
-
-// ============================================================================
-// CONSTANTES
-// ============================================================================
-
-const PAYMENT_METHODS = [
-  { value: 'CARD', label: 'Carte bancaire' },
-  { value: 'BANK_TRANSFER', label: 'Virement' },
-  { value: 'TAP_TO_PAY', label: 'Tap-to-Pay' },
-  { value: 'CASH', label: 'Especes' },
-  { value: 'CHECK', label: 'Cheque' },
-  { value: 'OTHER', label: 'Autre' }
-];
-
-const PAYMENT_STATUS = [
-  { value: 'PENDING', label: 'En attente' },
-  { value: 'PROCESSING', label: 'En cours' },
-  { value: 'COMPLETED', label: 'Complete' },
-  { value: 'FAILED', label: 'Echoue' },
-  { value: 'REFUNDED', label: 'Rembourse' },
-  { value: 'CANCELLED', label: 'Annule' }
-];
-
-const REFUND_STATUS = [
-  { value: 'PENDING', label: 'En attente' },
-  { value: 'PROCESSING', label: 'En cours' },
-  { value: 'COMPLETED', label: 'Effectue' },
-  { value: 'FAILED', label: 'Echoue' }
-];
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'orange',
@@ -135,31 +79,6 @@ const STATUS_COLORS: Record<string, string> = {
   FAILED: 'red',
   REFUNDED: 'gray',
   CANCELLED: 'red'
-};
-
-const METHOD_ICONS: Record<string, string> = {
-  CARD: '',
-  BANK_TRANSFER: '',
-  TAP_TO_PAY: '',
-  CASH: '',
-  CHECK: '',
-  OTHER: ''
-};
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
 };
 
 // Navigation inter-modules
@@ -198,6 +117,17 @@ const usePayments = (filters?: { status?: string; method?: string; date_from?: s
   });
 };
 
+const usePayment = (id: string) => {
+  return useQuery({
+    queryKey: ['payments', 'detail', id],
+    queryFn: async () => {
+      const response = await api.get<Payment>(`/v1/payments/${id}`).then(r => r.data);
+      return response;
+    },
+    enabled: !!id
+  });
+};
+
 const useRefunds = (filters?: { status?: string }) => {
   return useQuery({
     queryKey: ['payments', 'refunds', filters],
@@ -220,7 +150,7 @@ const usePaymentMethods = (filters?: { customer_id?: string }) => {
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
       const queryString = params.toString();
       const url = queryString ? `/v1/payments/methods?${queryString}` : '/v1/payments/methods';
-      const response = await api.get<PaymentMethod[]>(url).then(r => r.data);
+      const response = await api.get<SavedPaymentMethod[]>(url).then(r => r.data);
       return response;
     }
   });
@@ -251,10 +181,182 @@ const useRetryPayment = () => {
 };
 
 // ============================================================================
-// COMPOSANTS
+// PAYMENT DETAIL VIEW (BaseViewStandard)
 // ============================================================================
 
-const TransactionsView: React.FC = () => {
+interface PaymentDetailViewProps {
+  paymentId: string;
+  onBack: () => void;
+}
+
+const PaymentDetailView: React.FC<PaymentDetailViewProps> = ({ paymentId, onBack }) => {
+  const { data: payment, isLoading } = usePayment(paymentId);
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading-container">
+        <div className="azals-spinner" />
+        <p>Chargement du paiement...</p>
+      </div>
+    );
+  }
+
+  if (!payment) {
+    return (
+      <Card>
+        <div className="text-center py-8">
+          <AlertCircle size={48} className="text-danger mx-auto mb-4" />
+          <h3 className="text-lg font-medium">Paiement non trouve</h3>
+          <p className="text-muted mt-2">Le paiement demande n'existe pas.</p>
+          <Button variant="secondary" onClick={onBack} className="mt-4">
+            Retour
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const statusConfig = PAYMENT_STATUS_CONFIG[payment.status];
+  const methodConfig = METHOD_CONFIG[payment.method];
+  const refundCount = payment.refunds?.length || 0;
+
+  // Tabs definition
+  const tabs: TabDefinition<Payment>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Info size={16} />,
+      component: PaymentInfoTab
+    },
+    {
+      id: 'details',
+      label: 'Details techniques',
+      icon: <CreditCard size={16} />,
+      component: PaymentDetailsTab
+    },
+    {
+      id: 'refunds',
+      label: 'Remboursements',
+      icon: <RotateCcw size={16} />,
+      badge: refundCount > 0 ? refundCount : undefined,
+      component: PaymentRefundsTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      component: PaymentDocumentsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <History size={16} />,
+      component: PaymentHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'IA',
+      icon: <Sparkles size={16} />,
+      component: PaymentIATab
+    }
+  ];
+
+  // InfoBar items
+  const infoBarItems = [
+    {
+      id: 'amount',
+      label: 'Montant',
+      value: formatCurrency(payment.amount, payment.currency),
+      valueColor: 'primary' as SemanticColor
+    },
+    {
+      id: 'method',
+      label: 'Methode',
+      value: `${methodConfig.icon} ${methodConfig.label}`
+    },
+    {
+      id: 'status',
+      label: 'Statut',
+      value: statusConfig.label,
+      valueColor: statusConfig.color as SemanticColor
+    },
+    {
+      id: 'date',
+      label: 'Date',
+      value: formatDate(payment.created_at)
+    }
+  ];
+
+  // Sidebar sections
+  const sidebarSections = [
+    {
+      id: 'summary',
+      title: 'Resume',
+      items: [
+        { id: 'ref', label: 'Reference', value: payment.reference },
+        { id: 'amount', label: 'Montant', value: formatCurrency(payment.amount, payment.currency), highlight: true },
+        { id: 'status', label: 'Statut', value: statusConfig.label },
+        { id: 'method', label: 'Methode', value: methodConfig.label }
+      ]
+    },
+    {
+      id: 'client',
+      title: 'Client',
+      items: payment.customer_name ? [
+        { id: 'name', label: 'Nom', value: payment.customer_name },
+        ...(payment.customer_email ? [{ id: 'email', label: 'Email', value: payment.customer_email }] : [])
+      ] : [
+        { id: 'none', label: '', value: 'Pas de client associe' }
+      ]
+    },
+    {
+      id: 'dates',
+      title: 'Dates',
+      items: [
+        { id: 'created', label: 'Creation', value: formatDateTime(payment.created_at) },
+        ...(payment.processed_at ? [{ id: 'processed', label: 'Traitement', value: formatDateTime(payment.processed_at) }] : [])
+      ]
+    }
+  ];
+
+  // Header actions
+  const headerActions = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      onClick: onBack,
+      variant: 'ghost' as const
+    }
+  ];
+
+  return (
+    <BaseViewStandard<Payment>
+      title={`Paiement ${payment.reference}`}
+      subtitle={`${methodConfig.label} - ${payment.customer_name || 'Client anonyme'}`}
+      status={{
+        label: statusConfig.label,
+        color: statusConfig.color as SemanticColor
+      }}
+      data={payment}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
+// ============================================================================
+// COMPOSANTS DE VUES (Lists)
+// ============================================================================
+
+interface TransactionsViewProps {
+  onViewPayment: (payment: Payment) => void;
+}
+
+const TransactionsView: React.FC<TransactionsViewProps> = ({ onViewPayment }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterMethod, setFilterMethod] = useState<string>('');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -271,9 +373,9 @@ const TransactionsView: React.FC = () => {
       <code className="font-mono text-sm">{v as string}</code>
     )},
     { id: 'method', header: 'Methode', accessor: 'method', render: (v) => {
-      const val = v as string;
-      const info = PAYMENT_METHODS.find(m => m.value === val);
-      return <span>{METHOD_ICONS[val]} {info?.label || val}</span>;
+      const val = v as PaymentMethodType;
+      const config = METHOD_CONFIG[val];
+      return <span>{config?.icon} {config?.label || val}</span>;
     }},
     { id: 'customer_name', header: 'Client', accessor: 'customer_name', render: (v) => (v as string) || '-' },
     { id: 'invoice_number', header: 'Facture', accessor: 'invoice_number', render: (v) => (v as string) ? (
@@ -281,16 +383,16 @@ const TransactionsView: React.FC = () => {
     ) : '-' },
     { id: 'amount', header: 'Montant', accessor: 'amount', render: (v, row) => formatCurrency(v as number, (row as Payment).currency) },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
-      const val = v as string;
-      const info = PAYMENT_STATUS.find(s => s.value === val);
-      return <Badge color={STATUS_COLORS[val] || 'gray'}>{info?.label || val}</Badge>;
+      const val = v as PaymentStatus;
+      const config = PAYMENT_STATUS_CONFIG[val];
+      return <Badge color={config?.color || 'gray'}>{config?.label || val}</Badge>;
     }},
     { id: 'created_at', header: 'Date', accessor: 'created_at', render: (v) => formatDateTime(v as string) },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => {
       const payment = row as Payment;
       return (
         <div className="flex gap-1">
-          <Button size="sm" variant="secondary" onClick={() => setSelectedPayment(payment)}>Detail</Button>
+          <Button size="sm" variant="secondary" onClick={() => onViewPayment(payment)}>Detail</Button>
           {payment.status === 'FAILED' && (
             <Button size="sm" variant="warning" onClick={() => retryPayment.mutate(payment.id)}>Reessayer</Button>
           )}
@@ -312,7 +414,7 @@ const TransactionsView: React.FC = () => {
               <Select
                 value={filterMethod}
                 onChange={(v) => setFilterMethod(v)}
-                options={[{ value: '', label: 'Toutes methodes' }, ...PAYMENT_METHODS]}
+                options={[{ value: '', label: 'Toutes methodes' }, ...PAYMENT_METHODS.map(m => ({ value: m.value, label: m.label }))]}
                 className="w-40"
               />
             </div>
@@ -328,83 +430,6 @@ const TransactionsView: React.FC = () => {
         </div>
         <DataTable columns={columns} data={payments} isLoading={isLoading} keyField="id" />
       </Card>
-
-      {/* Detail du paiement */}
-      {selectedPayment && !showRefundModal && (
-        <Modal
-          isOpen={true}
-          onClose={() => setSelectedPayment(null)}
-          title={`Paiement ${selectedPayment.reference}`}
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-gray-500">Montant</div>
-                <div className="text-2xl font-bold">{formatCurrency(selectedPayment.amount, selectedPayment.currency)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">Statut</div>
-                <Badge color={STATUS_COLORS[selectedPayment.status] || 'gray'}>
-                  {PAYMENT_STATUS.find(s => s.value === selectedPayment.status)?.label}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-gray-500">Methode</div>
-                <div>{METHOD_ICONS[selectedPayment.method]} {PAYMENT_METHODS.find(m => m.value === selectedPayment.method)?.label}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Date</div>
-                <div>{formatDateTime(selectedPayment.created_at)}</div>
-              </div>
-              {selectedPayment.customer_name && (
-                <div>
-                  <div className="text-gray-500">Client</div>
-                  <div>{selectedPayment.customer_name}</div>
-                </div>
-              )}
-              {selectedPayment.customer_email && (
-                <div>
-                  <div className="text-gray-500">Email</div>
-                  <div>{selectedPayment.customer_email}</div>
-                </div>
-              )}
-              {selectedPayment.invoice_number && (
-                <div>
-                  <div className="text-gray-500">Facture</div>
-                  <div><code>{selectedPayment.invoice_number}</code></div>
-                </div>
-              )}
-              {selectedPayment.processed_at && (
-                <div>
-                  <div className="text-gray-500">Traite le</div>
-                  <div>{formatDateTime(selectedPayment.processed_at)}</div>
-                </div>
-              )}
-            </div>
-
-            {selectedPayment.description && (
-              <div>
-                <div className="text-sm text-gray-500">Description</div>
-                <div>{selectedPayment.description}</div>
-              </div>
-            )}
-
-            {selectedPayment.error_message && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded">
-                <div className="text-sm font-medium text-red-700">Erreur</div>
-                <div className="text-sm text-red-600">{selectedPayment.error_message}</div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="secondary" onClick={() => setSelectedPayment(null)}>Fermer</Button>
-            </div>
-          </div>
-        </Modal>
-      )}
 
       {/* Modal de remboursement */}
       {showRefundModal && selectedPayment && (
@@ -509,7 +534,7 @@ const RefundsView: React.FC = () => {
 const PaymentMethodsView: React.FC = () => {
   const { data: methods = [], isLoading } = usePaymentMethods();
 
-  const columns: TableColumn<PaymentMethod>[] = [
+  const columns: TableColumn<SavedPaymentMethod>[] = [
     { id: 'customer_name', header: 'Client', accessor: 'customer_name' },
     { id: 'type', header: 'Type', accessor: 'type', render: (v) => {
       const val = v as string;
@@ -518,13 +543,13 @@ const PaymentMethodsView: React.FC = () => {
     }},
     { id: 'last_four', header: 'Numero', accessor: 'last_four', render: (v, row) => {
       const val = v as string;
-      const method = row as PaymentMethod;
+      const method = row as SavedPaymentMethod;
       if (!val) return '-';
       return <span>.... {val} {method.brand && <Badge color="blue">{method.brand}</Badge>}</span>;
     }},
     { id: 'expiry', header: 'Expiration', accessor: 'expiry_month', render: (v, row) => {
       const val = v as number;
-      const method = row as PaymentMethod;
+      const method = row as SavedPaymentMethod;
       if (!val) return '-';
       return `${String(val).padStart(2, '0')}/${method.expiry_year}`;
     }},
@@ -551,7 +576,7 @@ const TapToPayView: React.FC = () => {
     <div className="space-y-4">
       <Card>
         <div className="text-center py-8">
-          <div className="text-6xl mb-4">Tap-to-Pay</div>
+          <div className="text-6xl mb-4">📱</div>
           <h3 className="text-2xl font-bold mb-2">Tap-to-Pay</h3>
           <p className="text-gray-600 mb-6">
             Encaissez directement avec votre smartphone grace au paiement sans contact NFC.
@@ -589,10 +614,15 @@ const TapToPayView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'transactions' | 'refunds' | 'methods' | 'tap-to-pay';
+type View = 'dashboard' | 'transactions' | 'refunds' | 'methods' | 'tap-to-pay' | 'detail';
+
+interface ViewState {
+  view: View;
+  paymentId?: string;
+}
 
 const PaymentsModule: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [viewState, setViewState] = useState<ViewState>({ view: 'dashboard' });
   const { data: stats } = usePaymentStats();
 
   const tabs = [
@@ -603,10 +633,25 @@ const PaymentsModule: React.FC = () => {
     { id: 'tap-to-pay', label: 'Tap-to-Pay' }
   ];
 
+  const handleViewPayment = (payment: Payment) => {
+    setViewState({ view: 'detail', paymentId: payment.id });
+  };
+
+  const handleBack = () => {
+    setViewState({ view: 'transactions' });
+  };
+
+  // Detail view
+  if (viewState.view === 'detail' && viewState.paymentId) {
+    return (
+      <PaymentDetailView paymentId={viewState.paymentId} onBack={handleBack} />
+    );
+  }
+
   const renderContent = () => {
-    switch (currentView) {
+    switch (viewState.view) {
       case 'transactions':
-        return <TransactionsView />;
+        return <TransactionsView onViewPayment={handleViewPayment} />;
       case 'refunds':
         return <RefundsView />;
       case 'methods':
@@ -622,7 +667,7 @@ const PaymentsModule: React.FC = () => {
                 value={formatCurrency(stats?.total_today || 0)}
                 icon={<DollarSign size={20} />}
                 variant="success"
-                onClick={() => setCurrentView('transactions')}
+                onClick={() => setViewState({ view: 'transactions' })}
               />
               <StatCard
                 title="Transactions aujourd'hui"
@@ -662,7 +707,7 @@ const PaymentsModule: React.FC = () => {
                 value={formatCurrency(stats?.refunded_amount_month || 0)}
                 icon={<RotateCcw size={20} />}
                 variant="default"
-                onClick={() => setCurrentView('refunds')}
+                onClick={() => setViewState({ view: 'refunds' })}
               />
             </Grid>
 
@@ -684,8 +729,8 @@ const PaymentsModule: React.FC = () => {
     >
       <TabNav
         tabs={tabs}
-        activeTab={currentView}
-        onChange={(id) => setCurrentView(id as View)}
+        activeTab={viewState.view}
+        onChange={(id) => setViewState({ view: id as View })}
       />
       <div className="mt-4">
         {renderContent()}

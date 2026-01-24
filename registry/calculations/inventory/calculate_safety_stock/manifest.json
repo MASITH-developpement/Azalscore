@@ -1,0 +1,48 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_safety_stock",
+  "name": "Calcule le stock de sécurité",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le stock de sécurité",
+  "inputs": {
+    "average_daily_usage": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "max_daily_usage": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "lead_time_days": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "safety_stock": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "forecasting"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -21,6 +21,8 @@
 #   RETENTION_DAYS   - Days to keep backups (default: 30)
 #   S3_BUCKET        - S3 bucket for remote storage (optional)
 #   SLACK_WEBHOOK    - Slack webhook for notifications (optional)
+#   BACKUP_ENCRYPTION_KEY - Path to GPG public key for encryption (optional)
+#   BACKUP_PASSPHRASE     - Symmetric passphrase for encryption (alternative)
 #
 
 set -euo pipefail
@@ -101,10 +103,59 @@ check_dependencies() {
         fi
     done
 
+    # Check for encryption tools if encryption is enabled
+    if [[ -n "${BACKUP_ENCRYPTION_KEY:-}" ]] || [[ -n "${BACKUP_PASSPHRASE:-}" ]]; then
+        if ! command -v gpg &> /dev/null; then
+            missing+=("gpg")
+        fi
+    fi
+
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_error "Missing dependencies: ${missing[*]}"
-        log_info "Install with: apt-get install postgresql-client gzip"
+        log_info "Install with: apt-get install postgresql-client gzip gnupg"
         exit 1
+    fi
+}
+
+encrypt_backup() {
+    local backup_file="$1"
+    local encrypted_file="${backup_file}.gpg"
+
+    # Skip if no encryption configured
+    if [[ -z "${BACKUP_ENCRYPTION_KEY:-}" ]] && [[ -z "${BACKUP_PASSPHRASE:-}" ]]; then
+        log_warn "SÉCURITÉ P0-10: Backup NON CHIFFRÉ! Configurez BACKUP_ENCRYPTION_KEY ou BACKUP_PASSPHRASE"
+        echo "$backup_file"
+        return
+    fi
+
+    log_info "Chiffrement du backup (P0-10 sécurité)..."
+
+    if [[ -n "${BACKUP_ENCRYPTION_KEY:-}" ]]; then
+        # Asymmetric encryption with GPG public key
+        if gpg --batch --yes --trust-model always \
+            --recipient-file "$BACKUP_ENCRYPTION_KEY" \
+            --output "$encrypted_file" \
+            --encrypt "$backup_file"; then
+            rm -f "$backup_file"
+            log_success "Backup chiffré avec clé publique: $encrypted_file"
+            echo "$encrypted_file"
+        else
+            log_error "Échec du chiffrement GPG"
+            echo "$backup_file"
+        fi
+    elif [[ -n "${BACKUP_PASSPHRASE:-}" ]]; then
+        # Symmetric encryption with passphrase
+        if echo "$BACKUP_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 \
+            --output "$encrypted_file" \
+            "$backup_file"; then
+            rm -f "$backup_file"
+            log_success "Backup chiffré avec passphrase: $encrypted_file"
+            echo "$encrypted_file"
+        else
+            log_error "Échec du chiffrement symétrique"
+            echo "$backup_file"
+        fi
     fi
 }
 
@@ -169,6 +220,9 @@ run_backup() {
         log_info "Compressing backup..."
         gzip -f "$backup_file"
         backup_file="${backup_file}.gz"
+
+        # SÉCURITÉ P0-10: Encrypt backup
+        backup_file=$(encrypt_backup "$backup_file")
 
         # Get file size
         local size=$(du -h "$backup_file" | cut -f1)

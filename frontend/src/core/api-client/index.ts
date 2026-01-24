@@ -134,8 +134,11 @@ const createApiClient = (): AxiosInstance => {
       // Skip incidents pour les endpoints d'incidents eux-mêmes (éviter boucle infinie)
       const isIncidentEndpoint = originalRequest.url?.includes('/incidents');
 
+      // Skip incidents pour les requêtes silencieuses (permission checks, etc.)
+      const isSilentRequest = originalRequest.headers?.['X-Silent-Error'] === 'true';
+
       // GUARDIAN: Créer un incident pour les erreurs significatives
-      if (!isIncidentEndpoint && !originalRequest._incidentCreated) {
+      if (!isIncidentEndpoint && !isSilentRequest && !originalRequest._incidentCreated) {
         originalRequest._incidentCreated = true;
 
         const status = error.response?.status;

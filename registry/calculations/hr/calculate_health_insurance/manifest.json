@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.hr.calculate_health_insurance",
+  "name": "Calcule la mutuelle santé",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la mutuelle santé",
+  "inputs": {
+    "base_premium": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "employer_share_percentage": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "employee_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "employer_cost": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "benefits"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

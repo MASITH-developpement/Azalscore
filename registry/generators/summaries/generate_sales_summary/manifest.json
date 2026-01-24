@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.generators.summaries.generate_sales_summary",
+  "name": "Génère un résumé des ventes",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un résumé des ventes",
+  "inputs": {
+    "sales_data": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "period": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "total_sales": {
+      "type": "number",
+      "description": ""
+    },
+    "number_of_transactions": {
+      "type": "number",
+      "description": ""
+    },
+    "average_sale": {
+      "type": "number",
+      "description": ""
+    },
+    "top_products": {
+      "type": "array",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "summaries",
+    "aggregates"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

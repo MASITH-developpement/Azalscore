@@ -1,0 +1,54 @@
+{
+  "id": "azalscore.external.government.verify_siret_insee",
+  "name": "Vérifie un SIRET via l'API INSEE",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Vérifie un SIRET via l'API INSEE",
+  "inputs": {
+    "siret": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "company_name": {
+      "type": "string",
+      "description": ""
+    },
+    "legal_form": {
+      "type": "string",
+      "description": ""
+    },
+    "address": {
+      "type": "object",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "government",
+    "insee"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

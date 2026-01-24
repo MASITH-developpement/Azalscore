@@ -1,0 +1,48 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_customer_acquisition_cost",
+  "name": "Calcule le coût d'acquisition client (CAC)",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le coût d'acquisition client (CAC)",
+  "inputs": {
+    "marketing_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "sales_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "new_customers": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "cac": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "commercial",
+    "metrics"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

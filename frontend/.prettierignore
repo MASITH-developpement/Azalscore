@@ -1,0 +1,11 @@
+dist
+build
+node_modules
+*.config.js
+*.config.ts
+coverage
+.vite
+.playwright
+pnpm-lock.yaml
+package-lock.json
+yarn.lock

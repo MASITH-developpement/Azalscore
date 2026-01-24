@@ -5,18 +5,42 @@
 import React, { useState } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users, Building, Contact } from 'lucide-react';
+import {
+  Plus, Users, Building, Contact as ContactIcon,
+  User, FileText, Clock, ShoppingCart, Sparkles
+} from 'lucide-react';
 import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { DynamicForm } from '@ui/forms';
 import { Button, Modal } from '@ui/actions';
+import {
+  BaseViewStandard,
+  type TabDefinition,
+  type InfoBarItem,
+  type SidebarSection,
+  type ActionDefinition,
+  type SemanticColor
+} from '@ui/standards';
 import { z } from 'zod';
 import type { PaginatedResponse, TableColumn } from '@/types';
+import type { Partner, Client } from './types';
+import {
+  PARTNER_TYPE_CONFIG, CLIENT_TYPE_CONFIG,
+  formatCurrency, formatDate, getPartnerAgeDays, hasContacts, getContactsCount
+} from './types';
+import {
+  PartnerInfoTab,
+  PartnerContactsTab,
+  PartnerTransactionsTab,
+  PartnerDocumentsTab,
+  PartnerHistoryTab,
+  PartnerIATab
+} from './components';
 
-// Types
-interface Partner {
+// Legacy Partner interface for list views (backward compatibility)
+interface PartnerLegacy {
   id: string;
   type: 'client' | 'supplier' | 'contact';
   code?: string;
@@ -37,20 +61,31 @@ const usePartners = (type: 'client' | 'supplier' | 'contact', page = 1, pageSize
   return useQuery({
     queryKey: ['partners', type, page, pageSize],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Partner>>(
+      const response = await api.get<PaginatedResponse<PartnerLegacy>>(
         `/v1/partners/${type}s?page=${page}&page_size=${pageSize}`
       );
-      return response as unknown as PaginatedResponse<Partner>;
+      return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
+  });
+};
+
+const usePartner = (type: 'client' | 'supplier' | 'contact', id: string | undefined) => {
+  return useQuery({
+    queryKey: ['partner', type, id],
+    queryFn: async () => {
+      const response = await api.get<Partner>(`/v1/partners/${type}s/${id}`);
+      return response as unknown as Partner;
+    },
+    enabled: !!id,
   });
 };
 
 const useCreatePartner = (type: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<Partner>) => {
-      const response = await api.post<Partner>(`/v1/partners/${type}s`, data);
-      return response as unknown as Partner;
+    mutationFn: async (data: Partial<PartnerLegacy>) => {
+      const response = await api.post<PartnerLegacy>(`/v1/partners/${type}s`, data);
+      return response as unknown as PartnerLegacy;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', type] });
@@ -73,7 +108,7 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
   const { data, isLoading, refetch } = usePartners(type, page, pageSize);
   const createPartner = useCreatePartner(type);
 
-  const columns: TableColumn<Partner>[] = [
+  const columns: TableColumn<PartnerLegacy>[] = [
     { id: 'name', header: 'Nom', accessor: 'name', sortable: true },
     { id: 'email', header: 'Email', accessor: 'email' },
     { id: 'phone', header: 'Téléphone', accessor: 'phone' },
@@ -95,13 +130,13 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
     {
       id: 'view',
       label: 'Voir',
-      onClick: (row: Partner) => navigate(`/partners/${type}s/${row.id}`),
+      onClick: (row: PartnerLegacy) => navigate(`/partners/${type}s/${row.id}`),
     },
     {
       id: 'edit',
       label: 'Modifier',
       capability: `partners.${type}s.edit`,
-      onClick: (row: Partner) => navigate(`/partners/${type}s/${row.id}/edit`),
+      onClick: (row: PartnerLegacy) => navigate(`/partners/${type}s/${row.id}/edit`),
     },
   ];
 
@@ -184,9 +219,9 @@ export const ClientsPage: React.FC = () => {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['partners', 'clients', page, pageSize],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Partner>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
+      const response = await api.get<PaginatedResponse<PartnerLegacy>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
       // api.get retourne déjà response.data, pas besoin de .data
-      return response as unknown as PaginatedResponse<Partner>;
+      return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
   });
 
@@ -205,7 +240,7 @@ export const ClientsPage: React.FC = () => {
     },
   });
 
-  const columns: TableColumn<Partner>[] = [
+  const columns: TableColumn<PartnerLegacy>[] = [
     { id: 'code', header: 'Code', accessor: 'code', sortable: true },
     { id: 'name', header: 'Nom', accessor: 'name', sortable: true },
     { id: 'email', header: 'Email', accessor: 'email' },
@@ -228,13 +263,13 @@ export const ClientsPage: React.FC = () => {
     {
       id: 'view',
       label: 'Voir',
-      onClick: (row: Partner) => navigate(`/partners/clients/${row.id}`),
+      onClick: (row: PartnerLegacy) => navigate(`/partners/clients/${row.id}`),
     },
     {
       id: 'edit',
       label: 'Modifier',
       capability: 'partners.clients.edit',
-      onClick: (row: Partner) => navigate(`/partners/clients/${row.id}/edit`),
+      onClick: (row: PartnerLegacy) => navigate(`/partners/clients/${row.id}/edit`),
     },
   ];
 
@@ -336,8 +371,8 @@ export const ContactsPage: React.FC = () => {
   const { data: clientsData, isLoading: loadingClients } = useQuery({
     queryKey: ['partners', 'clients-for-select'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Partner>>('/v1/partners/clients?page=1&page_size=100&is_active=true');
-      return response as unknown as PaginatedResponse<Partner>;
+      const response = await api.get<PaginatedResponse<PartnerLegacy>>('/v1/partners/clients?page=1&page_size=100&is_active=true');
+      return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
   });
 
@@ -421,7 +456,7 @@ export const ContactsPage: React.FC = () => {
       type: 'select' as const,
       required: true,
       placeholder: 'Sélectionner un client',
-      options: (clientsData?.items || []).map((c: Partner) => ({ value: c.id, label: c.name }))
+      options: (clientsData?.items || []).map((c: PartnerLegacy) => ({ value: c.id, label: c.name }))
     },
     { name: 'first_name', label: 'Prénom', type: 'text' as const, required: true },
     { name: 'last_name', label: 'Nom', type: 'text' as const, required: true },
@@ -527,7 +562,7 @@ export const PartnersDashboard: React.FC = () => {
             </Button>
           }
         >
-          <Contact size={32} className="azals-text--primary" />
+          <ContactIcon size={32} className="azals-text--primary" />
           <p>Carnet d'adresses</p>
         </Card>
       </Grid>
@@ -535,13 +570,212 @@ export const PartnersDashboard: React.FC = () => {
   );
 };
 
+/**
+ * PartnerDetailView - Vue detail standardisee BaseViewStandard
+ */
+interface PartnerDetailViewProps {
+  partnerType: 'client' | 'supplier' | 'contact';
+}
+
+const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partnerType }) => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: partner, isLoading, error } = usePartner(partnerType, id);
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">Chargement du partenaire...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !partner) {
+    return (
+      <PageWrapper title="Erreur">
+        <div className="azals-alert azals-alert--danger">
+          Partenaire introuvable
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // Configuration des onglets
+  const tabs: TabDefinition<Partner>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <User size={16} />,
+      component: PartnerInfoTab
+    },
+    {
+      id: 'contacts',
+      label: 'Contacts',
+      icon: <Users size={16} />,
+      badge: getContactsCount(partner),
+      component: PartnerContactsTab
+    },
+    {
+      id: 'transactions',
+      label: 'Transactions',
+      icon: <ShoppingCart size={16} />,
+      component: PartnerTransactionsTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      badge: partner.documents?.length,
+      component: PartnerDocumentsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: PartnerHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: PartnerIATab
+    }
+  ];
+
+  // Barre d'info KPIs
+  const typeConfig = PARTNER_TYPE_CONFIG[partner.type];
+  const clientTypeConfig = partner.type === 'client' && (partner as Client).client_type
+    ? CLIENT_TYPE_CONFIG[(partner as Client).client_type]
+    : null;
+
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'type',
+      label: 'Type',
+      value: typeConfig?.label || partner.type,
+      valueColor: (typeConfig?.color || 'gray') as SemanticColor
+    },
+    {
+      id: 'status',
+      label: 'Statut',
+      value: partner.is_active ? 'Actif' : 'Inactif',
+      valueColor: partner.is_active ? 'green' : 'gray'
+    }
+  ];
+
+  // Ajouter des KPIs specifiques selon le type
+  if (partner.type === 'client') {
+    const client = partner as Client;
+    if (clientTypeConfig) {
+      infoBarItems.push({
+        id: 'client_type',
+        label: 'Categorie',
+        value: clientTypeConfig.label,
+        valueColor: (clientTypeConfig.color || 'gray') as SemanticColor
+      });
+    }
+    if (client.total_orders !== undefined) {
+      infoBarItems.push({
+        id: 'orders',
+        label: 'Commandes',
+        value: String(client.total_orders),
+        valueColor: 'blue'
+      });
+    }
+    if (client.total_revenue !== undefined) {
+      infoBarItems.push({
+        id: 'revenue',
+        label: 'CA Total',
+        value: formatCurrency(client.total_revenue),
+        valueColor: 'green'
+      });
+    }
+  }
+
+  // Ajouter anciennete
+  const ageDays = getPartnerAgeDays(partner);
+  infoBarItems.push({
+    id: 'age',
+    label: 'Anciennete',
+    value: ageDays > 365 ? `${Math.floor(ageDays / 365)} an(s)` : `${ageDays}j`,
+    valueColor: ageDays > 365 ? 'green' : 'gray'
+  });
+
+  // Sidebar
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'summary',
+      title: 'Resume',
+      items: [
+        { id: 'code', label: 'Code', value: partner.code || '-' },
+        { id: 'email', label: 'Email', value: partner.email || '-' },
+        { id: 'phone', label: 'Telephone', value: partner.phone || partner.mobile || '-' },
+        { id: 'city', label: 'Ville', value: partner.city || '-' }
+      ]
+    }
+  ];
+
+  // Section financiere pour clients
+  if (partner.type === 'client') {
+    const client = partner as Client;
+    sidebarSections.push({
+      id: 'financial',
+      title: 'Donnees financieres',
+      items: [
+        { id: 'revenue', label: 'CA Total', value: formatCurrency(client.total_revenue || 0), highlight: true },
+        { id: 'orders', label: 'Commandes', value: String(client.total_orders || 0) },
+        { id: 'outstanding', label: 'Encours', value: formatCurrency(client.stats?.total_outstanding || 0) }
+      ]
+    });
+  }
+
+  // Actions header
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'edit',
+      label: 'Modifier',
+      variant: 'secondary',
+      capability: `partners.${partnerType}s.edit`,
+      onClick: () => navigate(`/partners/${partnerType}s/${id}/edit`)
+    }
+  ];
+
+  // Statut du partenaire
+  const status = {
+    label: partner.is_active ? 'Actif' : 'Inactif',
+    color: partner.is_active ? 'green' as const : 'gray' as const
+  };
+
+  return (
+    <BaseViewStandard<Partner>
+      title={partner.name}
+      subtitle={partner.code ? `Code: ${partner.code}` : undefined}
+      status={status}
+      data={partner}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
+// Composants detail par type
+const ClientDetailView: React.FC = () => <PartnerDetailView partnerType="client" />;
+const SupplierDetailView: React.FC = () => <PartnerDetailView partnerType="supplier" />;
+const ContactDetailView: React.FC = () => <PartnerDetailView partnerType="contact" />;
+
 // Router
 export const PartnersRoutes: React.FC = () => (
   <Routes>
     <Route index element={<PartnersDashboard />} />
     <Route path="clients" element={<ClientsPage />} />
+    <Route path="clients/:id" element={<ClientDetailView />} />
     <Route path="suppliers" element={<SuppliersPage />} />
+    <Route path="suppliers/:id" element={<SupplierDetailView />} />
     <Route path="contacts" element={<ContactsPage />} />
+    <Route path="contacts/:id" element={<ContactDetailView />} />
   </Routes>
 );
 

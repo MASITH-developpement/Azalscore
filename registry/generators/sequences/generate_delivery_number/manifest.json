@@ -1,0 +1,49 @@
+{
+  "id": "azalscore.generators.sequences.generate_delivery_number",
+  "name": "Génère un numéro de bon de livraison",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un numéro de bon de livraison",
+  "inputs": {
+    "prefix": {
+      "type": "string",
+      "required": false,
+      "description": "",
+      "default": "BL"
+    },
+    "year": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "counter": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "delivery_number": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "sequences",
+    "numbers"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

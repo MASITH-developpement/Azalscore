@@ -39,7 +39,7 @@ def test_login():
             resp_json = response.json()
             print(f"\nResponse Body:")
             print(json.dumps(resp_json, indent=2, ensure_ascii=False))
-        except:
+        except (json.JSONDecodeError, ValueError):
             print(f"\nResponse Text: {response.text}")
 
         if response.status_code == 200:

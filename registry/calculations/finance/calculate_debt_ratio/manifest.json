@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.finance.calculate_debt_ratio",
+  "name": "Calcule le ratio d'endettement",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le ratio d'endettement",
+  "inputs": {
+    "total_debt": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "total_equity": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "debt_ratio": {
+      "type": "number",
+      "description": ""
+    },
+    "debt_percentage": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "analytics"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

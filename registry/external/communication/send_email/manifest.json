@@ -1,0 +1,61 @@
+{
+  "id": "azalscore.external.communication.send_email",
+  "name": "Envoie un email via service externe",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Envoie un email via service externe",
+  "inputs": {
+    "to": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "subject": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "body": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "attachments": {
+      "type": "array",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "message_id": {
+      "type": "string",
+      "description": ""
+    },
+    "status": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "communication",
+    "email"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

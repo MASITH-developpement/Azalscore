@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.banking.calculate_loan_affordability",
+  "name": "Calcule la capacité d'emprunt",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la capacité d'emprunt",
+  "inputs": {
+    "monthly_income": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "max_loan": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "banking",
+    "loans"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

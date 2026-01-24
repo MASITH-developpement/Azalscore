@@ -9,7 +9,7 @@ import hashlib
 import json
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import pyotp
 from sqlalchemy.orm import Session
@@ -123,7 +123,7 @@ class TwoFactorService:
 
         # Activer le 2FA
         user.totp_enabled = 1
-        user.totp_verified_at = datetime.now(UTC)
+        user.totp_verified_at = datetime.now(timezone.utc)
         self.db.commit()
 
         return TOTPVerifyResult(

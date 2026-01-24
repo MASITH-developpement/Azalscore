@@ -1,0 +1,53 @@
+{
+  "id": "azalscore.calculations.hr.calculate_absence_duration",
+  "name": "Calcule la durée d'absence",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la durée d'absence",
+  "inputs": {
+    "start_date": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "end_date": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "include_weekends": {
+      "type": "boolean",
+      "required": false,
+      "description": "",
+      "default": false
+    }
+  },
+  "outputs": {
+    "absence_days": {
+      "type": "number",
+      "description": ""
+    },
+    "working_days": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "time_tracking"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

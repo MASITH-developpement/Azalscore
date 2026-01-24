@@ -1,3 +1,8 @@
+/**
+ * AZALSCORE Module - INTERVENTIONS
+ * Gestion des interventions terrain - Migré vers BaseViewStandard
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
@@ -6,8 +11,30 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input, TextArea } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
 import type { TableColumn } from '@/types';
-import { ClipboardList, Calendar, Wrench, CheckCircle, BarChart3, Clock, MapPin } from 'lucide-react';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
+import {
+  ClipboardList, Calendar, Wrench, CheckCircle, BarChart3, Clock, MapPin,
+  User, FileText, History, Sparkles, Package, Euro, AlertTriangle, Play, X
+} from 'lucide-react';
+
+// Import tab components
+import {
+  InterventionInfoTab,
+  InterventionLinesTab,
+  InterventionFinancialTab,
+  InterventionDocsTab,
+  InterventionHistoryTab,
+  InterventionIATab
+} from './components';
+
+// Import shared types
+import type { Intervention, InterventionType, InterventionPriorite, DonneurOrdre, InterventionStats } from './types';
+import {
+  STATUT_CONFIG, PRIORITE_CONFIG, TYPE_CONFIG,
+  formatDate, formatDuration, formatCurrency, isLate
+} from './types';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,146 +65,33 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
-// ============================================================================
-
-type InterventionStatut = 'A_PLANIFIER' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE';
-type InterventionPriorite = 'LOW' | 'NORMAL' | 'HIGH';
-type InterventionType = 'INSTALLATION' | 'MAINTENANCE' | 'REPARATION' | 'INSPECTION' | 'FORMATION' | 'CONSULTATION' | 'AUTRE';
-
-interface Intervention {
-  id: string;
-  reference: string;
-  client_id: string;
-  client_name?: string;
-  donneur_ordre_id?: string;
-  donneur_ordre_name?: string;
-  projet_id?: string;
-  projet_name?: string;
-  type_intervention: InterventionType;
-  priorite: InterventionPriorite;
-  titre: string;
-  description?: string;
-  date_prevue?: string;
-  heure_prevue?: string;
-  date_prevue_debut?: string;
-  date_prevue_fin?: string;
-  duree_prevue_minutes?: number;
-  intervenant_id?: string;
-  intervenant_name?: string;
-  statut: InterventionStatut;
-  date_debut_reelle?: string;
-  date_fin_reelle?: string;
-  duree_reelle_minutes?: number;
-  adresse_intervention?: string;
-  adresse_ligne1?: string;
-  adresse_ligne2?: string;
-  ville?: string;
-  code_postal?: string;
-  contact_sur_place?: string;
-  telephone_contact?: string;
-  notes_internes?: string;
-  materiel_necessaire?: string;
-  created_at: string;
-}
-
-interface RapportIntervention {
-  id: string;
-  intervention_id: string;
-  travaux_realises?: string;
-  observations?: string;
-  recommandations?: string;
-  pieces_remplacees?: string;
-  temps_passe_minutes?: number;
-  materiel_utilise?: string;
-  photos: string[];
-  signature_client?: string;
-  nom_signataire?: string;
-  is_signed: boolean;
-  created_at: string;
-}
-
-interface DonneurOrdre {
-  id: string;
-  nom: string;
-  email?: string;
-  telephone?: string;
-  entreprise?: string;
-  is_active: boolean;
-}
-
-interface InterventionStats {
-  a_planifier: number;
-  planifiees: number;
-  en_cours: number;
-  terminees_semaine: number;
-  terminees_mois: number;
-  duree_moyenne_minutes: number;
-  interventions_jour: number;
-}
-
-// ============================================================================
 // CONSTANTES
 // ============================================================================
 
 const STATUTS = [
   { value: 'A_PLANIFIER', label: 'A planifier' },
-  { value: 'PLANIFIEE', label: 'Planifiee' },
+  { value: 'PLANIFIEE', label: 'Planifiée' },
   { value: 'EN_COURS', label: 'En cours' },
-  { value: 'TERMINEE', label: 'Terminee' }
+  { value: 'TERMINEE', label: 'Terminée' },
+  { value: 'ANNULEE', label: 'Annulée' }
 ];
 
 const PRIORITES = [
   { value: 'LOW', label: 'Basse' },
   { value: 'NORMAL', label: 'Normale' },
-  { value: 'HIGH', label: 'Haute' }
+  { value: 'HIGH', label: 'Haute' },
+  { value: 'URGENT', label: 'Urgente' }
 ];
 
 const TYPES_INTERVENTION = [
   { value: 'INSTALLATION', label: 'Installation' },
   { value: 'MAINTENANCE', label: 'Maintenance' },
-  { value: 'REPARATION', label: 'Reparation' },
+  { value: 'REPARATION', label: 'Réparation' },
   { value: 'INSPECTION', label: 'Inspection' },
   { value: 'FORMATION', label: 'Formation' },
   { value: 'CONSULTATION', label: 'Consultation' },
   { value: 'AUTRE', label: 'Autre' }
 ];
-
-const STATUT_COLORS: Record<string, string> = {
-  A_PLANIFIER: 'gray',
-  PLANIFIEE: 'blue',
-  EN_COURS: 'orange',
-  TERMINEE: 'green'
-};
-
-const PRIORITE_COLORS: Record<string, string> = {
-  LOW: 'gray',
-  NORMAL: 'blue',
-  HIGH: 'red'
-};
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-const formatDuration = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return hours > 0 ? `${hours}h${mins.toString().padStart(2, '0')}` : `${mins}min`;
-};
-
-// Navigation inter-modules
-const navigateTo = (view: string, params?: Record<string, any>) => {
-  window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
-};
 
 // ============================================================================
 // API HOOKS
@@ -265,7 +179,211 @@ const useUpdateStatut = () => {
 };
 
 // ============================================================================
-// COMPOSANTS
+// DETAIL VIEW (BaseViewStandard)
+// ============================================================================
+
+interface InterventionDetailViewProps {
+  intervention: Intervention;
+  onClose: () => void;
+}
+
+const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ intervention, onClose }) => {
+  const updateStatut = useUpdateStatut();
+  const statutConfig = STATUT_CONFIG[intervention.statut];
+  const prioriteConfig = PRIORITE_CONFIG[intervention.priorite];
+  const typeConfig = TYPE_CONFIG[intervention.type_intervention];
+
+  // Tabs definition
+  const tabs: TabDefinition<Intervention>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <ClipboardList size={16} />,
+      component: InterventionInfoTab
+    },
+    {
+      id: 'lignes',
+      label: 'Détails',
+      icon: <Package size={16} />,
+      component: InterventionLinesTab
+    },
+    {
+      id: 'financier',
+      label: 'Financier',
+      icon: <Euro size={16} />,
+      component: InterventionFinancialTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      badge: intervention.rapport ? 1 : 0,
+      component: InterventionDocsTab
+    },
+    {
+      id: 'historique',
+      label: 'Historique',
+      icon: <History size={16} />,
+      component: InterventionHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: InterventionIATab
+    }
+  ];
+
+  // InfoBar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'client',
+      label: 'Client',
+      value: intervention.client_name || '-',
+      icon: <User size={14} />
+    },
+    {
+      id: 'type',
+      label: 'Type',
+      value: typeConfig?.label || intervention.type_intervention,
+      icon: <Wrench size={14} />
+    },
+    {
+      id: 'date_prevue',
+      label: 'Date prévue',
+      value: intervention.date_prevue ? formatDate(intervention.date_prevue) : 'Non planifiée',
+      icon: <Calendar size={14} />,
+      valueColor: isLate(intervention) ? 'red' : undefined
+    },
+    {
+      id: 'duree',
+      label: 'Durée',
+      value: formatDuration(intervention.duree_reelle_minutes || intervention.duree_prevue_minutes),
+      icon: <Clock size={14} />
+    }
+  ];
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'resume',
+      title: 'Résumé',
+      items: [
+        { id: 'reference', label: 'Référence', value: intervention.reference },
+        { id: 'priorite', label: 'Priorité', value: prioriteConfig?.label || intervention.priorite },
+        { id: 'intervenant', label: 'Intervenant', value: intervention.intervenant_name || 'Non assigné' },
+        { id: 'created_at', label: 'Créé le', value: formatDate(intervention.created_at) }
+      ]
+    },
+    {
+      id: 'localisation',
+      title: 'Localisation',
+      items: [
+        { id: 'adresse', label: 'Adresse', value: intervention.adresse_intervention || intervention.adresse_ligne1 || '-' },
+        { id: 'ville', label: 'Ville', value: intervention.ville || '-' },
+        { id: 'contact', label: 'Contact', value: intervention.contact_sur_place || '-' }
+      ]
+    },
+    {
+      id: 'facturation',
+      title: 'Facturation',
+      items: [
+        { id: 'facturable', label: 'Facturable', value: intervention.facturable !== false ? 'Oui' : 'Non' },
+        { id: 'montant_ht', label: 'Montant HT', value: formatCurrency(intervention.montant_ht || 0) },
+        { id: 'facture', label: 'Facture', value: intervention.facture_reference || '-' }
+      ]
+    }
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'close',
+      label: 'Fermer',
+      variant: 'secondary' as const,
+      onClick: onClose
+    }
+  ];
+
+  // Footer actions based on status
+  const primaryActions: ActionDefinition[] = [];
+
+  if (intervention.statut === 'A_PLANIFIER') {
+    primaryActions.push({
+      id: 'planifier',
+      label: 'Planifier',
+      icon: <Calendar size={16} />,
+      variant: 'primary' as const,
+      onClick: () => {
+        updateStatut.mutate({ id: intervention.id, statut: 'PLANIFIEE' });
+        onClose();
+      }
+    });
+  }
+
+  if (intervention.statut === 'PLANIFIEE') {
+    primaryActions.push({
+      id: 'demarrer',
+      label: 'Démarrer',
+      icon: <Play size={16} />,
+      variant: 'warning' as const,
+      onClick: () => {
+        updateStatut.mutate({ id: intervention.id, statut: 'EN_COURS' });
+        onClose();
+      }
+    });
+  }
+
+  if (intervention.statut === 'EN_COURS') {
+    primaryActions.push({
+      id: 'terminer',
+      label: 'Terminer',
+      icon: <CheckCircle size={16} />,
+      variant: 'success' as const,
+      onClick: () => {
+        updateStatut.mutate({ id: intervention.id, statut: 'TERMINEE' });
+        onClose();
+      }
+    });
+  }
+
+  if (intervention.statut !== 'TERMINEE' && intervention.statut !== 'ANNULEE') {
+    primaryActions.push({
+      id: 'annuler',
+      label: 'Annuler',
+      icon: <X size={16} />,
+      variant: 'danger' as const,
+      onClick: () => {
+        updateStatut.mutate({ id: intervention.id, statut: 'ANNULEE' });
+        onClose();
+      }
+    });
+  }
+
+  return (
+    <Modal isOpen={true} onClose={onClose} title="" size="xl">
+      <BaseViewStandard<Intervention>
+        title={intervention.titre}
+        subtitle={`Intervention ${intervention.reference}`}
+        status={{
+          label: statutConfig?.label || intervention.statut,
+          color: (statutConfig?.color || 'gray') as 'gray' | 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'yellow' | 'cyan',
+          icon: statutConfig?.icon
+        }}
+        data={intervention}
+        view="detail"
+        tabs={tabs}
+        infoBarItems={infoBarItems}
+        sidebarSections={sidebarSections}
+        headerActions={headerActions}
+        primaryActions={primaryActions}
+      />
+    </Modal>
+  );
+};
+
+// ============================================================================
+// LIST VIEW
 // ============================================================================
 
 const InterventionsListView: React.FC = () => {
@@ -283,34 +401,34 @@ const InterventionsListView: React.FC = () => {
   const updateStatut = useUpdateStatut();
 
   const columns: TableColumn<Intervention>[] = [
-    { id: 'reference', header: 'Reference', accessor: 'reference', render: (v) => (
+    { id: 'reference', header: 'Référence', accessor: 'reference', render: (v) => (
       <code className="font-mono text-sm">{v as string}</code>
     )},
     { id: 'titre', header: 'Titre', accessor: 'titre' },
     { id: 'client_name', header: 'Client', accessor: 'client_name', render: (v) => (v as string) || '-' },
     { id: 'type_intervention', header: 'Type', accessor: 'type_intervention', render: (v) => {
-      const info = TYPES_INTERVENTION.find(t => t.value === v);
-      return info?.label || (v as string);
+      const config = TYPE_CONFIG[v as InterventionType];
+      return config?.label || (v as string);
     }},
-    { id: 'priorite', header: 'Priorite', accessor: 'priorite', render: (v) => {
-      const info = PRIORITES.find(p => p.value === v);
-      return <Badge color={PRIORITE_COLORS[v as string] || 'gray'}>{info?.label || (v as string)}</Badge>;
+    { id: 'priorite', header: 'Priorité', accessor: 'priorite', render: (v) => {
+      const config = PRIORITE_CONFIG[v as InterventionPriorite];
+      return <Badge color={config?.color || 'gray'}>{config?.label || (v as string)}</Badge>;
     }},
-    { id: 'date_prevue', header: 'Date prevue', accessor: 'date_prevue', render: (v) => (v as string) ? formatDate(v as string) : '-' },
+    { id: 'date_prevue', header: 'Date prévue', accessor: 'date_prevue', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'intervenant_name', header: 'Intervenant', accessor: 'intervenant_name', render: (v) => (v as string) || '-' },
     { id: 'statut', header: 'Statut', accessor: 'statut', render: (v) => {
-      const info = STATUTS.find(s => s.value === v);
-      return <Badge color={STATUT_COLORS[v as string] || 'gray'}>{info?.label || (v as string)}</Badge>;
+      const config = STATUT_CONFIG[v as keyof typeof STATUT_CONFIG];
+      return <Badge color={config?.color || 'gray'}>{config?.label || (v as string)}</Badge>;
     }},
-    { id: 'duree_prevue_minutes', header: 'Duree', accessor: 'duree_prevue_minutes', render: (v) => (v as number) ? formatDuration(v as number) : '-' },
+    { id: 'duree_prevue_minutes', header: 'Durée', accessor: 'duree_prevue_minutes', render: (v) => (v as number) ? formatDuration(v as number) : '-' },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_v, row) => (
       <div className="flex gap-1">
-        <Button size="sm" variant="secondary" onClick={() => setSelectedIntervention(row)}>Detail</Button>
+        <Button size="sm" variant="secondary" onClick={() => setSelectedIntervention(row)}>Détail</Button>
         {row.statut === 'A_PLANIFIER' && (
           <Button size="sm" variant="primary" onClick={() => updateStatut.mutate({ id: row.id, statut: 'PLANIFIEE' })}>Planifier</Button>
         )}
         {row.statut === 'PLANIFIEE' && (
-          <Button size="sm" variant="warning" onClick={() => updateStatut.mutate({ id: row.id, statut: 'EN_COURS' })}>Demarrer</Button>
+          <Button size="sm" variant="warning" onClick={() => updateStatut.mutate({ id: row.id, statut: 'EN_COURS' })}>Démarrer</Button>
         )}
         {row.statut === 'EN_COURS' && (
           <Button size="sm" variant="success" onClick={() => updateStatut.mutate({ id: row.id, statut: 'TERMINEE' })}>Terminer</Button>
@@ -340,7 +458,7 @@ const InterventionsListView: React.FC = () => {
             <Select
               value={filterPriorite}
               onChange={(v) => setFilterPriorite(v)}
-              options={[{ value: '', label: 'Toutes priorites' }, ...PRIORITES]}
+              options={[{ value: '', label: 'Toutes priorités' }, ...PRIORITES]}
               className="w-36"
             />
             <Button onClick={() => setShowNewModal(true)}>Nouvelle intervention</Button>
@@ -349,9 +467,9 @@ const InterventionsListView: React.FC = () => {
         <DataTable columns={columns} data={interventions} isLoading={isLoading} keyField="id" />
       </Card>
 
-      {/* Modal Detail */}
+      {/* Detail View with BaseViewStandard */}
       {selectedIntervention && (
-        <InterventionDetailModal
+        <InterventionDetailView
           intervention={selectedIntervention}
           onClose={() => setSelectedIntervention(null)}
         />
@@ -365,162 +483,9 @@ const InterventionsListView: React.FC = () => {
   );
 };
 
-const InterventionDetailModal: React.FC<{
-  intervention: Intervention;
-  onClose: () => void;
-}> = ({ intervention, onClose }) => {
-  const updateStatut = useUpdateStatut();
-
-  return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title={`Intervention ${intervention.reference}`}
-      size="lg"
-    >
-      <div className="space-y-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-xl font-bold">{intervention.titre}</h3>
-            <div className="flex gap-2 mt-2">
-              <Badge color={STATUT_COLORS[intervention.statut] || 'gray'}>
-                {STATUTS.find(s => s.value === intervention.statut)?.label}
-              </Badge>
-              <Badge color={PRIORITE_COLORS[intervention.priorite] || 'gray'}>
-                {PRIORITES.find(p => p.value === intervention.priorite)?.label}
-              </Badge>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-500">Type</div>
-            <div>{TYPES_INTERVENTION.find(t => t.value === intervention.type_intervention)?.label}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-gray-500">Client</div>
-            <div className="font-medium">{intervention.client_name || '-'}</div>
-          </div>
-          <div>
-            <div className="text-gray-500">Donneur d'ordre</div>
-            <div className="font-medium">{intervention.donneur_ordre_name || '-'}</div>
-          </div>
-          <div>
-            <div className="text-gray-500">Intervenant</div>
-            <div className="font-medium">{intervention.intervenant_name || 'Non assigne'}</div>
-          </div>
-          <div>
-            <div className="text-gray-500">Projet</div>
-            <div className="font-medium">{intervention.projet_name || '-'}</div>
-          </div>
-          <div>
-            <div className="text-gray-500">Date prevue</div>
-            <div className="font-medium">{intervention.date_prevue ? formatDate(intervention.date_prevue) : '-'} {intervention.heure_prevue || ''}</div>
-          </div>
-          <div>
-            <div className="text-gray-500">Duree prevue</div>
-            <div className="font-medium">{intervention.duree_prevue_minutes ? formatDuration(intervention.duree_prevue_minutes) : '-'}</div>
-          </div>
-        </div>
-
-        {intervention.adresse_intervention && (
-          <div>
-            <div className="text-sm text-gray-500">Adresse d'intervention</div>
-            <div>{intervention.adresse_intervention}</div>
-          </div>
-        )}
-
-        {intervention.contact_sur_place && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <div className="text-gray-500">Contact sur place</div>
-              <div>{intervention.contact_sur_place}</div>
-            </div>
-            {intervention.telephone_contact && (
-              <div>
-                <div className="text-gray-500">Telephone</div>
-                <div>{intervention.telephone_contact}</div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {intervention.description && (
-          <div>
-            <div className="text-sm text-gray-500">Description</div>
-            <div className="bg-gray-50 p-3 rounded">{intervention.description}</div>
-          </div>
-        )}
-
-        {intervention.materiel_necessaire && (
-          <div>
-            <div className="text-sm text-gray-500">Materiel necessaire</div>
-            <div className="bg-yellow-50 p-3 rounded">{intervention.materiel_necessaire}</div>
-          </div>
-        )}
-
-        {intervention.notes_internes && (
-          <div>
-            <div className="text-sm text-gray-500">Notes internes</div>
-            <div className="bg-blue-50 p-3 rounded text-sm">{intervention.notes_internes}</div>
-          </div>
-        )}
-
-        {/* Suivi reel */}
-        {(intervention.date_debut_reelle || intervention.date_fin_reelle) && (
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-2">Suivi reel</h4>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              {intervention.date_debut_reelle && (
-                <div>
-                  <div className="text-gray-500">Demarrage</div>
-                  <div>{formatDateTime(intervention.date_debut_reelle)}</div>
-                </div>
-              )}
-              {intervention.date_fin_reelle && (
-                <div>
-                  <div className="text-gray-500">Fin</div>
-                  <div>{formatDateTime(intervention.date_fin_reelle)}</div>
-                </div>
-              )}
-              {intervention.duree_reelle_minutes && (
-                <div>
-                  <div className="text-gray-500">Duree reelle</div>
-                  <div>{formatDuration(intervention.duree_reelle_minutes)}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="flex gap-2">
-            {intervention.statut === 'A_PLANIFIER' && (
-              <Button variant="primary" onClick={() => {
-                updateStatut.mutate({ id: intervention.id, statut: 'PLANIFIEE' });
-                onClose();
-              }}>Planifier</Button>
-            )}
-            {intervention.statut === 'PLANIFIEE' && (
-              <Button variant="warning" onClick={() => {
-                updateStatut.mutate({ id: intervention.id, statut: 'EN_COURS' });
-                onClose();
-              }}>Demarrer l'intervention</Button>
-            )}
-            {intervention.statut === 'EN_COURS' && (
-              <Button variant="success" onClick={() => {
-                updateStatut.mutate({ id: intervention.id, statut: 'TERMINEE' });
-                onClose();
-              }}>Terminer l'intervention</Button>
-            )}
-          </div>
-          <Button variant="secondary" onClick={onClose}>Fermer</Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
+// ============================================================================
+// NEW INTERVENTION MODAL
+// ============================================================================
 
 const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { data: clients = [] } = useClients();
@@ -588,7 +553,7 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 value={formData.client_id}
                 onChange={(v) => setFormData({ ...formData, client_id: v })}
                 options={[
-                  { value: '', label: 'Selectionner...' },
+                  { value: '', label: 'Sélectionner...' },
                   ...clients.map((c: any) => ({ value: c.id, label: c.name }))
                 ]}
               />
@@ -621,11 +586,11 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
               <Select
                 value={formData.type_intervention}
                 onChange={(v) => setFormData({ ...formData, type_intervention: v })}
-                options={[{ value: '', label: 'Selectionner...' }, ...TYPES_INTERVENTION]}
+                options={[{ value: '', label: 'Sélectionner...' }, ...TYPES_INTERVENTION]}
               />
             </div>
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Priorite *</label>
+              <label className="block text-sm font-medium mb-1">Priorité *</label>
               <Select
                 value={formData.priorite}
                 onChange={(v) => setFormData({ ...formData, priorite: v })}
@@ -633,7 +598,7 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
               />
             </div>
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Duree prevue (min)</label>
+              <label className="block text-sm font-medium mb-1">Durée prévue (min)</label>
               <Input
                 type="number"
                 value={formData.duree_prevue_minutes}
@@ -645,7 +610,7 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
 
           <div className="grid grid-cols-3 gap-4">
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Date prevue</label>
+              <label className="block text-sm font-medium mb-1">Date prévue</label>
               <input
                 type="date"
                 className="azals-input"
@@ -654,7 +619,7 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
               />
             </div>
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Heure prevue</label>
+              <label className="block text-sm font-medium mb-1">Heure prévue</label>
               <input
                 type="time"
                 className="azals-input"
@@ -668,7 +633,7 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                 value={formData.intervenant_id}
                 onChange={(v) => setFormData({ ...formData, intervenant_id: v })}
                 options={[
-                  { value: '', label: 'Non assigne' },
+                  { value: '', label: 'Non assigné' },
                   ...intervenants.map((i: any) => ({ value: i.id, label: `${i.first_name} ${i.last_name}` }))
                 ]}
               />
@@ -680,7 +645,7 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             <Input
               value={formData.adresse_intervention}
               onChange={(v) => setFormData({ ...formData, adresse_intervention: v })}
-              placeholder="Adresse complete"
+              placeholder="Adresse complète"
             />
           </div>
 
@@ -694,7 +659,7 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
               />
             </div>
             <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Telephone contact</label>
+              <label className="block text-sm font-medium mb-1">Téléphone contact</label>
               <Input
                 value={formData.telephone_contact}
                 onChange={(v) => setFormData({ ...formData, telephone_contact: v })}
@@ -709,29 +674,33 @@ const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
               value={formData.description}
               onChange={(v) => setFormData({ ...formData, description: v })}
               rows={3}
-              placeholder="Description detaillee de l'intervention..."
+              placeholder="Description détaillée de l'intervention..."
             />
           </div>
 
           <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Materiel necessaire</label>
+            <label className="block text-sm font-medium mb-1">Matériel nécessaire</label>
             <TextArea
               value={formData.materiel_necessaire}
               onChange={(v) => setFormData({ ...formData, materiel_necessaire: v })}
               rows={2}
-              placeholder="Liste du materiel requis..."
+              placeholder="Liste du matériel requis..."
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
-            <Button type="submit" disabled={createIntervention.isPending}>Creer l'intervention</Button>
+            <Button type="submit" disabled={createIntervention.isPending}>Créer l'intervention</Button>
           </div>
         </div>
       </form>
     </Modal>
   );
 };
+
+// ============================================================================
+// DONNEURS D'ORDRE VIEW
+// ============================================================================
 
 const DonneursOrdreView: React.FC = () => {
   const { data: donneursOrdre = [], isLoading } = useDonneursOrdre();
@@ -740,7 +709,7 @@ const DonneursOrdreView: React.FC = () => {
     { id: 'nom', header: 'Nom', accessor: 'nom' },
     { id: 'entreprise', header: 'Entreprise', accessor: 'entreprise', render: (v) => (v as string) || '-' },
     { id: 'email', header: 'Email', accessor: 'email', render: (v) => (v as string) || '-' },
-    { id: 'telephone', header: 'Telephone', accessor: 'telephone', render: (v) => (v as string) || '-' },
+    { id: 'telephone', header: 'Téléphone', accessor: 'telephone', render: (v) => (v as string) || '-' },
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
     )}
@@ -757,12 +726,16 @@ const DonneursOrdreView: React.FC = () => {
   );
 };
 
+// ============================================================================
+// PLANNING VIEW
+// ============================================================================
+
 const PlanningView: React.FC = () => {
   const { data: interventions = [] } = useInterventions({ statut: 'PLANIFIEE' });
 
   // Grouper par date
   const interventionsByDate = interventions.reduce((acc: Record<string, Intervention[]>, int: Intervention) => {
-    const date = int.date_prevue || 'Non planifiee';
+    const date = int.date_prevue || 'Non planifiée';
     if (!acc[date]) acc[date] = [];
     acc[date].push(int);
     return acc;
@@ -775,14 +748,14 @@ const PlanningView: React.FC = () => {
       {dates.length === 0 ? (
         <Card>
           <div className="text-center py-8 text-gray-500">
-            Aucune intervention planifiee
+            Aucune intervention planifiée
           </div>
         </Card>
       ) : (
         dates.map(date => (
           <Card key={date}>
             <h4 className="font-semibold mb-3">
-              {date === 'Non planifiee' ? date : formatDate(date)}
+              {date === 'Non planifiée' ? date : formatDate(date)}
               <Badge color="blue">{interventionsByDate[date].length}</Badge>
             </h4>
             <div className="space-y-2">
@@ -791,11 +764,11 @@ const PlanningView: React.FC = () => {
                   <div>
                     <div className="font-medium">{int.titre}</div>
                     <div className="text-sm text-gray-500">
-                      {int.heure_prevue || '-'} - {int.client_name} - {int.intervenant_name || 'Non assigne'}
+                      {int.heure_prevue || '-'} - {int.client_name} - {int.intervenant_name || 'Non assigné'}
                     </div>
                   </div>
-                  <Badge color={PRIORITE_COLORS[int.priorite] || 'gray'}>
-                    {PRIORITES.find(p => p.value === int.priorite)?.label}
+                  <Badge color={PRIORITE_CONFIG[int.priorite]?.color || 'gray'}>
+                    {PRIORITE_CONFIG[int.priorite]?.label || int.priorite}
                   </Badge>
                 </div>
               ))}
@@ -844,7 +817,7 @@ const InterventionsModule: React.FC = () => {
                 onClick={() => setCurrentView('interventions')}
               />
               <StatCard
-                title="Planifiees"
+                title="Planifiées"
                 value={String(stats?.planifiees || 0)}
                 icon={<Calendar size={20} />}
                 variant="default"
@@ -857,7 +830,7 @@ const InterventionsModule: React.FC = () => {
                 variant="warning"
               />
               <StatCard
-                title="Terminees (semaine)"
+                title="Terminées (semaine)"
                 value={String(stats?.terminees_semaine || 0)}
                 icon={<CheckCircle size={20} />}
                 variant="success"
@@ -866,13 +839,13 @@ const InterventionsModule: React.FC = () => {
 
             <Grid cols={3}>
               <StatCard
-                title="Terminees (mois)"
+                title="Terminées (mois)"
                 value={String(stats?.terminees_mois || 0)}
                 icon={<BarChart3 size={20} />}
                 variant="default"
               />
               <StatCard
-                title="Duree moyenne"
+                title="Durée moyenne"
                 value={stats?.duree_moyenne_minutes ? formatDuration(stats.duree_moyenne_minutes) : '-'}
                 icon={<Clock size={20} />}
                 variant="default"

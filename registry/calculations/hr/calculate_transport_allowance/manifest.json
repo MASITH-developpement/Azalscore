@@ -1,0 +1,44 @@
+{
+  "id": "azalscore.calculations.hr.calculate_transport_allowance",
+  "name": "Calcule l'indemnité transport",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule l'indemnité transport",
+  "inputs": {
+    "monthly_pass_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "employer_share": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 0.5
+    }
+  },
+  "outputs": {
+    "allowance_amount": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "benefits"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

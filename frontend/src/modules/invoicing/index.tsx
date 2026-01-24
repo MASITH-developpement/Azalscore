@@ -23,7 +23,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, FileText, Check, Download, Eye, Edit, Trash2,
   ArrowRight, RefreshCw, Filter, Search, X, FileSpreadsheet,
-  AlertCircle, CheckCircle2, Clock, UserPlus, Copy, ShoppingCart
+  AlertCircle, CheckCircle2, Clock, UserPlus, Copy, ShoppingCart,
+  DollarSign, Link2, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
@@ -31,8 +32,31 @@ import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
+import {
+  BaseViewStandard,
+  type TabDefinition,
+  type InfoBarItem,
+  type SidebarSection,
+  type ActionDefinition,
+  type SemanticColor
+} from '@ui/standards';
 import { z } from 'zod';
 import type { PaginatedResponse, TableColumn, TableAction } from '@/types';
+import type { Document as InvoicingDocument } from './types';
+import {
+  DOCUMENT_STATUS_CONFIG, DOCUMENT_TYPE_CONFIG,
+  TRANSFORM_WORKFLOW as TRANSFORM_WORKFLOW_TYPES,
+  formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil,
+  getDaysUntilDue, isDocumentOverdue, canTransformDocument
+} from './types';
+import {
+  InvoicingInfoTab,
+  InvoicingLinesTab,
+  InvoicingFinancialTab,
+  InvoicingDocumentsTab,
+  InvoicingHistoryTab,
+  InvoicingIATab
+} from './components';
 
 // ============================================================
 // TYPES - Alignés avec le backend
@@ -1635,6 +1659,212 @@ const InvoicingDashboard: React.FC = () => {
 };
 
 // ============================================================
+// PAGES - Detail View (BaseViewStandard)
+// ============================================================
+
+interface InvoicingDetailViewProps {
+  type: DocumentType;
+}
+
+const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: document, isLoading, error } = useDocument(id || '');
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">
+          <RefreshCw className="animate-spin" size={24} />
+          <span>Chargement du document...</span>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !document) {
+    return (
+      <PageWrapper title="Erreur">
+        <div className="azals-alert azals-alert--danger">
+          Document introuvable
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  const typeConfig = DOCUMENT_TYPE_CONFIG[document.type];
+  const statusConfig = DOCUMENT_STATUS_CONFIG[document.status];
+
+  // Configuration des onglets
+  const tabs: TabDefinition<InvoicingDocument>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <FileText size={16} />,
+      component: InvoicingInfoTab
+    },
+    {
+      id: 'lines',
+      label: 'Lignes',
+      icon: <ShoppingCart size={16} />,
+      badge: document.lines?.length,
+      component: InvoicingLinesTab
+    },
+    {
+      id: 'financial',
+      label: 'Financier',
+      icon: <DollarSign size={16} />,
+      component: InvoicingFinancialTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <Link2 size={16} />,
+      component: InvoicingDocumentsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: InvoicingHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: InvoicingIATab
+    }
+  ];
+
+  // Barre d'info KPIs
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'type',
+      label: 'Type',
+      value: typeConfig.label,
+      valueColor: typeConfig.color as SemanticColor
+    },
+    {
+      id: 'status',
+      label: 'Statut',
+      value: statusConfig.label,
+      valueColor: statusConfig.color as SemanticColor
+    },
+    {
+      id: 'lines',
+      label: 'Lignes',
+      value: String(document.lines?.length || 0),
+      valueColor: 'blue'
+    },
+    {
+      id: 'total',
+      label: 'Total TTC',
+      value: formatCurrencyUtil(document.total, document.currency),
+      valueColor: 'green'
+    }
+  ];
+
+  // Ajouter alerte retard si applicable
+  if (isDocumentOverdue(document)) {
+    const days = Math.abs(getDaysUntilDue(document) || 0);
+    infoBarItems.push({
+      id: 'overdue',
+      label: 'Retard',
+      value: `${days}j`,
+      valueColor: 'red'
+    });
+  }
+
+  // Sidebar
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'summary',
+      title: 'Resume',
+      items: [
+        { id: 'number', label: 'Numero', value: document.number },
+        { id: 'date', label: 'Date', value: formatDateUtil(document.date) },
+        { id: 'customer', label: 'Client', value: document.customer_name || '-' },
+        { id: 'currency', label: 'Devise', value: document.currency }
+      ]
+    },
+    {
+      id: 'totals',
+      title: 'Montants',
+      items: [
+        { id: 'subtotal', label: 'Total HT', value: formatCurrencyUtil(document.subtotal, document.currency) },
+        { id: 'tax', label: 'TVA', value: formatCurrencyUtil(document.tax_amount, document.currency) },
+        { id: 'total', label: 'Total TTC', value: formatCurrencyUtil(document.total, document.currency), highlight: true }
+      ]
+    }
+  ];
+
+  // Ajouter section echeance si applicable
+  if (document.due_date) {
+    const daysUntil = getDaysUntilDue(document);
+    sidebarSections.push({
+      id: 'payment',
+      title: 'Echeance',
+      items: [
+        { id: 'due_date', label: 'Date', value: formatDateUtil(document.due_date) },
+        {
+          id: 'days',
+          label: 'Statut',
+          value: daysUntil !== null
+            ? (daysUntil < 0 ? `En retard (${Math.abs(daysUntil)}j)` : `${daysUntil}j restants`)
+            : '-',
+          highlight: daysUntil !== null && daysUntil < 0
+        }
+      ]
+    });
+  }
+
+  // Actions header
+  const headerActions: ActionDefinition[] = [];
+
+  if (document.status === 'DRAFT') {
+    headerActions.push({
+      id: 'edit',
+      label: 'Modifier',
+      variant: 'secondary',
+      capability: 'invoicing.edit',
+      onClick: () => navigate(`/invoicing/${type.toLowerCase()}s/${id}/edit`)
+    });
+  }
+
+  if (canTransformDocument(document)) {
+    const transformConfig = TRANSFORM_WORKFLOW_TYPES[document.type];
+    if (transformConfig) {
+      headerActions.push({
+        id: 'transform',
+        label: transformConfig.label,
+        variant: 'primary',
+        onClick: () => console.log('Transform to', transformConfig.target)
+      });
+    }
+  }
+
+  // Statut du document
+  const status = {
+    label: statusConfig.label,
+    color: statusConfig.color as SemanticColor
+  };
+
+  return (
+    <BaseViewStandard<InvoicingDocument>
+      title={`${typeConfig.label} ${document.number}`}
+      subtitle={document.customer_name || undefined}
+      status={status}
+      data={document}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
+// ============================================================
 // EXPORTS - Page Components
 // ============================================================
 
@@ -1646,9 +1876,15 @@ export const QuoteFormPage: React.FC = () => <DocumentFormPage type="QUOTE" />;
 export const OrderFormPage: React.FC = () => <DocumentFormPage type="ORDER" />;
 export const InvoiceFormPage: React.FC = () => <DocumentFormPage type="INVOICE" />;
 
+// Legacy detail pages (keeping for backward compatibility)
 export const QuoteDetailPage: React.FC = () => <DocumentDetailPage type="QUOTE" />;
 export const OrderDetailPage: React.FC = () => <DocumentDetailPage type="ORDER" />;
 export const InvoiceDetailPageComponent: React.FC = () => <DocumentDetailPage type="INVOICE" />;
+
+// New BaseViewStandard detail views
+export const QuoteDetailViewStandard: React.FC = () => <InvoicingDetailView type="QUOTE" />;
+export const OrderDetailViewStandard: React.FC = () => <InvoicingDetailView type="ORDER" />;
+export const InvoiceDetailViewStandard: React.FC = () => <InvoicingDetailView type="INVOICE" />;
 
 // ============================================================
 // EXPORTS - Router
@@ -1660,17 +1896,17 @@ export const InvoicingRoutes: React.FC = () => (
 
     <Route path="quotes" element={<QuotesPage />} />
     <Route path="quotes/new" element={<QuoteFormPage />} />
-    <Route path="quotes/:id" element={<QuoteDetailPage />} />
+    <Route path="quotes/:id" element={<QuoteDetailViewStandard />} />
     <Route path="quotes/:id/edit" element={<QuoteFormPage />} />
 
     <Route path="orders" element={<OrdersPage />} />
     <Route path="orders/new" element={<OrderFormPage />} />
-    <Route path="orders/:id" element={<OrderDetailPage />} />
+    <Route path="orders/:id" element={<OrderDetailViewStandard />} />
     <Route path="orders/:id/edit" element={<OrderFormPage />} />
 
     <Route path="invoices" element={<InvoicesPage />} />
     <Route path="invoices/new" element={<InvoiceFormPage />} />
-    <Route path="invoices/:id" element={<InvoiceDetailPageComponent />} />
+    <Route path="invoices/:id" element={<InvoiceDetailViewStandard />} />
     <Route path="invoices/:id/edit" element={<InvoiceFormPage />} />
   </Routes>
 );

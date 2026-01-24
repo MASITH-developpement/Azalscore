@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.external.webhooks.send_webhook",
+  "name": "Envoie une notification webhook",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Envoie une notification webhook",
+  "inputs": {
+    "url": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "payload": {
+      "type": "object",
+      "required": true,
+      "description": ""
+    },
+    "headers": {
+      "type": "object",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "status_code": {
+      "type": "number",
+      "description": ""
+    },
+    "response": {
+      "type": "object",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "webhooks",
+    "notifications"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

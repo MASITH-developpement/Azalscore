@@ -10,8 +10,15 @@
 #
 # Usage:
 #   ./restore_database.sh backup_file.sql.gz
+#   ./restore_database.sh backup_file.sql.gz.gpg  # Encrypted backup
 #   ./restore_database.sh --list              # List available backups
 #   ./restore_database.sh --dry-run file.gz   # Test without restoring
+#
+# Environment Variables:
+#   DATABASE_URL          - PostgreSQL connection URL (required)
+#   BACKUP_DIR            - Backup directory (default: /var/backups/azalscore)
+#   BACKUP_DECRYPTION_KEY - Path to GPG private key for decryption
+#   BACKUP_PASSPHRASE     - Symmetric passphrase for decryption
 #
 
 set -euo pipefail
@@ -98,6 +105,51 @@ list_backups() {
     echo ""
 }
 
+decrypt_backup() {
+    local backup_file="$1"
+    local decrypted_file
+
+    # Check if file is encrypted
+    if [[ "$backup_file" != *.gpg ]]; then
+        echo "$backup_file"
+        return
+    fi
+
+    log_info "Déchiffrement du backup chiffré..."
+
+    # Remove .gpg extension for decrypted file
+    decrypted_file="${backup_file%.gpg}"
+
+    if [[ -n "${BACKUP_DECRYPTION_KEY:-}" ]]; then
+        # Asymmetric decryption with private key
+        if gpg --batch --yes \
+            --decrypt \
+            --output "$decrypted_file" \
+            "$backup_file"; then
+            log_success "Backup déchiffré: $decrypted_file"
+            echo "$decrypted_file"
+        else
+            log_error "Échec du déchiffrement GPG (vérifiez votre clé privée)"
+            exit 1
+        fi
+    elif [[ -n "${BACKUP_PASSPHRASE:-}" ]]; then
+        # Symmetric decryption with passphrase
+        if echo "$BACKUP_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 \
+            --decrypt \
+            --output "$decrypted_file" \
+            "$backup_file"; then
+            log_success "Backup déchiffré: $decrypted_file"
+            echo "$decrypted_file"
+        else
+            log_error "Échec du déchiffrement (vérifiez votre passphrase)"
+            exit 1
+        fi
+    else
+        log_error "Backup chiffré détecté mais ni BACKUP_DECRYPTION_KEY ni BACKUP_PASSPHRASE n'est défini"
+        exit 1
+    fi
+}
+
 validate_backup_file() {
     local backup_file="$1"
 
@@ -109,6 +161,11 @@ validate_backup_file() {
             log_error "Backup file not found: $backup_file"
             exit 1
         fi
+    fi
+
+    # Decrypt if encrypted
+    if [[ "$backup_file" == *.gpg ]]; then
+        backup_file=$(decrypt_backup "$backup_file")
     fi
 
     # Check if it's a valid gzip file

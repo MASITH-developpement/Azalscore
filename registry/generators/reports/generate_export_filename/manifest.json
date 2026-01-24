@@ -1,0 +1,44 @@
+{
+  "id": "azalscore.generators.reports.generate_export_filename",
+  "name": "Génère un nom de fichier pour un export",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un nom de fichier pour un export",
+  "inputs": {
+    "entity_type": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "format": {
+      "type": "string",
+      "required": false,
+      "description": "",
+      "default": "csv"
+    }
+  },
+  "outputs": {
+    "filename": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "reports",
+    "filenames"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

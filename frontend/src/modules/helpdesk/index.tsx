@@ -1,3 +1,8 @@
+/**
+ * AZALSCORE Module - Helpdesk
+ * Gestion des tickets de support client
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
@@ -6,8 +11,29 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input, TextArea } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
-import { Inbox, Settings, AlertTriangle, CheckCircle, Clock, Target, Star } from 'lucide-react';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
+import {
+  Inbox, Settings, AlertTriangle, CheckCircle, Clock, Target, Star,
+  MessageSquare, FileText, BookOpen, Sparkles, User, Edit
+} from 'lucide-react';
 import type { TableColumn } from '@/types';
+import type { Ticket, TicketCategory, KnowledgeArticle, HelpdeskDashboard, TicketPriority, TicketStatus, TicketSource } from './types';
+import {
+  formatDate, formatDateTime, formatDuration,
+  PRIORITIES, STATUSES, SOURCES,
+  PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
+  isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
+  getTicketAge, getPublicMessageCount
+} from './types';
+import {
+  TicketInfoTab,
+  TicketMessagesTab,
+  TicketDocsTab,
+  TicketHistoryTab,
+  TicketKnowledgeTab,
+  TicketIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,127 +64,11 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
-// ============================================================================
-
-interface TicketCategory {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  sla_hours?: number;
-  is_active: boolean;
-}
-
-interface Ticket {
-  id: string;
-  number: string;
-  subject: string;
-  description: string;
-  category_id?: string;
-  category_name?: string;
-  customer_id?: string;
-  customer_name?: string;
-  customer_email?: string;
-  contact_id?: string;
-  contact_name?: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  status: 'OPEN' | 'IN_PROGRESS' | 'WAITING' | 'RESOLVED' | 'CLOSED';
-  assigned_to_id?: string;
-  assigned_to_name?: string;
-  source: 'EMAIL' | 'PHONE' | 'WEB' | 'CHAT' | 'OTHER';
-  sla_due_date?: string;
-  first_response_at?: string;
-  resolved_at?: string;
-  closed_at?: string;
-  messages: TicketMessage[];
-  created_at: string;
-}
-
-interface TicketMessage {
-  id: string;
-  content: string;
-  is_internal: boolean;
-  author_id: string;
-  author_name?: string;
-  created_at: string;
-}
-
-interface KnowledgeArticle {
-  id: string;
-  title: string;
-  content: string;
-  category_id?: string;
-  category_name?: string;
-  tags: string[];
-  views: number;
-  is_published: boolean;
-  created_at: string;
-}
-
-interface HelpdeskDashboard {
-  open_tickets: number;
-  in_progress_tickets: number;
-  overdue_tickets: number;
-  resolved_today: number;
-  avg_response_time: number;
-  avg_resolution_time: number;
-  satisfaction_rate: number;
-  tickets_by_priority: { priority: string; count: number }[];
-  tickets_by_category: { category_name: string; count: number }[];
-}
-
-// ============================================================================
-// CONSTANTES
-// ============================================================================
-
-const PRIORITIES = [
-  { value: 'LOW', label: 'Basse', color: 'gray' },
-  { value: 'MEDIUM', label: 'Moyenne', color: 'blue' },
-  { value: 'HIGH', label: 'Haute', color: 'orange' },
-  { value: 'URGENT', label: 'Urgente', color: 'red' }
-];
-
-const STATUSES = [
-  { value: 'OPEN', label: 'Ouvert', color: 'blue' },
-  { value: 'IN_PROGRESS', label: 'En cours', color: 'orange' },
-  { value: 'WAITING', label: 'En attente', color: 'yellow' },
-  { value: 'RESOLVED', label: 'Résolu', color: 'green' },
-  { value: 'CLOSED', label: 'Fermé', color: 'gray' }
-];
-
-const SOURCES = [
-  { value: 'EMAIL', label: 'Email' },
-  { value: 'PHONE', label: 'Téléphone' },
-  { value: 'WEB', label: 'Web' },
-  { value: 'CHAT', label: 'Chat' },
-  { value: 'OTHER', label: 'Autre' }
-];
-
-// ============================================================================
 // HELPERS
 // ============================================================================
 
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-const getStatusInfo = (statuses: any[], status: string) => {
+const getStatusInfo = (statuses: typeof STATUSES, status: string) => {
   return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
-};
-
-const formatDuration = (hours: number): string => {
-  if (hours < 1) return `${Math.round(hours * 60)}min`;
-  if (hours < 24) return `${hours.toFixed(1)}h`;
-  return `${(hours / 24).toFixed(1)}j`;
-};
-
-const navigateTo = (view: string, params?: Record<string, any>) => {
-  window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
 };
 
 // ============================================================================
@@ -237,31 +147,185 @@ const useUpdateTicketStatus = () => {
   });
 };
 
-const useAssignTicket = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, assignedToId }: { id: string; assignedToId: string }) => {
-      return api.post(`/v1/helpdesk/tickets/${id}/assign`, { assigned_to_id: assignedToId }).then(r => r.data);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
-  });
-};
+// ============================================================================
+// TICKET DETAIL VIEW (BaseViewStandard)
+// ============================================================================
 
-const useAddMessage = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ ticketId, content, isInternal }: { ticketId: string; content: string; isInternal: boolean }) => {
-      return api.post(`/v1/helpdesk/tickets/${ticketId}/messages`, { content, is_internal: isInternal }).then(r => r.data);
+interface TicketDetailViewProps {
+  ticketId: string;
+  onBack: () => void;
+}
+
+const TicketDetailView: React.FC<TicketDetailViewProps> = ({ ticketId, onBack }) => {
+  const { data: ticket, isLoading, error } = useTicket(ticketId);
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">Chargement du ticket...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !ticket) {
+    return (
+      <PageWrapper title="Ticket non trouve">
+        <Card>
+          <div className="azals-empty">
+            <AlertTriangle size={48} />
+            <p>Ce ticket n'existe pas ou a ete supprime.</p>
+            <Button onClick={onBack}>Retour a la liste</Button>
+          </div>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  const priorityConfig = PRIORITY_CONFIG[ticket.priority];
+  const statusConfig = STATUS_CONFIG[ticket.status];
+  const isOverdue = isTicketOverdue(ticket);
+  const slaDueSoon = isSlaDueSoon(ticket);
+  const timeUntilSla = getTimeUntilSla(ticket);
+
+  // Tabs definition
+  const tabs: TabDefinition<Ticket>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Inbox size={16} />,
+      component: TicketInfoTab,
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
-  });
+    {
+      id: 'messages',
+      label: 'Messages',
+      icon: <MessageSquare size={16} />,
+      badge: getPublicMessageCount(ticket),
+      component: TicketMessagesTab,
+    },
+    {
+      id: 'docs',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      badge: ticket.attachments?.length,
+      component: TicketDocsTab,
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: TicketHistoryTab,
+    },
+    {
+      id: 'knowledge',
+      label: 'Articles',
+      icon: <BookOpen size={16} />,
+      component: TicketKnowledgeTab,
+    },
+    {
+      id: 'ia',
+      label: 'IA',
+      icon: <Sparkles size={16} />,
+      component: TicketIATab,
+    },
+  ];
+
+  // Info bar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'status',
+      label: 'Statut',
+      value: statusConfig.label,
+      valueColor: statusConfig.color as SemanticColor,
+    },
+    {
+      id: 'priority',
+      label: 'Priorite',
+      value: priorityConfig.label,
+      valueColor: priorityConfig.color as SemanticColor,
+    },
+    {
+      id: 'sla',
+      label: 'SLA',
+      value: isOverdue ? 'Depasse' : slaDueSoon ? 'Proche' : timeUntilSla || 'N/A',
+      valueColor: isOverdue ? 'red' : slaDueSoon ? 'orange' : 'green',
+    },
+    {
+      id: 'age',
+      label: 'Age',
+      value: getTicketAge(ticket),
+      valueColor: 'gray' as SemanticColor,
+    },
+  ];
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'ticket',
+      title: 'Ticket',
+      items: [
+        { id: 'number', label: 'Numero', value: ticket.number },
+        { id: 'category', label: 'Categorie', value: ticket.category_name || '-' },
+        { id: 'source', label: 'Source', value: SOURCE_CONFIG[ticket.source]?.label || ticket.source },
+      ],
+    },
+    {
+      id: 'client',
+      title: 'Client',
+      items: [
+        { id: 'customer', label: 'Nom', value: ticket.customer_name || '-' },
+        { id: 'email', label: 'Email', value: ticket.customer_email || '-' },
+        { id: 'contact', label: 'Contact', value: ticket.contact_name || '-' },
+      ],
+    },
+    {
+      id: 'assignment',
+      title: 'Assignation',
+      items: [
+        { id: 'assigned', label: 'Assigne a', value: ticket.assigned_to_name || 'Non assigne', highlight: !ticket.assigned_to_name },
+        { id: 'created', label: 'Cree le', value: formatDate(ticket.created_at) },
+      ],
+    },
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      variant: 'ghost',
+      onClick: onBack,
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit size={16} />,
+      onClick: () => console.log('Edit ticket'),
+    },
+  ];
+
+  return (
+    <BaseViewStandard<Ticket>
+      title={ticket.subject}
+      subtitle={`Ticket ${ticket.number}`}
+      status={{
+        label: statusConfig.label,
+        color: statusConfig.color as SemanticColor,
+      }}
+      data={ticket}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
 };
 
 // ============================================================================
-// COMPOSANTS
+// COMPOSANTS DE LISTE
 // ============================================================================
 
-const TicketsView: React.FC = () => {
+const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSelectTicket }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterPriority, setFilterPriority] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
@@ -275,7 +339,6 @@ const TicketsView: React.FC = () => {
   const updateStatus = useUpdateTicketStatus();
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<Ticket>>({});
-  const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -285,30 +348,23 @@ const TicketsView: React.FC = () => {
   };
 
   const columns: TableColumn<Ticket>[] = [
-    { id: 'number', header: 'N°', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
+    { id: 'number', header: 'N', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
     { id: 'subject', header: 'Sujet', accessor: 'subject', render: (v, row: Ticket) => (
       <button
         className="text-blue-600 hover:underline text-left"
-        onClick={() => setSelectedTicket(row.id)}
+        onClick={() => onSelectTicket(row.id)}
       >
         {v as string}
       </button>
     )},
-    { id: 'customer_name', header: 'Client', accessor: 'customer_name', render: (v, row: Ticket) => (v as string) ? (
-      <button
-        className="text-blue-600 hover:underline"
-        onClick={() => navigateTo('crm', { view: 'customers', id: row.customer_id })}
-      >
-        {v as string}
-      </button>
-    ) : '-' },
-    { id: 'category_name', header: 'Catégorie', accessor: 'category_name', render: (v) => (v as string) || '-' },
-    { id: 'priority', header: 'Priorité', accessor: 'priority', render: (v) => {
+    { id: 'customer_name', header: 'Client', accessor: 'customer_name', render: (v) => (v as string) || '-' },
+    { id: 'category_name', header: 'Categorie', accessor: 'category_name', render: (v) => (v as string) || '-' },
+    { id: 'priority', header: 'Priorite', accessor: 'priority', render: (v) => {
       const info = getStatusInfo(PRIORITIES, v as string);
       return <Badge color={info.color}>{info.label}</Badge>;
     }},
-    { id: 'assigned_to_name', header: 'Assigné à', accessor: 'assigned_to_name', render: (v) => (v as string) || '-' },
-    { id: 'created_at', header: 'Créé le', accessor: 'created_at', render: (v) => formatDate(v as string) },
+    { id: 'assigned_to_name', header: 'Assigne a', accessor: 'assigned_to_name', render: (v) => (v as string) || '-' },
+    { id: 'created_at', header: 'Cree le', accessor: 'created_at', render: (v) => formatDate(v as string) },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v, row: Ticket) => (
       <Select
         value={v as string}
@@ -328,13 +384,13 @@ const TicketsView: React.FC = () => {
             <Select
               value={filterCategory}
               onChange={(val) => setFilterCategory(val)}
-              options={[{ value: '', label: 'Toutes catégories' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
+              options={[{ value: '', label: 'Toutes categories' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
               className="w-40"
             />
             <Select
               value={filterPriority}
               onChange={(val) => setFilterPriority(val)}
-              options={[{ value: '', label: 'Toutes priorités' }, ...PRIORITIES]}
+              options={[{ value: '', label: 'Toutes priorites' }, ...PRIORITIES]}
               className="w-36"
             />
             <Select
@@ -368,18 +424,18 @@ const TicketsView: React.FC = () => {
           </div>
           <Grid cols={2}>
             <div className="azals-field">
-              <label className="azals-field__label">Catégorie</label>
+              <label className="azals-field__label">Categorie</label>
               <Select
                 value={formData.category_id || ''}
                 onChange={(val) => setFormData({ ...formData, category_id: val })}
-                options={[{ value: '', label: 'Sélectionner...' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
+                options={[{ value: '', label: 'Selectionner...' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Priorité</label>
+              <label className="azals-field__label">Priorite</label>
               <Select
                 value={formData.priority || 'MEDIUM'}
-                onChange={(val) => setFormData({ ...formData, priority: val as Ticket['priority'] })}
+                onChange={(val) => setFormData({ ...formData, priority: val as TicketPriority })}
                 options={PRIORITIES}
               />
             </div>
@@ -389,7 +445,7 @@ const TicketsView: React.FC = () => {
               <label className="azals-field__label">Source</label>
               <Select
                 value={formData.source || 'WEB'}
-                onChange={(val) => setFormData({ ...formData, source: val as Ticket['source'] })}
+                onChange={(val) => setFormData({ ...formData, source: val as TicketSource })}
                 options={SOURCES}
               />
             </div>
@@ -404,107 +460,11 @@ const TicketsView: React.FC = () => {
           </Grid>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="secondary" onClick={() => setShowModal(false)}>Annuler</Button>
-            <Button type="submit" isLoading={createTicket.isPending}>Créer</Button>
+            <Button type="submit" isLoading={createTicket.isPending}>Creer</Button>
           </div>
         </form>
       </Modal>
-
-      {selectedTicket && (
-        <TicketDetailModal ticketId={selectedTicket} onClose={() => setSelectedTicket(null)} />
-      )}
     </>
-  );
-};
-
-const TicketDetailModal: React.FC<{ ticketId: string; onClose: () => void }> = ({ ticketId, onClose }) => {
-  const { data: ticket, isLoading } = useTicket(ticketId);
-  const addMessage = useAddMessage();
-  const [newMessage, setNewMessage] = useState('');
-  const [isInternal, setIsInternal] = useState(false);
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
-    await addMessage.mutateAsync({ ticketId, content: newMessage, isInternal });
-    setNewMessage('');
-  };
-
-  if (isLoading || !ticket) return null;
-
-  return (
-    <Modal isOpen={true} onClose={onClose} title={`Ticket ${ticket.number}`} size="lg">
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <span className="text-sm text-gray-500">Sujet</span>
-            <p className="font-medium">{ticket.subject}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">Client</span>
-            <p className="font-medium">{ticket.customer_name || ticket.customer_email || '-'}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">Statut</span>
-            <Badge color={getStatusInfo(STATUSES, ticket.status).color}>
-              {getStatusInfo(STATUSES, ticket.status).label}
-            </Badge>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">Priorité</span>
-            <Badge color={getStatusInfo(PRIORITIES, ticket.priority).color}>
-              {getStatusInfo(PRIORITIES, ticket.priority).label}
-            </Badge>
-          </div>
-        </div>
-
-        <div>
-          <span className="text-sm text-gray-500">Description</span>
-          <p className="mt-1">{ticket.description}</p>
-        </div>
-
-        <div>
-          <h4 className="font-medium mb-2">Messages</h4>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {(ticket.messages || []).map((msg) => (
-              <div
-                key={msg.id}
-                className={`p-3 rounded ${msg.is_internal ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'}`}
-              >
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>{msg.author_name}</span>
-                  <span>{formatDateTime(msg.created_at)}</span>
-                </div>
-                <p className="mt-1">{msg.content}</p>
-                {msg.is_internal && <Badge color="yellow">Note interne</Badge>}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="border-t pt-4">
-          <div className="azals-field">
-            <label className="azals-field__label">Nouvelle réponse</label>
-            <TextArea
-              value={newMessage}
-              onChange={(v) => setNewMessage(v)}
-              rows={3}
-            />
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={isInternal}
-                onChange={(e) => setIsInternal(e.target.checked)}
-              />
-              <span className="text-sm">Note interne</span>
-            </label>
-            <Button onClick={handleSendMessage} isLoading={addMessage.isPending}>
-              Envoyer
-            </Button>
-          </div>
-        </div>
-      </div>
-    </Modal>
   );
 };
 
@@ -524,8 +484,8 @@ const CategoriesView: React.FC = () => {
   return (
     <Card>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Catégories</h3>
-        <Button>Nouvelle catégorie</Button>
+        <h3 className="text-lg font-semibold">Categories</h3>
+        <Button>Nouvelle categorie</Button>
       </div>
       <DataTable columns={columns} data={categories} isLoading={isLoading} keyField="id" />
     </Card>
@@ -542,7 +502,7 @@ const KnowledgeBaseView: React.FC = () => {
 
   const columns: TableColumn<KnowledgeArticle>[] = [
     { id: 'title', header: 'Titre', accessor: 'title' },
-    { id: 'category_name', header: 'Catégorie', accessor: 'category_name', render: (v) => (v as string) || '-' },
+    { id: 'category_name', header: 'Categorie', accessor: 'category_name', render: (v) => (v as string) || '-' },
     { id: 'tags', header: 'Tags', accessor: 'tags', render: (v) => (
       <div className="flex gap-1 flex-wrap">
         {((v as string[]) || []).slice(0, 3).map((tag, i) => (
@@ -551,7 +511,7 @@ const KnowledgeBaseView: React.FC = () => {
       </div>
     )},
     { id: 'views', header: 'Vues', accessor: 'views' },
-    { id: 'is_published', header: 'Publié', accessor: 'is_published', render: (v) => (
+    { id: 'is_published', header: 'Publie', accessor: 'is_published', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
     )}
   ];
@@ -566,7 +526,7 @@ const KnowledgeBaseView: React.FC = () => {
             onChange={(val) => setFilterPublished(val)}
             options={[
               { value: '', label: 'Tous' },
-              { value: 'true', label: 'Publiés' },
+              { value: 'true', label: 'Publies' },
               { value: 'false', label: 'Brouillons' }
             ]}
             className="w-32"
@@ -583,23 +543,46 @@ const KnowledgeBaseView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'tickets' | 'categories' | 'knowledge';
+type View = 'dashboard' | 'tickets' | 'categories' | 'knowledge' | 'ticket-detail';
+
+interface NavState {
+  view: View;
+  ticketId?: string;
+}
 
 const HelpdeskModule: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [navState, setNavState] = useState<NavState>({ view: 'dashboard' });
   const { data: dashboard } = useHelpdeskDashboard();
 
   const tabs = [
     { id: 'dashboard', label: 'Tableau de bord' },
     { id: 'tickets', label: 'Tickets' },
-    { id: 'categories', label: 'Catégories' },
+    { id: 'categories', label: 'Categories' },
     { id: 'knowledge', label: 'Base de connaissances' }
   ];
 
+  const handleSelectTicket = (ticketId: string) => {
+    setNavState({ view: 'ticket-detail', ticketId });
+  };
+
+  const handleBackToList = () => {
+    setNavState({ view: 'tickets' });
+  };
+
+  // Afficher la vue detail du ticket
+  if (navState.view === 'ticket-detail' && navState.ticketId) {
+    return (
+      <TicketDetailView
+        ticketId={navState.ticketId}
+        onBack={handleBackToList}
+      />
+    );
+  }
+
   const renderContent = () => {
-    switch (currentView) {
+    switch (navState.view) {
       case 'tickets':
-        return <TicketsView />;
+        return <TicketsView onSelectTicket={handleSelectTicket} />;
       case 'categories':
         return <CategoriesView />;
       case 'knowledge':
@@ -613,24 +596,24 @@ const HelpdeskModule: React.FC = () => {
                 value={String(dashboard?.open_tickets || 0)}
                 icon={<Inbox />}
                 variant="default"
-                onClick={() => setCurrentView('tickets')}
+                onClick={() => setNavState({ view: 'tickets' })}
               />
               <StatCard
                 title="En cours"
                 value={String(dashboard?.in_progress_tickets || 0)}
                 icon={<Settings />}
                 variant="warning"
-                onClick={() => setCurrentView('tickets')}
+                onClick={() => setNavState({ view: 'tickets' })}
               />
               <StatCard
                 title="En retard"
                 value={String(dashboard?.overdue_tickets || 0)}
                 icon={<AlertTriangle />}
                 variant="danger"
-                onClick={() => setCurrentView('tickets')}
+                onClick={() => setNavState({ view: 'tickets' })}
               />
               <StatCard
-                title="Résolus aujourd'hui"
+                title="Resolus aujourd'hui"
                 value={String(dashboard?.resolved_today || 0)}
                 icon={<CheckCircle />}
                 variant="success"
@@ -638,13 +621,13 @@ const HelpdeskModule: React.FC = () => {
             </Grid>
             <Grid cols={3}>
               <StatCard
-                title="Temps moyen 1ère réponse"
+                title="Temps moyen 1ere reponse"
                 value={formatDuration(dashboard?.avg_response_time || 0)}
                 icon={<Clock />}
                 variant="default"
               />
               <StatCard
-                title="Temps moyen résolution"
+                title="Temps moyen resolution"
                 value={formatDuration(dashboard?.avg_resolution_time || 0)}
                 icon={<Target />}
                 variant="default"
@@ -659,7 +642,7 @@ const HelpdeskModule: React.FC = () => {
             <Grid cols={2}>
               {dashboard?.tickets_by_priority && dashboard.tickets_by_priority.length > 0 && (
                 <Card>
-                  <h3 className="text-lg font-semibold mb-4">Tickets par priorité</h3>
+                  <h3 className="text-lg font-semibold mb-4">Tickets par priorite</h3>
                   <div className="space-y-2">
                     {dashboard.tickets_by_priority.map((item, i) => {
                       const info = getStatusInfo(PRIORITIES, item.priority);
@@ -675,7 +658,7 @@ const HelpdeskModule: React.FC = () => {
               )}
               {dashboard?.tickets_by_category && dashboard.tickets_by_category.length > 0 && (
                 <Card>
-                  <h3 className="text-lg font-semibold mb-4">Tickets par catégorie</h3>
+                  <h3 className="text-lg font-semibold mb-4">Tickets par categorie</h3>
                   <div className="space-y-2">
                     {dashboard.tickets_by_category.map((item, i) => (
                       <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded">
@@ -696,8 +679,8 @@ const HelpdeskModule: React.FC = () => {
     <PageWrapper title="Support" subtitle="Gestion des tickets et support client">
       <TabNav
         tabs={tabs}
-        activeTab={currentView}
-        onChange={(id) => setCurrentView(id as View)}
+        activeTab={navState.view === 'ticket-detail' ? 'tickets' : navState.view}
+        onChange={(id) => setNavState({ view: id as View })}
       />
       <div className="mt-4">
         {renderContent()}

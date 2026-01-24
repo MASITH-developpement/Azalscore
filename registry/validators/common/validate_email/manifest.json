@@ -1,0 +1,50 @@
+{
+  "id": "azalscore.validators.common.validate_email",
+  "name": "Validation email",
+  "category": "validation",
+  "version": "1.0.0",
+  "description": "Valide une adresse email selon RFC 5322",
+  "inputs": {
+    "email": {
+      "type": "string",
+      "required": true,
+      "description": "Adresse email à valider"
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": "true si l'email est valide"
+    },
+    "normalized_email": {
+      "type": "string",
+      "description": "Email normalisé (minuscules, espaces supprimés)"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domaine de l'email"
+    },
+    "local_part": {
+      "type": "string",
+      "description": "Partie locale de l'email (avant @)"
+    },
+    "error": {
+      "type": "string",
+      "description": "Message d'erreur si invalide (null si valide)"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 500,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["validation", "email", "contact"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

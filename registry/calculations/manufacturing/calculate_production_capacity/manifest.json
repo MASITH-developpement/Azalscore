@@ -1,0 +1,53 @@
+{
+  "id": "azalscore.calculations.manufacturing.calculate_production_capacity",
+  "name": "Calcule la capacité de production",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la capacité de production",
+  "inputs": {
+    "available_hours": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "units_per_hour": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "efficiency_rate": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 1
+    }
+  },
+  "outputs": {
+    "total_capacity": {
+      "type": "number",
+      "description": ""
+    },
+    "effective_capacity": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "manufacturing",
+    "production"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

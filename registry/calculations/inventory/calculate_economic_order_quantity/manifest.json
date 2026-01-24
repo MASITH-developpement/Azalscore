@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_economic_order_quantity",
+  "name": "Calcule la quantité économique de commande (EOQ)",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la quantité économique de commande (EOQ)",
+  "inputs": {
+    "annual_demand": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "ordering_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "holding_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "eoq": {
+      "type": "number",
+      "description": ""
+    },
+    "total_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "orders_per_year": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "movements"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

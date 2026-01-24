@@ -1,0 +1,64 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_document_total",
+  "name": "Calcule le total d'un document commercial",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le total d'un document commercial",
+  "inputs": {
+    "lines": {
+      "type": "array",
+      "required": true,
+      "description": "Lignes du document"
+    },
+    "global_discount": {
+      "type": "number",
+      "required": false,
+      "description": "Remise globale"
+    },
+    "shipping_cost": {
+      "type": "number",
+      "required": false,
+      "description": "Frais de port"
+    }
+  },
+  "outputs": {
+    "subtotal_ht": {
+      "type": "number",
+      "description": ""
+    },
+    "total_discount": {
+      "type": "number",
+      "description": ""
+    },
+    "total_ht": {
+      "type": "number",
+      "description": ""
+    },
+    "total_vat": {
+      "type": "number",
+      "description": ""
+    },
+    "total_ttc": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "commercial",
+    "pricing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,4 +1,58 @@
-# AZALS - ERP Décisionnel Critique
+# AZALSCORE - ERP Décisionnel Orienté Gestion
+
+## Identité du produit
+
+**AZALSCORE** est un ERP nouvelle génération conçu pour les TPE/PME qui combine :
+
+### 🎯 Trois piliers fondamentaux
+
+1. **Saisie métier ultra-simplifiée**
+   - Interface épurée pour utilisateurs non-comptables
+   - Langage naturel (pas de jargon ERP)
+   - Prise en main seul en moins de 3 secondes
+   - Zéro formation requise
+
+2. **Comptabilité automatique**
+   - Génération automatique des écritures comptables
+   - Export comptable pour expert-comptable
+   - Aucune connaissance comptable requise
+   - Conforme aux normes françaises
+
+3. **Cockpit décisionnel intelligent**
+   - Détection automatique des risques critiques (🔴🟠🟢)
+   - Priorisation stricte : Trésorerie > Juridique > Fiscal > RH > Compta
+   - Vision en temps réel de la santé de l'entreprise
+   - Alertes contextuelles pour le dirigeant
+
+### 💡 Philosophie : "De la saisie à la décision"
+
+```
+Saisie métier simplifiée
+         ↓
+Comptabilité automatique
+         ↓
+Éléments de gestion
+         ↓
+Cockpit Dirigeant (décisions)
+```
+
+### 👥 Public cible : De la TPE à la Grande Entreprise
+
+**AZALSCORE s'adapte à TOUTES les tailles d'entreprise** :
+
+- **Mode AZALSCORE** → TPE/PME, dirigeants non-financiers, équipes sans formation ERP
+- **Mode ERP** → Grandes entreprises, experts-comptables, DAF, contrôleurs de gestion
+
+**Avantage unique** : Pas besoin de changer de logiciel en grandissant. L'entreprise évolue, l'interface s'adapte.
+
+### 🎨 Dualité des modes
+
+- **Mode AZALSCORE** (défaut) : Interface épurée, cockpit-first, prise en main 3 secondes
+- **Mode ERP** (optionnel) : Interface complète avec navigation horizontale et fonctionnalités avancées
+
+Un seul produit, deux interfaces, tous les besoins couverts.
+
+---
 
 ## Architecture Technique
 

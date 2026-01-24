@@ -1,0 +1,48 @@
+{
+  "id": "azalscore.generators.urls.generate_share_url",
+  "name": "Génère une URL de partage",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère une URL de partage",
+  "inputs": {
+    "entity_type": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "entity_id": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "base_url": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "share_url": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "urls",
+    "links"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

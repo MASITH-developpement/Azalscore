@@ -23,25 +23,201 @@
 
 ## Philosophie AZALS
 
-### ERP de décision, pas de gestion
+### ERP décisionnel orienté gestion
 
-**AZALS n'est PAS un logiciel de gestion.**
+**AZALSCORE n'est PAS un ERP traditionnel.**
 
-AZALS est un **ERP de direction** conçu pour :
-- Éclairer les **décisions stratégiques** du dirigeant
-- Détecter les **risques critiques** avant qu'ils ne deviennent des crises
-- Prioriser **automatiquement** ce qui nécessite l'attention du dirigeant
-- Garantir la **souveraineté décisionnelle** (aucune action automatique)
+AZALSCORE est un **ERP décisionnel orienté gestion** qui combine :
+
+#### 1. Saisie opérationnelle simplifiée
+- **Saisie métier** intuitive (devis, factures, achats, paie...)
+- **Génération automatique de la comptabilité** (export comptable)
+- **Zéro connaissance comptable requise**
+- Interface épurée pour utilisateurs non-ERP
+
+#### 2. Pilotage décisionnel intelligent
+- Les saisies alimentent automatiquement le **Cockpit Dirigeant**
+- Détection des **risques critiques** (trésorerie, juridique, fiscal...)
+- Priorisation automatique selon l'urgence (🔴🟠🟢)
+- Vision décisionnelle en temps réel
+
+#### Philosophie du flux de données
+```
+Saisie métier simplifiée
+         ↓
+Comptabilité automatique
+         ↓
+Éléments de gestion
+         ↓
+Cockpit Dirigeant (décisions)
+```
+
+**En résumé** : L'utilisateur saisit simplement ses opérations (sans connaître la compta), le système génère la comptabilité, et le dirigeant obtient les éléments de décision.
+
+---
+
+### Le Mode AZALSCORE : Interface épurée révolutionnaire
+
+**Constat** : Les ERP traditionnels sont complexes, intimidants, réservés aux experts.
+
+**Solution AZALSCORE** : Interface **ultra-épurée** conçue pour :
+- ✅ Utilisateurs **non comptables**
+- ✅ Utilisateurs qui **ne connaissent pas les ERP**
+- ✅ Prise en main **seul, sans formation, en moins de 3 secondes**
+
+#### Caractéristiques du Mode AZALSCORE
+
+**Design minimaliste** :
+- Suppression de tout jargon comptable/ERP
+- Langage métier naturel ("Créer une facture", pas "Écriture comptable")
+- Navigation instinctive (pas de menu à rallonge)
+- Couleurs et indicateurs visuels clairs
+
+**Saisie intelligente** :
+- Formulaires guidés étape par étape
+- Validation en temps réel
+- Suggestions automatiques
+- Gestion des erreurs pédagogique
+
+**Zéro formation requise** :
+- Interface auto-explicative
+- Tooltips contextuels discrets
+- Pas de manuel utilisateur nécessaire
+- Apprentissage par l'usage
+
+#### Exemple de différence
+
+**ERP classique** :
+```
+Menu : Comptabilité > Journal > Saisie > Type d'écriture...
+L'utilisateur abandonne avant d'avoir commencé.
+```
+
+**Mode AZALSCORE** :
+```
+[Nouvelle facture]
+Simple. Direct. Intuitif.
+```
+
+---
 
 ### Principe fondamental : "3 secondes pour comprendre"
 
-Le dirigeant doit pouvoir identifier **instantanément** :
+Que ce soit pour la **saisie** ou le **cockpit**, l'utilisateur doit pouvoir identifier **instantanément** :
+
+**Pour la saisie** :
+- Que dois-je faire ? (action claire)
+- Comment le faire ? (bouton évident)
+- Est-ce correct ? (validation immédiate)
+
+**Pour le cockpit** :
 - Le niveau de risque global (🔴🟠🟢)
 - Le domaine en alerte
 - L'action attendue de lui
 
-**Si le cockpit affiche 15 indicateurs, le dirigeant ne regarde rien.**  
-**Si le cockpit affiche le risque prioritaire, il agit.**
+**Si l'interface nécessite plus de 3 secondes de réflexion, elle a échoué.**
+
+---
+
+### Public cible
+
+**AZALSCORE s'adresse à TOUTES les tailles d'entreprise** grâce à sa dualité de modes :
+
+#### Mode AZALSCORE → TPE/PME
+1. **TPE/PME** sans service comptable interne
+2. **Dirigeants non financiers** (artisans, commerçants, professions libérales)
+3. **Équipes opérationnelles** sans formation ERP
+4. **Entrepreneurs** qui veulent se concentrer sur leur métier, pas sur la compta
+
+#### Mode ERP → Grandes entreprises
+1. **Grandes entreprises** avec DAF et contrôleurs de gestion
+2. **Experts-comptables** et cabinets comptables
+3. **Power users** ayant besoin de fonctionnalités avancées
+4. **Services financiers** structurés avec processus complexes
+
+**La force d'AZALSCORE** : Un seul produit qui s'adapte à toutes les tailles grâce à ses deux modes d'interface. Pas besoin de changer de logiciel en grandissant !
+
+---
+
+## Dualité des modes : AZALSCORE vs ERP
+
+### Pourquoi deux modes ?
+
+AZALSCORE reconnaît que **tous les utilisateurs n'ont pas les mêmes besoins** :
+
+- **Mode AZALSCORE** : Interface épurée pour utilisateurs métier (priorité par défaut)
+- **Mode ERP** : Interface complète pour utilisateurs avancés/experts
+
+### Mode AZALSCORE (par défaut)
+
+**Public** : Utilisateurs métier, non-comptables, non-ERP
+
+**Caractéristiques** :
+- Interface ultra-simplifiée
+- Langage naturel ("Créer une facture", pas "Saisie comptable")
+- Navigation minimale (pas de menu horizontal à rallonge)
+- Cockpit-first (le risque avant la gestion)
+- Formulaires guidés
+- Actions contextuelles
+
+**Navigation** :
+```
+┌─────────────────────────────────────────┐
+│ 🎯 AZALSCORE           👤 Utilisateur   │
+└─────────────────────────────────────────┘
+
+         COCKPIT DIRIGEANT
+      [État global : 🟢 Normal]
+
+   [Nouvelle saisie]  [Actions rapides ▼]
+```
+
+**Philosophie** :
+- L'utilisateur voit d'abord **où en est son entreprise** (cockpit)
+- Puis accède aux **actions nécessaires** (saisie guidée par les besoins)
+- Pas de navigation complexe : **contexte d'abord, action ensuite**
+
+---
+
+### Mode ERP (optionnel)
+
+**Public** : Experts-comptables, DAF, contrôleurs de gestion, power users
+
+**Caractéristiques** :
+- Interface complète avec tous les modules
+- Accès direct à tous les écrans
+- Navigation horizontale classique (si nécessaire)
+- Terminologie comptable/ERP assumée
+- Fonctionnalités avancées visibles
+
+**Navigation** :
+```
+┌──────────────────────────────────────────────────────────┐
+│ 🏢 AZALSCORE [MODE: ERP]           👤 Expert-Comptable  │
+│                                                          │
+│ [Cockpit] [Ventes] [Achats] [Tréso] [Compta] [Plus...] │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Philosophie** :
+- Navigation libre et complète
+- Accès direct à tous les modules
+- Pas de simplification (l'utilisateur sait ce qu'il fait)
+
+---
+
+### Bascule entre les modes
+
+**Comment ça fonctionne** :
+- Menu utilisateur → "Mode d'interface" → AZALSCORE / ERP
+- Préférence sauvegardée par utilisateur
+- Changement instantané (pas de rechargement)
+
+**Règle importante** :
+En **Mode 🔴 Critique**, même le Mode ERP applique les restrictions :
+- Les modules non-urgents sont grisés
+- Le cockpit force l'attention sur le risque prioritaire
+- La souveraineté du dirigeant prime sur le confort d'usage
 
 ---
 

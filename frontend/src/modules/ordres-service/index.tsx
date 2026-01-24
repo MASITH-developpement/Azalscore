@@ -2,122 +2,41 @@
  * AZALSCORE Module - ORDRES DE SERVICE (ODS)
  * Gestion des interventions et travaux
  * Flux : CRM → DEV → [ODS] → AFF → FAC/AVO → CPT
- * Numérotation : ODS-YY-MM-XXXX
+ * Numerotation : ODS-YY-MM-XXXX
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Wrench, Plus, Edit, Search, Check, X,
-  Euro, Calendar, Building2, MapPin, User, Clock,
-  CheckCircle2, AlertTriangle, Play, Pause, Camera,
-  FileText, Download, ChevronRight
+  Wrench, Plus, Edit, Search, Download, FileText,
+  Calendar, Clock, Play, CheckCircle2, X
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
-
-// ============================================================
-// TYPES
-// ============================================================
-
-type InterventionStatut = 'A_PLANIFIER' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'ANNULEE';
-type InterventionPriorite = 'BASSE' | 'NORMALE' | 'HAUTE' | 'URGENTE';
-
-interface Intervention {
-  id: string;
-  reference: string; // ODS-YY-MM-XXXX
-  titre: string;
-  description?: string;
-  statut: InterventionStatut;
-  priorite: InterventionPriorite;
-  client_id?: string;
-  client_nom?: string;
-  donneur_ordre_id?: string;
-  donneur_ordre_nom?: string;
-  projet_id?: string;
-  projet_nom?: string;
-  adresse_intervention?: string;
-  ville?: string;
-  code_postal?: string;
-  intervenant_id?: string;
-  intervenant_nom?: string;
-  date_prevue?: string;
-  heure_debut?: string;
-  heure_fin?: string;
-  duree_estimee_minutes?: number;
-  duree_reelle_minutes?: number;
-  date_arrivee?: string;
-  date_debut_intervention?: string;
-  date_fin_intervention?: string;
-  commentaire_cloture?: string;
-  photos?: string[];
-  signature_client?: string;
-  montant_estime?: number;
-  montant_reel?: number;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface DonneurOrdre {
-  id: string;
-  nom: string;
-  code?: string;
-  contact_nom?: string;
-  contact_email?: string;
-  contact_telephone?: string;
-}
-
-interface InterventionStats {
-  total: number;
-  a_planifier: number;
-  planifiees: number;
-  en_cours: number;
-  terminees: number;
-  annulees: number;
-}
-
-// ============================================================
-// CONSTANTS
-// ============================================================
-
-const STATUT_CONFIG: Record<InterventionStatut, { label: string; color: string; icon: React.ReactNode }> = {
-  A_PLANIFIER: { label: 'À planifier', color: 'gray', icon: <Calendar size={14} /> },
-  PLANIFIEE: { label: 'Planifiée', color: 'blue', icon: <Clock size={14} /> },
-  EN_COURS: { label: 'En cours', color: 'yellow', icon: <Play size={14} /> },
-  TERMINEE: { label: 'Terminée', color: 'green', icon: <CheckCircle2 size={14} /> },
-  ANNULEE: { label: 'Annulée', color: 'red', icon: <X size={14} /> },
-};
-
-const PRIORITE_CONFIG: Record<InterventionPriorite, { label: string; color: string }> = {
-  BASSE: { label: 'Basse', color: 'gray' },
-  NORMALE: { label: 'Normale', color: 'blue' },
-  HAUTE: { label: 'Haute', color: 'orange' },
-  URGENTE: { label: 'Urgente', color: 'red' },
-};
-
-// ============================================================
-// HELPERS
-// ============================================================
-
-const formatCurrency = (value: number): string =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
-
-const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('fr-FR');
-
-const formatDateTime = (date: string): string =>
-  new Date(date).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-
-const formatDuration = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return hours > 0 ? `${hours}h${mins > 0 ? mins : ''}` : `${mins}min`;
-};
+import type {
+  Intervention, DonneurOrdre, InterventionStats,
+  InterventionStatut, InterventionPriorite
+} from './types';
+import {
+  formatDate, formatDateTime, formatCurrency, formatDuration,
+  STATUT_CONFIG, PRIORITE_CONFIG, STATUTS, PRIORITES,
+  canEditIntervention, canStartIntervention, canCompleteIntervention, canInvoiceIntervention,
+  getInterventionAge, getActualDuration, getPhotoCount, getFullAddress
+} from './types';
+import {
+  InterventionInfoTab,
+  InterventionPlanningTab,
+  InterventionPhotosTab,
+  InterventionReportTab,
+  InterventionHistoryTab,
+  InterventionIATab
+} from './components';
 
 // ============================================================
 // API HOOKS
@@ -194,19 +113,6 @@ const useUpdateIntervention = () => {
   });
 };
 
-const usePlanifierIntervention = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { date_prevue: string; heure_debut?: string; intervenant_id?: string } }) => {
-      const response = await api.post<Intervention>(`/v1/interventions/${id}/planifier`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interventions'] });
-    },
-  });
-};
-
 const useDemarrerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -234,14 +140,18 @@ const useTerminerIntervention = () => {
 };
 
 // ============================================================
-// COMPONENTS
+// LOCAL COMPONENTS
 // ============================================================
 
 const StatutBadge: React.FC<{ statut: InterventionStatut }> = ({ statut }) => {
   const config = STATUT_CONFIG[statut];
   return (
     <span className={`azals-badge azals-badge--${config.color}`}>
-      {config.icon}
+      {statut === 'A_PLANIFIER' && <Calendar size={14} />}
+      {statut === 'PLANIFIEE' && <Clock size={14} />}
+      {statut === 'EN_COURS' && <Play size={14} />}
+      {statut === 'TERMINEE' && <CheckCircle2 size={14} />}
+      {statut === 'ANNULEE' && <X size={14} />}
       <span className="ml-1">{config.label}</span>
     </span>
   );
@@ -260,10 +170,10 @@ const ODSStats: React.FC = () => {
   const { data: stats } = useInterventionStats();
 
   const kpis: DashboardKPI[] = stats ? [
-    { id: 'planifier', label: 'À planifier', value: stats.a_planifier, icon: <Calendar size={20} />, variant: stats.a_planifier > 0 ? 'warning' : undefined },
-    { id: 'planifiees', label: 'Planifiées', value: stats.planifiees, icon: <Clock size={20} /> },
+    { id: 'planifier', label: 'A planifier', value: stats.a_planifier, icon: <Calendar size={20} />, variant: stats.a_planifier > 0 ? 'warning' : undefined },
+    { id: 'planifiees', label: 'Planifiees', value: stats.planifiees, icon: <Clock size={20} /> },
     { id: 'encours', label: 'En cours', value: stats.en_cours, icon: <Play size={20} /> },
-    { id: 'terminees', label: 'Terminées', value: stats.terminees, icon: <CheckCircle2 size={20} /> },
+    { id: 'terminees', label: 'Terminees', value: stats.terminees, icon: <CheckCircle2 size={20} /> },
   ] : [];
 
   return (
@@ -286,10 +196,10 @@ interface ODSNavState {
 }
 
 // ============================================================
-// LIST
+// LIST VIEW
 // ============================================================
 
-const ODSListInternal: React.FC<{
+const ODSListView: React.FC<{
   onSelectODS: (id: string) => void;
   onCreateODS: () => void;
 }> = ({ onSelectODS, onCreateODS }) => {
@@ -302,7 +212,7 @@ const ODSListInternal: React.FC<{
   const columns: TableColumn<Intervention>[] = [
     {
       id: 'reference',
-      header: 'Référence',
+      header: 'Reference',
       accessor: 'reference',
       sortable: true,
       render: (value, row) => (
@@ -327,7 +237,7 @@ const ODSListInternal: React.FC<{
     },
     {
       id: 'priorite',
-      header: 'Priorité',
+      header: 'Priorite',
       accessor: 'priorite',
       render: (value) => <PrioriteBadge priorite={value as InterventionPriorite} />,
     },
@@ -339,7 +249,7 @@ const ODSListInternal: React.FC<{
     },
     {
       id: 'date_prevue',
-      header: 'Date prévue',
+      header: 'Date prevue',
       accessor: 'date_prevue',
       render: (value, row) => {
         if (!value) return <span className="text-muted">-</span>;
@@ -389,8 +299,8 @@ const ODSListInternal: React.FC<{
             onChange={(e) => setFilters({ ...filters, statut: e.target.value || undefined })}
           >
             <option value="">Tous les statuts</option>
-            {Object.entries(STATUT_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>{config.label}</option>
+            {STATUTS.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
         </div>
@@ -416,13 +326,13 @@ const ODSListInternal: React.FC<{
 };
 
 // ============================================================
-// DETAIL
+// DETAIL VIEW (BaseViewStandard)
 // ============================================================
 
-const ODSDetailInternal: React.FC<{
+const InterventionDetailView: React.FC<{
   interventionId: string;
   onBack: () => void;
-  onEdit: () => void;
+  onEdit: (id: string) => void;
 }> = ({ interventionId, onBack, onEdit }) => {
   const { data: intervention, isLoading } = useIntervention(interventionId);
   const demarrer = useDemarrerIntervention();
@@ -430,8 +340,27 @@ const ODSDetailInternal: React.FC<{
   const [showTerminer, setShowTerminer] = useState(false);
   const [commentaire, setCommentaire] = useState('');
 
+  if (isLoading) {
+    return <PageWrapper title="Chargement..."><div className="azals-loading">Chargement...</div></PageWrapper>;
+  }
+
+  if (!intervention) {
+    return (
+      <PageWrapper title="Intervention non trouvee">
+        <Card><p>Cette intervention n'existe pas.</p><Button onClick={onBack}>Retour</Button></Card>
+      </PageWrapper>
+    );
+  }
+
+  const statutConfig = STATUT_CONFIG[intervention.statut];
+  const prioriteConfig = PRIORITE_CONFIG[intervention.priorite];
+  const canEdit = canEditIntervention(intervention);
+  const canStart = canStartIntervention(intervention);
+  const canComplete = canCompleteIntervention(intervention);
+  const canInvoice = canInvoiceIntervention(intervention);
+
   const handleDemarrer = async () => {
-    if (window.confirm('Démarrer l\'intervention ?')) {
+    if (window.confirm('Demarrer l\'intervention ?')) {
       await demarrer.mutateAsync(interventionId);
     }
   };
@@ -447,178 +376,176 @@ const ODSDetailInternal: React.FC<{
     }));
   };
 
-  if (isLoading) {
-    return <PageWrapper title="Chargement..."><div className="azals-loading">Chargement...</div></PageWrapper>;
-  }
+  // Tab definitions
+  const tabs: TabDefinition<Intervention>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Wrench size={16} />,
+      component: InterventionInfoTab,
+    },
+    {
+      id: 'planning',
+      label: 'Planning',
+      icon: <Calendar size={16} />,
+      component: InterventionPlanningTab,
+    },
+    {
+      id: 'photos',
+      label: 'Photos',
+      icon: <FileText size={16} />,
+      badge: getPhotoCount(intervention),
+      component: InterventionPhotosTab,
+    },
+    {
+      id: 'report',
+      label: 'Compte-rendu',
+      icon: <CheckCircle2 size={16} />,
+      component: InterventionReportTab,
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: InterventionHistoryTab,
+    },
+    {
+      id: 'ia',
+      label: 'IA',
+      icon: <Wrench size={16} />,
+      component: InterventionIATab,
+    },
+  ];
 
-  if (!intervention) {
-    return (
-      <PageWrapper title="Intervention non trouvée">
-        <Card><p>Cette intervention n'existe pas.</p><Button onClick={onBack}>Retour</Button></Card>
-      </PageWrapper>
-    );
-  }
+  // InfoBar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'statut',
+      label: 'Statut',
+      value: statutConfig.label,
+      valueColor: statutConfig.color as SemanticColor,
+    },
+    {
+      id: 'priorite',
+      label: 'Priorite',
+      value: prioriteConfig.label,
+      valueColor: prioriteConfig.color as SemanticColor,
+    },
+    {
+      id: 'date',
+      label: 'Date prevue',
+      value: intervention.date_prevue ? formatDate(intervention.date_prevue) : '-',
+    },
+    {
+      id: 'duree',
+      label: 'Duree',
+      value: getActualDuration(intervention) || (intervention.duree_estimee_minutes ? `~${formatDuration(intervention.duree_estimee_minutes)}` : '-'),
+    },
+  ];
 
-  const canEdit = ['A_PLANIFIER', 'PLANIFIEE'].includes(intervention.statut);
-  const canDemarrer = intervention.statut === 'PLANIFIEE';
-  const canTerminer = intervention.statut === 'EN_COURS';
-  const canFacturer = intervention.statut === 'TERMINEE';
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'intervention',
+      title: 'Intervention',
+      items: [
+        { id: 'reference', label: 'Reference', value: intervention.reference },
+        { id: 'age', label: 'Age', value: getInterventionAge(intervention) },
+        { id: 'photos', label: 'Photos', value: `${getPhotoCount(intervention)} photo(s)` },
+      ],
+    },
+    {
+      id: 'client',
+      title: 'Client',
+      items: [
+        { id: 'client', label: 'Client', value: intervention.client_nom || '-' },
+        { id: 'donneur', label: 'Donneur ordre', value: intervention.donneur_ordre_nom || '-' },
+        { id: 'lieu', label: 'Lieu', value: getFullAddress(intervention) || '-' },
+      ],
+    },
+    {
+      id: 'planning',
+      title: 'Planning',
+      items: [
+        { id: 'intervenant', label: 'Intervenant', value: intervention.intervenant_nom || 'Non assigne', highlight: !intervention.intervenant_nom },
+        { id: 'heure', label: 'Heure', value: intervention.heure_debut || '-' },
+      ],
+    },
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      variant: 'ghost',
+      onClick: onBack,
+    },
+    ...(canInvoice ? [{
+      id: 'invoice',
+      label: 'Creer facture',
+      icon: <FileText size={16} />,
+      onClick: handleCreateFacture,
+    }] : []),
+    ...(canComplete ? [{
+      id: 'complete',
+      label: 'Terminer',
+      icon: <CheckCircle2 size={16} />,
+      onClick: () => setShowTerminer(true),
+    }] : []),
+    ...(canStart ? [{
+      id: 'start',
+      label: 'Demarrer',
+      variant: 'secondary' as const,
+      icon: <Play size={16} />,
+      onClick: handleDemarrer,
+    }] : []),
+    ...(canEdit ? [{
+      id: 'edit',
+      label: 'Modifier',
+      variant: 'ghost' as const,
+      icon: <Edit size={16} />,
+      onClick: () => onEdit(interventionId),
+    }] : []),
+    {
+      id: 'pdf',
+      label: 'PDF',
+      variant: 'ghost',
+      icon: <Download size={16} />,
+      onClick: () => console.log('Download PDF'),
+    },
+  ];
 
   return (
-    <PageWrapper
-      title={intervention.reference}
-      subtitle={intervention.titre}
-      backAction={{ label: 'Retour', onClick: onBack }}
-      actions={
-        <ButtonGroup>
-          {canFacturer && (
-            <Button leftIcon={<FileText size={16} />} onClick={handleCreateFacture}>
-              Créer facture
-            </Button>
-          )}
-          {canTerminer && (
-            <Button leftIcon={<CheckCircle2 size={16} />} onClick={() => setShowTerminer(true)}>
-              Terminer
-            </Button>
-          )}
-          {canDemarrer && (
-            <Button variant="secondary" leftIcon={<Play size={16} />} onClick={handleDemarrer} isLoading={demarrer.isPending}>
-              Démarrer
-            </Button>
-          )}
-          {canEdit && (
-            <Button variant="ghost" leftIcon={<Edit size={16} />} onClick={onEdit}>Modifier</Button>
-          )}
-          <Button variant="ghost" leftIcon={<Download size={16} />}>PDF</Button>
-        </ButtonGroup>
-      }
-    >
-      <Grid cols={4} gap="md" className="mb-4">
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Statut</span>
-            <StatutBadge statut={intervention.statut} />
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Priorité</span>
-            <PrioriteBadge priorite={intervention.priorite} />
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Date prévue</span>
-            <span className="azals-stat__value">
-              {intervention.date_prevue ? formatDate(intervention.date_prevue) : '-'}
-            </span>
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Durée</span>
-            <span className="azals-stat__value">
-              {intervention.duree_reelle_minutes
-                ? formatDuration(intervention.duree_reelle_minutes)
-                : intervention.duree_estimee_minutes
-                  ? `~${formatDuration(intervention.duree_estimee_minutes)}`
-                  : '-'}
-            </span>
-          </div>
-        </Card>
-      </Grid>
+    <>
+      <BaseViewStandard<Intervention>
+        title={intervention.reference}
+        subtitle={intervention.titre}
+        status={{
+          label: statutConfig.label,
+          color: statutConfig.color as SemanticColor,
+        }}
+        data={intervention}
+        view="detail"
+        tabs={tabs}
+        infoBarItems={infoBarItems}
+        sidebarSections={sidebarSections}
+        headerActions={headerActions}
+      />
 
-      <Grid cols={2} gap="lg" className="mb-4">
-        <Card title="Client / Donneur d'ordre">
-          <dl className="azals-dl">
-            {intervention.client_nom && (
-              <><dt><Building2 size={14} /> Client</dt><dd>{intervention.client_nom}</dd></>
-            )}
-            {intervention.donneur_ordre_nom && (
-              <><dt><User size={14} /> Donneur d'ordre</dt><dd>{intervention.donneur_ordre_nom}</dd></>
-            )}
-            {intervention.adresse_intervention && (
-              <>
-                <dt><MapPin size={14} /> Lieu d'intervention</dt>
-                <dd>
-                  <div>{intervention.adresse_intervention}</div>
-                  {intervention.ville && <div>{intervention.code_postal} {intervention.ville}</div>}
-                </dd>
-              </>
-            )}
-          </dl>
-        </Card>
-
-        <Card title="Planning">
-          <dl className="azals-dl">
-            {intervention.intervenant_nom && (
-              <><dt><User size={14} /> Intervenant</dt><dd>{intervention.intervenant_nom}</dd></>
-            )}
-            {intervention.date_prevue && (
-              <>
-                <dt><Calendar size={14} /> Date prévue</dt>
-                <dd>
-                  {formatDate(intervention.date_prevue)}
-                  {intervention.heure_debut && ` à ${intervention.heure_debut}`}
-                </dd>
-              </>
-            )}
-            {intervention.date_arrivee && (
-              <><dt>Arrivée</dt><dd>{formatDateTime(intervention.date_arrivee)}</dd></>
-            )}
-            {intervention.date_fin_intervention && (
-              <><dt>Fin</dt><dd>{formatDateTime(intervention.date_fin_intervention)}</dd></>
-            )}
-          </dl>
-        </Card>
-      </Grid>
-
-      <Card title="Description">
-        <p className="text-muted">{intervention.description || 'Aucune description'}</p>
-      </Card>
-
-      {intervention.commentaire_cloture && (
-        <Card title="Compte-rendu" className="mt-4">
-          <p className="text-muted">{intervention.commentaire_cloture}</p>
-        </Card>
-      )}
-
-      {intervention.photos && intervention.photos.length > 0 && (
-        <Card title="Photos" className="mt-4">
-          <div className="azals-photo-grid">
-            {intervention.photos.map((url, i) => (
-              <img key={i} src={url} alt={`Photo ${i + 1}`} className="azals-photo-grid__item" />
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {canFacturer && (
-        <Card className="mt-4">
-          <div className="azals-action-card">
-            <div>
-              <h4>Prochaine étape</h4>
-              <p className="text-muted">Cette intervention est terminée, vous pouvez créer la facture</p>
-            </div>
-            <Button leftIcon={<ChevronRight size={16} />} onClick={handleCreateFacture}>
-              Créer facture
-            </Button>
-          </div>
-        </Card>
-      )}
-
+      {/* Modal Terminer */}
       {showTerminer && (
         <div className="azals-modal-overlay">
           <div className="azals-modal">
             <h3>Terminer l'intervention</h3>
             <div className="azals-form-field">
-              <label>Commentaire de clôture</label>
+              <label>Commentaire de cloture</label>
               <textarea
                 className="azals-textarea"
                 value={commentaire}
                 onChange={(e) => setCommentaire(e.target.value)}
                 rows={4}
-                placeholder="Travaux effectués, remarques..."
+                placeholder="Travaux effectues, remarques..."
               />
             </div>
             <div className="azals-modal__actions">
@@ -628,15 +555,15 @@ const ODSDetailInternal: React.FC<{
           </div>
         </div>
       )}
-    </PageWrapper>
+    </>
   );
 };
 
 // ============================================================
-// FORM
+// FORM VIEW
 // ============================================================
 
-const ODSFormInternal: React.FC<{
+const ODSFormView: React.FC<{
   interventionId?: string;
   onBack: () => void;
   onSaved: (id: string) => void;
@@ -721,21 +648,21 @@ const ODSFormInternal: React.FC<{
                 value={form.donneur_ordre_id}
                 onChange={(e) => setForm({ ...form, donneur_ordre_id: e.target.value })}
               >
-                <option value="">-- Sélectionner --</option>
+                <option value="">-- Selectionner --</option>
                 {donneursOrdre?.map(d => (
                   <option key={d.id} value={d.id}>{d.nom}</option>
                 ))}
               </select>
             </div>
             <div className="azals-form-field">
-              <label>Priorité</label>
+              <label>Priorite</label>
               <select
                 className="azals-select"
                 value={form.priorite}
                 onChange={(e) => setForm({ ...form, priorite: e.target.value as InterventionPriorite })}
               >
-                {Object.entries(PRIORITE_CONFIG).map(([key, config]) => (
-                  <option key={key} value={key}>{config.label}</option>
+                {PRIORITES.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
               </select>
             </div>
@@ -786,7 +713,7 @@ const ODSFormInternal: React.FC<{
         <Card title="Estimation">
           <Grid cols={2} gap="md">
             <div className="azals-form-field">
-              <label>Durée estimée (minutes)</label>
+              <label>Duree estimee (minutes)</label>
               <input
                 type="number"
                 className="azals-input"
@@ -797,7 +724,7 @@ const ODSFormInternal: React.FC<{
               />
             </div>
             <div className="azals-form-field">
-              <label>Montant estimé (€)</label>
+              <label>Montant estime (EUR)</label>
               <input
                 type="number"
                 className="azals-input"
@@ -812,7 +739,7 @@ const ODSFormInternal: React.FC<{
 
         <div className="azals-form-actions">
           <Button type="button" variant="ghost" onClick={onBack}>Annuler</Button>
-          <Button type="submit" isLoading={isSubmitting}>{isNew ? 'Créer' : 'Enregistrer'}</Button>
+          <Button type="submit" isLoading={isSubmitting}>{isNew ? 'Creer' : 'Enregistrer'}</Button>
         </div>
       </form>
     </PageWrapper>
@@ -844,15 +771,15 @@ export const OrdresServiceModule: React.FC = () => {
   switch (navState.view) {
     case 'detail':
       return (
-        <ODSDetailInternal
+        <InterventionDetailView
           interventionId={navState.interventionId!}
           onBack={navigateToList}
-          onEdit={() => navigateToForm(navState.interventionId)}
+          onEdit={navigateToForm}
         />
       );
     case 'form':
       return (
-        <ODSFormInternal
+        <ODSFormView
           interventionId={navState.interventionId}
           onBack={navState.isNew ? navigateToList : () => navigateToDetail(navState.interventionId!)}
           onSaved={navigateToDetail}
@@ -860,7 +787,7 @@ export const OrdresServiceModule: React.FC = () => {
       );
     default:
       return (
-        <ODSListInternal
+        <ODSListView
           onSelectODS={navigateToDetail}
           onCreateODS={() => navigateToForm()}
         />

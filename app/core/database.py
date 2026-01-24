@@ -48,6 +48,54 @@ def get_db():
         db.close()
 
 
+def get_db_with_rls(tenant_id: str):
+    """
+    Générateur de session avec contexte RLS activé.
+
+    SÉCURITÉ P1: Définit le tenant_id dans la session PostgreSQL
+    pour que les politiques RLS filtrent automatiquement les données.
+
+    Usage:
+        db = next(get_db_with_rls(tenant_id))
+        # Toutes les requêtes sont maintenant filtrées par RLS
+
+    Args:
+        tenant_id: ID du tenant pour le contexte RLS
+    """
+    db = SessionLocal()
+    try:
+        # SÉCURITÉ P1: Définir le contexte tenant pour RLS
+        # Cette variable est lue par les politiques RLS PostgreSQL
+        if tenant_id:
+            db.execute(
+                text("SET LOCAL app.current_tenant_id = :tenant_id"),
+                {"tenant_id": tenant_id}
+            )
+            logger.debug(f"[RLS] Tenant context set: {tenant_id}")
+        yield db
+    finally:
+        db.close()
+
+
+def set_rls_context(db, tenant_id: str) -> None:
+    """
+    Définit le contexte RLS sur une session existante.
+
+    SÉCURITÉ P1: À appeler au début de chaque transaction
+    pour activer le filtrage RLS.
+
+    Args:
+        db: Session SQLAlchemy
+        tenant_id: ID du tenant
+    """
+    if tenant_id:
+        db.execute(
+            text("SET LOCAL app.current_tenant_id = :tenant_id"),
+            {"tenant_id": tenant_id}
+        )
+        logger.debug(f"[RLS] Tenant context set on existing session: {tenant_id}")
+
+
 def check_database_connection() -> bool:
     """
     Vérifie que la connexion à PostgreSQL fonctionne.

@@ -177,6 +177,7 @@ class UUIDComplianceManager:
               AND t.table_type = 'BASE TABLE'
               AND c.data_type IN ('integer', 'bigint')
               AND (c.column_name = 'id' OR c.column_name LIKE '%_id')
+              AND c.table_name NOT LIKE 'ai_%'
             ORDER BY c.table_name, c.column_name
         """)
 

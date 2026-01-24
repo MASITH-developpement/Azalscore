@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.validators.addresses.validate_full_address",
+  "name": "Valide une adresse complète",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide une adresse complète",
+  "inputs": {
+    "address": {
+      "type": "object",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "addresses",
+    "validation"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -65,7 +65,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     """Réponse utilisateur."""
-    id: int
+    id: str
     tenant_id: str
     email: str
     username: str | None
@@ -163,13 +163,13 @@ class RoleUpdate(BaseModel):
 
 class RoleResponse(BaseModel):
     """Réponse rôle."""
-    id: int
+    id: str
     tenant_id: str
     code: str
     name: str
     description: str | None
     level: int
-    parent_id: int | None
+    parent_id: str | None
     is_system: bool
     is_active: bool
     is_assignable: bool
@@ -191,7 +191,7 @@ class RoleListResponse(BaseModel):
 
 class RoleAssignment(BaseModel):
     """Attribution de rôle."""
-    user_id: int
+    user_id: str
     role_code: str
     expires_at: datetime | None = None
 
@@ -224,7 +224,7 @@ class PermissionCreate(PermissionBase):
 
 class PermissionResponse(BaseModel):
     """Réponse permission."""
-    id: int
+    id: str
     tenant_id: str
     code: str
     module: str
@@ -249,7 +249,7 @@ class PermissionListResponse(BaseModel):
 class PermissionCheck(BaseModel):
     """Vérification de permission."""
     permission_code: str
-    user_id: int | None = None  # Si absent, utilisateur courant
+    user_id: str | None = None  # Si absent, utilisateur courant
 
 
 class PermissionCheckResult(BaseModel):
@@ -284,7 +284,7 @@ class GroupUpdate(BaseModel):
 
 class GroupResponse(BaseModel):
     """Réponse groupe."""
-    id: int
+    id: str
     tenant_id: str
     code: str
     name: str
@@ -314,7 +314,7 @@ class GroupMembership(BaseModel):
 
 class SessionResponse(BaseModel):
     """Réponse session."""
-    id: int
+    id: str
     token_jti: str
     ip_address: str | None
     user_agent: str | None
@@ -335,7 +335,7 @@ class SessionListResponse(BaseModel):
 
 class SessionRevoke(BaseModel):
     """Révocation de session."""
-    session_ids: list[int] | None = None  # Si absent, toutes sauf courante
+    session_ids: list[str] | None = None  # Si absent, toutes sauf courante
     reason: str | None = None
 
 
@@ -353,7 +353,7 @@ class InvitationCreate(BaseModel):
 
 class InvitationResponse(BaseModel):
     """Réponse invitation."""
-    id: int
+    id: str
     tenant_id: str
     email: str
     status: str
@@ -361,7 +361,7 @@ class InvitationResponse(BaseModel):
     groups_to_assign: list[str] = []
     created_at: datetime
     expires_at: datetime
-    invited_by: int
+    invited_by: str
     accepted_at: datetime | None
 
     model_config = {"from_attributes": True}
@@ -475,12 +475,12 @@ class PasswordPolicyResponse(BaseModel):
 
 class AuditLogResponse(BaseModel):
     """Réponse log audit."""
-    id: int
+    id: str
     tenant_id: str
     action: str
     entity_type: str
-    entity_id: int | None
-    actor_id: int | None
+    entity_id: str | None
+    actor_id: str | None
     actor_ip: str | None
     success: bool
     error_message: str | None
@@ -503,8 +503,8 @@ class AuditLogFilter(BaseModel):
     """Filtres pour logs audit."""
     action: str | None = None
     entity_type: str | None = None
-    entity_id: int | None = None
-    actor_id: int | None = None
+    entity_id: str | None = None
+    actor_id: str | None = None
     success: bool | None = None
     from_date: datetime | None = None
     to_date: datetime | None = None

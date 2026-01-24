@@ -56,7 +56,7 @@ class RoutePermission:
 # Format: (method, path_pattern) -> RoutePermission
 ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     # =========================================================================
-    # USERS & ROLES
+    # USERS & ROLES (legacy /api/iam/ routes)
     # =========================================================================
     ("GET", r"/api/iam/users/?$"): RoutePermission(Module.USERS, Action.READ),
     ("GET", r"/api/iam/users/\d+$"): RoutePermission(Module.USERS, Action.READ),
@@ -72,6 +72,30 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     ("DELETE", r"/api/iam/roles/\d+$"): RoutePermission(Module.USERS, Action.ASSIGN),
     ("POST", r"/api/iam/users/\d+/roles/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
     ("DELETE", r"/api/iam/users/\d+/roles/\d+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+
+    # =========================================================================
+    # USERS & ROLES (v1 routes - current API)
+    # =========================================================================
+    ("GET", r"/v1/iam/users/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v1/iam/users/?$"): RoutePermission(Module.USERS, Action.CREATE),
+    ("PUT", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.UPDATE),
+    ("PATCH", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.UPDATE),
+    ("DELETE", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.DELETE),
+
+    # Rôles v1
+    ("GET", r"/v1/iam/roles/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v1/iam/roles/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("PUT", r"/v1/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("DELETE", r"/v1/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("POST", r"/v1/iam/users/[0-9a-fA-F-]+/roles/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("DELETE", r"/v1/iam/users/[0-9a-fA-F-]+/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+
+    # Permissions v1
+    ("GET", r"/v1/iam/permissions/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v1/iam/permissions/check/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/iam/users/[0-9a-fA-F-]+/permissions/?$"): RoutePermission(Module.USERS, Action.READ),
 
     # =========================================================================
     # ORGANISATION
@@ -245,6 +269,8 @@ AUTHENTICATED_ONLY_ROUTES: list[str] = [
     r"^/api/users/me/?$",
     r"^/api/iam/me/?$",
     r"^/api/iam/users/me/?$",
+    r"^/v1/iam/users/me/?$",
+    r"^/v1/iam/me/?$",
 ]
 
 

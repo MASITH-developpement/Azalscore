@@ -1,0 +1,51 @@
+{
+  "id": "azalscore.calculations.projects.calculate_resource_allocation",
+  "name": "Calcule l'allocation des ressources",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule l'allocation des ressources",
+  "inputs": {
+    "tasks": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "resources": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "allocation_by_resource": {
+      "type": "object",
+      "description": ""
+    },
+    "utilization_rate": {
+      "type": "number",
+      "description": ""
+    },
+    "over_allocated": {
+      "type": "array",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "projects",
+    "scheduling"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

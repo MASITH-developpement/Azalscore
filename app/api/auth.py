@@ -3,10 +3,10 @@ AZALS - Endpoints Authentification SÉCURISÉS
 =============================================
 Login et Register pour utilisateurs DIRIGEANT.
 Rate limiting strict sur tous les endpoints auth.
+
+SÉCURITÉ P1-4: Rate limiting distribué via Redis en production.
 """
 
-import time
-from collections import defaultdict
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -17,97 +17,11 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User, UserRole
+from app.core.rate_limiter import auth_rate_limiter  # P1-4: Redis-backed rate limiter
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.core.two_factor import TwoFactorService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-# ============================================================================
-# RATE LIMITING STRICT POUR AUTH
-# ============================================================================
-
-class AuthRateLimiter:
-    """
-    Rate limiter STRICT pour endpoints d'authentification.
-    Protection contre brute force et credential stuffing.
-    """
-
-    def __init__(self):
-        self._login_attempts: dict[str, list[float]] = defaultdict(list)
-        self._register_attempts: dict[str, list[float]] = defaultdict(list)
-        self._failed_logins: dict[str, int] = defaultdict(int)
-
-    def _cleanup_old_attempts(self, attempts: list[float], window_seconds: int = 60) -> list[float]:
-        """Supprime les tentatives hors fenêtre."""
-        cutoff = time.time() - window_seconds
-        return [t for t in attempts if t > cutoff]
-
-    def check_login_rate(self, ip: str, email: str) -> None:
-        """Vérifie le rate limit pour login."""
-        settings = get_settings()
-        limit = settings.auth_rate_limit_per_minute
-
-        # Nettoyage
-        self._login_attempts[ip] = self._cleanup_old_attempts(self._login_attempts[ip])
-        self._login_attempts[email] = self._cleanup_old_attempts(self._login_attempts[email])
-
-        # Vérification par IP
-        if len(self._login_attempts[ip]) >= limit:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many login attempts from this IP. Wait 60 seconds.",
-                headers={"Retry-After": "60"}
-            )
-
-        # Vérification par email (3x plus permissif)
-        if len(self._login_attempts[email]) >= limit * 3:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many login attempts for this account. Wait 60 seconds.",
-                headers={"Retry-After": "60"}
-            )
-
-        # Blocage si trop d'échecs consécutifs
-        if self._failed_logins[email] >= 5:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Account temporarily locked due to failed attempts. Wait 15 minutes.",
-                headers={"Retry-After": "900"}
-            )
-
-    def record_login_attempt(self, ip: str, email: str, success: bool) -> None:
-        """Enregistre une tentative de login."""
-        now = time.time()
-        self._login_attempts[ip].append(now)
-        self._login_attempts[email].append(now)
-
-        if success:
-            self._failed_logins[email] = 0
-        else:
-            self._failed_logins[email] += 1
-
-    def check_register_rate(self, ip: str) -> None:
-        """Vérifie le rate limit pour registration (plus strict)."""
-        self._register_attempts[ip] = self._cleanup_old_attempts(
-            self._register_attempts[ip], window_seconds=300  # 5 minutes
-        )
-
-        # Max 3 registrations par 5 minutes par IP
-        if len(self._register_attempts[ip]) >= 3:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many registration attempts. Wait 5 minutes.",
-                headers={"Retry-After": "300"}
-            )
-
-    def record_register_attempt(self, ip: str) -> None:
-        """Enregistre une tentative d'inscription."""
-        self._register_attempts[ip].append(time.time())
-
-
-# Instance globale du rate limiter
-auth_rate_limiter = AuthRateLimiter()
 
 
 def get_client_ip(request: Request) -> str:
@@ -249,8 +163,12 @@ def register(
     client_ip = get_client_ip(request)
     auth_rate_limiter.check_register_rate(client_ip)
 
-    # Vérifier si l'email existe déjà
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    # SÉCURITÉ P0-3: Vérifier si l'email existe déjà DANS CE TENANT UNIQUEMENT
+    # Correction: ajout du filtre tenant_id pour isolation multi-tenant
+    existing_user = db.query(User).filter(
+        User.email == user_data.email,
+        User.tenant_id == tenant_id
+    ).first()
     if existing_user:
         # Enregistrer la tentative même si échec
         auth_rate_limiter.record_register_attempt(client_ip)
@@ -285,6 +203,7 @@ def register(
 def login(
     request: Request,
     user_data: UserLogin,
+    tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db)
 ):
     """
@@ -292,13 +211,19 @@ def login(
     RATE LIMITED: Max 5 tentatives par minute par IP.
     BLOCAGE: Apres 5 echecs consecutifs, compte bloque 15 min.
     Retourne LoginResponse ou LoginResponseWith2FA si 2FA requis.
+
+    SÉCURITÉ P0-3: Login isolé par tenant pour éviter les attaques cross-tenant.
     """
     # SÉCURITÉ: Rate limiting strict
     client_ip = get_client_ip(request)
     auth_rate_limiter.check_login_rate(client_ip, user_data.email)
 
-    # Recherche de l'utilisateur
-    user = db.query(User).filter(User.email == user_data.email).first()
+    # SÉCURITÉ P0-3: Recherche de l'utilisateur DANS LE TENANT UNIQUEMENT
+    # Correction: ajout du filtre tenant_id pour isolation multi-tenant
+    user = db.query(User).filter(
+        User.email == user_data.email,
+        User.tenant_id == tenant_id
+    ).first()
 
     if not user:
         # Enregistrer l'échec (timing constant pour éviter user enumeration)
@@ -550,8 +475,22 @@ def verify_2fa_login(
     """
     Vérifie le code 2FA et retourne le token d'accès final.
     Utilisé après un login qui retourne requires_2fa=True.
+
+    SÉCURITÉ: Rate limiting strict pour empêcher brute force des codes TOTP.
     """
     from app.core.security import decode_access_token
+
+    # SÉCURITÉ: Rate limiting sur 2FA (5 tentatives par minute par IP)
+    client_ip = get_client_ip(request)
+    from app.core.rate_limiter import rate_limiter
+    allowed, count = rate_limiter.check_rate("2fa:verify", client_ip, 5, 60)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many 2FA verification attempts. Wait 60 seconds.",
+            headers={"Retry-After": "60"}
+        )
+    rate_limiter.record_attempt("2fa:verify", client_ip, 60)
 
     # Décoder le pending token
     payload = decode_access_token(data.pending_token)
@@ -691,13 +630,24 @@ def regenerate_backup_codes(
 
 @router.post("/logout")
 def logout(
+    request: Request,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Déconnexion de l'utilisateur.
-    Avec JWT, le logout est géré côté client (suppression du token).
-    Cet endpoint permet au frontend d'avoir un point de terminaison cohérent.
+    Déconnexion de l'utilisateur avec révocation côté serveur.
+
+    SÉCURITÉ P0-6: Le token est ajouté à la blacklist pour invalidation immédiate.
+    Cela empêche la réutilisation du token même s'il n'a pas expiré.
     """
+    from app.core.security import revoke_token
+
+    # Récupérer le token depuis le header Authorization
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        # Révoquer le token (ajout à la blacklist)
+        revoke_token(token)
+
     return {"success": True, "message": "Logged out successfully"}
 
 

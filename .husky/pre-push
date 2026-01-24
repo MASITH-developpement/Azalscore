@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+#
+# AZALSCORE Pre-push Hook (AZA-FE-ENF)
+# =====================================
+# Vérifie la conformité avant chaque push
+#
+
+# Aller dans le répertoire frontend
+cd frontend || exit 1
+
+echo "🔍 Running pre-push checks (AZA-FE-ENF)..."
+
+# 1. Type check
+echo "🔎 Type checking..."
+npm run type-check || {
+  echo "❌ Type check failed"
+  exit 1
+}
+
+# 2. Menu/Route sync (AZA-FE-ENF)
+echo "🔗 Validating menu ↔ route synchronization..."
+npm run validate:menu-route-sync || {
+  echo "❌ Menu/Route sync validation failed (AZA-FE-ENF)"
+  echo "💡 Fix menu/route mismatches before pushing"
+  exit 1
+}
+
+# 3. Tests (si disponibles)
+echo "🧪 Running tests..."
+npm run test -- --run --passWithNoTests || {
+  echo "❌ Tests failed"
+  exit 1
+}
+
+echo "✅ All pre-push checks passed (AZA-FE-ENF)"
+exit 0

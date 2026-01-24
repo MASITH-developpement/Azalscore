@@ -30,6 +30,19 @@ const MobileRoutes = lazy(() => import('@modules/mobile'));
 const AdminRoutes = lazy(() => import('@modules/admin'));
 const BreakGlassPage = lazy(() => import('@modules/break-glass'));
 
+// Modules métier additionnels
+const HRRoutes = lazy(() => import('@modules/hr'));
+const CRMRoutes = lazy(() => import('@modules/crm'));
+const InventoryRoutes = lazy(() => import('@modules/inventory'));
+const ProductionRoutes = lazy(() => import('@modules/production'));
+const MaintenanceRoutes = lazy(() => import('@modules/maintenance'));
+const QualityRoutes = lazy(() => import('@modules/qualite'));
+const POSRoutes = lazy(() => import('@modules/pos'));
+const SubscriptionsRoutes = lazy(() => import('@modules/subscriptions'));
+const HelpdeskRoutes = lazy(() => import('@modules/helpdesk'));
+const BIRoutes = lazy(() => import('@modules/bi'));
+const ComplianceRoutes = lazy(() => import('@modules/compliance'));
+
 // Pages Auth
 const LoginPage = lazy(() => import('@/pages/auth/Login'));
 const TwoFactorPage = lazy(() => import('@/pages/auth/TwoFactor'));
@@ -203,6 +216,83 @@ export const AppRouter: React.FC = () => {
 
             {/* Mobile */}
             <Route path="/mobile/*" element={<MobileRoutes />} />
+
+            {/* Ressources Humaines */}
+            <Route path="/hr/*" element={
+              <CapabilityRoute capability="hr.view">
+                <HRRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* CRM */}
+            <Route path="/crm/*" element={
+              <CapabilityRoute capability="crm.view">
+                <CRMRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Inventaire / Stock */}
+            <Route path="/inventory/*" element={
+              <CapabilityRoute capability="inventory.view">
+                <InventoryRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Production */}
+            <Route path="/production/*" element={
+              <CapabilityRoute capability="production.view">
+                <ProductionRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Maintenance */}
+            <Route path="/maintenance/*" element={
+              <CapabilityRoute capability="maintenance.view">
+                <MaintenanceRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Qualité */}
+            <Route path="/quality/*" element={
+              <CapabilityRoute capability="quality.view">
+                <QualityRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Point de Vente */}
+            <Route path="/pos/*" element={
+              <CapabilityRoute capability="pos.view">
+                <POSRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Abonnements */}
+            <Route path="/subscriptions/*" element={
+              <CapabilityRoute capability="subscriptions.view">
+                <SubscriptionsRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Helpdesk */}
+            <Route path="/helpdesk/*" element={
+              <CapabilityRoute capability="helpdesk.view">
+                <HelpdeskRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Business Intelligence */}
+            <Route path="/bi/*" element={
+              <CapabilityRoute capability="bi.view">
+                <BIRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Conformité */}
+            <Route path="/compliance/*" element={
+              <CapabilityRoute capability="compliance.view">
+                <ComplianceRoutes />
+              </CapabilityRoute>
+            } />
 
             {/* Administration */}
             <Route path="/admin/*" element={

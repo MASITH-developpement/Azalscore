@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_margin_rate",
+  "name": "Calcule le taux de marge sur une vente",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le taux de marge sur une vente",
+  "inputs": {
+    "selling_price": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "cost_price": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "margin_amount": {
+      "type": "number",
+      "description": ""
+    },
+    "margin_rate": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "commercial",
+    "pricing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,0 +1,44 @@
+#!/usr/bin/env sh
+#
+# AZALSCORE Pre-commit Hook (AZA-FE-ENF)
+# =======================================
+# Vérifie la conformité avant chaque commit
+#
+
+# Aller dans le répertoire frontend
+cd frontend || exit 1
+
+echo "🔍 Running pre-commit checks (AZA-FE-ENF)..."
+
+# 1. Lint-staged (ESLint + Prettier sur fichiers modifiés)
+echo "📝 Running lint-staged..."
+npx lint-staged || {
+  echo "❌ Lint-staged failed"
+  exit 1
+}
+
+# 2. AZALSCORE Linter (AZA-FE-ENF)
+echo "🔍 Running AZALSCORE normative linter..."
+npm run azalscore:lint || {
+  echo "❌ AZALSCORE linter failed - Violations AZA-FE-ENF detected"
+  echo "💡 Fix violations before committing"
+  exit 1
+}
+
+# 3. Validation structure modules
+echo "📂 Validating module structure..."
+npm run validate:modules || {
+  echo "❌ Module structure validation failed"
+  exit 1
+}
+
+# 4. Validation meta.ts (AZA-FE-META)
+echo "📋 Validating meta.ts files..."
+npm run validate:meta || {
+  echo "❌ meta.ts validation failed"
+  echo "💡 Run: npm run generate:meta"
+  exit 1
+}
+
+echo "✅ All pre-commit checks passed (AZA-FE-ENF)"
+exit 0

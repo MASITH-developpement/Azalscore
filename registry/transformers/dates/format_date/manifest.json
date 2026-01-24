@@ -1,0 +1,44 @@
+{
+  "id": "azalscore.transformers.dates.format_date",
+  "name": "Formate une date selon un format",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Formate une date selon un format",
+  "inputs": {
+    "date": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "format": {
+      "type": "string",
+      "required": false,
+      "description": "",
+      "default": "DD/MM/YYYY"
+    }
+  },
+  "outputs": {
+    "formatted_date": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "dates",
+    "periods"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

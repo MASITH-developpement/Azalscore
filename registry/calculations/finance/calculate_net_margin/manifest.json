@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.finance.calculate_net_margin",
+  "name": "Calcule la marge nette",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la marge nette",
+  "inputs": {
+    "net_income": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "revenue": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "net_margin": {
+      "type": "number",
+      "description": ""
+    },
+    "net_margin_rate": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "analytics"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

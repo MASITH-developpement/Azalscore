@@ -1,0 +1,42 @@
+{
+  "id": "azalscore.external.storage.delete_file",
+  "name": "Supprime un fichier du cloud",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Supprime un fichier du cloud",
+  "inputs": {
+    "file_id": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "success": {
+      "type": "boolean",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "storage",
+    "cloud"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,3 +1,8 @@
+/**
+ * AZALSCORE Module - Projects
+ * Gestion de projets et suivi du temps
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
@@ -6,8 +11,40 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input, TextArea } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import {
+  BaseViewStandard,
+  type TabDefinition,
+  type InfoBarItem,
+  type SidebarSection,
+  type ActionDefinition,
+  type SemanticColor
+} from '@ui/standards';
 import type { TableColumn } from '@/types';
-import { Folder, ClipboardList, CheckCircle, RefreshCw, Clock, BarChart3, DollarSign } from 'lucide-react';
+import {
+  Folder, ClipboardList, CheckCircle, RefreshCw, Clock, BarChart3,
+  DollarSign, ArrowLeft, Edit, Send, Printer, Trash2, Target,
+  User, Sparkles, FileText, CheckSquare
+} from 'lucide-react';
+
+// Types et helpers
+import type { Project, Task, TimeEntry, ProjectStats } from './types';
+import {
+  formatDate, formatCurrency, formatHours, formatPercent,
+  PROJECT_STATUS_CONFIG, TASK_STATUS_CONFIG, PRIORITY_CONFIG,
+  getDaysRemaining, getBudgetUsedPercent, getTaskCountByStatus,
+  getTotalLoggedHours, isProjectOverdue, isProjectNearDeadline,
+  isBudgetOverrun
+} from './types';
+
+// Composants tabs
+import {
+  ProjectInfoTab,
+  ProjectTasksTab,
+  ProjectTimesheetTab,
+  ProjectDocsTab,
+  ProjectHistoryTab,
+  ProjectIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,138 +75,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
-// ============================================================================
-
-interface Project {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  client_id?: string;
-  client_name?: string;
-  manager_id?: string;
-  manager_name?: string;
-  status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  start_date?: string;
-  end_date?: string;
-  budget?: number;
-  spent?: number;
-  progress: number;
-  currency: string;
-  created_at: string;
-}
-
-interface Task {
-  id: string;
-  project_id: string;
-  project_name?: string;
-  title: string;
-  description?: string;
-  assignee_id?: string;
-  assignee_name?: string;
-  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  due_date?: string;
-  estimated_hours?: number;
-  logged_hours?: number;
-  created_at: string;
-}
-
-interface TimeEntry {
-  id: string;
-  project_id: string;
-  project_name?: string;
-  task_id?: string;
-  task_title?: string;
-  user_id: string;
-  user_name: string;
-  date: string;
-  hours: number;
-  description?: string;
-  is_billable: boolean;
-  created_at: string;
-}
-
-interface ProjectStats {
-  active_projects: number;
-  total_projects: number;
-  total_tasks: number;
-  tasks_completed: number;
-  tasks_in_progress: number;
-  hours_this_week: number;
-  hours_this_month: number;
-  budget_used_percent: number;
-}
-
-// ============================================================================
-// CONSTANTES
-// ============================================================================
-
-const PROJECT_STATUS = [
-  { value: 'DRAFT', label: 'Brouillon' },
-  { value: 'ACTIVE', label: 'En cours' },
-  { value: 'PAUSED', label: 'En pause' },
-  { value: 'COMPLETED', label: 'Terminé' },
-  { value: 'CANCELLED', label: 'Annulé' }
-];
-
-const TASK_STATUS = [
-  { value: 'TODO', label: 'À faire' },
-  { value: 'IN_PROGRESS', label: 'En cours' },
-  { value: 'REVIEW', label: 'En revue' },
-  { value: 'DONE', label: 'Terminé' }
-];
-
-const PRIORITIES = [
-  { value: 'LOW', label: 'Basse' },
-  { value: 'NORMAL', label: 'Normale' },
-  { value: 'HIGH', label: 'Haute' },
-  { value: 'URGENT', label: 'Urgente' }
-];
-
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'gray',
-  ACTIVE: 'blue',
-  PAUSED: 'orange',
-  COMPLETED: 'green',
-  CANCELLED: 'red',
-  TODO: 'gray',
-  IN_PROGRESS: 'blue',
-  REVIEW: 'purple',
-  DONE: 'green'
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  LOW: 'gray',
-  NORMAL: 'blue',
-  HIGH: 'orange',
-  URGENT: 'red'
-};
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatHours = (hours: number): string => {
-  return `${hours.toFixed(1)}h`;
-};
-
-// Navigation inter-modules
-const navigateTo = (view: string, params?: Record<string, any>) => {
-  window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
-};
-
-// ============================================================================
 // API HOOKS
 // ============================================================================
 
@@ -195,6 +100,17 @@ const useProjects = (filters?: { status?: string; client_id?: string }) => {
       const response = await api.get<{ items: Project[] } | Project[]>(url).then(r => r.data);
       return (response as any)?.items || response as Project[];
     }
+  });
+};
+
+const useProject = (id: string) => {
+  return useQuery({
+    queryKey: ['projects', 'detail', id],
+    queryFn: async () => {
+      const response = await api.get<Project>(`/v1/projects/${id}`).then(r => r.data);
+      return response;
+    },
+    enabled: !!id
   });
 };
 
@@ -269,21 +185,271 @@ const useLogTime = () => {
 };
 
 // ============================================================================
-// COMPOSANTS
+// PROJECT DETAIL VIEW (BaseViewStandard)
 // ============================================================================
 
-const ProjectsListView: React.FC = () => {
+interface ProjectDetailViewProps {
+  projectId: string;
+  onBack: () => void;
+  onEdit?: () => void;
+}
+
+const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack, onEdit }) => {
+  const { data: project, isLoading, error } = useProject(projectId);
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading">
+        <RefreshCw className="azals-spin" size={32} />
+        <p>Chargement du projet...</p>
+      </div>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <div className="azals-error">
+        <p>Erreur lors du chargement du projet</p>
+        <Button onClick={onBack}>Retour</Button>
+      </div>
+    );
+  }
+
+  // Configuration statut
+  const statusConfig = PROJECT_STATUS_CONFIG[project.status];
+  const statusColorMap: Record<string, SemanticColor> = {
+    gray: 'gray',
+    blue: 'blue',
+    green: 'green',
+    orange: 'orange',
+    red: 'red',
+    purple: 'purple'
+  };
+
+  // Calculs
+  const taskCounts = getTaskCountByStatus(project);
+  const totalTasks = (project.tasks || []).length;
+  const daysRemaining = getDaysRemaining(project);
+  const budgetPercent = getBudgetUsedPercent(project);
+  const isOverdue = isProjectOverdue(project);
+  const isNearDeadline = isProjectNearDeadline(project);
+  const budgetOverrun = isBudgetOverrun(project);
+
+  // Tabs
+  const tabs: TabDefinition<Project>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Folder size={16} />,
+      component: ProjectInfoTab
+    },
+    {
+      id: 'tasks',
+      label: 'Taches',
+      icon: <CheckSquare size={16} />,
+      badge: taskCounts.TODO + taskCounts.IN_PROGRESS,
+      component: ProjectTasksTab
+    },
+    {
+      id: 'timesheet',
+      label: 'Temps',
+      icon: <Clock size={16} />,
+      component: ProjectTimesheetTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      badge: project.documents?.length,
+      component: ProjectDocsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: ProjectHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: ProjectIATab
+    }
+  ];
+
+  // Info bar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'progress',
+      label: 'Avancement',
+      value: formatPercent(project.progress),
+      valueColor: project.progress >= 100 ? 'green' : project.progress >= 50 ? 'blue' : 'orange'
+    },
+    {
+      id: 'tasks',
+      label: 'Taches',
+      value: `${taskCounts.DONE}/${totalTasks}`,
+      valueColor: taskCounts.DONE === totalTasks ? 'green' : 'blue'
+    },
+    {
+      id: 'budget',
+      label: 'Budget',
+      value: formatPercent(budgetPercent),
+      valueColor: budgetOverrun ? 'red' : budgetPercent > 80 ? 'orange' : 'green'
+    },
+    {
+      id: 'deadline',
+      label: 'Echeance',
+      value: daysRemaining !== null ? `${daysRemaining}j` : '-',
+      valueColor: isOverdue ? 'red' : isNearDeadline ? 'orange' : 'green'
+    }
+  ];
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'summary',
+      title: 'Resume projet',
+      items: [
+        { id: 'code', label: 'Code', value: project.code },
+        { id: 'client', label: 'Client', value: project.client_name || '-' },
+        { id: 'manager', label: 'Responsable', value: project.manager_name || '-' },
+        { id: 'priority', label: 'Priorite', value: PRIORITY_CONFIG[project.priority].label }
+      ]
+    },
+    {
+      id: 'planning',
+      title: 'Planning',
+      items: [
+        { id: 'start', label: 'Debut', value: formatDate(project.start_date) },
+        { id: 'end', label: 'Fin prevue', value: formatDate(project.end_date) },
+        { id: 'remaining', label: 'Jours restants', value: daysRemaining !== null ? `${daysRemaining}` : '-', highlight: isOverdue || isNearDeadline }
+      ]
+    },
+    {
+      id: 'budget',
+      title: 'Budget',
+      items: [
+        { id: 'budget-total', label: 'Budget total', value: formatCurrency(project.budget, project.currency), format: 'currency' as const },
+        { id: 'budget-spent', label: 'Depense', value: formatCurrency(project.spent, project.currency), format: 'currency' as const },
+        { id: 'budget-remaining', label: 'Reste', value: formatCurrency((project.budget || 0) - (project.spent || 0), project.currency), format: 'currency' as const, highlight: budgetOverrun }
+      ]
+    },
+    {
+      id: 'time',
+      title: 'Temps',
+      items: [
+        { id: 'hours', label: 'Heures logguees', value: formatHours(getTotalLoggedHours(project)) },
+        { id: 'team', label: 'Equipe', value: `${project.team_members?.length || 0} membre(s)` }
+      ]
+    }
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      variant: 'ghost',
+      onClick: onBack
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit size={16} />,
+      variant: 'secondary',
+      onClick: onEdit
+    }
+  ];
+
+  // Primary actions
+  const primaryActions: ActionDefinition[] = [
+    {
+      id: 'log-time',
+      label: 'Saisir du temps',
+      icon: <Clock size={16} />,
+      variant: 'primary'
+    },
+    {
+      id: 'add-task',
+      label: 'Ajouter tache',
+      icon: <CheckSquare size={16} />,
+      variant: 'secondary'
+    },
+    {
+      id: 'print',
+      label: 'Imprimer',
+      icon: <Printer size={16} />,
+      variant: 'ghost'
+    }
+  ];
+
+  return (
+    <BaseViewStandard<Project>
+      title={project.name}
+      subtitle={`${project.code} - ${project.client_name || 'Sans client'}`}
+      status={{
+        label: statusConfig.label,
+        color: statusColorMap[statusConfig.color] || 'gray'
+      }}
+      data={project}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+    />
+  );
+};
+
+// ============================================================================
+// LIST VIEWS
+// ============================================================================
+
+const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({ onSelectProject }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const { data: projects = [], isLoading } = useProjects({
     status: filterStatus || undefined
   });
+
+  const PROJECT_STATUS = [
+    { value: 'DRAFT', label: 'Brouillon' },
+    { value: 'ACTIVE', label: 'En cours' },
+    { value: 'PAUSED', label: 'En pause' },
+    { value: 'COMPLETED', label: 'Termine' },
+    { value: 'CANCELLED', label: 'Annule' }
+  ];
+
+  const PRIORITIES = [
+    { value: 'LOW', label: 'Basse' },
+    { value: 'NORMAL', label: 'Normale' },
+    { value: 'HIGH', label: 'Haute' },
+    { value: 'URGENT', label: 'Urgente' }
+  ];
+
+  const STATUS_COLORS: Record<string, string> = {
+    DRAFT: 'gray',
+    ACTIVE: 'blue',
+    PAUSED: 'orange',
+    COMPLETED: 'green',
+    CANCELLED: 'red'
+  };
+
+  const PRIORITY_COLORS: Record<string, string> = {
+    LOW: 'gray',
+    NORMAL: 'blue',
+    HIGH: 'orange',
+    URGENT: 'red'
+  };
 
   const columns: TableColumn<Project>[] = [
     { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
     { id: 'name', header: 'Projet', accessor: 'name' },
     { id: 'client_name', header: 'Client', accessor: 'client_name', render: (v) => (v as string) || '-' },
     { id: 'manager_name', header: 'Responsable', accessor: 'manager_name', render: (v) => (v as string) || '-' },
-    { id: 'priority', header: 'Priorité', accessor: 'priority', render: (v) => {
+    { id: 'priority', header: 'Priorite', accessor: 'priority', render: (v) => {
       const val = v as string;
       const info = PRIORITIES.find(p => p.value === val);
       return <Badge color={PRIORITY_COLORS[val] || 'gray'}>{info?.label || val}</Badge>;
@@ -309,9 +475,11 @@ const ProjectsListView: React.FC = () => {
         </div>
       );
     }},
-    { id: 'end_date', header: 'Échéance', accessor: 'end_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
+    { id: 'end_date', header: 'Echeance', accessor: 'end_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'budget', header: 'Budget', accessor: 'budget', render: (v, row: Project) => (v as number) ? formatCurrency(v as number, row.currency) : '-' },
-    { id: 'actions', header: 'Actions', accessor: 'id', render: () => <Button size="sm" variant="secondary">Détail</Button> }
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row: Project) => (
+      <Button size="sm" variant="secondary" onClick={() => onSelectProject(row.id)}>Detail</Button>
+    )}
   ];
 
   return (
@@ -343,11 +511,39 @@ const TasksView: React.FC = () => {
   const { data: projects = [] } = useProjects();
   const updateStatus = useUpdateTaskStatus();
 
+  const TASK_STATUS = [
+    { value: 'TODO', label: 'A faire' },
+    { value: 'IN_PROGRESS', label: 'En cours' },
+    { value: 'REVIEW', label: 'En revue' },
+    { value: 'DONE', label: 'Termine' }
+  ];
+
+  const PRIORITIES = [
+    { value: 'LOW', label: 'Basse' },
+    { value: 'NORMAL', label: 'Normale' },
+    { value: 'HIGH', label: 'Haute' },
+    { value: 'URGENT', label: 'Urgente' }
+  ];
+
+  const STATUS_COLORS: Record<string, string> = {
+    TODO: 'gray',
+    IN_PROGRESS: 'blue',
+    REVIEW: 'purple',
+    DONE: 'green'
+  };
+
+  const PRIORITY_COLORS: Record<string, string> = {
+    LOW: 'gray',
+    NORMAL: 'blue',
+    HIGH: 'orange',
+    URGENT: 'red'
+  };
+
   const columns: TableColumn<Task>[] = [
-    { id: 'title', header: 'Tâche', accessor: 'title' },
+    { id: 'title', header: 'Tache', accessor: 'title' },
     { id: 'project_name', header: 'Projet', accessor: 'project_name', render: (v) => (v as string) || '-' },
-    { id: 'assignee_name', header: 'Assigné à', accessor: 'assignee_name', render: (v) => (v as string) || 'Non assigné' },
-    { id: 'priority', header: 'Priorité', accessor: 'priority', render: (v) => {
+    { id: 'assignee_name', header: 'Assigne a', accessor: 'assignee_name', render: (v) => (v as string) || 'Non assigne' },
+    { id: 'priority', header: 'Priorite', accessor: 'priority', render: (v) => {
       const val = v as string;
       const info = PRIORITIES.find(p => p.value === val);
       return <Badge color={PRIORITY_COLORS[val] || 'gray'}>{info?.label || val}</Badge>;
@@ -357,13 +553,13 @@ const TasksView: React.FC = () => {
       const info = TASK_STATUS.find(s => s.value === val);
       return <Badge color={STATUS_COLORS[val] || 'gray'}>{info?.label || val}</Badge>;
     }},
-    { id: 'due_date', header: 'Échéance', accessor: 'due_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
+    { id: 'due_date', header: 'Echeance', accessor: 'due_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'estimated_hours', header: 'Est.', accessor: 'estimated_hours', render: (v) => (v as number) ? formatHours(v as number) : '-' },
-    { id: 'logged_hours', header: 'Réel', accessor: 'logged_hours', render: (v) => (v as number) ? formatHours(v as number) : '-' },
+    { id: 'logged_hours', header: 'Reel', accessor: 'logged_hours', render: (v) => (v as number) ? formatHours(v as number) : '-' },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row: Task) => (
       <div className="flex gap-1">
         {row.status === 'TODO' && (
-          <Button size="sm" variant="primary" onClick={() => updateStatus.mutate({ id: row.id, status: 'IN_PROGRESS' })}>Démarrer</Button>
+          <Button size="sm" variant="primary" onClick={() => updateStatus.mutate({ id: row.id, status: 'IN_PROGRESS' })}>Demarrer</Button>
         )}
         {row.status === 'IN_PROGRESS' && (
           <Button size="sm" variant="warning" onClick={() => updateStatus.mutate({ id: row.id, status: 'REVIEW' })}>Soumettre</Button>
@@ -378,7 +574,7 @@ const TasksView: React.FC = () => {
   return (
     <Card>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Tâches</h3>
+        <h3 className="text-lg font-semibold">Taches</h3>
         <div className="flex gap-2">
           <Select
             value={filterProject}
@@ -395,7 +591,7 @@ const TasksView: React.FC = () => {
             options={[{ value: '', label: 'Tous statuts' }, ...TASK_STATUS]}
             className="w-32"
           />
-          <Button>Nouvelle tâche</Button>
+          <Button>Nouvelle tache</Button>
         </div>
       </div>
       <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" />
@@ -419,7 +615,7 @@ const TimesheetView: React.FC = () => {
   const columns: TableColumn<TimeEntry>[] = [
     { id: 'date', header: 'Date', accessor: 'date', render: (v) => formatDate(v as string) },
     { id: 'project_name', header: 'Projet', accessor: 'project_name' },
-    { id: 'task_title', header: 'Tâche', accessor: 'task_title', render: (v) => (v as string) || '-' },
+    { id: 'task_title', header: 'Tache', accessor: 'task_title', render: (v) => (v as string) || '-' },
     { id: 'user_name', header: 'Utilisateur', accessor: 'user_name' },
     { id: 'hours', header: 'Heures', accessor: 'hours', render: (v) => formatHours(v as number) },
     { id: 'description', header: 'Description', accessor: 'description', render: (v) => {
@@ -480,7 +676,7 @@ const TimesheetView: React.FC = () => {
                   value={formProjectId}
                   onChange={(v) => setFormProjectId(v)}
                   options={[
-                    { value: '', label: 'Sélectionner...' },
+                    { value: '', label: 'Selectionner...' },
                     ...projects.map((p: Project) => ({ value: p.id, label: p.name }))
                   ]}
                 />
@@ -513,7 +709,7 @@ const TimesheetView: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">Description</label>
                 <TextArea
                   rows={2}
-                  placeholder="Travail effectué..."
+                  placeholder="Travail effectue..."
                   value={formDescription}
                   onChange={(v) => setFormDescription(v)}
                 />
@@ -540,23 +736,44 @@ const TimesheetView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'projects' | 'tasks' | 'timesheet';
+type View = 'dashboard' | 'projects' | 'tasks' | 'timesheet' | 'detail';
 
 const ProjectsModule: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const { data: stats } = useProjectStats();
 
   const tabs = [
     { id: 'dashboard', label: 'Vue d\'ensemble' },
     { id: 'projects', label: 'Projets' },
-    { id: 'tasks', label: 'Tâches' },
+    { id: 'tasks', label: 'Taches' },
     { id: 'timesheet', label: 'Temps' }
   ];
+
+  const handleSelectProject = (id: string) => {
+    setSelectedProjectId(id);
+    setCurrentView('detail');
+  };
+
+  const handleBackFromDetail = () => {
+    setSelectedProjectId(null);
+    setCurrentView('projects');
+  };
+
+  // Render detail view
+  if (currentView === 'detail' && selectedProjectId) {
+    return (
+      <ProjectDetailView
+        projectId={selectedProjectId}
+        onBack={handleBackFromDetail}
+      />
+    );
+  }
 
   const renderContent = () => {
     switch (currentView) {
       case 'projects':
-        return <ProjectsListView />;
+        return <ProjectsListView onSelectProject={handleSelectProject} />;
       case 'tasks':
         return <TasksView />;
       case 'timesheet':
@@ -573,14 +790,14 @@ const ProjectsModule: React.FC = () => {
                 onClick={() => setCurrentView('projects')}
               />
               <StatCard
-                title="Tâches totales"
+                title="Taches totales"
                 value={String(stats?.total_tasks || 0)}
                 icon={<ClipboardList className="h-5 w-5" />}
                 variant="default"
                 onClick={() => setCurrentView('tasks')}
               />
               <StatCard
-                title="Tâches terminées"
+                title="Taches terminees"
                 value={String(stats?.tasks_completed || 0)}
                 icon={<CheckCircle className="h-5 w-5" />}
                 variant="success"
@@ -608,7 +825,7 @@ const ProjectsModule: React.FC = () => {
                 variant="default"
               />
               <StatCard
-                title="Budget utilisé"
+                title="Budget utilise"
                 value={`${stats?.budget_used_percent || 0}%`}
                 icon={<DollarSign className="h-5 w-5" />}
                 variant={stats?.budget_used_percent && stats.budget_used_percent > 90 ? 'danger' : 'success'}

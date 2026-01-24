@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.taxes.calculate_pro_rata_vat",
+  "name": "Calcule le prorata de TVA",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le prorata de TVA",
+  "inputs": {
+    "taxable_sales": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "pro_rata": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "taxes",
+    "vat"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

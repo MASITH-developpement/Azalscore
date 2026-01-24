@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.transformers.sanitization.sanitize_sql",
+  "name": "Échappe les caractères SQL",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Échappe les caractères SQL",
+  "inputs": {
+    "value": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "sanitized": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "sanitization",
+    "cleaning"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

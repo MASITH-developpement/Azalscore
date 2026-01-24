@@ -1,0 +1,48 @@
+{
+  "id": "azalscore.calculations.hr.calculate_performance_bonus",
+  "name": "Calcule la prime de performance",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la prime de performance",
+  "inputs": {
+    "base_salary": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "performance_score": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "bonus_percentage": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "bonus_amount": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "performance"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

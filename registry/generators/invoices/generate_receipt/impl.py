@@ -1,0 +1,39 @@
+"""
+Implémentation du sous-programme : generate_receipt
+
+RÈGLES STRICTES :
+- Code métier PUR (pas de try/except)
+- Pas de side effects
+- Idempotent
+
+Utilisation : 20+ endroits dans le codebase
+"""
+
+from typing import Dict, Any
+from decimal import Decimal
+
+
+def execute(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Génère un reçu
+
+    Args:
+        inputs: {
+            "payment": object,  # 
+        }
+
+    Returns:
+        {
+            "receipt": object,  # 
+        }
+    """
+    # TODO: Implémenter la logique métier
+
+    payment = inputs["payment"]
+
+    # Logique métier à implémenter
+    # TODO: Remplacer ce template par la vraie logique
+
+    return {
+        "receipt": None,  # TODO: Calculer la valeur
+    }

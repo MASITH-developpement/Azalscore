@@ -1,0 +1,62 @@
+{
+  "id": "azalscore.generators.sequences.generate_document_number",
+  "name": "Génération numéro de document",
+  "category": "generation",
+  "version": "1.0.0",
+  "description": "Génère un numéro de document unique avec préfixe, année et compteur",
+  "inputs": {
+    "prefix": {
+      "type": "string",
+      "required": true,
+      "description": "Préfixe du document (ex: 'FAC', 'DEV', 'CMD')"
+    },
+    "year": {
+      "type": "number",
+      "required": true,
+      "description": "Année du document (ex: 2026)"
+    },
+    "counter": {
+      "type": "number",
+      "required": true,
+      "description": "Numéro de séquence (ex: 1, 2, 3...)"
+    },
+    "format": {
+      "type": "string",
+      "required": false,
+      "description": "Format du numéro (défaut: '{prefix}-{year}-{num:05d}')",
+      "default": "{prefix}-{year}-{num:05d}"
+    }
+  },
+  "outputs": {
+    "document_number": {
+      "type": "string",
+      "description": "Numéro de document généré (ex: 'FAC-2026-00001')"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Préfixe utilisé"
+    },
+    "year": {
+      "type": "number",
+      "description": "Année utilisée"
+    },
+    "counter": {
+      "type": "number",
+      "description": "Compteur utilisé"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 500,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["generation", "sequence", "document", "numbering"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

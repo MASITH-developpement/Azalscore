@@ -483,6 +483,6 @@ def get_bigint_tables(engine: Engine) -> set[str]:
                 AND c.udt_name IN ('int4', 'int8', 'serial', 'bigserial')
             """))
             tables = {row[0] for row in result}
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Failed to retrieve tables with integer PKs: {e}")
     return tables

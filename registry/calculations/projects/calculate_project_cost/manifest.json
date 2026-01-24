@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.calculations.projects.calculate_project_cost",
+  "name": "Calcule le coût d'un projet",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le coût d'un projet",
+  "inputs": {
+    "tasks": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "resources": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "total_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "labor_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "material_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "overhead_cost": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "projects",
+    "costing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

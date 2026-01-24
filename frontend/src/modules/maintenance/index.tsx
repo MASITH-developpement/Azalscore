@@ -1,3 +1,8 @@
+/**
+ * AZALSCORE Module - Maintenance
+ * Gestion de la maintenance et des equipements
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
@@ -6,8 +11,40 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import {
+  BaseViewStandard,
+  type TabDefinition,
+  type InfoBarItem,
+  type SidebarSection,
+  type ActionDefinition,
+  type SemanticColor
+} from '@ui/standards';
 import type { TableColumn } from '@/types';
-import { Check, Wrench, X, Cog, AlertTriangle, Calendar, BarChart3, Clock } from 'lucide-react';
+import {
+  Check, Wrench, X, Cog, AlertTriangle, Calendar, BarChart3, Clock,
+  ArrowLeft, Edit, Printer, Package, FileText, Sparkles, RefreshCw
+} from 'lucide-react';
+
+// Types et helpers
+import type { Asset, MaintenanceOrder, MaintenancePlan, MaintenanceDashboard } from './types';
+import {
+  formatDate, formatCurrency, formatHours,
+  ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
+  ORDER_TYPE_CONFIG, ORDER_STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG,
+  getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon,
+  isWarrantyExpired, getAssetAge, getTotalMaintenanceCost, getOrderCountByStatus,
+  getLowStockParts
+} from './types';
+
+// Composants tabs
+import {
+  AssetInfoTab,
+  AssetOrdersTab,
+  AssetPartsTab,
+  AssetDocsTab,
+  AssetHistoryTab,
+  AssetIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,175 +75,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
-// ============================================================================
-
-interface Asset {
-  id: string;
-  code: string;
-  name: string;
-  type: 'EQUIPMENT' | 'VEHICLE' | 'TOOL' | 'BUILDING' | 'IT';
-  category_id?: string;
-  category_name?: string;
-  location?: string;
-  serial_number?: string;
-  manufacturer?: string;
-  model?: string;
-  purchase_date?: string;
-  warranty_end_date?: string;
-  status: 'OPERATIONAL' | 'UNDER_MAINTENANCE' | 'OUT_OF_SERVICE' | 'SCRAPPED';
-  criticality: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  last_maintenance_date?: string;
-  next_maintenance_date?: string;
-  created_at: string;
-}
-
-interface MaintenanceOrder {
-  id: string;
-  number: string;
-  asset_id: string;
-  asset_name?: string;
-  asset_code?: string;
-  type: 'PREVENTIVE' | 'CORRECTIVE' | 'PREDICTIVE' | 'CONDITION_BASED';
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  status: 'DRAFT' | 'PLANNED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
-  description: string;
-  planned_start_date?: string;
-  planned_end_date?: string;
-  actual_start_date?: string;
-  actual_end_date?: string;
-  assigned_to_id?: string;
-  assigned_to_name?: string;
-  parts_used: PartUsage[];
-  labor_hours: number;
-  total_cost: number;
-  failure_cause?: string;
-  resolution?: string;
-  created_at: string;
-}
-
-interface PartUsage {
-  id: string;
-  product_id: string;
-  product_name?: string;
-  quantity: number;
-  unit_cost: number;
-}
-
-interface MaintenancePlan {
-  id: string;
-  code: string;
-  name: string;
-  asset_id?: string;
-  asset_name?: string;
-  asset_type?: string;
-  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'HOURS_BASED' | 'CYCLES_BASED';
-  frequency_value: number;
-  tasks: MaintenanceTask[];
-  last_execution_date?: string;
-  next_execution_date?: string;
-  is_active: boolean;
-}
-
-interface MaintenanceTask {
-  id: string;
-  sequence: number;
-  description: string;
-  duration_minutes: number;
-  parts_required: { product_id: string; product_name?: string; quantity: number }[];
-}
-
-interface MaintenanceDashboard {
-  assets_operational: number;
-  assets_under_maintenance: number;
-  assets_out_of_service: number;
-  orders_in_progress: number;
-  orders_overdue: number;
-  upcoming_preventive: number;
-  mtbf: number;
-  mttr: number;
-}
-
-// ============================================================================
-// CONSTANTES
-// ============================================================================
-
-const ASSET_TYPES = [
-  { value: 'EQUIPMENT', label: 'Equipement' },
-  { value: 'VEHICLE', label: 'Vehicule' },
-  { value: 'TOOL', label: 'Outil' },
-  { value: 'BUILDING', label: 'Batiment' },
-  { value: 'IT', label: 'IT' }
-];
-
-const ASSET_STATUSES = [
-  { value: 'OPERATIONAL', label: 'Operationnel', color: 'green' },
-  { value: 'UNDER_MAINTENANCE', label: 'En maintenance', color: 'orange' },
-  { value: 'OUT_OF_SERVICE', label: 'Hors service', color: 'red' },
-  { value: 'SCRAPPED', label: 'Mis au rebut', color: 'gray' }
-];
-
-const CRITICALITIES = [
-  { value: 'LOW', label: 'Faible', color: 'gray' },
-  { value: 'MEDIUM', label: 'Moyenne', color: 'blue' },
-  { value: 'HIGH', label: 'Haute', color: 'orange' },
-  { value: 'CRITICAL', label: 'Critique', color: 'red' }
-];
-
-const ORDER_TYPES = [
-  { value: 'PREVENTIVE', label: 'Preventive' },
-  { value: 'CORRECTIVE', label: 'Corrective' },
-  { value: 'PREDICTIVE', label: 'Predictive' },
-  { value: 'CONDITION_BASED', label: 'Conditionnelle' }
-];
-
-const ORDER_PRIORITIES = [
-  { value: 'LOW', label: 'Basse', color: 'gray' },
-  { value: 'NORMAL', label: 'Normale', color: 'blue' },
-  { value: 'HIGH', label: 'Haute', color: 'orange' },
-  { value: 'URGENT', label: 'Urgente', color: 'red' }
-];
-
-const ORDER_STATUSES = [
-  { value: 'DRAFT', label: 'Brouillon', color: 'gray' },
-  { value: 'PLANNED', label: 'Planifie', color: 'blue' },
-  { value: 'IN_PROGRESS', label: 'En cours', color: 'orange' },
-  { value: 'ON_HOLD', label: 'En attente', color: 'yellow' },
-  { value: 'COMPLETED', label: 'Termine', color: 'green' },
-  { value: 'CANCELLED', label: 'Annule', color: 'red' }
-];
-
-const FREQUENCIES = [
-  { value: 'DAILY', label: 'Quotidienne' },
-  { value: 'WEEKLY', label: 'Hebdomadaire' },
-  { value: 'MONTHLY', label: 'Mensuelle' },
-  { value: 'QUARTERLY', label: 'Trimestrielle' },
-  { value: 'YEARLY', label: 'Annuelle' },
-  { value: 'HOURS_BASED', label: 'Par heures' },
-  { value: 'CYCLES_BASED', label: 'Par cycles' }
-];
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-const getStatusInfo = (statuses: any[], status: string) => {
-  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
-};
-
-const navigateTo = (view: string, params?: Record<string, any>) => {
-  window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view, params } }));
-};
-
-// ============================================================================
 // API HOOKS
 // ============================================================================
 
@@ -231,6 +99,16 @@ const useAssets = (filters?: { type?: string; status?: string; criticality?: str
       const url = `/v1/maintenance/assets${queryString ? `?${queryString}` : ''}`;
       return api.get<Asset[]>(url).then(r => r.data);
     }
+  });
+};
+
+const useAsset = (id: string) => {
+  return useQuery({
+    queryKey: ['maintenance', 'asset', id],
+    queryFn: async () => {
+      return api.get<Asset>(`/v1/maintenance/assets/${id}`).then(r => r.data);
+    },
+    enabled: !!id
   });
 };
 
@@ -289,10 +167,286 @@ const useUpdateOrderStatus = () => {
 };
 
 // ============================================================================
-// COMPOSANTS
+// ASSET DETAIL VIEW (BaseViewStandard)
 // ============================================================================
 
-const AssetsView: React.FC = () => {
+interface AssetDetailViewProps {
+  assetId: string;
+  onBack: () => void;
+  onEdit?: () => void;
+}
+
+const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onEdit }) => {
+  const { data: asset, isLoading, error } = useAsset(assetId);
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading">
+        <RefreshCw className="azals-spin" size={32} />
+        <p>Chargement de l'equipement...</p>
+      </div>
+    );
+  }
+
+  if (error || !asset) {
+    return (
+      <div className="azals-error">
+        <p>Erreur lors du chargement de l'equipement</p>
+        <Button onClick={onBack}>Retour</Button>
+      </div>
+    );
+  }
+
+  // Configuration statut
+  const statusConfig = ASSET_STATUS_CONFIG[asset.status];
+  const statusColorMap: Record<string, SemanticColor> = {
+    gray: 'gray',
+    blue: 'blue',
+    green: 'green',
+    orange: 'orange',
+    red: 'red',
+    purple: 'purple',
+    yellow: 'yellow',
+    cyan: 'cyan'
+  };
+
+  // Calculs
+  const orderCounts = getOrderCountByStatus(asset);
+  const activeOrders = orderCounts.IN_PROGRESS + orderCounts.PLANNED;
+  const daysUntilMaintenance = getDaysUntilMaintenance(asset);
+  const maintenanceOverdue = isMaintenanceOverdue(asset);
+  const maintenanceDueSoon = isMaintenanceDueSoon(asset);
+  const warrantyExpired = isWarrantyExpired(asset);
+  const lowStockParts = getLowStockParts(asset);
+
+  // Tabs
+  const tabs: TabDefinition<Asset>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Wrench size={16} />,
+      component: AssetInfoTab
+    },
+    {
+      id: 'orders',
+      label: 'Ordres',
+      icon: <Cog size={16} />,
+      badge: activeOrders > 0 ? activeOrders : undefined,
+      component: AssetOrdersTab
+    },
+    {
+      id: 'parts',
+      label: 'Pieces',
+      icon: <Package size={16} />,
+      badge: lowStockParts.length > 0 ? lowStockParts.length : undefined,
+      component: AssetPartsTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      badge: asset.documents?.length,
+      component: AssetDocsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: AssetHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: AssetIATab
+    }
+  ];
+
+  // Info bar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'status',
+      label: 'Statut',
+      value: statusConfig.label,
+      valueColor: statusColorMap[statusConfig.color] || 'gray'
+    },
+    {
+      id: 'criticality',
+      label: 'Criticite',
+      value: CRITICALITY_CONFIG[asset.criticality].label,
+      valueColor: statusColorMap[CRITICALITY_CONFIG[asset.criticality].color] || 'gray'
+    },
+    {
+      id: 'maintenance',
+      label: 'Maintenance',
+      value: daysUntilMaintenance !== null ? `${daysUntilMaintenance}j` : '-',
+      valueColor: maintenanceOverdue ? 'red' : maintenanceDueSoon ? 'orange' : 'green'
+    },
+    {
+      id: 'orders',
+      label: 'Ordres actifs',
+      value: String(activeOrders),
+      valueColor: activeOrders > 0 ? 'blue' : 'gray'
+    }
+  ];
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'identification',
+      title: 'Identification',
+      items: [
+        { id: 'code', label: 'Code', value: asset.code },
+        { id: 'type', label: 'Type', value: ASSET_TYPE_CONFIG[asset.type].label },
+        { id: 'serial', label: 'N serie', value: asset.serial_number || '-' },
+        { id: 'location', label: 'Emplacement', value: asset.location || '-' }
+      ]
+    },
+    {
+      id: 'specifications',
+      title: 'Specifications',
+      items: [
+        { id: 'manufacturer', label: 'Fabricant', value: asset.manufacturer || '-' },
+        { id: 'model', label: 'Modele', value: asset.model || '-' },
+        { id: 'age', label: 'Age', value: getAssetAge(asset) !== null ? `${getAssetAge(asset)} an(s)` : '-' }
+      ]
+    },
+    {
+      id: 'maintenance',
+      title: 'Maintenance',
+      items: [
+        { id: 'last', label: 'Derniere', value: formatDate(asset.last_maintenance_date) },
+        { id: 'next', label: 'Prochaine', value: formatDate(asset.next_maintenance_date), highlight: maintenanceOverdue || maintenanceDueSoon },
+        { id: 'cost', label: 'Cout total', value: formatCurrency(getTotalMaintenanceCost(asset)), format: 'currency' as const }
+      ]
+    },
+    {
+      id: 'warranty',
+      title: 'Garantie',
+      items: [
+        { id: 'purchase', label: 'Achat', value: formatDate(asset.purchase_date) },
+        { id: 'warranty-end', label: 'Fin garantie', value: formatDate(asset.warranty_end_date), highlight: warrantyExpired }
+      ]
+    }
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      variant: 'ghost',
+      onClick: onBack
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit size={16} />,
+      variant: 'secondary',
+      onClick: onEdit
+    }
+  ];
+
+  // Primary actions
+  const primaryActions: ActionDefinition[] = [
+    {
+      id: 'create-order',
+      label: 'Nouvel ordre',
+      icon: <Wrench size={16} />,
+      variant: 'primary'
+    },
+    {
+      id: 'print',
+      label: 'Imprimer',
+      icon: <Printer size={16} />,
+      variant: 'ghost'
+    }
+  ];
+
+  return (
+    <BaseViewStandard<Asset>
+      title={asset.name}
+      subtitle={`${asset.code} - ${ASSET_TYPE_CONFIG[asset.type].label}`}
+      status={{
+        label: statusConfig.label,
+        color: statusColorMap[statusConfig.color] || 'gray'
+      }}
+      data={asset}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+    />
+  );
+};
+
+// ============================================================================
+// LIST VIEWS
+// ============================================================================
+
+const ASSET_TYPES = [
+  { value: 'EQUIPMENT', label: 'Equipement' },
+  { value: 'VEHICLE', label: 'Vehicule' },
+  { value: 'TOOL', label: 'Outil' },
+  { value: 'BUILDING', label: 'Batiment' },
+  { value: 'IT', label: 'IT' }
+];
+
+const ASSET_STATUSES = [
+  { value: 'OPERATIONAL', label: 'Operationnel', color: 'green' },
+  { value: 'UNDER_MAINTENANCE', label: 'En maintenance', color: 'orange' },
+  { value: 'OUT_OF_SERVICE', label: 'Hors service', color: 'red' },
+  { value: 'SCRAPPED', label: 'Mis au rebut', color: 'gray' }
+];
+
+const CRITICALITIES = [
+  { value: 'LOW', label: 'Faible', color: 'gray' },
+  { value: 'MEDIUM', label: 'Moyenne', color: 'blue' },
+  { value: 'HIGH', label: 'Haute', color: 'orange' },
+  { value: 'CRITICAL', label: 'Critique', color: 'red' }
+];
+
+const ORDER_TYPES = [
+  { value: 'PREVENTIVE', label: 'Preventive' },
+  { value: 'CORRECTIVE', label: 'Corrective' },
+  { value: 'PREDICTIVE', label: 'Predictive' },
+  { value: 'CONDITION_BASED', label: 'Conditionnelle' }
+];
+
+const ORDER_PRIORITIES = [
+  { value: 'LOW', label: 'Basse', color: 'gray' },
+  { value: 'NORMAL', label: 'Normale', color: 'blue' },
+  { value: 'HIGH', label: 'Haute', color: 'orange' },
+  { value: 'URGENT', label: 'Urgente', color: 'red' }
+];
+
+const ORDER_STATUSES = [
+  { value: 'DRAFT', label: 'Brouillon', color: 'gray' },
+  { value: 'PLANNED', label: 'Planifie', color: 'blue' },
+  { value: 'IN_PROGRESS', label: 'En cours', color: 'orange' },
+  { value: 'ON_HOLD', label: 'En attente', color: 'yellow' },
+  { value: 'COMPLETED', label: 'Termine', color: 'green' },
+  { value: 'CANCELLED', label: 'Annule', color: 'red' }
+];
+
+const FREQUENCIES = [
+  { value: 'DAILY', label: 'Quotidienne' },
+  { value: 'WEEKLY', label: 'Hebdomadaire' },
+  { value: 'MONTHLY', label: 'Mensuelle' },
+  { value: 'QUARTERLY', label: 'Trimestrielle' },
+  { value: 'YEARLY', label: 'Annuelle' },
+  { value: 'HOURS_BASED', label: 'Par heures' },
+  { value: 'CYCLES_BASED', label: 'Par cycles' }
+];
+
+const getStatusInfo = (statuses: any[], status: string) => {
+  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
+};
+
+const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelectAsset }) => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterCriticality, setFilterCriticality] = useState<string>('');
@@ -327,7 +481,10 @@ const AssetsView: React.FC = () => {
       const info = getStatusInfo(ASSET_STATUSES, v as string);
       return <Badge color={info.color as any}>{info.label}</Badge>;
     }},
-    { id: 'next_maintenance_date', header: 'Proch. maint.', accessor: 'next_maintenance_date', render: (v) => (v as string) ? formatDate(v as string) : '-' }
+    { id: 'next_maintenance_date', header: 'Proch. maint.', accessor: 'next_maintenance_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row: Asset) => (
+      <Button size="sm" variant="secondary" onClick={() => onSelectAsset(row.id)}>Detail</Button>
+    )}
   ];
 
   return (
@@ -482,12 +639,7 @@ const MaintenanceOrdersView: React.FC = () => {
   const columns: TableColumn<MaintenanceOrder>[] = [
     { id: 'number', header: 'N', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
     { id: 'asset_name', header: 'Equipement', accessor: 'asset_name', render: (v, row: MaintenanceOrder) => (
-      <button
-        className="text-blue-600 hover:underline"
-        onClick={() => navigateTo('maintenance', { view: 'assets', id: row.asset_id })}
-      >
-        {v as string} ({row.asset_code})
-      </button>
+      <span>{v as string} ({row.asset_code})</span>
     )},
     { id: 'type', header: 'Type', accessor: 'type', render: (v) => {
       const info = ORDER_TYPES.find(t => t.value === v);
@@ -622,7 +774,7 @@ const PlansView: React.FC = () => {
       const info = FREQUENCIES.find(f => f.value === v);
       return `${info?.label || (v as string)} (${row.frequency_value})`;
     }},
-    { id: 'tasks', header: 'Taches', accessor: 'tasks', render: (v) => <Badge color="blue">{(v as MaintenanceTask[])?.length || 0}</Badge> },
+    { id: 'tasks', header: 'Taches', accessor: 'tasks', render: (v) => <Badge color="blue">{(v as any[])?.length || 0}</Badge> },
     { id: 'next_execution_date', header: 'Proch. execution', accessor: 'next_execution_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
@@ -652,10 +804,11 @@ const PlansView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'assets' | 'orders' | 'plans';
+type View = 'dashboard' | 'assets' | 'orders' | 'plans' | 'detail';
 
 const MaintenanceModule: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const { data: dashboard } = useMaintenanceDashboard();
 
   const tabs = [
@@ -665,10 +818,30 @@ const MaintenanceModule: React.FC = () => {
     { id: 'plans', label: 'Plans preventifs' }
   ];
 
+  const handleSelectAsset = (id: string) => {
+    setSelectedAssetId(id);
+    setCurrentView('detail');
+  };
+
+  const handleBackFromDetail = () => {
+    setSelectedAssetId(null);
+    setCurrentView('assets');
+  };
+
+  // Render detail view
+  if (currentView === 'detail' && selectedAssetId) {
+    return (
+      <AssetDetailView
+        assetId={selectedAssetId}
+        onBack={handleBackFromDetail}
+      />
+    );
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case 'assets':
-        return <AssetsView />;
+        return <AssetsView onSelectAsset={handleSelectAsset} />;
       case 'orders':
         return <MaintenanceOrdersView />;
       case 'plans':

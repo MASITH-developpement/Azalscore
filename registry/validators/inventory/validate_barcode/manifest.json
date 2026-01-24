@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.validators.inventory.validate_barcode",
+  "name": "Valide un code-barres (EAN13, UPC)",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide un code-barres (EAN13, UPC)",
+  "inputs": {
+    "barcode": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "type": {
+      "type": "string",
+      "required": false,
+      "description": "",
+      "default": "EAN13"
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "normalized_barcode": {
+      "type": "string",
+      "description": ""
+    },
+    "checksum": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "inventory",
+    "stock"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

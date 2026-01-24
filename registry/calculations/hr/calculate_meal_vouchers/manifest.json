@@ -1,0 +1,57 @@
+{
+  "id": "azalscore.calculations.hr.calculate_meal_vouchers",
+  "name": "Calcule les tickets restaurant",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule les tickets restaurant",
+  "inputs": {
+    "working_days": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "voucher_value": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "employee_share": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 0.5
+    }
+  },
+  "outputs": {
+    "total_value": {
+      "type": "number",
+      "description": ""
+    },
+    "employee_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "employer_cost": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "benefits"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

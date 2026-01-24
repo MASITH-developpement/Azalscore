@@ -1,0 +1,46 @@
+{
+  "id": "azalscore.validators.data.validate_payment_terms",
+  "name": "Valide des conditions de paiement",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide des conditions de paiement",
+  "inputs": {
+    "payment_terms": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "days": {
+      "type": "number",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "data",
+    "business"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

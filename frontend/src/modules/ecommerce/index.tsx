@@ -1,96 +1,47 @@
 /**
  * AZALSCORE Module - E-commerce
- * Gestion de la vente en ligne - Produits, commandes, catégories et expéditions
+ * Gestion de la vente en ligne - Produits, commandes, categories et expeditions
  */
 
 import React, { useState } from 'react';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, ShoppingCart, Truck, Tag, Euro, TrendingUp, AlertTriangle } from 'lucide-react';
+import {
+  Package, ShoppingCart, Truck, Tag, Euro, TrendingUp, AlertTriangle,
+  ArrowLeft, Edit, Printer, Clock, FileText, Sparkles, RefreshCw
+} from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
+import { Button } from '@ui/actions';
 import { Select } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import {
+  BaseViewStandard,
+  type TabDefinition,
+  type InfoBarItem,
+  type SidebarSection,
+  type ActionDefinition,
+  type SemanticColor
+} from '@ui/standards';
 import type { TableColumn } from '@/types';
 
+// Types et helpers
+import type { Product, Order, Category, Shipping, OrderItem } from './types';
+import {
+  PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, SHIPPING_STATUS_CONFIG,
+  formatCurrency, formatDate, formatDateTime, isLowStock, isOutOfStock, calculateMargin
+} from './types';
+
+// Composants tabs
+import {
+  ProductInfoTab, ProductStockTab, ProductDocumentsTab, ProductHistoryTab, ProductIATab,
+  OrderInfoTab, OrderItemsTab, OrderShippingTab, OrderDocumentsTab, OrderHistoryTab, OrderIATab
+} from './components';
+
 // ============================================================================
-// TYPES
+// TYPES LOCAUX (extensions pour compatibilite)
 // ============================================================================
-
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  description?: string;
-  price: number;
-  compare_price?: number;
-  cost?: number;
-  stock: number;
-  status: 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
-  category_id?: string;
-  category_name?: string;
-  currency: string;
-  image_url?: string;
-  weight?: number;
-  is_featured: boolean;
-  created_at: string;
-}
-
-interface Order {
-  id: string;
-  number: string;
-  customer_id?: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone?: string;
-  shipping_address?: string;
-  billing_address?: string;
-  status: OrderStatus;
-  payment_status: PaymentStatus;
-  subtotal: number;
-  shipping_cost: number;
-  tax: number;
-  total: number;
-  currency: string;
-  items: OrderItem[];
-  tracking_number?: string;
-  notes?: string;
-  created_at: string;
-}
-
-type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
-type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
-
-interface OrderItem {
-  product_id: string;
-  product_name: string;
-  sku: string;
-  quantity: number;
-  unit_price: number;
-  total: number;
-}
-
-interface Category {
-  id: string;
-  code: string;
-  name: string;
-  parent_id?: string;
-  products_count: number;
-  is_active: boolean;
-}
-
-interface Shipping {
-  id: string;
-  order_id: string;
-  order_number: string;
-  carrier: string;
-  tracking_number: string;
-  status: 'PENDING' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'RETURNED';
-  estimated_delivery?: string;
-  shipped_at?: string;
-  delivered_at?: string;
-}
 
 interface EcommerceStats {
   total_products: number;
@@ -104,64 +55,42 @@ interface EcommerceStats {
 }
 
 // ============================================================================
-// CONSTANTES
+// CONSTANTES LOCALES
 // ============================================================================
 
 const PRODUCT_STATUS = [
   { value: 'ACTIVE', label: 'Actif' },
   { value: 'DRAFT', label: 'Brouillon' },
-  { value: 'ARCHIVED', label: 'Archivé' }
+  { value: 'ARCHIVED', label: 'Archive' }
 ];
 
 const ORDER_STATUS = [
   { value: 'PENDING', label: 'En attente' },
-  { value: 'CONFIRMED', label: 'Confirmée' },
-  { value: 'PROCESSING', label: 'En préparation' },
-  { value: 'SHIPPED', label: 'Expédiée' },
-  { value: 'DELIVERED', label: 'Livrée' },
-  { value: 'CANCELLED', label: 'Annulée' },
-  { value: 'REFUNDED', label: 'Remboursée' }
+  { value: 'CONFIRMED', label: 'Confirmee' },
+  { value: 'PROCESSING', label: 'En preparation' },
+  { value: 'SHIPPED', label: 'Expediee' },
+  { value: 'DELIVERED', label: 'Livree' },
+  { value: 'CANCELLED', label: 'Annulee' },
+  { value: 'REFUNDED', label: 'Remboursee' }
 ];
 
 const PAYMENT_STATUS = [
   { value: 'PENDING', label: 'En attente' },
-  { value: 'PAID', label: 'Payé' },
-  { value: 'FAILED', label: 'Échoué' },
-  { value: 'REFUNDED', label: 'Remboursé' }
+  { value: 'PAID', label: 'Paye' },
+  { value: 'FAILED', label: 'Echoue' },
+  { value: 'REFUNDED', label: 'Rembourse' }
 ];
 
 const SHIPPING_STATUS = [
   { value: 'PENDING', label: 'En attente' },
-  { value: 'PICKED_UP', label: 'Enlevé' },
+  { value: 'PICKED_UP', label: 'Enleve' },
   { value: 'IN_TRANSIT', label: 'En transit' },
-  { value: 'DELIVERED', label: 'Livré' },
-  { value: 'RETURNED', label: 'Retourné' }
+  { value: 'DELIVERED', label: 'Livre' },
+  { value: 'RETURNED', label: 'Retourne' }
 ];
 
-const ORDER_STATUS_COLORS: Record<string, string> = {
-  PENDING: 'orange', CONFIRMED: 'blue', PROCESSING: 'blue',
-  SHIPPED: 'purple', DELIVERED: 'green', CANCELLED: 'red', REFUNDED: 'gray'
-};
-
-const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  PENDING: 'orange', PAID: 'green', FAILED: 'red', REFUNDED: 'gray'
-};
-
 // ============================================================================
-// HELPERS
-// ============================================================================
-
-const formatCurrency = (amount: number, currency = 'EUR'): string =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-
-const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('fr-FR');
-
-const formatDateTime = (date: string): string =>
-  new Date(date).toLocaleString('fr-FR');
-
-// ============================================================================
-// COMPOSANTS UI
+// COMPOSANTS UI LOCAUX
 // ============================================================================
 
 const Badge: React.FC<{ color: string; children: React.ReactNode }> = ({ color, children }) => (
@@ -214,6 +143,17 @@ const useProducts = (filters?: { status?: string; category_id?: string }) => {
   });
 };
 
+const useProduct = (id: string) => {
+  return useQuery({
+    queryKey: ['ecommerce', 'product', id],
+    queryFn: async () => {
+      const response = await api.get<Product>(`/v1/ecommerce/products/${id}`);
+      return response.data;
+    },
+    enabled: !!id
+  });
+};
+
 const useOrders = (filters?: { status?: string; payment_status?: string }) => {
   return useQuery({
     queryKey: ['ecommerce', 'orders', filters],
@@ -225,6 +165,17 @@ const useOrders = (filters?: { status?: string; payment_status?: string }) => {
       const data = response.data;
       return Array.isArray(data) ? data : data.items || [];
     }
+  });
+};
+
+const useOrder = (id: string) => {
+  return useQuery({
+    queryKey: ['ecommerce', 'order', id],
+    queryFn: async () => {
+      const response = await api.get<Order>(`/v1/ecommerce/orders/${id}`);
+      return response.data;
+    },
+    enabled: !!id
   });
 };
 
@@ -264,10 +215,229 @@ const useUpdateOrderStatus = () => {
 };
 
 // ============================================================================
-// VUES
+// DETAIL VIEWS (BaseViewStandard)
+// ============================================================================
+
+/**
+ * ProductDetailView - Vue detail produit avec BaseViewStandard
+ */
+const ProductDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: product, isLoading, error } = useProduct(id || '');
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading">
+        <RefreshCw className="azals-spin" size={32} />
+        <p>Chargement du produit...</p>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="azals-error">
+        <p>Erreur lors du chargement du produit</p>
+        <Button onClick={() => navigate('/ecommerce')}>Retour</Button>
+      </div>
+    );
+  }
+
+  const statusConfig = PRODUCT_STATUS_CONFIG[product.status];
+  const statusColorMap: Record<string, SemanticColor> = {
+    green: 'green', orange: 'orange', gray: 'gray', red: 'red', blue: 'blue', purple: 'purple'
+  };
+
+  const lowStock = isLowStock(product);
+  const outStock = isOutOfStock(product);
+  const margin = product.cost ? calculateMargin(product.price, product.cost) : null;
+
+  // Tabs
+  const tabs: TabDefinition<Product>[] = [
+    { id: 'info', label: 'Informations', icon: <Package size={16} />, component: ProductInfoTab },
+    { id: 'stock', label: 'Stock', icon: <Tag size={16} />, badge: outStock ? 1 : lowStock ? 1 : undefined, component: ProductStockTab },
+    { id: 'documents', label: 'Documents', icon: <FileText size={16} />, component: ProductDocumentsTab },
+    { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: ProductHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: ProductIATab }
+  ];
+
+  // Info bar
+  const infoBarItems: InfoBarItem[] = [
+    { id: 'status', label: 'Statut', value: statusConfig.label, valueColor: statusColorMap[statusConfig.color] || 'gray' },
+    { id: 'stock', label: 'Stock', value: String(product.stock), valueColor: outStock ? 'red' : lowStock ? 'orange' : 'green' },
+    { id: 'price', label: 'Prix', value: formatCurrency(product.price, product.currency), valueColor: 'blue' },
+    { id: 'margin', label: 'Marge', value: margin !== null ? `${margin.toFixed(0)}%` : '-', valueColor: margin && margin >= 30 ? 'green' : margin && margin >= 15 ? 'orange' : 'gray' }
+  ];
+
+  // Sidebar
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'identification',
+      title: 'Identification',
+      items: [
+        { id: 'sku', label: 'SKU', value: product.sku },
+        { id: 'category', label: 'Categorie', value: product.category_name || '-' },
+        { id: 'barcode', label: 'Code-barres', value: product.barcode || '-' }
+      ]
+    },
+    {
+      id: 'tarification',
+      title: 'Tarification',
+      items: [
+        { id: 'price', label: 'Prix vente', value: formatCurrency(product.price, product.currency) },
+        { id: 'cost', label: 'Prix achat', value: product.cost ? formatCurrency(product.cost, product.currency) : '-' },
+        { id: 'compare', label: 'Prix barre', value: product.compare_price ? formatCurrency(product.compare_price, product.currency) : '-' }
+      ]
+    },
+    {
+      id: 'stock',
+      title: 'Stock',
+      items: [
+        { id: 'qty', label: 'Quantite', value: String(product.stock), highlight: outStock || lowStock },
+        { id: 'featured', label: 'Vedette', value: product.is_featured ? 'Oui' : 'Non' }
+      ]
+    }
+  ];
+
+  // Actions
+  const headerActions: ActionDefinition[] = [
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost', onClick: () => navigate('/ecommerce') },
+    { id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' }
+  ];
+
+  return (
+    <BaseViewStandard<Product>
+      title={product.name}
+      subtitle={`SKU: ${product.sku}`}
+      status={{ label: statusConfig.label, color: statusColorMap[statusConfig.color] || 'gray' }}
+      data={product}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
+/**
+ * OrderDetailView - Vue detail commande avec BaseViewStandard
+ */
+const OrderDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: order, isLoading, error } = useOrder(id || '');
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading">
+        <RefreshCw className="azals-spin" size={32} />
+        <p>Chargement de la commande...</p>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="azals-error">
+        <p>Erreur lors du chargement de la commande</p>
+        <Button onClick={() => navigate('/ecommerce')}>Retour</Button>
+      </div>
+    );
+  }
+
+  const statusConfig = ORDER_STATUS_CONFIG[order.status];
+  const paymentConfig = PAYMENT_STATUS_CONFIG[order.payment_status];
+  const statusColorMap: Record<string, SemanticColor> = {
+    green: 'green', orange: 'orange', gray: 'gray', red: 'red', blue: 'blue', purple: 'purple'
+  };
+
+  // Tabs
+  const tabs: TabDefinition<Order>[] = [
+    { id: 'info', label: 'Informations', icon: <ShoppingCart size={16} />, component: OrderInfoTab },
+    { id: 'items', label: 'Articles', icon: <Package size={16} />, badge: order.items.length, component: OrderItemsTab },
+    { id: 'shipping', label: 'Expedition', icon: <Truck size={16} />, component: OrderShippingTab },
+    { id: 'documents', label: 'Documents', icon: <FileText size={16} />, component: OrderDocumentsTab },
+    { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: OrderHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: OrderIATab }
+  ];
+
+  // Info bar
+  const infoBarItems: InfoBarItem[] = [
+    { id: 'status', label: 'Statut', value: statusConfig.label, valueColor: statusColorMap[statusConfig.color] || 'gray' },
+    { id: 'payment', label: 'Paiement', value: paymentConfig.label, valueColor: statusColorMap[paymentConfig.color] || 'gray' },
+    { id: 'total', label: 'Total', value: formatCurrency(order.total, order.currency), valueColor: 'blue' },
+    { id: 'items', label: 'Articles', value: String(order.items.length), valueColor: 'gray' }
+  ];
+
+  // Sidebar
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'commande',
+      title: 'Commande',
+      items: [
+        { id: 'number', label: 'Numero', value: order.number },
+        { id: 'date', label: 'Date', value: formatDateTime(order.created_at) },
+        { id: 'source', label: 'Source', value: order.source || '-' }
+      ]
+    },
+    {
+      id: 'client',
+      title: 'Client',
+      items: [
+        { id: 'name', label: 'Nom', value: order.customer_name },
+        { id: 'email', label: 'Email', value: order.customer_email },
+        { id: 'phone', label: 'Telephone', value: order.customer_phone || '-' }
+      ]
+    },
+    {
+      id: 'montants',
+      title: 'Montants',
+      items: [
+        { id: 'subtotal', label: 'Sous-total', value: formatCurrency(order.subtotal, order.currency) },
+        { id: 'shipping', label: 'Livraison', value: formatCurrency(order.shipping_cost, order.currency) },
+        { id: 'tax', label: 'TVA', value: formatCurrency(order.tax, order.currency) },
+        { id: 'total', label: 'Total TTC', value: formatCurrency(order.total, order.currency), highlight: true }
+      ]
+    },
+    {
+      id: 'expedition',
+      title: 'Expedition',
+      items: [
+        { id: 'tracking', label: 'N° suivi', value: order.tracking_number || '-' },
+        { id: 'carrier', label: 'Transporteur', value: order.carrier || '-' }
+      ]
+    }
+  ];
+
+  // Actions
+  const headerActions: ActionDefinition[] = [
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost', onClick: () => navigate('/ecommerce') },
+    { id: 'print', label: 'Imprimer', icon: <Printer size={16} />, variant: 'secondary' }
+  ];
+
+  return (
+    <BaseViewStandard<Order>
+      title={`Commande ${order.number}`}
+      subtitle={`${order.customer_name} - ${formatDate(order.created_at)}`}
+      status={{ label: statusConfig.label, color: statusColorMap[statusConfig.color] || 'gray' }}
+      data={order}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
+// ============================================================================
+// LIST VIEWS
 // ============================================================================
 
 const ProductsView: React.FC = () => {
+  const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const { data: products = [], isLoading, refetch } = useProducts({
@@ -277,9 +447,21 @@ const ProductsView: React.FC = () => {
   const { data: categories = [] } = useCategories();
 
   const columns: TableColumn<Product>[] = [
-    { id: 'sku', header: 'SKU', accessor: 'sku', render: (v) => <code className="font-mono text-sm">{v as string}</code> },
+    {
+      id: 'sku',
+      header: 'SKU',
+      accessor: 'sku',
+      render: (v, row) => (
+        <button
+          className="font-mono text-sm text-primary hover:underline"
+          onClick={() => navigate(`/ecommerce/products/${row.id}`)}
+        >
+          {v as string}
+        </button>
+      )
+    },
     { id: 'name', header: 'Produit', accessor: 'name' },
-    { id: 'category_name', header: 'Catégorie', accessor: 'category_name', render: (v) => (v as string) || '-' },
+    { id: 'category_name', header: 'Categorie', accessor: 'category_name', render: (v) => (v as string) || '-' },
     { id: 'price', header: 'Prix', accessor: 'price', align: 'right', render: (v, row) => formatCurrency(v as number, row.currency) },
     { id: 'stock', header: 'Stock', accessor: 'stock', align: 'right', render: (v) => {
       const stock = v as number;
@@ -291,7 +473,10 @@ const ProductsView: React.FC = () => {
       const color = status === 'ACTIVE' ? 'green' : status === 'DRAFT' ? 'orange' : 'gray';
       return <Badge color={color}>{info?.label || status}</Badge>;
     }},
-    { id: 'is_featured', header: 'Vedette', accessor: 'is_featured', render: (v) => (v as boolean) ? <Badge color="purple">Oui</Badge> : '-' }
+    { id: 'is_featured', header: 'Vedette', accessor: 'is_featured', render: (v) => (v as boolean) ? <Badge color="purple">Oui</Badge> : '-' },
+    { id: 'actions', header: '', accessor: 'id', render: (_, row) => (
+      <Button variant="ghost" size="sm" onClick={() => navigate(`/ecommerce/products/${row.id}`)}>Detail</Button>
+    )}
   ];
 
   return (
@@ -300,8 +485,8 @@ const ProductsView: React.FC = () => {
         <Select
           value={filterCategory}
           onChange={(v) => setFilterCategory(v)}
-          options={[{ value: '', label: 'Toutes catégories' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
-          placeholder="Catégorie"
+          options={[{ value: '', label: 'Toutes categories' }, ...categories.map(c => ({ value: c.id, label: c.name }))]}
+          placeholder="Categorie"
         />
         <Select
           value={filterStatus}
@@ -316,108 +501,65 @@ const ProductsView: React.FC = () => {
 };
 
 const OrdersView: React.FC = () => {
+  const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterPayment, setFilterPayment] = useState<string>('');
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const { data: orders = [], isLoading, refetch } = useOrders({
     status: filterStatus || undefined,
     payment_status: filterPayment || undefined
   });
-  const updateStatus = useUpdateOrderStatus();
 
   const columns: TableColumn<Order>[] = [
-    { id: 'number', header: 'N° Commande', accessor: 'number', render: (v) => <code className="font-mono text-sm">{v as string}</code> },
+    {
+      id: 'number',
+      header: 'N° Commande',
+      accessor: 'number',
+      render: (v, row) => (
+        <button
+          className="font-mono text-sm text-primary hover:underline"
+          onClick={() => navigate(`/ecommerce/orders/${row.id}`)}
+        >
+          {v as string}
+        </button>
+      )
+    },
     { id: 'customer_name', header: 'Client', accessor: 'customer_name' },
     { id: 'created_at', header: 'Date', accessor: 'created_at', render: (v) => formatDateTime(v as string) },
     { id: 'items', header: 'Articles', accessor: 'items', render: (v) => <Badge color="blue">{(v as OrderItem[])?.length || 0}</Badge> },
     { id: 'total', header: 'Total', accessor: 'total', align: 'right', render: (v, row) => formatCurrency(v as number, row.currency) },
     { id: 'payment_status', header: 'Paiement', accessor: 'payment_status', render: (v) => {
       const status = v as string;
-      const info = PAYMENT_STATUS.find(s => s.value === status);
-      return <Badge color={PAYMENT_STATUS_COLORS[status] || 'gray'}>{info?.label || status}</Badge>;
+      const config = PAYMENT_STATUS_CONFIG[status as keyof typeof PAYMENT_STATUS_CONFIG];
+      return <Badge color={config?.color || 'gray'}>{config?.label || status}</Badge>;
     }},
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const status = v as string;
-      const info = ORDER_STATUS.find(s => s.value === status);
-      return <Badge color={ORDER_STATUS_COLORS[status] || 'gray'}>{info?.label || status}</Badge>;
+      const config = ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG];
+      return <Badge color={config?.color || 'gray'}>{config?.label || status}</Badge>;
     }},
-    { id: 'actions', header: 'Actions', accessor: (row) => row, render: (_, row) => (
-      <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(row)}>Détail</Button>
+    { id: 'actions', header: '', accessor: 'id', render: (_, row) => (
+      <Button variant="ghost" size="sm" onClick={() => navigate(`/ecommerce/orders/${row.id}`)}>Detail</Button>
     )}
   ];
 
   return (
-    <>
-      <Card title="Commandes">
-        <div className="azals-filter-bar mb-4">
-          <Select
-            value={filterPayment}
-            onChange={(v) => setFilterPayment(v)}
-            options={[{ value: '', label: 'Tous paiements' }, ...PAYMENT_STATUS]}
-            placeholder="Paiement"
-          />
-          <Select
-            value={filterStatus}
-            onChange={(v) => setFilterStatus(v)}
-            options={[{ value: '', label: 'Tous statuts' }, ...ORDER_STATUS]}
-            placeholder="Statut"
-          />
-        </div>
-        <DataTable columns={columns} data={orders} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune commande" />
-      </Card>
-
-      <Modal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={`Commande ${selectedOrder?.number}`} size="lg">
-        {selectedOrder && (
-          <div className="space-y-4">
-            <Grid cols={2}>
-              <div>
-                <h4 className="font-semibold mb-2">Client</h4>
-                <p>{selectedOrder.customer_name}</p>
-                <p className="text-sm text-muted">{selectedOrder.customer_email}</p>
-                {selectedOrder.customer_phone && <p className="text-sm text-muted">{selectedOrder.customer_phone}</p>}
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Adresse de livraison</h4>
-                <p className="text-sm">{selectedOrder.shipping_address || 'Non renseignée'}</p>
-              </div>
-            </Grid>
-
-            <div>
-              <h4 className="font-semibold mb-2">Articles</h4>
-              <table className="azals-table w-full text-sm">
-                <thead><tr><th>Produit</th><th className="text-right">Qté</th><th className="text-right">Prix unit.</th><th className="text-right">Total</th></tr></thead>
-                <tbody>
-                  {selectedOrder.items?.map((item, i) => (
-                    <tr key={i}><td>{item.product_name}</td><td className="text-right">{item.quantity}</td><td className="text-right">{formatCurrency(item.unit_price)}</td><td className="text-right">{formatCurrency(item.total)}</td></tr>
-                  ))}
-                </tbody>
-                <tfoot className="font-semibold">
-                  <tr><td colSpan={3} className="text-right">Sous-total</td><td className="text-right">{formatCurrency(selectedOrder.subtotal)}</td></tr>
-                  <tr><td colSpan={3} className="text-right">Livraison</td><td className="text-right">{formatCurrency(selectedOrder.shipping_cost)}</td></tr>
-                  <tr><td colSpan={3} className="text-right">TVA</td><td className="text-right">{formatCurrency(selectedOrder.tax)}</td></tr>
-                  <tr className="text-lg"><td colSpan={3} className="text-right">Total</td><td className="text-right">{formatCurrency(selectedOrder.total)}</td></tr>
-                </tfoot>
-              </table>
-            </div>
-
-            <div className="flex justify-between items-center pt-4 border-t">
-              <div className="flex gap-2 items-center">
-                <span className="font-semibold">Changer statut:</span>
-                <Select
-                  value={selectedOrder.status}
-                  onChange={(v) => {
-                    updateStatus.mutate({ id: selectedOrder.id, status: v });
-                    setSelectedOrder({ ...selectedOrder, status: v as OrderStatus });
-                  }}
-                  options={ORDER_STATUS}
-                />
-              </div>
-              <Button onClick={() => setSelectedOrder(null)}>Fermer</Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </>
+    <Card title="Commandes">
+      <div className="azals-filter-bar mb-4">
+        <Select
+          value={filterPayment}
+          onChange={(v) => setFilterPayment(v)}
+          options={[{ value: '', label: 'Tous paiements' }, ...PAYMENT_STATUS]}
+          placeholder="Paiement"
+        />
+        <Select
+          value={filterStatus}
+          onChange={(v) => setFilterStatus(v)}
+          options={[{ value: '', label: 'Tous statuts' }, ...ORDER_STATUS]}
+          placeholder="Statut"
+        />
+      </div>
+      <DataTable columns={columns} data={orders} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune commande" />
+    </Card>
   );
 };
 
@@ -432,8 +574,8 @@ const CategoriesView: React.FC = () => {
   ];
 
   return (
-    <Card title="Catégories" actions={<Button>Nouvelle catégorie</Button>}>
-      <DataTable columns={columns} data={categories} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune catégorie" />
+    <Card title="Categories" actions={<Button>Nouvelle categorie</Button>}>
+      <DataTable columns={columns} data={categories} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune categorie" />
     </Card>
   );
 };
@@ -448,17 +590,16 @@ const ShippingsView: React.FC = () => {
     { id: 'tracking_number', header: 'N° Suivi', accessor: 'tracking_number', render: (v) => <code className="font-mono text-sm">{(v as string) || '-'}</code> },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const status = v as string;
-      const info = SHIPPING_STATUS.find(s => s.value === status);
-      const colors: Record<string, string> = { PENDING: 'orange', PICKED_UP: 'blue', IN_TRANSIT: 'purple', DELIVERED: 'green', RETURNED: 'red' };
-      return <Badge color={colors[status] || 'gray'}>{info?.label || status}</Badge>;
+      const config = SHIPPING_STATUS_CONFIG[status as keyof typeof SHIPPING_STATUS_CONFIG];
+      return <Badge color={config?.color || 'gray'}>{config?.label || status}</Badge>;
     }},
-    { id: 'estimated_delivery', header: 'Livraison prévue', accessor: 'estimated_delivery', render: (v) => (v as string) ? formatDate(v as string) : '-' },
-    { id: 'shipped_at', header: 'Expédié le', accessor: 'shipped_at', render: (v) => (v as string) ? formatDate(v as string) : '-' },
-    { id: 'delivered_at', header: 'Livré le', accessor: 'delivered_at', render: (v) => (v as string) ? formatDate(v as string) : '-' }
+    { id: 'estimated_delivery', header: 'Livraison prevue', accessor: 'estimated_delivery', render: (v) => (v as string) ? formatDate(v as string) : '-' },
+    { id: 'shipped_at', header: 'Expedie le', accessor: 'shipped_at', render: (v) => (v as string) ? formatDate(v as string) : '-' },
+    { id: 'delivered_at', header: 'Livre le', accessor: 'delivered_at', render: (v) => (v as string) ? formatDate(v as string) : '-' }
   ];
 
   return (
-    <Card title="Expéditions">
+    <Card title="Expeditions">
       <div className="azals-filter-bar mb-4">
         <Select
           value={filterStatus}
@@ -467,27 +608,27 @@ const ShippingsView: React.FC = () => {
           placeholder="Statut"
         />
       </div>
-      <DataTable columns={columns} data={shippings} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune expédition" />
+      <DataTable columns={columns} data={shippings} keyField="id" isLoading={isLoading} onRefresh={refetch} emptyMessage="Aucune expedition" />
     </Card>
   );
 };
 
 // ============================================================================
-// MODULE PRINCIPAL
+// DASHBOARD
 // ============================================================================
 
-type View = 'dashboard' | 'products' | 'orders' | 'categories' | 'shippings';
+type DashboardView = 'dashboard' | 'products' | 'orders' | 'categories' | 'shippings';
 
-const EcommerceModule: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+const EcommerceDashboard: React.FC = () => {
+  const [currentView, setCurrentView] = useState<DashboardView>('dashboard');
   const { data: stats } = useEcommerceStats();
 
   const tabs = [
     { id: 'dashboard', label: 'Vue d\'ensemble' },
     { id: 'products', label: 'Produits' },
     { id: 'orders', label: 'Commandes' },
-    { id: 'categories', label: 'Catégories' },
-    { id: 'shippings', label: 'Expéditions' }
+    { id: 'categories', label: 'Categories' },
+    { id: 'shippings', label: 'Expeditions' }
   ];
 
   const renderContent = () => {
@@ -515,11 +656,23 @@ const EcommerceModule: React.FC = () => {
   };
 
   return (
-    <PageWrapper title="E-commerce" subtitle="Vente en ligne - Produits, commandes et expéditions">
-      <TabNav tabs={tabs} activeTab={currentView} onChange={(id) => setCurrentView(id as View)} />
+    <PageWrapper title="E-commerce" subtitle="Vente en ligne - Produits, commandes et expeditions">
+      <TabNav tabs={tabs} activeTab={currentView} onChange={(id) => setCurrentView(id as DashboardView)} />
       <div className="mt-4">{renderContent()}</div>
     </PageWrapper>
   );
 };
 
-export default EcommerceModule;
+// ============================================================================
+// MODULE PRINCIPAL AVEC ROUTES
+// ============================================================================
+
+const EcommerceRoutes: React.FC = () => (
+  <Routes>
+    <Route index element={<EcommerceDashboard />} />
+    <Route path="products/:id" element={<ProductDetailView />} />
+    <Route path="orders/:id" element={<OrderDetailView />} />
+  </Routes>
+);
+
+export default EcommerceRoutes;

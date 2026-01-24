@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.external.geolocation.reverse_geocode",
+  "name": "Géocodage inverse (lat/lng vers adresse)",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Géocodage inverse (lat/lng vers adresse)",
+  "inputs": {
+    "latitude": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "longitude": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "address": {
+      "type": "string",
+      "description": ""
+    },
+    "city": {
+      "type": "string",
+      "description": ""
+    },
+    "country": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "geolocation",
+    "address"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

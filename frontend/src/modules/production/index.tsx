@@ -1,3 +1,8 @@
+/**
+ * AZALSCORE Module - Production
+ * Gestion de la production et fabrication
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
@@ -6,8 +11,29 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import type { TableColumn } from '@/types';
-import { Settings, ClipboardList, CheckCircle, BarChart3, Factory, Clock } from 'lucide-react';
+import {
+  Settings, ClipboardList, CheckCircle, BarChart3, Factory, Clock,
+  Package, Layers, FileText, History, Sparkles, ArrowLeft,
+  Play, Pause, Edit, X, Eye
+} from 'lucide-react';
+
+import type {
+  WorkCenter, BillOfMaterials, BOMLine, BOMOperation,
+  ProductionOrder, WorkOrder, ProductionDashboard
+} from './types';
+import {
+  formatDate, formatCurrency, formatDuration, formatQuantity, formatPercent,
+  WORK_CENTER_TYPE_CONFIG, BOM_STATUS_CONFIG, ORDER_STATUS_CONFIG,
+  ORDER_PRIORITY_CONFIG, WORK_ORDER_STATUS_CONFIG,
+  isLate, isUrgent, getCompletionRate, isDraft, canConfirm, canStart, canComplete
+} from './types';
+import {
+  OrderInfoTab, OrderOperationsTab, OrderMaterialsTab,
+  OrderDocsTab, OrderHistoryTab, OrderIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -41,93 +67,6 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
     ))}
   </nav>
 );
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface WorkCenter {
-  id: string;
-  code: string;
-  name: string;
-  type: 'MACHINE' | 'WORKSTATION' | 'LINE' | 'AREA';
-  capacity: number;
-  efficiency: number;
-  cost_per_hour: number;
-  is_active: boolean;
-}
-
-interface BillOfMaterials {
-  id: string;
-  code: string;
-  product_id: string;
-  product_name?: string;
-  version: string;
-  status: 'DRAFT' | 'ACTIVE' | 'OBSOLETE';
-  lines: BOMLine[];
-  operations: BOMOperation[];
-  created_at: string;
-}
-
-interface BOMLine {
-  id: string;
-  component_id: string;
-  component_name?: string;
-  quantity: number;
-  unit: string;
-  scrap_rate: number;
-}
-
-interface BOMOperation {
-  id: string;
-  sequence: number;
-  work_center_id: string;
-  work_center_name?: string;
-  name: string;
-  duration: number;
-  setup_time: number;
-}
-
-interface ProductionOrder {
-  id: string;
-  number: string;
-  product_id: string;
-  product_name?: string;
-  bom_id: string;
-  quantity_planned: number;
-  quantity_produced: number;
-  start_date: string;
-  end_date?: string;
-  status: 'DRAFT' | 'CONFIRMED' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  work_orders: WorkOrder[];
-  created_at: string;
-}
-
-interface WorkOrder {
-  id: string;
-  production_order_id: string;
-  operation_id: string;
-  work_center_id: string;
-  work_center_name?: string;
-  sequence: number;
-  name: string;
-  status: 'PENDING' | 'READY' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
-  duration_planned: number;
-  duration_actual: number;
-  start_time?: string;
-  end_time?: string;
-}
-
-interface ProductionDashboard {
-  orders_in_progress: number;
-  orders_planned: number;
-  orders_completed_today: number;
-  efficiency_rate: number;
-  work_centers_active: number;
-  work_centers_total: number;
-  pending_work_orders: number;
-}
 
 // ============================================================================
 // CONSTANTES
@@ -173,22 +112,8 @@ const WORK_ORDER_STATUSES = [
 // HELPERS
 // ============================================================================
 
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
 const getStatusInfo = (statuses: { value: string; label: string; color: string }[], status: string) => {
   return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
-};
-
-const formatDuration = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
 };
 
 const navigateTo = (view: string, params?: Record<string, unknown>) => {
@@ -240,6 +165,16 @@ const useProductionOrders = (filters?: { status?: string; priority?: string }) =
       const response = await api.get<ProductionOrder[] | { items: ProductionOrder[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
+  });
+};
+
+const useProductionOrder = (id: string) => {
+  return useQuery({
+    queryKey: ['production', 'order', id],
+    queryFn: async () => {
+      return api.get<ProductionOrder>(`/v1/production/orders/${id}`).then(r => r.data);
+    },
+    enabled: !!id
   });
 };
 
@@ -306,8 +241,203 @@ const useCompleteOrder = () => {
   });
 };
 
+const useCancelOrder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return api.post(`/v1/production/orders/${id}/cancel`).then(r => r.data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production'] })
+  });
+};
+
 // ============================================================================
-// COMPOSANTS
+// VUE DETAIL - PRODUCTION ORDER
+// ============================================================================
+
+interface ProductionOrderDetailViewProps {
+  orderId: string;
+  onBack: () => void;
+  onEdit?: () => void;
+}
+
+const ProductionOrderDetailView: React.FC<ProductionOrderDetailViewProps> = ({ orderId, onBack, onEdit }) => {
+  const { data: order, isLoading, error } = useProductionOrder(orderId);
+  const confirmOrder = useConfirmOrder();
+  const startOrder = useStartOrder();
+  const completeOrder = useCompleteOrder();
+  const cancelOrder = useCancelOrder();
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading">
+        <div className="azals-loading__spinner" />
+        <p>Chargement de l'ordre de fabrication...</p>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="azals-error">
+        <p>Erreur lors du chargement de l'ordre.</p>
+        <Button onClick={onBack} leftIcon={<ArrowLeft size={16} />}>Retour</Button>
+      </div>
+    );
+  }
+
+  // Configuration des onglets
+  const tabs: TabDefinition<ProductionOrder>[] = [
+    { id: 'info', label: 'Informations', icon: <Factory size={16} />, component: OrderInfoTab },
+    { id: 'operations', label: 'Operations', icon: <Settings size={16} />, badge: order.work_orders?.length, component: OrderOperationsTab },
+    { id: 'materials', label: 'Materiaux', icon: <Layers size={16} />, badge: order.material_consumptions?.length, component: OrderMaterialsTab },
+    { id: 'docs', label: 'Documents', icon: <FileText size={16} />, component: OrderDocsTab },
+    { id: 'history', label: 'Historique', icon: <History size={16} />, component: OrderHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: OrderIATab }
+  ];
+
+  // Configuration InfoBar
+  const statusConfig = ORDER_STATUS_CONFIG[order.status];
+  const priorityConfig = ORDER_PRIORITY_CONFIG[order.priority];
+  const completionRate = getCompletionRate(order);
+
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'product',
+      label: 'Produit',
+      value: order.product_name || order.product_code || '-',
+      icon: <Package size={16} />
+    },
+    {
+      id: 'quantity',
+      label: 'Quantite',
+      value: `${order.quantity_produced} / ${order.quantity_planned}`,
+      icon: <BarChart3 size={16} />
+    },
+    {
+      id: 'progress',
+      label: 'Avancement',
+      value: formatPercent(completionRate),
+      valueColor: completionRate >= 1 ? 'green' : completionRate >= 0.5 ? 'orange' : 'gray'
+    },
+    {
+      id: 'priority',
+      label: 'Priorite',
+      value: priorityConfig.label,
+      valueColor: priorityConfig.color as SemanticColor
+    }
+  ];
+
+  // Configuration Sidebar
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'summary',
+      title: 'Resume',
+      items: [
+        { id: 'status', label: 'Statut', value: statusConfig.label },
+        { id: 'planned', label: 'Qte planifiee', value: formatQuantity(order.quantity_planned, order.unit) },
+        { id: 'produced', label: 'Qte produite', value: formatQuantity(order.quantity_produced, order.unit), highlight: completionRate >= 1 },
+        { id: 'progress', label: 'Avancement', value: formatPercent(completionRate) }
+      ]
+    },
+    {
+      id: 'dates',
+      title: 'Dates',
+      items: [
+        { id: 'start', label: 'Date debut', value: formatDate(order.start_date) },
+        { id: 'due', label: 'Echeance', value: order.due_date ? formatDate(order.due_date) : '-' },
+        ...(order.actual_end ? [{ id: 'end', label: 'Fin reelle', value: formatDate(order.actual_end) }] : [])
+      ]
+    },
+    {
+      id: 'costs',
+      title: 'Couts',
+      items: [
+        { id: 'planned-cost', label: 'Cout prevu', value: order.cost_planned ? formatCurrency(order.cost_planned) : '-' },
+        { id: 'actual-cost', label: 'Cout reel', value: order.cost_actual ? formatCurrency(order.cost_actual) : '-', format: 'currency' }
+      ]
+    }
+  ];
+
+  // Actions header
+  const headerActions: ActionDefinition[] = [
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost', onClick: onBack },
+    ...(onEdit ? [{ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' as const, onClick: onEdit }] : [])
+  ];
+
+  // Actions primaires
+  const primaryActions: ActionDefinition[] = [];
+
+  if (canConfirm(order)) {
+    primaryActions.push({
+      id: 'confirm',
+      label: 'Confirmer',
+      icon: <CheckCircle size={16} />,
+      variant: 'primary',
+      onClick: () => confirmOrder.mutate(order.id)
+    });
+  }
+
+  if (canStart(order)) {
+    primaryActions.push({
+      id: 'start',
+      label: 'Demarrer',
+      icon: <Play size={16} />,
+      variant: 'primary',
+      onClick: () => startOrder.mutate(order.id)
+    });
+  }
+
+  if (canComplete(order)) {
+    primaryActions.push({
+      id: 'complete',
+      label: 'Terminer',
+      icon: <CheckCircle size={16} />,
+      variant: 'primary',
+      onClick: () => completeOrder.mutate(order.id)
+    });
+  }
+
+  if (isDraft(order)) {
+    primaryActions.push({
+      id: 'cancel',
+      label: 'Annuler',
+      icon: <X size={16} />,
+      variant: 'danger',
+      onClick: () => cancelOrder.mutate(order.id)
+    });
+  }
+
+  // Mapping couleurs
+  const statusColorMap: Record<string, SemanticColor> = {
+    gray: 'gray',
+    blue: 'blue',
+    orange: 'orange',
+    green: 'green',
+    red: 'red'
+  };
+
+  return (
+    <BaseViewStandard<ProductionOrder>
+      title={`OF ${order.number}`}
+      subtitle={order.product_name || order.product_code}
+      status={{
+        label: statusConfig.label,
+        color: statusColorMap[statusConfig.color] || 'gray'
+      }}
+      data={order}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+    />
+  );
+};
+
+// ============================================================================
+// VUES LISTE
 // ============================================================================
 
 const WorkCentersView: React.FC = () => {
@@ -467,7 +597,11 @@ const BOMsView: React.FC = () => {
   );
 };
 
-const ProductionOrdersView: React.FC = () => {
+interface ProductionOrdersViewProps {
+  onSelectOrder: (id: string) => void;
+}
+
+const ProductionOrdersView: React.FC<ProductionOrdersViewProps> = ({ onSelectOrder }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterPriority, setFilterPriority] = useState<string>('');
   const { data: orders = [], isLoading } = useProductionOrders({
@@ -490,7 +624,14 @@ const ProductionOrdersView: React.FC = () => {
   };
 
   const columns: TableColumn<ProductionOrder>[] = [
-    { id: 'number', header: 'N', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
+    { id: 'number', header: 'N', accessor: 'number', render: (v, row) => (
+      <button
+        className="font-mono text-blue-600 hover:underline"
+        onClick={() => onSelectOrder(row.id)}
+      >
+        {v as string}
+      </button>
+    )},
     { id: 'product_name', header: 'Produit', accessor: 'product_name' },
     { id: 'quantity_planned', header: 'Qte planifiee', accessor: 'quantity_planned' },
     { id: 'quantity_produced', header: 'Qte produite', accessor: 'quantity_produced', render: (v, row) => (
@@ -509,6 +650,9 @@ const ProductionOrdersView: React.FC = () => {
     }},
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
       <div className="flex gap-1">
+        <Button size="sm" variant="ghost" onClick={() => onSelectOrder(row.id)}>
+          <Eye size={14} />
+        </Button>
         {row.status === 'DRAFT' && (
           <Button size="sm" onClick={() => confirmOrder.mutate(row.id)}>Confirmer</Button>
         )}
@@ -634,10 +778,11 @@ const WorkOrdersView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'work-centers' | 'boms' | 'orders' | 'work-orders';
+type View = 'dashboard' | 'work-centers' | 'boms' | 'orders' | 'work-orders' | 'order-detail';
 
 const ProductionModule: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const { data: dashboard } = useProductionDashboard();
 
   const tabs = [
@@ -648,6 +793,26 @@ const ProductionModule: React.FC = () => {
     { id: 'work-orders', label: 'Ordres de travail' }
   ];
 
+  const handleSelectOrder = (id: string) => {
+    setSelectedOrderId(id);
+    setCurrentView('order-detail');
+  };
+
+  const handleBackFromDetail = () => {
+    setSelectedOrderId(null);
+    setCurrentView('orders');
+  };
+
+  // Vue detail d'un ordre
+  if (currentView === 'order-detail' && selectedOrderId) {
+    return (
+      <ProductionOrderDetailView
+        orderId={selectedOrderId}
+        onBack={handleBackFromDetail}
+      />
+    );
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case 'work-centers':
@@ -655,7 +820,7 @@ const ProductionModule: React.FC = () => {
       case 'boms':
         return <BOMsView />;
       case 'orders':
-        return <ProductionOrdersView />;
+        return <ProductionOrdersView onSelectOrder={handleSelectOrder} />;
       case 'work-orders':
         return <WorkOrdersView />;
       default:

@@ -1,8 +1,14 @@
 """
 AZALS - Sécurité et Authentification
 Gestion JWT et hashing de mots de passe
+
+SÉCURITÉ:
+- Tokens JWT avec JTI unique pour révocation côté serveur
+- Blacklist distribuée via Redis en production
+- Bcrypt pour hashing des mots de passe
 """
 
+import uuid
 from datetime import datetime, timedelta
 
 import bcrypt
@@ -63,14 +69,18 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
-    Crée un JWT access token.
+    Crée un JWT access token avec JTI unique pour révocation.
 
     Args:
         data: Données à encoder (sub, tenant_id, role)
         expires_delta: Durée de validité personnalisée
 
     Returns:
-        JWT signé
+        JWT signé avec jti unique
+
+    SÉCURITÉ:
+    - Chaque token a un jti (JWT ID) unique
+    - Permet la révocation côté serveur via blacklist
     """
     to_encode = data.copy()
 
@@ -79,24 +89,77 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode.update({"exp": expire})
+    # Ajouter JTI unique pour permettre la révocation
+    jti = str(uuid.uuid4())
+
+    to_encode.update({
+        "exp": expire,
+        "jti": jti,
+        "iat": datetime.utcnow()
+    })
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
 
 
-def decode_access_token(token: str) -> dict | None:
+def decode_access_token(token: str, check_blacklist: bool = True) -> dict | None:
     """
-    Décode et valide un JWT.
+    Décode et valide un JWT, vérifie la blacklist.
 
     Args:
         token: JWT à décoder
+        check_blacklist: Si True, vérifie que le token n'est pas révoqué
 
     Returns:
-        Payload du JWT si valide, None sinon
+        Payload du JWT si valide et non révoqué, None sinon
+
+    SÉCURITÉ:
+    - Vérifie la signature et l'expiration
+    - Vérifie que le token n'est pas dans la blacklist (révoqué)
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        # Vérifier si le token est blacklisté
+        if check_blacklist:
+            jti = payload.get("jti")
+            if jti:
+                from app.core.token_blacklist import is_token_blacklisted
+                if is_token_blacklisted(jti):
+                    return None
+
         return payload
     except JWTError:
         return None
+
+
+def revoke_token(token: str) -> bool:
+    """
+    Révoque un token JWT en l'ajoutant à la blacklist.
+
+    Args:
+        token: JWT à révoquer
+
+    Returns:
+        True si révoqué avec succès, False sinon
+    """
+    try:
+        # Décoder sans vérifier la blacklist (le token peut déjà y être)
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        jti = payload.get("jti")
+        exp = payload.get("exp")
+
+        if not jti or not exp:
+            return False
+
+        # Convertir exp en timestamp si nécessaire
+        if isinstance(exp, datetime):
+            exp_timestamp = exp.timestamp()
+        else:
+            exp_timestamp = float(exp)
+
+        from app.core.token_blacklist import blacklist_token
+        return blacklist_token(jti, exp_timestamp)
+
+    except JWTError:
+        return False

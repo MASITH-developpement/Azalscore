@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_stock_coverage",
+  "name": "Calcule la couverture de stock en jours",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la couverture de stock en jours",
+  "inputs": {
+    "current_stock": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "daily_consumption": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "coverage_days": {
+      "type": "number",
+      "description": ""
+    },
+    "is_sufficient": {
+      "type": "boolean",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "metrics"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -6,7 +7,26 @@ import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select, Input, TextArea } from '@ui/forms';
 import { StatCard, ProgressBar } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition, SemanticColor } from '@ui/standards';
 import type { TableColumn } from '@/types';
+import {
+  ClipboardCheck, AlertTriangle, FileText, Clock, Sparkles,
+  Play, CheckCircle2, ArrowLeft, Edit, Printer
+} from 'lucide-react';
+import type {
+  Audit as AuditType, AuditFinding, AuditDocument, AuditHistoryEntry
+} from './types';
+import {
+  formatDate, formatPercent,
+  AUDIT_TYPE_CONFIG, AUDIT_STATUS_CONFIG,
+  isAuditCompleted, isAuditInProgress, hasCriticalFindings,
+  hasOpenFindings, getAuditScoreColor
+} from './types';
+import {
+  AuditInfoTab, AuditFindingsTab, AuditDocumentsTab,
+  AuditHistoryTab, AuditIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -181,13 +201,7 @@ const STATUS_COLORS: Record<string, string> = {
 // HELPERS
 // ============================================================================
 
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatPercent = (value: number): string => {
-  return `${value.toFixed(0)}%`;
-};
+// formatDate and formatPercent are imported from ./types
 
 // ============================================================================
 // API HOOKS
@@ -270,6 +284,16 @@ const useUpdateGDPRStatus = () => {
   });
 };
 
+const useAudit = (id: string) => {
+  return useQuery({
+    queryKey: ['compliance', 'audits', id],
+    queryFn: async () => {
+      return api.get<AuditType>(`/v1/compliance/audits/${id}`).then(r => r.data);
+    },
+    enabled: !!id
+  });
+};
+
 // ============================================================================
 // COMPOSANTS
 // ============================================================================
@@ -327,6 +351,7 @@ const PoliciesView: React.FC = () => {
 };
 
 const AuditsView: React.FC = () => {
+  const navigate = useNavigate();
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const { data: audits = [], isLoading } = useAudits({
@@ -360,7 +385,9 @@ const AuditsView: React.FC = () => {
         <Badge color={scoreValue >= 80 ? 'green' : scoreValue >= 60 ? 'orange' : 'red'}>{scoreValue}%</Badge>
       ) : '-';
     }},
-    { id: 'actions', header: 'Actions', accessor: 'id', render: () => <Button size="sm" variant="secondary">Detail</Button> }
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (v) => (
+      <Button size="sm" variant="secondary" onClick={() => navigate(`/compliance/audits/${v}`)}>Detail</Button>
+    )}
   ];
 
   return (
@@ -496,6 +523,226 @@ const ConsentsView: React.FC = () => {
 };
 
 // ============================================================================
+// AUDIT DETAIL VIEW
+// ============================================================================
+
+const AuditDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: audit, isLoading, error } = useAudit(id || '');
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="flex items-center justify-center h-64">
+          <div className="azals-spinner" />
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !audit) {
+    return (
+      <PageWrapper title="Erreur">
+        <Card>
+          <div className="text-center py-8">
+            <p className="text-red-600">Audit non trouve</p>
+            <Button variant="secondary" onClick={() => navigate('/compliance')} className="mt-4">
+              <ArrowLeft size={16} className="mr-2" />
+              Retour
+            </Button>
+          </div>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  // Tabs definition
+  const tabs: TabDefinition<AuditType>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <ClipboardCheck size={16} />,
+      component: AuditInfoTab
+    },
+    {
+      id: 'findings',
+      label: 'Constats',
+      icon: <AlertTriangle size={16} />,
+      badge: audit.findings_count > 0 ? audit.findings_count : undefined,
+      component: AuditFindingsTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      component: AuditDocumentsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: AuditHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: AuditIATab
+    }
+  ];
+
+  // Info bar items
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'type',
+      label: 'Type',
+      value: AUDIT_TYPE_CONFIG[audit.type]?.label || audit.type,
+      valueColor: AUDIT_TYPE_CONFIG[audit.type]?.color as 'blue' | 'purple' | 'orange' || 'gray'
+    },
+    {
+      id: 'score',
+      label: 'Score',
+      value: audit.score !== undefined ? formatPercent(audit.score) : '-',
+      valueColor: audit.score !== undefined ? getAuditScoreColor(audit.score) as 'green' | 'orange' | 'red' : 'gray'
+    },
+    {
+      id: 'findings',
+      label: 'Constats',
+      value: String(audit.findings_count),
+      valueColor: audit.findings_count > 0 ? 'orange' : 'green'
+    },
+    {
+      id: 'critical',
+      label: 'Critiques',
+      value: String(audit.critical_findings),
+      valueColor: audit.critical_findings > 0 ? 'red' : 'green'
+    }
+  ];
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'dates',
+      title: 'Calendrier',
+      items: [
+        { id: 'planned', label: 'Date prevue', value: audit.planned_date ? formatDate(audit.planned_date) : '-' },
+        { id: 'start', label: 'Debut', value: audit.start_date ? formatDate(audit.start_date) : '-' },
+        { id: 'end', label: 'Fin', value: audit.end_date ? formatDate(audit.end_date) : '-' },
+        { id: 'completed', label: 'Cloture', value: audit.completed_date ? formatDate(audit.completed_date) : '-' }
+      ]
+    },
+    {
+      id: 'results',
+      title: 'Resultats',
+      items: [
+        {
+          id: 'score',
+          label: 'Score global',
+          value: audit.score !== undefined ? formatPercent(audit.score) : '-',
+          highlight: audit.score !== undefined && audit.score >= 80
+        },
+        { id: 'total_findings', label: 'Total constats', value: String(audit.findings_count) },
+        {
+          id: 'critical_findings',
+          label: 'Constats critiques',
+          value: String(audit.critical_findings),
+          highlight: audit.critical_findings === 0
+        }
+      ]
+    },
+    {
+      id: 'team',
+      title: 'Equipe',
+      items: [
+        { id: 'auditor', label: 'Auditeur', value: audit.auditor || audit.lead_auditor || '-' },
+        { id: 'company', label: 'Cabinet', value: audit.auditor_company || '-' }
+      ]
+    }
+  ];
+
+  // Header actions
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      variant: 'secondary',
+      onClick: () => navigate('/compliance')
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit size={16} />,
+      variant: 'secondary',
+      onClick: () => console.log('Edit audit')
+    },
+    {
+      id: 'print',
+      label: 'Imprimer',
+      icon: <Printer size={16} />,
+      variant: 'secondary',
+      onClick: () => window.print()
+    }
+  ];
+
+  // Primary actions (footer - right side)
+  const primaryActions: ActionDefinition[] = [];
+
+  if (audit.status === 'PLANNED') {
+    primaryActions.push({
+      id: 'start',
+      label: 'Demarrer l\'audit',
+      icon: <Play size={16} />,
+      variant: 'primary',
+      onClick: () => console.log('Start audit')
+    });
+  }
+
+  if (audit.status === 'IN_PROGRESS') {
+    primaryActions.push({
+      id: 'complete',
+      label: 'Cloturer l\'audit',
+      icon: <CheckCircle2 size={16} />,
+      variant: 'success',
+      onClick: () => console.log('Complete audit')
+    });
+  }
+
+  // Secondary actions (footer - left side)
+  const secondaryActions: ActionDefinition[] = [];
+
+  if (audit.report_url) {
+    secondaryActions.push({
+      id: 'report',
+      label: 'Voir le rapport',
+      icon: <FileText size={16} />,
+      variant: 'secondary',
+      onClick: () => { window.open(audit.report_url, '_blank'); }
+    });
+  }
+
+  return (
+    <BaseViewStandard<AuditType>
+      title={audit.name}
+      subtitle={audit.code}
+      status={{
+        label: AUDIT_STATUS_CONFIG[audit.status]?.label || audit.status,
+        color: (AUDIT_STATUS_CONFIG[audit.status]?.color || 'gray') as SemanticColor
+      }}
+      data={audit}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+      secondaryActions={secondaryActions}
+    />
+  );
+};
+
+// ============================================================================
 // MODULE PRINCIPAL
 // ============================================================================
 
@@ -618,4 +865,17 @@ const ComplianceModule: React.FC = () => {
   );
 };
 
-export default ComplianceModule;
+// ============================================================================
+// ROUTES WRAPPER
+// ============================================================================
+
+const ComplianceRoutes: React.FC = () => {
+  return (
+    <Routes>
+      <Route index element={<ComplianceModule />} />
+      <Route path="audits/:id" element={<AuditDetailView />} />
+    </Routes>
+  );
+};
+
+export default ComplianceRoutes;

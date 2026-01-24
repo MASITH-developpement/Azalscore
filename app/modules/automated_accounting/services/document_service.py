@@ -151,49 +151,35 @@ class DocumentService:
         if not file_path:
             raise ValueError("No file path available for processing")
 
-        try:
-            # 1. OCR - Extraction du texte
-            logger.info(f"Starting OCR for document {document_id}")
-            self.ocr_service.process_document(document_id, file_path)
+        # 1. OCR - Extraction du texte
+        logger.info(f"Starting OCR for document {document_id}")
+        self.ocr_service.process_document(document_id, file_path)
 
-            # Recharge le document après OCR
-            self.db.refresh(document)
+        # Recharge le document après OCR
+        self.db.refresh(document)
 
-            # 2. Classification IA
-            logger.info(f"Starting AI classification for document {document_id}")
-            self.ai_service.classify_document(document_id)
+        # 2. Classification IA
+        logger.info(f"Starting AI classification for document {document_id}")
+        self.ai_service.classify_document(document_id)
 
-            # Recharge après classification
-            self.db.refresh(document)
+        # Recharge après classification
+        self.db.refresh(document)
 
-            # 3. Génération de l'écriture comptable
-            logger.info(f"Generating accounting entry for document {document_id}")
-            auto_entry = self.accounting_service.process_document(document_id)
+        # 3. Génération de l'écriture comptable
+        logger.info(f"Generating accounting entry for document {document_id}")
+        auto_entry = self.accounting_service.process_document(document_id)
 
-            # Recharge final
-            self.db.refresh(document)
+        # Recharge final
+        self.db.refresh(document)
 
-            # Vérifie s'il y a des alertes à créer
-            self._check_and_create_alerts(document)
+        # Vérifie s'il y a des alertes à créer
+        self._check_and_create_alerts(document)
 
-            logger.info(
-                f"Document {document_id} processed successfully. "
-                f"Status: {document.status.value}, "
-                f"Auto-validated: {auto_entry.auto_validated}"
-            )
-
-        except Exception as e:
-            logger.error(f"Error processing document {document_id}: {e}")
-            document.status = DocumentStatus.ERROR
-            self._create_alert(
-                alert_type=AlertType.DOCUMENT_UNREADABLE,
-                title="Erreur de traitement",
-                message=f"Le document n'a pas pu être traité: {str(e)}",
-                document_id=document_id,
-                severity=AlertSeverity.ERROR
-            )
-            self.db.commit()
-            raise
+        logger.info(
+            f"Document {document_id} processed successfully. "
+            f"Status: {document.status.value}, "
+            f"Auto-validated: {auto_entry.auto_validated}"
+        )
 
         return document
 
@@ -422,17 +408,12 @@ class DocumentService:
         }
 
         for doc_id in document_ids:
-            try:
-                self.validate_document(
-                    document_id=doc_id,
-                    validated_by=validated_by,
-                    validation_data=DocumentValidate()
-                )
-                results["validated"] += 1
-            except Exception as e:
-                results["failed"] += 1
-                results["failed_ids"].append(str(doc_id))
-                results["errors"][str(doc_id)] = str(e)
+            self.validate_document(
+                document_id=doc_id,
+                validated_by=validated_by,
+                validation_data=DocumentValidate()
+            )
+            results["validated"] += 1
 
         return results
 

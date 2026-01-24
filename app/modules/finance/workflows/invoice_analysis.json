@@ -1,0 +1,84 @@
+{
+  "module_id": "azalscore.finance.invoice_analysis",
+  "version": "1.0.0",
+  "description": "Analyse une facture : calcul de marge, validation IBAN, alertes automatiques",
+  "author": "AZALSCORE",
+  "created_at": "2026-01-22",
+  "steps": [
+    {
+      "id": "validate_supplier_iban",
+      "use": "azalscore.validation.validate_iban@1.0.0",
+      "inputs": {
+        "iban": "{{context.supplier_iban}}"
+      },
+      "retry": 1,
+      "timeout": 2000
+    },
+    {
+      "id": "calculate_vat",
+      "use": "azalscore.computation.calculate_vat@1.0.0",
+      "inputs": {
+        "amount_ht": "{{context.amount_ht}}",
+        "vat_rate": "{{context.vat_rate}}"
+      },
+      "retry": 1,
+      "timeout": 1000
+    },
+    {
+      "id": "calculate_margin",
+      "use": "azalscore.finance.calculate_margin@1.0.0",
+      "inputs": {
+        "price": "{{calculate_vat.amount_ttc}}",
+        "cost": "{{context.cost}}"
+      },
+      "retry": 2,
+      "timeout": 3000
+    },
+    {
+      "id": "send_low_margin_alert",
+      "condition": "{{calculate_margin.margin_rate}} < 0.2",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "low_margin",
+        "severity": "warning",
+        "title": "Marge faible détectée",
+        "message": "La marge sur cette facture est inférieure à 20%",
+        "data": {
+          "margin_rate": "{{calculate_margin.margin_rate}}",
+          "margin_percentage": "{{calculate_margin.margin_percentage}}",
+          "invoice_id": "{{context.invoice_id}}"
+        }
+      },
+      "retry": 3,
+      "timeout": 5000,
+      "fallback": "azalscore.notification.log_alert"
+    },
+    {
+      "id": "send_invalid_iban_alert",
+      "condition": "{{validate_supplier_iban.is_valid}} == false",
+      "use": "azalscore.notification.send_alert@1.0.0",
+      "inputs": {
+        "alert_type": "invalid_iban",
+        "severity": "critical",
+        "title": "IBAN fournisseur invalide",
+        "message": "L'IBAN du fournisseur est invalide : {{validate_supplier_iban.error}}",
+        "data": {
+          "supplier_id": "{{context.supplier_id}}",
+          "iban": "{{context.supplier_iban}}",
+          "error": "{{validate_supplier_iban.error}}"
+        }
+      },
+      "retry": 3,
+      "timeout": 5000
+    }
+  ],
+  "outputs": {
+    "iban_valid": "{{validate_supplier_iban.is_valid}}",
+    "vat_details": "{{calculate_vat}}",
+    "margin_details": "{{calculate_margin}}",
+    "alerts_sent": [
+      "{{send_low_margin_alert}}",
+      "{{send_invalid_iban_alert}}"
+    ]
+  }
+}

@@ -1,0 +1,130 @@
+# AZALS - Alertmanager Configuration
+# ====================================
+# Configuration pour routage et notification des alertes Prometheus
+#
+# SÉCURITÉ P0-9: Configuration OBLIGATOIRE pour production
+# Remplacer les valeurs CHANGE_ME avant déploiement!
+
+global:
+  # Timeout pour résolution d'alertes
+  resolve_timeout: 5m
+
+  # Configuration SMTP pour emails
+  # TODO: Configurer en production
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alertmanager@azals.io'
+  smtp_auth_username: 'CHANGE_ME'
+  smtp_auth_password: 'CHANGE_ME'
+  smtp_require_tls: true
+
+  # Configuration Slack (optionnel)
+  # slack_api_url: 'https://hooks.slack.com/services/CHANGE_ME'
+
+# Templates personnalisés pour notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Configuration du routage des alertes
+route:
+  # Champs de groupement - alertes identiques groupées ensemble
+  group_by: ['alertname', 'severity', 'service']
+
+  # Délai avant première notification d'un nouveau groupe
+  group_wait: 30s
+
+  # Délai entre notifications du même groupe
+  group_interval: 5m
+
+  # Délai avant répétition d'une alerte non résolue
+  repeat_interval: 4h
+
+  # Récepteur par défaut
+  receiver: 'default-receiver'
+
+  # Routes spécifiques par sévérité/service
+  routes:
+    # Alertes CRITIQUES - notification immédiate
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+
+    # Alertes base de données
+    - match:
+        service: postgres
+      receiver: 'db-team'
+
+    # Alertes API
+    - match:
+        service: azals-api
+      receiver: 'api-team'
+
+    # Alertes infrastructure
+    - match_re:
+        service: (nginx|node|redis)
+      receiver: 'infra-team'
+
+# Configuration des récepteurs
+receivers:
+  # Récepteur par défaut
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'ops@azals.io'
+        send_resolved: true
+        headers:
+          Subject: '[AZALS] {{ .Status | toUpper }} - {{ .GroupLabels.alertname }}'
+
+  # Alertes critiques - multi-canal
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'critical@azals.io,cto@azals.io'
+        send_resolved: true
+        headers:
+          Subject: '[AZALS CRITICAL] {{ .Status | toUpper }} - {{ .GroupLabels.alertname }}'
+    # webhook_configs:
+    #   - url: 'https://pagerduty.com/webhook/CHANGE_ME'
+    #     send_resolved: true
+
+  # Équipe base de données
+  - name: 'db-team'
+    email_configs:
+      - to: 'dba@azals.io'
+        send_resolved: true
+
+  # Équipe API
+  - name: 'api-team'
+    email_configs:
+      - to: 'backend@azals.io'
+        send_resolved: true
+
+  # Équipe infrastructure
+  - name: 'infra-team'
+    email_configs:
+      - to: 'infra@azals.io'
+        send_resolved: true
+
+# Règles d'inhibition
+# Supprime certaines alertes quand d'autres sont déjà actives
+inhibit_rules:
+  # Si le service est down, ne pas alerter sur ses métriques
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['service']
+
+  # Si critique, inhiber les warnings du même service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+
+  # Si le node est down, inhiber toutes ses alertes
+  - source_match:
+      alertname: 'NodeDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['instance']

@@ -5,8 +5,11 @@ AZALS MODULE T6 - Router API Diffusion Périodique
 Points d'entrée REST pour la gestion des diffusions automatiques.
 """
 
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
@@ -578,7 +581,8 @@ async def process_due_broadcasts(
                 triggered_user=current_user.id
             )
             executions.append(execution)
-        except Exception:
-            pass  # Log error but continue with other broadcasts
+        except Exception as e:
+            logger.error(f"Failed to execute broadcast {broadcast.id}: {e}")
+            # Continue with other broadcasts
 
     return executions

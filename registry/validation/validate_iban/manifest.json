@@ -1,0 +1,46 @@
+{
+  "id": "azalscore.validation.validate_iban",
+  "name": "Validation IBAN",
+  "category": "validation",
+  "version": "1.0.0",
+  "description": "Valide un numéro IBAN selon la norme internationale",
+  "inputs": {
+    "iban": {
+      "type": "string",
+      "required": true,
+      "description": "Numéro IBAN à valider (avec ou sans espaces)"
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": "true si l'IBAN est valide, false sinon"
+    },
+    "normalized_iban": {
+      "type": "string",
+      "description": "IBAN normalisé (sans espaces, majuscules)"
+    },
+    "country_code": {
+      "type": "string",
+      "description": "Code pays (FR, DE, etc.)"
+    },
+    "error": {
+      "type": "string",
+      "description": "Message d'erreur si invalide (null si valide)"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["validation", "iban", "bank", "finance"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

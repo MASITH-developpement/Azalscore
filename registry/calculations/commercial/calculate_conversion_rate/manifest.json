@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_conversion_rate",
+  "name": "Calcule le taux de conversion",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le taux de conversion",
+  "inputs": {
+    "leads": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "conversions": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "conversion_rate": {
+      "type": "number",
+      "description": ""
+    },
+    "conversion_percentage": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "commercial",
+    "forecasting"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

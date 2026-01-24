@@ -12,8 +12,12 @@ Ces tests utilisent une vraie base de données SQLite pour valider
 le comportement réel de l'application.
 """
 
-import pytest
+import logging
 import os
+
+import pytest
+
+logger = logging.getLogger(__name__)
 import tempfile
 from datetime import datetime, date
 from decimal import Decimal
@@ -77,8 +81,8 @@ def test_db():
     # Supprimer le fichier DB
     try:
         os.unlink(db_path)
-    except:
-        pass
+    except OSError as e:
+        logger.debug(f"Could not delete test database file {db_path}: {e}")
 
 
 @pytest.fixture

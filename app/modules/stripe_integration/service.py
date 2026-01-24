@@ -848,14 +848,9 @@ class StripeService:
         self.db.flush()
 
         # Traiter selon le type
-        try:
-            self._handle_webhook(webhook)
-            webhook.status = WebhookStatus.PROCESSED
-            webhook.processed_at = datetime.utcnow()
-        except Exception as e:
-            webhook.status = WebhookStatus.FAILED
-            webhook.processing_error = str(e)
-            webhook.retry_count += 1
+        self._handle_webhook(webhook)
+        webhook.status = WebhookStatus.PROCESSED
+        webhook.processed_at = datetime.utcnow()
 
         self.db.commit()
         self.db.refresh(webhook)
@@ -1200,71 +1195,65 @@ class StripeService:
         from app.modules.iam.service import IAMService
         from app.modules.tenants.models import SubscriptionPlan, Tenant, TenantEnvironment, TenantStatus
 
-        try:
-            # Générer mot de passe temporaire
-            temp_password = secrets.token_urlsafe(12)
+        # Générer mot de passe temporaire
+        temp_password = secrets.token_urlsafe(12)
 
-            # 1. Créer le tenant
-            tenant = Tenant(
-                tenant_id=tenant_id,
-                name=tenant_name,
-                legal_name=tenant_name,
-                email=admin_email,
-                country=country,
-                environment=TenantEnvironment.PRODUCTION,
-                status=TenantStatus.ACTIVE,
-                plan=SubscriptionPlan[plan] if plan in SubscriptionPlan.__members__ else SubscriptionPlan.STARTER,
-                timezone="Europe/Paris",
-                language="fr",
-                currency="EUR",
-                max_users=self._get_max_users_for_plan(plan),
-                max_storage_gb=self._get_max_storage_for_plan(plan),
-                features={"stripe_provisioned": True},
-                extra_data={
-                    "stripe_customer_id": stripe_customer_id,
-                    "stripe_subscription_id": stripe_subscription_id,
-                    "provisioned_at": datetime.utcnow().isoformat()
-                },
-                activated_at=datetime.utcnow(),
-                created_by="system:stripe_webhook"
-            )
-            self.db.add(tenant)
-            self.db.flush()
+        # 1. Créer le tenant
+        tenant = Tenant(
+            tenant_id=tenant_id,
+            name=tenant_name,
+            legal_name=tenant_name,
+            email=admin_email,
+            country=country,
+            environment=TenantEnvironment.PRODUCTION,
+            status=TenantStatus.ACTIVE,
+            plan=SubscriptionPlan[plan] if plan in SubscriptionPlan.__members__ else SubscriptionPlan.STARTER,
+            timezone="Europe/Paris",
+            language="fr",
+            currency="EUR",
+            max_users=self._get_max_users_for_plan(plan),
+            max_storage_gb=self._get_max_storage_for_plan(plan),
+            features={"stripe_provisioned": True},
+            extra_data={
+                "stripe_customer_id": stripe_customer_id,
+                "stripe_subscription_id": stripe_subscription_id,
+                "provisioned_at": datetime.utcnow().isoformat()
+            },
+            activated_at=datetime.utcnow(),
+            created_by="system:stripe_webhook"
+        )
+        self.db.add(tenant)
+        self.db.flush()
 
-            # 2. Créer l'utilisateur admin via IAMService
-            iam_service = IAMService(self.db, tenant_id)
+        # 2. Créer l'utilisateur admin via IAMService
+        iam_service = IAMService(self.db, tenant_id)
 
-            admin_user = iam_service.create_user(UserCreate(
-                email=admin_email,
-                username=admin_email.split("@")[0],
-                password=temp_password,
-                first_name=admin_first_name,
-                last_name=admin_last_name,
-                role_codes=["ADMIN"],  # Rôle admin
-                locale="fr",
-                timezone="Europe/Paris"
-            ))
+        admin_user = iam_service.create_user(UserCreate(
+            email=admin_email,
+            username=admin_email.split("@")[0],
+            password=temp_password,
+            first_name=admin_first_name,
+            last_name=admin_last_name,
+            role_codes=["ADMIN"],  # Rôle admin
+            locale="fr",
+            timezone="Europe/Paris"
+        ))
 
-            # 3. Marquer le mot de passe comme devant être changé
-            admin_user.must_change_password = True
+        # 3. Marquer le mot de passe comme devant être changé
+        admin_user.must_change_password = True
 
-            self.db.commit()
+        self.db.commit()
 
-            logger.info(f"Provisioned tenant {tenant_id} with admin {admin_email}")
+        logger.info(f"Provisioned tenant {tenant_id} with admin {admin_email}")
 
-            return {
-                "tenant_id": tenant_id,
-                "tenant_name": tenant_name,
-                "admin_email": admin_email,
-                "admin_user_id": admin_user.id,
-                "temporary_password": temp_password,
-                "plan": plan
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to provision tenant {tenant_id}: {e}")
-            self.db.rollback()
-            return None
+        return {
+            "tenant_id": tenant_id,
+            "tenant_name": tenant_name,
+            "admin_email": admin_email,
+            "admin_user_id": admin_user.id,
+            "temporary_password": temp_password,
+            "plan": plan
+        }
 
     def _get_max_users_for_plan(self, plan: str) -> int:
         """Retourne le nombre max d'utilisateurs selon le plan."""

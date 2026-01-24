@@ -1,0 +1,175 @@
+/**
+ * AZALSCORE UI Standards - CSS Variables
+ * Variables CSS pour les composants standardisés avec support dual-mode
+ *
+ * Mode AZALSCORE: Interface simplifiée, IA proéminente
+ * Mode ERP: Interface dense, tous champs visibles
+ */
+
+/* ============================================================
+   VARIABLES DE BASE (communes aux deux modes)
+   ============================================================ */
+
+:root {
+  /* Layout Standards */
+  --azals-std-header-height: 64px;
+  --azals-std-sidebar-width: 320px;
+  --azals-std-footer-height: 64px;
+  --azals-std-content-max-width: 1400px;
+
+  /* Spacing Standards */
+  --azals-std-gap-xs: 0.25rem;
+  --azals-std-gap-sm: 0.5rem;
+  --azals-std-gap-md: 1rem;
+  --azals-std-gap-lg: 1.5rem;
+  --azals-std-gap-xl: 2rem;
+
+  /* Border Radius Standards */
+  --azals-std-radius-sm: 0.25rem;
+  --azals-std-radius-md: 0.5rem;
+  --azals-std-radius-lg: 0.75rem;
+  --azals-std-radius-xl: 1rem;
+
+  /* Tabs Standards */
+  --azals-std-tab-height: 44px;
+  --azals-std-tab-padding: 0 1rem;
+  --azals-std-tab-gap: 0.25rem;
+
+  /* Info Bar Standards */
+  --azals-std-infobar-height: 80px;
+  --azals-std-kpi-min-width: 140px;
+
+  /* Sidebar Summary Standards */
+  --azals-std-sidebar-padding: 1.5rem;
+
+  /* Footer Actions Standards */
+  --azals-std-footer-padding: 1rem 1.5rem;
+
+  /* Animation Standards */
+  --azals-std-transition: 200ms ease;
+  --azals-std-transition-fast: 150ms ease;
+
+  /* Z-Index Standards */
+  --azals-std-z-tabs: 10;
+  --azals-std-z-sidebar: 20;
+  --azals-std-z-footer: 30;
+}
+
+/* ============================================================
+   MODE AZALSCORE - Interface simplifiée
+   ============================================================ */
+
+[data-ui-mode="azalscore"],
+:root:not([data-ui-mode]) {
+  /* Densité des champs */
+  --azals-std-field-density: 1;
+  --azals-std-field-gap: 1.5rem;
+  --azals-std-field-padding: 0.75rem 1rem;
+
+  /* Affichage des éléments secondaires */
+  --azals-std-secondary-display: none;
+  --azals-std-secondary-opacity: 0;
+
+  /* Emphase IA */
+  --azals-std-ia-emphasis: 1;
+  --azals-std-ia-scale: 1;
+  --azals-std-ia-bg: var(--azals-primary-50);
+  --azals-std-ia-border-color: var(--azals-primary-200);
+
+  /* Tabs */
+  --azals-std-tab-font-size: var(--azals-font-size-md);
+  --azals-std-tab-icon-size: 20px;
+
+  /* KPI Cards */
+  --azals-std-kpi-padding: 1.25rem;
+  --azals-std-kpi-value-size: var(--azals-font-size-2xl);
+
+  /* Sidebar */
+  --azals-std-sidebar-bg: var(--azals-bg);
+
+  /* Cards */
+  --azals-std-card-padding: 1.5rem;
+  --azals-std-card-gap: 1rem;
+
+  /* Typography */
+  --azals-std-title-size: var(--azals-font-size-xl);
+  --azals-std-subtitle-size: var(--azals-font-size-sm);
+  --azals-std-label-size: var(--azals-font-size-sm);
+
+  /* Visibility Toggles */
+  --azals-std-erp-only-display: none;
+  --azals-std-azalscore-only-display: block;
+}
+
+/* ============================================================
+   MODE ERP - Interface dense
+   ============================================================ */
+
+[data-ui-mode="erp"] {
+  /* Densité des champs - Plus compact */
+  --azals-std-field-density: 0.75;
+  --azals-std-field-gap: 1rem;
+  --azals-std-field-padding: 0.5rem 0.75rem;
+
+  /* Affichage des éléments secondaires - Tous visibles */
+  --azals-std-secondary-display: block;
+  --azals-std-secondary-opacity: 1;
+
+  /* Emphase IA - Plus discret */
+  --azals-std-ia-emphasis: 0.5;
+  --azals-std-ia-scale: 0.9;
+  --azals-std-ia-bg: var(--azals-gray-50);
+  --azals-std-ia-border-color: var(--azals-gray-200);
+
+  /* Tabs - Plus compacts */
+  --azals-std-tab-font-size: var(--azals-font-size-sm);
+  --azals-std-tab-icon-size: 16px;
+
+  /* KPI Cards - Plus compacts */
+  --azals-std-kpi-padding: 1rem;
+  --azals-std-kpi-value-size: var(--azals-font-size-xl);
+
+  /* Sidebar - Plus compacte */
+  --azals-std-sidebar-bg: var(--azals-gray-50);
+
+  /* Cards - Plus compacts */
+  --azals-std-card-padding: 1rem;
+  --azals-std-card-gap: 0.75rem;
+
+  /* Typography - Plus compact */
+  --azals-std-title-size: var(--azals-font-size-lg);
+  --azals-std-subtitle-size: var(--azals-font-size-xs);
+  --azals-std-label-size: var(--azals-font-size-xs);
+
+  /* Visibility Toggles */
+  --azals-std-erp-only-display: block;
+  --azals-std-azalscore-only-display: none;
+}
+
+/* ============================================================
+   CLASSES UTILITAIRES POUR VISIBILITÉ
+   ============================================================ */
+
+/* Champs secondaires (masqués en mode AZALSCORE) */
+.azals-std-field--secondary {
+  display: var(--azals-std-secondary-display);
+  opacity: var(--azals-std-secondary-opacity);
+  transition: opacity var(--azals-std-transition);
+}
+
+/* Contenu ERP uniquement */
+.azals-std-erp-only {
+  display: var(--azals-std-erp-only-display);
+}
+
+/* Contenu AZALSCORE uniquement */
+.azals-std-azalscore-only {
+  display: var(--azals-std-azalscore-only-display);
+}
+
+/* Onglet IA avec emphase variable */
+.azals-std-tab--ia {
+  transform: scale(var(--azals-std-ia-scale));
+  background: var(--azals-std-ia-bg);
+  border-color: var(--azals-std-ia-border-color);
+}

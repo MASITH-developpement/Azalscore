@@ -1,0 +1,43 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_weighted_opportunity",
+  "name": "Calcule le montant pondéré d'une opportunité",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le montant pondéré d'une opportunité",
+  "inputs": {
+    "amount": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "probability": {
+      "type": "number",
+      "required": true,
+      "description": "Probabilité (0-1)"
+    }
+  },
+  "outputs": {
+    "weighted_amount": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "commercial",
+    "pricing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.calculations.finance.calculate_loan_payment",
+  "name": "Calcule la mensualité d'un prêt",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la mensualité d'un prêt",
+  "inputs": {
+    "principal": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "annual_rate": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "months": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "monthly_payment": {
+      "type": "number",
+      "description": ""
+    },
+    "total_interest": {
+      "type": "number",
+      "description": ""
+    },
+    "total_amount": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "interest"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

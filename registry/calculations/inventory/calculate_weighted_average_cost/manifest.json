@@ -1,0 +1,57 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_weighted_average_cost",
+  "name": "Calcule le coût moyen pondéré",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le coût moyen pondéré",
+  "inputs": {
+    "old_quantity": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "old_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "new_quantity": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "new_cost": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "average_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "total_quantity": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "valuation"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -16,6 +16,7 @@ import { useCapabilitiesStore, type CapabilitiesStatus } from '@core/capabilitie
 import { initAuditUI } from '@core/audit-ui';
 import { initializeStores, useUIStore } from '@ui/states';
 import { initGuardianErrorHandlers } from '@core/guardian/incident-store';
+import { initInterfaceMode } from './utils/interfaceMode';
 import './styles/main.css';
 
 // ============================================================
@@ -98,6 +99,9 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
     const initialize = async () => {
       try {
+        // 0. Initialize UI mode (data-ui-mode attribute) - FIRST
+        initInterfaceMode();
+
         // 1. Initialize audit system (fire and forget)
         initAuditUI();
 

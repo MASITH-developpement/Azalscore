@@ -1,0 +1,61 @@
+"""
+Tests du sous-programme calculate_weighted_average_cost
+
+Couverture cible : >= 80%
+"""
+
+import pytest
+from ..impl import execute
+
+
+class TestCalculateWeightedAverageCost:
+    """Tests du sous-programme calculate_weighted_average_cost"""
+
+    def test_basic_execution(self):
+        """Test d'exécution basique"""
+        # TODO: Ajuster selon les inputs réels
+        inputs = {
+            "old_quantity": 100.0,
+            "old_cost": 100.0,
+            "new_quantity": 100.0,
+            "new_cost": 100.0,
+        }
+
+        result = execute(inputs)
+
+        # Vérifications basiques
+        assert result is not None
+        assert isinstance(result, dict)
+
+        assert "average_cost" in result
+        assert "total_quantity" in result
+
+    def test_idempotence(self):
+        """Test d'idempotence (même input = même output)"""
+        inputs = {{
+            "old_quantity": 100.0,
+            "old_cost": 100.0,
+            "new_quantity": 100.0,
+            "new_cost": 100.0,
+        }
+
+        result1 = execute(inputs)
+        result2 = execute(inputs)
+        result3 = execute(inputs)
+
+        assert result1 == result2 == result3
+
+    def test_no_side_effects_on_inputs(self):
+        """Test absence d'effets de bord sur les inputs"""
+        inputs = {{
+            "old_quantity": "test",
+            "old_cost": "test",
+            "new_quantity": "test",
+            "new_cost": "test",
+        }
+        inputs_copy = inputs.copy()
+
+        execute(inputs)
+
+        # Les inputs ne doivent pas être modifiés
+        assert inputs == inputs_copy

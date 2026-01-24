@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.external.translation.translate_text",
+  "name": "Traduit un texte",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Traduit un texte",
+  "inputs": {
+    "text": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "translated": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "translation",
+    "services"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

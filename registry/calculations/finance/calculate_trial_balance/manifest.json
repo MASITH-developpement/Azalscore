@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.calculations.finance.calculate_trial_balance",
+  "name": "Calcule la balance de vérification",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la balance de vérification",
+  "inputs": {
+    "fiscal_year": {
+      "type": "string",
+      "required": true,
+      "description": "Exercice fiscal"
+    },
+    "period": {
+      "type": "string",
+      "required": false,
+      "description": "Période"
+    }
+  },
+  "outputs": {
+    "accounts": {
+      "type": "array",
+      "description": "Liste des comptes avec soldes"
+    },
+    "total_debit": {
+      "type": "number",
+      "description": "Total débit"
+    },
+    "total_credit": {
+      "type": "number",
+      "description": "Total crédit"
+    },
+    "is_balanced": {
+      "type": "boolean",
+      "description": "Balance équilibrée"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "account_balances"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,6 +1,6 @@
 /**
  * AZALSCORE Module - DEVIS
- * Gestion des devis clients
+ * Gestion des devis clients avec BaseViewStandard
  * Flux : CRM → [DEV] → COM/ODS → AFF → FAC/AVO → CPT
  * Numérotation : DEV-YY-MM-XXXX
  */
@@ -9,124 +9,37 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FileText, Plus, Edit, Trash2, Search, Send, Check, X,
-  Euro, Calendar, User, Building2, Copy, ChevronRight,
-  Download, Printer, Eye, Clock, AlertTriangle, CheckCircle2
+  Euro, Calendar, Clock, AlertTriangle, CheckCircle2,
+  ChevronRight, Download, Printer, Package, History,
+  FileArchive, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import {
+  BaseViewStandard,
+  type TabDefinition,
+  type InfoBarItem,
+  type SidebarSection,
+  type ActionDefinition,
+  type StatusDefinition,
+  type SemanticColor,
+} from '@ui/standards';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
-// ============================================================
-// TYPES
-// ============================================================
-
-type DocumentStatus = 'DRAFT' | 'PENDING' | 'VALIDATED' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
-
-interface DocumentLine {
-  id: string;
-  line_number: number;
-  product_id?: string;
-  product_code?: string;
-  description: string;
-  quantity: number;
-  unit?: string;
-  unit_price: number;
-  discount_percent: number;
-  discount_amount: number;
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  total: number;
-}
-
-interface Devis {
-  id: string;
-  number: string; // DEV-YY-MM-XXXX
-  reference?: string;
-  status: DocumentStatus;
-  customer_id: string;
-  customer_name?: string;
-  customer_code?: string;
-  opportunity_id?: string;
-  date: string;
-  validity_date?: string;
-  billing_address?: Record<string, string>;
-  shipping_address?: Record<string, string>;
-  subtotal: number;
-  discount_amount: number;
-  discount_percent: number;
-  tax_amount: number;
-  total: number;
-  currency: string;
-  notes?: string;
-  internal_notes?: string;
-  terms?: string;
-  lines: DocumentLine[];
-  pdf_url?: string;
-  assigned_to?: string;
-  validated_by?: string;
-  validated_at?: string;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface DevisFormData {
-  customer_id: string;
-  reference?: string;
-  validity_date?: string;
-  notes?: string;
-  internal_notes?: string;
-  terms?: string;
-  discount_percent?: number;
-}
-
-interface Customer {
-  id: string;
-  code: string;
-  name: string;
-  legal_name?: string;
-  email?: string;
-  phone?: string;
-  address_line1?: string;
-  city?: string;
-  postal_code?: string;
-}
-
-// ============================================================
-// CONSTANTS
-// ============================================================
-
-const STATUS_CONFIG: Record<DocumentStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  DRAFT: { label: 'Brouillon', color: 'gray', icon: <Edit size={14} /> },
-  PENDING: { label: 'En attente', color: 'yellow', icon: <Clock size={14} /> },
-  VALIDATED: { label: 'Validé', color: 'blue', icon: <Check size={14} /> },
-  SENT: { label: 'Envoyé', color: 'purple', icon: <Send size={14} /> },
-  ACCEPTED: { label: 'Accepté', color: 'green', icon: <CheckCircle2 size={14} /> },
-  REJECTED: { label: 'Refusé', color: 'red', icon: <X size={14} /> },
-  CANCELLED: { label: 'Annulé', color: 'gray', icon: <X size={14} /> },
-};
-
-// ============================================================
-// HELPERS
-// ============================================================
-
-const formatCurrency = (value: number, currency = 'EUR'): string =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value);
-
-const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('fr-FR');
-
-const generateDevisNumber = (): string => {
-  const now = new Date();
-  const yy = now.getFullYear().toString().slice(-2);
-  const mm = (now.getMonth() + 1).toString().padStart(2, '0');
-  const xxxx = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `DEV-${yy}-${mm}-${xxxx}`;
-};
+// Import types et composants tabs
+import type { Devis, DevisFormData, Customer, DocumentStatus, DocumentLine } from './types';
+import { STATUS_CONFIG, formatCurrency, formatDate } from './types';
+import {
+  DevisInfoTab,
+  DevisLinesTab,
+  DevisFinancialTab,
+  DevisDocsTab,
+  DevisHistoryTab,
+  DevisIATab,
+} from './components';
 
 // ============================================================
 // API HOOKS
@@ -176,15 +89,10 @@ const useCreateDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: DevisFormData) => {
-      const response = await api.post<Devis>('/v1/commercial/documents', {
-        ...data,
-        type: 'QUOTE',
-      });
+      const response = await api.post<Devis>('/v1/commercial/documents', { ...data, type: 'QUOTE' });
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -195,9 +103,7 @@ const useUpdateDevis = () => {
       const response = await api.put<Devis>(`/v1/commercial/documents/${id}`, data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -208,9 +114,7 @@ const useValidateDevis = () => {
       const response = await api.post<Devis>(`/v1/commercial/documents/${id}/validate`);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -221,9 +125,7 @@ const useSendDevis = () => {
       const response = await api.post<Devis>(`/v1/commercial/documents/${id}/send`);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -234,9 +136,7 @@ const useConvertToOrder = () => {
       const response = await api.post<Devis>(`/v1/commercial/quotes/${quoteId}/convert`);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -247,21 +147,7 @@ const useAddLine = () => {
       const response = await api.post<DocumentLine>(`/v1/commercial/documents/${documentId}/lines`, data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
-  });
-};
-
-const useDeleteLine = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (lineId: string) => {
-      await api.delete(`/v1/commercial/lines/${lineId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
   });
 };
 
@@ -321,10 +207,10 @@ interface DevisNavState {
 }
 
 // ============================================================
-// LIST
+// LIST VIEW
 // ============================================================
 
-const DevisListInternal: React.FC<{
+const DevisListView: React.FC<{
   onSelectDevis: (id: string) => void;
   onCreateDevis: (customerId?: string) => void;
 }> = ({ onSelectDevis, onCreateDevis }) => {
@@ -453,10 +339,10 @@ const DevisListInternal: React.FC<{
 };
 
 // ============================================================
-// DETAIL
+// DETAIL VIEW - BaseViewStandard
 // ============================================================
 
-const DevisDetailInternal: React.FC<{
+const DevisDetailView: React.FC<{
   devisId: string;
   onBack: () => void;
   onEdit: () => void;
@@ -466,225 +352,251 @@ const DevisDetailInternal: React.FC<{
   const sendDevis = useSendDevis();
   const convertToOrder = useConvertToOrder();
 
-  const handleValidate = async () => {
-    if (window.confirm('Valider ce devis ?')) {
-      await validateDevis.mutateAsync(devisId);
+  // Tab definitions
+  const tabs: TabDefinition<Devis>[] = useMemo(() => [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <FileText size={18} />,
+      component: DevisInfoTab,
+    },
+    {
+      id: 'lines',
+      label: 'Lignes',
+      icon: <Package size={18} />,
+      badge: devis?.lines?.length || 0,
+      component: DevisLinesTab,
+    },
+    {
+      id: 'financial',
+      label: 'Financier',
+      icon: <Euro size={18} />,
+      component: DevisFinancialTab,
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileArchive size={18} />,
+      component: DevisDocsTab,
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <History size={18} />,
+      component: DevisHistoryTab,
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={18} />,
+      isIA: true,
+      component: DevisIATab,
+    },
+  ], [devis?.lines?.length]);
+
+  // Status mapping
+  const statusDef: StatusDefinition | undefined = devis ? {
+    label: STATUS_CONFIG[devis.status].label,
+    color: STATUS_CONFIG[devis.status].color as SemanticColor,
+  } : undefined;
+
+  // Info bar items (KPIs)
+  const infoBarItems: InfoBarItem[] = useMemo(() => {
+    if (!devis) return [];
+    return [
+      {
+        id: 'date',
+        label: 'Date',
+        value: formatDate(devis.date),
+        icon: <Calendar size={16} />,
+      },
+      {
+        id: 'validity',
+        label: 'Validité',
+        value: devis.validity_date ? formatDate(devis.validity_date) : '-',
+        valueColor: devis.validity_date && new Date(devis.validity_date) < new Date() ? 'negative' : undefined,
+        icon: <Clock size={16} />,
+      },
+      {
+        id: 'lines',
+        label: 'Lignes',
+        value: devis.lines?.length || 0,
+        icon: <Package size={16} />,
+        secondary: true,
+      },
+      {
+        id: 'total',
+        label: 'Total TTC',
+        value: formatCurrency(devis.total, devis.currency),
+        icon: <Euro size={16} />,
+      },
+    ];
+  }, [devis]);
+
+  // Sidebar sections
+  const sidebarSections: SidebarSection[] = useMemo(() => {
+    if (!devis) return [];
+    return [
+      {
+        id: 'totaux',
+        title: 'Récapitulatif',
+        items: [
+          { id: 'subtotal', label: 'Sous-total HT', value: devis.subtotal, format: 'currency' },
+          ...(devis.discount_amount > 0 ? [{
+            id: 'discount',
+            label: `Remise (${devis.discount_percent}%)`,
+            value: -devis.discount_amount,
+            format: 'currency' as const,
+          }] : []),
+          { id: 'tax', label: 'TVA', value: devis.tax_amount, format: 'currency' },
+        ],
+        total: { label: 'Total TTC', value: devis.total },
+      },
+      {
+        id: 'client',
+        title: 'Client',
+        items: [
+          { id: 'name', label: 'Nom', value: devis.customer_name || '-' },
+          { id: 'code', label: 'Code', value: devis.customer_code || '-', secondary: true },
+        ],
+      },
+    ];
+  }, [devis]);
+
+  // Header actions
+  const headerActions: ActionDefinition[] = useMemo(() => {
+    if (!devis) return [];
+    const actions: ActionDefinition[] = [];
+
+    if (devis.status === 'DRAFT') {
+      actions.push({
+        id: 'edit',
+        label: 'Modifier',
+        icon: <Edit size={16} />,
+        variant: 'ghost',
+        onClick: onEdit,
+      });
     }
-  };
 
-  const handleSend = async () => {
-    if (window.confirm('Marquer ce devis comme envoyé ?')) {
-      await sendDevis.mutateAsync(devisId);
+    actions.push({
+      id: 'pdf',
+      label: 'PDF',
+      icon: <Download size={16} />,
+      variant: 'ghost',
+    });
+
+    actions.push({
+      id: 'print',
+      label: 'Imprimer',
+      icon: <Printer size={16} />,
+      variant: 'ghost',
+    });
+
+    return actions;
+  }, [devis, onEdit]);
+
+  // Primary actions (footer)
+  const primaryActions: ActionDefinition[] = useMemo(() => {
+    if (!devis) return [];
+    const actions: ActionDefinition[] = [];
+
+    if (devis.status === 'ACCEPTED') {
+      actions.push({
+        id: 'convert',
+        label: 'Convertir en commande',
+        icon: <ChevronRight size={16} />,
+        variant: 'primary',
+        loading: convertToOrder.isPending,
+        onClick: async () => {
+          if (window.confirm('Convertir ce devis en commande ?')) {
+            const order = await convertToOrder.mutateAsync(devisId);
+            window.dispatchEvent(new CustomEvent('azals:navigate', {
+              detail: { view: 'commandes', params: { id: order.id } }
+            }));
+          }
+        },
+      });
     }
-  };
 
-  const handleConvert = async () => {
-    if (window.confirm('Convertir ce devis en commande ?')) {
-      try {
-        const order = await convertToOrder.mutateAsync(devisId);
-        window.dispatchEvent(new CustomEvent('azals:navigate', {
-          detail: { view: 'commandes', params: { id: order.id } }
-        }));
-      } catch (error) {
-        console.error('Erreur conversion:', error);
-      }
+    if (devis.status === 'VALIDATED') {
+      actions.push({
+        id: 'send',
+        label: 'Marquer envoyé',
+        icon: <Send size={16} />,
+        variant: 'secondary',
+        loading: sendDevis.isPending,
+        onClick: async () => {
+          if (window.confirm('Marquer ce devis comme envoyé ?')) {
+            await sendDevis.mutateAsync(devisId);
+          }
+        },
+      });
     }
-  };
 
-  if (isLoading) {
-    return <PageWrapper title="Chargement..."><div className="azals-loading">Chargement...</div></PageWrapper>;
-  }
+    if (devis.status === 'DRAFT') {
+      actions.push({
+        id: 'validate',
+        label: 'Valider',
+        icon: <Check size={16} />,
+        variant: 'primary',
+        loading: validateDevis.isPending,
+        onClick: async () => {
+          if (window.confirm('Valider ce devis ?')) {
+            await validateDevis.mutateAsync(devisId);
+          }
+        },
+      });
+    }
 
-  if (!devis) {
+    return actions;
+  }, [devis, devisId, validateDevis, sendDevis, convertToOrder]);
+
+  // Secondary actions (footer)
+  const secondaryActions: ActionDefinition[] = useMemo(() => [
+    {
+      id: 'back',
+      label: 'Retour à la liste',
+      variant: 'ghost',
+      onClick: onBack,
+    },
+  ], [onBack]);
+
+  if (!devis && !isLoading) {
     return (
       <PageWrapper title="Devis non trouvé">
-        <Card><p>Ce devis n'existe pas.</p><Button onClick={onBack}>Retour</Button></Card>
+        <Card>
+          <p>Ce devis n'existe pas.</p>
+          <Button onClick={onBack}>Retour</Button>
+        </Card>
       </PageWrapper>
     );
   }
 
-  const canEdit = devis.status === 'DRAFT';
-  const canValidate = devis.status === 'DRAFT';
-  const canSend = devis.status === 'VALIDATED';
-  const canConvert = devis.status === 'ACCEPTED';
-
   return (
-    <PageWrapper
-      title={devis.number}
-      subtitle={devis.customer_name}
+    <BaseViewStandard<Devis>
+      title={devis?.number || 'Chargement...'}
+      subtitle={devis?.customer_name}
+      status={statusDef}
+      data={devis!}
+      view="detail"
+      tabs={tabs}
+      defaultTab="info"
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      primaryActions={primaryActions}
+      secondaryActions={secondaryActions}
       backAction={{ label: 'Retour', onClick: onBack }}
-      actions={
-        <ButtonGroup>
-          {canConvert && (
-            <Button leftIcon={<ChevronRight size={16} />} onClick={handleConvert} isLoading={convertToOrder.isPending}>
-              Convertir en commande
-            </Button>
-          )}
-          {canSend && (
-            <Button variant="secondary" leftIcon={<Send size={16} />} onClick={handleSend} isLoading={sendDevis.isPending}>
-              Marquer envoyé
-            </Button>
-          )}
-          {canValidate && (
-            <Button variant="secondary" leftIcon={<Check size={16} />} onClick={handleValidate} isLoading={validateDevis.isPending}>
-              Valider
-            </Button>
-          )}
-          {canEdit && (
-            <Button variant="ghost" leftIcon={<Edit size={16} />} onClick={onEdit}>Modifier</Button>
-          )}
-          <Button variant="ghost" leftIcon={<Download size={16} />}>PDF</Button>
-          <Button variant="ghost" leftIcon={<Printer size={16} />}>Imprimer</Button>
-        </ButtonGroup>
-      }
-    >
-      <Grid cols={4} gap="md" className="mb-4">
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Statut</span>
-            <StatusBadge status={devis.status} />
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Date</span>
-            <span className="azals-stat__value">{formatDate(devis.date)}</span>
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Validité</span>
-            <span className="azals-stat__value">{devis.validity_date ? formatDate(devis.validity_date) : '-'}</span>
-          </div>
-        </Card>
-        <Card>
-          <div className="azals-stat">
-            <span className="azals-stat__label">Total TTC</span>
-            <span className="azals-stat__value azals-stat__value--large">{formatCurrency(devis.total)}</span>
-          </div>
-        </Card>
-      </Grid>
-
-      <Grid cols={2} gap="lg" className="mb-4">
-        <Card title="Client">
-          <dl className="azals-dl">
-            <dt><Building2 size={14} /> Client</dt>
-            <dd>
-              <strong>{devis.customer_name}</strong>
-              {devis.customer_code && <span className="text-muted"> ({devis.customer_code})</span>}
-            </dd>
-            {devis.billing_address && (
-              <>
-                <dt>Adresse facturation</dt>
-                <dd>
-                  {devis.billing_address.line1 && <div>{devis.billing_address.line1}</div>}
-                  {devis.billing_address.city && <div>{devis.billing_address.postal_code} {devis.billing_address.city}</div>}
-                </dd>
-              </>
-            )}
-          </dl>
-        </Card>
-
-        <Card title="Informations">
-          <dl className="azals-dl">
-            {devis.reference && <><dt>Référence client</dt><dd>{devis.reference}</dd></>}
-            <dt>Créé le</dt><dd>{formatDate(devis.created_at)}</dd>
-            {devis.validated_at && <><dt>Validé le</dt><dd>{formatDate(devis.validated_at)}</dd></>}
-          </dl>
-        </Card>
-      </Grid>
-
-      <Card title="Lignes du devis">
-        {devis.lines && devis.lines.length > 0 ? (
-          <table className="azals-table azals-table--simple">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Description</th>
-                <th className="text-right">Qté</th>
-                <th className="text-right">P.U. HT</th>
-                <th className="text-right">Remise</th>
-                <th className="text-right">Total HT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {devis.lines.map(line => (
-                <tr key={line.id}>
-                  <td>{line.line_number}</td>
-                  <td>
-                    {line.product_code && <span className="text-muted">[{line.product_code}] </span>}
-                    {line.description}
-                  </td>
-                  <td className="text-right">{line.quantity} {line.unit}</td>
-                  <td className="text-right">{formatCurrency(line.unit_price)}</td>
-                  <td className="text-right">{line.discount_percent > 0 ? `${line.discount_percent}%` : '-'}</td>
-                  <td className="text-right">{formatCurrency(line.subtotal)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={5} className="text-right"><strong>Sous-total HT</strong></td>
-                <td className="text-right">{formatCurrency(devis.subtotal)}</td>
-              </tr>
-              {devis.discount_amount > 0 && (
-                <tr>
-                  <td colSpan={5} className="text-right">Remise {devis.discount_percent > 0 && `(${devis.discount_percent}%)`}</td>
-                  <td className="text-right">-{formatCurrency(devis.discount_amount)}</td>
-                </tr>
-              )}
-              <tr>
-                <td colSpan={5} className="text-right">TVA</td>
-                <td className="text-right">{formatCurrency(devis.tax_amount)}</td>
-              </tr>
-              <tr className="azals-table__total">
-                <td colSpan={5} className="text-right"><strong>Total TTC</strong></td>
-                <td className="text-right"><strong>{formatCurrency(devis.total)}</strong></td>
-              </tr>
-            </tfoot>
-          </table>
-        ) : (
-          <p className="text-muted text-center py-4">Aucune ligne</p>
-        )}
-      </Card>
-
-      {(devis.notes || devis.terms) && (
-        <Grid cols={2} gap="lg" className="mt-4">
-          {devis.notes && (
-            <Card title="Notes">
-              <p className="text-muted">{devis.notes}</p>
-            </Card>
-          )}
-          {devis.terms && (
-            <Card title="Conditions">
-              <p className="text-muted">{devis.terms}</p>
-            </Card>
-          )}
-        </Grid>
-      )}
-
-      {canConvert && (
-        <Card className="mt-4">
-          <div className="azals-action-card">
-            <div>
-              <h4>Prochaine étape</h4>
-              <p className="text-muted">Ce devis est accepté, vous pouvez le convertir en commande</p>
-            </div>
-            <Button leftIcon={<ChevronRight size={16} />} onClick={handleConvert}>
-              Convertir en commande
-            </Button>
-          </div>
-        </Card>
-      )}
-    </PageWrapper>
+      isLoading={isLoading}
+    />
   );
 };
 
 // ============================================================
-// FORM
+// FORM VIEW (unchanged for now)
 // ============================================================
 
-const DevisFormInternal: React.FC<{
+const DevisFormView: React.FC<{
   devisId?: string;
   customerId?: string;
   onBack: () => void;
@@ -696,7 +608,6 @@ const DevisFormInternal: React.FC<{
   const createDevis = useCreateDevis();
   const updateDevis = useUpdateDevis();
   const addLine = useAddLine();
-  const deleteLine = useDeleteLine();
 
   const [form, setForm] = useState<DevisFormData>({
     customer_id: customerId || '',
@@ -736,14 +647,7 @@ const DevisFormInternal: React.FC<{
   const handleAddLine = () => {
     if (!newLine.description) return;
     setLines([...lines, { ...newLine, line_number: lines.length + 1 }]);
-    setNewLine({
-      description: '',
-      quantity: 1,
-      unit: 'pce',
-      unit_price: 0,
-      discount_percent: 0,
-      tax_rate: 20,
-    });
+    setNewLine({ description: '', quantity: 1, unit: 'pce', unit_price: 0, discount_percent: 0, tax_rate: 20 });
   };
 
   const handleRemoveLine = (index: number) => {
@@ -759,7 +663,6 @@ const DevisFormInternal: React.FC<{
     try {
       if (isNew) {
         const result = await createDevis.mutateAsync(form);
-        // Ajouter les lignes
         for (const line of lines) {
           await addLine.mutateAsync({ documentId: result.id, data: line });
         }
@@ -781,12 +684,11 @@ const DevisFormInternal: React.FC<{
       return sum + lineTotal;
     }, 0);
     const discountAmount = subtotal * (form.discount_percent || 0) / 100;
-    const taxBase = subtotal - discountAmount;
     const taxAmount = lines.reduce((sum, line) => {
       const lineTotal = (line.quantity || 0) * (line.unit_price || 0) * (1 - (line.discount_percent || 0) / 100);
       return sum + lineTotal * (line.tax_rate || 20) / 100;
     }, 0) * (1 - (form.discount_percent || 0) / 100);
-    const total = taxBase + taxAmount;
+    const total = subtotal - discountAmount + taxAmount;
     return { subtotal, discountAmount, taxAmount, total };
   };
 
@@ -1024,7 +926,7 @@ export const DevisModule: React.FC = () => {
   switch (navState.view) {
     case 'detail':
       return (
-        <DevisDetailInternal
+        <DevisDetailView
           devisId={navState.devisId!}
           onBack={navigateToList}
           onEdit={() => navigateToForm(navState.devisId)}
@@ -1032,7 +934,7 @@ export const DevisModule: React.FC = () => {
       );
     case 'form':
       return (
-        <DevisFormInternal
+        <DevisFormView
           devisId={navState.devisId}
           customerId={navState.customerId}
           onBack={navState.isNew ? navigateToList : () => navigateToDetail(navState.devisId!)}
@@ -1041,7 +943,7 @@ export const DevisModule: React.FC = () => {
       );
     default:
       return (
-        <DevisListInternal
+        <DevisListView
           onSelectDevis={navigateToDetail}
           onCreateDevis={(customerId) => navigateToForm(undefined, customerId)}
         />

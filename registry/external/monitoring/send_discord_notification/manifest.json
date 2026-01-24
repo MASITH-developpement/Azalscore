@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.external.monitoring.send_discord_notification",
+  "name": "Envoie une notification Discord",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Envoie une notification Discord",
+  "inputs": {
+    "message": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "status": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "monitoring",
+    "alerts"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

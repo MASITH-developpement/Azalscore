@@ -1,13 +1,45 @@
+/**
+ * AZALSCORE Module - Subscriptions
+ * Gestion des abonnements et revenus recurrents
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
-import { Button, Modal } from '@ui/actions';
+import { Button } from '@ui/actions';
 import { Select } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
-import { List, Users, DollarSign, TrendingDown, Gift, PlusCircle } from 'lucide-react';
+import { BaseViewStandard, type TabDefinition, type SemanticColor } from '@ui/standards';
 import type { TableColumn } from '@/types';
+import {
+  List, Users, DollarSign, TrendingDown, Gift, PlusCircle,
+  ArrowLeft, Info, Package, Receipt, FileText, History, Sparkles,
+  AlertCircle
+} from 'lucide-react';
+
+// Import types
+import type {
+  Plan, Subscription, SubscriptionInvoice, SubscriptionStats,
+  SubscriptionStatus
+} from './types';
+import {
+  formatCurrency, formatDate, formatPercent,
+  INTERVALS, SUBSCRIPTION_STATUS, INVOICE_STATUS,
+  SUBSCRIPTION_STATUS_CONFIG, INTERVAL_CONFIG,
+  getDaysUntilRenewal, willCancel, getPaidInvoicesCount
+} from './types';
+
+// Import tab components
+import {
+  SubscriptionInfoTab,
+  SubscriptionPlanTab,
+  SubscriptionBillingTab,
+  SubscriptionDocumentsTab,
+  SubscriptionHistoryTab,
+  SubscriptionIATab
+} from './components';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -38,92 +70,8 @@ const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
 );
 
 // ============================================================================
-// TYPES
+// CONSTANTES LOCALES
 // ============================================================================
-
-interface Plan {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  price: number;
-  currency: string;
-  interval: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
-  features: string[];
-  trial_days: number;
-  is_active: boolean;
-  subscribers_count: number;
-  created_at: string;
-}
-
-interface Subscription {
-  id: string;
-  plan_id: string;
-  plan_name: string;
-  customer_id: string;
-  customer_name: string;
-  customer_email: string;
-  status: 'ACTIVE' | 'TRIAL' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED';
-  start_date: string;
-  current_period_end: string;
-  trial_end?: string;
-  cancel_at_period_end: boolean;
-  amount: number;
-  currency: string;
-  created_at: string;
-}
-
-interface Invoice {
-  id: string;
-  subscription_id: string;
-  customer_name: string;
-  number: string;
-  status: 'DRAFT' | 'OPEN' | 'PAID' | 'VOID' | 'UNCOLLECTIBLE';
-  amount: number;
-  currency: string;
-  period_start: string;
-  period_end: string;
-  due_date: string;
-  paid_at?: string;
-  created_at: string;
-}
-
-interface SubscriptionStats {
-  total_plans: number;
-  active_subscriptions: number;
-  trial_subscriptions: number;
-  mrr: number;
-  arr: number;
-  churn_rate: number;
-  new_subscribers_month: number;
-  revenue_this_month: number;
-}
-
-// ============================================================================
-// CONSTANTES
-// ============================================================================
-
-const INTERVALS = [
-  { value: 'MONTHLY', label: 'Mensuel' },
-  { value: 'QUARTERLY', label: 'Trimestriel' },
-  { value: 'YEARLY', label: 'Annuel' }
-];
-
-const SUBSCRIPTION_STATUS = [
-  { value: 'ACTIVE', label: 'Actif' },
-  { value: 'TRIAL', label: 'Essai' },
-  { value: 'PAST_DUE', label: 'En retard' },
-  { value: 'CANCELLED', label: 'Annule' },
-  { value: 'EXPIRED', label: 'Expire' }
-];
-
-const INVOICE_STATUS = [
-  { value: 'DRAFT', label: 'Brouillon' },
-  { value: 'OPEN', label: 'Ouverte' },
-  { value: 'PAID', label: 'Payee' },
-  { value: 'VOID', label: 'Annulee' },
-  { value: 'UNCOLLECTIBLE', label: 'Irrecouvrable' }
-];
 
 const STATUS_COLORS: Record<string, string> = {
   ACTIVE: 'green',
@@ -136,22 +84,6 @@ const STATUS_COLORS: Record<string, string> = {
   PAID: 'green',
   VOID: 'red',
   UNCOLLECTIBLE: 'red'
-};
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const formatPercent = (value: number): string => {
-  return `${value.toFixed(1)}%`;
 };
 
 // Navigation inter-modules
@@ -199,6 +131,16 @@ const useSubscriptions = (filters?: { status?: string; plan_id?: string }) => {
   });
 };
 
+const useSubscription = (id: string) => {
+  return useQuery({
+    queryKey: ['subscriptions', 'detail', id],
+    queryFn: async () => {
+      return api.get<Subscription>(`/v1/subscriptions/${id}`).then(r => r.data);
+    },
+    enabled: !!id
+  });
+};
+
 const useInvoices = (filters?: { status?: string }) => {
   return useQuery({
     queryKey: ['subscriptions', 'invoices', filters],
@@ -207,7 +149,7 @@ const useInvoices = (filters?: { status?: string }) => {
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
       const url = queryString ? `/v1/subscriptions/invoices?${queryString}` : '/v1/subscriptions/invoices';
-      return api.get<Invoice[]>(url).then(r => r.data);
+      return api.get<SubscriptionInvoice[]>(url).then(r => r.data);
     }
   });
 };
@@ -225,7 +167,175 @@ const useCancelSubscription = () => {
 };
 
 // ============================================================================
-// COMPOSANTS
+// SUBSCRIPTION DETAIL VIEW (BaseViewStandard)
+// ============================================================================
+
+interface SubscriptionDetailViewProps {
+  subscriptionId: string;
+  onBack: () => void;
+}
+
+const SubscriptionDetailView: React.FC<SubscriptionDetailViewProps> = ({ subscriptionId, onBack }) => {
+  const { data: subscription, isLoading } = useSubscription(subscriptionId);
+
+  if (isLoading) {
+    return (
+      <div className="azals-loading-container">
+        <div className="azals-spinner" />
+        <p>Chargement de l'abonnement...</p>
+      </div>
+    );
+  }
+
+  if (!subscription) {
+    return (
+      <Card>
+        <div className="text-center py-8">
+          <AlertCircle size={48} className="text-danger mx-auto mb-4" />
+          <h3 className="text-lg font-medium">Abonnement non trouve</h3>
+          <p className="text-muted mt-2">L'abonnement demande n'existe pas.</p>
+          <Button variant="secondary" onClick={onBack} className="mt-4">
+            Retour
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const statusConfig = SUBSCRIPTION_STATUS_CONFIG[subscription.status];
+  const intervalConfig = INTERVAL_CONFIG[subscription.plan_code as keyof typeof INTERVAL_CONFIG] || INTERVAL_CONFIG.MONTHLY;
+  const invoicesCount = getPaidInvoicesCount(subscription);
+  const daysUntilRenewal = getDaysUntilRenewal(subscription);
+
+  // Tabs definition
+  const tabs: TabDefinition<Subscription>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Info size={16} />,
+      component: SubscriptionInfoTab
+    },
+    {
+      id: 'plan',
+      label: 'Plan',
+      icon: <Package size={16} />,
+      component: SubscriptionPlanTab
+    },
+    {
+      id: 'billing',
+      label: 'Facturation',
+      icon: <Receipt size={16} />,
+      badge: invoicesCount > 0 ? invoicesCount : undefined,
+      component: SubscriptionBillingTab
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: <FileText size={16} />,
+      component: SubscriptionDocumentsTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <History size={16} />,
+      component: SubscriptionHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'IA',
+      icon: <Sparkles size={16} />,
+      component: SubscriptionIATab
+    }
+  ];
+
+  // InfoBar items
+  const infoBarItems = [
+    {
+      id: 'plan',
+      label: 'Plan',
+      value: subscription.plan_name
+    },
+    {
+      id: 'amount',
+      label: 'Montant',
+      value: `${formatCurrency(subscription.amount, subscription.currency)} ${intervalConfig.shortLabel}`,
+      valueColor: 'primary' as SemanticColor
+    },
+    {
+      id: 'status',
+      label: 'Statut',
+      value: statusConfig.label,
+      valueColor: statusConfig.color as SemanticColor
+    },
+    {
+      id: 'renewal',
+      label: 'Renouvellement',
+      value: willCancel(subscription) ? 'Annulation' : `${daysUntilRenewal}j`,
+      valueColor: (willCancel(subscription) ? 'red' : daysUntilRenewal <= 7 ? 'orange' : undefined) as SemanticColor
+    }
+  ];
+
+  // Sidebar sections
+  const sidebarSections = [
+    {
+      id: 'summary',
+      title: 'Resume',
+      items: [
+        { id: 'plan', label: 'Plan', value: subscription.plan_name },
+        { id: 'amount', label: 'Montant', value: `${formatCurrency(subscription.amount, subscription.currency)} ${intervalConfig.shortLabel}`, highlight: true },
+        { id: 'status', label: 'Statut', value: statusConfig.label },
+        { id: 'start', label: 'Debut', value: formatDate(subscription.start_date) }
+      ]
+    },
+    {
+      id: 'client',
+      title: 'Client',
+      items: [
+        { id: 'name', label: 'Nom', value: subscription.customer_name },
+        { id: 'email', label: 'Email', value: subscription.customer_email }
+      ]
+    },
+    {
+      id: 'period',
+      title: 'Periode en cours',
+      items: [
+        { id: 'end', label: 'Fin de periode', value: formatDate(subscription.current_period_end) },
+        { id: 'renewal', label: 'Renouvellement', value: `Dans ${daysUntilRenewal} jours` }
+      ]
+    }
+  ];
+
+  // Header actions
+  const headerActions = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      onClick: onBack,
+      variant: 'ghost' as const
+    }
+  ];
+
+  return (
+    <BaseViewStandard<Subscription>
+      title={`Abonnement - ${subscription.customer_name}`}
+      subtitle={`${subscription.plan_name} - ${intervalConfig.label}`}
+      status={{
+        label: statusConfig.label,
+        color: statusConfig.color as SemanticColor
+      }}
+      data={subscription}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+    />
+  );
+};
+
+// ============================================================================
+// COMPOSANTS DE VUES (Lists)
 // ============================================================================
 
 const PlansView: React.FC = () => {
@@ -273,7 +383,11 @@ const PlansView: React.FC = () => {
   );
 };
 
-const SubscriptionsView: React.FC = () => {
+interface SubscriptionsViewProps {
+  onViewSubscription: (subscription: Subscription) => void;
+}
+
+const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({ onViewSubscription }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterPlan, setFilterPlan] = useState<string>('');
   const { data: subscriptions = [], isLoading } = useSubscriptions({
@@ -291,32 +405,36 @@ const SubscriptionsView: React.FC = () => {
     { id: 'plan_name', header: 'Plan', accessor: 'plan_name' },
     { id: 'amount', header: 'Montant', accessor: 'amount', render: (v, row) => formatCurrency(v as number, row.currency) },
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
-      const info = SUBSCRIPTION_STATUS.find(s => s.value === v);
-      return <Badge color={STATUS_COLORS[v as string] || 'gray'}>{info?.label || (v as string)}</Badge>;
+      const status = v as SubscriptionStatus;
+      const config = SUBSCRIPTION_STATUS_CONFIG[status];
+      return <Badge color={config?.color || 'gray'}>{config?.label || status}</Badge>;
     }},
     { id: 'start_date', header: 'Debut', accessor: 'start_date', render: (v) => formatDate(v as string) },
     { id: 'current_period_end', header: 'Fin periode', accessor: 'current_period_end', render: (v) => formatDate(v as string) },
     { id: 'cancel_at_period_end', header: 'Annulation', accessor: 'cancel_at_period_end', render: (v) => (v as boolean) ? (
       <Badge color="orange">Fin de periode</Badge>
     ) : null },
-    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
-      <div className="flex gap-1">
-        <Button size="sm" variant="secondary">Detail</Button>
-        {row.status === 'ACTIVE' && !row.cancel_at_period_end && (
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => {
-              if (confirm('Annuler cet abonnement a la fin de la periode?')) {
-                cancelSubscription.mutate({ id: row.id, immediately: false });
-              }
-            }}
-          >
-            Annuler
-          </Button>
-        )}
-      </div>
-    )}
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => {
+      const sub = row as Subscription;
+      return (
+        <div className="flex gap-1">
+          <Button size="sm" variant="secondary" onClick={() => onViewSubscription(sub)}>Detail</Button>
+          {sub.status === 'ACTIVE' && !sub.cancel_at_period_end && (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => {
+                if (confirm('Annuler cet abonnement a la fin de la periode?')) {
+                  cancelSubscription.mutate({ id: sub.id, immediately: false });
+                }
+              }}
+            >
+              Annuler
+            </Button>
+          )}
+        </div>
+      );
+    }}
   ];
 
   return (
@@ -352,7 +470,7 @@ const InvoicesView: React.FC = () => {
     status: filterStatus || undefined
   });
 
-  const columns: TableColumn<Invoice>[] = [
+  const columns: TableColumn<SubscriptionInvoice>[] = [
     { id: 'number', header: 'N Facture', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
     { id: 'customer_name', header: 'Client', accessor: 'customer_name' },
     { id: 'period_start', header: 'Periode', accessor: 'period_start', render: (v, row) => (
@@ -457,10 +575,15 @@ const MetricsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'plans' | 'subscriptions' | 'invoices' | 'metrics';
+type View = 'dashboard' | 'plans' | 'subscriptions' | 'invoices' | 'metrics' | 'detail';
+
+interface ViewState {
+  view: View;
+  subscriptionId?: string;
+}
 
 const SubscriptionsModule: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [viewState, setViewState] = useState<ViewState>({ view: 'dashboard' });
   const { data: stats } = useSubscriptionStats();
 
   const tabs = [
@@ -471,12 +594,27 @@ const SubscriptionsModule: React.FC = () => {
     { id: 'metrics', label: 'Metriques SaaS' }
   ];
 
+  const handleViewSubscription = (subscription: Subscription) => {
+    setViewState({ view: 'detail', subscriptionId: subscription.id });
+  };
+
+  const handleBack = () => {
+    setViewState({ view: 'subscriptions' });
+  };
+
+  // Detail view
+  if (viewState.view === 'detail' && viewState.subscriptionId) {
+    return (
+      <SubscriptionDetailView subscriptionId={viewState.subscriptionId} onBack={handleBack} />
+    );
+  }
+
   const renderContent = () => {
-    switch (currentView) {
+    switch (viewState.view) {
       case 'plans':
         return <PlansView />;
       case 'subscriptions':
-        return <SubscriptionsView />;
+        return <SubscriptionsView onViewSubscription={handleViewSubscription} />;
       case 'invoices':
         return <InvoicesView />;
       case 'metrics':
@@ -490,21 +628,21 @@ const SubscriptionsModule: React.FC = () => {
                 value={String(stats?.total_plans || 0)}
                 icon={<List />}
                 variant="default"
-                onClick={() => setCurrentView('plans')}
+                onClick={() => setViewState({ view: 'plans' })}
               />
               <StatCard
                 title="Abonnes actifs"
                 value={String(stats?.active_subscriptions || 0)}
                 icon={<Users />}
                 variant="success"
-                onClick={() => setCurrentView('subscriptions')}
+                onClick={() => setViewState({ view: 'subscriptions' })}
               />
               <StatCard
                 title="MRR"
                 value={formatCurrency(stats?.mrr || 0)}
                 icon={<DollarSign />}
                 variant="default"
-                onClick={() => setCurrentView('metrics')}
+                onClick={() => setViewState({ view: 'metrics' })}
               />
               <StatCard
                 title="Taux churn"
@@ -542,8 +680,8 @@ const SubscriptionsModule: React.FC = () => {
     <PageWrapper title="Abonnements" subtitle="Gestion des revenus recurrents">
       <TabNav
         tabs={tabs}
-        activeTab={currentView}
-        onChange={(id) => setCurrentView(id as View)}
+        activeTab={viewState.view}
+        onChange={(id) => setViewState({ view: id as View })}
       />
       <div className="mt-4">
         {renderContent()}

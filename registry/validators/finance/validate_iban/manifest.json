@@ -1,0 +1,54 @@
+{
+  "id": "azalscore.validators.finance.validate_iban",
+  "name": "Valide un numéro IBAN",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide un numéro IBAN",
+  "inputs": {
+    "iban": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "normalized_iban": {
+      "type": "string",
+      "description": ""
+    },
+    "country_code": {
+      "type": "string",
+      "description": ""
+    },
+    "bank_code": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "finance",
+    "banking"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

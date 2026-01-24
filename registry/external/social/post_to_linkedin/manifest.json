@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.external.social.post_to_linkedin",
+  "name": "Publie sur LinkedIn",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Publie sur LinkedIn",
+  "inputs": {
+    "message": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "post_id": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "social",
+    "sharing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

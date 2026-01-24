@@ -1,0 +1,60 @@
+{
+  "id": "azalscore.transformers.arrays.paginate_array",
+  "name": "Pagine un tableau",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Pagine un tableau",
+  "inputs": {
+    "items": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "page": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "page_size": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "items": {
+      "type": "array",
+      "description": ""
+    },
+    "total_items": {
+      "type": "number",
+      "description": ""
+    },
+    "total_pages": {
+      "type": "number",
+      "description": ""
+    },
+    "current_page": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "arrays",
+    "pagination"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

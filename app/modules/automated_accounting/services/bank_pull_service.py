@@ -402,16 +402,13 @@ class BankPullService:
 
         sessions = []
         for connection in connections:
-            try:
-                session = self.sync_connection(
-                    connection_id=connection.id,
-                    triggered_by=triggered_by,
-                    sync_type=sync_type,
-                    days_back=days_back
-                )
-                sessions.append(session)
-            except Exception as e:
-                logger.error(f"Sync failed for connection {connection.id}: {e}")
+            session = self.sync_connection(
+                connection_id=connection.id,
+                triggered_by=triggered_by,
+                sync_type=sync_type,
+                days_back=days_back
+            )
+            sessions.append(session)
 
         return sessions
 
@@ -466,40 +463,29 @@ class BankPullService:
         self.db.add(session)
         self.db.commit()
 
-        try:
-            provider = self.get_provider(connection.provider)
+        provider = self.get_provider(connection.provider)
 
-            # Synchronise chaque compte
-            accounts = self.db.query(SyncedBankAccount).filter(
-                SyncedBankAccount.connection_id == connection_id,
-                SyncedBankAccount.is_sync_enabled
-            ).all()
+        # Synchronise chaque compte
+        accounts = self.db.query(SyncedBankAccount).filter(
+            SyncedBankAccount.connection_id == connection_id,
+            SyncedBankAccount.is_sync_enabled
+        ).all()
 
-            for account in accounts:
-                self._sync_account_data(
-                    provider, connection, account, start_date, end_date, session
-                )
-
-            # Finalise la session
-            session.status = SyncStatus.COMPLETED
-            session.completed_at = datetime.utcnow()
-            session.duration_ms = int(
-                (session.completed_at - session.started_at).total_seconds() * 1000
+        for account in accounts:
+            self._sync_account_data(
+                provider, connection, account, start_date, end_date, session
             )
 
-            # Met à jour la connexion
-            connection.last_sync_at = datetime.utcnow()
-            connection.last_sync_status = "SUCCESS"
+        # Finalise la session
+        session.status = SyncStatus.COMPLETED
+        session.completed_at = datetime.utcnow()
+        session.duration_ms = int(
+            (session.completed_at - session.started_at).total_seconds() * 1000
+        )
 
-        except Exception as e:
-            session.status = SyncStatus.FAILED
-            session.error_message = str(e)
-            session.completed_at = datetime.utcnow()
-
-            connection.last_sync_status = "FAILED"
-            connection.last_sync_error = str(e)
-
-            logger.error(f"Bank sync failed: {e}")
+        # Met à jour la connexion
+        connection.last_sync_at = datetime.utcnow()
+        connection.last_sync_status = "SUCCESS"
 
         self.db.commit()
         self.db.refresh(session)
@@ -588,26 +574,20 @@ class BankPullService:
         """Vérifie et rafraîchit le token si nécessaire."""
         if connection.token_expires_at and connection.token_expires_at < datetime.utcnow():
             if connection.refresh_token_encrypted:
-                try:
-                    provider = self.get_provider(connection.provider)
-                    # Déchiffrer le refresh token avant utilisation
-                    decrypted_refresh = self._get_decrypted_refresh_token(connection)
-                    new_tokens = provider.refresh_token(decrypted_refresh)
+                provider = self.get_provider(connection.provider)
+                # Déchiffrer le refresh token avant utilisation
+                decrypted_refresh = self._get_decrypted_refresh_token(connection)
+                new_tokens = provider.refresh_token(decrypted_refresh)
 
-                    # Chiffrer les nouveaux tokens avant stockage
-                    connection.access_token_encrypted = encrypt_value(new_tokens["access_token"])
-                    if new_tokens.get("refresh_token"):
-                        connection.refresh_token_encrypted = encrypt_value(new_tokens["refresh_token"])
-                    connection.token_expires_at = new_tokens.get("expires_at")
-                    connection.status = BankConnectionStatus.ACTIVE
+                # Chiffrer les nouveaux tokens avant stockage
+                connection.access_token_encrypted = encrypt_value(new_tokens["access_token"])
+                if new_tokens.get("refresh_token"):
+                    connection.refresh_token_encrypted = encrypt_value(new_tokens["refresh_token"])
+                connection.token_expires_at = new_tokens.get("expires_at")
+                connection.status = BankConnectionStatus.ACTIVE
 
-                    self.db.commit()
-                    logger.info(f"Token refreshed for connection {connection.id}")
-
-                except Exception as e:
-                    connection.status = BankConnectionStatus.EXPIRED
-                    self.db.commit()
-                    raise ValueError(f"Token refresh failed: {e}")
+                self.db.commit()
+                logger.info(f"Token refreshed for connection {connection.id}")
             else:
                 connection.status = BankConnectionStatus.EXPIRED
                 self.db.commit()
