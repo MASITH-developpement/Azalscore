@@ -90,7 +90,7 @@ class TheoDelegator:
         Returns:
             AdapterResult avec le message vocal
         """
-        logger.info(f"[Delegator] Processing intent: {intent.category}/{intent.action_type}")
+        logger.info(f"[Delegator] Processing intent: {intent.category}/{intent.action}")
 
         # 1. Trouver l'adapter et l'action
         adapter_name, action_name = self._resolve_adapter(intent)
