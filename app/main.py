@@ -150,6 +150,9 @@ from app.modules.procurement.router import router as procurement_router
 # Module M4 - Achats (Purchases) - Backend complet
 from app.modules.purchases.router import router as purchases_router
 
+# Module ACCOUNTING - Comptabilité Générale - Backend complet
+from app.modules.accounting.router import router as accounting_router
+
 # Module M6 - Production (Manufacturing)
 from app.modules.production.router import router as production_router
 
@@ -670,6 +673,9 @@ api_v1.include_router(procurement_router)
 
 # Module M4 - Achats (Purchases) - Backend complet
 api_v1.include_router(purchases_router)
+
+# Module ACCOUNTING - Comptabilité Générale - Backend complet
+api_v1.include_router(accounting_router)
 
 # Module M5 - Stock (Inventaire + Logistique)
 api_v1.include_router(inventory_router)
