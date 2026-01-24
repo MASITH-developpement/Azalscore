@@ -207,6 +207,40 @@
   color: #1a1d21;
 }
 
+/* Theo AI Button */
+.azals-unified-header__theo-btn {
+  position: relative;
+  color: #8b5cf6;
+}
+
+.azals-unified-header__theo-btn:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  color: #7c3aed;
+}
+
+.azals-unified-header__theo-btn--active {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white !important;
+}
+
+.azals-unified-header__theo-btn--active:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+}
+
+/* Pulse animation for Theo button */
+@keyframes theo-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0);
+  }
+}
+
+.azals-unified-header__theo-btn:not(.azals-unified-header__theo-btn--active):hover {
+  animation: theo-pulse 2s infinite;
+}
+
 /* User menu */
 .azals-unified-header__user-menu {
   position: relative;
@@ -452,6 +486,15 @@
 
 .azals-unified-header--demo .azals-unified-header__icon-btn:hover {
   background: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__theo-btn {
+  color: rgba(167, 139, 250, 1) !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__theo-btn--active {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
   color: white !important;
 }
 

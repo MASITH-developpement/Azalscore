@@ -41,7 +41,7 @@ const VehiculesModule = lazy(() => import('./modules/vehicles'));
 const AffairesModule = lazy(() => import('./modules/affaires'));
 const ProductionModule = lazy(() => import('./modules/production'));
 const MaintenanceModule = lazy(() => import('./modules/maintenance'));
-const QualityModule = lazy(() => import('./modules/quality'));
+const QualityModule = lazy(() => import('./modules/qualite'));
 const POSModule = lazy(() => import('./modules/pos'));
 const EcommerceModule = lazy(() => import('./modules/ecommerce'));
 const MarketplaceModule = lazy(() => import('./modules/marketplace'));

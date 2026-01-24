@@ -47,6 +47,10 @@ class TenantMiddleware(BaseHTTPMiddleware):
         "/v1/auth/refresh", "/v1/auth/logout", "/v1/auth",
         # Audit routes (public for UI events without auth)
         "/v1/audit", "/v1/audit/ui-events",
+        # AI Orchestration (public status + Theo interface)
+        "/api/v1/ai/status", "/v1/ai/status",
+        "/api/v1/ai/theo", "/v1/ai/theo",
+        "/api/v1/ai/auth", "/v1/ai/auth",
     }
 
     async def dispatch(self, request: Request, call_next):

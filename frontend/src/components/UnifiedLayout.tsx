@@ -16,12 +16,14 @@ import { clsx } from 'clsx';
 import {
   Menu, X, Bell, User, LogOut, Settings, ChevronDown,
   Search, Plus, LayoutList, LayoutGrid, Database, AlertTriangle,
-  FileText, Users, Package, Truck, Star, Clock
+  FileText, Users, Package, Truck, Star, Clock, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@core/auth';
 import { DynamicMenu } from '@ui/menu-dynamic';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
+import { TheoPanelContainer } from '@ui/components/TheoPanel';
+import { useTheo } from '@core/theo';
 import { isDemoMode, setDemoMode } from '../utils/demoMode';
 import { setInterfaceMode, getCurrentMode, type InterfaceMode } from '../utils/interfaceMode';
 
@@ -34,6 +36,9 @@ export type ViewKey =
   | 'gestion-devis' | 'gestion-commandes' | 'gestion-interventions' | 'gestion-factures' | 'gestion-paiements'
   | 'affaires'
   | 'crm' | 'stock' | 'achats' | 'projets' | 'rh' | 'vehicules'
+  | 'production' | 'maintenance' | 'quality'
+  | 'pos' | 'ecommerce' | 'marketplace' | 'subscriptions'
+  | 'helpdesk' | 'bi' | 'compliance' | 'web'
   | 'compta' | 'tresorerie'
   | 'cockpit'
   | 'admin';
@@ -68,6 +73,17 @@ const MENU_ITEMS: MenuItem[] = [
   { key: 'achats', label: 'Achats', group: 'Modules' },
   { key: 'projets', label: 'Projets', group: 'Modules' },
   { key: 'rh', label: 'RH', group: 'Modules' },
+  { key: 'production', label: 'Production', group: 'Logistique' },
+  { key: 'maintenance', label: 'Maintenance', group: 'Logistique' },
+  { key: 'quality', label: 'Qualité', group: 'Logistique' },
+  { key: 'pos', label: 'Point de Vente', group: 'Commerce' },
+  { key: 'ecommerce', label: 'E-commerce', group: 'Commerce' },
+  { key: 'marketplace', label: 'Marketplace', group: 'Commerce' },
+  { key: 'subscriptions', label: 'Abonnements', group: 'Commerce' },
+  { key: 'helpdesk', label: 'Support Client', group: 'Services' },
+  { key: 'web', label: 'Site Web', group: 'Digital' },
+  { key: 'bi', label: 'Reporting & BI', group: 'Digital' },
+  { key: 'compliance', label: 'Conformité', group: 'Digital' },
   { key: 'compta', label: 'Comptabilité', group: 'Finance' },
   { key: 'tresorerie', label: 'Trésorerie', group: 'Finance' },
   { key: 'cockpit', label: 'Cockpit Dirigeant', group: 'Direction' },
@@ -96,6 +112,7 @@ const Header: React.FC<HeaderProps> = ({
   isMobileMenuOpen = false,
 }) => {
   const { user } = useAuth();
+  const { toggle: toggleTheo, isOpen: isTheoOpen } = useTheo();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const demoMode = isDemoMode();
@@ -176,6 +193,18 @@ const Header: React.FC<HeaderProps> = ({
 
       {/* Right side */}
       <div className="azals-unified-header__right">
+        {/* Assistance IA Theo */}
+        <button
+          className={clsx('azals-unified-header__icon-btn azals-unified-header__theo-btn', {
+            'azals-unified-header__theo-btn--active': isTheoOpen
+          })}
+          onClick={toggleTheo}
+          aria-label="Assistance IA"
+          title="Assistance IA Theo"
+        >
+          <Sparkles size={20} />
+        </button>
+
         {/* Notifications */}
         <button className="azals-unified-header__icon-btn" aria-label="Notifications">
           <Bell size={20} />
@@ -386,6 +415,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({
 
       <ErrorToaster />
       <GuardianPanelContainer />
+      <TheoPanelContainer />
     </div>
   );
 };
