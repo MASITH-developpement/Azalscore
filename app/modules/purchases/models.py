@@ -117,8 +117,8 @@ class PurchaseSupplier(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relations
-    orders = relationship("PurchaseOrder", back_populates="supplier", lazy="dynamic")
-    invoices = relationship("PurchaseInvoice", back_populates="supplier", lazy="dynamic")
+    orders = relationship("LegacyPurchaseOrder", back_populates="supplier", lazy="dynamic")
+    invoices = relationship("LegacyPurchaseInvoice", back_populates="supplier", lazy="dynamic")
 
     # Index
     __table_args__ = (
@@ -128,7 +128,7 @@ class PurchaseSupplier(Base):
     )
 
 
-class PurchaseOrder(Base):
+class LegacyPurchaseOrder(Base):
     """Commande d'achat fournisseur."""
     __tablename__ = "purchases_orders"
 
@@ -177,8 +177,8 @@ class PurchaseOrder(Base):
 
     # Relations
     supplier = relationship("PurchaseSupplier", back_populates="orders")
-    lines = relationship("PurchaseOrderLine", back_populates="order", cascade="all, delete-orphan")
-    invoices = relationship("PurchaseInvoice", back_populates="order")
+    lines = relationship("LegacyPurchaseOrderLine", back_populates="order", cascade="all, delete-orphan")
+    invoices = relationship("LegacyPurchaseInvoice", back_populates="order")
 
     # Index
     __table_args__ = (
@@ -190,7 +190,7 @@ class PurchaseOrder(Base):
     )
 
 
-class PurchaseOrderLine(Base):
+class LegacyPurchaseOrderLine(Base):
     """Ligne de commande achat."""
     __tablename__ = "purchases_order_lines"
 
@@ -230,7 +230,7 @@ class PurchaseOrderLine(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relation
-    order = relationship("PurchaseOrder", back_populates="lines")
+    order = relationship("LegacyPurchaseOrder", back_populates="lines")
 
     # Index
     __table_args__ = (
@@ -239,7 +239,7 @@ class PurchaseOrderLine(Base):
     )
 
 
-class PurchaseInvoice(Base):
+class LegacyPurchaseInvoice(Base):
     """Facture fournisseur."""
     __tablename__ = "purchases_invoices"
 
@@ -289,8 +289,8 @@ class PurchaseInvoice(Base):
 
     # Relations
     supplier = relationship("PurchaseSupplier", back_populates="invoices")
-    order = relationship("PurchaseOrder", back_populates="invoices")
-    lines = relationship("PurchaseInvoiceLine", back_populates="invoice", cascade="all, delete-orphan")
+    order = relationship("LegacyPurchaseOrder", back_populates="invoices")
+    lines = relationship("LegacyPurchaseInvoiceLine", back_populates="invoice", cascade="all, delete-orphan")
 
     # Index
     __table_args__ = (
@@ -303,7 +303,7 @@ class PurchaseInvoice(Base):
     )
 
 
-class PurchaseInvoiceLine(Base):
+class LegacyPurchaseInvoiceLine(Base):
     """Ligne de facture fournisseur."""
     __tablename__ = "purchases_invoice_lines"
 
@@ -340,7 +340,7 @@ class PurchaseInvoiceLine(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relation
-    invoice = relationship("PurchaseInvoice", back_populates="lines")
+    invoice = relationship("LegacyPurchaseInvoice", back_populates="lines")
 
     # Index
     __table_args__ = (

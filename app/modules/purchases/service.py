@@ -16,10 +16,10 @@ from sqlalchemy.orm import Session, selectinload
 from .models import (
     InvoiceStatus,
     OrderStatus,
-    PurchaseInvoice,
-    PurchaseInvoiceLine,
-    PurchaseOrder,
-    PurchaseOrderLine,
+    LegacyPurchaseInvoice,
+    LegacyPurchaseInvoiceLine,
+    LegacyPurchaseOrder,
+    LegacyPurchaseOrderLine,
     PurchaseSupplier,
     SupplierStatus,
 )
@@ -144,9 +144,9 @@ class PurchasesService:
             return False
 
         # Vérifier qu'il n'y a pas de commandes ou factures liées
-        orders_count = self.db.query(PurchaseOrder).filter(
-            PurchaseOrder.tenant_id == self.tenant_id,
-            PurchaseOrder.supplier_id == supplier_id
+        orders_count = self.db.query(LegacyPurchaseOrder).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id,
+            LegacyPurchaseOrder.supplier_id == supplier_id
         ).count()
 
         if orders_count > 0:
@@ -161,13 +161,13 @@ class PurchasesService:
     # GESTION DES COMMANDES
     # ========================================================================
 
-    def create_order(self, data: PurchaseOrderCreate, user_id: UUID) -> PurchaseOrder:
+    def create_order(self, data: PurchaseOrderCreate, user_id: UUID) -> LegacyPurchaseOrder:
         """Créer une commande d'achat."""
         # Générer un numéro de commande
         order_number = self.get_next_order_number()
 
         # Créer la commande
-        order = PurchaseOrder(
+        order = LegacyPurchaseOrder(
             tenant_id=self.tenant_id,
             number=order_number,
             created_by=user_id,
@@ -180,7 +180,7 @@ class PurchasesService:
         total_ttc = Decimal("0.00")
 
         for line_data in data.lines:
-            line = PurchaseOrderLine(
+            line = LegacyPurchaseOrderLine(
                 tenant_id=self.tenant_id,
                 **line_data.model_dump(exclude_unset=False)
             )
@@ -202,14 +202,14 @@ class PurchasesService:
         self.db.refresh(order)
         return order
 
-    def get_order(self, order_id: UUID) -> Optional[PurchaseOrder]:
+    def get_order(self, order_id: UUID) -> Optional[LegacyPurchaseOrder]:
         """Récupérer une commande par ID avec ses lignes."""
-        return self.db.query(PurchaseOrder).options(
-            selectinload(PurchaseOrder.lines),
-            selectinload(PurchaseOrder.supplier)
+        return self.db.query(LegacyPurchaseOrder).options(
+            selectinload(LegacyPurchaseOrder.lines),
+            selectinload(LegacyPurchaseOrder.supplier)
         ).filter(
-            PurchaseOrder.tenant_id == self.tenant_id,
-            PurchaseOrder.id == order_id
+            LegacyPurchaseOrder.tenant_id == self.tenant_id,
+            LegacyPurchaseOrder.id == order_id
         ).first()
 
     def get_next_order_number(self) -> str:
@@ -217,10 +217,10 @@ class PurchasesService:
         year = datetime.now().year
         prefix = f"CA-{year}-"
 
-        last_order = self.db.query(PurchaseOrder).filter(
-            PurchaseOrder.tenant_id == self.tenant_id,
-            PurchaseOrder.number.like(f"{prefix}%")
-        ).order_by(desc(PurchaseOrder.number)).first()
+        last_order = self.db.query(LegacyPurchaseOrder).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id,
+            LegacyPurchaseOrder.number.like(f"{prefix}%")
+        ).order_by(desc(LegacyPurchaseOrder.number)).first()
 
         if last_order:
             try:
@@ -240,29 +240,29 @@ class PurchasesService:
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[PurchaseOrder], int]:
+    ) -> Tuple[List[LegacyPurchaseOrder], int]:
         """Lister les commandes avec filtres."""
-        query = self.db.query(PurchaseOrder).options(
-            selectinload(PurchaseOrder.supplier)
-        ).filter(PurchaseOrder.tenant_id == self.tenant_id)
+        query = self.db.query(LegacyPurchaseOrder).options(
+            selectinload(LegacyPurchaseOrder.supplier)
+        ).filter(LegacyPurchaseOrder.tenant_id == self.tenant_id)
 
         if supplier_id:
-            query = query.filter(PurchaseOrder.supplier_id == supplier_id)
+            query = query.filter(LegacyPurchaseOrder.supplier_id == supplier_id)
         if status:
-            query = query.filter(PurchaseOrder.status == status)
+            query = query.filter(LegacyPurchaseOrder.status == status)
         if search:
             query = query.filter(
                 or_(
-                    PurchaseOrder.number.ilike(f"%{search}%"),
-                    PurchaseOrder.reference.ilike(f"%{search}%")
+                    LegacyPurchaseOrder.number.ilike(f"%{search}%"),
+                    LegacyPurchaseOrder.reference.ilike(f"%{search}%")
                 )
             )
 
         total = query.count()
-        items = query.order_by(desc(PurchaseOrder.date)).offset((page - 1) * page_size).limit(page_size).all()
+        items = query.order_by(desc(LegacyPurchaseOrder.date)).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_order(self, order_id: UUID, data: PurchaseOrderUpdate) -> Optional[PurchaseOrder]:
+    def update_order(self, order_id: UUID, data: PurchaseOrderUpdate) -> Optional[LegacyPurchaseOrder]:
         """Mettre à jour une commande."""
         order = self.get_order(order_id)
         if not order:
@@ -280,7 +280,7 @@ class PurchasesService:
         self.db.refresh(order)
         return order
 
-    def validate_order(self, order_id: UUID, user_id: UUID) -> Optional[PurchaseOrder]:
+    def validate_order(self, order_id: UUID, user_id: UUID) -> Optional[LegacyPurchaseOrder]:
         """Valider une commande (DRAFT → SENT)."""
         order = self.get_order(order_id)
         if not order:
@@ -300,7 +300,7 @@ class PurchasesService:
         self.db.refresh(order)
         return order
 
-    def cancel_order(self, order_id: UUID) -> Optional[PurchaseOrder]:
+    def cancel_order(self, order_id: UUID) -> Optional[LegacyPurchaseOrder]:
         """Annuler une commande."""
         order = self.get_order(order_id)
         if not order:
@@ -318,19 +318,19 @@ class PurchasesService:
     # GESTION DES FACTURES
     # ========================================================================
 
-    def create_invoice(self, data: PurchaseInvoiceCreate, user_id: UUID) -> PurchaseInvoice:
+    def create_invoice(self, data: PurchaseInvoiceCreate, user_id: UUID) -> LegacyPurchaseInvoice:
         """Créer une facture fournisseur."""
         # Vérifier si le numéro existe déjà
-        existing = self.db.query(PurchaseInvoice).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id,
-            PurchaseInvoice.number == data.number
+        existing = self.db.query(LegacyPurchaseInvoice).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id,
+            LegacyPurchaseInvoice.number == data.number
         ).first()
 
         if existing:
             raise ValueError(f"Une facture avec le numéro {data.number} existe déjà")
 
         # Créer la facture
-        invoice = PurchaseInvoice(
+        invoice = LegacyPurchaseInvoice(
             tenant_id=self.tenant_id,
             created_by=user_id,
             **data.model_dump(exclude={"lines"}, exclude_unset=False)
@@ -342,7 +342,7 @@ class PurchasesService:
         total_ttc = Decimal("0.00")
 
         for line_data in data.lines:
-            line = PurchaseInvoiceLine(
+            line = LegacyPurchaseInvoiceLine(
                 tenant_id=self.tenant_id,
                 **line_data.model_dump(exclude_unset=False)
             )
@@ -364,14 +364,14 @@ class PurchasesService:
         self.db.refresh(invoice)
         return invoice
 
-    def get_invoice(self, invoice_id: UUID) -> Optional[PurchaseInvoice]:
+    def get_invoice(self, invoice_id: UUID) -> Optional[LegacyPurchaseInvoice]:
         """Récupérer une facture par ID avec ses lignes."""
-        return self.db.query(PurchaseInvoice).options(
-            selectinload(PurchaseInvoice.lines),
-            selectinload(PurchaseInvoice.supplier)
+        return self.db.query(LegacyPurchaseInvoice).options(
+            selectinload(LegacyPurchaseInvoice.lines),
+            selectinload(LegacyPurchaseInvoice.supplier)
         ).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id,
-            PurchaseInvoice.id == invoice_id
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id,
+            LegacyPurchaseInvoice.id == invoice_id
         ).first()
 
     def list_invoices(
@@ -382,31 +382,31 @@ class PurchasesService:
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
-    ) -> Tuple[List[PurchaseInvoice], int]:
+    ) -> Tuple[List[LegacyPurchaseInvoice], int]:
         """Lister les factures avec filtres."""
-        query = self.db.query(PurchaseInvoice).options(
-            selectinload(PurchaseInvoice.supplier)
-        ).filter(PurchaseInvoice.tenant_id == self.tenant_id)
+        query = self.db.query(LegacyPurchaseInvoice).options(
+            selectinload(LegacyPurchaseInvoice.supplier)
+        ).filter(LegacyPurchaseInvoice.tenant_id == self.tenant_id)
 
         if supplier_id:
-            query = query.filter(PurchaseInvoice.supplier_id == supplier_id)
+            query = query.filter(LegacyPurchaseInvoice.supplier_id == supplier_id)
         if order_id:
-            query = query.filter(PurchaseInvoice.order_id == order_id)
+            query = query.filter(LegacyPurchaseInvoice.order_id == order_id)
         if status:
-            query = query.filter(PurchaseInvoice.status == status)
+            query = query.filter(LegacyPurchaseInvoice.status == status)
         if search:
             query = query.filter(
                 or_(
-                    PurchaseInvoice.number.ilike(f"%{search}%"),
-                    PurchaseInvoice.reference.ilike(f"%{search}%")
+                    LegacyPurchaseInvoice.number.ilike(f"%{search}%"),
+                    LegacyPurchaseInvoice.reference.ilike(f"%{search}%")
                 )
             )
 
         total = query.count()
-        items = query.order_by(desc(PurchaseInvoice.invoice_date)).offset((page - 1) * page_size).limit(page_size).all()
+        items = query.order_by(desc(LegacyPurchaseInvoice.invoice_date)).offset((page - 1) * page_size).limit(page_size).all()
         return items, total
 
-    def update_invoice(self, invoice_id: UUID, data: PurchaseInvoiceUpdate) -> Optional[PurchaseInvoice]:
+    def update_invoice(self, invoice_id: UUID, data: PurchaseInvoiceUpdate) -> Optional[LegacyPurchaseInvoice]:
         """Mettre à jour une facture."""
         invoice = self.get_invoice(invoice_id)
         if not invoice:
@@ -424,7 +424,7 @@ class PurchasesService:
         self.db.refresh(invoice)
         return invoice
 
-    def validate_invoice(self, invoice_id: UUID, user_id: UUID) -> Optional[PurchaseInvoice]:
+    def validate_invoice(self, invoice_id: UUID, user_id: UUID) -> Optional[LegacyPurchaseInvoice]:
         """Valider une facture (DRAFT → VALIDATED)."""
         invoice = self.get_invoice(invoice_id)
         if not invoice:
@@ -457,7 +457,7 @@ class PurchasesService:
         payment_date: datetime,
         payment_method: str,
         amount: Optional[Decimal] = None
-    ) -> Optional[PurchaseInvoice]:
+    ) -> Optional[LegacyPurchaseInvoice]:
         """Enregistrer le paiement d'une facture."""
         invoice = self.get_invoice(invoice_id)
         if not invoice:
@@ -506,67 +506,67 @@ class PurchasesService:
         ).count()
 
         # Commandes
-        total_orders = self.db.query(PurchaseOrder).filter(
-            PurchaseOrder.tenant_id == self.tenant_id
+        total_orders = self.db.query(LegacyPurchaseOrder).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id
         ).count()
 
-        draft_orders = self.db.query(PurchaseOrder).filter(
-            PurchaseOrder.tenant_id == self.tenant_id,
-            PurchaseOrder.status == OrderStatus.DRAFT
+        draft_orders = self.db.query(LegacyPurchaseOrder).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id,
+            LegacyPurchaseOrder.status == OrderStatus.DRAFT
         ).count()
 
-        sent_orders = self.db.query(PurchaseOrder).filter(
-            PurchaseOrder.tenant_id == self.tenant_id,
-            PurchaseOrder.status == OrderStatus.SENT
+        sent_orders = self.db.query(LegacyPurchaseOrder).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id,
+            LegacyPurchaseOrder.status == OrderStatus.SENT
         ).count()
 
-        confirmed_orders = self.db.query(PurchaseOrder).filter(
-            PurchaseOrder.tenant_id == self.tenant_id,
-            PurchaseOrder.status == OrderStatus.CONFIRMED
+        confirmed_orders = self.db.query(LegacyPurchaseOrder).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id,
+            LegacyPurchaseOrder.status == OrderStatus.CONFIRMED
         ).count()
 
-        received_orders = self.db.query(PurchaseOrder).filter(
-            PurchaseOrder.tenant_id == self.tenant_id,
-            PurchaseOrder.status == OrderStatus.RECEIVED
+        received_orders = self.db.query(LegacyPurchaseOrder).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id,
+            LegacyPurchaseOrder.status == OrderStatus.RECEIVED
         ).count()
 
         # Factures
-        total_invoices = self.db.query(PurchaseInvoice).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id
+        total_invoices = self.db.query(LegacyPurchaseInvoice).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id
         ).count()
 
-        pending_invoices = self.db.query(PurchaseInvoice).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id,
-            PurchaseInvoice.status == InvoiceStatus.DRAFT
+        pending_invoices = self.db.query(LegacyPurchaseInvoice).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id,
+            LegacyPurchaseInvoice.status == InvoiceStatus.DRAFT
         ).count()
 
-        validated_invoices = self.db.query(PurchaseInvoice).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id,
-            PurchaseInvoice.status == InvoiceStatus.VALIDATED
+        validated_invoices = self.db.query(LegacyPurchaseInvoice).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id,
+            LegacyPurchaseInvoice.status == InvoiceStatus.VALIDATED
         ).count()
 
-        paid_invoices = self.db.query(PurchaseInvoice).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id,
-            PurchaseInvoice.status == InvoiceStatus.PAID
+        paid_invoices = self.db.query(LegacyPurchaseInvoice).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id,
+            LegacyPurchaseInvoice.status == InvoiceStatus.PAID
         ).count()
 
         # Montants
-        period_orders_sum = self.db.query(func.sum(PurchaseOrder.total_ttc)).filter(
-            PurchaseOrder.tenant_id == self.tenant_id
+        period_orders_sum = self.db.query(func.sum(LegacyPurchaseOrder.total_ttc)).filter(
+            LegacyPurchaseOrder.tenant_id == self.tenant_id
         ).scalar() or Decimal("0.00")
 
-        period_invoices_sum = self.db.query(func.sum(PurchaseInvoice.total_ttc)).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id
+        period_invoices_sum = self.db.query(func.sum(LegacyPurchaseInvoice.total_ttc)).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id
         ).scalar() or Decimal("0.00")
 
-        period_paid_sum = self.db.query(func.sum(PurchaseInvoice.paid_amount)).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id,
-            PurchaseInvoice.status == InvoiceStatus.PAID
+        period_paid_sum = self.db.query(func.sum(LegacyPurchaseInvoice.paid_amount)).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id,
+            LegacyPurchaseInvoice.status == InvoiceStatus.PAID
         ).scalar() or Decimal("0.00")
 
-        pending_payments_sum = self.db.query(func.sum(PurchaseInvoice.total_ttc)).filter(
-            PurchaseInvoice.tenant_id == self.tenant_id,
-            PurchaseInvoice.status == InvoiceStatus.VALIDATED
+        pending_payments_sum = self.db.query(func.sum(LegacyPurchaseInvoice.total_ttc)).filter(
+            LegacyPurchaseInvoice.tenant_id == self.tenant_id,
+            LegacyPurchaseInvoice.status == InvoiceStatus.VALIDATED
         ).scalar() or Decimal("0.00")
 
         # Moyennes
@@ -577,9 +577,9 @@ class PurchasesService:
         top_suppliers_data = self.db.query(
             PurchaseSupplier.id,
             PurchaseSupplier.name,
-            func.sum(PurchaseOrder.total_ttc).label("total")
+            func.sum(LegacyPurchaseOrder.total_ttc).label("total")
         ).join(
-            PurchaseOrder, PurchaseOrder.supplier_id == PurchaseSupplier.id
+            LegacyPurchaseOrder, LegacyPurchaseOrder.supplier_id == PurchaseSupplier.id
         ).filter(
             PurchaseSupplier.tenant_id == self.tenant_id
         ).group_by(
