@@ -39,9 +39,10 @@ logger = logging.getLogger(__name__)
 class BackupService:
     """Service pour les sauvegardes chiffrées."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id
         self.base_path = os.environ.get("BACKUP_PATH", "/var/azals/backups")
 
     # =========================================================================
@@ -503,6 +504,6 @@ class BackupService:
         )
 
 
-def get_backup_service(db: Session, tenant_id: str) -> BackupService:
+def get_backup_service(db: Session, tenant_id: str, user_id: str = None) -> BackupService:
     """Factory pour le service backup."""
-    return BackupService(db, tenant_id)
+    return BackupService(db, tenant_id, user_id)
