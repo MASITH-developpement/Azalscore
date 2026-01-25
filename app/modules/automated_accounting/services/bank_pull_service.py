@@ -213,9 +213,10 @@ class BankPullService:
     JAMAIS de webhooks ou push depuis la banque.
     """
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self._providers: dict[str, BankProvider] = {}
         self._init_providers()
 

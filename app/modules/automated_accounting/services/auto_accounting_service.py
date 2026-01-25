@@ -317,9 +317,10 @@ class AutoAccountingService:
     Principe clé: La comptabilité est produite AVANT toute intervention humaine.
     """
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self.rules_engine = AccountingRulesEngine(db, tenant_id)
 
     def process_document(

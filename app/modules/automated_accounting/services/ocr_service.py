@@ -345,9 +345,10 @@ class FieldExtractor:
 class OCRService:
     """Service principal d'OCR pour les documents comptables."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self._engines: dict[str, OCREngine] = {}
         self._init_engines()
 

@@ -449,9 +449,10 @@ class AIClassificationEngine:
 class AIClassificationService:
     """Service de classification IA pour les documents comptables."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self.engine = AIClassificationEngine(db, tenant_id)
 
     def classify_document(self, document_id: UUID) -> AIClassification:

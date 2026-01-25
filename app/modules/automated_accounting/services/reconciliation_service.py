@@ -48,9 +48,10 @@ class MatchingEngine:
         "min_confidence_auto": Decimal("90"),    # Confiance min pour auto-rapprochement
     }
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self._rules_cache: list[ReconciliationRule] | None = None
 
     def find_matches(
@@ -323,9 +324,10 @@ class MatchingEngine:
 class ReconciliationService:
     """Service de rapprochement automatique."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self.matching_engine = MatchingEngine(db, tenant_id)
 
     # =========================================================================
