@@ -1,0 +1,943 @@
+"""
+AZALS MODULE HR - Router API v2 (CORE SaaS)
+============================================
+
+✅ MIGRÉ CORE SaaS Phase 2.2
+- Utilise get_saas_context() au lieu de get_current_user() + get_tenant_id()
+- Isolation tenant automatique via context.tenant_id
+- Audit trail automatique via context.user_id
+
+Endpoints API pour la gestion des ressources humaines.
+"""
+
+from datetime import date
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.saas_context import SaaSContext, get_saas_context
+
+from .models import DocumentType, EmployeeStatus, EvaluationStatus, LeaveStatus, TrainingStatus, TrainingType
+from .schemas import (
+    ContractCreate,
+    ContractResponse,
+    DepartmentCreate,
+    DepartmentResponse,
+    DepartmentUpdate,
+    EmployeeCreate,
+    EmployeeList,
+    EmployeeResponse,
+    EmployeeSkillCreate,
+    EmployeeSkillResponse,
+    EmployeeUpdate,
+    EvaluationCreate,
+    EvaluationResponse,
+    EvaluationUpdate,
+    HRDashboard,
+    HRDocumentCreate,
+    HRDocumentResponse,
+    LeaveBalanceResponse,
+    LeaveRequestCreate,
+    LeaveRequestResponse,
+    PayrollPeriodCreate,
+    PayrollPeriodResponse,
+    PayslipCreate,
+    PayslipResponse,
+    PositionCreate,
+    PositionResponse,
+    PositionUpdate,
+    SkillCreate,
+    SkillResponse,
+    TimeEntryCreate,
+    TimeEntryResponse,
+    TrainingCreate,
+    TrainingParticipantCreate,
+    TrainingParticipantResponse,
+    TrainingResponse,
+)
+from .service import get_hr_service
+
+router = APIRouter(prefix="/hr", tags=["RH - Ressources Humaines"])
+
+
+# =============================================================================
+# SERVICE DEPENDENCY v2
+# =============================================================================
+
+def get_service_v2(
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+) -> object:
+    """✅ MIGRÉ CORE SaaS: Utilise context.tenant_id"""
+    return get_hr_service(db, context.tenant_id)
+
+
+# =============================================================================
+# DÉPARTEMENTS
+# =============================================================================
+
+@router.post("/departments", response_model=DepartmentResponse, status_code=status.HTTP_201_CREATED)
+def create_department(
+    data: DepartmentCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer un département.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user → context
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_department(data)
+
+
+@router.get("/departments", response_model=list[DepartmentResponse])
+def list_departments(
+    is_active: bool = True,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les départements.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_departments(is_active=is_active)
+
+
+@router.get("/departments/{department_id}", response_model=DepartmentResponse)
+def get_department(
+    department_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer un département par son ID.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    department = service.get_department(department_id)
+    if not department:
+        raise HTTPException(status_code=404, detail="Département non trouvé")
+    return department
+
+
+@router.put("/departments/{department_id}", response_model=DepartmentResponse)
+def update_department(
+    department_id: UUID,
+    data: DepartmentUpdate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Mettre à jour un département.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.update_department(department_id, data)
+
+
+# =============================================================================
+# POSTES
+# =============================================================================
+
+@router.post("/positions", response_model=PositionResponse, status_code=status.HTTP_201_CREATED)
+def create_position(
+    data: PositionCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer un poste.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_position(data)
+
+
+@router.get("/positions", response_model=list[PositionResponse])
+def list_positions(
+    department_id: UUID | None = None,
+    is_active: bool = True,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les postes.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_positions(department_id=department_id, is_active=is_active)
+
+
+@router.get("/positions/{position_id}", response_model=PositionResponse)
+def get_position(
+    position_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer un poste par son ID.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    position = service.get_position(position_id)
+    if not position:
+        raise HTTPException(status_code=404, detail="Poste non trouvé")
+    return position
+
+
+@router.put("/positions/{position_id}", response_model=PositionResponse)
+def update_position(
+    position_id: UUID,
+    data: PositionUpdate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Mettre à jour un poste.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.update_position(position_id, data)
+
+
+# =============================================================================
+# EMPLOYÉS
+# =============================================================================
+
+@router.post("/employees", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
+def create_employee(
+    data: EmployeeCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user → context
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_employee(data, created_by=context.user_id)
+
+
+@router.get("/employees", response_model=EmployeeList)
+def list_employees(
+    department_id: UUID | None = None,
+    position_id: UUID | None = None,
+    status: EmployeeStatus | None = None,
+    search: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les employés avec filtres et pagination.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    employees, total = service.list_employees(
+        department_id=department_id,
+        position_id=position_id,
+        status=status,
+        search=search,
+        page=page,
+        page_size=page_size
+    )
+    return EmployeeList(
+        employees=employees,
+        total=total,
+        page=page,
+        page_size=page_size
+    )
+
+
+@router.get("/employees/{employee_id}", response_model=EmployeeResponse)
+def get_employee(
+    employee_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer un employé par son ID.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    employee = service.get_employee(employee_id)
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employé non trouvé")
+    return employee
+
+
+@router.put("/employees/{employee_id}", response_model=EmployeeResponse)
+def update_employee(
+    employee_id: UUID,
+    data: EmployeeUpdate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Mettre à jour un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.update_employee(employee_id, data, updated_by=context.user_id)
+
+
+@router.post("/employees/{employee_id}/terminate", response_model=EmployeeResponse)
+def terminate_employee(
+    employee_id: UUID,
+    termination_date: date,
+    termination_reason: str,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Mettre fin au contrat d'un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.terminate_employee(
+        employee_id=employee_id,
+        termination_date=termination_date,
+        termination_reason=termination_reason,
+        terminated_by=context.user_id
+    )
+
+
+# =============================================================================
+# CONTRATS
+# =============================================================================
+
+@router.post("/contracts", response_model=ContractResponse, status_code=status.HTTP_201_CREATED)
+def create_contract(
+    data: ContractCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer un contrat.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_contract(data, created_by=context.user_id)
+
+
+@router.get("/contracts/{contract_id}", response_model=ContractResponse)
+def get_contract(
+    contract_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer un contrat par son ID.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    contract = service.get_contract(contract_id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contrat non trouvé")
+    return contract
+
+
+@router.get("/employees/{employee_id}/contracts", response_model=list[ContractResponse])
+def get_employee_contracts(
+    employee_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer les contrats d'un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.get_employee_contracts(employee_id)
+
+
+# =============================================================================
+# DEMANDES DE CONGÉS
+# =============================================================================
+
+@router.post("/employees/{employee_id}/leave-requests", response_model=LeaveRequestResponse, status_code=status.HTTP_201_CREATED)
+def create_leave_request(
+    employee_id: UUID,
+    data: LeaveRequestCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer une demande de congé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_leave_request(employee_id, data)
+
+
+@router.get("/leave-requests")
+def list_leave_requests(
+    employee_id: UUID | None = None,
+    status: LeaveStatus | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les demandes de congés.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_leave_requests(
+        employee_id=employee_id,
+        status=status,
+        from_date=from_date,
+        to_date=to_date
+    )
+
+
+@router.post("/leave-requests/{leave_id}/approve", response_model=LeaveRequestResponse)
+def approve_leave_request(
+    leave_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Approuver une demande de congé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.approve_leave_request(leave_id, approved_by=context.user_id)
+
+
+@router.post("/leave-requests/{leave_id}/reject", response_model=LeaveRequestResponse)
+def reject_leave_request(
+    leave_id: UUID,
+    rejection_reason: str,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Rejeter une demande de congé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.reject_leave_request(
+        leave_id=leave_id,
+        rejection_reason=rejection_reason,
+        rejected_by=context.user_id
+    )
+
+
+@router.get("/employees/{employee_id}/leave-balance", response_model=list[LeaveBalanceResponse])
+def get_employee_leave_balance(
+    employee_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer le solde de congés d'un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.get_employee_leave_balance(employee_id)
+
+
+# =============================================================================
+# PÉRIODES DE PAIE
+# =============================================================================
+
+@router.post("/payroll-periods", response_model=PayrollPeriodResponse, status_code=status.HTTP_201_CREATED)
+def create_payroll_period(
+    data: PayrollPeriodCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer une période de paie.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_payroll_period(data, created_by=context.user_id)
+
+
+@router.get("/payroll-periods", response_model=list[PayrollPeriodResponse])
+def list_payroll_periods(
+    year: int | None = None,
+    month: int | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les périodes de paie.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_payroll_periods(year=year, month=month)
+
+
+@router.get("/payroll-periods/{period_id}", response_model=PayrollPeriodResponse)
+def get_payroll_period(
+    period_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer une période de paie par son ID.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    period = service.get_payroll_period(period_id)
+    if not period:
+        raise HTTPException(status_code=404, detail="Période de paie non trouvée")
+    return period
+
+
+# =============================================================================
+# BULLETINS DE PAIE
+# =============================================================================
+
+@router.get("/payslips", response_model=list[PayslipResponse])
+def list_payslips(
+    employee_id: UUID | None = None,
+    period_id: UUID | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les bulletins de paie.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_payslips(employee_id=employee_id, period_id=period_id)
+
+
+@router.post("/payslips", response_model=PayslipResponse, status_code=status.HTTP_201_CREATED)
+def create_payslip(
+    data: PayslipCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer un bulletin de paie.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_payslip(data, created_by=context.user_id)
+
+
+@router.post("/payslips/{payslip_id}/validate", response_model=PayslipResponse)
+def validate_payslip(
+    payslip_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Valider un bulletin de paie.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.validate_payslip(payslip_id, validated_by=context.user_id)
+
+
+@router.get("/employees/{employee_id}/payslips", response_model=list[PayslipResponse])
+def get_employee_payslips(
+    employee_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer les bulletins de paie d'un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.get_employee_payslips(employee_id)
+
+
+# =============================================================================
+# SAISIE DES TEMPS
+# =============================================================================
+
+@router.post("/employees/{employee_id}/time-entries", response_model=TimeEntryResponse, status_code=status.HTTP_201_CREATED)
+def create_time_entry(
+    employee_id: UUID,
+    data: TimeEntryCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer une saisie de temps.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_time_entry(employee_id, data)
+
+
+@router.get("/time-entries", response_model=list[TimeEntryResponse])
+def list_time_entries(
+    employee_id: UUID | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les saisies de temps.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_time_entries(
+        employee_id=employee_id,
+        from_date=from_date,
+        to_date=to_date
+    )
+
+
+# =============================================================================
+# COMPÉTENCES
+# =============================================================================
+
+@router.post("/skills", response_model=SkillResponse, status_code=status.HTTP_201_CREATED)
+def create_skill(
+    data: SkillCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer une compétence.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_skill(data)
+
+
+@router.get("/skills", response_model=list[SkillResponse])
+def list_skills(
+    category: str | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les compétences.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_skills(category=category)
+
+
+@router.post("/employees/{employee_id}/skills", response_model=EmployeeSkillResponse, status_code=status.HTTP_201_CREATED)
+def assign_skill_to_employee(
+    employee_id: UUID,
+    data: EmployeeSkillCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Assigner une compétence à un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.assign_skill_to_employee(employee_id, data)
+
+
+@router.get("/employees/{employee_id}/skills", response_model=list[EmployeeSkillResponse])
+def get_employee_skills(
+    employee_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer les compétences d'un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.get_employee_skills(employee_id)
+
+
+# =============================================================================
+# FORMATIONS
+# =============================================================================
+
+@router.post("/trainings", response_model=TrainingResponse, status_code=status.HTTP_201_CREATED)
+def create_training(
+    data: TrainingCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer une formation.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_training(data, created_by=context.user_id)
+
+
+@router.get("/trainings", response_model=list[TrainingResponse])
+def list_trainings(
+    training_type: TrainingType | None = None,
+    status: TrainingStatus | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les formations.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_trainings(training_type=training_type, status=status)
+
+
+@router.get("/trainings/{training_id}", response_model=TrainingResponse)
+def get_training(
+    training_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer une formation par son ID.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    training = service.get_training(training_id)
+    if not training:
+        raise HTTPException(status_code=404, detail="Formation non trouvée")
+    return training
+
+
+@router.post("/trainings/{training_id}/enroll", response_model=TrainingParticipantResponse, status_code=status.HTTP_201_CREATED)
+def enroll_in_training(
+    training_id: UUID,
+    data: TrainingParticipantCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Inscrire un employé à une formation.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.enroll_in_training(training_id, data)
+
+
+# =============================================================================
+# ÉVALUATIONS
+# =============================================================================
+
+@router.post("/evaluations", response_model=EvaluationResponse, status_code=status.HTTP_201_CREATED)
+def create_evaluation(
+    data: EvaluationCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer une évaluation.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_evaluation(data, created_by=context.user_id)
+
+
+@router.get("/evaluations", response_model=list[EvaluationResponse])
+def list_evaluations(
+    employee_id: UUID | None = None,
+    evaluator_id: UUID | None = None,
+    status: EvaluationStatus | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Lister les évaluations.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_evaluations(
+        employee_id=employee_id,
+        evaluator_id=evaluator_id,
+        status=status
+    )
+
+
+@router.get("/evaluations/{evaluation_id}", response_model=EvaluationResponse)
+def get_evaluation(
+    evaluation_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer une évaluation par son ID.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    evaluation = service.get_evaluation(evaluation_id)
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Évaluation non trouvée")
+    return evaluation
+
+
+@router.put("/evaluations/{evaluation_id}", response_model=EvaluationResponse)
+def update_evaluation(
+    evaluation_id: UUID,
+    data: EvaluationUpdate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Mettre à jour une évaluation.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.update_evaluation(evaluation_id, data, updated_by=context.user_id)
+
+
+# =============================================================================
+# DOCUMENTS RH
+# =============================================================================
+
+@router.post("/documents", response_model=HRDocumentResponse, status_code=status.HTTP_201_CREATED)
+def create_hr_document(
+    data: HRDocumentCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Créer un document RH.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    - current_user.id → context.user_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.create_hr_document(data, uploaded_by=context.user_id)
+
+
+@router.get("/employees/{employee_id}/documents", response_model=list[HRDocumentResponse])
+def get_employee_documents(
+    employee_id: UUID,
+    document_type: DocumentType | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer les documents d'un employé.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.get_employee_documents(employee_id, document_type=document_type)
+
+
+# =============================================================================
+# DASHBOARD
+# =============================================================================
+
+@router.get("/dashboard", response_model=HRDashboard)
+def get_hr_dashboard(
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ MIGRÉ CORE SaaS: Récupérer le dashboard RH.
+
+    Changements:
+    - tenant_id → context.tenant_id
+    """
+    service = get_hr_service(db, context.tenant_id)
+    return service.get_hr_dashboard()

@@ -72,7 +72,7 @@ from .schemas import (
 class ProjectsService:
     """Service de gestion des projets."""
 
-    def __init__(self, db: Session, tenant_id: int, user_id: UUID):
+    def __init__(self, db: Session, tenant_id: str, user_id: UUID):
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
@@ -1484,6 +1484,6 @@ class ProjectsService:
         }
 
 
-def get_projects_service(db: Session, tenant_id: int, user_id: UUID) -> ProjectsService:
+def get_projects_service(db: Session, tenant_id: str, user_id: UUID) -> ProjectsService:
     """Factory pour le service projets."""
     return ProjectsService(db, tenant_id, user_id)

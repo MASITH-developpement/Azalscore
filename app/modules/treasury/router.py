@@ -78,10 +78,7 @@ async def create_account(
     """Créer un nouveau compte bancaire."""
     service = get_treasury_service(db, current_user.tenant_id)
 
-    try:
-        return service.create_account(data, current_user.id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_account(data, current_user.id)
 
 
 @router.get("/accounts", response_model=PaginatedBankAccounts)
@@ -145,12 +142,9 @@ async def delete_account(
     """Supprimer un compte bancaire (soft delete)."""
     service = get_treasury_service(db, current_user.tenant_id)
 
-    try:
-        success = service.delete_account(account_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Compte bancaire non trouvé")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    success = service.delete_account(account_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Compte bancaire non trouvé")
 
 
 # ============================================================================
@@ -166,10 +160,7 @@ async def create_transaction(
     """Créer une nouvelle transaction bancaire."""
     service = get_treasury_service(db, current_user.tenant_id)
 
-    try:
-        return service.create_transaction(data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.create_transaction(data)
 
 
 @router.get("/transactions", response_model=PaginatedBankTransactions)
@@ -269,10 +260,7 @@ async def reconcile_transaction(
     """Rapprocher une transaction avec un document."""
     service = get_treasury_service(db, current_user.tenant_id)
 
-    try:
-        return service.reconcile_transaction(transaction_id, data, current_user.id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.reconcile_transaction(transaction_id, data, current_user.id)
 
 
 @router.post("/transactions/{transaction_id}/unreconcile", response_model=BankTransactionResponse)
@@ -284,7 +272,4 @@ async def unreconcile_transaction(
     """Annuler le rapprochement d'une transaction."""
     service = get_treasury_service(db, current_user.tenant_id)
 
-    try:
-        return service.unreconcile_transaction(transaction_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.unreconcile_transaction(transaction_id)
