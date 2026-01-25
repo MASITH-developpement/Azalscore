@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 from datetime import datetime
 from uuid import uuid4
 
-from app.core.saas_context import SaaSContext, UserRole, get_saas_context
+from app.core.saas_context import SaaSContext, UserRole
 from fastapi import Depends
 
 

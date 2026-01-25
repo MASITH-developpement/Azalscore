@@ -7,7 +7,7 @@ from unittest.mock import Mock
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from app.core.saas_context import SaaSContext, UserRole, get_saas_context
+from app.core.saas_context import SaaSContext, UserRole
 from fastapi import Depends
 
 from app.modules.guardian.models import (
@@ -21,7 +21,7 @@ from app.modules.guardian.models import (
     ErrorType,
     Environment,
     CorrectionStatus,
-    TestStatus,
+    TestResult,
 )
 
 
@@ -235,7 +235,7 @@ def sample_correction_test(db_session, tenant_id, sample_correction):
         correction_id=sample_correction.id,
         test_name="database_connection_test",
         test_type="SMOKE",
-        status=TestStatus.PASSED,
+        status=TestResult.PASSED,
         executed_at=datetime.utcnow(),
         duration_seconds=0.5
     )

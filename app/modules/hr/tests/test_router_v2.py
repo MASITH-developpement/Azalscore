@@ -39,7 +39,7 @@ from app.modules.hr.models import (
     LeaveRequest,
     PayrollPeriod,
     Payslip,
-    TimeEntry,
+    HRTimeEntry,
     Skill,
     EmployeeSkill,
     Training,

@@ -17,7 +17,7 @@ from app.main import app
 from app.core.database import get_db
 from app.core.saas_context import SaaSContext, UserRole
 from app.modules.finance.models import (
-    Account, Journal, FiscalYear, Entry, BankAccount,
+    Account, Journal, FiscalYear, JournalEntry, BankAccount,
     BankStatement, AccountType, JournalType, EntryStatus
 )
 
@@ -430,7 +430,7 @@ def test_list_entries(client, auth_headers):
 def test_get_entry(client, auth_headers, sample_journal, sample_fiscal_year, db_session, tenant_id):
     """Test récupération d'une écriture"""
     # Créer une écriture
-    entry = Entry(
+    entry = JournalEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         journal_id=sample_journal.id,
@@ -456,7 +456,7 @@ def test_add_entry_lines(client, auth_headers, sample_account, sample_journal,
                          sample_fiscal_year, db_session, tenant_id):
     """Test ajout de lignes à une écriture"""
     # Créer une écriture
-    entry = Entry(
+    entry = JournalEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         journal_id=sample_journal.id,
@@ -487,7 +487,7 @@ def test_validate_entry_workflow(client, auth_headers, sample_journal,
                                   sample_fiscal_year, db_session, tenant_id):
     """Test workflow validation d'une écriture (DRAFT → VALIDATED)"""
     # Créer une écriture avec lignes équilibrées
-    entry = Entry(
+    entry = JournalEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         journal_id=sample_journal.id,
@@ -515,7 +515,7 @@ def test_post_entry_workflow(client, auth_headers, sample_journal,
                               sample_fiscal_year, db_session, tenant_id):
     """Test workflow post d'une écriture (VALIDATED → POSTED)"""
     # Créer une écriture validée
-    entry = Entry(
+    entry = JournalEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         journal_id=sample_journal.id,
@@ -543,7 +543,7 @@ def test_cancel_entry_workflow(client, auth_headers, sample_journal,
                                 sample_fiscal_year, db_session, tenant_id):
     """Test workflow annulation d'une écriture"""
     # Créer une écriture
-    entry = Entry(
+    entry = JournalEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         journal_id=sample_journal.id,
@@ -569,7 +569,7 @@ def test_cannot_modify_posted_entry(client, auth_headers, sample_journal,
                                       sample_fiscal_year, db_session, tenant_id):
     """Test impossibilité de modifier une écriture postée"""
     # Créer une écriture postée
-    entry = Entry(
+    entry = JournalEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         journal_id=sample_journal.id,
@@ -594,7 +594,7 @@ def test_entry_balance_validation(client, auth_headers, sample_account,
                                    sample_journal, sample_fiscal_year, db_session, tenant_id):
     """Test validation de l'équilibre débit/crédit"""
     # Créer une écriture déséquilibrée
-    entry = Entry(
+    entry = JournalEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         journal_id=sample_journal.id,

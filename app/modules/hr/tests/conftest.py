@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 from datetime import datetime, date, timedelta
 from uuid import uuid4
 
-from app.core.saas_context import SaaSContext, UserRole, get_saas_context
+from app.core.saas_context import SaaSContext, UserRole
 from fastapi import Depends
 
 from app.modules.hr.models import (
@@ -18,7 +18,7 @@ from app.modules.hr.models import (
     LeaveRequest,
     PayrollPeriod,
     Payslip,
-    TimeEntry,
+    HRTimeEntry,
     Skill,
     EmployeeSkill,
     Training,
@@ -29,7 +29,7 @@ from app.modules.hr.models import (
     ContractType,
     LeaveType,
     LeaveStatus,
-    PayslipStatus,
+    PayrollStatus,
     TrainingType,
     TrainingStatus,
     EvaluationStatus,
@@ -226,7 +226,7 @@ def sample_payslip(db_session, tenant_id, sample_employee, sample_payroll_period
         gross_salary=4000.0,
         net_salary=3000.0,
         worked_hours=151.67,
-        status=PayslipStatus.DRAFT,
+        status=PayrollStatus.DRAFT,
         created_by=user_id
     )
     db_session.add(payslip)
@@ -238,7 +238,7 @@ def sample_payslip(db_session, tenant_id, sample_employee, sample_payroll_period
 @pytest.fixture
 def sample_time_entry(db_session, tenant_id, sample_employee):
     """Fixture pour une saisie de temps de test"""
-    time_entry = TimeEntry(
+    time_entry = HRTimeEntry(
         id=uuid4(),
         tenant_id=tenant_id,
         employee_id=sample_employee.id,
