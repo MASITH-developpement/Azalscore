@@ -156,10 +156,7 @@ def send_email(
     current_user: User = Depends(get_current_user)
 ):
     """Envoyer un email."""
-    try:
-        return service.send_email(data, created_by=current_user.email)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.send_email(data, created_by=current_user.email)
 
 
 @router.post("/send/bulk", response_model=BulkSendResponse)

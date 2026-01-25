@@ -49,7 +49,7 @@ from app.core.logging_config import get_logger, setup_logging
 from app.core.metrics import MetricsMiddleware, init_metrics
 from app.core.metrics import router as metrics_router
 from app.core.middleware import TenantMiddleware
-from app.core.auth_middleware import AuthMiddleware
+from app.core.core_auth_middleware import CoreAuthMiddleware
 from app.core.models import User
 from app.core.security_middleware import setup_cors
 from app.core.error_middleware import ErrorHandlingMiddleware
@@ -98,6 +98,7 @@ from app.modules.ecommerce.router import router as ecommerce_router
 
 # Module EMAIL - Email transactionnel
 from app.modules.email.router import router as email_router
+from app.modules.email.router_v2 import router as email_router_v2
 
 # Module M17 - Field Service (Interventions Terrain)
 from app.modules.field_service.router import router as field_service_router
@@ -581,9 +582,10 @@ app.add_middleware(MetricsMiddleware)
 # En production, activer deny-by-default dans rbac_middleware.py
 app.add_middleware(RBACMiddleware)
 
-# 5. AuthMiddleware - Parse JWT et définit request.state.user
-# IMPORTANT: Doit s'exécuter AVANT RBAC pour que request.state.user soit disponible
-app.add_middleware(AuthMiddleware)
+# 5. CoreAuthMiddleware - Parse JWT et crée SaaSContext via CORE
+# IMPORTANT: Doit s'exécuter AVANT RBAC pour que request.state.saas_context soit disponible
+# NOUVEAU: Utilise CORE.authenticate() au lieu de logique dupliquée
+app.add_middleware(CoreAuthMiddleware)
 
 # 6. TenantMiddleware - Validation X-Tenant-ID
 app.add_middleware(TenantMiddleware)
@@ -1075,6 +1077,9 @@ def create_admin_user(
 # Monter l'API v1 sur l'app principale
 app.include_router(api_v1)
 
+# ==================== ROUTERS V2 (CORE SaaS) ====================
+# Routers migrés vers CORE SaaS v2
+app.include_router(email_router_v2)
 
 # ==================== THEO VOICE API ====================
 # WebSocket et REST endpoints pour Théo (assistant vocal)

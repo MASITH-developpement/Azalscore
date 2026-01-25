@@ -42,9 +42,10 @@ logger = logging.getLogger(__name__)
 class EmailService:
     """Service pour la gestion des emails transactionnels."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id
 
     # =========================================================================
     # CONFIGURATION
@@ -114,38 +115,32 @@ class EmailService:
         if not config:
             return False, "Configuration non trouvée"
 
-        try:
-            if config.provider == "smtp":
-                return self._verify_smtp(config)
-            else:
-                return False, f"Provider {config.provider} non supporté pour la vérification"
-        except Exception as e:
-            return False, str(e)
+        if config.provider == "smtp":
+            return self._verify_smtp(config)
+        else:
+            return False, f"Provider {config.provider} non supporté pour la vérification"
 
     def _verify_smtp(self, config: EmailConfig) -> tuple[bool, str]:
         """Vérifie la connexion SMTP."""
-        try:
-            if config.smtp_use_ssl:
-                context = ssl.create_default_context()
-                server = smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, context=context)
-            else:
-                server = smtplib.SMTP(config.smtp_host, config.smtp_port)
-                if config.smtp_use_tls:
-                    server.starttls()
+        if config.smtp_use_ssl:
+            context = ssl.create_default_context()
+            server = smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, context=context)
+        else:
+            server = smtplib.SMTP(config.smtp_host, config.smtp_port)
+            if config.smtp_use_tls:
+                server.starttls()
 
-            if config.smtp_username and config.smtp_password_encrypted:
-                password = decrypt_value(config.smtp_password_encrypted)
-                server.login(config.smtp_username, password)
+        if config.smtp_username and config.smtp_password_encrypted:
+            password = decrypt_value(config.smtp_password_encrypted)
+            server.login(config.smtp_username, password)
 
-            server.quit()
+        server.quit()
 
-            config.is_verified = True
-            config.last_verified_at = datetime.utcnow()
-            self.db.commit()
+        config.is_verified = True
+        config.last_verified_at = datetime.utcnow()
+        self.db.commit()
 
-            return True, "Configuration SMTP valide"
-        except Exception as e:
-            return False, f"Erreur SMTP: {str(e)}"
+        return True, "Configuration SMTP valide"
 
     # =========================================================================
     # TEMPLATES
@@ -299,21 +294,17 @@ class EmailService:
         failed = 0
 
         for recipient in data.recipients:
-            try:
-                variables = {**data.base_variables, **recipient.get('variables', {})}
-                request = SendEmailRequest(
-                    to_email=recipient['email'],
-                    to_name=recipient.get('name'),
-                    email_type=data.email_type,
-                    template_code=data.template_code,
-                    variables=variables,
-                    priority=data.priority
-                )
-                response = self.send_email(request)
-                email_ids.append(response.id)
-            except Exception as e:
-                logger.error(f"Erreur envoi bulk à {recipient.get('email')}: {e}")
-                failed += 1
+            variables = {**data.base_variables, **recipient.get('variables', {})}
+            request = SendEmailRequest(
+                to_email=recipient['email'],
+                to_name=recipient.get('name'),
+                email_type=data.email_type,
+                template_code=data.template_code,
+                variables=variables,
+                priority=data.priority
+            )
+            response = self.send_email(request)
+            email_ids.append(response.id)
 
         return BulkSendResponse(
             total=len(data.recipients),
@@ -361,28 +352,23 @@ class EmailService:
             item.locked_at = now
             self.db.commit()
 
-            try:
-                email_log = self.db.query(EmailLog).filter(EmailLog.id == item.email_log_id).first()
-                if email_log:
-                    success = self._send_email_now(email_log)
-                    if success:
-                        self.db.delete(item)
-                        processed += 1
-                    else:
-                        item.attempts += 1
-                        item.last_attempt_at = now
-                        item.next_attempt_at = now + timedelta(minutes=5 * item.attempts)
-                        item.locked_by = None
-                        item.locked_at = None
+            email_log = self.db.query(EmailLog).filter(EmailLog.id == item.email_log_id).first()
+            if email_log:
+                success = self._send_email_now(email_log)
+                if success:
+                    self.db.delete(item)
+                    processed += 1
+                else:
+                    item.attempts += 1
+                    item.last_attempt_at = now
+                    item.next_attempt_at = now + timedelta(minutes=5 * item.attempts)
+                    item.locked_by = None
+                    item.locked_at = None
 
-                        if item.attempts >= email_log.max_retries:
-                            email_log.status = EmailStatus.FAILED
-                            email_log.failed_at = now
-                            self.db.delete(item)
-            except Exception as e:
-                logger.error(f"Erreur traitement email {item.email_log_id}: {e}")
-                item.locked_by = None
-                item.locked_at = None
+                    if item.attempts >= email_log.max_retries:
+                        email_log.status = EmailStatus.FAILED
+                        email_log.failed_at = now
+                        self.db.delete(item)
 
             self.db.commit()
 
@@ -394,81 +380,67 @@ class EmailService:
         if not config:
             return False
 
-        try:
-            email_log.status = EmailStatus.SENDING
+        email_log.status = EmailStatus.SENDING
+        self.db.commit()
+
+        if config.provider == "smtp":
+            success = self._send_via_smtp(config, email_log)
+        else:
+            logger.warning(f"Provider {config.provider} non implémenté")
+            success = False
+
+        if success:
+            email_log.status = EmailStatus.SENT
+            email_log.sent_at = datetime.utcnow()
+            email_log.provider = config.provider
             self.db.commit()
-
-            if config.provider == "smtp":
-                success = self._send_via_smtp(config, email_log)
-            else:
-                logger.warning(f"Provider {config.provider} non implémenté")
-                success = False
-
-            if success:
-                email_log.status = EmailStatus.SENT
-                email_log.sent_at = datetime.utcnow()
-                email_log.provider = config.provider
-                self.db.commit()
-                return True
-            else:
-                email_log.retry_count += 1
-                self.db.commit()
-                return False
-
-        except Exception as e:
-            logger.error(f"Erreur envoi email {email_log.id}: {e}")
-            email_log.error_message = str(e)
+            return True
+        else:
             email_log.retry_count += 1
             self.db.commit()
             return False
 
     def _send_via_smtp(self, config: EmailConfig, email_log: EmailLog) -> bool:
         """Envoie via SMTP."""
-        try:
-            msg = MIMEMultipart('alternative')
-            msg['From'] = f"{config.from_name} <{config.from_email}>"
-            msg['To'] = email_log.to_email
-            msg['Subject'] = email_log.subject
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f"{config.from_name} <{config.from_email}>"
+        msg['To'] = email_log.to_email
+        msg['Subject'] = email_log.subject
 
-            if config.reply_to_email:
-                msg['Reply-To'] = config.reply_to_email
+        if config.reply_to_email:
+            msg['Reply-To'] = config.reply_to_email
 
-            if email_log.cc_emails:
-                msg['Cc'] = ', '.join(email_log.cc_emails)
+        if email_log.cc_emails:
+            msg['Cc'] = ', '.join(email_log.cc_emails)
 
-            if email_log.body_text:
-                msg.attach(MIMEText(email_log.body_text, 'plain', 'utf-8'))
+        if email_log.body_text:
+            msg.attach(MIMEText(email_log.body_text, 'plain', 'utf-8'))
 
-            if email_log.body_html:
-                msg.attach(MIMEText(email_log.body_html, 'html', 'utf-8'))
+        if email_log.body_html:
+            msg.attach(MIMEText(email_log.body_html, 'html', 'utf-8'))
 
-            recipients = [email_log.to_email]
-            if email_log.cc_emails:
-                recipients.extend(email_log.cc_emails)
-            if email_log.bcc_emails:
-                recipients.extend(email_log.bcc_emails)
+        recipients = [email_log.to_email]
+        if email_log.cc_emails:
+            recipients.extend(email_log.cc_emails)
+        if email_log.bcc_emails:
+            recipients.extend(email_log.bcc_emails)
 
-            if config.smtp_use_ssl:
-                context = ssl.create_default_context()
-                server = smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, context=context)
-            else:
-                server = smtplib.SMTP(config.smtp_host, config.smtp_port)
-                if config.smtp_use_tls:
-                    server.starttls()
+        if config.smtp_use_ssl:
+            context = ssl.create_default_context()
+            server = smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, context=context)
+        else:
+            server = smtplib.SMTP(config.smtp_host, config.smtp_port)
+            if config.smtp_use_tls:
+                server.starttls()
 
-            if config.smtp_username and config.smtp_password_encrypted:
-                password = decrypt_value(config.smtp_password_encrypted)
-                server.login(config.smtp_username, password)
+        if config.smtp_username and config.smtp_password_encrypted:
+            password = decrypt_value(config.smtp_password_encrypted)
+            server.login(config.smtp_username, password)
 
-            server.sendmail(config.from_email, recipients, msg.as_string())
-            server.quit()
+        server.sendmail(config.from_email, recipients, msg.as_string())
+        server.quit()
 
-            return True
-
-        except Exception as e:
-            logger.error(f"Erreur SMTP: {e}")
-            email_log.error_message = str(e)
-            return False
+        return True
 
     # =========================================================================
     # STATISTIQUES
@@ -600,6 +572,6 @@ class EmailService:
         return items, total
 
 
-def get_email_service(db: Session, tenant_id: str) -> EmailService:
+def get_email_service(db: Session, tenant_id: str, user_id: str = None) -> EmailService:
     """Factory pour le service email."""
-    return EmailService(db, tenant_id)
+    return EmailService(db, tenant_id, user_id)
