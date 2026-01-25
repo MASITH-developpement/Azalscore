@@ -7,16 +7,16 @@ from unittest.mock import Mock, patch
 from datetime import datetime, date
 from uuid import uuid4
 
-from app.core.saas_context import SaaSContext, UserRole, get_saas_context
+from app.core.saas_context import SaaSContext, UserRole
 from fastapi import Depends
 
 from app.modules.commercial.models import (
     Customer,
     Contact,
     Opportunity,
-    Document,
-    Product,
-    Activity,
+    CommercialDocument,
+    CatalogProduct,
+    CustomerActivity,
     PipelineStage,
     CustomerType,
     DocumentType,
@@ -172,7 +172,7 @@ def sample_opportunity(db_session, tenant_id, sample_customer):
 @pytest.fixture
 def sample_document(db_session, tenant_id, sample_customer):
     """Fixture pour un document de test (devis)"""
-    document = Document(
+    document = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -195,7 +195,7 @@ def sample_document(db_session, tenant_id, sample_customer):
 @pytest.fixture
 def sample_product(db_session, tenant_id):
     """Fixture pour un produit de test"""
-    product = Product(
+    product = CatalogProduct(
         id=uuid4(),
         tenant_id=tenant_id,
         code="PROD-TEST-001",
@@ -216,7 +216,7 @@ def sample_product(db_session, tenant_id):
 @pytest.fixture
 def sample_activity(db_session, tenant_id, sample_customer):
     """Fixture pour une activité de test"""
-    activity = Activity(
+    activity = CustomerActivity(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,

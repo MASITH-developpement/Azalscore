@@ -32,12 +32,12 @@ from app.modules.commercial.models import (
     Customer,
     Contact,
     Opportunity,
-    Document,
+    CommercialDocument,
     DocumentLine,
     Payment,
-    Activity,
+    CustomerActivity,
     PipelineStage,
-    Product,
+    CatalogProduct,
     CustomerType,
     DocumentType,
     DocumentStatus,
@@ -446,7 +446,7 @@ def test_update_document(client, auth_headers, sample_document):
 def test_delete_document_draft_only(client, auth_headers, db_session, sample_customer, tenant_id):
     """Test suppression document (seuls DRAFT supprimables)"""
     # DRAFT → supprimable
-    draft_doc = Document(
+    draft_doc = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -465,7 +465,7 @@ def test_delete_document_draft_only(client, auth_headers, db_session, sample_cus
     assert response.status_code == 204
 
     # VALIDATED → non supprimable
-    validated_doc = Document(
+    validated_doc = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -500,7 +500,7 @@ def test_validate_document_workflow(client, auth_headers, sample_document, db_se
 
 def test_send_document_workflow(client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow envoi document (VALIDATED → SENT)"""
-    doc = Document(
+    doc = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -524,7 +524,7 @@ def test_send_document_workflow(client, auth_headers, db_session, sample_custome
 
 def test_convert_quote_to_order(client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow conversion devis → commande"""
-    quote = Document(
+    quote = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -551,7 +551,7 @@ def test_convert_quote_to_order(client, auth_headers, db_session, sample_custome
 
 def test_create_invoice_from_order(client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow création facture depuis commande"""
-    order = Document(
+    order = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -591,7 +591,7 @@ def test_export_documents_csv(client, auth_headers, sample_document):
 def test_complete_document_workflow(client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow complet: QUOTE → ORDER → INVOICE"""
     # 1. Créer devis
-    quote = Document(
+    quote = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -685,7 +685,7 @@ def test_delete_document_line(client, auth_headers, db_session, sample_document,
 def test_create_payment(client, auth_headers, db_session, sample_customer, tenant_id):
     """Test enregistrement d'un paiement sur facture"""
     # Créer une facture
-    invoice = Document(
+    invoice = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -718,7 +718,7 @@ def test_create_payment(client, auth_headers, db_session, sample_customer, tenan
 
 def test_list_payments(client, auth_headers, db_session, sample_customer, tenant_id):
     """Test liste des paiements d'un document"""
-    invoice = Document(
+    invoice = CommercialDocument(
         id=uuid4(),
         tenant_id=tenant_id,
         customer_id=sample_customer.id,
@@ -830,7 +830,7 @@ def test_activities_tenant_isolation(client, auth_headers, db_session, tenant_id
     )
     db_session.add(other_customer)
 
-    other_activity = Activity(
+    other_activity = CustomerActivity(
         id=uuid4(),
         tenant_id="other-tenant",
         customer_id=other_customer.id,
@@ -988,7 +988,7 @@ def test_update_product(client, auth_headers, sample_product):
 
 def test_products_tenant_isolation(client, auth_headers, db_session):
     """Test isolation tenant sur produits"""
-    other_product = Product(
+    other_product = CatalogProduct(
         id=uuid4(),
         tenant_id="other-tenant",
         code="OTHER-PROD",
