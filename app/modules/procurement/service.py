@@ -50,9 +50,10 @@ from .schemas import (
 class ProcurementService:
     """Service pour la gestion des achats."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # =========================================================================
     # FOURNISSEURS
@@ -1318,6 +1319,6 @@ class ProcurementService:
         )
 
 
-def get_procurement_service(db: Session, tenant_id: str) -> ProcurementService:
-    """Factory pour le service Achats."""
-    return ProcurementService(db, tenant_id)
+def get_procurement_service(db: Session, tenant_id: str, user_id: str = None) -> ProcurementService:
+    """Factory pour créer le service Procurement."""
+    return ProcurementService(db, tenant_id, user_id)
