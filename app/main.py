@@ -188,6 +188,7 @@ from app.modules.web.router_v2 import router as web_router_v2
 
 # Module T8 - Site Web Officiel AZALS
 from app.modules.website.router import router as website_router
+from app.modules.website.router_v2 import router as website_router_v2
 from app.services.scheduler import scheduler_service
 
 
@@ -1084,6 +1085,7 @@ app.include_router(api_v1)
 app.include_router(email_router_v2)
 app.include_router(triggers_router_v2)
 app.include_router(web_router_v2)
+app.include_router(website_router_v2)
 
 # ==================== THEO VOICE API ====================
 # WebSocket et REST endpoints pour Théo (assistant vocal)
