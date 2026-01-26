@@ -276,6 +276,69 @@ services:
         reservations:
           memory: ${PROMTAIL_MEMORY_RESERVATION:-32M}
 
+  # ============================================================
+  # Node Exporter - Métriques système
+  # ============================================================
+  node-exporter:
+    image: prom/node-exporter:v1.6.0
+    container_name: azals_node_exporter
+    restart: always
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - azals_internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+
+  # ============================================================
+  # Postgres Exporter - Métriques PostgreSQL
+  # ============================================================
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.13.2
+    container_name: azals_postgres_exporter
+    restart: always
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-azals_user}:${POSTGRES_PASSWORD}@azals_postgres:5432/${POSTGRES_DB:-azals}?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - azals_internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+
+  # ============================================================
+  # Redis Exporter - Métriques Redis
+  # ============================================================
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.52.0
+    container_name: azals_redis_exporter
+    restart: always
+    environment:
+      REDIS_ADDR: "redis://azals_redis:6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - azals_internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+
 # ============================================================
 # VOLUMES
 # ============================================================
