@@ -121,11 +121,15 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
       const response = await api.post<{
         session_id: string;
         message: string;
-      }>('/v1/ai/theo/start', {});
+      }>('/v1/ai/theo/start', {}) as unknown as {
+        session_id: string;
+        message: string;
+      };
 
-      if (response.data) {
+      // Le backend retourne directement {session_id, message}
+      if (response) {
         const session: TheoSession = {
-          session_id: response.data.session_id,
+          session_id: response.session_id,
           started_at: new Date(),
           last_activity: new Date(),
           message_count: 0,
@@ -135,7 +139,7 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
         const welcomeMessage: TheoMessage = {
           id: generateMessageId(),
           role: 'theo',
-          content: response.data.message || 'Bonjour ! Je suis Theo, votre assistant IA AZALSCORE. Comment puis-je vous aider ?',
+          content: response.message || 'Bonjour ! Je suis Theo, votre assistant IA AZALSCORE. Comment puis-je vous aider ?',
           timestamp: new Date(),
         };
 
@@ -229,26 +233,34 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
           page: window.location.pathname,
           timestamp: new Date().toISOString(),
         },
-      });
+      }) as unknown as {
+        message: string;
+        intent?: string;
+        confidence?: number;
+        requires_confirmation?: boolean;
+        clarification_options?: string[];
+        action_result?: unknown;
+      };
 
-      if (response.data) {
+      // Le backend retourne directement les données
+      if (response) {
         const theoResponse: TheoMessage = {
           id: generateMessageId(),
           role: 'theo',
-          content: response.data.message,
+          content: response.message,
           timestamp: new Date(),
           metadata: {
-            intent: response.data.intent,
-            confidence: response.data.confidence,
-            requires_confirmation: response.data.requires_confirmation,
-            clarification_options: response.data.clarification_options,
+            intent: response.intent,
+            confidence: response.confidence,
+            requires_confirmation: response.requires_confirmation,
+            clarification_options: response.clarification_options,
           },
         };
 
         set((state) => ({
           messages: [...state.messages, theoResponse],
-          state: response.data?.requires_confirmation ? 'clarifying' : 'idle',
-          pendingConfirmation: response.data?.requires_confirmation ? theoResponse : null,
+          state: response.requires_confirmation ? 'clarifying' : 'idle',
+          pendingConfirmation: response.requires_confirmation ? theoResponse : null,
           session: state.session ? {
             ...state.session,
             last_activity: new Date(),
@@ -289,13 +301,17 @@ export const useTheoStore = create<TheoStore>((set, get) => ({
         session_id: session.session_id,
         confirmed,
         intent: pendingConfirmation.metadata?.intent,
-      });
+      }) as unknown as {
+        message: string;
+        action_result?: unknown;
+      };
 
-      if (response.data) {
+      // Le backend retourne directement les données
+      if (response) {
         const confirmResponse: TheoMessage = {
           id: generateMessageId(),
           role: 'theo',
-          content: response.data.message,
+          content: response.message,
           timestamp: new Date(),
         };
 
