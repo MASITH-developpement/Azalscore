@@ -69,7 +69,7 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     image: azals/api:${VERSION:-latest}
-    container_name: api
+    container_name: azals_api
     restart: always
     env_file:
       - .env.production
@@ -91,10 +91,10 @@ services:
     networks:
       azals_internal:
         aliases:
-          - api
+          - azals_api
       azals_external:
         aliases:
-          - api
+          - azals_api
     deploy:
       resources:
         limits:
@@ -275,6 +275,33 @@ services:
           memory: ${PROMTAIL_MEMORY_LIMIT:-128M}
         reservations:
           memory: ${PROMTAIL_MEMORY_RESERVATION:-32M}
+
+  # ============================================================
+  # cAdvisor - Métriques containers (CPU, RAM, I/O)
+  # ============================================================
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: azals_cadvisor
+    restart: always
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    command:
+      - '--housekeeping_interval=15s'
+      - '--docker_only=true'
+      - '--disable_metrics=percpu,sched,tcp,udp,disk,diskIO,hugetlb,referenced_memory,resctrl,process'
+    networks:
+      - azals_internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
 
   # ============================================================
   # Node Exporter - Métriques système

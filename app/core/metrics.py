@@ -109,6 +109,46 @@ SYSTEM_HEALTH = Gauge(
     ['component']
 )
 
+# ============================================================================
+# MÉTRIQUES IA (Theo, Guardian, Orchestrator)
+# ============================================================================
+
+AI_INFERENCE_DURATION = Histogram(
+    'azals_ai_inference_duration_seconds',
+    'AI inference duration in seconds',
+    ['model', 'operation'],
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0]
+)
+
+AI_REQUESTS_TOTAL = Counter(
+    'azals_ai_requests_total',
+    'Total AI requests',
+    ['model', 'operation', 'status']
+)
+
+AI_TOKENS_TOTAL = Counter(
+    'azals_ai_tokens_total',
+    'Total AI tokens consumed',
+    ['model', 'direction']
+)
+
+AI_SESSIONS_ACTIVE = Gauge(
+    'azals_ai_sessions_active',
+    'Active AI sessions (Theo)'
+)
+
+AI_GUARDIAN_DECISIONS = Counter(
+    'azals_ai_guardian_decisions_total',
+    'Guardian security decisions',
+    ['decision', 'risk_level']
+)
+
+AI_CACHE_RATIO = Gauge(
+    'azals_ai_cache_hit_ratio',
+    'AI response cache hit ratio (0-1)',
+    ['model']
+)
+
 
 # ============================================================================
 # MIDDLEWARE DE MÉTRIQUES
@@ -312,3 +352,47 @@ def record_cache_access(cache_type: str, hit: bool):
         CACHE_HITS.labels(cache_type=cache_type).inc()
     else:
         CACHE_MISSES.labels(cache_type=cache_type).inc()
+
+
+# ============================================================================
+# HELPERS IA
+# ============================================================================
+
+def record_ai_inference(model: str, operation: str, duration: float, success: bool):
+    """Enregistre une inférence IA avec durée et statut."""
+    AI_INFERENCE_DURATION.labels(model=model, operation=operation).observe(duration)
+    AI_REQUESTS_TOTAL.labels(
+        model=model,
+        operation=operation,
+        status="success" if success else "error"
+    ).inc()
+
+
+def record_ai_tokens(model: str, input_tokens: int, output_tokens: int):
+    """Enregistre la consommation de tokens IA."""
+    AI_TOKENS_TOTAL.labels(model=model, direction="input").inc(input_tokens)
+    AI_TOKENS_TOTAL.labels(model=model, direction="output").inc(output_tokens)
+
+
+def record_guardian_decision(decision: str, risk_level: str):
+    """Enregistre une décision Guardian (allow/deny/escalate)."""
+    AI_GUARDIAN_DECISIONS.labels(decision=decision, risk_level=risk_level).inc()
+
+
+def track_ai_inference(model: str, operation: str):
+    """Décorateur pour tracker les inférences IA."""
+    def decorator(func: Callable):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            start = time.perf_counter()
+            success = True
+            try:
+                return await func(*args, **kwargs)
+            except Exception:
+                success = False
+                raise
+            finally:
+                duration = time.perf_counter() - start
+                record_ai_inference(model, operation, duration, success)
+        return wrapper
+    return decorator

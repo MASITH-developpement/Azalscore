@@ -1,52 +1,99 @@
-# AZALS - Prometheus Configuration
-# =================================
+# AZALSCORE — Prometheus Configuration (Production)
+# ===================================================
+# One service = one job | Scrape 15s | Labels: service, instance, env
 
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    environment: production
+    env: production
     application: azalscore
+    version: "0.4.0"
 
-# Scrape configurations
+# Alerting (activé quand AlertManager est déployé)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Règles d'alerte
+rule_files:
+  - "alerts/api-alerts.yml"
+  - "alerts/database-alerts.yml"
+  - "alerts/infrastructure-alerts.yml"
+
+# ============================================================
+# SCRAPE CONFIGS — Un job par service
+# ============================================================
 scrape_configs:
+
+  # ----------------------------------------------------------
+  # INFRASTRUCTURE
+  # ----------------------------------------------------------
+
   # Prometheus self-monitoring
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
         labels:
           service: prometheus
+          instance: prometheus
 
-  # AZALS API metrics
+  # Node Exporter — CPU, RAM, disque, réseau du host
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: node
+          instance: host
+
+  # cAdvisor — Métriques containers (CPU, RAM, I/O par container)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: cadvisor
+          instance: docker
+    metric_relabel_configs:
+      # Garder uniquement les containers azals_*
+      - source_labels: [container_label_com_docker_compose_service]
+        regex: '.+'
+        action: keep
+
+  # ----------------------------------------------------------
+  # DONNÉES
+  # ----------------------------------------------------------
+
+  # PostgreSQL — Connexions, requêtes, réplication, stockage
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: postgres
+          instance: azals_postgres
+
+  # Redis — Mémoire, connexions, opérations, cache
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: redis
+          instance: azals_redis
+
+  # ----------------------------------------------------------
+  # APPLICATION — Backend AZALSCORE (FastAPI + IA)
+  # ----------------------------------------------------------
+
+  # Backend API — HTTP, DB queries, auth, cache, tenants, health, GC Python
   - job_name: 'azals-api'
     metrics_path: /metrics
     static_configs:
       - targets: ['azals_api:80']
         labels:
           service: azals-api
+          instance: azals_api
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
         regex: '(.+):\d+'
         replacement: '${1}'
-
-  # PostgreSQL metrics (via postgres_exporter)
-  - job_name: 'postgres-exporter'
-    static_configs:
-      - targets: ['postgres-exporter:9187']
-        labels:
-          service: postgres
-
-  # Redis metrics (via redis_exporter)
-  - job_name: 'redis-exporter'
-    static_configs:
-      - targets: ['redis-exporter:9121']
-        labels:
-          service: redis
-
-  # Node/System metrics (via node_exporter)
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
-        labels:
-          service: node
