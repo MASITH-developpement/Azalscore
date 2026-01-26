@@ -184,6 +184,7 @@ from app.modules.triggers.router_v2 import router as triggers_router_v2
 
 # Module T7 - Module Web Transverse
 from app.modules.web.router import router as web_router
+from app.modules.web.router_v2 import router as web_router_v2
 
 # Module T8 - Site Web Officiel AZALS
 from app.modules.website.router import router as website_router
@@ -1082,6 +1083,7 @@ app.include_router(api_v1)
 # Routers migrés vers CORE SaaS v2
 app.include_router(email_router_v2)
 app.include_router(triggers_router_v2)
+app.include_router(web_router_v2)
 
 # ==================== THEO VOICE API ====================
 # WebSocket et REST endpoints pour Théo (assistant vocal)
