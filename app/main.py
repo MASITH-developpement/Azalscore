@@ -172,6 +172,7 @@ from app.modules.quality.router import router as quality_router
 
 # Module M15 - Stripe Integration
 from app.modules.stripe_integration.router import router as stripe_router
+from app.modules.stripe_integration.router_v2 import router as stripe_router_v2
 
 # Module M14 - Subscriptions (Abonnements)
 from app.modules.subscriptions.router import router as subscriptions_router
@@ -1101,6 +1102,7 @@ app.include_router(country_packs_router_v2)
 app.include_router(email_router_v2)
 app.include_router(marketplace_router_v2)
 app.include_router(mobile_router_v2)
+app.include_router(stripe_router_v2)
 app.include_router(triggers_router_v2)
 app.include_router(web_router_v2)
 app.include_router(website_router_v2)
