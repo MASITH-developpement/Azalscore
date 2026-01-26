@@ -180,6 +180,7 @@ from app.modules.tenants.router import router as tenants_router
 
 # Module T2 - Système de Déclencheurs & Diffusion
 from app.modules.triggers.router import router as triggers_router
+from app.modules.triggers.router_v2 import router as triggers_router_v2
 
 # Module T7 - Module Web Transverse
 from app.modules.web.router import router as web_router
@@ -1080,6 +1081,7 @@ app.include_router(api_v1)
 # ==================== ROUTERS V2 (CORE SaaS) ====================
 # Routers migrés vers CORE SaaS v2
 app.include_router(email_router_v2)
+app.include_router(triggers_router_v2)
 
 # ==================== THEO VOICE API ====================
 # WebSocket et REST endpoints pour Théo (assistant vocal)
