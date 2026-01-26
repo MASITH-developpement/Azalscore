@@ -195,6 +195,9 @@ from app.modules.country_packs.router_v2 import router as country_packs_router_v
 from app.modules.web.router import router as web_router
 from app.modules.web.router_v2 import router as web_router_v2
 
+# Module Marketplace - Site Marchand Public
+from app.modules.marketplace.router_v2 import router as marketplace_router_v2
+
 # Module T8 - Site Web Officiel AZALS
 from app.modules.website.router import router as website_router
 from app.modules.website.router_v2 import router as website_router_v2
@@ -1095,6 +1098,7 @@ app.include_router(ai_assistant_router_v2)
 app.include_router(autoconfig_router_v2)
 app.include_router(country_packs_router_v2)
 app.include_router(email_router_v2)
+app.include_router(marketplace_router_v2)
 app.include_router(triggers_router_v2)
 app.include_router(web_router_v2)
 app.include_router(website_router_v2)

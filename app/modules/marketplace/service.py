@@ -38,8 +38,9 @@ logger = logging.getLogger(__name__)
 class MarketplaceService:
     """Service marketplace."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user_id: str = None):
         self.db = db
+        self.user_id = user_id  # Pour CORE SaaS v2 (audit)
 
     # =========================================================================
     # PLANS
