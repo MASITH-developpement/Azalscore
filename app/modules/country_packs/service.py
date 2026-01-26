@@ -31,9 +31,10 @@ from app.modules.country_packs.models import (
 class CountryPackService:
     """Service de gestion des packs pays."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # ========================================================================
     # GESTION DES PACKS PAYS

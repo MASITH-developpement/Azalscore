@@ -188,6 +188,9 @@ from app.modules.autoconfig.router_v2 import router as autoconfig_router_v2
 from app.modules.triggers.router import router as triggers_router
 from app.modules.triggers.router_v2 import router as triggers_router_v2
 
+# Module T5 - Packs Pays
+from app.modules.country_packs.router_v2 import router as country_packs_router_v2
+
 # Module T7 - Module Web Transverse
 from app.modules.web.router import router as web_router
 from app.modules.web.router_v2 import router as web_router_v2
@@ -1090,6 +1093,7 @@ app.include_router(api_v1)
 # Routers migrés vers CORE SaaS v2
 app.include_router(ai_assistant_router_v2)
 app.include_router(autoconfig_router_v2)
+app.include_router(country_packs_router_v2)
 app.include_router(email_router_v2)
 app.include_router(triggers_router_v2)
 app.include_router(web_router_v2)
