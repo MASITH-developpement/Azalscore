@@ -178,6 +178,9 @@ from app.modules.subscriptions.router import router as subscriptions_router
 # Module T9 - Gestion des Tenants (Multi-Tenancy)
 from app.modules.tenants.router import router as tenants_router
 
+# Module AI Assistant - Assistant IA Transverse
+from app.modules.ai_assistant.router_v2 import router as ai_assistant_router_v2
+
 # Module T2 - Système de Déclencheurs & Diffusion
 from app.modules.triggers.router import router as triggers_router
 from app.modules.triggers.router_v2 import router as triggers_router_v2
@@ -1082,6 +1085,7 @@ app.include_router(api_v1)
 
 # ==================== ROUTERS V2 (CORE SaaS) ====================
 # Routers migrés vers CORE SaaS v2
+app.include_router(ai_assistant_router_v2)
 app.include_router(email_router_v2)
 app.include_router(triggers_router_v2)
 app.include_router(web_router_v2)
