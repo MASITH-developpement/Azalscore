@@ -32,9 +32,9 @@ from uuid import uuid4
 # TESTS AUDIT LOGS
 # ============================================================================
 
-def test_search_audit_logs_all(client, auth_headers, sample_audit_logs_batch, tenant_id):
+def test_search_audit_logs_all(test_client, client, auth_headers, sample_audit_logs_batch, tenant_id):
     """Test recherche tous les logs d'audit avec pagination"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/logs?page=1&page_size=10",
         headers=auth_headers
     )
@@ -54,9 +54,9 @@ def test_search_audit_logs_all(client, auth_headers, sample_audit_logs_batch, te
         assert log["tenant_id"] == tenant_id
 
 
-def test_search_audit_logs_with_filters(client, auth_headers, sample_audit_logs_batch):
+def test_search_audit_logs_with_filters(test_client, client, auth_headers, sample_audit_logs_batch):
     """Test recherche logs avec filtres multiples"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/logs?action=CREATE&level=INFO&module=finance&success=true",
         headers=auth_headers
     )
@@ -72,12 +72,12 @@ def test_search_audit_logs_with_filters(client, auth_headers, sample_audit_logs_
         assert log["success"] is True
 
 
-def test_search_audit_logs_by_date_range(client, auth_headers, sample_audit_logs_batch):
+def test_search_audit_logs_by_date_range(test_client, client, auth_headers, sample_audit_logs_batch):
     """Test recherche logs par période"""
     from_date = (datetime.utcnow() - timedelta(hours=5)).isoformat()
     to_date = datetime.utcnow().isoformat()
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs?from_date={from_date}&to_date={to_date}",
         headers=auth_headers
     )
@@ -87,9 +87,9 @@ def test_search_audit_logs_by_date_range(client, auth_headers, sample_audit_logs
     assert isinstance(data["logs"], list)
 
 
-def test_search_audit_logs_by_user(client, auth_headers, sample_audit_log, user_id):
+def test_search_audit_logs_by_user(test_client, client, auth_headers, sample_audit_log, user_id):
     """Test recherche logs par utilisateur"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs?user_id={user_id}",
         headers=auth_headers
     )
@@ -101,9 +101,9 @@ def test_search_audit_logs_by_user(client, auth_headers, sample_audit_log, user_
         assert log["user_id"] == user_id
 
 
-def test_get_audit_log_by_id(client, auth_headers, sample_audit_log):
+def test_get_audit_log_by_id(test_client, client, auth_headers, sample_audit_log):
     """Test récupération d'un log par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs/{sample_audit_log.id}",
         headers=auth_headers
     )
@@ -116,9 +116,9 @@ def test_get_audit_log_by_id(client, auth_headers, sample_audit_log):
     assert data["module"] == sample_audit_log.module
 
 
-def test_get_entity_audit_history(client, auth_headers, sample_audit_log):
+def test_get_entity_audit_history(test_client, client, auth_headers, sample_audit_log):
     """Test récupération historique d'une entité"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs/entity/{sample_audit_log.entity_type}/{sample_audit_log.entity_id}",
         headers=auth_headers
     )
@@ -133,9 +133,9 @@ def test_get_entity_audit_history(client, auth_headers, sample_audit_log):
         assert log["entity_id"] == sample_audit_log.entity_id
 
 
-def test_get_user_audit_history(client, auth_headers, sample_audit_log, user_id):
+def test_get_user_audit_history(test_client, client, auth_headers, sample_audit_log, user_id):
     """Test récupération historique d'un utilisateur"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs/user/{user_id}?limit=50",
         headers=auth_headers
     )
@@ -152,9 +152,9 @@ def test_get_user_audit_history(client, auth_headers, sample_audit_log, user_id)
 # TESTS SESSIONS
 # ============================================================================
 
-def test_list_active_sessions(client, auth_headers, sample_session, tenant_id):
+def test_list_active_sessions(test_client, client, auth_headers, sample_session, tenant_id):
     """Test liste des sessions actives"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/sessions",
         headers=auth_headers
     )
@@ -169,9 +169,9 @@ def test_list_active_sessions(client, auth_headers, sample_session, tenant_id):
         assert session["is_active"] is True
 
 
-def test_list_active_sessions_by_user(client, auth_headers, sample_session, user_id):
+def test_list_active_sessions_by_user(test_client, client, auth_headers, sample_session, user_id):
     """Test liste sessions d'un utilisateur spécifique"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/sessions?user_id={user_id}",
         headers=auth_headers
     )
@@ -183,9 +183,9 @@ def test_list_active_sessions_by_user(client, auth_headers, sample_session, user
         assert session["user_id"] == user_id
 
 
-def test_terminate_session(client, auth_headers, sample_session):
+def test_terminate_session(test_client, client, auth_headers, sample_session):
     """Test terminer une session active"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/audit/sessions/{sample_session.session_id}/terminate?reason=Test+termination",
         headers=auth_headers
     )
@@ -201,9 +201,9 @@ def test_terminate_session(client, auth_headers, sample_session):
 # TESTS METRICS
 # ============================================================================
 
-def test_create_metric(client, auth_headers, tenant_id, user_id, sample_metric_data):
+def test_create_metric(test_client, client, auth_headers, tenant_id, user_id, sample_metric_data):
     """Test création d'une nouvelle métrique"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/metrics",
         json=sample_metric_data,
         headers=auth_headers
@@ -218,9 +218,9 @@ def test_create_metric(client, auth_headers, tenant_id, user_id, sample_metric_d
     assert data["metric_type"] == sample_metric_data["metric_type"]
 
 
-def test_list_metrics(client, auth_headers, sample_metric, tenant_id):
+def test_list_metrics(test_client, client, auth_headers, sample_metric, tenant_id):
     """Test liste des métriques"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/metrics",
         headers=auth_headers
     )
@@ -234,9 +234,9 @@ def test_list_metrics(client, auth_headers, sample_metric, tenant_id):
         assert metric["tenant_id"] == tenant_id
 
 
-def test_list_metrics_by_category(client, auth_headers, sample_metric):
+def test_list_metrics_by_category(test_client, client, auth_headers, sample_metric):
     """Test liste métriques filtrées par module"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/metrics?category={sample_metric.module}",
         headers=auth_headers
     )
@@ -248,7 +248,7 @@ def test_list_metrics_by_category(client, auth_headers, sample_metric):
         assert metric.get("module") == sample_metric.module
 
 
-def test_record_metric_value(client, auth_headers, sample_metric, tenant_id):
+def test_record_metric_value(test_client, client, auth_headers, sample_metric, tenant_id):
     """Test enregistrement d'une valeur de métrique"""
     metric_data = {
         "metric_code": sample_metric.code,
@@ -256,7 +256,7 @@ def test_record_metric_value(client, auth_headers, sample_metric, tenant_id):
         "timestamp": datetime.utcnow().isoformat()
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/metrics/record",
         json=metric_data,
         headers=auth_headers
@@ -270,9 +270,9 @@ def test_record_metric_value(client, auth_headers, sample_metric, tenant_id):
     assert data["tenant_id"] == tenant_id
 
 
-def test_get_metric_values(client, auth_headers, sample_metric_values, sample_metric):
+def test_get_metric_values(test_client, client, auth_headers, sample_metric_values, sample_metric):
     """Test récupération des valeurs d'une métrique"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/metrics/{sample_metric.code}/values?limit=50",
         headers=auth_headers
     )
@@ -290,9 +290,9 @@ def test_get_metric_values(client, auth_headers, sample_metric_values, sample_me
 # TESTS BENCHMARKS
 # ============================================================================
 
-def test_create_benchmark(client, auth_headers, tenant_id, user_id, sample_benchmark_data):
+def test_create_benchmark(test_client, client, auth_headers, tenant_id, user_id, sample_benchmark_data):
     """Test création d'un benchmark"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/benchmarks",
         json=sample_benchmark_data,
         headers=auth_headers
@@ -308,9 +308,9 @@ def test_create_benchmark(client, auth_headers, tenant_id, user_id, sample_bench
     assert "created_by" in data
 
 
-def test_list_benchmarks(client, auth_headers, sample_benchmark, tenant_id):
+def test_list_benchmarks(test_client, client, auth_headers, sample_benchmark, tenant_id):
     """Test liste des benchmarks"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/benchmarks",
         headers=auth_headers
     )
@@ -324,9 +324,9 @@ def test_list_benchmarks(client, auth_headers, sample_benchmark, tenant_id):
         assert benchmark["tenant_id"] == tenant_id
 
 
-def test_list_benchmarks_by_category(client, auth_headers, sample_benchmark):
+def test_list_benchmarks_by_category(test_client, client, auth_headers, sample_benchmark):
     """Test liste benchmarks filtrés par type"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/benchmarks?category={sample_benchmark.benchmark_type}",
         headers=auth_headers
     )
@@ -338,9 +338,9 @@ def test_list_benchmarks_by_category(client, auth_headers, sample_benchmark):
         assert benchmark["benchmark_type"] == sample_benchmark.benchmark_type
 
 
-def test_run_benchmark(client, auth_headers, sample_benchmark, user_id):
+def test_run_benchmark(test_client, client, auth_headers, sample_benchmark, user_id):
     """Test exécution d'un benchmark"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/audit/benchmarks/{sample_benchmark.id}/run",
         headers=auth_headers
     )
@@ -353,9 +353,9 @@ def test_run_benchmark(client, auth_headers, sample_benchmark, user_id):
     assert "executed_by" in data
 
 
-def test_get_benchmark_results(client, auth_headers, sample_benchmark_result, sample_benchmark):
+def test_get_benchmark_results(test_client, client, auth_headers, sample_benchmark_result, sample_benchmark):
     """Test récupération des résultats d'un benchmark"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/benchmarks/{sample_benchmark.id}/results?limit=10",
         headers=auth_headers
     )
@@ -374,9 +374,9 @@ def test_get_benchmark_results(client, auth_headers, sample_benchmark_result, sa
 # TESTS COMPLIANCE CHECKS
 # ============================================================================
 
-def test_create_compliance_check(client, auth_headers, tenant_id, user_id, sample_compliance_data):
+def test_create_compliance_check(test_client, client, auth_headers, tenant_id, user_id, sample_compliance_data):
     """Test création d'un contrôle de conformité"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/compliance/checks",
         json=sample_compliance_data,
         headers=auth_headers
@@ -392,9 +392,9 @@ def test_create_compliance_check(client, auth_headers, tenant_id, user_id, sampl
     assert "created_by" in data or "checked_by" in data
 
 
-def test_list_compliance_checks(client, auth_headers, sample_compliance_check, tenant_id):
+def test_list_compliance_checks(test_client, client, auth_headers, sample_compliance_check, tenant_id):
     """Test liste des contrôles de conformité"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/compliance/checks",
         headers=auth_headers
     )
@@ -408,9 +408,9 @@ def test_list_compliance_checks(client, auth_headers, sample_compliance_check, t
         assert check["tenant_id"] == tenant_id
 
 
-def test_list_compliance_checks_by_framework(client, auth_headers, sample_compliance_check):
+def test_list_compliance_checks_by_framework(test_client, client, auth_headers, sample_compliance_check):
     """Test liste contrôles filtrés par framework"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/compliance/checks?framework={sample_compliance_check.framework.value}",
         headers=auth_headers
     )
@@ -422,7 +422,7 @@ def test_list_compliance_checks_by_framework(client, auth_headers, sample_compli
         assert check["framework"] == sample_compliance_check.framework.value
 
 
-def test_update_compliance_check(client, auth_headers, sample_compliance_check, user_id):
+def test_update_compliance_check(test_client, client, auth_headers, sample_compliance_check, user_id):
     """Test mise à jour d'un contrôle de conformité"""
     update_data = {
         "status": "NON_COMPLIANT",
@@ -430,7 +430,7 @@ def test_update_compliance_check(client, auth_headers, sample_compliance_check, 
         "remediation": "Fix violations ASAP"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/audit/compliance/checks/{sample_compliance_check.id}",
         json=update_data,
         headers=auth_headers
@@ -444,9 +444,9 @@ def test_update_compliance_check(client, auth_headers, sample_compliance_check, 
     assert "updated_by" in data or "checked_by" in data
 
 
-def test_get_compliance_summary(client, auth_headers, sample_compliance_check):
+def test_get_compliance_summary(test_client, client, auth_headers, sample_compliance_check):
     """Test récupération du résumé de conformité"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/compliance/summary",
         headers=auth_headers
     )
@@ -463,9 +463,9 @@ def test_get_compliance_summary(client, auth_headers, sample_compliance_check):
 # TESTS RETENTION RULES
 # ============================================================================
 
-def test_create_retention_rule(client, auth_headers, tenant_id, user_id, sample_retention_data):
+def test_create_retention_rule(test_client, client, auth_headers, tenant_id, user_id, sample_retention_data):
     """Test création d'une règle de rétention"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/retention/rules",
         json=sample_retention_data,
         headers=auth_headers
@@ -481,9 +481,9 @@ def test_create_retention_rule(client, auth_headers, tenant_id, user_id, sample_
     assert "created_by" in data or "created_at" in data
 
 
-def test_list_retention_rules(client, auth_headers, sample_retention_rule, tenant_id):
+def test_list_retention_rules(test_client, client, auth_headers, sample_retention_rule, tenant_id):
     """Test liste des règles de rétention"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/retention/rules",
         headers=auth_headers
     )
@@ -497,9 +497,9 @@ def test_list_retention_rules(client, auth_headers, sample_retention_rule, tenan
         assert rule["tenant_id"] == tenant_id
 
 
-def test_apply_retention_rules_dry_run(client, auth_headers, sample_retention_rule):
+def test_apply_retention_rules_dry_run(test_client, client, auth_headers, sample_retention_rule):
     """Test application des règles de rétention (mode simulation)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/retention/apply?dry_run=true",
         headers=auth_headers
     )
@@ -515,9 +515,9 @@ def test_apply_retention_rules_dry_run(client, auth_headers, sample_retention_ru
 # TESTS EXPORTS
 # ============================================================================
 
-def test_create_export(client, auth_headers, tenant_id, user_id, sample_export_data):
+def test_create_export(test_client, client, auth_headers, tenant_id, user_id, sample_export_data):
     """Test création d'un export d'audit"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/exports",
         json=sample_export_data,
         headers=auth_headers
@@ -533,9 +533,9 @@ def test_create_export(client, auth_headers, tenant_id, user_id, sample_export_d
     assert data["requested_by"] == user_id or "requested_by" in data
 
 
-def test_list_exports(client, auth_headers, sample_export, tenant_id):
+def test_list_exports(test_client, client, auth_headers, sample_export, tenant_id):
     """Test liste des exports"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/exports",
         headers=auth_headers
     )
@@ -549,9 +549,9 @@ def test_list_exports(client, auth_headers, sample_export, tenant_id):
         assert export["tenant_id"] == tenant_id
 
 
-def test_get_export_by_id(client, auth_headers, sample_export):
+def test_get_export_by_id(test_client, client, auth_headers, sample_export):
     """Test récupération d'un export par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/exports/{sample_export.id}",
         headers=auth_headers
     )
@@ -564,9 +564,9 @@ def test_get_export_by_id(client, auth_headers, sample_export):
     assert "status" in data
 
 
-def test_process_export(client, auth_headers, sample_export):
+def test_process_export(test_client, client, auth_headers, sample_export):
     """Test retraitement d'un export"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/audit/exports/{sample_export.id}/process",
         headers=auth_headers
     )
@@ -582,9 +582,9 @@ def test_process_export(client, auth_headers, sample_export):
 # TESTS DASHBOARDS
 # ============================================================================
 
-def test_create_dashboard(client, auth_headers, tenant_id, user_id, sample_dashboard_data):
+def test_create_dashboard(test_client, client, auth_headers, tenant_id, user_id, sample_dashboard_data):
     """Test création d'un dashboard personnalisé"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/dashboards",
         json=sample_dashboard_data,
         headers=auth_headers
@@ -600,9 +600,9 @@ def test_create_dashboard(client, auth_headers, tenant_id, user_id, sample_dashb
     assert data["owner_id"] == user_id or "owner_id" in data
 
 
-def test_list_dashboards(client, auth_headers, sample_dashboard, tenant_id):
+def test_list_dashboards(test_client, client, auth_headers, sample_dashboard, tenant_id):
     """Test liste des dashboards"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/dashboards",
         headers=auth_headers
     )
@@ -616,12 +616,12 @@ def test_list_dashboards(client, auth_headers, sample_dashboard, tenant_id):
         assert dashboard["tenant_id"] == tenant_id
 
 
-def test_get_dashboard_data(client, auth_headers, sample_dashboard):
+def test_get_dashboard_data(test_client, client, auth_headers, sample_dashboard):
     """Test récupération des données d'un dashboard"""
     from_date = (datetime.utcnow() - timedelta(days=7)).isoformat()
     to_date = datetime.utcnow().isoformat()
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/dashboards/{sample_dashboard.id}/data?from_date={from_date}&to_date={to_date}",
         headers=auth_headers
     )
@@ -633,9 +633,9 @@ def test_get_dashboard_data(client, auth_headers, sample_dashboard):
     assert isinstance(data, dict)
 
 
-def test_get_dashboard_data_default_period(client, auth_headers, sample_dashboard):
+def test_get_dashboard_data_default_period(test_client, client, auth_headers, sample_dashboard):
     """Test récupération données dashboard sans dates (période par défaut)"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/dashboards/{sample_dashboard.id}/data",
         headers=auth_headers
     )
@@ -649,12 +649,12 @@ def test_get_dashboard_data_default_period(client, auth_headers, sample_dashboar
 # TESTS STATISTICS
 # ============================================================================
 
-def test_get_audit_stats(client, auth_headers, sample_audit_logs_batch):
+def test_get_audit_stats(test_client, client, auth_headers, sample_audit_logs_batch):
     """Test récupération des statistiques d'audit"""
     from_date = (datetime.utcnow() - timedelta(days=7)).isoformat()
     to_date = datetime.utcnow().isoformat()
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/stats?from_date={from_date}&to_date={to_date}",
         headers=auth_headers
     )
@@ -668,9 +668,9 @@ def test_get_audit_stats(client, auth_headers, sample_audit_logs_batch):
     assert any(key in data for key in ["total_logs", "total", "stats", "summary"])
 
 
-def test_get_audit_dashboard(client, auth_headers, sample_audit_logs_batch):
+def test_get_audit_dashboard(test_client, client, auth_headers, sample_audit_logs_batch):
     """Test récupération du dashboard principal d'audit"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/dashboard?period=7d",
         headers=auth_headers
     )
@@ -686,17 +686,15 @@ def test_get_audit_dashboard(client, auth_headers, sample_audit_logs_batch):
 # TESTS WORKFLOWS COMPLEXES
 # ============================================================================
 
-def test_workflow_create_metric_and_record_values(
-    client,
+def test_workflow_create_metric_and_record_values(test_client, client,
     auth_headers,
     tenant_id,
-    sample_metric_data
-):
+    sample_metric_data):
     """
     Test workflow complet: créer métrique → enregistrer valeurs → récupérer historique
     """
     # 1. Créer métrique
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/metrics",
         json=sample_metric_data,
         headers=auth_headers
@@ -712,7 +710,7 @@ def test_workflow_create_metric_and_record_values(
             "value": 100.0 + (i * 10),
             "timestamp": (datetime.utcnow() - timedelta(hours=i)).isoformat()
         }
-        response = client.post(
+        response = test_client.post(
             "/api/v2/audit/metrics/record",
             json=value_data,
             headers=auth_headers
@@ -720,7 +718,7 @@ def test_workflow_create_metric_and_record_values(
         assert response.status_code == 200
 
     # 3. Récupérer historique
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/metrics/{metric_code}/values",
         headers=auth_headers
     )
@@ -729,16 +727,14 @@ def test_workflow_create_metric_and_record_values(
     assert len(values) >= 5
 
 
-def test_workflow_benchmark_execution_and_results(
-    client,
+def test_workflow_benchmark_execution_and_results(test_client, client,
     auth_headers,
-    sample_benchmark_data
-):
+    sample_benchmark_data):
     """
     Test workflow: créer benchmark → exécuter → récupérer résultats
     """
     # 1. Créer benchmark
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/benchmarks",
         json=sample_benchmark_data,
         headers=auth_headers
@@ -748,7 +744,7 @@ def test_workflow_benchmark_execution_and_results(
     benchmark_id = benchmark["id"]
 
     # 2. Exécuter benchmark
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/audit/benchmarks/{benchmark_id}/run",
         headers=auth_headers
     )
@@ -756,7 +752,7 @@ def test_workflow_benchmark_execution_and_results(
     result = response.json()
 
     # 3. Récupérer historique résultats
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/benchmarks/{benchmark_id}/results",
         headers=auth_headers
     )
@@ -765,17 +761,15 @@ def test_workflow_benchmark_execution_and_results(
     assert isinstance(results, list)
 
 
-def test_workflow_compliance_check_lifecycle(
-    client,
+def test_workflow_compliance_check_lifecycle(test_client, client,
     auth_headers,
     sample_compliance_data,
-    user_id
-):
+    user_id):
     """
     Test workflow: créer check → mettre à jour statut → récupérer summary
     """
     # 1. Créer compliance check
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/compliance/checks",
         json=sample_compliance_data,
         headers=auth_headers
@@ -789,7 +783,7 @@ def test_workflow_compliance_check_lifecycle(
         "status": "COMPLIANT",
         "actual_result": "All checks passed"
     }
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/audit/compliance/checks/{check_id}",
         json=update_data,
         headers=auth_headers
@@ -797,7 +791,7 @@ def test_workflow_compliance_check_lifecycle(
     assert response.status_code == 200
 
     # 3. Récupérer summary
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/compliance/summary",
         headers=auth_headers
     )
@@ -806,17 +800,15 @@ def test_workflow_compliance_check_lifecycle(
     assert isinstance(summary, dict)
 
 
-def test_workflow_export_audit_logs(
-    client,
+def test_workflow_export_audit_logs(test_client, client,
     auth_headers,
     sample_audit_logs_batch,
-    sample_export_data
-):
+    sample_export_data):
     """
     Test workflow: créer export → vérifier progression → récupérer résultat
     """
     # 1. Créer export
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/exports",
         json=sample_export_data,
         headers=auth_headers
@@ -826,7 +818,7 @@ def test_workflow_export_audit_logs(
     export_id = export["id"]
 
     # 2. Vérifier statut
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/exports/{export_id}",
         headers=auth_headers
     )
@@ -835,7 +827,7 @@ def test_workflow_export_audit_logs(
     assert "status" in export_status
 
     # 3. Liste tous les exports
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/exports",
         headers=auth_headers
     )
@@ -848,10 +840,10 @@ def test_workflow_export_audit_logs(
 # TESTS PAGINATION & FILTRES
 # ============================================================================
 
-def test_search_logs_pagination(client, auth_headers, sample_audit_logs_batch):
+def test_search_logs_pagination(test_client, client, auth_headers, sample_audit_logs_batch):
     """Test pagination de la recherche de logs"""
     # Page 1
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/logs?page=1&page_size=5",
         headers=auth_headers
     )
@@ -861,7 +853,7 @@ def test_search_logs_pagination(client, auth_headers, sample_audit_logs_batch):
     assert page1["page"] == 1
 
     # Page 2
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/logs?page=2&page_size=5",
         headers=auth_headers
     )
@@ -870,9 +862,9 @@ def test_search_logs_pagination(client, auth_headers, sample_audit_logs_batch):
     assert page2["page"] == 2
 
 
-def test_search_logs_by_entity(client, auth_headers, sample_audit_log):
+def test_search_logs_by_entity(test_client, client, auth_headers, sample_audit_log):
     """Test recherche logs par entité"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs?entity_type={sample_audit_log.entity_type}&entity_id={sample_audit_log.entity_id}",
         headers=auth_headers
     )
@@ -885,9 +877,9 @@ def test_search_logs_by_entity(client, auth_headers, sample_audit_log):
         assert log["entity_id"] == sample_audit_log.entity_id
 
 
-def test_search_logs_with_text_search(client, auth_headers, sample_audit_log):
+def test_search_logs_with_text_search(test_client, client, auth_headers, sample_audit_log):
     """Test recherche logs avec texte libre"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/logs?search_text=facture",
         headers=auth_headers
     )
@@ -901,7 +893,7 @@ def test_search_logs_with_text_search(client, auth_headers, sample_audit_log):
 # TESTS SÉCURITÉ & ISOLATION TENANT
 # ============================================================================
 
-def test_audit_logs_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_audit_logs_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: vérifier l'isolation stricte des logs par tenant
     """
@@ -923,7 +915,7 @@ def test_audit_logs_tenant_isolation(client, auth_headers, db_session, tenant_id
     db_session.commit()
 
     # Tenter de récupérer tous les logs
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/logs",
         headers=auth_headers
     )
@@ -937,7 +929,7 @@ def test_audit_logs_tenant_isolation(client, auth_headers, db_session, tenant_id
         assert log["tenant_id"] != other_tenant_id
 
 
-def test_metrics_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_metrics_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: isolation des métriques par tenant
     """
@@ -954,7 +946,7 @@ def test_metrics_tenant_isolation(client, auth_headers, db_session, tenant_id):
     db_session.commit()
 
     # Récupérer métriques
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/metrics",
         headers=auth_headers
     )
@@ -967,7 +959,7 @@ def test_metrics_tenant_isolation(client, auth_headers, db_session, tenant_id):
         assert metric["tenant_id"] == tenant_id
 
 
-def test_compliance_checks_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_compliance_checks_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: isolation des contrôles de conformité par tenant
     """
@@ -986,7 +978,7 @@ def test_compliance_checks_tenant_isolation(client, auth_headers, db_session, te
     db_session.commit()
 
     # Récupérer checks
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/compliance/checks",
         headers=auth_headers
     )
@@ -1003,10 +995,10 @@ def test_compliance_checks_tenant_isolation(client, auth_headers, db_session, te
 # TESTS ERREURS & CAS LIMITES
 # ============================================================================
 
-def test_get_nonexistent_log(client, auth_headers):
+def test_get_nonexistent_log(test_client, client, auth_headers):
     """Test récupération d'un log inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs/{fake_id}",
         headers=auth_headers
     )
@@ -1015,10 +1007,10 @@ def test_get_nonexistent_log(client, auth_headers):
     assert "non trouvé" in response.json()["detail"].lower()
 
 
-def test_get_nonexistent_export(client, auth_headers):
+def test_get_nonexistent_export(test_client, client, auth_headers):
     """Test récupération d'un export inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/exports/{fake_id}",
         headers=auth_headers
     )
@@ -1026,7 +1018,7 @@ def test_get_nonexistent_export(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_create_metric_with_duplicate_code(client, auth_headers, sample_metric):
+def test_create_metric_with_duplicate_code(test_client, client, auth_headers, sample_metric):
     """Test création métrique avec code dupliqué (devrait échouer)"""
     duplicate_data = {
         "code": sample_metric.code,  # Code existant
@@ -1034,7 +1026,7 @@ def test_create_metric_with_duplicate_code(client, auth_headers, sample_metric):
         "metric_type": "GAUGE"
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/metrics",
         json=duplicate_data,
         headers=auth_headers
@@ -1044,9 +1036,9 @@ def test_create_metric_with_duplicate_code(client, auth_headers, sample_metric):
     assert response.status_code in [400, 409, 422]
 
 
-def test_invalid_audit_dashboard_period(client, auth_headers):
+def test_invalid_audit_dashboard_period(test_client, client, auth_headers):
     """Test récupération dashboard avec période invalide"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/dashboard?period=invalid",
         headers=auth_headers
     )
@@ -1066,12 +1058,10 @@ def test_invalid_audit_dashboard_period(client, auth_headers):
     "HIPAA",
     "PCI_DSS"
 ])
-def test_create_compliance_check_for_framework(
-    client,
+def test_create_compliance_check_for_framework(test_client, client,
     auth_headers,
     tenant_id,
-    framework
-):
+    framework):
     """Test création de contrôles pour différents frameworks de conformité"""
     data = {
         "framework": framework,
@@ -1081,7 +1071,7 @@ def test_create_compliance_check_for_framework(
         "check_type": "AUTOMATED"
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/compliance/checks",
         json=data,
         headers=auth_headers
@@ -1093,13 +1083,11 @@ def test_create_compliance_check_for_framework(
     assert result["tenant_id"] == tenant_id
 
 
-def test_get_compliance_summary_by_framework(
-    client,
+def test_get_compliance_summary_by_framework(test_client, client,
     auth_headers,
-    sample_compliance_check
-):
+    sample_compliance_check):
     """Test récupération du résumé de conformité par framework"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/compliance/summary?framework={sample_compliance_check.framework.value}",
         headers=auth_headers
     )
@@ -1113,9 +1101,9 @@ def test_get_compliance_summary_by_framework(
 # TESTS RETENTION & DATA LIFECYCLE
 # ============================================================================
 
-def test_list_retention_rules_by_category(client, auth_headers, sample_retention_rule):
+def test_list_retention_rules_by_category(test_client, client, auth_headers, sample_retention_rule):
     """Test liste des règles de rétention filtrées par catégorie"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/retention/rules?category={AuditCategory.BUSINESS.value}",
         headers=auth_headers
     )
@@ -1125,9 +1113,9 @@ def test_list_retention_rules_by_category(client, auth_headers, sample_retention
     assert isinstance(data, list)
 
 
-def test_apply_retention_rules_background_task(client, auth_headers, sample_retention_rule):
+def test_apply_retention_rules_background_task(test_client, client, auth_headers, sample_retention_rule):
     """Test application asynchrone des règles de rétention"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/retention/apply?dry_run=false",
         headers=auth_headers
     )
@@ -1144,15 +1132,13 @@ def test_apply_retention_rules_background_task(client, auth_headers, sample_rete
 # TESTS PERFORMANCE & SCALABILITÉ
 # ============================================================================
 
-def test_search_logs_large_dataset_performance(
-    client,
+def test_search_logs_large_dataset_performance(test_client, client,
     auth_headers,
     sample_audit_logs_batch,
-    benchmark
-):
+    benchmark):
     """Test performance recherche sur large dataset"""
     # Recherche avec multiples filtres
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/logs?page=1&page_size=100&action=CREATE&level=INFO",
         headers=auth_headers
     )
@@ -1165,9 +1151,9 @@ def test_search_logs_large_dataset_performance(
     assert len(data["logs"]) <= 100
 
 
-def test_metric_values_query_with_limit(client, auth_headers, sample_metric_values, sample_metric):
+def test_metric_values_query_with_limit(test_client, client, auth_headers, sample_metric_values, sample_metric):
     """Test récupération de valeurs métriques avec limite haute"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/metrics/{sample_metric.code}/values?limit=1000",
         headers=auth_headers
     )
@@ -1184,12 +1170,10 @@ def test_metric_values_query_with_limit(client, auth_headers, sample_metric_valu
 # ============================================================================
 
 @pytest.mark.parametrize("export_format", ["CSV", "JSON", "PDF", "EXCEL"])
-def test_create_export_various_formats(
-    client,
+def test_create_export_various_formats(test_client, client,
     auth_headers,
     tenant_id,
-    export_format
-):
+    export_format):
     """Test création d'exports dans différents formats"""
     data = {
         "export_type": "AUDIT_LOGS",
@@ -1198,7 +1182,7 @@ def test_create_export_various_formats(
         "date_to": datetime.utcnow().isoformat()
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/audit/exports",
         json=data,
         headers=auth_headers
@@ -1210,9 +1194,9 @@ def test_create_export_various_formats(
     assert result["tenant_id"] == tenant_id
 
 
-def test_list_exports_by_status(client, auth_headers, sample_export):
+def test_list_exports_by_status(test_client, client, auth_headers, sample_export):
     """Test liste des exports filtrés par statut"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/exports?status={sample_export.status}",
         headers=auth_headers
     )
@@ -1228,9 +1212,9 @@ def test_list_exports_by_status(client, auth_headers, sample_export):
 # TESTS AUDIT TRAIL INTEGRITY
 # ============================================================================
 
-def test_audit_log_contains_complete_trail(client, auth_headers, sample_audit_log, assert_audit_trail):
+def test_audit_log_contains_complete_trail(test_client, client, auth_headers, sample_audit_log, assert_audit_trail):
     """Test vérifier que les logs contiennent tous les champs d'audit trail"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs/{sample_audit_log.id}",
         headers=auth_headers
     )
@@ -1242,9 +1226,9 @@ def test_audit_log_contains_complete_trail(client, auth_headers, sample_audit_lo
     assert_audit_trail(data)
 
 
-def test_audit_log_tracks_user_changes(client, auth_headers, sample_audit_log, user_id):
+def test_audit_log_tracks_user_changes(test_client, client, auth_headers, sample_audit_log, user_id):
     """Test vérifier que les modifications sont tracées avec user_id"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs?user_id={user_id}&action=UPDATE",
         headers=auth_headers
     )
@@ -1261,9 +1245,9 @@ def test_audit_log_tracks_user_changes(client, auth_headers, sample_audit_log, u
 # TESTS SESSION MANAGEMENT
 # ============================================================================
 
-def test_list_active_sessions_statistics(client, auth_headers, sample_session):
+def test_list_active_sessions_statistics(test_client, client, auth_headers, sample_session):
     """Test récupération des statistiques de sessions actives"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/sessions",
         headers=auth_headers
     )
@@ -1280,11 +1264,11 @@ def test_list_active_sessions_statistics(client, auth_headers, sample_session):
             assert session["is_active"] is True
 
 
-def test_terminate_session_with_reason(client, auth_headers, sample_session):
+def test_terminate_session_with_reason(test_client, client, auth_headers, sample_session):
     """Test terminer une session avec raison spécifique"""
     reason = "Security policy violation"
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/audit/sessions/{sample_session.session_id}/terminate?reason={reason}",
         headers=auth_headers
     )
@@ -1300,7 +1284,7 @@ def test_terminate_session_with_reason(client, auth_headers, sample_session):
 # TESTS REGRESSION & DATA INTEGRITY
 # ============================================================================
 
-def test_create_multiple_dashboards(client, auth_headers, tenant_id, user_id):
+def test_create_multiple_dashboards(test_client, client, auth_headers, tenant_id, user_id):
     """Test création de plusieurs dashboards sans conflit"""
     for i in range(3):
         data = {
@@ -1310,7 +1294,7 @@ def test_create_multiple_dashboards(client, auth_headers, tenant_id, user_id):
             "widgets": f'[{{"type": "chart", "index": {i}}}]'
         }
 
-        response = client.post(
+        response = test_client.post(
             "/api/v2/audit/dashboards",
             json=data,
             headers=auth_headers
@@ -1322,9 +1306,9 @@ def test_create_multiple_dashboards(client, auth_headers, tenant_id, user_id):
         assert result["tenant_id"] == tenant_id
 
 
-def test_benchmark_results_history(client, auth_headers, sample_benchmark_result, sample_benchmark):
+def test_benchmark_results_history(test_client, client, auth_headers, sample_benchmark_result, sample_benchmark):
     """Test historique des résultats de benchmark (trend analysis)"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/benchmarks/{sample_benchmark.id}/results?limit=50",
         headers=auth_headers
     )
@@ -1343,9 +1327,9 @@ def test_benchmark_results_history(client, auth_headers, sample_benchmark_result
 # TESTS DOCUMENTATION & MÉTADONNÉES
 # ============================================================================
 
-def test_audit_log_contains_metadata(client, auth_headers, sample_audit_log):
+def test_audit_log_contains_metadata(test_client, client, auth_headers, sample_audit_log):
     """Test vérifier que les logs contiennent les métadonnées système"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/audit/logs/{sample_audit_log.id}",
         headers=auth_headers
     )
@@ -1360,9 +1344,9 @@ def test_audit_log_contains_metadata(client, auth_headers, sample_audit_log):
     assert "created_at" in data
 
 
-def test_compliance_check_evidence_tracking(client, auth_headers, sample_compliance_check):
+def test_compliance_check_evidence_tracking(test_client, client, auth_headers, sample_compliance_check):
     """Test vérifier que les contrôles de conformité trackent les preuves"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/audit/compliance/checks",
         headers=auth_headers
     )

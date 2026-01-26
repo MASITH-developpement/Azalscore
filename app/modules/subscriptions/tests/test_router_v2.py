@@ -24,7 +24,6 @@ from uuid import UUID
 
 import pytest
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
 
 from app.core.saas_context import SaaSContext
 
@@ -33,7 +32,7 @@ from app.core.saas_context import SaaSContext
 # PLANS - 8 tests
 # ============================================================================
 
-def test_create_plan(mock_saas_context, plan_data, sample_plan):
+def test_create_plan(test_client, mock_saas_context, plan_data, sample_plan):
     """Test création d'un plan."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -51,7 +50,7 @@ def test_create_plan(mock_saas_context, plan_data, sample_plan):
         service_mock.create_plan.assert_called_once()
 
 
-def test_list_plans(mock_saas_context, sample_plan):
+def test_list_plans(test_client, mock_saas_context, sample_plan):
     """Test listage des plans."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -67,7 +66,7 @@ def test_list_plans(mock_saas_context, sample_plan):
         assert result["items"][0]["id"] == sample_plan["id"]
 
 
-def test_get_plan(mock_saas_context, sample_plan):
+def test_get_plan(test_client, mock_saas_context, sample_plan):
     """Test récupération d'un plan."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -82,7 +81,7 @@ def test_get_plan(mock_saas_context, sample_plan):
         service_mock.get_plan.assert_called_once_with(1)
 
 
-def test_get_plan_not_found(mock_saas_context):
+def test_get_plan_not_found(test_client, mock_saas_context):
     """Test récupération d'un plan inexistant."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -97,7 +96,7 @@ def test_get_plan_not_found(mock_saas_context):
         assert exc_info.value.status_code == 404
 
 
-def test_update_plan(mock_saas_context, sample_plan):
+def test_update_plan(test_client, mock_saas_context, sample_plan):
     """Test mise à jour d'un plan."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -113,7 +112,7 @@ def test_update_plan(mock_saas_context, sample_plan):
         assert result["name"] == "Plan Updated"
 
 
-def test_update_plan_not_found(mock_saas_context):
+def test_update_plan_not_found(test_client, mock_saas_context):
     """Test mise à jour d'un plan inexistant."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -129,7 +128,7 @@ def test_update_plan_not_found(mock_saas_context):
         assert exc_info.value.status_code == 404
 
 
-def test_delete_plan(mock_saas_context):
+def test_delete_plan(test_client, mock_saas_context):
     """Test suppression d'un plan."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -144,7 +143,7 @@ def test_delete_plan(mock_saas_context):
         service_mock.delete_plan.assert_called_once_with(1)
 
 
-def test_plan_pagination(mock_saas_context, sample_plan):
+def test_plan_pagination(test_client, mock_saas_context, sample_plan):
     """Test pagination des plans."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -164,7 +163,7 @@ def test_plan_pagination(mock_saas_context, sample_plan):
 # ADD-ONS - 8 tests
 # ============================================================================
 
-def test_create_addon(mock_saas_context, addon_data, sample_addon):
+def test_create_addon(test_client, mock_saas_context, addon_data, sample_addon):
     """Test création d'un add-on."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -180,7 +179,7 @@ def test_create_addon(mock_saas_context, addon_data, sample_addon):
         assert result["code"] == sample_addon["code"]
 
 
-def test_list_addons(mock_saas_context, sample_addon):
+def test_list_addons(test_client, mock_saas_context, sample_addon):
     """Test listage de tous les add-ons."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -194,7 +193,7 @@ def test_list_addons(mock_saas_context, sample_addon):
         assert result == []
 
 
-def test_list_plan_addons(mock_saas_context, sample_addon):
+def test_list_plan_addons(test_client, mock_saas_context, sample_addon):
     """Test listage des add-ons d'un plan."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -209,7 +208,7 @@ def test_list_plan_addons(mock_saas_context, sample_addon):
         assert result[0]["id"] == sample_addon["id"]
 
 
-def test_get_addon(mock_saas_context, sample_addon):
+def test_get_addon(test_client, mock_saas_context, sample_addon):
     """Test récupération d'un add-on (via list)."""
     # Note: Pas d'endpoint get_addon direct, testons via list
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
@@ -224,7 +223,7 @@ def test_get_addon(mock_saas_context, sample_addon):
         assert result[0]["id"] == sample_addon["id"]
 
 
-def test_get_addon_not_found(mock_saas_context):
+def test_get_addon_not_found(test_client, mock_saas_context):
     """Test récupération d'un add-on inexistant."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -238,7 +237,7 @@ def test_get_addon_not_found(mock_saas_context):
         assert len(result) == 0
 
 
-def test_update_addon(mock_saas_context, sample_addon):
+def test_update_addon(test_client, mock_saas_context, sample_addon):
     """Test mise à jour d'un add-on."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -254,7 +253,7 @@ def test_update_addon(mock_saas_context, sample_addon):
         assert result["name"] == "Addon Updated"
 
 
-def test_delete_addon(mock_saas_context):
+def test_delete_addon(test_client, mock_saas_context):
     """Test suppression d'un add-on."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -269,7 +268,7 @@ def test_delete_addon(mock_saas_context):
         assert exc_info.value.status_code == 501
 
 
-def test_addon_pagination(mock_saas_context, sample_addon):
+def test_addon_pagination(test_client, mock_saas_context, sample_addon):
     """Test pagination des add-ons."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -288,7 +287,7 @@ def test_addon_pagination(mock_saas_context, sample_addon):
 # SUBSCRIPTIONS - 14 tests
 # ============================================================================
 
-def test_create_subscription(mock_saas_context, subscription_data, sample_subscription):
+def test_create_subscription(test_client, mock_saas_context, subscription_data, sample_subscription):
     """Test création d'un abonnement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -304,7 +303,7 @@ def test_create_subscription(mock_saas_context, subscription_data, sample_subscr
         assert result["status"] == sample_subscription["status"]
 
 
-def test_list_subscriptions(mock_saas_context, sample_subscription):
+def test_list_subscriptions(test_client, mock_saas_context, sample_subscription):
     """Test listage des abonnements."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -319,7 +318,7 @@ def test_list_subscriptions(mock_saas_context, sample_subscription):
         assert len(result["items"]) == 1
 
 
-def test_list_subscriptions_with_filters(mock_saas_context, sample_subscription):
+def test_list_subscriptions_with_filters(test_client, mock_saas_context, sample_subscription):
     """Test listage des abonnements avec filtres."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -334,7 +333,7 @@ def test_list_subscriptions_with_filters(mock_saas_context, sample_subscription)
         service_mock.list_subscriptions.assert_called_once()
 
 
-def test_get_subscription(mock_saas_context, sample_subscription):
+def test_get_subscription(test_client, mock_saas_context, sample_subscription):
     """Test récupération d'un abonnement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -348,7 +347,7 @@ def test_get_subscription(mock_saas_context, sample_subscription):
         assert result["id"] == sample_subscription["id"]
 
 
-def test_get_subscription_not_found(mock_saas_context):
+def test_get_subscription_not_found(test_client, mock_saas_context):
     """Test récupération d'un abonnement inexistant."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -363,7 +362,7 @@ def test_get_subscription_not_found(mock_saas_context):
         assert exc_info.value.status_code == 404
 
 
-def test_update_subscription(mock_saas_context, sample_subscription):
+def test_update_subscription(test_client, mock_saas_context, sample_subscription):
     """Test mise à jour d'un abonnement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -379,7 +378,7 @@ def test_update_subscription(mock_saas_context, sample_subscription):
         assert result["quantity"] == 2
 
 
-def test_change_plan(mock_saas_context, sample_subscription):
+def test_change_plan(test_client, mock_saas_context, sample_subscription):
     """Test changement de plan."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -396,7 +395,7 @@ def test_change_plan(mock_saas_context, sample_subscription):
         assert result["plan_id"] == 2
 
 
-def test_change_plan_not_found(mock_saas_context):
+def test_change_plan_not_found(test_client, mock_saas_context):
     """Test changement de plan pour abonnement inexistant."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -412,7 +411,7 @@ def test_change_plan_not_found(mock_saas_context):
             change_subscription_plan(999, data, service_mock)
 
 
-def test_cancel_subscription(mock_saas_context, sample_subscription):
+def test_cancel_subscription(test_client, mock_saas_context, sample_subscription):
     """Test annulation d'un abonnement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -429,7 +428,7 @@ def test_cancel_subscription(mock_saas_context, sample_subscription):
         assert result["status"] == "canceled"
 
 
-def test_pause_subscription(mock_saas_context, sample_subscription):
+def test_pause_subscription(test_client, mock_saas_context, sample_subscription):
     """Test pause d'un abonnement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -446,7 +445,7 @@ def test_pause_subscription(mock_saas_context, sample_subscription):
         assert result["status"] == "paused"
 
 
-def test_resume_subscription(mock_saas_context, sample_subscription):
+def test_resume_subscription(test_client, mock_saas_context, sample_subscription):
     """Test reprise d'un abonnement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -461,7 +460,7 @@ def test_resume_subscription(mock_saas_context, sample_subscription):
         assert result["status"] == "active"
 
 
-def test_subscription_pagination(mock_saas_context, sample_subscription):
+def test_subscription_pagination(test_client, mock_saas_context, sample_subscription):
     """Test pagination des abonnements."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -477,7 +476,7 @@ def test_subscription_pagination(mock_saas_context, sample_subscription):
         assert len(result["items"]) == 10
 
 
-def test_subscription_with_addons(mock_saas_context, subscription_data, sample_subscription):
+def test_subscription_with_addons(test_client, mock_saas_context, subscription_data, sample_subscription):
     """Test création abonnement avec add-ons."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -505,7 +504,7 @@ def test_subscription_with_addons(mock_saas_context, subscription_data, sample_s
         assert result["id"] == sample_subscription["id"]
 
 
-def test_subscription_status_transitions(mock_saas_context, sample_subscription):
+def test_subscription_status_transitions(test_client, mock_saas_context, sample_subscription):
     """Test transitions de statut."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -527,7 +526,7 @@ def test_subscription_status_transitions(mock_saas_context, sample_subscription)
 # INVOICES - 10 tests
 # ============================================================================
 
-def test_create_invoice(mock_saas_context, invoice_data, sample_invoice):
+def test_create_invoice(test_client, mock_saas_context, invoice_data, sample_invoice):
     """Test création d'une facture."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -543,7 +542,7 @@ def test_create_invoice(mock_saas_context, invoice_data, sample_invoice):
         assert result["invoice_number"] == sample_invoice["invoice_number"]
 
 
-def test_list_invoices(mock_saas_context, sample_invoice):
+def test_list_invoices(test_client, mock_saas_context, sample_invoice):
     """Test listage des factures."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -558,7 +557,7 @@ def test_list_invoices(mock_saas_context, sample_invoice):
         assert len(result["items"]) == 1
 
 
-def test_list_invoices_with_filters(mock_saas_context, sample_invoice):
+def test_list_invoices_with_filters(test_client, mock_saas_context, sample_invoice):
     """Test listage des factures avec filtres."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -572,7 +571,7 @@ def test_list_invoices_with_filters(mock_saas_context, sample_invoice):
         assert result["total"] == 1
 
 
-def test_get_invoice(mock_saas_context, sample_invoice):
+def test_get_invoice(test_client, mock_saas_context, sample_invoice):
     """Test récupération d'une facture."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -586,7 +585,7 @@ def test_get_invoice(mock_saas_context, sample_invoice):
         assert result["id"] == sample_invoice["id"]
 
 
-def test_get_invoice_not_found(mock_saas_context):
+def test_get_invoice_not_found(test_client, mock_saas_context):
     """Test récupération d'une facture inexistante."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -601,7 +600,7 @@ def test_get_invoice_not_found(mock_saas_context):
         assert exc_info.value.status_code == 404
 
 
-def test_finalize_invoice(mock_saas_context, sample_invoice):
+def test_finalize_invoice(test_client, mock_saas_context, sample_invoice):
     """Test finalisation d'une facture."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -616,7 +615,7 @@ def test_finalize_invoice(mock_saas_context, sample_invoice):
         assert result["status"] == "open"
 
 
-def test_void_invoice(mock_saas_context, sample_invoice):
+def test_void_invoice(test_client, mock_saas_context, sample_invoice):
     """Test annulation d'une facture."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -631,7 +630,7 @@ def test_void_invoice(mock_saas_context, sample_invoice):
         assert result["status"] == "void"
 
 
-def test_pay_invoice(mock_saas_context, sample_invoice):
+def test_pay_invoice(test_client, mock_saas_context, sample_invoice):
     """Test paiement d'une facture."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -646,7 +645,7 @@ def test_pay_invoice(mock_saas_context, sample_invoice):
         assert result["status"] == "paid"
 
 
-def test_invoice_pagination(mock_saas_context, sample_invoice):
+def test_invoice_pagination(test_client, mock_saas_context, sample_invoice):
     """Test pagination des factures."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -662,7 +661,7 @@ def test_invoice_pagination(mock_saas_context, sample_invoice):
         assert len(result["items"]) == 10
 
 
-def test_invoice_line_items(mock_saas_context, invoice_data, sample_invoice):
+def test_invoice_line_items(test_client, mock_saas_context, invoice_data, sample_invoice):
     """Test facture avec lignes."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -685,7 +684,7 @@ def test_invoice_line_items(mock_saas_context, invoice_data, sample_invoice):
 # PAYMENTS - 5 tests
 # ============================================================================
 
-def test_create_payment(mock_saas_context, payment_data, sample_payment):
+def test_create_payment(test_client, mock_saas_context, payment_data, sample_payment):
     """Test création d'un paiement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -701,7 +700,7 @@ def test_create_payment(mock_saas_context, payment_data, sample_payment):
         assert result["status"] == sample_payment["status"]
 
 
-def test_list_payments(mock_saas_context, sample_payment):
+def test_list_payments(test_client, mock_saas_context, sample_payment):
     """Test listage des paiements."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -715,7 +714,7 @@ def test_list_payments(mock_saas_context, sample_payment):
         assert result == []
 
 
-def test_list_payments_with_filters(mock_saas_context):
+def test_list_payments_with_filters(test_client, mock_saas_context):
     """Test listage des paiements avec filtres."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -728,7 +727,7 @@ def test_list_payments_with_filters(mock_saas_context):
         assert result == []
 
 
-def test_payment_pagination(mock_saas_context):
+def test_payment_pagination(test_client, mock_saas_context):
     """Test pagination des paiements."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -741,7 +740,7 @@ def test_payment_pagination(mock_saas_context):
         assert result == []
 
 
-def test_payment_application(mock_saas_context, payment_data, sample_payment):
+def test_payment_application(test_client, mock_saas_context, payment_data, sample_payment):
     """Test application d'un paiement à une facture."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -760,7 +759,7 @@ def test_payment_application(mock_saas_context, payment_data, sample_payment):
 # COUPONS - 6 tests
 # ============================================================================
 
-def test_create_coupon(mock_saas_context, coupon_data, sample_coupon):
+def test_create_coupon(test_client, mock_saas_context, coupon_data, sample_coupon):
     """Test création d'un coupon."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -776,7 +775,7 @@ def test_create_coupon(mock_saas_context, coupon_data, sample_coupon):
         assert result["code"] == sample_coupon["code"]
 
 
-def test_list_coupons(mock_saas_context, sample_coupon):
+def test_list_coupons(test_client, mock_saas_context, sample_coupon):
     """Test listage des coupons."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -791,7 +790,7 @@ def test_list_coupons(mock_saas_context, sample_coupon):
         assert result[0]["id"] == sample_coupon["id"]
 
 
-def test_get_coupon(mock_saas_context, sample_coupon):
+def test_get_coupon(test_client, mock_saas_context, sample_coupon):
     """Test récupération d'un coupon."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -805,7 +804,7 @@ def test_get_coupon(mock_saas_context, sample_coupon):
         assert result["id"] == sample_coupon["id"]
 
 
-def test_validate_coupon(mock_saas_context, sample_coupon):
+def test_validate_coupon(test_client, mock_saas_context, sample_coupon):
     """Test validation d'un coupon."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -826,7 +825,7 @@ def test_validate_coupon(mock_saas_context, sample_coupon):
         assert result["valid"] is True
 
 
-def test_coupon_expiration(mock_saas_context, sample_coupon):
+def test_coupon_expiration(test_client, mock_saas_context, sample_coupon):
     """Test coupon expiré."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -847,7 +846,7 @@ def test_coupon_expiration(mock_saas_context, sample_coupon):
         assert result["error_message"] == "Coupon expiré"
 
 
-def test_coupon_usage_limit(mock_saas_context, sample_coupon):
+def test_coupon_usage_limit(test_client, mock_saas_context, sample_coupon):
     """Test limite d'utilisation d'un coupon."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -871,7 +870,7 @@ def test_coupon_usage_limit(mock_saas_context, sample_coupon):
 # USAGE - 4 tests
 # ============================================================================
 
-def test_record_usage(mock_saas_context, usage_data):
+def test_record_usage(test_client, mock_saas_context, usage_data):
     """Test enregistrement d'usage."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -892,7 +891,7 @@ def test_record_usage(mock_saas_context, usage_data):
         assert result["id"] == 1
 
 
-def test_list_usage_records(mock_saas_context):
+def test_list_usage_records(test_client, mock_saas_context):
     """Test listage des enregistrements d'usage."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -916,7 +915,7 @@ def test_list_usage_records(mock_saas_context):
         assert result[0]["item_name"] == "API Calls"
 
 
-def test_usage_pagination(mock_saas_context):
+def test_usage_pagination(test_client, mock_saas_context):
     """Test pagination des enregistrements d'usage."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -931,7 +930,7 @@ def test_usage_pagination(mock_saas_context):
         assert len(result) == 10
 
 
-def test_usage_aggregation(mock_saas_context):
+def test_usage_aggregation(test_client, mock_saas_context):
     """Test agrégation d'usage."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -957,7 +956,7 @@ def test_usage_aggregation(mock_saas_context):
 # METRICS - 2 tests
 # ============================================================================
 
-def test_get_metrics(mock_saas_context, sample_metrics):
+def test_get_metrics(test_client, mock_saas_context, sample_metrics):
     """Test récupération des métriques."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -972,7 +971,7 @@ def test_get_metrics(mock_saas_context, sample_metrics):
         assert result["arr"] == sample_metrics["arr"]
 
 
-def test_metrics_structure(mock_saas_context, sample_metrics):
+def test_metrics_structure(test_client, mock_saas_context, sample_metrics):
     """Test structure des métriques."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -997,7 +996,7 @@ def test_metrics_structure(mock_saas_context, sample_metrics):
 # WEBHOOKS - 2 tests
 # ============================================================================
 
-def test_create_webhook(mock_saas_context):
+def test_create_webhook(test_client, mock_saas_context):
     """Test réception d'un webhook."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -1021,7 +1020,7 @@ def test_create_webhook(mock_saas_context):
         assert result["webhook_id"] == 1
 
 
-def test_list_webhooks(mock_saas_context):
+def test_list_webhooks(test_client, mock_saas_context):
     """Test listage des webhooks."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -1039,7 +1038,7 @@ def test_list_webhooks(mock_saas_context):
 # WORKFLOWS - 2 tests
 # ============================================================================
 
-def test_complete_subscription_lifecycle(mock_saas_context, subscription_data, sample_subscription, sample_invoice, sample_payment):
+def test_complete_subscription_lifecycle(test_client, mock_saas_context, subscription_data, sample_subscription, sample_invoice, sample_payment):
     """Test workflow complet: création → facture → paiement → renouvellement."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()
@@ -1081,7 +1080,7 @@ def test_complete_subscription_lifecycle(mock_saas_context, subscription_data, s
         assert paid_invoice["status"] == "paid"
 
 
-def test_plan_change_workflow(mock_saas_context, sample_subscription):
+def test_plan_change_workflow(test_client, mock_saas_context, sample_subscription):
     """Test workflow changement de plan avec proratisation."""
     with patch("app.modules.subscriptions.router_v2.get_subscription_service") as mock_service:
         service_mock = Mock()

@@ -35,9 +35,9 @@ from uuid import uuid4
 # TESTS CATÉGORIES
 # ============================================================================
 
-def test_create_category(client, auth_headers, tenant_id, user_id, sample_category_data):
+def test_create_category(test_client, client, auth_headers, tenant_id, user_id, sample_category_data):
     """Test création d'une catégorie de produits"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/categories",
         json=sample_category_data,
         headers=auth_headers
@@ -53,9 +53,9 @@ def test_create_category(client, auth_headers, tenant_id, user_id, sample_catego
     assert data["created_by"] == user_id
 
 
-def test_list_categories(client, auth_headers, sample_category, tenant_id):
+def test_list_categories(test_client, client, auth_headers, sample_category, tenant_id):
     """Test liste des catégories"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/categories",
         headers=auth_headers
     )
@@ -69,9 +69,9 @@ def test_list_categories(client, auth_headers, sample_category, tenant_id):
         assert category["tenant_id"] == tenant_id
 
 
-def test_get_category(client, auth_headers, sample_category):
+def test_get_category(test_client, client, auth_headers, sample_category):
     """Test récupération d'une catégorie par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/categories/{sample_category.id}",
         headers=auth_headers
     )
@@ -83,14 +83,14 @@ def test_get_category(client, auth_headers, sample_category):
     assert data["code"] == sample_category.code
 
 
-def test_update_category(client, auth_headers, sample_category):
+def test_update_category(test_client, client, auth_headers, sample_category):
     """Test mise à jour d'une catégorie"""
     update_data = {
         "name": "Updated Electronics",
         "description": "Updated description"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/inventory/categories/{sample_category.id}",
         json=update_data,
         headers=auth_headers
@@ -107,9 +107,9 @@ def test_update_category(client, auth_headers, sample_category):
 # TESTS ENTREPÔTS
 # ============================================================================
 
-def test_create_warehouse(client, auth_headers, tenant_id, user_id, sample_warehouse_data):
+def test_create_warehouse(test_client, client, auth_headers, tenant_id, user_id, sample_warehouse_data):
     """Test création d'un entrepôt"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/warehouses",
         json=sample_warehouse_data,
         headers=auth_headers
@@ -124,9 +124,9 @@ def test_create_warehouse(client, auth_headers, tenant_id, user_id, sample_wareh
     assert data["created_by"] == user_id
 
 
-def test_list_warehouses(client, auth_headers, sample_warehouse, tenant_id):
+def test_list_warehouses(test_client, client, auth_headers, sample_warehouse, tenant_id):
     """Test liste des entrepôts"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/warehouses",
         headers=auth_headers
     )
@@ -139,9 +139,9 @@ def test_list_warehouses(client, auth_headers, sample_warehouse, tenant_id):
         assert warehouse["tenant_id"] == tenant_id
 
 
-def test_get_warehouse(client, auth_headers, sample_warehouse):
+def test_get_warehouse(test_client, client, auth_headers, sample_warehouse):
     """Test récupération d'un entrepôt par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/warehouses/{sample_warehouse.id}",
         headers=auth_headers
     )
@@ -153,14 +153,14 @@ def test_get_warehouse(client, auth_headers, sample_warehouse):
     assert data["code"] == sample_warehouse.code
 
 
-def test_update_warehouse(client, auth_headers, sample_warehouse):
+def test_update_warehouse(test_client, client, auth_headers, sample_warehouse):
     """Test mise à jour d'un entrepôt"""
     update_data = {
         "name": "Updated Warehouse Name",
         "address": "789 New Address"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/inventory/warehouses/{sample_warehouse.id}",
         json=update_data,
         headers=auth_headers
@@ -173,9 +173,9 @@ def test_update_warehouse(client, auth_headers, sample_warehouse):
     assert data["address"] == update_data["address"]
 
 
-def test_get_warehouse_stock(client, auth_headers, sample_warehouse, sample_product, sample_location):
+def test_get_warehouse_stock(test_client, client, auth_headers, sample_warehouse, sample_product, sample_location):
     """Test récupération du stock d'un entrepôt"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/warehouses/{sample_warehouse.id}/stock",
         headers=auth_headers
     )
@@ -187,9 +187,9 @@ def test_get_warehouse_stock(client, auth_headers, sample_warehouse, sample_prod
     # Devrait retourner les niveaux de stock par produit
 
 
-def test_list_warehouses_inactive(client, auth_headers, sample_warehouse):
+def test_list_warehouses_inactive(test_client, client, auth_headers, sample_warehouse):
     """Test liste des entrepôts inactifs"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/warehouses?is_active=false",
         headers=auth_headers
     )
@@ -206,9 +206,9 @@ def test_list_warehouses_inactive(client, auth_headers, sample_warehouse):
 # TESTS EMPLACEMENTS
 # ============================================================================
 
-def test_create_location(client, auth_headers, tenant_id, user_id, sample_warehouse, sample_location_data):
+def test_create_location(test_client, client, auth_headers, tenant_id, user_id, sample_warehouse, sample_location_data):
     """Test création d'un emplacement"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/warehouses/{sample_warehouse.id}/locations",
         json=sample_location_data,
         headers=auth_headers
@@ -222,9 +222,9 @@ def test_create_location(client, auth_headers, tenant_id, user_id, sample_wareho
     assert data["tenant_id"] == tenant_id
 
 
-def test_list_locations(client, auth_headers, sample_location, tenant_id):
+def test_list_locations(test_client, client, auth_headers, sample_location, tenant_id):
     """Test liste des emplacements"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/locations",
         headers=auth_headers
     )
@@ -237,9 +237,9 @@ def test_list_locations(client, auth_headers, sample_location, tenant_id):
         assert location["tenant_id"] == tenant_id
 
 
-def test_list_locations_by_warehouse(client, auth_headers, sample_warehouse, sample_location):
+def test_list_locations_by_warehouse(test_client, client, auth_headers, sample_warehouse, sample_location):
     """Test liste des emplacements filtrés par entrepôt"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/locations?warehouse_id={sample_warehouse.id}",
         headers=auth_headers
     )
@@ -251,9 +251,9 @@ def test_list_locations_by_warehouse(client, auth_headers, sample_warehouse, sam
         assert location["warehouse_id"] == str(sample_warehouse.id)
 
 
-def test_get_location(client, auth_headers, sample_location):
+def test_get_location(test_client, client, auth_headers, sample_location):
     """Test récupération d'un emplacement par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/locations/{sample_location.id}",
         headers=auth_headers
     )
@@ -269,9 +269,9 @@ def test_get_location(client, auth_headers, sample_location):
 # TESTS PRODUITS
 # ============================================================================
 
-def test_create_product(client, auth_headers, tenant_id, user_id, sample_product_data):
+def test_create_product(test_client, client, auth_headers, tenant_id, user_id, sample_product_data):
     """Test création d'un produit"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/products",
         json=sample_product_data,
         headers=auth_headers
@@ -286,9 +286,9 @@ def test_create_product(client, auth_headers, tenant_id, user_id, sample_product
     assert data["created_by"] == user_id
 
 
-def test_list_products(client, auth_headers, sample_product, tenant_id):
+def test_list_products(test_client, client, auth_headers, sample_product, tenant_id):
     """Test liste des produits avec pagination"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/products?page=1&page_size=50",
         headers=auth_headers
     )
@@ -307,9 +307,9 @@ def test_list_products(client, auth_headers, sample_product, tenant_id):
         assert product["tenant_id"] == tenant_id
 
 
-def test_list_products_by_category(client, auth_headers, sample_product, sample_category):
+def test_list_products_by_category(test_client, client, auth_headers, sample_product, sample_category):
     """Test liste des produits filtrés par catégorie"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/products?category_id={sample_category.id}",
         headers=auth_headers
     )
@@ -321,9 +321,9 @@ def test_list_products_by_category(client, auth_headers, sample_product, sample_
         assert product["category_id"] == str(sample_category.id)
 
 
-def test_list_products_search(client, auth_headers, sample_product):
+def test_list_products_search(test_client, client, auth_headers, sample_product):
     """Test recherche de produits par nom"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/products?search={sample_product.name[:6]}",
         headers=auth_headers
     )
@@ -334,9 +334,9 @@ def test_list_products_search(client, auth_headers, sample_product):
     assert isinstance(data["products"], list)
 
 
-def test_get_product(client, auth_headers, sample_product):
+def test_get_product(test_client, client, auth_headers, sample_product):
     """Test récupération d'un produit par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/products/{sample_product.id}",
         headers=auth_headers
     )
@@ -348,14 +348,14 @@ def test_get_product(client, auth_headers, sample_product):
     assert data["sku"] == sample_product.sku
 
 
-def test_update_product(client, auth_headers, sample_product):
+def test_update_product(test_client, client, auth_headers, sample_product):
     """Test mise à jour d'un produit"""
     update_data = {
         "name": "Updated Laptop XPS 16",
         "unit_price": 1300.00
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/inventory/products/{sample_product.id}",
         json=update_data,
         headers=auth_headers
@@ -368,9 +368,9 @@ def test_update_product(client, auth_headers, sample_product):
     assert float(data["unit_price"]) == update_data["unit_price"]
 
 
-def test_activate_product(client, auth_headers, sample_product):
+def test_activate_product(test_client, client, auth_headers, sample_product):
     """Test activation d'un produit"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/products/{sample_product.id}/activate",
         headers=auth_headers
     )
@@ -381,9 +381,9 @@ def test_activate_product(client, auth_headers, sample_product):
     assert data["status"] == "ACTIVE"
 
 
-def test_get_product_stock(client, auth_headers, sample_product):
+def test_get_product_stock(test_client, client, auth_headers, sample_product):
     """Test récupération du stock d'un produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/products/{sample_product.id}/stock",
         headers=auth_headers
     )
@@ -399,9 +399,9 @@ def test_get_product_stock(client, auth_headers, sample_product):
 # TESTS LOTS
 # ============================================================================
 
-def test_create_lot(client, auth_headers, tenant_id, user_id, sample_lot_data):
+def test_create_lot(test_client, client, auth_headers, tenant_id, user_id, sample_lot_data):
     """Test création d'un lot"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/lots",
         json=sample_lot_data,
         headers=auth_headers
@@ -415,9 +415,9 @@ def test_create_lot(client, auth_headers, tenant_id, user_id, sample_lot_data):
     assert data["created_by"] == user_id
 
 
-def test_list_lots(client, auth_headers, sample_lot, tenant_id):
+def test_list_lots(test_client, client, auth_headers, sample_lot, tenant_id):
     """Test liste des lots"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/lots",
         headers=auth_headers
     )
@@ -430,9 +430,9 @@ def test_list_lots(client, auth_headers, sample_lot, tenant_id):
         assert lot["tenant_id"] == tenant_id
 
 
-def test_list_lots_by_product(client, auth_headers, sample_lot, sample_product):
+def test_list_lots_by_product(test_client, client, auth_headers, sample_lot, sample_product):
     """Test liste des lots filtrés par produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/lots?product_id={sample_product.id}",
         headers=auth_headers
     )
@@ -444,9 +444,9 @@ def test_list_lots_by_product(client, auth_headers, sample_lot, sample_product):
         assert lot["product_id"] == str(sample_product.id)
 
 
-def test_get_lot(client, auth_headers, sample_lot):
+def test_get_lot(test_client, client, auth_headers, sample_lot):
     """Test récupération d'un lot par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/lots/{sample_lot.id}",
         headers=auth_headers
     )
@@ -462,9 +462,9 @@ def test_get_lot(client, auth_headers, sample_lot):
 # TESTS NUMÉROS DE SÉRIE
 # ============================================================================
 
-def test_create_serial_number(client, auth_headers, tenant_id, user_id, sample_serial_data):
+def test_create_serial_number(test_client, client, auth_headers, tenant_id, user_id, sample_serial_data):
     """Test création d'un numéro de série"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/serials",
         json=sample_serial_data,
         headers=auth_headers
@@ -478,9 +478,9 @@ def test_create_serial_number(client, auth_headers, tenant_id, user_id, sample_s
     assert data["created_by"] == user_id
 
 
-def test_get_serial_number(client, auth_headers, sample_serial_number):
+def test_get_serial_number(test_client, client, auth_headers, sample_serial_number):
     """Test récupération d'un numéro de série par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/serials/{sample_serial_number.id}",
         headers=auth_headers
     )
@@ -496,9 +496,9 @@ def test_get_serial_number(client, auth_headers, sample_serial_number):
 # TESTS MOUVEMENTS DE STOCK
 # ============================================================================
 
-def test_create_movement(client, auth_headers, tenant_id, user_id, sample_movement_data):
+def test_create_movement(test_client, client, auth_headers, tenant_id, user_id, sample_movement_data):
     """Test création d'un mouvement de stock"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/movements",
         json=sample_movement_data,
         headers=auth_headers
@@ -513,9 +513,9 @@ def test_create_movement(client, auth_headers, tenant_id, user_id, sample_moveme
     assert data["created_by"] == user_id
 
 
-def test_list_movements(client, auth_headers, sample_movement_in, tenant_id):
+def test_list_movements(test_client, client, auth_headers, sample_movement_in, tenant_id):
     """Test liste des mouvements avec pagination"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/movements?page=1&page_size=50",
         headers=auth_headers
     )
@@ -533,9 +533,9 @@ def test_list_movements(client, auth_headers, sample_movement_in, tenant_id):
         assert movement["tenant_id"] == tenant_id
 
 
-def test_list_movements_by_product(client, auth_headers, sample_movement_in, sample_product):
+def test_list_movements_by_product(test_client, client, auth_headers, sample_movement_in, sample_product):
     """Test liste des mouvements filtrés par produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/movements?product_id={sample_product.id}",
         headers=auth_headers
     )
@@ -547,9 +547,9 @@ def test_list_movements_by_product(client, auth_headers, sample_movement_in, sam
         assert movement["product_id"] == str(sample_product.id)
 
 
-def test_list_movements_by_type(client, auth_headers, sample_movement_in):
+def test_list_movements_by_type(test_client, client, auth_headers, sample_movement_in):
     """Test liste des mouvements filtrés par type"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/movements?movement_type={MovementType.IN.value}",
         headers=auth_headers
     )
@@ -561,9 +561,9 @@ def test_list_movements_by_type(client, auth_headers, sample_movement_in):
         assert movement["movement_type"] == MovementType.IN.value
 
 
-def test_get_movement(client, auth_headers, sample_movement_in):
+def test_get_movement(test_client, client, auth_headers, sample_movement_in):
     """Test récupération d'un mouvement par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/movements/{sample_movement_in.id}",
         headers=auth_headers
     )
@@ -575,9 +575,9 @@ def test_get_movement(client, auth_headers, sample_movement_in):
     assert data["reference"] == sample_movement_in.reference
 
 
-def test_confirm_movement(client, auth_headers, sample_movement_in):
+def test_confirm_movement(test_client, client, auth_headers, sample_movement_in):
     """Test confirmation d'un mouvement de stock"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/movements/{sample_movement_in.id}/confirm",
         headers=auth_headers
     )
@@ -589,9 +589,9 @@ def test_confirm_movement(client, auth_headers, sample_movement_in):
     assert "confirmed_at" in data
 
 
-def test_cancel_movement(client, auth_headers, sample_movement_in):
+def test_cancel_movement(test_client, client, auth_headers, sample_movement_in):
     """Test annulation d'un mouvement de stock"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/movements/{sample_movement_in.id}/cancel?reason=Test+cancellation",
         headers=auth_headers
     )
@@ -606,9 +606,9 @@ def test_cancel_movement(client, auth_headers, sample_movement_in):
 # TESTS INVENTAIRES PHYSIQUES
 # ============================================================================
 
-def test_create_inventory_count(client, auth_headers, tenant_id, user_id, sample_inventory_count_data):
+def test_create_inventory_count(test_client, client, auth_headers, tenant_id, user_id, sample_inventory_count_data):
     """Test création d'un inventaire physique"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/counts",
         json=sample_inventory_count_data,
         headers=auth_headers
@@ -622,9 +622,9 @@ def test_create_inventory_count(client, auth_headers, tenant_id, user_id, sample
     assert data["created_by"] == user_id
 
 
-def test_list_inventory_counts(client, auth_headers, sample_inventory_count, tenant_id):
+def test_list_inventory_counts(test_client, client, auth_headers, sample_inventory_count, tenant_id):
     """Test liste des inventaires physiques"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/counts",
         headers=auth_headers
     )
@@ -637,9 +637,9 @@ def test_list_inventory_counts(client, auth_headers, sample_inventory_count, ten
         assert count["tenant_id"] == tenant_id
 
 
-def test_get_inventory_count(client, auth_headers, sample_inventory_count):
+def test_get_inventory_count(test_client, client, auth_headers, sample_inventory_count):
     """Test récupération d'un inventaire par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/counts/{sample_inventory_count.id}",
         headers=auth_headers
     )
@@ -651,9 +651,9 @@ def test_get_inventory_count(client, auth_headers, sample_inventory_count):
     assert data["reference"] == sample_inventory_count.reference
 
 
-def test_start_inventory_count(client, auth_headers, sample_inventory_count):
+def test_start_inventory_count(test_client, client, auth_headers, sample_inventory_count):
     """Test démarrage d'un inventaire physique"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/counts/{sample_inventory_count.id}/start",
         headers=auth_headers
     )
@@ -665,13 +665,13 @@ def test_start_inventory_count(client, auth_headers, sample_inventory_count):
     assert "started_at" in data
 
 
-def test_update_count_line(client, auth_headers, sample_inventory_count, sample_count_line):
+def test_update_count_line(test_client, client, auth_headers, sample_inventory_count, sample_count_line):
     """Test mise à jour d'une ligne d'inventaire"""
     update_data = {
         "counted_quantity": 95
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/inventory/counts/{sample_inventory_count.id}/lines/{sample_count_line.id}",
         json=update_data,
         headers=auth_headers
@@ -684,9 +684,9 @@ def test_update_count_line(client, auth_headers, sample_inventory_count, sample_
     assert "success" in data or "status" in data
 
 
-def test_validate_inventory_count(client, auth_headers, sample_inventory_count):
+def test_validate_inventory_count(test_client, client, auth_headers, sample_inventory_count):
     """Test validation d'un inventaire physique"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/counts/{sample_inventory_count.id}/validate",
         headers=auth_headers
     )
@@ -702,9 +702,9 @@ def test_validate_inventory_count(client, auth_headers, sample_inventory_count):
 # TESTS PRÉPARATIONS DE COMMANDES
 # ============================================================================
 
-def test_create_picking(client, auth_headers, tenant_id, user_id, sample_picking_data):
+def test_create_picking(test_client, client, auth_headers, tenant_id, user_id, sample_picking_data):
     """Test création d'une préparation de commande"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/pickings",
         json=sample_picking_data,
         headers=auth_headers
@@ -718,9 +718,9 @@ def test_create_picking(client, auth_headers, tenant_id, user_id, sample_picking
     assert data["created_by"] == user_id
 
 
-def test_list_pickings(client, auth_headers, sample_picking, tenant_id):
+def test_list_pickings(test_client, client, auth_headers, sample_picking, tenant_id):
     """Test liste des préparations"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/pickings",
         headers=auth_headers
     )
@@ -733,9 +733,9 @@ def test_list_pickings(client, auth_headers, sample_picking, tenant_id):
         assert picking["tenant_id"] == tenant_id
 
 
-def test_list_pickings_by_status(client, auth_headers, sample_picking):
+def test_list_pickings_by_status(test_client, client, auth_headers, sample_picking):
     """Test liste des préparations filtrées par statut"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/pickings?status={PickingStatus.PENDING.value}",
         headers=auth_headers
     )
@@ -747,9 +747,9 @@ def test_list_pickings_by_status(client, auth_headers, sample_picking):
         assert picking["status"] == PickingStatus.PENDING.value
 
 
-def test_get_picking(client, auth_headers, sample_picking):
+def test_get_picking(test_client, client, auth_headers, sample_picking):
     """Test récupération d'une préparation par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/pickings/{sample_picking.id}",
         headers=auth_headers
     )
@@ -761,9 +761,9 @@ def test_get_picking(client, auth_headers, sample_picking):
     assert data["reference"] == sample_picking.reference
 
 
-def test_assign_picking(client, auth_headers, sample_picking, user_id):
+def test_assign_picking(test_client, client, auth_headers, sample_picking, user_id):
     """Test assignation d'une préparation à un utilisateur"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/pickings/{sample_picking.id}/assign/{user_id}",
         headers=auth_headers
     )
@@ -775,9 +775,9 @@ def test_assign_picking(client, auth_headers, sample_picking, user_id):
     assert data["status"] == "ASSIGNED"
 
 
-def test_start_picking(client, auth_headers, sample_picking):
+def test_start_picking(test_client, client, auth_headers, sample_picking):
     """Test démarrage d'une préparation"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/pickings/{sample_picking.id}/start",
         headers=auth_headers
     )
@@ -789,13 +789,13 @@ def test_start_picking(client, auth_headers, sample_picking):
     assert "started_at" in data
 
 
-def test_pick_line(client, auth_headers, sample_picking, sample_picking_line):
+def test_pick_line(test_client, client, auth_headers, sample_picking, sample_picking_line):
     """Test marquage d'une ligne comme préparée"""
     update_data = {
         "quantity_picked": 8
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/inventory/pickings/{sample_picking.id}/lines/{sample_picking_line.id}/pick",
         json=update_data,
         headers=auth_headers
@@ -808,9 +808,9 @@ def test_pick_line(client, auth_headers, sample_picking, sample_picking_line):
     assert "success" in data or "status" in data
 
 
-def test_complete_picking(client, auth_headers, sample_picking):
+def test_complete_picking(test_client, client, auth_headers, sample_picking):
     """Test finalisation d'une préparation"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/pickings/{sample_picking.id}/complete",
         headers=auth_headers
     )
@@ -826,9 +826,9 @@ def test_complete_picking(client, auth_headers, sample_picking):
 # TESTS DASHBOARD
 # ============================================================================
 
-def test_get_inventory_dashboard(client, auth_headers):
+def test_get_inventory_dashboard(test_client, client, auth_headers):
     """Test récupération du dashboard inventaire"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/dashboard",
         headers=auth_headers
     )
@@ -846,18 +846,16 @@ def test_get_inventory_dashboard(client, auth_headers):
 # TESTS WORKFLOWS COMPLEXES
 # ============================================================================
 
-def test_workflow_stock_movement_lifecycle(
-    client,
+def test_workflow_stock_movement_lifecycle(test_client, client,
     auth_headers,
     sample_product,
     sample_location,
-    sample_movement_data
-):
+    sample_movement_data):
     """
     Test workflow complet: créer mouvement → confirmer → vérifier stock
     """
     # 1. Créer mouvement d'entrée
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/movements",
         json=sample_movement_data,
         headers=auth_headers
@@ -867,7 +865,7 @@ def test_workflow_stock_movement_lifecycle(
     movement_id = movement["id"]
 
     # 2. Confirmer mouvement
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/movements/{movement_id}/confirm",
         headers=auth_headers
     )
@@ -876,7 +874,7 @@ def test_workflow_stock_movement_lifecycle(
     assert confirmed["status"] == "CONFIRMED"
 
     # 3. Vérifier stock produit mis à jour
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/products/{sample_product.id}/stock",
         headers=auth_headers
     )
@@ -885,17 +883,15 @@ def test_workflow_stock_movement_lifecycle(
     assert isinstance(stock, list)
 
 
-def test_workflow_inventory_count_full(
-    client,
+def test_workflow_inventory_count_full(test_client, client,
     auth_headers,
     sample_warehouse,
-    sample_inventory_count_data
-):
+    sample_inventory_count_data):
     """
     Test workflow complet inventaire: créer → démarrer → compter → valider
     """
     # 1. Créer inventaire
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/counts",
         json=sample_inventory_count_data,
         headers=auth_headers
@@ -905,7 +901,7 @@ def test_workflow_inventory_count_full(
     count_id = count["id"]
 
     # 2. Démarrer inventaire
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/counts/{count_id}/start",
         headers=auth_headers
     )
@@ -914,7 +910,7 @@ def test_workflow_inventory_count_full(
     assert started["status"] == "IN_PROGRESS"
 
     # 3. Valider inventaire
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/counts/{count_id}/validate",
         headers=auth_headers
     )
@@ -923,18 +919,16 @@ def test_workflow_inventory_count_full(
     assert validated["status"] == "VALIDATED"
 
 
-def test_workflow_picking_full_cycle(
-    client,
+def test_workflow_picking_full_cycle(test_client, client,
     auth_headers,
     user_id,
     sample_warehouse,
-    sample_picking_data
-):
+    sample_picking_data):
     """
     Test workflow complet préparation: créer → assigner → démarrer → finaliser
     """
     # 1. Créer préparation
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/pickings",
         json=sample_picking_data,
         headers=auth_headers
@@ -944,7 +938,7 @@ def test_workflow_picking_full_cycle(
     picking_id = picking["id"]
 
     # 2. Assigner à utilisateur
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/pickings/{picking_id}/assign/{user_id}",
         headers=auth_headers
     )
@@ -953,7 +947,7 @@ def test_workflow_picking_full_cycle(
     assert assigned["status"] == "ASSIGNED"
 
     # 3. Démarrer préparation
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/pickings/{picking_id}/start",
         headers=auth_headers
     )
@@ -962,7 +956,7 @@ def test_workflow_picking_full_cycle(
     assert started["status"] == "IN_PROGRESS"
 
     # 4. Finaliser préparation
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/pickings/{picking_id}/complete",
         headers=auth_headers
     )
@@ -971,17 +965,15 @@ def test_workflow_picking_full_cycle(
     assert completed["status"] == "DONE"
 
 
-def test_workflow_product_with_lot(
-    client,
+def test_workflow_product_with_lot(test_client, client,
     auth_headers,
     sample_product,
-    sample_lot_data
-):
+    sample_lot_data):
     """
     Test workflow: créer produit avec lots
     """
     # 1. Créer lot pour produit
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/lots",
         json=sample_lot_data,
         headers=auth_headers
@@ -990,7 +982,7 @@ def test_workflow_product_with_lot(
     lot = response.json()
 
     # 2. Récupérer lots du produit
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/lots?product_id={sample_product.id}",
         headers=auth_headers
     )
@@ -999,17 +991,15 @@ def test_workflow_product_with_lot(
     assert any(l["id"] == lot["id"] for l in lots)
 
 
-def test_workflow_product_with_serial(
-    client,
+def test_workflow_product_with_serial(test_client, client,
     auth_headers,
     sample_serial_product,
-    sample_serial_data
-):
+    sample_serial_data):
     """
     Test workflow: créer produit avec numéros de série
     """
     # 1. Créer numéro de série
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/serials",
         json=sample_serial_data,
         headers=auth_headers
@@ -1018,7 +1008,7 @@ def test_workflow_product_with_serial(
     serial = response.json()
 
     # 2. Récupérer le numéro de série
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/serials/{serial['id']}",
         headers=auth_headers
     )
@@ -1031,7 +1021,7 @@ def test_workflow_product_with_serial(
 # TESTS SÉCURITÉ & ISOLATION TENANT
 # ============================================================================
 
-def test_products_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_products_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: vérifier l'isolation stricte des produits par tenant
     """
@@ -1051,7 +1041,7 @@ def test_products_tenant_isolation(client, auth_headers, db_session, tenant_id):
     db_session.commit()
 
     # Tenter de récupérer tous les produits
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/products",
         headers=auth_headers
     )
@@ -1065,7 +1055,7 @@ def test_products_tenant_isolation(client, auth_headers, db_session, tenant_id):
         assert product["tenant_id"] != "other-tenant-999"
 
 
-def test_movements_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_movements_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: isolation des mouvements de stock par tenant
     """
@@ -1084,7 +1074,7 @@ def test_movements_tenant_isolation(client, auth_headers, db_session, tenant_id)
     db_session.commit()
 
     # Récupérer mouvements
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/movements",
         headers=auth_headers
     )
@@ -1097,7 +1087,7 @@ def test_movements_tenant_isolation(client, auth_headers, db_session, tenant_id)
         assert movement["tenant_id"] == tenant_id
 
 
-def test_warehouses_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_warehouses_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: isolation des entrepôts par tenant
     """
@@ -1115,7 +1105,7 @@ def test_warehouses_tenant_isolation(client, auth_headers, db_session, tenant_id
     db_session.commit()
 
     # Récupérer entrepôts
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/warehouses",
         headers=auth_headers
     )
@@ -1132,10 +1122,10 @@ def test_warehouses_tenant_isolation(client, auth_headers, db_session, tenant_id
 # TESTS ERREURS & CAS LIMITES
 # ============================================================================
 
-def test_get_nonexistent_product(client, auth_headers):
+def test_get_nonexistent_product(test_client, client, auth_headers):
     """Test récupération d'un produit inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/products/{fake_id}",
         headers=auth_headers
     )
@@ -1144,10 +1134,10 @@ def test_get_nonexistent_product(client, auth_headers):
     assert "non trouvé" in response.json()["detail"].lower()
 
 
-def test_get_nonexistent_warehouse(client, auth_headers):
+def test_get_nonexistent_warehouse(test_client, client, auth_headers):
     """Test récupération d'un entrepôt inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/warehouses/{fake_id}",
         headers=auth_headers
     )
@@ -1155,10 +1145,10 @@ def test_get_nonexistent_warehouse(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_get_nonexistent_movement(client, auth_headers):
+def test_get_nonexistent_movement(test_client, client, auth_headers):
     """Test récupération d'un mouvement inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/movements/{fake_id}",
         headers=auth_headers
     )
@@ -1166,10 +1156,10 @@ def test_get_nonexistent_movement(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_get_nonexistent_picking(client, auth_headers):
+def test_get_nonexistent_picking(test_client, client, auth_headers):
     """Test récupération d'une préparation inexistante"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/pickings/{fake_id}",
         headers=auth_headers
     )
@@ -1177,10 +1167,10 @@ def test_get_nonexistent_picking(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_get_nonexistent_lot(client, auth_headers):
+def test_get_nonexistent_lot(test_client, client, auth_headers):
     """Test récupération d'un lot inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/lots/{fake_id}",
         headers=auth_headers
     )
@@ -1188,7 +1178,7 @@ def test_get_nonexistent_lot(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_create_product_duplicate_sku(client, auth_headers, sample_product):
+def test_create_product_duplicate_sku(test_client, client, auth_headers, sample_product):
     """Test création produit avec SKU dupliqué (devrait échouer)"""
     duplicate_data = {
         "sku": sample_product.sku,  # SKU existant
@@ -1198,7 +1188,7 @@ def test_create_product_duplicate_sku(client, auth_headers, sample_product):
         "unit_price": 50.00
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/products",
         json=duplicate_data,
         headers=auth_headers
@@ -1208,10 +1198,10 @@ def test_create_product_duplicate_sku(client, auth_headers, sample_product):
     assert response.status_code in [400, 409, 422]
 
 
-def test_confirm_already_confirmed_movement(client, auth_headers, sample_movement_out):
+def test_confirm_already_confirmed_movement(test_client, client, auth_headers, sample_movement_out):
     """Test confirmer un mouvement déjà confirmé"""
     # sample_movement_out est déjà CONFIRMED
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/movements/{sample_movement_out.id}/confirm",
         headers=auth_headers
     )
@@ -1220,7 +1210,7 @@ def test_confirm_already_confirmed_movement(client, auth_headers, sample_movemen
     assert response.status_code in [200, 400, 409]
 
 
-def test_create_movement_with_negative_quantity(client, auth_headers, sample_product, sample_location):
+def test_create_movement_with_negative_quantity(test_client, client, auth_headers, sample_product, sample_location):
     """Test création mouvement avec quantité négative (devrait échouer)"""
     invalid_data = {
         "movement_type": "IN",
@@ -1229,7 +1219,7 @@ def test_create_movement_with_negative_quantity(client, auth_headers, sample_pro
         "destination_location_id": str(sample_location.id)
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/movements",
         json=invalid_data,
         headers=auth_headers
@@ -1243,10 +1233,10 @@ def test_create_movement_with_negative_quantity(client, auth_headers, sample_pro
 # TESTS PAGINATION & FILTRES
 # ============================================================================
 
-def test_list_products_pagination(client, auth_headers, sample_product):
+def test_list_products_pagination(test_client, client, auth_headers, sample_product):
     """Test pagination de la liste des produits"""
     # Page 1
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/products?page=1&page_size=10",
         headers=auth_headers
     )
@@ -1256,7 +1246,7 @@ def test_list_products_pagination(client, auth_headers, sample_product):
     assert page1["page_size"] == 10
 
     # Page 2
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/products?page=2&page_size=10",
         headers=auth_headers
     )
@@ -1265,12 +1255,12 @@ def test_list_products_pagination(client, auth_headers, sample_product):
     assert page2["page"] == 2
 
 
-def test_list_movements_with_date_range(client, auth_headers, sample_movement_in):
+def test_list_movements_with_date_range(test_client, client, auth_headers, sample_movement_in):
     """Test liste des mouvements avec filtre de dates"""
     from_date = (date.today() - timedelta(days=7)).isoformat()
     to_date = date.today().isoformat()
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/movements?from_date={from_date}&to_date={to_date}",
         headers=auth_headers
     )
@@ -1280,9 +1270,9 @@ def test_list_movements_with_date_range(client, auth_headers, sample_movement_in
     assert isinstance(data["movements"], list)
 
 
-def test_list_pickings_by_assigned_user(client, auth_headers, user_id):
+def test_list_pickings_by_assigned_user(test_client, client, auth_headers, user_id):
     """Test liste des préparations filtrées par utilisateur assigné"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/pickings?assigned_to={user_id}",
         headers=auth_headers
     )
@@ -1295,9 +1285,9 @@ def test_list_pickings_by_assigned_user(client, auth_headers, user_id):
             assert picking["assigned_to"] == user_id
 
 
-def test_list_lots_by_status(client, auth_headers, sample_lot):
+def test_list_lots_by_status(test_client, client, auth_headers, sample_lot):
     """Test liste des lots filtrés par statut"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/lots?status={sample_lot.status.value}",
         headers=auth_headers
     )
@@ -1313,10 +1303,10 @@ def test_list_lots_by_status(client, auth_headers, sample_lot):
 # TESTS BUSINESS LOGIC
 # ============================================================================
 
-def test_product_status_transitions(client, auth_headers, sample_product):
+def test_product_status_transitions(test_client, client, auth_headers, sample_product):
     """Test transitions de statut produit"""
     # Activer produit
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/inventory/products/{sample_product.id}/activate",
         headers=auth_headers
     )
@@ -1325,9 +1315,9 @@ def test_product_status_transitions(client, auth_headers, sample_product):
     assert data["status"] == "ACTIVE"
 
 
-def test_warehouse_stock_summary(client, auth_headers, sample_warehouse):
+def test_warehouse_stock_summary(test_client, client, auth_headers, sample_warehouse):
     """Test récupération du résumé de stock d'un entrepôt"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/warehouses/{sample_warehouse.id}/stock",
         headers=auth_headers
     )
@@ -1339,9 +1329,9 @@ def test_warehouse_stock_summary(client, auth_headers, sample_warehouse):
     assert isinstance(stock_data, list)
 
 
-def test_product_stock_levels(client, auth_headers, sample_product):
+def test_product_stock_levels(test_client, client, auth_headers, sample_product):
     """Test récupération des niveaux de stock d'un produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/products/{sample_product.id}/stock",
         headers=auth_headers
     )
@@ -1353,9 +1343,9 @@ def test_product_stock_levels(client, auth_headers, sample_product):
     assert isinstance(stock_levels, list)
 
 
-def test_inventory_count_by_warehouse(client, auth_headers, sample_warehouse, sample_inventory_count):
+def test_inventory_count_by_warehouse(test_client, client, auth_headers, sample_warehouse, sample_inventory_count):
     """Test liste des inventaires filtrés par entrepôt"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/counts?warehouse_id={sample_warehouse.id}",
         headers=auth_headers
     )
@@ -1367,9 +1357,9 @@ def test_inventory_count_by_warehouse(client, auth_headers, sample_warehouse, sa
         assert count["warehouse_id"] == str(sample_warehouse.id)
 
 
-def test_inventory_count_by_status(client, auth_headers, sample_inventory_count):
+def test_inventory_count_by_status(test_client, client, auth_headers, sample_inventory_count):
     """Test liste des inventaires filtrés par statut"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/counts?status={InventoryStatus.DRAFT.value}",
         headers=auth_headers
     )
@@ -1385,9 +1375,9 @@ def test_inventory_count_by_status(client, auth_headers, sample_inventory_count)
 # TESTS CATÉGORIES HIÉRARCHIQUES
 # ============================================================================
 
-def test_list_categories_with_parent(client, auth_headers, sample_category, sample_subcategory):
+def test_list_categories_with_parent(test_client, client, auth_headers, sample_category, sample_subcategory):
     """Test liste des catégories filtrées par parent"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/categories?parent_id={sample_category.id}",
         headers=auth_headers
     )
@@ -1400,7 +1390,7 @@ def test_list_categories_with_parent(client, auth_headers, sample_category, samp
         assert category["parent_id"] == str(sample_category.id)
 
 
-def test_create_subcategory(client, auth_headers, tenant_id, sample_category):
+def test_create_subcategory(test_client, client, auth_headers, tenant_id, sample_category):
     """Test création d'une sous-catégorie"""
     subcategory_data = {
         "code": "SUB-CAT",
@@ -1408,7 +1398,7 @@ def test_create_subcategory(client, auth_headers, tenant_id, sample_category):
         "parent_id": str(sample_category.id)
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/inventory/categories",
         json=subcategory_data,
         headers=auth_headers
@@ -1425,9 +1415,9 @@ def test_create_subcategory(client, auth_headers, tenant_id, sample_category):
 # TESTS TRAÇABILITÉ LOT/SÉRIE
 # ============================================================================
 
-def test_lot_expiration_tracking(client, auth_headers, sample_lot):
+def test_lot_expiration_tracking(test_client, client, auth_headers, sample_lot):
     """Test suivi de l'expiration des lots"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/lots/{sample_lot.id}",
         headers=auth_headers
     )
@@ -1441,7 +1431,7 @@ def test_lot_expiration_tracking(client, auth_headers, sample_lot):
     assert "status" in data
 
 
-def test_serial_number_uniqueness(client, auth_headers, sample_serial_product):
+def test_serial_number_uniqueness(test_client, client, auth_headers, sample_serial_product):
     """Test unicité des numéros de série"""
     serial_data = {
         "product_id": str(sample_serial_product.id),
@@ -1449,7 +1439,7 @@ def test_serial_number_uniqueness(client, auth_headers, sample_serial_product):
     }
 
     # Créer premier numéro de série
-    response1 = client.post(
+    response1 = test_client.post(
         "/api/v2/inventory/serials",
         json=serial_data,
         headers=auth_headers
@@ -1457,7 +1447,7 @@ def test_serial_number_uniqueness(client, auth_headers, sample_serial_product):
     assert response1.status_code == 201
 
     # Tenter de créer doublon (devrait échouer)
-    response2 = client.post(
+    response2 = test_client.post(
         "/api/v2/inventory/serials",
         json=serial_data,
         headers=auth_headers
@@ -1470,9 +1460,9 @@ def test_serial_number_uniqueness(client, auth_headers, sample_serial_product):
 # TESTS PERFORMANCE & VOLUME
 # ============================================================================
 
-def test_list_products_large_dataset(client, auth_headers, sample_product):
+def test_list_products_large_dataset(test_client, client, auth_headers, sample_product):
     """Test liste des produits avec pagination haute"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/inventory/products?page=1&page_size=100",
         headers=auth_headers
     )
@@ -1485,9 +1475,9 @@ def test_list_products_large_dataset(client, auth_headers, sample_product):
     assert len(data["products"]) <= 100
 
 
-def test_list_movements_with_multiple_filters(client, auth_headers, sample_product, sample_warehouse):
+def test_list_movements_with_multiple_filters(test_client, client, auth_headers, sample_product, sample_warehouse):
     """Test liste des mouvements avec filtres combinés"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/inventory/movements?product_id={sample_product.id}&warehouse_id={sample_warehouse.id}&movement_type=IN",
         headers=auth_headers
     )

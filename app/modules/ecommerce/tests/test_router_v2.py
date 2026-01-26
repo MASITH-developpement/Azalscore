@@ -12,9 +12,7 @@ from decimal import Decimal
 from unittest.mock import Mock, patch, MagicMock
 
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
 
-from app.main import app
 from app.modules.ecommerce.service import EcommerceService
 
 from .conftest import (
@@ -36,7 +34,7 @@ class TestCategories:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_category_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_category, category_data):
+    def test_create_category_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_category, category_data):
         """Test création d'une catégorie."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -48,7 +46,7 @@ class TestCategories:
         assert response["name"] == "Electronics"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_categories_success(self, mock_get_service, mock_category):
+    def test_list_categories_success(test_client, self, mock_get_service, mock_category):
         """Test listage des catégories."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_categories.return_value = [mock_category]
@@ -59,7 +57,7 @@ class TestCategories:
         assert result[0].name == "Electronics"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_categories_with_filters(self, mock_get_service, mock_category):
+    def test_list_categories_with_filters(test_client, self, mock_get_service, mock_category):
         """Test listage avec filtres."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_categories.return_value = [mock_category]
@@ -69,7 +67,7 @@ class TestCategories:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_category_success(self, mock_get_service, mock_category):
+    def test_get_category_success(test_client, self, mock_get_service, mock_category):
         """Test récupération d'une catégorie."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_category.return_value = mock_category
@@ -80,7 +78,7 @@ class TestCategories:
         assert result.name == "Electronics"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_category_not_found(self, mock_get_service):
+    def test_get_category_not_found(test_client, self, mock_get_service):
         """Test récupération catégorie inexistante."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_category.return_value = None
@@ -91,7 +89,7 @@ class TestCategories:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_category_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_category):
+    def test_update_category_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_category):
         """Test mise à jour d'une catégorie."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -103,7 +101,7 @@ class TestCategories:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_delete_category_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_delete_category_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test suppression d'une catégorie."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -115,7 +113,7 @@ class TestCategories:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_category_forbidden_employee(self, mock_get_context, mock_get_service, mock_employee_context):
+    def test_create_category_forbidden_employee(test_client, self, mock_get_context, mock_get_service, mock_employee_context):
         """Test création refusée pour un employé."""
         mock_get_context.return_value = mock_employee_context
         # L'employé n'a pas les permissions nécessaires
@@ -131,7 +129,7 @@ class TestProducts:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_product_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_product):
+    def test_create_product_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_product):
         """Test création d'un produit."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -143,7 +141,7 @@ class TestProducts:
         assert result.name == "Laptop HP"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_products_success(self, mock_get_service, mock_product):
+    def test_list_products_success(test_client, self, mock_get_service, mock_product):
         """Test listage des produits."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.list_products.return_value = ([mock_product], 1)
@@ -154,7 +152,7 @@ class TestProducts:
         assert total == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_products_with_filters(self, mock_get_service, mock_product):
+    def test_list_products_with_filters(test_client, self, mock_get_service, mock_product):
         """Test listage avec filtres."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.list_products.return_value = ([mock_product], 1)
@@ -171,7 +169,7 @@ class TestProducts:
         assert len(products) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_products_pagination(self, mock_get_service, mock_product):
+    def test_list_products_pagination(test_client, self, mock_get_service, mock_product):
         """Test pagination."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.list_products.return_value = ([mock_product], 1)
@@ -181,7 +179,7 @@ class TestProducts:
         assert len(products) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_product_success(self, mock_get_service, mock_product):
+    def test_get_product_success(test_client, self, mock_get_service, mock_product):
         """Test récupération d'un produit."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_product.return_value = mock_product
@@ -192,7 +190,7 @@ class TestProducts:
         assert result.sku == "LAP-HP-001"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_product_by_slug(self, mock_get_service, mock_product):
+    def test_get_product_by_slug(test_client, self, mock_get_service, mock_product):
         """Test récupération par slug."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_product_by_slug.return_value = mock_product
@@ -203,7 +201,7 @@ class TestProducts:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_product_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_product):
+    def test_update_product_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_product):
         """Test mise à jour d'un produit."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -215,7 +213,7 @@ class TestProducts:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_delete_product_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_delete_product_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test suppression (archivage) d'un produit."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -227,7 +225,7 @@ class TestProducts:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_publish_product_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_product):
+    def test_publish_product_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_product):
         """Test publication d'un produit."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -240,7 +238,7 @@ class TestProducts:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_stock_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_update_stock_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test mise à jour du stock."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -252,7 +250,7 @@ class TestProducts:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_stock_with_variant(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_update_stock_with_variant(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test mise à jour du stock d'une variante."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -263,7 +261,7 @@ class TestProducts:
         assert result is True
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_product_not_found(self, mock_get_service):
+    def test_get_product_not_found(test_client, self, mock_get_service):
         """Test produit inexistant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_product.return_value = None
@@ -282,7 +280,7 @@ class TestVariants:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_variant_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_variant):
+    def test_create_variant_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_variant):
         """Test création d'une variante."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -294,7 +292,7 @@ class TestVariants:
         assert result.name == "16GB RAM"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_variants_success(self, mock_get_service, mock_variant):
+    def test_list_variants_success(test_client, self, mock_get_service, mock_variant):
         """Test listage des variantes."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_variants.return_value = [mock_variant]
@@ -305,7 +303,7 @@ class TestVariants:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_variant_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_variant):
+    def test_update_variant_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_variant):
         """Test mise à jour d'une variante."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -317,7 +315,7 @@ class TestVariants:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_delete_variant_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_delete_variant_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test suppression d'une variante."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -328,7 +326,7 @@ class TestVariants:
         assert result is True
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_variants_empty(self, mock_get_service):
+    def test_list_variants_empty(test_client, self, mock_get_service):
         """Test listage sans variantes."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_variants.return_value = []
@@ -339,7 +337,7 @@ class TestVariants:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_variant_not_found(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_update_variant_not_found(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test mise à jour variante inexistante."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -358,8 +356,8 @@ class TestCustomers:
     """Tests pour les endpoints de clients."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_register_customer_success(self, mock_get_service, mock_customer):
-        """Test inscription d'un client."""
+    def test_register_customer_success(test_client, self, mock_get_service, mock_customer):
+        """Test inscription d'un test_client."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.register_customer.return_value = (mock_customer, "Inscription réussie")
         mock_get_service.return_value = mock_service
@@ -369,7 +367,7 @@ class TestCustomers:
         assert customer.email == "customer@test.com"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_register_customer_duplicate_email(self, mock_get_service):
+    def test_register_customer_duplicate_email(test_client, self, mock_get_service):
         """Test inscription avec email existant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.register_customer.return_value = (None, "Email déjà utilisé")
@@ -380,8 +378,8 @@ class TestCustomers:
         assert message == "Email déjà utilisé"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_login_customer_success(self, mock_get_service, mock_customer):
-        """Test connexion d'un client."""
+    def test_login_customer_success(test_client, self, mock_get_service, mock_customer):
+        """Test connexion d'un test_client."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.authenticate_customer.return_value = mock_customer
         mock_get_service.return_value = mock_service
@@ -391,7 +389,7 @@ class TestCustomers:
         assert result.email == "customer@test.com"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_login_customer_invalid_credentials(self, mock_get_service):
+    def test_login_customer_invalid_credentials(test_client, self, mock_get_service):
         """Test connexion avec mauvais identifiants."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.authenticate_customer.return_value = None
@@ -401,8 +399,8 @@ class TestCustomers:
         assert result is None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_customer_success(self, mock_get_service, mock_customer):
-        """Test récupération d'un client."""
+    def test_get_customer_success(test_client, self, mock_get_service, mock_customer):
+        """Test récupération d'un test_client."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_customer.return_value = mock_customer
         mock_get_service.return_value = mock_service
@@ -411,7 +409,7 @@ class TestCustomers:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_customer_not_found(self, mock_get_service):
+    def test_get_customer_not_found(test_client, self, mock_get_service):
         """Test client inexistant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_customer.return_value = None
@@ -421,7 +419,7 @@ class TestCustomers:
         assert result is None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_add_customer_address_success(self, mock_get_service):
+    def test_add_customer_address_success(test_client, self, mock_get_service):
         """Test ajout d'une adresse."""
         mock_service = Mock(spec=EcommerceService)
         mock_address = Mock()
@@ -434,7 +432,7 @@ class TestCustomers:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_customer_addresses_success(self, mock_get_service):
+    def test_list_customer_addresses_success(test_client, self, mock_get_service):
         """Test listage des adresses."""
         mock_service = Mock(spec=EcommerceService)
         mock_address = Mock()
@@ -445,7 +443,7 @@ class TestCustomers:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_customer_addresses_empty(self, mock_get_service):
+    def test_list_customer_addresses_empty(test_client, self, mock_get_service):
         """Test listage sans adresses."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_customer_addresses.return_value = []
@@ -455,8 +453,8 @@ class TestCustomers:
         assert len(result) == 0
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_customer_orders_success(self, mock_get_service, mock_customer, mock_order):
-        """Test listage des commandes d'un client."""
+    def test_list_customer_orders_success(test_client, self, mock_get_service, mock_customer, mock_order):
+        """Test listage des commandes d'un test_client."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_customer.return_value = mock_customer
         mock_service.list_orders.return_value = ([mock_order], 1)
@@ -476,7 +474,7 @@ class TestCart:
     """Tests pour les endpoints de panier."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_or_create_cart_success(self, mock_get_service, mock_cart):
+    def test_get_or_create_cart_success(test_client, self, mock_get_service, mock_cart):
         """Test création/récupération d'un panier."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_or_create_cart.return_value = mock_cart
@@ -487,7 +485,7 @@ class TestCart:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_cart_success(self, mock_get_service, mock_cart):
+    def test_get_cart_success(test_client, self, mock_get_service, mock_cart):
         """Test récupération d'un panier."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_cart.return_value = mock_cart
@@ -498,7 +496,7 @@ class TestCart:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_add_to_cart_success(self, mock_get_service, mock_cart_item):
+    def test_add_to_cart_success(test_client, self, mock_get_service, mock_cart_item):
         """Test ajout d'un article au panier."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.add_to_cart.return_value = (mock_cart_item, "Article ajouté")
@@ -509,7 +507,7 @@ class TestCart:
         assert message == "Article ajouté"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_add_to_cart_insufficient_stock(self, mock_get_service):
+    def test_add_to_cart_insufficient_stock(test_client, self, mock_get_service):
         """Test ajout avec stock insuffisant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.add_to_cart.return_value = (None, "Stock insuffisant")
@@ -520,7 +518,7 @@ class TestCart:
         assert "Stock insuffisant" in message
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_update_cart_item_success(self, mock_get_service, mock_cart_item):
+    def test_update_cart_item_success(test_client, self, mock_get_service, mock_cart_item):
         """Test mise à jour d'un article."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.update_cart_item.return_value = (mock_cart_item, "Quantité mise à jour")
@@ -530,7 +528,7 @@ class TestCart:
         assert item is not None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_remove_from_cart_success(self, mock_get_service):
+    def test_remove_from_cart_success(test_client, self, mock_get_service):
         """Test suppression d'un article."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.remove_from_cart.return_value = (True, "Article retiré")
@@ -540,7 +538,7 @@ class TestCart:
         assert success is True
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_clear_cart_success(self, mock_get_service):
+    def test_clear_cart_success(test_client, self, mock_get_service):
         """Test vidage du panier."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.clear_cart.return_value = True
@@ -550,7 +548,7 @@ class TestCart:
         assert result is True
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_apply_coupon_success(self, mock_get_service):
+    def test_apply_coupon_success(test_client, self, mock_get_service):
         """Test application d'un coupon."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.apply_coupon.return_value = (True, "Code promo appliqué", Decimal("20"))
@@ -561,7 +559,7 @@ class TestCart:
         assert discount == Decimal("20")
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_apply_coupon_invalid(self, mock_get_service):
+    def test_apply_coupon_invalid(test_client, self, mock_get_service):
         """Test application d'un coupon invalide."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.apply_coupon.return_value = (False, "Code promo invalide", None)
@@ -572,7 +570,7 @@ class TestCart:
         assert discount is None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_remove_coupon_success(self, mock_get_service):
+    def test_remove_coupon_success(test_client, self, mock_get_service):
         """Test retrait d'un coupon."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.remove_coupon.return_value = True
@@ -590,7 +588,7 @@ class TestWishlist:
     """Tests pour les endpoints de wishlist."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_wishlist_success(self, mock_get_service, mock_wishlist):
+    def test_get_wishlist_success(test_client, self, mock_get_service, mock_wishlist):
         """Test récupération de la wishlist."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_or_create_wishlist.return_value = mock_wishlist
@@ -600,7 +598,7 @@ class TestWishlist:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_add_to_wishlist_success(self, mock_get_service):
+    def test_add_to_wishlist_success(test_client, self, mock_get_service):
         """Test ajout à la wishlist."""
         mock_service = Mock(spec=EcommerceService)
         mock_item = Mock()
@@ -612,7 +610,7 @@ class TestWishlist:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_add_to_wishlist_duplicate(self, mock_get_service):
+    def test_add_to_wishlist_duplicate(test_client, self, mock_get_service):
         """Test ajout d'un article déjà dans la wishlist."""
         mock_service = Mock(spec=EcommerceService)
         mock_item = Mock()
@@ -624,7 +622,7 @@ class TestWishlist:
         assert result is not None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_remove_from_wishlist_success(self, mock_get_service):
+    def test_remove_from_wishlist_success(test_client, self, mock_get_service):
         """Test retrait de la wishlist."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.remove_from_wishlist.return_value = True
@@ -634,7 +632,7 @@ class TestWishlist:
         assert result is True
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_remove_from_wishlist_not_found(self, mock_get_service):
+    def test_remove_from_wishlist_not_found(test_client, self, mock_get_service):
         """Test retrait d'un article inexistant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.remove_from_wishlist.return_value = False
@@ -644,7 +642,7 @@ class TestWishlist:
         assert result is False
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_or_create_wishlist_creates_new(self, mock_get_service, mock_wishlist):
+    def test_get_or_create_wishlist_creates_new(test_client, self, mock_get_service, mock_wishlist):
         """Test création d'une nouvelle wishlist."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_or_create_wishlist.return_value = mock_wishlist
@@ -662,7 +660,7 @@ class TestOrders:
     """Tests pour les endpoints de commandes."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_checkout_success(self, mock_get_service, mock_order):
+    def test_checkout_success(test_client, self, mock_get_service, mock_order):
         """Test checkout réussi."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.checkout.return_value = (mock_order, "Commande créée")
@@ -674,7 +672,7 @@ class TestOrders:
         assert order.order_number == "ORD-20250125-ABC123"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_checkout_empty_cart(self, mock_get_service):
+    def test_checkout_empty_cart(test_client, self, mock_get_service):
         """Test checkout avec panier vide."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.checkout.return_value = (None, "Panier vide")
@@ -685,7 +683,7 @@ class TestOrders:
         assert message == "Panier vide"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_checkout_insufficient_stock(self, mock_get_service):
+    def test_checkout_insufficient_stock(test_client, self, mock_get_service):
         """Test checkout avec stock insuffisant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.checkout.return_value = (None, "Stock insuffisant pour Laptop HP")
@@ -697,7 +695,7 @@ class TestOrders:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_list_orders_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
+    def test_list_orders_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
         """Test listage des commandes."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -711,7 +709,7 @@ class TestOrders:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_list_orders_with_filters(self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
+    def test_list_orders_with_filters(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
         """Test listage avec filtres."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -726,7 +724,7 @@ class TestOrders:
         assert len(orders) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_order_success(self, mock_get_service, mock_order):
+    def test_get_order_success(test_client, self, mock_get_service, mock_order):
         """Test récupération d'une commande."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_order.return_value = mock_order
@@ -737,7 +735,7 @@ class TestOrders:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_order_by_number(self, mock_get_service, mock_order):
+    def test_get_order_by_number(test_client, self, mock_get_service, mock_order):
         """Test récupération par numéro."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_order_by_number.return_value = mock_order
@@ -749,7 +747,7 @@ class TestOrders:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_order_status_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
+    def test_update_order_status_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
         """Test mise à jour du statut."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -763,7 +761,7 @@ class TestOrders:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_cancel_order_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_cancel_order_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test annulation de commande."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -775,7 +773,7 @@ class TestOrders:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_cancel_order_already_shipped(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_cancel_order_already_shipped(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test annulation d'une commande déjà expédiée."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -786,7 +784,7 @@ class TestOrders:
         assert success is False
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_order_not_found(self, mock_get_service):
+    def test_get_order_not_found(test_client, self, mock_get_service):
         """Test commande inexistante."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_order.return_value = None
@@ -797,7 +795,7 @@ class TestOrders:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_list_orders_pagination(self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
+    def test_list_orders_pagination(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_order):
         """Test pagination des commandes."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -817,7 +815,7 @@ class TestPayments:
     """Tests pour les endpoints de paiements."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_create_payment_success(self, mock_get_service, mock_payment, mock_order):
+    def test_create_payment_success(test_client, self, mock_get_service, mock_payment, mock_order):
         """Test création d'un paiement."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_order.return_value = mock_order
@@ -828,7 +826,7 @@ class TestPayments:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_create_payment_order_not_found(self, mock_get_service):
+    def test_create_payment_order_not_found(test_client, self, mock_get_service):
         """Test création avec commande inexistante."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_order.return_value = None
@@ -838,7 +836,7 @@ class TestPayments:
         assert result is None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_confirm_payment_success(self, mock_get_service, mock_payment):
+    def test_confirm_payment_success(test_client, self, mock_get_service, mock_payment):
         """Test confirmation de paiement."""
         mock_service = Mock(spec=EcommerceService)
         mock_payment.status = "captured"
@@ -849,7 +847,7 @@ class TestPayments:
         assert result.status == "captured"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_confirm_payment_not_found(self, mock_get_service):
+    def test_confirm_payment_not_found(test_client, self, mock_get_service):
         """Test confirmation paiement inexistant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.confirm_payment.return_value = None
@@ -859,7 +857,7 @@ class TestPayments:
         assert result is None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_fail_payment_success(self, mock_get_service, mock_payment):
+    def test_fail_payment_success(test_client, self, mock_get_service, mock_payment):
         """Test échec de paiement."""
         mock_service = Mock(spec=EcommerceService)
         mock_payment.status = "failed"
@@ -870,7 +868,7 @@ class TestPayments:
         assert result.status == "failed"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_create_payment_with_stripe(self, mock_get_service, mock_payment, mock_order):
+    def test_create_payment_with_stripe(test_client, self, mock_get_service, mock_payment, mock_order):
         """Test création avec Stripe."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_order.return_value = mock_order
@@ -882,7 +880,7 @@ class TestPayments:
         assert result.provider == "stripe"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_confirm_payment_updates_order(self, mock_get_service, mock_payment, mock_order):
+    def test_confirm_payment_updates_order(test_client, self, mock_get_service, mock_payment, mock_order):
         """Test que la confirmation met à jour la commande."""
         mock_service = Mock(spec=EcommerceService)
         mock_payment.status = "captured"
@@ -895,7 +893,7 @@ class TestPayments:
         assert result.status == "captured"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_payment_status_flow(self, mock_get_service, mock_payment):
+    def test_payment_status_flow(test_client, self, mock_get_service, mock_payment):
         """Test flux de statuts de paiement."""
         mock_service = Mock(spec=EcommerceService)
 
@@ -917,7 +915,7 @@ class TestShippingMethods:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_shipping_method_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_shipping_method):
+    def test_create_shipping_method_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_shipping_method):
         """Test création d'une méthode de livraison."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -928,7 +926,7 @@ class TestShippingMethods:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_shipping_methods_success(self, mock_get_service, mock_shipping_method):
+    def test_list_shipping_methods_success(test_client, self, mock_get_service, mock_shipping_method):
         """Test listage des méthodes."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_shipping_methods.return_value = [mock_shipping_method]
@@ -938,7 +936,7 @@ class TestShippingMethods:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_shipping_methods_by_country(self, mock_get_service, mock_shipping_method):
+    def test_list_shipping_methods_by_country(test_client, self, mock_get_service, mock_shipping_method):
         """Test filtrage par pays."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_shipping_methods.return_value = [mock_shipping_method]
@@ -948,7 +946,7 @@ class TestShippingMethods:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_shipping_methods_by_cart_subtotal(self, mock_get_service, mock_shipping_method):
+    def test_list_shipping_methods_by_cart_subtotal(test_client, self, mock_get_service, mock_shipping_method):
         """Test filtrage par montant minimum."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_shipping_methods.return_value = [mock_shipping_method]
@@ -958,7 +956,7 @@ class TestShippingMethods:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_shipping_rates_success(self, mock_get_service, mock_cart, mock_shipping_method):
+    def test_get_shipping_rates_success(test_client, self, mock_get_service, mock_cart, mock_shipping_method):
         """Test calcul des frais de port."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_cart.return_value = mock_cart
@@ -970,7 +968,7 @@ class TestShippingMethods:
         assert len(rates) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_shipping_rates_free_shipping(self, mock_get_service, mock_cart, mock_shipping_method):
+    def test_get_shipping_rates_free_shipping(test_client, self, mock_get_service, mock_cart, mock_shipping_method):
         """Test frais de port gratuits."""
         mock_service = Mock(spec=EcommerceService)
         mock_cart.subtotal = Decimal("1000")
@@ -991,7 +989,7 @@ class TestShippingRates:
     """Tests pour les endpoints de calcul de frais."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_calculate_shipping_rates_success(self, mock_get_service, mock_cart, mock_shipping_method):
+    def test_calculate_shipping_rates_success(test_client, self, mock_get_service, mock_cart, mock_shipping_method):
         """Test calcul des frais."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_cart.return_value = mock_cart
@@ -1002,7 +1000,7 @@ class TestShippingRates:
         assert result is not None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_calculate_shipping_rates_cart_not_found(self, mock_get_service):
+    def test_calculate_shipping_rates_cart_not_found(test_client, self, mock_get_service):
         """Test calcul avec panier inexistant."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_cart.return_value = None
@@ -1012,7 +1010,7 @@ class TestShippingRates:
         assert result is None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_calculate_shipping_rates_multiple_methods(self, mock_get_service, mock_cart, mock_shipping_method):
+    def test_calculate_shipping_rates_multiple_methods(test_client, self, mock_get_service, mock_cart, mock_shipping_method):
         """Test calcul avec plusieurs méthodes."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_cart.return_value = mock_cart
@@ -1036,7 +1034,7 @@ class TestShipments:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_shipment_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
+    def test_create_shipment_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
         """Test création d'une expédition."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1048,7 +1046,7 @@ class TestShipments:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_mark_shipped_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
+    def test_mark_shipped_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
         """Test marquage comme expédié."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1061,7 +1059,7 @@ class TestShipments:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_mark_shipped_not_found(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_mark_shipped_not_found(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test marquage expédition inexistante."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1073,7 +1071,7 @@ class TestShipments:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_shipment_updates_order(self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment, mock_order):
+    def test_create_shipment_updates_order(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment, mock_order):
         """Test que la création met à jour la commande."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1086,7 +1084,7 @@ class TestShipments:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_shipment_with_tracking(self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
+    def test_shipment_with_tracking(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
         """Test expédition avec numéro de suivi."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1099,7 +1097,7 @@ class TestShipments:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_shipment_status_flow(self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
+    def test_shipment_status_flow(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_shipment):
         """Test flux de statuts d'expédition."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1121,7 +1119,7 @@ class TestReviews:
     """Tests pour les endpoints d'avis."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_create_review_success(self, mock_get_service, mock_review):
+    def test_create_review_success(test_client, self, mock_get_service, mock_review):
         """Test création d'un avis."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.create_review.return_value = mock_review
@@ -1131,8 +1129,8 @@ class TestReviews:
         assert result.id == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_create_review_with_customer(self, mock_get_service, mock_review):
-        """Test création avec client."""
+    def test_create_review_with_customer(test_client, self, mock_get_service, mock_review):
+        """Test création avec test_client."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.create_review.return_value = mock_review
         mock_get_service.return_value = mock_service
@@ -1141,7 +1139,7 @@ class TestReviews:
         assert result is not None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_product_reviews_success(self, mock_get_service, mock_review):
+    def test_list_product_reviews_success(test_client, self, mock_get_service, mock_review):
         """Test listage des avis d'un produit."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_product_reviews.return_value = [mock_review]
@@ -1151,7 +1149,7 @@ class TestReviews:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_product_reviews_approved_only(self, mock_get_service, mock_review):
+    def test_list_product_reviews_approved_only(test_client, self, mock_get_service, mock_review):
         """Test listage avis approuvés uniquement."""
         mock_service = Mock(spec=EcommerceService)
         mock_review.is_approved = True
@@ -1162,7 +1160,7 @@ class TestReviews:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_list_product_reviews_all(self, mock_get_service, mock_review):
+    def test_list_product_reviews_all(test_client, self, mock_get_service, mock_review):
         """Test listage tous les avis."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_product_reviews.return_value = [mock_review]
@@ -1173,7 +1171,7 @@ class TestReviews:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_approve_review_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_approve_review_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test approbation d'un avis."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1185,7 +1183,7 @@ class TestReviews:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_approve_review_not_found(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_approve_review_not_found(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test approbation avis inexistant."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1196,7 +1194,7 @@ class TestReviews:
         assert result is False
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_review_rating_validation(self, mock_get_service, mock_review):
+    def test_review_rating_validation(test_client, self, mock_get_service, mock_review):
         """Test validation de la note."""
         mock_service = Mock(spec=EcommerceService)
         mock_review.rating = 5
@@ -1212,7 +1210,7 @@ class TestCoupons:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_create_coupon_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_coupon):
+    def test_create_coupon_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_coupon):
         """Test création d'un coupon."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1224,7 +1222,7 @@ class TestCoupons:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_list_coupons_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_coupon):
+    def test_list_coupons_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_coupon):
         """Test listage des coupons."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1235,7 +1233,7 @@ class TestCoupons:
         assert len(result) == 1
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_get_coupon_by_code(self, mock_get_service, mock_coupon):
+    def test_get_coupon_by_code(test_client, self, mock_get_service, mock_coupon):
         """Test récupération par code."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_coupon_by_code.return_value = mock_coupon
@@ -1245,7 +1243,7 @@ class TestCoupons:
         assert result.code == "SAVE20"
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_validate_coupon_success(self, mock_get_service, mock_cart, mock_coupon):
+    def test_validate_coupon_success(test_client, self, mock_get_service, mock_cart, mock_coupon):
         """Test validation d'un coupon."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_cart.return_value = mock_cart
@@ -1259,7 +1257,7 @@ class TestCoupons:
         assert coupon is not None
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_validate_coupon_invalid(self, mock_get_service, mock_cart):
+    def test_validate_coupon_invalid(test_client, self, mock_get_service, mock_cart):
         """Test validation coupon invalide."""
         mock_service = Mock(spec=EcommerceService)
         mock_service.get_cart.return_value = mock_cart
@@ -1271,7 +1269,7 @@ class TestCoupons:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_update_coupon_success(self, mock_get_context, mock_get_service, mock_admin_context, mock_coupon):
+    def test_update_coupon_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_coupon):
         """Test mise à jour d'un coupon."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1283,7 +1281,7 @@ class TestCoupons:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_delete_coupon_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_delete_coupon_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test désactivation d'un coupon."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1294,7 +1292,7 @@ class TestCoupons:
         assert result is True
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_coupon_discount_types(self, mock_get_service, mock_coupon):
+    def test_coupon_discount_types(test_client, self, mock_get_service, mock_coupon):
         """Test types de réduction."""
         mock_service = Mock(spec=EcommerceService)
 
@@ -1316,7 +1314,7 @@ class TestDashboard:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_get_dashboard_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_get_dashboard_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test récupération du dashboard."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1334,7 +1332,7 @@ class TestDashboard:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_get_sales_analytics_success(self, mock_get_context, mock_get_service, mock_admin_context):
+    def test_get_sales_analytics_success(test_client, self, mock_get_context, mock_get_service, mock_admin_context):
         """Test récupération des analytics."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)
@@ -1357,7 +1355,7 @@ class TestWorkflows:
     """Tests pour les workflows complets."""
 
     @patch("app.modules.ecommerce.router_v2.get_service")
-    def test_complete_purchase_flow(self, mock_get_service, mock_cart, mock_order, mock_payment):
+    def test_complete_purchase_flow(test_client, self, mock_get_service, mock_cart, mock_order, mock_payment):
         """Test flux complet d'achat."""
         mock_service = Mock(spec=EcommerceService)
 
@@ -1390,7 +1388,7 @@ class TestWorkflows:
 
     @patch("app.modules.ecommerce.router_v2.get_service")
     @patch("app.modules.ecommerce.router_v2.get_saas_context")
-    def test_order_fulfillment_flow(self, mock_get_context, mock_get_service, mock_admin_context, mock_order, mock_shipment):
+    def test_order_fulfillment_flow(test_client, self, mock_get_context, mock_get_service, mock_admin_context, mock_order, mock_shipment):
         """Test flux de traitement de commande."""
         mock_get_context.return_value = mock_admin_context
         mock_service = Mock(spec=EcommerceService)

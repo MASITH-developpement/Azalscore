@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.dependencies_v2 import get_saas_context
 from app.core.saas_context import SaaSContext
-from app.core.saas_dependencies import get_saas_context
 
 from .models import AgentStatus, TicketPriority, TicketStatus
 from .schemas import (

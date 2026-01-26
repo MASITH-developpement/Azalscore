@@ -23,19 +23,17 @@ TOTAL: 37 tests
 import pytest
 from uuid import uuid4
 from datetime import datetime, timedelta, date
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.main import app
 
 
 # ============================================================================
 # TESTS TENANTS
 # ============================================================================
 
-def test_create_tenant_super_admin_only(client, super_admin_headers):
+def test_create_tenant_super_admin_only(test_client, client, super_admin_headers):
     """Test création tenant (SUPER_ADMIN only)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/tenants",
         json={
             "tenant_id": "new-tenant-001",
@@ -53,9 +51,9 @@ def test_create_tenant_super_admin_only(client, super_admin_headers):
     assert data["status"] == "TRIAL" or "status" in data
 
 
-def test_create_tenant_non_super_admin_forbidden(client, auth_headers):
+def test_create_tenant_non_super_admin_forbidden(test_client, client, auth_headers):
     """Test création tenant par non-super-admin (doit échouer)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/tenants",
         json={
             "tenant_id": "forbidden-tenant",
@@ -69,9 +67,9 @@ def test_create_tenant_non_super_admin_forbidden(client, auth_headers):
     assert "super_admin" in response.json()["detail"].lower()
 
 
-def test_list_tenants_super_admin_only(client, super_admin_headers, sample_tenant):
+def test_list_tenants_super_admin_only(test_client, client, super_admin_headers, sample_tenant):
     """Test liste tenants (SUPER_ADMIN only)"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/tenants?skip=0&limit=50",
         headers=super_admin_headers
     )
@@ -82,9 +80,9 @@ def test_list_tenants_super_admin_only(client, super_admin_headers, sample_tenan
     assert len(data) >= 1
 
 
-def test_get_current_tenant_me(client, auth_headers, sample_tenant):
+def test_get_current_tenant_me(test_client, client, auth_headers, sample_tenant):
     """Test récupération tenant courant (/me)"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/tenants/me",
         headers=auth_headers
     )
@@ -95,9 +93,9 @@ def test_get_current_tenant_me(client, auth_headers, sample_tenant):
     assert data["name"] == sample_tenant.name
 
 
-def test_get_tenant_with_ownership_check(client, auth_headers, sample_tenant):
+def test_get_tenant_with_ownership_check(test_client, client, auth_headers, sample_tenant):
     """Test récupération tenant avec vérification ownership"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}",
         headers=auth_headers
     )
@@ -107,7 +105,7 @@ def test_get_tenant_with_ownership_check(client, auth_headers, sample_tenant):
     assert data["tenant_id"] == sample_tenant.tenant_id
 
 
-def test_get_other_tenant_forbidden(client, auth_headers, db_session):
+def test_get_other_tenant_forbidden(test_client, client, auth_headers, db_session):
     """Test accès à autre tenant (doit échouer sans super_admin)"""
     # Créer tenant différent
     other_tenant = Tenant(
@@ -121,7 +119,7 @@ def test_get_other_tenant_forbidden(client, auth_headers, db_session):
     db_session.commit()
 
     # Tenter d'accéder (doit échouer)
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{other_tenant.tenant_id}",
         headers=auth_headers
     )
@@ -130,9 +128,9 @@ def test_get_other_tenant_forbidden(client, auth_headers, db_session):
     assert "tenant" in response.json()["detail"].lower()
 
 
-def test_update_tenant(client, auth_headers, sample_tenant):
+def test_update_tenant(test_client, client, auth_headers, sample_tenant):
     """Test mise à jour tenant (ADMIN requis)"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/tenants/{sample_tenant.tenant_id}",
         json={"name": "Updated Tenant Name"},
         headers=auth_headers
@@ -143,7 +141,7 @@ def test_update_tenant(client, auth_headers, sample_tenant):
     assert data["name"] == "Updated Tenant Name"
 
 
-def test_activate_suspend_cancel_tenant_super_admin_only(client, super_admin_headers, db_session):
+def test_activate_suspend_cancel_tenant_super_admin_only(test_client, client, super_admin_headers, db_session):
     """Test workflow activate/suspend/cancel (SUPER_ADMIN only)"""
     # Créer tenant
     tenant = Tenant(
@@ -157,7 +155,7 @@ def test_activate_suspend_cancel_tenant_super_admin_only(client, super_admin_hea
     db_session.commit()
 
     # Activate
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{tenant.tenant_id}/activate",
         headers=super_admin_headers
     )
@@ -165,7 +163,7 @@ def test_activate_suspend_cancel_tenant_super_admin_only(client, super_admin_hea
     assert response.json()["status"] == "ACTIVE"
 
     # Suspend
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{tenant.tenant_id}/suspend?reason=Payment failed",
         headers=super_admin_headers
     )
@@ -173,7 +171,7 @@ def test_activate_suspend_cancel_tenant_super_admin_only(client, super_admin_hea
     assert response.json()["status"] == "SUSPENDED"
 
     # Cancel
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{tenant.tenant_id}/cancel?reason=User request",
         headers=super_admin_headers
     )
@@ -181,7 +179,7 @@ def test_activate_suspend_cancel_tenant_super_admin_only(client, super_admin_hea
     assert response.json()["status"] == "CANCELLED"
 
 
-def test_start_trial(client, auth_headers, db_session):
+def test_start_trial(test_client, client, auth_headers, db_session):
     """Test démarrage période d'essai"""
     # Créer tenant sans trial
     tenant = Tenant(
@@ -194,7 +192,7 @@ def test_start_trial(client, auth_headers, db_session):
     db_session.add(tenant)
     db_session.commit()
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{tenant.tenant_id}/trial?days=14",
         headers=auth_headers
     )
@@ -204,9 +202,9 @@ def test_start_trial(client, auth_headers, db_session):
     assert "trial_ends_at" in data or data["status"] == "TRIAL"
 
 
-def test_tenant_duplicate_id(client, super_admin_headers, sample_tenant):
+def test_tenant_duplicate_id(test_client, client, super_admin_headers, sample_tenant):
     """Test création tenant avec ID dupliqué (doit échouer)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/tenants",
         json={
             "tenant_id": sample_tenant.tenant_id,  # ID existant
@@ -224,9 +222,9 @@ def test_tenant_duplicate_id(client, super_admin_headers, sample_tenant):
 # TESTS SUBSCRIPTIONS
 # ============================================================================
 
-def test_create_subscription_super_admin_only(client, super_admin_headers, sample_tenant):
+def test_create_subscription_super_admin_only(test_client, client, super_admin_headers, sample_tenant):
     """Test création abonnement (SUPER_ADMIN only)"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/subscriptions",
         json={
             "plan": "PREMIUM",
@@ -242,9 +240,9 @@ def test_create_subscription_super_admin_only(client, super_admin_headers, sampl
     assert data["billing_cycle"] == "MONTHLY"
 
 
-def test_get_active_subscription(client, auth_headers, sample_subscription):
+def test_get_active_subscription(test_client, client, auth_headers, sample_subscription):
     """Test récupération abonnement actif"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_subscription.tenant_id}/subscriptions/active",
         headers=auth_headers
     )
@@ -255,9 +253,9 @@ def test_get_active_subscription(client, auth_headers, sample_subscription):
     assert data["plan"] == sample_subscription.plan
 
 
-def test_update_subscription_super_admin_only(client, super_admin_headers, sample_subscription):
+def test_update_subscription_super_admin_only(test_client, client, super_admin_headers, sample_subscription):
     """Test mise à jour abonnement (SUPER_ADMIN only)"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/tenants/{sample_subscription.tenant_id}/subscriptions",
         json={"plan": "ENTERPRISE"},
         headers=super_admin_headers
@@ -268,10 +266,10 @@ def test_update_subscription_super_admin_only(client, super_admin_headers, sampl
     assert data["plan"] == "ENTERPRISE"
 
 
-def test_subscription_not_found(client, auth_headers, sample_tenant):
+def test_subscription_not_found(test_client, client, auth_headers, sample_tenant):
     """Test récupération abonnement inexistant"""
     # Tenant sans abonnement
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/subscriptions/active",
         headers=auth_headers
     )
@@ -284,9 +282,9 @@ def test_subscription_not_found(client, auth_headers, sample_tenant):
 # TESTS MODULES
 # ============================================================================
 
-def test_activate_module(client, auth_headers, sample_tenant):
+def test_activate_module(test_client, client, auth_headers, sample_tenant):
     """Test activation d'un module"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/modules/activate",
         json={
             "module_code": "FINANCE",
@@ -301,9 +299,9 @@ def test_activate_module(client, auth_headers, sample_tenant):
     assert data["is_active"] is True
 
 
-def test_list_modules(client, auth_headers, sample_tenant, sample_module):
+def test_list_modules(test_client, client, auth_headers, sample_tenant, sample_module):
     """Test liste des modules activés"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/modules",
         headers=auth_headers
     )
@@ -315,9 +313,9 @@ def test_list_modules(client, auth_headers, sample_tenant, sample_module):
     assert any(m["module_code"] == sample_module.module_code for m in data)
 
 
-def test_deactivate_module(client, auth_headers, sample_tenant, sample_module):
+def test_deactivate_module(test_client, client, auth_headers, sample_tenant, sample_module):
     """Test désactivation d'un module"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/modules/{sample_module.module_code}/deactivate",
         headers=auth_headers
     )
@@ -327,9 +325,9 @@ def test_deactivate_module(client, auth_headers, sample_tenant, sample_module):
     assert data["is_active"] is False
 
 
-def test_check_module_active(client, auth_headers, sample_tenant, sample_module):
+def test_check_module_active(test_client, client, auth_headers, sample_tenant, sample_module):
     """Test vérification si module est actif"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/modules/{sample_module.module_code}/active",
         headers=auth_headers
     )
@@ -344,9 +342,9 @@ def test_check_module_active(client, auth_headers, sample_tenant, sample_module)
 # TESTS INVITATIONS
 # ============================================================================
 
-def test_create_invitation(client, auth_headers, sample_tenant):
+def test_create_invitation(test_client, client, auth_headers, sample_tenant):
     """Test création d'une invitation"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/invitations",
         json={
             "email": "invited@example.com",
@@ -363,9 +361,9 @@ def test_create_invitation(client, auth_headers, sample_tenant):
     assert "expires_at" in data
 
 
-def test_get_invitations(client, auth_headers, sample_tenant, sample_invitation):
+def test_get_invitations(test_client, client, auth_headers, sample_tenant, sample_invitation):
     """Test liste des invitations"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/invitations",
         headers=auth_headers
     )
@@ -376,7 +374,7 @@ def test_get_invitations(client, auth_headers, sample_tenant, sample_invitation)
     assert len(data) >= 1
 
 
-def test_accept_invitation(client, db_session, sample_tenant):
+def test_accept_invitation(test_client, client, db_session, sample_tenant):
     """Test acceptation d'une invitation"""
     # Créer invitation
     invitation = TenantInvitation(
@@ -393,7 +391,7 @@ def test_accept_invitation(client, db_session, sample_tenant):
     db_session.commit()
 
     # Accepter (endpoint peut être public ou protégé)
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/invitations/accept",
         json={"token": "accept-token-123"}
     )
@@ -406,9 +404,9 @@ def test_accept_invitation(client, db_session, sample_tenant):
 # TESTS USAGE & EVENTS
 # ============================================================================
 
-def test_get_usage(client, auth_headers, sample_tenant):
+def test_get_usage(test_client, client, auth_headers, sample_tenant):
     """Test récupération des métriques d'usage"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/usage",
         headers=auth_headers
     )
@@ -419,9 +417,9 @@ def test_get_usage(client, auth_headers, sample_tenant):
     assert "users_count" in data or "storage_used" in data or isinstance(data, dict)
 
 
-def test_record_usage(client, auth_headers, sample_tenant):
+def test_record_usage(test_client, client, auth_headers, sample_tenant):
     """Test enregistrement d'événement usage"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/usage",
         json={
             "metric": "api_calls",
@@ -435,9 +433,9 @@ def test_record_usage(client, auth_headers, sample_tenant):
     assert response.status_code in [201, 204, 200]
 
 
-def test_get_events(client, auth_headers, sample_tenant):
+def test_get_events(test_client, client, auth_headers, sample_tenant):
     """Test récupération des événements tenant"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/events?skip=0&limit=50",
         headers=auth_headers
     )
@@ -451,9 +449,9 @@ def test_get_events(client, auth_headers, sample_tenant):
 # TESTS SETTINGS
 # ============================================================================
 
-def test_get_settings(client, auth_headers, sample_tenant, sample_settings):
+def test_get_settings(test_client, client, auth_headers, sample_tenant, sample_settings):
     """Test récupération des paramètres tenant"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/settings",
         headers=auth_headers
     )
@@ -464,9 +462,9 @@ def test_get_settings(client, auth_headers, sample_tenant, sample_settings):
     assert "timezone" in data
 
 
-def test_update_settings(client, auth_headers, sample_tenant, sample_settings):
+def test_update_settings(test_client, client, auth_headers, sample_tenant, sample_settings):
     """Test mise à jour des paramètres (ADMIN requis)"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/settings",
         json={
             "locale": "en_US",
@@ -481,7 +479,7 @@ def test_update_settings(client, auth_headers, sample_tenant, sample_settings):
     assert data["timezone"] == "America/New_York"
 
 
-def test_settings_tenant_ownership(client, auth_headers, db_session):
+def test_settings_tenant_ownership(test_client, client, auth_headers, db_session):
     """Test accès settings autre tenant (doit échouer)"""
     # Créer tenant différent avec settings
     other_tenant = Tenant(
@@ -503,7 +501,7 @@ def test_settings_tenant_ownership(client, auth_headers, db_session):
     db_session.commit()
 
     # Tenter d'accéder
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{other_tenant.tenant_id}/settings",
         headers=auth_headers
     )
@@ -515,9 +513,9 @@ def test_settings_tenant_ownership(client, auth_headers, db_session):
 # TESTS ONBOARDING
 # ============================================================================
 
-def test_get_onboarding(client, auth_headers, sample_tenant, sample_onboarding):
+def test_get_onboarding(test_client, client, auth_headers, sample_tenant, sample_onboarding):
     """Test récupération du statut d'onboarding"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/onboarding",
         headers=auth_headers
     )
@@ -528,9 +526,9 @@ def test_get_onboarding(client, auth_headers, sample_tenant, sample_onboarding):
     assert "completed_steps" in data or "progress" in data
 
 
-def test_update_onboarding(client, auth_headers, sample_tenant, sample_onboarding):
+def test_update_onboarding(test_client, client, auth_headers, sample_tenant, sample_onboarding):
     """Test mise à jour étape d'onboarding"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/onboarding",
         json={
             "step": "setup_users",
@@ -549,9 +547,9 @@ def test_update_onboarding(client, auth_headers, sample_tenant, sample_onboardin
 # TESTS DASHBOARD
 # ============================================================================
 
-def test_get_tenant_dashboard(client, auth_headers, sample_tenant):
+def test_get_tenant_dashboard(test_client, client, auth_headers, sample_tenant):
     """Test récupération du dashboard tenant"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/dashboard",
         headers=auth_headers
     )
@@ -566,9 +564,9 @@ def test_get_tenant_dashboard(client, auth_headers, sample_tenant):
 # TESTS PROVISIONING
 # ============================================================================
 
-def test_provision_tenant(client, super_admin_headers):
+def test_provision_tenant(test_client, client, super_admin_headers):
     """Test provisioning complet tenant (SUPER_ADMIN only)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/tenants/provision",
         json={
             "tenant_id": "provisioned-tenant",
@@ -587,9 +585,9 @@ def test_provision_tenant(client, super_admin_headers):
     assert "admin_user" in data or "access_token" in data
 
 
-def test_provision_masith(client, super_admin_headers):
+def test_provision_masith(test_client, client, super_admin_headers):
     """Test provisioning spécifique MASITH"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/tenants/provision-masith",
         json={
             "tenant_id": "masith-tenant",
@@ -607,9 +605,9 @@ def test_provision_masith(client, super_admin_headers):
 # TESTS PLATFORM (SUPER_ADMIN)
 # ============================================================================
 
-def test_get_platform_stats(client, super_admin_headers, sample_tenant):
+def test_get_platform_stats(test_client, client, super_admin_headers, sample_tenant):
     """Test statistiques plateforme (SUPER_ADMIN only)"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/tenants/platform/stats",
         headers=super_admin_headers
     )
@@ -623,17 +621,17 @@ def test_get_platform_stats(client, super_admin_headers, sample_tenant):
 # TESTS SECURITY
 # ============================================================================
 
-def test_super_admin_enforcement(client, auth_headers):
+def test_super_admin_enforcement(test_client, client, auth_headers):
     """Test enforcement strict SUPER_ADMIN pour opérations critiques"""
     # Liste tenants (SUPER_ADMIN only)
-    response = client.get(
+    response = test_client.get(
         "/api/v2/tenants",
         headers=auth_headers
     )
     assert response.status_code == 403
 
     # Créer tenant (SUPER_ADMIN only)
-    response = client.post(
+    response = test_client.post(
         "/api/v2/tenants",
         json={"tenant_id": "test", "name": "Test", "plan": "FREE"},
         headers=auth_headers
@@ -641,7 +639,7 @@ def test_super_admin_enforcement(client, auth_headers):
     assert response.status_code == 403
 
 
-def test_tenant_ownership_enforcement(client, auth_headers, db_session):
+def test_tenant_ownership_enforcement(test_client, client, auth_headers, db_session):
     """Test enforcement strict tenant ownership"""
     # Créer tenant différent
     other_tenant = Tenant(
@@ -655,7 +653,7 @@ def test_tenant_ownership_enforcement(client, auth_headers, db_session):
     db_session.commit()
 
     # Tenter de modifier autre tenant (doit échouer)
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/tenants/{other_tenant.tenant_id}",
         json={"name": "Hacked"},
         headers=auth_headers
@@ -663,11 +661,11 @@ def test_tenant_ownership_enforcement(client, auth_headers, db_session):
     assert response.status_code == 403
 
 
-def test_tenant_admin_requirement(client, user_auth_headers, sample_tenant):
+def test_tenant_admin_requirement(test_client, client, user_auth_headers, sample_tenant):
     """Test requirement rôle ADMIN pour certaines opérations"""
     # Mise à jour settings nécessite ADMIN
     # Si user_auth_headers simule un USER normal, doit échouer
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/tenants/{sample_tenant.tenant_id}/settings",
         json={"locale": "en_US"},
         headers=user_auth_headers
@@ -677,7 +675,7 @@ def test_tenant_admin_requirement(client, user_auth_headers, sample_tenant):
     assert response.status_code in [200, 403]
 
 
-def test_tenant_isolation_strict(client, super_admin_headers, db_session):
+def test_tenant_isolation_strict(test_client, client, super_admin_headers, db_session):
     """Test isolation stricte entre tenants"""
     # Créer 2 tenants
     tenant1 = Tenant(
@@ -698,7 +696,7 @@ def test_tenant_isolation_strict(client, super_admin_headers, db_session):
     db_session.commit()
 
     # Liste des tenants doit les retourner tous (SUPER_ADMIN)
-    response = client.get(
+    response = test_client.get(
         "/api/v2/tenants",
         headers=super_admin_headers
     )
@@ -710,10 +708,10 @@ def test_tenant_isolation_strict(client, super_admin_headers, db_session):
     assert "isolated-2" in tenant_ids
 
 
-def test_saas_context_performance(client, auth_headers, sample_tenant, benchmark):
+def test_saas_context_performance(test_client, client, auth_headers, sample_tenant, benchmark):
     """Test performance du context SaaS (doit être <50ms)"""
     def call_endpoint():
-        return client.get(
+        return test_client.get(
             "/api/v2/tenants/me",
             headers=auth_headers
         )

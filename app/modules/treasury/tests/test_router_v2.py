@@ -25,7 +25,7 @@ from unittest.mock import Mock, patch, MagicMock
 # TESTS SUMMARY / FORECAST
 # ============================================================================
 
-def test_get_summary():
+def test_get_summary(test_client):
     """Test récupération du résumé de trésorerie"""
     from app.modules.treasury.router_v2 import get_treasury_summary
     from app.modules.treasury.service import TreasuryService
@@ -59,7 +59,7 @@ def test_get_summary():
             assert result["forecast_7d"] == Decimal("10200.00")
 
 
-def test_summary_structure(sample_summary):
+def test_summary_structure( test_client, sample_summary):
     """Test structure du résumé de trésorerie"""
     required_fields = [
         "total_balance",
@@ -74,7 +74,7 @@ def test_summary_structure(sample_summary):
         assert field in sample_summary, f"Champ manquant: {field}"
 
 
-def test_get_forecast():
+def test_get_forecast(test_client):
     """Test récupération des prévisions de trésorerie"""
     from app.modules.treasury.router_v2 import get_forecast
     from app.modules.treasury.service import TreasuryService
@@ -110,7 +110,7 @@ def test_get_forecast():
             assert result[0]["projected_balance"] == Decimal("10000.00")
 
 
-def test_forecast_with_custom_days():
+def test_forecast_with_custom_days(test_client):
     """Test prévisions avec nombre de jours personnalisé"""
     from app.modules.treasury.router_v2 import get_forecast
     from app.modules.treasury.service import TreasuryService
@@ -139,7 +139,7 @@ def test_forecast_with_custom_days():
 # TESTS BANK ACCOUNTS
 # ============================================================================
 
-def test_create_account(account_data, sample_account):
+def test_create_account(test_client, account_data, sample_account):
     """Test création d'un compte bancaire"""
     from app.modules.treasury.router_v2 import create_account
     from app.modules.treasury.service import TreasuryService
@@ -165,7 +165,7 @@ def test_create_account(account_data, sample_account):
             assert result["tenant_id"] == "tenant-test-001"
 
 
-def test_list_accounts():
+def test_list_accounts(test_client):
     """Test liste des comptes bancaires"""
     from app.modules.treasury.router_v2 import list_accounts
     from app.modules.treasury.service import TreasuryService
@@ -195,7 +195,7 @@ def test_list_accounts():
             assert len(result.items) == 2
 
 
-def test_list_accounts_with_filters():
+def test_list_accounts_with_filters(test_client):
     """Test liste des comptes avec filtres"""
     from app.modules.treasury.router_v2 import list_accounts
     from app.modules.treasury.service import TreasuryService
@@ -221,7 +221,7 @@ def test_list_accounts_with_filters():
             assert result.items[0]["is_active"] is True
 
 
-def test_get_account(sample_account):
+def test_get_account( test_client, sample_account):
     """Test récupération d'un compte bancaire"""
     from app.modules.treasury.router_v2 import get_account
     from app.modules.treasury.service import TreasuryService
@@ -246,7 +246,7 @@ def test_get_account(sample_account):
             assert result["code"] == sample_account["code"]
 
 
-def test_get_account_not_found():
+def test_get_account_not_found(test_client):
     """Test récupération d'un compte inexistant"""
     from app.modules.treasury.router_v2 import get_account
     from app.modules.treasury.service import TreasuryService
@@ -272,7 +272,7 @@ def test_get_account_not_found():
             assert "non trouvé" in exc_info.value.detail
 
 
-def test_update_account(sample_account):
+def test_update_account( test_client, sample_account):
     """Test mise à jour d'un compte bancaire"""
     from app.modules.treasury.router_v2 import update_account
     from app.modules.treasury.service import TreasuryService
@@ -299,7 +299,7 @@ def test_update_account(sample_account):
             assert result["name"] == "Compte Mis à Jour"
 
 
-def test_update_account_not_found():
+def test_update_account_not_found(test_client):
     """Test mise à jour d'un compte inexistant"""
     from app.modules.treasury.router_v2 import update_account
     from app.modules.treasury.service import TreasuryService
@@ -326,7 +326,7 @@ def test_update_account_not_found():
             assert exc_info.value.status_code == 404
 
 
-def test_delete_account():
+def test_delete_account(test_client):
     """Test suppression d'un compte bancaire (soft delete)"""
     from app.modules.treasury.router_v2 import delete_account
     from app.modules.treasury.service import TreasuryService
@@ -350,7 +350,7 @@ def test_delete_account():
             assert result is None
 
 
-def test_delete_account_not_found():
+def test_delete_account_not_found(test_client):
     """Test suppression d'un compte inexistant"""
     from app.modules.treasury.router_v2 import delete_account
     from app.modules.treasury.service import TreasuryService
@@ -375,7 +375,7 @@ def test_delete_account_not_found():
             assert exc_info.value.status_code == 404
 
 
-def test_account_pagination():
+def test_account_pagination(test_client):
     """Test pagination des comptes bancaires"""
     from app.modules.treasury.router_v2 import list_accounts
     from app.modules.treasury.service import TreasuryService
@@ -407,7 +407,7 @@ def test_account_pagination():
 # TESTS TRANSACTIONS
 # ============================================================================
 
-def test_create_transaction(transaction_data, sample_transaction):
+def test_create_transaction(test_client, transaction_data, sample_transaction):
     """Test création d'une transaction bancaire"""
     from app.modules.treasury.router_v2 import create_transaction
     from app.modules.treasury.service import TreasuryService
@@ -432,7 +432,7 @@ def test_create_transaction(transaction_data, sample_transaction):
             assert result["amount"] == sample_transaction["amount"]
 
 
-def test_list_transactions():
+def test_list_transactions(test_client):
     """Test liste des transactions bancaires"""
     from app.modules.treasury.router_v2 import list_transactions
     from app.modules.treasury.service import TreasuryService
@@ -469,7 +469,7 @@ def test_list_transactions():
             assert len(result.items) == 2
 
 
-def test_list_transactions_with_filters():
+def test_list_transactions_with_filters(test_client):
     """Test liste des transactions avec filtres"""
     from app.modules.treasury.router_v2 import list_transactions
     from app.modules.treasury.service import TreasuryService
@@ -503,7 +503,7 @@ def test_list_transactions_with_filters():
             assert result.total == 1
 
 
-def test_list_account_transactions(sample_account):
+def test_list_account_transactions( test_client, sample_account):
     """Test liste des transactions d'un compte"""
     from app.modules.treasury.router_v2 import list_account_transactions
     from app.modules.treasury.service import TreasuryService
@@ -535,7 +535,7 @@ def test_list_account_transactions(sample_account):
                 assert result.total == 1
 
 
-def test_list_account_transactions_not_found():
+def test_list_account_transactions_not_found(test_client):
     """Test liste des transactions d'un compte inexistant"""
     from app.modules.treasury.router_v2 import list_account_transactions
     from app.modules.treasury.service import TreasuryService
@@ -566,7 +566,7 @@ def test_list_account_transactions_not_found():
             assert exc_info.value.status_code == 404
 
 
-def test_get_transaction(sample_transaction):
+def test_get_transaction( test_client, sample_transaction):
     """Test récupération d'une transaction"""
     from app.modules.treasury.router_v2 import get_transaction
     from app.modules.treasury.service import TreasuryService
@@ -590,7 +590,7 @@ def test_get_transaction(sample_transaction):
             assert result["id"] == sample_transaction["id"]
 
 
-def test_get_transaction_not_found():
+def test_get_transaction_not_found(test_client):
     """Test récupération d'une transaction inexistante"""
     from app.modules.treasury.router_v2 import get_transaction
     from app.modules.treasury.service import TreasuryService
@@ -615,7 +615,7 @@ def test_get_transaction_not_found():
             assert exc_info.value.status_code == 404
 
 
-def test_update_transaction(sample_transaction):
+def test_update_transaction( test_client, sample_transaction):
     """Test mise à jour d'une transaction"""
     from app.modules.treasury.router_v2 import update_transaction
     from app.modules.treasury.service import TreasuryService
@@ -642,7 +642,7 @@ def test_update_transaction(sample_transaction):
             assert result["description"] == "Description mise à jour"
 
 
-def test_update_transaction_not_found():
+def test_update_transaction_not_found(test_client):
     """Test mise à jour d'une transaction inexistante"""
     from app.modules.treasury.router_v2 import update_transaction
     from app.modules.treasury.service import TreasuryService
@@ -669,7 +669,7 @@ def test_update_transaction_not_found():
             assert exc_info.value.status_code == 404
 
 
-def test_reconcile_transaction(sample_transaction, reconciliation_data):
+def test_reconcile_transaction( test_client, sample_transaction, reconciliation_data):
     """Test rapprochement d'une transaction"""
     from app.modules.treasury.router_v2 import reconcile_transaction
     from app.modules.treasury.service import TreasuryService
@@ -705,7 +705,7 @@ def test_reconcile_transaction(sample_transaction, reconciliation_data):
             assert result["linked_document"] is not None
 
 
-def test_unreconcile_transaction(sample_transaction):
+def test_unreconcile_transaction( test_client, sample_transaction):
     """Test annulation de rapprochement"""
     from app.modules.treasury.router_v2 import unreconcile_transaction
     from app.modules.treasury.service import TreasuryService
@@ -736,7 +736,7 @@ def test_unreconcile_transaction(sample_transaction):
             assert result["linked_document"] is None
 
 
-def test_transaction_pagination():
+def test_transaction_pagination(test_client):
     """Test pagination des transactions"""
     from app.modules.treasury.router_v2 import list_transactions
     from app.modules.treasury.service import TreasuryService
@@ -776,7 +776,7 @@ def test_transaction_pagination():
 # TESTS WORKFLOWS
 # ============================================================================
 
-def test_complete_treasury_flow(account_data, transaction_data, reconciliation_data):
+def test_complete_treasury_flow(test_client, account_data, transaction_data, reconciliation_data):
     """Test workflow complet: compte → transaction → rapprochement"""
     from app.modules.treasury.router_v2 import (
         create_account,
@@ -842,7 +842,7 @@ def test_complete_treasury_flow(account_data, transaction_data, reconciliation_d
             assert reconciled["reconciled"] is True
 
 
-def test_reconciliation_workflow(sample_transaction, reconciliation_data):
+def test_reconciliation_workflow( test_client, sample_transaction, reconciliation_data):
     """Test workflow rapprochement → annulation"""
     from app.modules.treasury.router_v2 import (
         reconcile_transaction,
@@ -890,7 +890,7 @@ def test_reconciliation_workflow(sample_transaction, reconciliation_data):
 # TESTS SECURITY
 # ============================================================================
 
-def test_tenant_isolation():
+def test_tenant_isolation(test_client):
     """Test isolation entre tenants"""
     from app.modules.treasury.router_v2 import list_accounts
     from app.modules.treasury.service import TreasuryService
@@ -938,7 +938,7 @@ def test_tenant_isolation():
             assert result_b.items[0]["tenant_id"] == "tenant-b"
 
 
-def test_context_propagation():
+def test_context_propagation(test_client):
     """Test propagation du contexte SaaS au service"""
     from app.modules.treasury.router_v2 import get_treasury_service
     from app.modules.treasury.service import TreasuryService

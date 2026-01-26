@@ -73,7 +73,7 @@ from .schemas import (
 )
 from .service import ProjectsService, get_projects_service
 
-router = APIRouter(prefix="/projects", tags=["M9 - Projets"])
+router = APIRouter(prefix="/v2/projects", tags=["M9 - Projets"])
 
 
 # ============================================================================

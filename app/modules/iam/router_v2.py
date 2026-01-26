@@ -78,7 +78,7 @@ from .schemas import (
 )
 from .service import IAMService, get_iam_service
 
-router = APIRouter(prefix="/iam", tags=["iam"])
+router = APIRouter(prefix="/v2/iam", tags=["iam"])
 
 
 # ============================================================================

@@ -59,7 +59,7 @@ from .schemas import (
     TenantUsageResponse,
 )
 
-router = APIRouter(prefix="/tenants", tags=["Tenants"])
+router = APIRouter(prefix="/v2/tenants", tags=["Tenants"])
 
 
 # ============================================================================

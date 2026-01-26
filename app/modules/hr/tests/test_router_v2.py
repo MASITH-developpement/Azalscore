@@ -27,10 +27,8 @@ TOTAL: 55 tests
 import pytest
 from uuid import uuid4
 from datetime import date, datetime, timedelta
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.main import app
 from app.modules.hr.models import (
     Department,
     Position,
@@ -61,9 +59,9 @@ from app.modules.hr.models import (
 # TESTS DÉPARTEMENTS
 # ============================================================================
 
-def test_create_department(client, auth_headers, tenant_id):
+def test_create_department(test_client, client, auth_headers, tenant_id):
     """Test création d'un département"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/departments",
         json={
             "code": "DEV",
@@ -81,9 +79,9 @@ def test_create_department(client, auth_headers, tenant_id):
     assert data["tenant_id"] == tenant_id
 
 
-def test_list_departments(client, auth_headers, sample_department):
+def test_list_departments(test_client, client, auth_headers, sample_department):
     """Test liste des départements"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/hr/departments?is_active=true",
         headers=auth_headers
     )
@@ -95,9 +93,9 @@ def test_list_departments(client, auth_headers, sample_department):
     assert any(d["code"] == sample_department.code for d in data)
 
 
-def test_get_department(client, auth_headers, sample_department):
+def test_get_department(test_client, client, auth_headers, sample_department):
     """Test récupération d'un département"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/departments/{sample_department.id}",
         headers=auth_headers
     )
@@ -108,9 +106,9 @@ def test_get_department(client, auth_headers, sample_department):
     assert data["code"] == sample_department.code
 
 
-def test_update_department(client, auth_headers, sample_department):
+def test_update_department(test_client, client, auth_headers, sample_department):
     """Test mise à jour d'un département"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/hr/departments/{sample_department.id}",
         json={"description": "Description mise à jour"},
         headers=auth_headers
@@ -125,9 +123,9 @@ def test_update_department(client, auth_headers, sample_department):
 # TESTS POSTES
 # ============================================================================
 
-def test_create_position(client, auth_headers, sample_department, tenant_id):
+def test_create_position(test_client, client, auth_headers, sample_department, tenant_id):
     """Test création d'un poste"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/positions",
         json={
             "code": "DEV-SENIOR",
@@ -146,9 +144,9 @@ def test_create_position(client, auth_headers, sample_department, tenant_id):
     assert data["department_id"] == str(sample_department.id)
 
 
-def test_list_positions(client, auth_headers, sample_position):
+def test_list_positions(test_client, client, auth_headers, sample_position):
     """Test liste des postes avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/positions?department_id={sample_position.department_id}&is_active=true",
         headers=auth_headers
     )
@@ -159,9 +157,9 @@ def test_list_positions(client, auth_headers, sample_position):
     assert len(data) >= 1
 
 
-def test_get_position(client, auth_headers, sample_position):
+def test_get_position(test_client, client, auth_headers, sample_position):
     """Test récupération d'un poste"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/positions/{sample_position.id}",
         headers=auth_headers
     )
@@ -171,9 +169,9 @@ def test_get_position(client, auth_headers, sample_position):
     assert data["id"] == str(sample_position.id)
 
 
-def test_update_position(client, auth_headers, sample_position):
+def test_update_position(test_client, client, auth_headers, sample_position):
     """Test mise à jour d'un poste"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/hr/positions/{sample_position.id}",
         json={"description": "Nouvelle description"},
         headers=auth_headers
@@ -188,9 +186,9 @@ def test_update_position(client, auth_headers, sample_position):
 # TESTS EMPLOYÉS
 # ============================================================================
 
-def test_create_employee(client, auth_headers, sample_position, tenant_id):
+def test_create_employee(test_client, client, auth_headers, sample_position, tenant_id):
     """Test création d'un employé"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/employees",
         json={
             "employee_number": "EMP-001",
@@ -213,9 +211,9 @@ def test_create_employee(client, auth_headers, sample_position, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_list_employees(client, auth_headers, sample_employee):
+def test_list_employees(test_client, client, auth_headers, sample_employee):
     """Test liste des employés avec filtres"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/hr/employees?status=ACTIVE&page=1&page_size=50",
         headers=auth_headers
     )
@@ -227,9 +225,9 @@ def test_list_employees(client, auth_headers, sample_employee):
     assert data["total"] >= 1
 
 
-def test_get_employee(client, auth_headers, sample_employee):
+def test_get_employee(test_client, client, auth_headers, sample_employee):
     """Test récupération d'un employé"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{sample_employee.id}",
         headers=auth_headers
     )
@@ -240,9 +238,9 @@ def test_get_employee(client, auth_headers, sample_employee):
     assert data["employee_number"] == sample_employee.employee_number
 
 
-def test_update_employee(client, auth_headers, sample_employee):
+def test_update_employee(test_client, client, auth_headers, sample_employee):
     """Test mise à jour d'un employé"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/hr/employees/{sample_employee.id}",
         json={"phone": "+33123456789"},
         headers=auth_headers
@@ -254,10 +252,10 @@ def test_update_employee(client, auth_headers, sample_employee):
     assert "updated_by" in data or "created_by" in data  # Audit trail
 
 
-def test_terminate_employee(client, auth_headers, sample_employee):
+def test_terminate_employee(test_client, client, auth_headers, sample_employee):
     """Test workflow terminaison d'un employé"""
     termination_date = date.today()
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/employees/{sample_employee.id}/terminate",
         params={
             "termination_date": str(termination_date),
@@ -273,7 +271,7 @@ def test_terminate_employee(client, auth_headers, sample_employee):
     assert "terminated_by" in data or "updated_by" in data  # Audit trail
 
 
-def test_employees_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_employees_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """Test isolation tenant sur employés (données sensibles)"""
     # Créer employé pour autre tenant
     other_dept = Department(
@@ -308,7 +306,7 @@ def test_employees_tenant_isolation(client, auth_headers, db_session, tenant_id)
     db_session.commit()
 
     # Tenter d'accéder (doit échouer)
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{other_employee.id}",
         headers=auth_headers
     )
@@ -320,9 +318,9 @@ def test_employees_tenant_isolation(client, auth_headers, db_session, tenant_id)
 # TESTS CONTRATS
 # ============================================================================
 
-def test_create_contract(client, auth_headers, sample_employee, tenant_id):
+def test_create_contract(test_client, client, auth_headers, sample_employee, tenant_id):
     """Test création d'un contrat"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/contracts",
         json={
             "employee_id": str(sample_employee.id),
@@ -341,9 +339,9 @@ def test_create_contract(client, auth_headers, sample_employee, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_get_contract(client, auth_headers, sample_contract):
+def test_get_contract(test_client, client, auth_headers, sample_contract):
     """Test récupération d'un contrat"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/contracts/{sample_contract.id}",
         headers=auth_headers
     )
@@ -353,9 +351,9 @@ def test_get_contract(client, auth_headers, sample_contract):
     assert data["id"] == str(sample_contract.id)
 
 
-def test_get_employee_contracts(client, auth_headers, sample_employee, sample_contract):
+def test_get_employee_contracts(test_client, client, auth_headers, sample_employee, sample_contract):
     """Test liste des contrats d'un employé"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{sample_employee.id}/contracts",
         headers=auth_headers
     )
@@ -366,9 +364,9 @@ def test_get_employee_contracts(client, auth_headers, sample_employee, sample_co
     assert len(data) >= 1
 
 
-def test_contract_salary_confidential(client, auth_headers, sample_contract):
+def test_contract_salary_confidential(test_client, client, auth_headers, sample_contract):
     """Test que les informations salariales sont présentes (données sensibles)"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/contracts/{sample_contract.id}",
         headers=auth_headers
     )
@@ -384,12 +382,12 @@ def test_contract_salary_confidential(client, auth_headers, sample_contract):
 # TESTS DEMANDES DE CONGÉS
 # ============================================================================
 
-def test_create_leave_request(client, auth_headers, sample_employee, tenant_id):
+def test_create_leave_request(test_client, client, auth_headers, sample_employee, tenant_id):
     """Test création d'une demande de congé"""
     start_date = date.today() + timedelta(days=7)
     end_date = start_date + timedelta(days=5)
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/employees/{sample_employee.id}/leave-requests",
         json={
             "leave_type": "PAID_LEAVE",
@@ -406,9 +404,9 @@ def test_create_leave_request(client, auth_headers, sample_employee, tenant_id):
     assert data["status"] == "PENDING" or "status" in data
 
 
-def test_list_leave_requests(client, auth_headers, sample_leave_request):
+def test_list_leave_requests(test_client, client, auth_headers, sample_leave_request):
     """Test liste des demandes de congés avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/leave-requests?employee_id={sample_leave_request.employee_id}&status=PENDING",
         headers=auth_headers
     )
@@ -418,9 +416,9 @@ def test_list_leave_requests(client, auth_headers, sample_leave_request):
     assert isinstance(data, list)
 
 
-def test_approve_leave_request(client, auth_headers, sample_leave_request):
+def test_approve_leave_request(test_client, client, auth_headers, sample_leave_request):
     """Test workflow approbation de congé (PENDING → APPROVED)"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/leave-requests/{sample_leave_request.id}/approve",
         headers=auth_headers
     )
@@ -431,7 +429,7 @@ def test_approve_leave_request(client, auth_headers, sample_leave_request):
     assert "approved_by" in data  # Audit trail
 
 
-def test_reject_leave_request(client, auth_headers, db_session, sample_employee, tenant_id):
+def test_reject_leave_request(test_client, client, auth_headers, db_session, sample_employee, tenant_id):
     """Test workflow rejet de congé (PENDING → REJECTED)"""
     leave = LeaveRequest(
         id=uuid4(),
@@ -445,7 +443,7 @@ def test_reject_leave_request(client, auth_headers, db_session, sample_employee,
     db_session.add(leave)
     db_session.commit()
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/leave-requests/{leave.id}/reject",
         params={"rejection_reason": "Période de forte activité"},
         headers=auth_headers
@@ -457,9 +455,9 @@ def test_reject_leave_request(client, auth_headers, db_session, sample_employee,
     assert "rejected_by" in data  # Audit trail
 
 
-def test_get_employee_leave_balance(client, auth_headers, sample_employee):
+def test_get_employee_leave_balance(test_client, client, auth_headers, sample_employee):
     """Test récupération du solde de congés"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{sample_employee.id}/leave-balance",
         headers=auth_headers
     )
@@ -470,13 +468,13 @@ def test_get_employee_leave_balance(client, auth_headers, sample_employee):
     # Peut être vide si aucun solde configuré
 
 
-def test_leave_request_date_validation(client, auth_headers, sample_employee):
+def test_leave_request_date_validation(test_client, client, auth_headers, sample_employee):
     """Test validation des dates (end_date >= start_date)"""
     # Cette validation devrait être côté service, test si l'API gère bien
     start_date = date.today()
     end_date = start_date - timedelta(days=1)  # Date fin avant date début
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/employees/{sample_employee.id}/leave-requests",
         json={
             "leave_type": "PAID_LEAVE",
@@ -495,9 +493,9 @@ def test_leave_request_date_validation(client, auth_headers, sample_employee):
 # TESTS PÉRIODES DE PAIE
 # ============================================================================
 
-def test_create_payroll_period(client, auth_headers, tenant_id):
+def test_create_payroll_period(test_client, client, auth_headers, tenant_id):
     """Test création d'une période de paie"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/payroll-periods",
         json={
             "year": 2024,
@@ -515,9 +513,9 @@ def test_create_payroll_period(client, auth_headers, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_list_payroll_periods(client, auth_headers, sample_payroll_period):
+def test_list_payroll_periods(test_client, client, auth_headers, sample_payroll_period):
     """Test liste des périodes de paie avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/payroll-periods?year={sample_payroll_period.year}&month={sample_payroll_period.month}",
         headers=auth_headers
     )
@@ -528,9 +526,9 @@ def test_list_payroll_periods(client, auth_headers, sample_payroll_period):
     assert len(data) >= 1
 
 
-def test_get_payroll_period(client, auth_headers, sample_payroll_period):
+def test_get_payroll_period(test_client, client, auth_headers, sample_payroll_period):
     """Test récupération d'une période de paie"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/payroll-periods/{sample_payroll_period.id}",
         headers=auth_headers
     )
@@ -544,9 +542,9 @@ def test_get_payroll_period(client, auth_headers, sample_payroll_period):
 # TESTS BULLETINS DE PAIE
 # ============================================================================
 
-def test_create_payslip(client, auth_headers, sample_employee, sample_payroll_period, tenant_id):
+def test_create_payslip(test_client, client, auth_headers, sample_employee, sample_payroll_period, tenant_id):
     """Test création d'un bulletin de paie"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/payslips",
         json={
             "employee_id": str(sample_employee.id),
@@ -565,9 +563,9 @@ def test_create_payslip(client, auth_headers, sample_employee, sample_payroll_pe
     assert "created_by" in data  # Audit trail
 
 
-def test_list_payslips(client, auth_headers, sample_payslip):
+def test_list_payslips(test_client, client, auth_headers, sample_payslip):
     """Test liste des bulletins de paie avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/payslips?employee_id={sample_payslip.employee_id}",
         headers=auth_headers
     )
@@ -578,9 +576,9 @@ def test_list_payslips(client, auth_headers, sample_payslip):
     assert len(data) >= 1
 
 
-def test_validate_payslip(client, auth_headers, sample_payslip):
+def test_validate_payslip(test_client, client, auth_headers, sample_payslip):
     """Test workflow validation bulletin de paie (DRAFT → VALIDATED)"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/payslips/{sample_payslip.id}/validate",
         headers=auth_headers
     )
@@ -591,9 +589,9 @@ def test_validate_payslip(client, auth_headers, sample_payslip):
     assert "validated_by" in data  # Audit trail
 
 
-def test_get_employee_payslips(client, auth_headers, sample_employee, sample_payslip):
+def test_get_employee_payslips(test_client, client, auth_headers, sample_employee, sample_payslip):
     """Test liste des bulletins d'un employé"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{sample_employee.id}/payslips",
         headers=auth_headers
     )
@@ -603,9 +601,9 @@ def test_get_employee_payslips(client, auth_headers, sample_employee, sample_pay
     assert isinstance(data, list)
 
 
-def test_payslip_sensitive_data(client, auth_headers, sample_payslip):
+def test_payslip_sensitive_data(test_client, client, auth_headers, sample_payslip):
     """Test que les données salariales sensibles sont protégées par tenant"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/payslips?employee_id={sample_payslip.employee_id}",
         headers=auth_headers
     )
@@ -622,9 +620,9 @@ def test_payslip_sensitive_data(client, auth_headers, sample_payslip):
 # TESTS SAISIE DES TEMPS
 # ============================================================================
 
-def test_create_time_entry(client, auth_headers, sample_employee, tenant_id):
+def test_create_time_entry(test_client, client, auth_headers, sample_employee, tenant_id):
     """Test création d'une saisie de temps"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/employees/{sample_employee.id}/time-entries",
         json={
             "date": str(date.today()),
@@ -639,9 +637,9 @@ def test_create_time_entry(client, auth_headers, sample_employee, tenant_id):
     assert data["hours"] == 8.0
 
 
-def test_list_time_entries(client, auth_headers, sample_time_entry):
+def test_list_time_entries(test_client, client, auth_headers, sample_time_entry):
     """Test liste des saisies de temps avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/time-entries?employee_id={sample_time_entry.employee_id}",
         headers=auth_headers
     )
@@ -652,10 +650,10 @@ def test_list_time_entries(client, auth_headers, sample_time_entry):
     assert len(data) >= 1
 
 
-def test_time_entry_hours_validation(client, auth_headers, sample_employee):
+def test_time_entry_hours_validation(test_client, client, auth_headers, sample_employee):
     """Test validation des heures saisies (>0, <24)"""
     # Test avec heures négatives (devrait échouer)
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/employees/{sample_employee.id}/time-entries",
         json={
             "date": str(date.today()),
@@ -672,9 +670,9 @@ def test_time_entry_hours_validation(client, auth_headers, sample_employee):
 # TESTS COMPÉTENCES
 # ============================================================================
 
-def test_create_skill(client, auth_headers, tenant_id):
+def test_create_skill(test_client, client, auth_headers, tenant_id):
     """Test création d'une compétence"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/skills",
         json={
             "name": "Python",
@@ -690,9 +688,9 @@ def test_create_skill(client, auth_headers, tenant_id):
     assert data["category"] == "Développement"
 
 
-def test_list_skills(client, auth_headers, sample_skill):
+def test_list_skills(test_client, client, auth_headers, sample_skill):
     """Test liste des compétences avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/skills?category={sample_skill.category}",
         headers=auth_headers
     )
@@ -703,9 +701,9 @@ def test_list_skills(client, auth_headers, sample_skill):
     assert len(data) >= 1
 
 
-def test_assign_skill_to_employee(client, auth_headers, sample_employee, sample_skill):
+def test_assign_skill_to_employee(test_client, client, auth_headers, sample_employee, sample_skill):
     """Test assignation d'une compétence à un employé"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/employees/{sample_employee.id}/skills",
         json={
             "skill_id": str(sample_skill.id),
@@ -721,9 +719,9 @@ def test_assign_skill_to_employee(client, auth_headers, sample_employee, sample_
     assert data["level"] == 4
 
 
-def test_get_employee_skills(client, auth_headers, sample_employee, sample_employee_skill):
+def test_get_employee_skills(test_client, client, auth_headers, sample_employee, sample_employee_skill):
     """Test récupération des compétences d'un employé"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{sample_employee.id}/skills",
         headers=auth_headers
     )
@@ -738,9 +736,9 @@ def test_get_employee_skills(client, auth_headers, sample_employee, sample_emplo
 # TESTS FORMATIONS
 # ============================================================================
 
-def test_create_training(client, auth_headers, tenant_id):
+def test_create_training(test_client, client, auth_headers, tenant_id):
     """Test création d'une formation"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/trainings",
         json={
             "title": "Formation Python Avancé",
@@ -760,9 +758,9 @@ def test_create_training(client, auth_headers, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_list_trainings(client, auth_headers, sample_training):
+def test_list_trainings(test_client, client, auth_headers, sample_training):
     """Test liste des formations avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/trainings?status={sample_training.status}",
         headers=auth_headers
     )
@@ -773,9 +771,9 @@ def test_list_trainings(client, auth_headers, sample_training):
     assert len(data) >= 1
 
 
-def test_get_training(client, auth_headers, sample_training):
+def test_get_training(test_client, client, auth_headers, sample_training):
     """Test récupération d'une formation"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/trainings/{sample_training.id}",
         headers=auth_headers
     )
@@ -785,9 +783,9 @@ def test_get_training(client, auth_headers, sample_training):
     assert data["id"] == str(sample_training.id)
 
 
-def test_enroll_in_training(client, auth_headers, sample_training, sample_employee):
+def test_enroll_in_training(test_client, client, auth_headers, sample_training, sample_employee):
     """Test inscription d'un employé à une formation"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/hr/trainings/{sample_training.id}/enroll",
         json={
             "employee_id": str(sample_employee.id)
@@ -805,9 +803,9 @@ def test_enroll_in_training(client, auth_headers, sample_training, sample_employ
 # TESTS ÉVALUATIONS
 # ============================================================================
 
-def test_create_evaluation(client, auth_headers, sample_employee, tenant_id):
+def test_create_evaluation(test_client, client, auth_headers, sample_employee, tenant_id):
     """Test création d'une évaluation"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/evaluations",
         json={
             "employee_id": str(sample_employee.id),
@@ -826,9 +824,9 @@ def test_create_evaluation(client, auth_headers, sample_employee, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_list_evaluations(client, auth_headers, sample_evaluation):
+def test_list_evaluations(test_client, client, auth_headers, sample_evaluation):
     """Test liste des évaluations avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/evaluations?employee_id={sample_evaluation.employee_id}",
         headers=auth_headers
     )
@@ -839,9 +837,9 @@ def test_list_evaluations(client, auth_headers, sample_evaluation):
     assert len(data) >= 1
 
 
-def test_get_evaluation(client, auth_headers, sample_evaluation):
+def test_get_evaluation(test_client, client, auth_headers, sample_evaluation):
     """Test récupération d'une évaluation"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/evaluations/{sample_evaluation.id}",
         headers=auth_headers
     )
@@ -851,9 +849,9 @@ def test_get_evaluation(client, auth_headers, sample_evaluation):
     assert data["id"] == str(sample_evaluation.id)
 
 
-def test_update_evaluation(client, auth_headers, sample_evaluation):
+def test_update_evaluation(test_client, client, auth_headers, sample_evaluation):
     """Test mise à jour d'une évaluation"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/hr/evaluations/{sample_evaluation.id}",
         json={"overall_rating": 5},
         headers=auth_headers
@@ -865,7 +863,7 @@ def test_update_evaluation(client, auth_headers, sample_evaluation):
     assert "updated_by" in data  # Audit trail
 
 
-def test_evaluation_workflow(client, auth_headers, db_session, sample_employee, tenant_id):
+def test_evaluation_workflow(test_client, client, auth_headers, db_session, sample_employee, tenant_id):
     """Test workflow complet évaluation (DRAFT → IN_PROGRESS → COMPLETED)"""
     # Créer évaluation DRAFT
     eval_data = Evaluation(
@@ -881,7 +879,7 @@ def test_evaluation_workflow(client, auth_headers, db_session, sample_employee, 
     db_session.commit()
 
     # Mettre à jour vers IN_PROGRESS
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/hr/evaluations/{eval_data.id}",
         json={"status": "IN_PROGRESS"},
         headers=auth_headers
@@ -890,7 +888,7 @@ def test_evaluation_workflow(client, auth_headers, db_session, sample_employee, 
     assert response.json()["status"] == "IN_PROGRESS"
 
     # Finaliser vers COMPLETED
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/hr/evaluations/{eval_data.id}",
         json={"status": "COMPLETED"},
         headers=auth_headers
@@ -903,9 +901,9 @@ def test_evaluation_workflow(client, auth_headers, db_session, sample_employee, 
 # TESTS DOCUMENTS RH
 # ============================================================================
 
-def test_create_hr_document(client, auth_headers, sample_employee, tenant_id):
+def test_create_hr_document(test_client, client, auth_headers, sample_employee, tenant_id):
     """Test création d'un document RH"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/documents",
         json={
             "employee_id": str(sample_employee.id),
@@ -923,9 +921,9 @@ def test_create_hr_document(client, auth_headers, sample_employee, tenant_id):
     assert "uploaded_by" in data  # Audit trail
 
 
-def test_get_employee_documents(client, auth_headers, sample_employee, sample_hr_document):
+def test_get_employee_documents(test_client, client, auth_headers, sample_employee, sample_hr_document):
     """Test liste des documents d'un employé"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{sample_employee.id}/documents",
         headers=auth_headers
     )
@@ -936,7 +934,7 @@ def test_get_employee_documents(client, auth_headers, sample_employee, sample_hr
     assert len(data) >= 1
 
 
-def test_hr_documents_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_hr_documents_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """Test isolation tenant sur documents RH (très sensibles)"""
     # Créer employé + document autre tenant
     other_dept = Department(
@@ -981,7 +979,7 @@ def test_hr_documents_tenant_isolation(client, auth_headers, db_session, tenant_
     db_session.commit()
 
     # Tenter d'accéder aux documents (doit être filtré)
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/hr/employees/{other_employee.id}/documents",
         headers=auth_headers
     )
@@ -996,9 +994,9 @@ def test_hr_documents_tenant_isolation(client, auth_headers, db_session, tenant_
 # TESTS DASHBOARD
 # ============================================================================
 
-def test_get_hr_dashboard(client, auth_headers, sample_employee):
+def test_get_hr_dashboard(test_client, client, auth_headers, sample_employee):
     """Test récupération du dashboard RH"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/hr/dashboard",
         headers=auth_headers
     )
@@ -1013,10 +1011,10 @@ def test_get_hr_dashboard(client, auth_headers, sample_employee):
 # TESTS PERFORMANCE & SECURITY
 # ============================================================================
 
-def test_saas_context_performance(client, auth_headers, benchmark):
+def test_saas_context_performance(test_client, client, auth_headers, benchmark):
     """Test performance du context SaaS (doit être <50ms)"""
     def call_endpoint():
-        return client.get(
+        return test_client.get(
             "/api/v2/hr/departments",
             headers=auth_headers
         )
@@ -1025,10 +1023,10 @@ def test_saas_context_performance(client, auth_headers, benchmark):
     assert result.status_code == 200
 
 
-def test_audit_trail_automatic(client, auth_headers, sample_position):
+def test_audit_trail_automatic(test_client, client, auth_headers, sample_position):
     """Test audit trail automatique sur toutes créations"""
     # Créer employé
-    response = client.post(
+    response = test_client.post(
         "/api/v2/hr/employees",
         json={
             "employee_number": "AUDIT-001",
@@ -1048,7 +1046,7 @@ def test_audit_trail_automatic(client, auth_headers, sample_position):
     assert data["created_by"] is not None
 
 
-def test_tenant_isolation_strict(client, auth_headers, db_session):
+def test_tenant_isolation_strict(test_client, client, auth_headers, db_session):
     """Test isolation stricte entre tenants (données RH sensibles)"""
     # Créer département pour autre tenant
     other_dept = Department(
@@ -1061,7 +1059,7 @@ def test_tenant_isolation_strict(client, auth_headers, db_session):
     db_session.commit()
 
     # Tenter de lister tous les départements (doit filtrer automatiquement)
-    response = client.get(
+    response = test_client.get(
         "/api/v2/hr/departments",
         headers=auth_headers
     )

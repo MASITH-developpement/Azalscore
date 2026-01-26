@@ -70,7 +70,7 @@ from .schemas import (
 )
 from .service import get_finance_service
 
-router = APIRouter(prefix="/finance", tags=["Finance"])
+router = APIRouter(prefix="/v2/finance", tags=["Finance"])
 
 
 # ============================================================================

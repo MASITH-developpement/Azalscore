@@ -18,7 +18,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.saas_context import SaaSContext, get_saas_context
+from app.core.dependencies_v2 import get_saas_context
+from app.core.saas_context import SaaSContext
 from app.core.models import UserRole
 
 from .models import (
@@ -59,7 +60,7 @@ from .schemas import (
 )
 from .service import get_guardian_service
 
-router = APIRouter(prefix="/guardian", tags=["GUARDIAN"])
+router = APIRouter(prefix="/v2/guardian", tags=["GUARDIAN"])
 
 
 # ============================================================================

@@ -17,7 +17,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.saas_context import SaaSContext, get_saas_context
+from app.core.dependencies_v2 import get_saas_context
+from app.core.saas_context import SaaSContext
 
 from .models import BOMStatus, MOPriority, MOStatus, WorkCenterStatus
 from .schemas import (
@@ -63,7 +64,7 @@ from .schemas import (
 )
 from .service import get_production_service
 
-router = APIRouter(prefix="/production", tags=["M6 - Production"])
+router = APIRouter(prefix="/v2/production", tags=["M6 - Production"])
 
 
 # ============================================================================

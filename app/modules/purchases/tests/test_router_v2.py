@@ -26,12 +26,12 @@ from .conftest import (
 # SUPPLIER TESTS (10 tests)
 # ============================================================================
 
-def test_create_supplier(client, auth_headers, supplier_data, sample_supplier):
+def test_create_supplier(test_client, client, auth_headers, supplier_data, sample_supplier):
     """Test creating a new supplier."""
     with patch("app.modules.purchases.service.PurchasesService.create_supplier") as mock_create:
         mock_create.return_value = MagicMock(**sample_supplier)
 
-        response = client.post(
+        response = test_client.post(
             "/v2/purchases/suppliers",
             json=supplier_data,
             headers=auth_headers
@@ -45,12 +45,12 @@ def test_create_supplier(client, auth_headers, supplier_data, sample_supplier):
         assert data["status"] == "APPROVED"
 
 
-def test_list_suppliers(client, auth_headers, sample_supplier):
+def test_list_suppliers(test_client, client, auth_headers, sample_supplier):
     """Test listing suppliers."""
     with patch("app.modules.purchases.service.PurchasesService.list_suppliers") as mock_list:
         mock_list.return_value = ([MagicMock(**sample_supplier)], 1)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/suppliers",
             headers=auth_headers
         )
@@ -63,41 +63,41 @@ def test_list_suppliers(client, auth_headers, sample_supplier):
         assert_supplier_fields(data["items"][0])
 
 
-def test_list_suppliers_with_filters(client, auth_headers, sample_supplier):
+def test_list_suppliers_with_filters(test_client, client, auth_headers, sample_supplier):
     """Test listing suppliers with various filters."""
     with patch("app.modules.purchases.service.PurchasesService.list_suppliers") as mock_list:
         mock_list.return_value = ([MagicMock(**sample_supplier)], 1)
 
         # Test status filter
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/suppliers?status=APPROVED",
             headers=auth_headers
         )
         assert response.status_code == 200
 
         # Test search filter
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/suppliers?search=Test",
             headers=auth_headers
         )
         assert response.status_code == 200
 
         # Test is_active filter
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/suppliers?is_active=true",
             headers=auth_headers
         )
         assert response.status_code == 200
 
 
-def test_get_supplier(client, auth_headers, sample_supplier):
+def test_get_supplier(test_client, client, auth_headers, sample_supplier):
     """Test getting a specific supplier."""
     supplier_id = sample_supplier["id"]
 
     with patch("app.modules.purchases.service.PurchasesService.get_supplier") as mock_get:
         mock_get.return_value = MagicMock(**sample_supplier)
 
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/suppliers/{supplier_id}",
             headers=auth_headers
         )
@@ -108,14 +108,14 @@ def test_get_supplier(client, auth_headers, sample_supplier):
         assert data["id"] == supplier_id
 
 
-def test_get_supplier_not_found(client, auth_headers):
+def test_get_supplier_not_found(test_client, client, auth_headers):
     """Test getting a non-existent supplier."""
     supplier_id = str(uuid4())
 
     with patch("app.modules.purchases.service.PurchasesService.get_supplier") as mock_get:
         mock_get.return_value = None
 
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/suppliers/{supplier_id}",
             headers=auth_headers
         )
@@ -124,7 +124,7 @@ def test_get_supplier_not_found(client, auth_headers):
         assert "non trouvé" in response.json()["detail"]
 
 
-def test_update_supplier(client, auth_headers, sample_supplier):
+def test_update_supplier(test_client, client, auth_headers, sample_supplier):
     """Test updating a supplier."""
     supplier_id = sample_supplier["id"]
     update_data = {"name": "Updated Supplier Name"}
@@ -135,7 +135,7 @@ def test_update_supplier(client, auth_headers, sample_supplier):
     with patch("app.modules.purchases.service.PurchasesService.update_supplier") as mock_update:
         mock_update.return_value = MagicMock(**updated_supplier)
 
-        response = client.put(
+        response = test_client.put(
             f"/v2/purchases/suppliers/{supplier_id}",
             json=update_data,
             headers=auth_headers
@@ -146,7 +146,7 @@ def test_update_supplier(client, auth_headers, sample_supplier):
         assert data["name"] == update_data["name"]
 
 
-def test_update_supplier_not_found(client, auth_headers):
+def test_update_supplier_not_found(test_client, client, auth_headers):
     """Test updating a non-existent supplier."""
     supplier_id = str(uuid4())
     update_data = {"name": "Updated Name"}
@@ -154,7 +154,7 @@ def test_update_supplier_not_found(client, auth_headers):
     with patch("app.modules.purchases.service.PurchasesService.update_supplier") as mock_update:
         mock_update.return_value = None
 
-        response = client.put(
+        response = test_client.put(
             f"/v2/purchases/suppliers/{supplier_id}",
             json=update_data,
             headers=auth_headers
@@ -163,14 +163,14 @@ def test_update_supplier_not_found(client, auth_headers):
         assert response.status_code == 404
 
 
-def test_delete_supplier(client, auth_headers, sample_supplier):
+def test_delete_supplier(test_client, client, auth_headers, sample_supplier):
     """Test deleting a supplier (soft delete)."""
     supplier_id = sample_supplier["id"]
 
     with patch("app.modules.purchases.service.PurchasesService.delete_supplier") as mock_delete:
         mock_delete.return_value = True
 
-        response = client.delete(
+        response = test_client.delete(
             f"/v2/purchases/suppliers/{supplier_id}",
             headers=auth_headers
         )
@@ -178,14 +178,14 @@ def test_delete_supplier(client, auth_headers, sample_supplier):
         assert response.status_code == 204
 
 
-def test_delete_supplier_not_found(client, auth_headers):
+def test_delete_supplier_not_found(test_client, client, auth_headers):
     """Test deleting a non-existent supplier."""
     supplier_id = str(uuid4())
 
     with patch("app.modules.purchases.service.PurchasesService.delete_supplier") as mock_delete:
         mock_delete.return_value = False
 
-        response = client.delete(
+        response = test_client.delete(
             f"/v2/purchases/suppliers/{supplier_id}",
             headers=auth_headers
         )
@@ -193,14 +193,14 @@ def test_delete_supplier_not_found(client, auth_headers):
         assert response.status_code == 404
 
 
-def test_supplier_pagination(client, auth_headers, sample_supplier):
+def test_supplier_pagination(test_client, client, auth_headers, sample_supplier):
     """Test supplier pagination."""
     suppliers = [MagicMock(**{**sample_supplier, "id": str(uuid4())}) for _ in range(5)]
 
     with patch("app.modules.purchases.service.PurchasesService.list_suppliers") as mock_list:
         mock_list.return_value = (suppliers, 25)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/suppliers?page=2&page_size=5",
             headers=auth_headers
         )
@@ -217,12 +217,12 @@ def test_supplier_pagination(client, auth_headers, sample_supplier):
 # ORDER TESTS (14 tests)
 # ============================================================================
 
-def test_create_order(client, auth_headers, order_data, sample_order):
+def test_create_order(test_client, client, auth_headers, order_data, sample_order):
     """Test creating a new order."""
     with patch("app.modules.purchases.service.PurchasesService.create_order") as mock_create:
         mock_create.return_value = MagicMock(**sample_order)
 
-        response = client.post(
+        response = test_client.post(
             "/v2/purchases/orders",
             json=order_data,
             headers=auth_headers
@@ -235,12 +235,12 @@ def test_create_order(client, auth_headers, order_data, sample_order):
         assert data["number"] == sample_order["number"]
 
 
-def test_list_orders(client, auth_headers, sample_order):
+def test_list_orders(test_client, client, auth_headers, sample_order):
     """Test listing orders."""
     with patch("app.modules.purchases.service.PurchasesService.list_orders") as mock_list:
         mock_list.return_value = ([MagicMock(**sample_order)], 1)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/orders",
             headers=auth_headers
         )
@@ -253,41 +253,41 @@ def test_list_orders(client, auth_headers, sample_order):
         assert_order_fields(data["items"][0])
 
 
-def test_list_orders_with_filters(client, auth_headers, sample_order):
+def test_list_orders_with_filters(test_client, client, auth_headers, sample_order):
     """Test listing orders with various filters."""
     with patch("app.modules.purchases.service.PurchasesService.list_orders") as mock_list:
         mock_list.return_value = ([MagicMock(**sample_order)], 1)
 
         # Test supplier_id filter
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/orders?supplier_id={sample_order['supplier_id']}",
             headers=auth_headers
         )
         assert response.status_code == 200
 
         # Test status filter
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/orders?status=DRAFT",
             headers=auth_headers
         )
         assert response.status_code == 200
 
         # Test search filter
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/orders?search=CA-2024",
             headers=auth_headers
         )
         assert response.status_code == 200
 
 
-def test_get_order(client, auth_headers, sample_order):
+def test_get_order(test_client, client, auth_headers, sample_order):
     """Test getting a specific order."""
     order_id = sample_order["id"]
 
     with patch("app.modules.purchases.service.PurchasesService.get_order") as mock_get:
         mock_get.return_value = MagicMock(**sample_order)
 
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/orders/{order_id}",
             headers=auth_headers
         )
@@ -298,14 +298,14 @@ def test_get_order(client, auth_headers, sample_order):
         assert data["id"] == order_id
 
 
-def test_get_order_not_found(client, auth_headers):
+def test_get_order_not_found(test_client, client, auth_headers):
     """Test getting a non-existent order."""
     order_id = str(uuid4())
 
     with patch("app.modules.purchases.service.PurchasesService.get_order") as mock_get:
         mock_get.return_value = None
 
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/orders/{order_id}",
             headers=auth_headers
         )
@@ -314,7 +314,7 @@ def test_get_order_not_found(client, auth_headers):
         assert "non trouvée" in response.json()["detail"]
 
 
-def test_update_order(client, auth_headers, sample_order):
+def test_update_order(test_client, client, auth_headers, sample_order):
     """Test updating an order."""
     order_id = sample_order["id"]
     update_data = {"reference": "UPDATED-REF-001"}
@@ -325,7 +325,7 @@ def test_update_order(client, auth_headers, sample_order):
     with patch("app.modules.purchases.service.PurchasesService.update_order") as mock_update:
         mock_update.return_value = MagicMock(**updated_order)
 
-        response = client.put(
+        response = test_client.put(
             f"/v2/purchases/orders/{order_id}",
             json=update_data,
             headers=auth_headers
@@ -336,7 +336,7 @@ def test_update_order(client, auth_headers, sample_order):
         assert data["reference"] == update_data["reference"]
 
 
-def test_update_order_not_found(client, auth_headers):
+def test_update_order_not_found(test_client, client, auth_headers):
     """Test updating a non-existent order."""
     order_id = str(uuid4())
     update_data = {"reference": "UPDATED-REF"}
@@ -344,7 +344,7 @@ def test_update_order_not_found(client, auth_headers):
     with patch("app.modules.purchases.service.PurchasesService.update_order") as mock_update:
         mock_update.return_value = None
 
-        response = client.put(
+        response = test_client.put(
             f"/v2/purchases/orders/{order_id}",
             json=update_data,
             headers=auth_headers
@@ -353,7 +353,7 @@ def test_update_order_not_found(client, auth_headers):
         assert response.status_code == 404
 
 
-def test_validate_order(client, auth_headers, sample_order):
+def test_validate_order(test_client, client, auth_headers, sample_order):
     """Test validating an order (DRAFT → SENT)."""
     order_id = sample_order["id"]
 
@@ -364,7 +364,7 @@ def test_validate_order(client, auth_headers, sample_order):
     with patch("app.modules.purchases.service.PurchasesService.validate_order") as mock_validate:
         mock_validate.return_value = MagicMock(**validated_order)
 
-        response = client.post(
+        response = test_client.post(
             f"/v2/purchases/orders/{order_id}/validate",
             headers=auth_headers
         )
@@ -375,14 +375,14 @@ def test_validate_order(client, auth_headers, sample_order):
         assert data["validated_at"] is not None
 
 
-def test_validate_order_not_found(client, auth_headers):
+def test_validate_order_not_found(test_client, client, auth_headers):
     """Test validating a non-existent order."""
     order_id = str(uuid4())
 
     with patch("app.modules.purchases.service.PurchasesService.validate_order") as mock_validate:
         mock_validate.return_value = None
 
-        response = client.post(
+        response = test_client.post(
             f"/v2/purchases/orders/{order_id}/validate",
             headers=auth_headers
         )
@@ -390,7 +390,7 @@ def test_validate_order_not_found(client, auth_headers):
         assert response.status_code == 404
 
 
-def test_cancel_order(client, auth_headers, sample_order):
+def test_cancel_order(test_client, client, auth_headers, sample_order):
     """Test cancelling an order."""
     order_id = sample_order["id"]
 
@@ -400,7 +400,7 @@ def test_cancel_order(client, auth_headers, sample_order):
     with patch("app.modules.purchases.service.PurchasesService.cancel_order") as mock_cancel:
         mock_cancel.return_value = MagicMock(**cancelled_order)
 
-        response = client.post(
+        response = test_client.post(
             f"/v2/purchases/orders/{order_id}/cancel",
             headers=auth_headers
         )
@@ -410,14 +410,14 @@ def test_cancel_order(client, auth_headers, sample_order):
         assert data["status"] == "CANCELLED"
 
 
-def test_cancel_order_not_found(client, auth_headers):
+def test_cancel_order_not_found(test_client, client, auth_headers):
     """Test cancelling a non-existent order."""
     order_id = str(uuid4())
 
     with patch("app.modules.purchases.service.PurchasesService.cancel_order") as mock_cancel:
         mock_cancel.return_value = None
 
-        response = client.post(
+        response = test_client.post(
             f"/v2/purchases/orders/{order_id}/cancel",
             headers=auth_headers
         )
@@ -425,7 +425,7 @@ def test_cancel_order_not_found(client, auth_headers):
         assert response.status_code == 404
 
 
-def test_delete_order_draft(client, auth_headers, sample_order):
+def test_delete_order_draft(test_client, client, auth_headers, sample_order):
     """Test deleting a draft order."""
     order_id = sample_order["id"]
 
@@ -438,7 +438,7 @@ def test_delete_order_draft(client, auth_headers, sample_order):
         mock_get.return_value = draft_order
 
         with patch("app.modules.purchases.service.PurchasesService.db") as mock_db:
-            response = client.delete(
+            response = test_client.delete(
                 f"/v2/purchases/orders/{order_id}",
                 headers=auth_headers
             )
@@ -446,7 +446,7 @@ def test_delete_order_draft(client, auth_headers, sample_order):
             assert response.status_code == 204
 
 
-def test_delete_order_not_draft(client, auth_headers, sample_order):
+def test_delete_order_not_draft(test_client, client, auth_headers, sample_order):
     """Test deleting a non-draft order (should fail)."""
     order_id = sample_order["id"]
 
@@ -460,7 +460,7 @@ def test_delete_order_not_draft(client, auth_headers, sample_order):
     with patch("app.modules.purchases.service.PurchasesService.get_order") as mock_get:
         mock_get.return_value = mock_order
 
-        response = client.delete(
+        response = test_client.delete(
             f"/v2/purchases/orders/{order_id}",
             headers=auth_headers
         )
@@ -469,14 +469,14 @@ def test_delete_order_not_draft(client, auth_headers, sample_order):
         assert "brouillon" in response.json()["detail"]
 
 
-def test_order_pagination(client, auth_headers, sample_order):
+def test_order_pagination(test_client, client, auth_headers, sample_order):
     """Test order pagination."""
     orders = [MagicMock(**{**sample_order, "id": str(uuid4())}) for _ in range(10)]
 
     with patch("app.modules.purchases.service.PurchasesService.list_orders") as mock_list:
         mock_list.return_value = (orders, 50)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/orders?page=3&page_size=10",
             headers=auth_headers
         )
@@ -493,12 +493,12 @@ def test_order_pagination(client, auth_headers, sample_order):
 # INVOICE TESTS (13 tests)
 # ============================================================================
 
-def test_create_invoice(client, auth_headers, invoice_data, sample_invoice):
+def test_create_invoice(test_client, client, auth_headers, invoice_data, sample_invoice):
     """Test creating a new invoice."""
     with patch("app.modules.purchases.service.PurchasesService.create_invoice") as mock_create:
         mock_create.return_value = MagicMock(**sample_invoice)
 
-        response = client.post(
+        response = test_client.post(
             "/v2/purchases/invoices",
             json=invoice_data,
             headers=auth_headers
@@ -511,12 +511,12 @@ def test_create_invoice(client, auth_headers, invoice_data, sample_invoice):
         assert data["number"] == sample_invoice["number"]
 
 
-def test_list_invoices(client, auth_headers, sample_invoice):
+def test_list_invoices(test_client, client, auth_headers, sample_invoice):
     """Test listing invoices."""
     with patch("app.modules.purchases.service.PurchasesService.list_invoices") as mock_list:
         mock_list.return_value = ([MagicMock(**sample_invoice)], 1)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/invoices",
             headers=auth_headers
         )
@@ -529,48 +529,48 @@ def test_list_invoices(client, auth_headers, sample_invoice):
         assert_invoice_fields(data["items"][0])
 
 
-def test_list_invoices_with_filters(client, auth_headers, sample_invoice):
+def test_list_invoices_with_filters(test_client, client, auth_headers, sample_invoice):
     """Test listing invoices with various filters."""
     with patch("app.modules.purchases.service.PurchasesService.list_invoices") as mock_list:
         mock_list.return_value = ([MagicMock(**sample_invoice)], 1)
 
         # Test supplier_id filter
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/invoices?supplier_id={sample_invoice['supplier_id']}",
             headers=auth_headers
         )
         assert response.status_code == 200
 
         # Test order_id filter
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/invoices?order_id={sample_invoice['order_id']}",
             headers=auth_headers
         )
         assert response.status_code == 200
 
         # Test status filter
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/invoices?status=DRAFT",
             headers=auth_headers
         )
         assert response.status_code == 200
 
         # Test search filter
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/invoices?search=INV-SUPP",
             headers=auth_headers
         )
         assert response.status_code == 200
 
 
-def test_get_invoice(client, auth_headers, sample_invoice):
+def test_get_invoice(test_client, client, auth_headers, sample_invoice):
     """Test getting a specific invoice."""
     invoice_id = sample_invoice["id"]
 
     with patch("app.modules.purchases.service.PurchasesService.get_invoice") as mock_get:
         mock_get.return_value = MagicMock(**sample_invoice)
 
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/invoices/{invoice_id}",
             headers=auth_headers
         )
@@ -581,14 +581,14 @@ def test_get_invoice(client, auth_headers, sample_invoice):
         assert data["id"] == invoice_id
 
 
-def test_get_invoice_not_found(client, auth_headers):
+def test_get_invoice_not_found(test_client, client, auth_headers):
     """Test getting a non-existent invoice."""
     invoice_id = str(uuid4())
 
     with patch("app.modules.purchases.service.PurchasesService.get_invoice") as mock_get:
         mock_get.return_value = None
 
-        response = client.get(
+        response = test_client.get(
             f"/v2/purchases/invoices/{invoice_id}",
             headers=auth_headers
         )
@@ -597,7 +597,7 @@ def test_get_invoice_not_found(client, auth_headers):
         assert "non trouvée" in response.json()["detail"]
 
 
-def test_update_invoice(client, auth_headers, sample_invoice):
+def test_update_invoice(test_client, client, auth_headers, sample_invoice):
     """Test updating an invoice."""
     invoice_id = sample_invoice["id"]
     update_data = {"reference": "UPDATED-SUPP-REF"}
@@ -608,7 +608,7 @@ def test_update_invoice(client, auth_headers, sample_invoice):
     with patch("app.modules.purchases.service.PurchasesService.update_invoice") as mock_update:
         mock_update.return_value = MagicMock(**updated_invoice)
 
-        response = client.put(
+        response = test_client.put(
             f"/v2/purchases/invoices/{invoice_id}",
             json=update_data,
             headers=auth_headers
@@ -619,7 +619,7 @@ def test_update_invoice(client, auth_headers, sample_invoice):
         assert data["reference"] == update_data["reference"]
 
 
-def test_update_invoice_not_found(client, auth_headers):
+def test_update_invoice_not_found(test_client, client, auth_headers):
     """Test updating a non-existent invoice."""
     invoice_id = str(uuid4())
     update_data = {"reference": "UPDATED-REF"}
@@ -627,7 +627,7 @@ def test_update_invoice_not_found(client, auth_headers):
     with patch("app.modules.purchases.service.PurchasesService.update_invoice") as mock_update:
         mock_update.return_value = None
 
-        response = client.put(
+        response = test_client.put(
             f"/v2/purchases/invoices/{invoice_id}",
             json=update_data,
             headers=auth_headers
@@ -636,7 +636,7 @@ def test_update_invoice_not_found(client, auth_headers):
         assert response.status_code == 404
 
 
-def test_validate_invoice(client, auth_headers, sample_invoice):
+def test_validate_invoice(test_client, client, auth_headers, sample_invoice):
     """Test validating an invoice (DRAFT → VALIDATED)."""
     invoice_id = sample_invoice["id"]
 
@@ -647,7 +647,7 @@ def test_validate_invoice(client, auth_headers, sample_invoice):
     with patch("app.modules.purchases.service.PurchasesService.validate_invoice") as mock_validate:
         mock_validate.return_value = MagicMock(**validated_invoice)
 
-        response = client.post(
+        response = test_client.post(
             f"/v2/purchases/invoices/{invoice_id}/validate",
             headers=auth_headers
         )
@@ -658,14 +658,14 @@ def test_validate_invoice(client, auth_headers, sample_invoice):
         assert data["validated_at"] is not None
 
 
-def test_validate_invoice_not_found(client, auth_headers):
+def test_validate_invoice_not_found(test_client, client, auth_headers):
     """Test validating a non-existent invoice."""
     invoice_id = str(uuid4())
 
     with patch("app.modules.purchases.service.PurchasesService.validate_invoice") as mock_validate:
         mock_validate.return_value = None
 
-        response = client.post(
+        response = test_client.post(
             f"/v2/purchases/invoices/{invoice_id}/validate",
             headers=auth_headers
         )
@@ -673,7 +673,7 @@ def test_validate_invoice_not_found(client, auth_headers):
         assert response.status_code == 404
 
 
-def test_delete_invoice_draft(client, auth_headers, sample_invoice):
+def test_delete_invoice_draft(test_client, client, auth_headers, sample_invoice):
     """Test deleting a draft invoice."""
     invoice_id = sample_invoice["id"]
 
@@ -686,7 +686,7 @@ def test_delete_invoice_draft(client, auth_headers, sample_invoice):
         mock_get.return_value = draft_invoice
 
         with patch("app.modules.purchases.service.PurchasesService.db") as mock_db:
-            response = client.delete(
+            response = test_client.delete(
                 f"/v2/purchases/invoices/{invoice_id}",
                 headers=auth_headers
             )
@@ -694,7 +694,7 @@ def test_delete_invoice_draft(client, auth_headers, sample_invoice):
             assert response.status_code == 204
 
 
-def test_delete_invoice_not_draft(client, auth_headers, sample_invoice):
+def test_delete_invoice_not_draft(test_client, client, auth_headers, sample_invoice):
     """Test deleting a non-draft invoice (should fail)."""
     invoice_id = sample_invoice["id"]
 
@@ -708,7 +708,7 @@ def test_delete_invoice_not_draft(client, auth_headers, sample_invoice):
     with patch("app.modules.purchases.service.PurchasesService.get_invoice") as mock_get:
         mock_get.return_value = mock_invoice
 
-        response = client.delete(
+        response = test_client.delete(
             f"/v2/purchases/invoices/{invoice_id}",
             headers=auth_headers
         )
@@ -717,14 +717,14 @@ def test_delete_invoice_not_draft(client, auth_headers, sample_invoice):
         assert "brouillon" in response.json()["detail"]
 
 
-def test_invoice_pagination(client, auth_headers, sample_invoice):
+def test_invoice_pagination(test_client, client, auth_headers, sample_invoice):
     """Test invoice pagination."""
     invoices = [MagicMock(**{**sample_invoice, "id": str(uuid4())}) for _ in range(15)]
 
     with patch("app.modules.purchases.service.PurchasesService.list_invoices") as mock_list:
         mock_list.return_value = (invoices, 45)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/invoices?page=2&page_size=15",
             headers=auth_headers
         )
@@ -737,7 +737,7 @@ def test_invoice_pagination(client, auth_headers, sample_invoice):
         assert data["pages"] == 3
 
 
-def test_invoice_with_order_link(client, auth_headers, sample_invoice):
+def test_invoice_with_order_link(test_client, client, auth_headers, sample_invoice):
     """Test invoice linked to an order."""
     with patch("app.modules.purchases.service.PurchasesService.create_invoice") as mock_create:
         mock_create.return_value = MagicMock(**sample_invoice)
@@ -757,7 +757,7 @@ def test_invoice_with_order_link(client, auth_headers, sample_invoice):
             ]
         }
 
-        response = client.post(
+        response = test_client.post(
             "/v2/purchases/invoices",
             json=invoice_data,
             headers=auth_headers
@@ -772,12 +772,12 @@ def test_invoice_with_order_link(client, auth_headers, sample_invoice):
 # SUMMARY TESTS (2 tests)
 # ============================================================================
 
-def test_get_summary(client, auth_headers, sample_summary):
+def test_get_summary(test_client, client, auth_headers, sample_summary):
     """Test getting summary/dashboard data."""
     with patch("app.modules.purchases.service.PurchasesService.get_summary") as mock_summary:
         mock_summary.return_value = MagicMock(**sample_summary)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/summary",
             headers=auth_headers
         )
@@ -790,12 +790,12 @@ def test_get_summary(client, auth_headers, sample_summary):
         assert "period_orders_amount" in data
 
 
-def test_summary_structure(client, auth_headers, sample_summary):
+def test_summary_structure(test_client, client, auth_headers, sample_summary):
     """Test summary data structure and completeness."""
     with patch("app.modules.purchases.service.PurchasesService.get_summary") as mock_summary:
         mock_summary.return_value = MagicMock(**sample_summary)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/summary",
             headers=auth_headers
         )
@@ -827,13 +827,13 @@ def test_summary_structure(client, auth_headers, sample_summary):
 # WORKFLOW TESTS (5 tests)
 # ============================================================================
 
-def test_complete_purchase_flow(client, auth_headers, supplier_data, order_data, invoice_data, sample_supplier, sample_order, sample_invoice):
+def test_complete_purchase_flow(test_client, client, auth_headers, supplier_data, order_data, invoice_data, sample_supplier, sample_order, sample_invoice):
     """Test complete purchase workflow: supplier → order → invoice."""
     # Step 1: Create supplier
     with patch("app.modules.purchases.service.PurchasesService.create_supplier") as mock_create_supplier:
         mock_create_supplier.return_value = MagicMock(**sample_supplier)
 
-        supplier_response = client.post(
+        supplier_response = test_client.post(
             "/v2/purchases/suppliers",
             json=supplier_data,
             headers=auth_headers
@@ -845,7 +845,7 @@ def test_complete_purchase_flow(client, auth_headers, supplier_data, order_data,
     with patch("app.modules.purchases.service.PurchasesService.create_order") as mock_create_order:
         mock_create_order.return_value = MagicMock(**sample_order)
 
-        order_response = client.post(
+        order_response = test_client.post(
             "/v2/purchases/orders",
             json=order_data,
             headers=auth_headers
@@ -857,7 +857,7 @@ def test_complete_purchase_flow(client, auth_headers, supplier_data, order_data,
     with patch("app.modules.purchases.service.PurchasesService.create_invoice") as mock_create_invoice:
         mock_create_invoice.return_value = MagicMock(**sample_invoice)
 
-        invoice_response = client.post(
+        invoice_response = test_client.post(
             "/v2/purchases/invoices",
             json=invoice_data,
             headers=auth_headers
@@ -866,7 +866,7 @@ def test_complete_purchase_flow(client, auth_headers, supplier_data, order_data,
         assert invoice_response.json()["order_id"] == order_id
 
 
-def test_order_validation_workflow(client, auth_headers, sample_order):
+def test_order_validation_workflow(test_client, client, auth_headers, sample_order):
     """Test order validation workflow: DRAFT → SENT."""
     order_id = sample_order["id"]
 
@@ -874,7 +874,7 @@ def test_order_validation_workflow(client, auth_headers, sample_order):
     with patch("app.modules.purchases.service.PurchasesService.create_order") as mock_create:
         mock_create.return_value = MagicMock(**sample_order)
 
-        create_response = client.post(
+        create_response = test_client.post(
             "/v2/purchases/orders",
             json={
                 "supplier_id": sample_order["supplier_id"],
@@ -900,7 +900,7 @@ def test_order_validation_workflow(client, auth_headers, sample_order):
     with patch("app.modules.purchases.service.PurchasesService.validate_order") as mock_validate:
         mock_validate.return_value = MagicMock(**validated_order)
 
-        validate_response = client.post(
+        validate_response = test_client.post(
             f"/v2/purchases/orders/{order_id}/validate",
             headers=auth_headers
         )
@@ -908,7 +908,7 @@ def test_order_validation_workflow(client, auth_headers, sample_order):
         assert validate_response.json()["status"] == "SENT"
 
 
-def test_invoice_validation_workflow(client, auth_headers, sample_invoice):
+def test_invoice_validation_workflow(test_client, client, auth_headers, sample_invoice):
     """Test invoice validation workflow: DRAFT → VALIDATED."""
     invoice_id = sample_invoice["id"]
 
@@ -916,7 +916,7 @@ def test_invoice_validation_workflow(client, auth_headers, sample_invoice):
     with patch("app.modules.purchases.service.PurchasesService.create_invoice") as mock_create:
         mock_create.return_value = MagicMock(**sample_invoice)
 
-        create_response = client.post(
+        create_response = test_client.post(
             "/v2/purchases/invoices",
             json={
                 "number": "INV-TEST-001",
@@ -943,7 +943,7 @@ def test_invoice_validation_workflow(client, auth_headers, sample_invoice):
     with patch("app.modules.purchases.service.PurchasesService.validate_invoice") as mock_validate:
         mock_validate.return_value = MagicMock(**validated_invoice)
 
-        validate_response = client.post(
+        validate_response = test_client.post(
             f"/v2/purchases/invoices/{invoice_id}/validate",
             headers=auth_headers
         )
@@ -951,7 +951,7 @@ def test_invoice_validation_workflow(client, auth_headers, sample_invoice):
         assert validate_response.json()["status"] == "VALIDATED"
 
 
-def test_supplier_deactivation(client, auth_headers, sample_supplier):
+def test_supplier_deactivation(test_client, client, auth_headers, sample_supplier):
     """Test supplier deactivation workflow."""
     supplier_id = sample_supplier["id"]
 
@@ -963,7 +963,7 @@ def test_supplier_deactivation(client, auth_headers, sample_supplier):
     with patch("app.modules.purchases.service.PurchasesService.update_supplier") as mock_update:
         mock_update.return_value = MagicMock(**deactivated_supplier)
 
-        response = client.put(
+        response = test_client.put(
             f"/v2/purchases/suppliers/{supplier_id}",
             json={"is_active": False, "status": "INACTIVE"},
             headers=auth_headers
@@ -974,7 +974,7 @@ def test_supplier_deactivation(client, auth_headers, sample_supplier):
         assert response.json()["status"] == "INACTIVE"
 
 
-def test_order_cancellation(client, auth_headers, sample_order):
+def test_order_cancellation(test_client, client, auth_headers, sample_order):
     """Test order cancellation workflow."""
     order_id = sample_order["id"]
 
@@ -985,7 +985,7 @@ def test_order_cancellation(client, auth_headers, sample_order):
     with patch("app.modules.purchases.service.PurchasesService.cancel_order") as mock_cancel:
         mock_cancel.return_value = MagicMock(**cancelled_order)
 
-        response = client.post(
+        response = test_client.post(
             f"/v2/purchases/orders/{order_id}/cancel",
             headers=auth_headers
         )
@@ -998,13 +998,13 @@ def test_order_cancellation(client, auth_headers, sample_order):
 # SECURITY TESTS (3 tests)
 # ============================================================================
 
-def test_tenant_isolation(client, auth_headers, sample_supplier, tenant_id):
+def test_tenant_isolation(test_client, client, auth_headers, sample_supplier, tenant_id):
     """Test that tenant isolation is enforced."""
     with patch("app.modules.purchases.service.PurchasesService.list_suppliers") as mock_list:
         # Ensure only tenant-specific data is returned
         mock_list.return_value = ([MagicMock(**sample_supplier)], 1)
 
-        response = client.get(
+        response = test_client.get(
             "/v2/purchases/suppliers",
             headers=auth_headers
         )
@@ -1016,7 +1016,7 @@ def test_tenant_isolation(client, auth_headers, sample_supplier, tenant_id):
             assert item["tenant_id"] == tenant_id
 
 
-def test_context_propagation(client, auth_headers, supplier_data, tenant_id, user_id):
+def test_context_propagation(test_client, client, auth_headers, supplier_data, tenant_id, user_id):
     """Test that SaaSContext is properly propagated."""
     with patch("app.modules.purchases.service.PurchasesService.create_supplier") as mock_create:
         def check_context(data, created_by):
@@ -1026,7 +1026,7 @@ def test_context_propagation(client, auth_headers, supplier_data, tenant_id, use
 
         mock_create.side_effect = check_context
 
-        response = client.post(
+        response = test_client.post(
             "/v2/purchases/suppliers",
             json=supplier_data,
             headers=auth_headers
@@ -1035,12 +1035,12 @@ def test_context_propagation(client, auth_headers, supplier_data, tenant_id, use
         assert response.status_code == 201
 
 
-def test_audit_trail(client, auth_headers, supplier_data, sample_supplier, user_id):
+def test_audit_trail(test_client, client, auth_headers, supplier_data, sample_supplier, user_id):
     """Test that audit trail fields are properly set."""
     with patch("app.modules.purchases.service.PurchasesService.create_supplier") as mock_create:
         mock_create.return_value = MagicMock(**sample_supplier)
 
-        response = client.post(
+        response = test_client.post(
             "/v2/purchases/suppliers",
             json=supplier_data,
             headers=auth_headers
@@ -1058,14 +1058,14 @@ def test_audit_trail(client, auth_headers, supplier_data, sample_supplier, user_
 # EDGE CASES TESTS (3 tests)
 # ============================================================================
 
-def test_invalid_supplier_data(client, auth_headers):
+def test_invalid_supplier_data(test_client, client, auth_headers):
     """Test creating supplier with invalid data."""
     invalid_data = {
         "code": "",  # Empty code should fail
         "name": "Test"
     }
 
-    response = client.post(
+    response = test_client.post(
         "/v2/purchases/suppliers",
         json=invalid_data,
         headers=auth_headers
@@ -1075,13 +1075,13 @@ def test_invalid_supplier_data(client, auth_headers):
     assert response.status_code == 422
 
 
-def test_duplicate_order_reference(client, auth_headers, order_data, sample_order):
+def test_duplicate_order_reference(test_client, client, auth_headers, order_data, sample_order):
     """Test creating order with duplicate number."""
     with patch("app.modules.purchases.service.PurchasesService.create_order") as mock_create:
         # Simulate duplicate number error
         mock_create.side_effect = ValueError("Duplicate order number")
 
-        response = client.post(
+        response = test_client.post(
             "/v2/purchases/orders",
             json=order_data,
             headers=auth_headers
@@ -1091,7 +1091,7 @@ def test_duplicate_order_reference(client, auth_headers, order_data, sample_orde
         assert response.status_code >= 400
 
 
-def test_validation_errors(client, auth_headers, invoice_data):
+def test_validation_errors(test_client, client, auth_headers, invoice_data):
     """Test validation errors in invoice creation."""
     # Invalid invoice data (missing required fields)
     invalid_invoice_data = {
@@ -1101,7 +1101,7 @@ def test_validation_errors(client, auth_headers, invoice_data):
         "lines": []  # Empty lines should fail
     }
 
-    response = client.post(
+    response = test_client.post(
         "/v2/purchases/invoices",
         json=invalid_invoice_data,
         headers=auth_headers

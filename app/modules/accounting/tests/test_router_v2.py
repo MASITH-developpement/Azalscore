@@ -16,9 +16,9 @@ from uuid import uuid4
 # 1. SUMMARY (1 test)
 # ===========================
 
-def test_get_accounting_summary(client, auth_headers):
+def test_get_accounting_summary(test_client, client, auth_headers):
     """Test récupération du résumé comptable."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/summary",
         headers=auth_headers
     )
@@ -35,9 +35,9 @@ def test_get_accounting_summary(client, auth_headers):
 # 2. FISCAL YEARS (8 tests)
 # ===========================
 
-def test_create_fiscal_year(client, auth_headers, sample_fiscal_year_data, assert_fiscal_year_structure):
+def test_create_fiscal_year(test_client, client, auth_headers, sample_fiscal_year_data, assert_fiscal_year_structure):
     """Test création exercice comptable."""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers,
         json=sample_fiscal_year_data
@@ -51,9 +51,9 @@ def test_create_fiscal_year(client, auth_headers, sample_fiscal_year_data, asser
     assert data["status"] == "OPEN"
 
 
-def test_list_fiscal_years(client, auth_headers):
+def test_list_fiscal_years(test_client, client, auth_headers):
     """Test listing de tous les exercices comptables."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers
     )
@@ -67,9 +67,9 @@ def test_list_fiscal_years(client, auth_headers):
     assert isinstance(data["items"], list)
 
 
-def test_list_fiscal_years_with_status_filter(client, auth_headers):
+def test_list_fiscal_years_with_status_filter(test_client, client, auth_headers):
     """Test filtrage des exercices par statut."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/fiscal-years?status=OPEN",
         headers=auth_headers
     )
@@ -82,10 +82,10 @@ def test_list_fiscal_years_with_status_filter(client, auth_headers):
         assert item["status"] == "OPEN"
 
 
-def test_get_fiscal_year(client, auth_headers, sample_fiscal_year, assert_fiscal_year_structure):
+def test_get_fiscal_year(test_client, client, auth_headers, sample_fiscal_year, assert_fiscal_year_structure):
     """Test récupération d'un exercice spécifique."""
     fiscal_year_id = sample_fiscal_year["id"]
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/fiscal-years/{fiscal_year_id}",
         headers=auth_headers
     )
@@ -96,7 +96,7 @@ def test_get_fiscal_year(client, auth_headers, sample_fiscal_year, assert_fiscal
     assert data["id"] == fiscal_year_id
 
 
-def test_update_fiscal_year(client, auth_headers, sample_fiscal_year):
+def test_update_fiscal_year(test_client, client, auth_headers, sample_fiscal_year):
     """Test mise à jour d'un exercice comptable."""
     fiscal_year_id = sample_fiscal_year["id"]
     update_data = {
@@ -104,7 +104,7 @@ def test_update_fiscal_year(client, auth_headers, sample_fiscal_year):
         "description": "Exercice modifié pour tests"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/accounting/fiscal-years/{fiscal_year_id}",
         headers=auth_headers,
         json=update_data
@@ -115,10 +115,10 @@ def test_update_fiscal_year(client, auth_headers, sample_fiscal_year):
     assert data["name"] == update_data["name"]
 
 
-def test_close_fiscal_year(client, auth_headers, sample_fiscal_year):
+def test_close_fiscal_year(test_client, client, auth_headers, sample_fiscal_year):
     """Test clôture d'un exercice comptable."""
     fiscal_year_id = sample_fiscal_year["id"]
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/fiscal-years/{fiscal_year_id}/close",
         headers=auth_headers
     )
@@ -129,10 +129,10 @@ def test_close_fiscal_year(client, auth_headers, sample_fiscal_year):
     assert "closed_at" in data
 
 
-def test_fiscal_year_not_found(client, auth_headers):
+def test_fiscal_year_not_found(test_client, client, auth_headers):
     """Test erreur 404 pour exercice inexistant."""
     non_existent_id = str(uuid4())
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/fiscal-years/{non_existent_id}",
         headers=auth_headers
     )
@@ -140,9 +140,9 @@ def test_fiscal_year_not_found(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_fiscal_years_tenant_isolation(client, auth_headers, tenant_id, assert_tenant_isolation):
+def test_fiscal_years_tenant_isolation(test_client, client, auth_headers, tenant_id, assert_tenant_isolation):
     """Test isolation des exercices par tenant."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers
     )
@@ -156,9 +156,9 @@ def test_fiscal_years_tenant_isolation(client, auth_headers, tenant_id, assert_t
 # 3. CHART OF ACCOUNTS (8 tests)
 # ===========================
 
-def test_create_account(client, auth_headers, sample_account_data, assert_account_structure):
+def test_create_account(test_client, client, auth_headers, sample_account_data, assert_account_structure):
     """Test création d'un compte comptable."""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/accounts",
         headers=auth_headers,
         json=sample_account_data
@@ -172,9 +172,9 @@ def test_create_account(client, auth_headers, sample_account_data, assert_accoun
     assert data["type"] == sample_account_data["type"]
 
 
-def test_list_accounts(client, auth_headers):
+def test_list_accounts(test_client, client, auth_headers):
     """Test listing de tous les comptes."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/accounts",
         headers=auth_headers
     )
@@ -188,10 +188,10 @@ def test_list_accounts(client, auth_headers):
     assert isinstance(data["items"], list)
 
 
-def test_list_accounts_with_filters(client, auth_headers):
+def test_list_accounts_with_filters(test_client, client, auth_headers):
     """Test filtrage des comptes (type, class, search)."""
     # Test filtre par type
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/accounts?type=LIABILITY",
         headers=auth_headers
     )
@@ -201,7 +201,7 @@ def test_list_accounts_with_filters(client, auth_headers):
         assert item["type"] == "LIABILITY"
 
     # Test filtre par classe
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/accounts?class=4",
         headers=auth_headers
     )
@@ -211,17 +211,17 @@ def test_list_accounts_with_filters(client, auth_headers):
         assert item["class"] == "4"
 
     # Test recherche
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/accounts?search=Banque",
         headers=auth_headers
     )
     assert response.status_code == 200
 
 
-def test_get_account(client, auth_headers, sample_account, assert_account_structure):
+def test_get_account(test_client, client, auth_headers, sample_account, assert_account_structure):
     """Test récupération d'un compte spécifique."""
     account_id = sample_account["id"]
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/accounts/{account_id}",
         headers=auth_headers
     )
@@ -232,7 +232,7 @@ def test_get_account(client, auth_headers, sample_account, assert_account_struct
     assert data["id"] == account_id
 
 
-def test_update_account(client, auth_headers, sample_account):
+def test_update_account(test_client, client, auth_headers, sample_account):
     """Test mise à jour d'un compte."""
     account_id = sample_account["id"]
     update_data = {
@@ -240,7 +240,7 @@ def test_update_account(client, auth_headers, sample_account):
         "description": "Description modifiée"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/accounting/accounts/{account_id}",
         headers=auth_headers,
         json=update_data
@@ -251,10 +251,10 @@ def test_update_account(client, auth_headers, sample_account):
     assert data["name"] == update_data["name"]
 
 
-def test_account_not_found(client, auth_headers):
+def test_account_not_found(test_client, client, auth_headers):
     """Test erreur 404 pour compte inexistant."""
     non_existent_id = str(uuid4())
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/accounts/{non_existent_id}",
         headers=auth_headers
     )
@@ -262,9 +262,9 @@ def test_account_not_found(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_accounts_tenant_isolation(client, auth_headers, tenant_id, assert_tenant_isolation):
+def test_accounts_tenant_isolation(test_client, client, auth_headers, tenant_id, assert_tenant_isolation):
     """Test isolation des comptes par tenant."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/accounts",
         headers=auth_headers
     )
@@ -274,9 +274,9 @@ def test_accounts_tenant_isolation(client, auth_headers, tenant_id, assert_tenan
     assert_tenant_isolation(data, tenant_id)
 
 
-def test_accounts_pagination(client, auth_headers):
+def test_accounts_pagination(test_client, client, auth_headers):
     """Test pagination des comptes."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/accounts?page=1&page_size=10",
         headers=auth_headers
     )
@@ -292,9 +292,9 @@ def test_accounts_pagination(client, auth_headers):
 # 4. JOURNAL ENTRIES (12 tests)
 # ===========================
 
-def test_create_journal_entry(client, auth_headers, sample_journal_entry_data, assert_journal_entry_structure):
+def test_create_journal_entry(test_client, client, auth_headers, sample_journal_entry_data, assert_journal_entry_structure):
     """Test création d'une écriture comptable."""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/journal-entries",
         headers=auth_headers,
         json=sample_journal_entry_data
@@ -308,9 +308,9 @@ def test_create_journal_entry(client, auth_headers, sample_journal_entry_data, a
     assert data["is_balanced"] is True
 
 
-def test_list_journal_entries(client, auth_headers):
+def test_list_journal_entries(test_client, client, auth_headers):
     """Test listing de toutes les écritures."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/journal-entries",
         headers=auth_headers
     )
@@ -324,19 +324,19 @@ def test_list_journal_entries(client, auth_headers):
     assert isinstance(data["items"], list)
 
 
-def test_list_journal_entries_with_filters(client, auth_headers, sample_fiscal_year):
+def test_list_journal_entries_with_filters(test_client, client, auth_headers, sample_fiscal_year):
     """Test filtrage des écritures (fiscal_year, journal_code, status, period)."""
     fiscal_year_id = sample_fiscal_year["id"]
 
     # Test filtre par exercice
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/journal-entries?fiscal_year_id={fiscal_year_id}",
         headers=auth_headers
     )
     assert response.status_code == 200
 
     # Test filtre par code journal
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/journal-entries?journal_code=BQ",
         headers=auth_headers
     )
@@ -346,7 +346,7 @@ def test_list_journal_entries_with_filters(client, auth_headers, sample_fiscal_y
         assert item["journal_code"] == "BQ"
 
     # Test filtre par statut
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/journal-entries?status=DRAFT",
         headers=auth_headers
     )
@@ -356,17 +356,17 @@ def test_list_journal_entries_with_filters(client, auth_headers, sample_fiscal_y
         assert item["status"] == "DRAFT"
 
     # Test filtre par période
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/journal-entries?period=1",
         headers=auth_headers
     )
     assert response.status_code == 200
 
 
-def test_get_journal_entry(client, auth_headers, sample_journal_entry, assert_journal_entry_structure):
+def test_get_journal_entry(test_client, client, auth_headers, sample_journal_entry, assert_journal_entry_structure):
     """Test récupération d'une écriture spécifique."""
     entry_id = sample_journal_entry["id"]
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/journal-entries/{entry_id}",
         headers=auth_headers
     )
@@ -377,7 +377,7 @@ def test_get_journal_entry(client, auth_headers, sample_journal_entry, assert_jo
     assert data["id"] == entry_id
 
 
-def test_update_journal_entry(client, auth_headers, sample_journal_entry):
+def test_update_journal_entry(test_client, client, auth_headers, sample_journal_entry):
     """Test mise à jour d'une écriture."""
     entry_id = sample_journal_entry["id"]
     update_data = {
@@ -385,7 +385,7 @@ def test_update_journal_entry(client, auth_headers, sample_journal_entry):
         "reference": "BQ2024-001-MOD"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/accounting/journal-entries/{entry_id}",
         headers=auth_headers,
         json=update_data
@@ -396,10 +396,10 @@ def test_update_journal_entry(client, auth_headers, sample_journal_entry):
     assert data["description"] == update_data["description"]
 
 
-def test_post_journal_entry(client, auth_headers, sample_journal_entry):
+def test_post_journal_entry(test_client, client, auth_headers, sample_journal_entry):
     """Test passage d'une écriture de DRAFT à POSTED."""
     entry_id = sample_journal_entry["id"]
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/journal-entries/{entry_id}/post",
         headers=auth_headers
     )
@@ -411,10 +411,10 @@ def test_post_journal_entry(client, auth_headers, sample_journal_entry):
     assert "posted_by" in data
 
 
-def test_validate_journal_entry(client, auth_headers, sample_journal_entry_posted):
+def test_validate_journal_entry(test_client, client, auth_headers, sample_journal_entry_posted):
     """Test validation d'une écriture POSTED → VALIDATED."""
     entry_id = sample_journal_entry_posted["id"]
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/journal-entries/{entry_id}/validate",
         headers=auth_headers
     )
@@ -426,10 +426,10 @@ def test_validate_journal_entry(client, auth_headers, sample_journal_entry_poste
     assert "validated_by" in data
 
 
-def test_cancel_journal_entry(client, auth_headers, sample_journal_entry):
+def test_cancel_journal_entry(test_client, client, auth_headers, sample_journal_entry):
     """Test annulation d'une écriture."""
     entry_id = sample_journal_entry["id"]
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/journal-entries/{entry_id}/cancel",
         headers=auth_headers
     )
@@ -439,10 +439,10 @@ def test_cancel_journal_entry(client, auth_headers, sample_journal_entry):
     assert data["status"] == "CANCELLED"
 
 
-def test_journal_entry_not_found(client, auth_headers):
+def test_journal_entry_not_found(test_client, client, auth_headers):
     """Test erreur 404 pour écriture inexistante."""
     non_existent_id = str(uuid4())
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/journal-entries/{non_existent_id}",
         headers=auth_headers
     )
@@ -450,9 +450,9 @@ def test_journal_entry_not_found(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_journal_entries_tenant_isolation(client, auth_headers, tenant_id, assert_tenant_isolation):
+def test_journal_entries_tenant_isolation(test_client, client, auth_headers, tenant_id, assert_tenant_isolation):
     """Test isolation des écritures par tenant."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/journal-entries",
         headers=auth_headers
     )
@@ -462,9 +462,9 @@ def test_journal_entries_tenant_isolation(client, auth_headers, tenant_id, asser
     assert_tenant_isolation(data, tenant_id)
 
 
-def test_journal_entry_pagination(client, auth_headers):
+def test_journal_entry_pagination(test_client, client, auth_headers):
     """Test pagination des écritures."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/journal-entries?page=1&page_size=20",
         headers=auth_headers
     )
@@ -476,9 +476,9 @@ def test_journal_entry_pagination(client, auth_headers):
     assert len(data["items"]) <= 20
 
 
-def test_journal_entry_search(client, auth_headers):
+def test_journal_entry_search(test_client, client, auth_headers):
     """Test recherche dans les écritures."""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/journal-entries?search=Paiement",
         headers=auth_headers
     )
@@ -492,10 +492,10 @@ def test_journal_entry_search(client, auth_headers):
 # 5. LEDGER (3 tests)
 # ===========================
 
-def test_get_ledger(client, auth_headers, sample_fiscal_year):
+def test_get_ledger(test_client, client, auth_headers, sample_fiscal_year):
     """Test récupération du grand livre."""
     fiscal_year_id = sample_fiscal_year["id"]
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/ledger?fiscal_year_id={fiscal_year_id}",
         headers=auth_headers
     )
@@ -509,12 +509,12 @@ def test_get_ledger(client, auth_headers, sample_fiscal_year):
     assert isinstance(data["entries"], list)
 
 
-def test_get_ledger_by_account(client, auth_headers, sample_fiscal_year, sample_account):
+def test_get_ledger_by_account(test_client, client, auth_headers, sample_fiscal_year, sample_account):
     """Test récupération du grand livre pour un compte spécifique."""
     fiscal_year_id = sample_fiscal_year["id"]
     account_id = sample_account["id"]
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/ledger?fiscal_year_id={fiscal_year_id}&account_id={account_id}",
         headers=auth_headers
     )
@@ -527,12 +527,12 @@ def test_get_ledger_by_account(client, auth_headers, sample_fiscal_year, sample_
         assert entry.get("account_id") == account_id or entry.get("account_number") == sample_account["number"]
 
 
-def test_ledger_account_not_found(client, auth_headers, sample_fiscal_year):
+def test_ledger_account_not_found(test_client, client, auth_headers, sample_fiscal_year):
     """Test erreur pour compte inexistant dans le grand livre."""
     fiscal_year_id = sample_fiscal_year["id"]
     non_existent_account = str(uuid4())
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/ledger?fiscal_year_id={fiscal_year_id}&account_id={non_existent_account}",
         headers=auth_headers
     )
@@ -545,10 +545,10 @@ def test_ledger_account_not_found(client, auth_headers, sample_fiscal_year):
 # 6. BALANCE (2 tests)
 # ===========================
 
-def test_get_balance(client, auth_headers, sample_fiscal_year):
+def test_get_balance(test_client, client, auth_headers, sample_fiscal_year):
     """Test récupération de la balance."""
     fiscal_year_id = sample_fiscal_year["id"]
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/balance?fiscal_year_id={fiscal_year_id}",
         headers=auth_headers
     )
@@ -562,10 +562,10 @@ def test_get_balance(client, auth_headers, sample_fiscal_year):
     assert isinstance(data["items"], list)
 
 
-def test_get_balance_with_period(client, auth_headers, sample_fiscal_year):
+def test_get_balance_with_period(test_client, client, auth_headers, sample_fiscal_year):
     """Test récupération de la balance pour une période."""
     fiscal_year_id = sample_fiscal_year["id"]
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/balance?fiscal_year_id={fiscal_year_id}&period=1",
         headers=auth_headers
     )
@@ -581,10 +581,10 @@ def test_get_balance_with_period(client, auth_headers, sample_fiscal_year):
 # 7. WORKFLOWS (5 tests)
 # ===========================
 
-def test_workflow_fiscal_year_lifecycle(client, auth_headers, sample_fiscal_year_data):
+def test_workflow_fiscal_year_lifecycle(test_client, client, auth_headers, sample_fiscal_year_data):
     """Test cycle de vie complet d'un exercice comptable."""
     # 1. Création
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers,
         json=sample_fiscal_year_data
@@ -594,7 +594,7 @@ def test_workflow_fiscal_year_lifecycle(client, auth_headers, sample_fiscal_year
     assert fiscal_year["status"] == "OPEN"
 
     # 2. Mise à jour
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/accounting/fiscal-years/{fiscal_year['id']}",
         headers=auth_headers,
         json={"name": "Exercice 2024 - Updated"}
@@ -602,7 +602,7 @@ def test_workflow_fiscal_year_lifecycle(client, auth_headers, sample_fiscal_year
     assert response.status_code == 200
 
     # 3. Clôture
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/fiscal-years/{fiscal_year['id']}/close",
         headers=auth_headers
     )
@@ -611,10 +611,10 @@ def test_workflow_fiscal_year_lifecycle(client, auth_headers, sample_fiscal_year
     assert closed_fy["status"] == "CLOSED"
 
 
-def test_workflow_journal_entry_full_cycle(client, auth_headers, sample_journal_entry_data):
+def test_workflow_journal_entry_full_cycle(test_client, client, auth_headers, sample_journal_entry_data):
     """Test cycle complet d'une écriture: DRAFT → POSTED → VALIDATED."""
     # 1. Création (DRAFT)
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/journal-entries",
         headers=auth_headers,
         json=sample_journal_entry_data
@@ -624,7 +624,7 @@ def test_workflow_journal_entry_full_cycle(client, auth_headers, sample_journal_
     assert entry["status"] == "DRAFT"
 
     # 2. Passage en POSTED
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/journal-entries/{entry['id']}/post",
         headers=auth_headers
     )
@@ -633,7 +633,7 @@ def test_workflow_journal_entry_full_cycle(client, auth_headers, sample_journal_
     assert posted_entry["status"] == "POSTED"
 
     # 3. Validation
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/journal-entries/{entry['id']}/validate",
         headers=auth_headers
     )
@@ -642,10 +642,10 @@ def test_workflow_journal_entry_full_cycle(client, auth_headers, sample_journal_
     assert validated_entry["status"] == "VALIDATED"
 
 
-def test_workflow_create_chart_and_entries(client, auth_headers, sample_fiscal_year_data, sample_account_data, sample_journal_entry_data):
+def test_workflow_create_chart_and_entries(test_client, client, auth_headers, sample_fiscal_year_data, sample_account_data, sample_journal_entry_data):
     """Test workflow: créer exercice + plan comptable + écritures."""
     # 1. Créer exercice
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers,
         json=sample_fiscal_year_data
@@ -654,7 +654,7 @@ def test_workflow_create_chart_and_entries(client, auth_headers, sample_fiscal_y
     fiscal_year = response.json()
 
     # 2. Créer comptes
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/accounts",
         headers=auth_headers,
         json=sample_account_data
@@ -667,7 +667,7 @@ def test_workflow_create_chart_and_entries(client, auth_headers, sample_fiscal_y
         **sample_journal_entry_data,
         "fiscal_year_id": fiscal_year["id"]
     }
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/journal-entries",
         headers=auth_headers,
         json=journal_data
@@ -675,19 +675,19 @@ def test_workflow_create_chart_and_entries(client, auth_headers, sample_fiscal_y
     assert response.status_code == 201
 
 
-def test_workflow_generate_balance(client, auth_headers, sample_fiscal_year):
+def test_workflow_generate_balance(test_client, client, auth_headers, sample_fiscal_year):
     """Test workflow de génération de balance."""
     fiscal_year_id = sample_fiscal_year["id"]
 
     # 1. Récupérer les écritures
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/journal-entries?fiscal_year_id={fiscal_year_id}",
         headers=auth_headers
     )
     assert response.status_code == 200
 
     # 2. Générer la balance
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/accounting/balance?fiscal_year_id={fiscal_year_id}",
         headers=auth_headers
     )
@@ -698,10 +698,10 @@ def test_workflow_generate_balance(client, auth_headers, sample_fiscal_year):
     assert balance["is_balanced"] is True
 
 
-def test_workflow_close_fiscal_year_with_entries(client, auth_headers, sample_fiscal_year_data, sample_journal_entry_data):
+def test_workflow_close_fiscal_year_with_entries(test_client, client, auth_headers, sample_fiscal_year_data, sample_journal_entry_data):
     """Test clôture d'exercice avec écritures validées."""
     # 1. Créer exercice
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers,
         json=sample_fiscal_year_data
@@ -714,7 +714,7 @@ def test_workflow_close_fiscal_year_with_entries(client, auth_headers, sample_fi
         **sample_journal_entry_data,
         "fiscal_year_id": fiscal_year["id"]
     }
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/journal-entries",
         headers=auth_headers,
         json=journal_data
@@ -723,11 +723,11 @@ def test_workflow_close_fiscal_year_with_entries(client, auth_headers, sample_fi
     entry = response.json()
 
     # 3. Poster et valider l'écriture
-    client.post(f"/api/v2/accounting/journal-entries/{entry['id']}/post", headers=auth_headers)
-    client.post(f"/api/v2/accounting/journal-entries/{entry['id']}/validate", headers=auth_headers)
+    test_client.post(f"/api/v2/accounting/journal-entries/{entry['id']}/post", headers=auth_headers)
+    test_client.post(f"/api/v2/accounting/journal-entries/{entry['id']}/validate", headers=auth_headers)
 
     # 4. Clôturer l'exercice
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/accounting/fiscal-years/{fiscal_year['id']}/close",
         headers=auth_headers
     )
@@ -738,10 +738,10 @@ def test_workflow_close_fiscal_year_with_entries(client, auth_headers, sample_fi
 # 8. SECURITY (3 tests)
 # ===========================
 
-def test_tenant_isolation_strict(client, auth_headers, monkeypatch, tenant_id):
+def test_tenant_isolation_strict(test_client, client, auth_headers, monkeypatch, tenant_id):
     """Test isolation stricte entre tenants."""
     # Créer des données pour tenant-test-001
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers
     )
@@ -768,7 +768,7 @@ def test_tenant_isolation_strict(client, auth_headers, monkeypatch, tenant_id):
     monkeypatch.setattr(router_v2, "get_saas_context", mock_other_tenant_context)
 
     # Vérifier que les données du tenant 1 ne sont pas visibles
-    response = client.get(
+    response = test_client.get(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers
     )
@@ -780,7 +780,7 @@ def test_tenant_isolation_strict(client, auth_headers, monkeypatch, tenant_id):
         assert item["tenant_id"] == "tenant-test-002"
 
 
-def test_saas_context_performance(client, auth_headers):
+def test_saas_context_performance(test_client, client, auth_headers):
     """Test performance du contexte SaaS sur requêtes multiples."""
     # Effectuer plusieurs requêtes pour vérifier que le contexte
     # ne dégrade pas les performances
@@ -792,14 +792,14 @@ def test_saas_context_performance(client, auth_headers):
     ]
 
     for endpoint in endpoints:
-        response = client.get(endpoint, headers=auth_headers)
+        response = test_client.get(endpoint, headers=auth_headers)
         assert response.status_code == 200
 
 
-def test_audit_trail_automatic(client, auth_headers, sample_fiscal_year_data):
+def test_audit_trail_automatic(test_client, client, auth_headers, sample_fiscal_year_data):
     """Test génération automatique de l'audit trail."""
     # Créer un exercice
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers,
         json=sample_fiscal_year_data
@@ -817,7 +817,7 @@ def test_audit_trail_automatic(client, auth_headers, sample_fiscal_year_data):
 # 9. EDGE CASES (3 tests)
 # ===========================
 
-def test_invalid_date_range(client, auth_headers):
+def test_invalid_date_range(test_client, client, auth_headers):
     """Test création d'exercice avec dates invalides."""
     invalid_data = {
         "name": "Exercice invalide",
@@ -827,7 +827,7 @@ def test_invalid_date_range(client, auth_headers):
         "status": "OPEN"
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/fiscal-years",
         headers=auth_headers,
         json=invalid_data
@@ -837,10 +837,10 @@ def test_invalid_date_range(client, auth_headers):
     assert response.status_code in [400, 422]
 
 
-def test_duplicate_account_number(client, auth_headers, sample_account_data):
+def test_duplicate_account_number(test_client, client, auth_headers, sample_account_data):
     """Test création de compte avec numéro dupliqué."""
     # Créer le premier compte
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/accounts",
         headers=auth_headers,
         json=sample_account_data
@@ -848,7 +848,7 @@ def test_duplicate_account_number(client, auth_headers, sample_account_data):
     assert response.status_code == 201
 
     # Tenter de créer un compte avec le même numéro
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/accounts",
         headers=auth_headers,
         json=sample_account_data
@@ -858,7 +858,7 @@ def test_duplicate_account_number(client, auth_headers, sample_account_data):
     assert response.status_code in [400, 409]
 
 
-def test_unbalanced_journal_entry(client, auth_headers):
+def test_unbalanced_journal_entry(test_client, client, auth_headers):
     """Test création d'écriture non équilibrée."""
     unbalanced_data = {
         "date": str(date.today()),
@@ -886,7 +886,7 @@ def test_unbalanced_journal_entry(client, auth_headers):
         ]
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/accounting/journal-entries",
         headers=auth_headers,
         json=unbalanced_data

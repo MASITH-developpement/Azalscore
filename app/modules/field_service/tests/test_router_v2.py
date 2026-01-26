@@ -84,7 +84,7 @@ from app.modules.field_service.router_v2 import (
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_get_service_creates_service_with_context(mock_saas_context):
+async def test_get_service_creates_service_with_context(test_client, mock_saas_context):
     """Test que get_service crée le service avec le contexte SaaS."""
     mock_db = Mock()
 
@@ -107,7 +107,7 @@ async def test_get_service_creates_service_with_context(mock_saas_context):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_zones_success(mock_field_service, mock_zone):
+async def test_list_zones_success(test_client, mock_field_service, mock_zone):
     """Test liste des zones avec succès."""
     mock_field_service.list_zones.return_value = [mock_zone]
 
@@ -120,7 +120,7 @@ async def test_list_zones_success(mock_field_service, mock_zone):
 
 
 @pytest.mark.asyncio
-async def test_get_zone_success(mock_field_service, mock_zone):
+async def test_get_zone_success(test_client, mock_field_service, mock_zone):
     """Test récupération d'une zone avec succès."""
     mock_field_service.get_zone.return_value = mock_zone
 
@@ -131,7 +131,7 @@ async def test_get_zone_success(mock_field_service, mock_zone):
 
 
 @pytest.mark.asyncio
-async def test_get_zone_not_found(mock_field_service):
+async def test_get_zone_not_found(test_client):
     """Test récupération d'une zone inexistante."""
     mock_field_service.get_zone.return_value = None
 
@@ -142,7 +142,7 @@ async def test_get_zone_not_found(mock_field_service):
 
 
 @pytest.mark.asyncio
-async def test_create_zone_success(mock_field_service, zone_create_data, mock_zone):
+async def test_create_zone_success(test_client, mock_field_service, zone_create_data, mock_zone):
     """Test création d'une zone avec succès."""
     mock_field_service.create_zone.return_value = mock_zone
 
@@ -156,7 +156,7 @@ async def test_create_zone_success(mock_field_service, zone_create_data, mock_zo
 
 
 @pytest.mark.asyncio
-async def test_update_zone_success(mock_field_service, zone_update_data, mock_zone):
+async def test_update_zone_success(test_client, mock_field_service, zone_update_data, mock_zone):
     """Test mise à jour d'une zone avec succès."""
     updated_zone = mock_zone
     updated_zone.name = zone_update_data["name"]
@@ -172,7 +172,7 @@ async def test_update_zone_success(mock_field_service, zone_update_data, mock_zo
 
 
 @pytest.mark.asyncio
-async def test_delete_zone_success(mock_field_service):
+async def test_delete_zone_success(test_client):
     """Test suppression d'une zone avec succès."""
     mock_field_service.delete_zone.return_value = True
 
@@ -187,7 +187,7 @@ async def test_delete_zone_success(mock_field_service):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_technicians_success(mock_field_service, mock_technician):
+async def test_list_technicians_success(test_client, mock_field_service, mock_technician):
     """Test liste des techniciens avec succès."""
     mock_field_service.list_technicians.return_value = [mock_technician]
 
@@ -205,7 +205,7 @@ async def test_list_technicians_success(mock_field_service, mock_technician):
 
 
 @pytest.mark.asyncio
-async def test_list_technicians_filtered_by_zone(mock_field_service, mock_technician):
+async def test_list_technicians_filtered_by_zone(test_client, mock_field_service, mock_technician):
     """Test liste des techniciens filtrés par zone."""
     mock_field_service.list_technicians.return_value = [mock_technician]
 
@@ -222,7 +222,7 @@ async def test_list_technicians_filtered_by_zone(mock_field_service, mock_techni
 
 
 @pytest.mark.asyncio
-async def test_list_technicians_available_only(mock_field_service, mock_technician):
+async def test_list_technicians_available_only(test_client, mock_field_service, mock_technician):
     """Test liste des techniciens disponibles uniquement."""
     mock_technician.status = TechnicianStatus.AVAILABLE
     mock_field_service.list_technicians.return_value = [mock_technician]
@@ -240,7 +240,7 @@ async def test_list_technicians_available_only(mock_field_service, mock_technici
 
 
 @pytest.mark.asyncio
-async def test_get_technician_success(mock_field_service, mock_technician):
+async def test_get_technician_success(test_client, mock_field_service, mock_technician):
     """Test récupération d'un technicien avec succès."""
     mock_field_service.get_technician.return_value = mock_technician
 
@@ -251,9 +251,7 @@ async def test_get_technician_success(mock_field_service, mock_technician):
 
 
 @pytest.mark.asyncio
-async def test_create_technician_success(
-    mock_field_service, technician_create_data, mock_technician
-):
+async def test_create_technician_success(test_client, mock_field_service, technician_create_data, mock_technician):
     """Test création d'un technicien avec succès."""
     mock_field_service.create_technician.return_value = mock_technician
 
@@ -267,7 +265,7 @@ async def test_create_technician_success(
 
 
 @pytest.mark.asyncio
-async def test_update_technician_status_success(mock_field_service, mock_technician):
+async def test_update_technician_status_success(test_client, mock_field_service, mock_technician):
     """Test mise à jour du statut d'un technicien."""
     mock_technician.status = TechnicianStatus.ON_MISSION
     mock_field_service.update_technician_status.return_value = mock_technician
@@ -286,7 +284,7 @@ async def test_update_technician_status_success(mock_field_service, mock_technic
 
 
 @pytest.mark.asyncio
-async def test_update_technician_location_success(mock_field_service, mock_technician):
+async def test_update_technician_location_success(test_client, mock_field_service, mock_technician):
     """Test mise à jour de la position GPS d'un technicien."""
     mock_technician.last_location_lat = Decimal("48.8566")
     mock_technician.last_location_lng = Decimal("2.3522")
@@ -302,7 +300,7 @@ async def test_update_technician_location_success(mock_field_service, mock_techn
 
 
 @pytest.mark.asyncio
-async def test_delete_technician_success(mock_field_service):
+async def test_delete_technician_success(test_client):
     """Test suppression d'un technicien avec succès."""
     mock_field_service.delete_technician.return_value = True
 
@@ -317,7 +315,7 @@ async def test_delete_technician_success(mock_field_service):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_get_technician_schedule_success(mock_field_service, mock_intervention):
+async def test_get_technician_schedule_success(test_client, mock_field_service, mock_intervention):
     """Test récupération du planning d'un technicien."""
     mock_field_service.get_technician_schedule.return_value = [mock_intervention]
 
@@ -338,7 +336,7 @@ async def test_get_technician_schedule_success(mock_field_service, mock_interven
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_vehicles_success(mock_field_service, mock_vehicle):
+async def test_list_vehicles_success(test_client, mock_field_service, mock_vehicle):
     """Test liste des véhicules avec succès."""
     mock_field_service.list_vehicles.return_value = [mock_vehicle]
 
@@ -350,7 +348,7 @@ async def test_list_vehicles_success(mock_field_service, mock_vehicle):
 
 
 @pytest.mark.asyncio
-async def test_get_vehicle_success(mock_field_service, mock_vehicle):
+async def test_get_vehicle_success(test_client, mock_field_service, mock_vehicle):
     """Test récupération d'un véhicule avec succès."""
     mock_field_service.get_vehicle.return_value = mock_vehicle
 
@@ -361,7 +359,7 @@ async def test_get_vehicle_success(mock_field_service, mock_vehicle):
 
 
 @pytest.mark.asyncio
-async def test_create_vehicle_success(mock_field_service, vehicle_create_data, mock_vehicle):
+async def test_create_vehicle_success(test_client, mock_field_service, vehicle_create_data, mock_vehicle):
     """Test création d'un véhicule avec succès."""
     mock_field_service.create_vehicle.return_value = mock_vehicle
 
@@ -375,7 +373,7 @@ async def test_create_vehicle_success(mock_field_service, vehicle_create_data, m
 
 
 @pytest.mark.asyncio
-async def test_update_vehicle_success(mock_field_service, mock_vehicle):
+async def test_update_vehicle_success(test_client, mock_field_service, mock_vehicle):
     """Test mise à jour d'un véhicule avec succès."""
     mock_vehicle.mileage = 20000
     mock_field_service.update_vehicle.return_value = mock_vehicle
@@ -390,7 +388,7 @@ async def test_update_vehicle_success(mock_field_service, mock_vehicle):
 
 
 @pytest.mark.asyncio
-async def test_delete_vehicle_success(mock_field_service):
+async def test_delete_vehicle_success(test_client):
     """Test suppression d'un véhicule avec succès."""
     mock_field_service.delete_vehicle.return_value = True
 
@@ -405,7 +403,7 @@ async def test_delete_vehicle_success(mock_field_service):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_templates_success(mock_field_service, mock_template):
+async def test_list_templates_success(test_client, mock_field_service, mock_template):
     """Test liste des templates avec succès."""
     mock_field_service.list_templates.return_value = [mock_template]
 
@@ -417,7 +415,7 @@ async def test_list_templates_success(mock_field_service, mock_template):
 
 
 @pytest.mark.asyncio
-async def test_get_template_success(mock_field_service, mock_template):
+async def test_get_template_success(test_client, mock_field_service, mock_template):
     """Test récupération d'un template avec succès."""
     mock_field_service.get_template.return_value = mock_template
 
@@ -428,7 +426,7 @@ async def test_get_template_success(mock_field_service, mock_template):
 
 
 @pytest.mark.asyncio
-async def test_create_template_success(mock_field_service, template_create_data, mock_template):
+async def test_create_template_success(test_client, mock_field_service, template_create_data, mock_template):
     """Test création d'un template avec succès."""
     mock_field_service.create_template.return_value = mock_template
 
@@ -442,7 +440,7 @@ async def test_create_template_success(mock_field_service, template_create_data,
 
 
 @pytest.mark.asyncio
-async def test_update_template_success(mock_field_service, mock_template):
+async def test_update_template_success(test_client, mock_field_service, mock_template):
     """Test mise à jour d'un template avec succès."""
     mock_template.estimated_duration = 180
     mock_field_service.update_template.return_value = mock_template
@@ -457,7 +455,7 @@ async def test_update_template_success(mock_field_service, mock_template):
 
 
 @pytest.mark.asyncio
-async def test_delete_template_success(mock_field_service):
+async def test_delete_template_success(test_client):
     """Test suppression d'un template avec succès."""
     mock_field_service.delete_template.return_value = True
 
@@ -472,7 +470,7 @@ async def test_delete_template_success(mock_field_service):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_interventions_success(mock_field_service, mock_intervention):
+async def test_list_interventions_success(test_client, mock_field_service, mock_intervention):
     """Test liste des interventions avec succès."""
     mock_field_service.list_interventions.return_value = ([mock_intervention], 1)
 
@@ -499,7 +497,7 @@ async def test_list_interventions_success(mock_field_service, mock_intervention)
 
 
 @pytest.mark.asyncio
-async def test_list_interventions_with_filters(mock_field_service, mock_intervention):
+async def test_list_interventions_with_filters(test_client, mock_field_service, mock_intervention):
     """Test liste des interventions avec filtres."""
     mock_field_service.list_interventions.return_value = ([mock_intervention], 1)
 
@@ -524,7 +522,7 @@ async def test_list_interventions_with_filters(mock_field_service, mock_interven
 
 
 @pytest.mark.asyncio
-async def test_get_intervention_success(mock_field_service, mock_intervention):
+async def test_get_intervention_success(test_client, mock_field_service, mock_intervention):
     """Test récupération d'une intervention avec succès."""
     mock_field_service.get_intervention.return_value = mock_intervention
 
@@ -535,7 +533,7 @@ async def test_get_intervention_success(mock_field_service, mock_intervention):
 
 
 @pytest.mark.asyncio
-async def test_get_intervention_by_reference_success(mock_field_service, mock_intervention):
+async def test_get_intervention_by_reference_success(test_client, mock_field_service, mock_intervention):
     """Test récupération d'une intervention par référence."""
     mock_field_service.get_intervention_by_reference.return_value = mock_intervention
 
@@ -548,9 +546,7 @@ async def test_get_intervention_by_reference_success(mock_field_service, mock_in
 
 
 @pytest.mark.asyncio
-async def test_create_intervention_success(
-    mock_field_service, intervention_create_data, mock_intervention
-):
+async def test_create_intervention_success(test_client, mock_field_service, intervention_create_data, mock_intervention):
     """Test création d'une intervention avec succès."""
     mock_field_service.create_intervention.return_value = mock_intervention
 
@@ -564,9 +560,7 @@ async def test_create_intervention_success(
 
 
 @pytest.mark.asyncio
-async def test_update_intervention_success(
-    mock_field_service, intervention_update_data, mock_intervention
-):
+async def test_update_intervention_success(test_client, mock_field_service, intervention_update_data, mock_intervention):
     """Test mise à jour d'une intervention avec succès."""
     mock_intervention.priority = InterventionPriority.URGENT
     mock_field_service.update_intervention.return_value = mock_intervention
@@ -581,7 +575,7 @@ async def test_update_intervention_success(
 
 
 @pytest.mark.asyncio
-async def test_assign_intervention_success(mock_field_service, mock_assigned_intervention):
+async def test_assign_intervention_success(test_client, mock_field_service, mock_assigned_intervention):
     """Test assignation d'une intervention à un technicien."""
     mock_field_service.assign_intervention.return_value = mock_assigned_intervention
 
@@ -601,7 +595,7 @@ async def test_assign_intervention_success(mock_field_service, mock_assigned_int
 
 
 @pytest.mark.asyncio
-async def test_start_travel_success(mock_field_service, mock_assigned_intervention):
+async def test_start_travel_success(test_client, mock_field_service, mock_assigned_intervention):
     """Test démarrage du trajet vers l'intervention."""
     mock_assigned_intervention.status = InterventionStatus.EN_ROUTE
     mock_field_service.start_travel.return_value = mock_assigned_intervention
@@ -618,7 +612,7 @@ async def test_start_travel_success(mock_field_service, mock_assigned_interventi
 
 
 @pytest.mark.asyncio
-async def test_arrive_on_site_success(mock_field_service, mock_assigned_intervention):
+async def test_arrive_on_site_success(test_client, mock_field_service, mock_assigned_intervention):
     """Test arrivée sur site d'intervention."""
     mock_assigned_intervention.status = InterventionStatus.ON_SITE
     mock_field_service.arrive_on_site.return_value = mock_assigned_intervention
@@ -635,7 +629,7 @@ async def test_arrive_on_site_success(mock_field_service, mock_assigned_interven
 
 
 @pytest.mark.asyncio
-async def test_start_intervention_success(mock_field_service, mock_assigned_intervention):
+async def test_start_intervention_success(test_client, mock_field_service, mock_assigned_intervention):
     """Test démarrage de l'intervention."""
     mock_assigned_intervention.status = InterventionStatus.IN_PROGRESS
     mock_field_service.start_intervention.return_value = mock_assigned_intervention
@@ -652,7 +646,7 @@ async def test_start_intervention_success(mock_field_service, mock_assigned_inte
 
 
 @pytest.mark.asyncio
-async def test_complete_intervention_success(mock_field_service, mock_completed_intervention):
+async def test_complete_intervention_success(test_client, mock_field_service, mock_completed_intervention):
     """Test complétion d'une intervention."""
     mock_field_service.complete_intervention.return_value = mock_completed_intervention
 
@@ -675,7 +669,7 @@ async def test_complete_intervention_success(mock_field_service, mock_completed_
 
 
 @pytest.mark.asyncio
-async def test_cancel_intervention_success(mock_field_service, mock_intervention):
+async def test_cancel_intervention_success(test_client, mock_field_service, mock_intervention):
     """Test annulation d'une intervention."""
     mock_intervention.status = InterventionStatus.CANCELLED
     mock_field_service.cancel_intervention.return_value = mock_intervention
@@ -689,7 +683,7 @@ async def test_cancel_intervention_success(mock_field_service, mock_intervention
 
 
 @pytest.mark.asyncio
-async def test_rate_intervention_success(mock_field_service, mock_completed_intervention):
+async def test_rate_intervention_success(test_client, mock_field_service, mock_completed_intervention):
     """Test notation d'une intervention."""
     mock_completed_intervention.customer_rating = 5
     mock_field_service.rate_intervention.return_value = mock_completed_intervention
@@ -706,7 +700,7 @@ async def test_rate_intervention_success(mock_field_service, mock_completed_inte
 
 
 @pytest.mark.asyncio
-async def test_get_intervention_history_success(mock_field_service):
+async def test_get_intervention_history_success(test_client):
     """Test récupération de l'historique d'une intervention."""
     mock_history = [
         Mock(action="created", created_at=datetime.utcnow()),
@@ -727,7 +721,7 @@ async def test_get_intervention_history_success(mock_field_service):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_time_entries_success(mock_field_service, mock_time_entry):
+async def test_list_time_entries_success(test_client, mock_field_service, mock_time_entry):
     """Test liste des entrées de temps avec succès."""
     mock_field_service.list_time_entries.return_value = [mock_time_entry]
 
@@ -746,7 +740,7 @@ async def test_list_time_entries_success(mock_field_service, mock_time_entry):
 
 
 @pytest.mark.asyncio
-async def test_create_time_entry_success(mock_field_service, time_entry_create_data, mock_time_entry):
+async def test_create_time_entry_success(test_client, mock_field_service, time_entry_create_data, mock_time_entry):
     """Test création d'une entrée de temps avec succès."""
     mock_field_service.create_time_entry.return_value = mock_time_entry
 
@@ -760,7 +754,7 @@ async def test_create_time_entry_success(mock_field_service, time_entry_create_d
 
 
 @pytest.mark.asyncio
-async def test_update_time_entry_success(mock_field_service, mock_time_entry):
+async def test_update_time_entry_success(test_client, mock_field_service, mock_time_entry):
     """Test mise à jour d'une entrée de temps avec succès."""
     mock_time_entry.end_time = datetime.utcnow()
     mock_time_entry.duration_minutes = 120
@@ -780,7 +774,7 @@ async def test_update_time_entry_success(mock_field_service, mock_time_entry):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_get_route_success(mock_field_service, mock_route):
+async def test_get_route_success(test_client, mock_field_service, mock_route):
     """Test récupération d'une tournée avec succès."""
     mock_field_service.get_route.return_value = mock_route
 
@@ -791,7 +785,7 @@ async def test_get_route_success(mock_field_service, mock_route):
 
 
 @pytest.mark.asyncio
-async def test_create_route_success(mock_field_service, route_create_data, mock_route):
+async def test_create_route_success(test_client, mock_field_service, route_create_data, mock_route):
     """Test création d'une tournée avec succès."""
     mock_field_service.create_route.return_value = mock_route
 
@@ -805,7 +799,7 @@ async def test_create_route_success(mock_field_service, route_create_data, mock_
 
 
 @pytest.mark.asyncio
-async def test_update_route_success(mock_field_service, mock_route):
+async def test_update_route_success(test_client, mock_field_service, mock_route):
     """Test mise à jour d'une tournée avec succès."""
     mock_route.actual_distance_km = Decimal("50.0")
     mock_field_service.update_route.return_value = mock_route
@@ -824,7 +818,7 @@ async def test_update_route_success(mock_field_service, mock_route):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_expenses_success(mock_field_service, mock_expense):
+async def test_list_expenses_success(test_client, mock_field_service, mock_expense):
     """Test liste des frais avec succès."""
     mock_field_service.list_expenses.return_value = [mock_expense]
 
@@ -842,7 +836,7 @@ async def test_list_expenses_success(mock_field_service, mock_expense):
 
 
 @pytest.mark.asyncio
-async def test_create_expense_success(mock_field_service, expense_create_data, mock_expense):
+async def test_create_expense_success(test_client, mock_field_service, expense_create_data, mock_expense):
     """Test création d'un frais avec succès."""
     mock_field_service.create_expense.return_value = mock_expense
 
@@ -856,7 +850,7 @@ async def test_create_expense_success(mock_field_service, expense_create_data, m
 
 
 @pytest.mark.asyncio
-async def test_approve_expense_success(mock_field_service, mock_expense):
+async def test_approve_expense_success(test_client, mock_field_service, mock_expense):
     """Test approbation d'un frais avec succès."""
     mock_expense.status = "approved"
     mock_field_service.approve_expense.return_value = mock_expense
@@ -868,7 +862,7 @@ async def test_approve_expense_success(mock_field_service, mock_expense):
 
 
 @pytest.mark.asyncio
-async def test_reject_expense_success(mock_field_service, mock_expense):
+async def test_reject_expense_success(test_client, mock_field_service, mock_expense):
     """Test rejet d'un frais avec succès."""
     mock_expense.status = "rejected"
     mock_field_service.reject_expense.return_value = mock_expense
@@ -886,7 +880,7 @@ async def test_reject_expense_success(mock_field_service, mock_expense):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_list_contracts_success(mock_field_service, mock_contract):
+async def test_list_contracts_success(test_client, mock_field_service, mock_contract):
     """Test liste des contrats avec succès."""
     mock_field_service.list_contracts.return_value = [mock_contract]
 
@@ -900,7 +894,7 @@ async def test_list_contracts_success(mock_field_service, mock_contract):
 
 
 @pytest.mark.asyncio
-async def test_get_contract_success(mock_field_service, mock_contract):
+async def test_get_contract_success(test_client, mock_field_service, mock_contract):
     """Test récupération d'un contrat avec succès."""
     mock_field_service.get_contract.return_value = mock_contract
 
@@ -911,7 +905,7 @@ async def test_get_contract_success(mock_field_service, mock_contract):
 
 
 @pytest.mark.asyncio
-async def test_create_contract_success(mock_field_service, contract_create_data, mock_contract):
+async def test_create_contract_success(test_client, mock_field_service, contract_create_data, mock_contract):
     """Test création d'un contrat avec succès."""
     mock_field_service.create_contract.return_value = mock_contract
 
@@ -925,7 +919,7 @@ async def test_create_contract_success(mock_field_service, contract_create_data,
 
 
 @pytest.mark.asyncio
-async def test_update_contract_success(mock_field_service, mock_contract):
+async def test_update_contract_success(test_client, mock_field_service, mock_contract):
     """Test mise à jour d'un contrat avec succès."""
     mock_contract.status = "suspended"
     mock_field_service.update_contract.return_value = mock_contract
@@ -944,7 +938,7 @@ async def test_update_contract_success(mock_field_service, mock_contract):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_get_intervention_stats_success(mock_field_service, mock_intervention_stats):
+async def test_get_intervention_stats_success(test_client, mock_field_service, mock_intervention_stats):
     """Test récupération des statistiques d'interventions."""
     mock_field_service.get_intervention_stats.return_value = mock_intervention_stats
 
@@ -956,7 +950,7 @@ async def test_get_intervention_stats_success(mock_field_service, mock_intervent
 
 
 @pytest.mark.asyncio
-async def test_get_technician_stats_success(mock_field_service, mock_technician_stats):
+async def test_get_technician_stats_success(test_client, mock_field_service, mock_technician_stats):
     """Test récupération des statistiques par technicien."""
     mock_field_service.get_technician_stats.return_value = mock_technician_stats
 
@@ -969,7 +963,7 @@ async def test_get_technician_stats_success(mock_field_service, mock_technician_
 
 
 @pytest.mark.asyncio
-async def test_get_dashboard_success(mock_field_service, mock_dashboard):
+async def test_get_dashboard_success(test_client, mock_field_service, mock_dashboard):
     """Test récupération du dashboard complet."""
     mock_field_service.get_dashboard.return_value = mock_dashboard
 
@@ -987,13 +981,11 @@ async def test_get_dashboard_success(mock_field_service, mock_dashboard):
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_complete_work_order_lifecycle(
-    mock_field_service,
+async def test_complete_work_order_lifecycle(test_client, mock_field_service,
     intervention_create_data,
     mock_intervention,
     mock_assigned_intervention,
-    mock_completed_intervention,
-):
+    mock_completed_intervention,):
     """Test du cycle de vie complet d'une intervention."""
     # 1. Création
     mock_field_service.create_intervention.return_value = mock_intervention
@@ -1052,9 +1044,7 @@ async def test_complete_work_order_lifecycle(
 
 
 @pytest.mark.asyncio
-async def test_route_optimization_workflow(
-    mock_field_service, route_create_data, mock_route, mock_intervention
-):
+async def test_route_optimization_workflow(test_client, mock_field_service, route_create_data, mock_route, mock_intervention):
     """Test du workflow d'optimisation de tournée."""
     # 1. Créer des interventions
     mock_field_service.create_intervention.return_value = mock_intervention
@@ -1090,7 +1080,7 @@ async def test_route_optimization_workflow(
 # =============================================================================
 
 @pytest.mark.asyncio
-async def test_intervention_not_found_error(mock_field_service):
+async def test_intervention_not_found_error(test_client):
     """Test erreur intervention non trouvée."""
     mock_field_service.get_intervention.return_value = None
 
@@ -1101,7 +1091,7 @@ async def test_intervention_not_found_error(mock_field_service):
 
 
 @pytest.mark.asyncio
-async def test_technician_not_found_error(mock_field_service):
+async def test_technician_not_found_error(test_client):
     """Test erreur technicien non trouvé."""
     mock_field_service.get_technician.return_value = None
 
@@ -1112,7 +1102,7 @@ async def test_technician_not_found_error(mock_field_service):
 
 
 @pytest.mark.asyncio
-async def test_assign_intervention_technician_not_found(mock_field_service):
+async def test_assign_intervention_technician_not_found(test_client):
     """Test erreur assignation avec technicien inexistant."""
     mock_field_service.assign_intervention.return_value = None
 
@@ -1127,7 +1117,7 @@ async def test_assign_intervention_technician_not_found(mock_field_service):
 
 
 @pytest.mark.asyncio
-async def test_update_time_entry_not_found(mock_field_service):
+async def test_update_time_entry_not_found(test_client):
     """Test erreur mise à jour entrée de temps inexistante."""
     mock_field_service.update_time_entry.return_value = None
 
@@ -1142,7 +1132,7 @@ async def test_update_time_entry_not_found(mock_field_service):
 
 
 @pytest.mark.asyncio
-async def test_list_interventions_pagination(mock_field_service, mock_intervention):
+async def test_list_interventions_pagination(test_client, mock_field_service, mock_intervention):
     """Test pagination de la liste des interventions."""
     interventions = [mock_intervention] * 100
     mock_field_service.list_interventions.return_value = (interventions[:50], 100)

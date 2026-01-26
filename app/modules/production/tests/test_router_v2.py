@@ -35,9 +35,9 @@ from uuid import uuid4
 # TESTS CENTRES DE TRAVAIL (WORK CENTERS)
 # ============================================================================
 
-def test_create_work_center(client, auth_headers, tenant_id, user_id, sample_work_center_data):
+def test_create_work_center(test_client, client, auth_headers, tenant_id, user_id, sample_work_center_data):
     """Test création d'un centre de travail"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/work-centers",
         json=sample_work_center_data,
         headers=auth_headers
@@ -52,9 +52,9 @@ def test_create_work_center(client, auth_headers, tenant_id, user_id, sample_wor
     assert data["created_by"] == user_id
 
 
-def test_list_work_centers(client, auth_headers, sample_work_center, tenant_id):
+def test_list_work_centers(test_client, client, auth_headers, sample_work_center, tenant_id):
     """Test liste des centres de travail"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/work-centers",
         headers=auth_headers
     )
@@ -67,9 +67,9 @@ def test_list_work_centers(client, auth_headers, sample_work_center, tenant_id):
         assert wc["tenant_id"] == tenant_id
 
 
-def test_get_work_center(client, auth_headers, sample_work_center):
+def test_get_work_center(test_client, client, auth_headers, sample_work_center):
     """Test récupération d'un centre de travail par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/work-centers/{sample_work_center.id}",
         headers=auth_headers
     )
@@ -81,14 +81,14 @@ def test_get_work_center(client, auth_headers, sample_work_center):
     assert data["code"] == sample_work_center.code
 
 
-def test_update_work_center(client, auth_headers, sample_work_center):
+def test_update_work_center(test_client, client, auth_headers, sample_work_center):
     """Test mise à jour d'un centre de travail"""
     update_data = {
         "name": "Updated Assembly Line",
         "capacity_per_hour": 20
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/production/work-centers/{sample_work_center.id}",
         json=update_data,
         headers=auth_headers
@@ -101,9 +101,9 @@ def test_update_work_center(client, auth_headers, sample_work_center):
     assert float(data["capacity_per_hour"]) == update_data["capacity_per_hour"]
 
 
-def test_set_work_center_status(client, auth_headers, sample_work_center):
+def test_set_work_center_status(test_client, client, auth_headers, sample_work_center):
     """Test modification du statut d'un centre de travail"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-centers/{sample_work_center.id}/status/{WorkCenterStatus.MAINTENANCE.value}",
         headers=auth_headers
     )
@@ -114,9 +114,9 @@ def test_set_work_center_status(client, auth_headers, sample_work_center):
     assert data["status"] == WorkCenterStatus.MAINTENANCE.value
 
 
-def test_get_work_center_orders(client, auth_headers, sample_work_center, sample_work_order):
+def test_get_work_center_orders(test_client, client, auth_headers, sample_work_center, sample_work_order):
     """Test liste des ordres de travail d'un centre"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/work-centers/{sample_work_center.id}/work-orders",
         headers=auth_headers
     )
@@ -134,9 +134,9 @@ def test_get_work_center_orders(client, auth_headers, sample_work_center, sample
 # TESTS NOMENCLATURES (BOM)
 # ============================================================================
 
-def test_create_bom(client, auth_headers, tenant_id, user_id, sample_bom_data):
+def test_create_bom(test_client, client, auth_headers, tenant_id, user_id, sample_bom_data):
     """Test création d'une nomenclature"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/bom",
         json=sample_bom_data,
         headers=auth_headers
@@ -150,9 +150,9 @@ def test_create_bom(client, auth_headers, tenant_id, user_id, sample_bom_data):
     assert data["created_by"] == user_id
 
 
-def test_list_boms(client, auth_headers, sample_bom, tenant_id):
+def test_list_boms(test_client, client, auth_headers, sample_bom, tenant_id):
     """Test liste des nomenclatures avec pagination"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/bom?page=1&page_size=50",
         headers=auth_headers
     )
@@ -170,9 +170,9 @@ def test_list_boms(client, auth_headers, sample_bom, tenant_id):
         assert bom["tenant_id"] == tenant_id
 
 
-def test_list_boms_by_product(client, auth_headers, sample_bom, sample_product):
+def test_list_boms_by_product(test_client, client, auth_headers, sample_bom, sample_product):
     """Test liste des BOMs filtrées par produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/bom?product_id={sample_product.id}",
         headers=auth_headers
     )
@@ -184,9 +184,9 @@ def test_list_boms_by_product(client, auth_headers, sample_bom, sample_product):
         assert bom["product_id"] == str(sample_product.id)
 
 
-def test_get_bom(client, auth_headers, sample_bom):
+def test_get_bom(test_client, client, auth_headers, sample_bom):
     """Test récupération d'une nomenclature par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/bom/{sample_bom.id}",
         headers=auth_headers
     )
@@ -198,9 +198,9 @@ def test_get_bom(client, auth_headers, sample_bom):
     assert data["code"] == sample_bom.code
 
 
-def test_get_bom_by_product(client, auth_headers, sample_bom, sample_product):
+def test_get_bom_by_product(test_client, client, auth_headers, sample_bom, sample_product):
     """Test récupération de la BOM active d'un produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/bom/product/{sample_product.id}",
         headers=auth_headers
     )
@@ -212,14 +212,14 @@ def test_get_bom_by_product(client, auth_headers, sample_bom, sample_product):
     assert data["status"] == "ACTIVE"
 
 
-def test_update_bom(client, auth_headers, sample_bom):
+def test_update_bom(test_client, client, auth_headers, sample_bom):
     """Test mise à jour d'une nomenclature"""
     update_data = {
         "version": "1.1",
         "notes": "Updated BOM version"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/production/bom/{sample_bom.id}",
         json=update_data,
         headers=auth_headers
@@ -231,9 +231,9 @@ def test_update_bom(client, auth_headers, sample_bom):
     assert data["version"] == update_data["version"]
 
 
-def test_activate_bom(client, auth_headers, sample_bom):
+def test_activate_bom(test_client, client, auth_headers, sample_bom):
     """Test activation d'une nomenclature"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/bom/{sample_bom.id}/activate",
         headers=auth_headers
     )
@@ -244,9 +244,9 @@ def test_activate_bom(client, auth_headers, sample_bom):
     assert data["status"] == "ACTIVE"
 
 
-def test_add_bom_line(client, auth_headers, sample_bom, sample_bom_line_data):
+def test_add_bom_line(test_client, client, auth_headers, sample_bom, sample_bom_line_data):
     """Test ajout d'une ligne à une nomenclature"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/bom/{sample_bom.id}/lines",
         json=sample_bom_line_data,
         headers=auth_headers
@@ -264,9 +264,9 @@ def test_add_bom_line(client, auth_headers, sample_bom, sample_bom_line_data):
 # TESTS GAMMES (ROUTINGS)
 # ============================================================================
 
-def test_create_routing(client, auth_headers, tenant_id, user_id, sample_routing_data):
+def test_create_routing(test_client, client, auth_headers, tenant_id, user_id, sample_routing_data):
     """Test création d'une gamme de fabrication"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/routings",
         json=sample_routing_data,
         headers=auth_headers
@@ -280,9 +280,9 @@ def test_create_routing(client, auth_headers, tenant_id, user_id, sample_routing
     assert data["created_by"] == user_id
 
 
-def test_list_routings(client, auth_headers, sample_routing, tenant_id):
+def test_list_routings(test_client, client, auth_headers, sample_routing, tenant_id):
     """Test liste des gammes"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/routings",
         headers=auth_headers
     )
@@ -295,9 +295,9 @@ def test_list_routings(client, auth_headers, sample_routing, tenant_id):
         assert routing["tenant_id"] == tenant_id
 
 
-def test_get_routing(client, auth_headers, sample_routing):
+def test_get_routing(test_client, client, auth_headers, sample_routing):
     """Test récupération d'une gamme par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/routings/{sample_routing.id}",
         headers=auth_headers
     )
@@ -313,9 +313,9 @@ def test_get_routing(client, auth_headers, sample_routing):
 # TESTS ORDRES DE FABRICATION (MO)
 # ============================================================================
 
-def test_create_manufacturing_order(client, auth_headers, tenant_id, user_id, sample_mo_data):
+def test_create_manufacturing_order(test_client, client, auth_headers, tenant_id, user_id, sample_mo_data):
     """Test création d'un ordre de fabrication"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/orders",
         json=sample_mo_data,
         headers=auth_headers
@@ -330,9 +330,9 @@ def test_create_manufacturing_order(client, auth_headers, tenant_id, user_id, sa
     assert data["created_by"] == user_id
 
 
-def test_list_manufacturing_orders(client, auth_headers, sample_manufacturing_order, tenant_id):
+def test_list_manufacturing_orders(test_client, client, auth_headers, sample_manufacturing_order, tenant_id):
     """Test liste des ordres de fabrication avec pagination"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/orders?page=1&page_size=50",
         headers=auth_headers
     )
@@ -350,9 +350,9 @@ def test_list_manufacturing_orders(client, auth_headers, sample_manufacturing_or
         assert mo["tenant_id"] == tenant_id
 
 
-def test_list_manufacturing_orders_by_status(client, auth_headers, sample_manufacturing_order):
+def test_list_manufacturing_orders_by_status(test_client, client, auth_headers, sample_manufacturing_order):
     """Test liste des MOs filtrés par statut"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/orders?status={MOStatus.DRAFT.value}",
         headers=auth_headers
     )
@@ -364,9 +364,9 @@ def test_list_manufacturing_orders_by_status(client, auth_headers, sample_manufa
         assert mo["status"] == MOStatus.DRAFT.value
 
 
-def test_list_manufacturing_orders_by_priority(client, auth_headers, sample_manufacturing_order):
+def test_list_manufacturing_orders_by_priority(test_client, client, auth_headers, sample_manufacturing_order):
     """Test liste des MOs filtrés par priorité"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/orders?priority={MOPriority.NORMAL.value}",
         headers=auth_headers
     )
@@ -378,9 +378,9 @@ def test_list_manufacturing_orders_by_priority(client, auth_headers, sample_manu
         assert mo["priority"] == MOPriority.NORMAL.value
 
 
-def test_get_manufacturing_order(client, auth_headers, sample_manufacturing_order):
+def test_get_manufacturing_order(test_client, client, auth_headers, sample_manufacturing_order):
     """Test récupération d'un ordre de fabrication par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/orders/{sample_manufacturing_order.id}",
         headers=auth_headers
     )
@@ -392,14 +392,14 @@ def test_get_manufacturing_order(client, auth_headers, sample_manufacturing_orde
     assert data["reference"] == sample_manufacturing_order.reference
 
 
-def test_update_manufacturing_order(client, auth_headers, sample_manufacturing_order):
+def test_update_manufacturing_order(test_client, client, auth_headers, sample_manufacturing_order):
     """Test mise à jour d'un ordre de fabrication"""
     update_data = {
         "quantity_to_produce": 150,
         "priority": "HIGH"
     }
 
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/production/orders/{sample_manufacturing_order.id}",
         json=update_data,
         headers=auth_headers
@@ -412,9 +412,9 @@ def test_update_manufacturing_order(client, auth_headers, sample_manufacturing_o
     assert data["priority"] == update_data["priority"]
 
 
-def test_confirm_manufacturing_order(client, auth_headers, sample_manufacturing_order):
+def test_confirm_manufacturing_order(test_client, client, auth_headers, sample_manufacturing_order):
     """Test confirmation d'un ordre de fabrication"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{sample_manufacturing_order.id}/confirm",
         headers=auth_headers
     )
@@ -426,9 +426,9 @@ def test_confirm_manufacturing_order(client, auth_headers, sample_manufacturing_
     assert "confirmed_at" in data
 
 
-def test_start_manufacturing_order(client, auth_headers, sample_confirmed_mo):
+def test_start_manufacturing_order(test_client, client, auth_headers, sample_confirmed_mo):
     """Test démarrage d'un ordre de fabrication"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{sample_confirmed_mo.id}/start",
         headers=auth_headers
     )
@@ -440,9 +440,9 @@ def test_start_manufacturing_order(client, auth_headers, sample_confirmed_mo):
     assert "started_at" in data
 
 
-def test_complete_manufacturing_order(client, auth_headers, sample_confirmed_mo):
+def test_complete_manufacturing_order(test_client, client, auth_headers, sample_confirmed_mo):
     """Test finalisation d'un ordre de fabrication"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{sample_confirmed_mo.id}/complete",
         headers=auth_headers
     )
@@ -454,9 +454,9 @@ def test_complete_manufacturing_order(client, auth_headers, sample_confirmed_mo)
     assert "completed_at" in data
 
 
-def test_cancel_manufacturing_order(client, auth_headers, sample_manufacturing_order):
+def test_cancel_manufacturing_order(test_client, client, auth_headers, sample_manufacturing_order):
     """Test annulation d'un ordre de fabrication"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{sample_manufacturing_order.id}/cancel?reason=Test+cancellation",
         headers=auth_headers
     )
@@ -471,9 +471,9 @@ def test_cancel_manufacturing_order(client, auth_headers, sample_manufacturing_o
 # TESTS ORDRES DE TRAVAIL (WO)
 # ============================================================================
 
-def test_get_work_order(client, auth_headers, sample_work_order):
+def test_get_work_order(test_client, client, auth_headers, sample_work_order):
     """Test récupération d'un ordre de travail par ID"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/work-orders/{sample_work_order.id}",
         headers=auth_headers
     )
@@ -485,13 +485,13 @@ def test_get_work_order(client, auth_headers, sample_work_order):
     assert data["mo_id"] == str(sample_work_order.mo_id)
 
 
-def test_start_work_order(client, auth_headers, sample_work_order):
+def test_start_work_order(test_client, client, auth_headers, sample_work_order):
     """Test démarrage d'un ordre de travail"""
     start_data = {
         "notes": "Starting work order"
     }
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-orders/{sample_work_order.id}/start",
         json=start_data,
         headers=auth_headers
@@ -504,13 +504,13 @@ def test_start_work_order(client, auth_headers, sample_work_order):
     assert "started_at" in data
 
 
-def test_complete_work_order(client, auth_headers, sample_in_progress_wo):
+def test_complete_work_order(test_client, client, auth_headers, sample_in_progress_wo):
     """Test finalisation d'un ordre de travail"""
     complete_data = {
         "actual_duration": 95
     }
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-orders/{sample_in_progress_wo.id}/complete",
         json=complete_data,
         headers=auth_headers
@@ -523,9 +523,9 @@ def test_complete_work_order(client, auth_headers, sample_in_progress_wo):
     assert "completed_at" in data
 
 
-def test_pause_work_order(client, auth_headers, sample_in_progress_wo):
+def test_pause_work_order(test_client, client, auth_headers, sample_in_progress_wo):
     """Test pause d'un ordre de travail"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-orders/{sample_in_progress_wo.id}/pause?reason=Machine+breakdown",
         headers=auth_headers
     )
@@ -536,9 +536,9 @@ def test_pause_work_order(client, auth_headers, sample_in_progress_wo):
     assert data["status"] == WorkOrderStatus.PAUSED.value
 
 
-def test_resume_work_order(client, auth_headers, sample_in_progress_wo):
+def test_resume_work_order(test_client, client, auth_headers, sample_in_progress_wo):
     """Test reprise d'un ordre de travail"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-orders/{sample_in_progress_wo.id}/resume",
         headers=auth_headers
     )
@@ -554,9 +554,9 @@ def test_resume_work_order(client, auth_headers, sample_in_progress_wo):
 # TESTS CONSOMMATIONS & PRODUCTION
 # ============================================================================
 
-def test_consume_material(client, auth_headers, sample_confirmed_mo, sample_consume_data):
+def test_consume_material(test_client, client, auth_headers, sample_confirmed_mo, sample_consume_data):
     """Test consommation de matières premières"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{sample_confirmed_mo.id}/consume",
         json=sample_consume_data,
         headers=auth_headers
@@ -570,14 +570,14 @@ def test_consume_material(client, auth_headers, sample_confirmed_mo, sample_cons
     assert float(data["quantity"]) == sample_consume_data["quantity"]
 
 
-def test_return_material(client, auth_headers, sample_consumption):
+def test_return_material(test_client, client, auth_headers, sample_consumption):
     """Test retour de matières au stock"""
     return_data = {
         "consumption_id": str(sample_consumption.id),
         "quantity": 10
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/consumptions/return",
         json=return_data,
         headers=auth_headers
@@ -590,9 +590,9 @@ def test_return_material(client, auth_headers, sample_consumption):
     assert "id" in data or "status" in data
 
 
-def test_record_production(client, auth_headers, sample_confirmed_mo, sample_produce_data):
+def test_record_production(test_client, client, auth_headers, sample_confirmed_mo, sample_produce_data):
     """Test enregistrement d'une production"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{sample_confirmed_mo.id}/produce",
         json=sample_produce_data,
         headers=auth_headers
@@ -609,9 +609,9 @@ def test_record_production(client, auth_headers, sample_confirmed_mo, sample_pro
 # TESTS REBUTS (SCRAPS)
 # ============================================================================
 
-def test_record_scrap(client, auth_headers, tenant_id, user_id, sample_scrap_data):
+def test_record_scrap(test_client, client, auth_headers, tenant_id, user_id, sample_scrap_data):
     """Test enregistrement d'un rebut"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/scraps",
         json=sample_scrap_data,
         headers=auth_headers
@@ -625,9 +625,9 @@ def test_record_scrap(client, auth_headers, tenant_id, user_id, sample_scrap_dat
     assert data["scrapped_by"] == user_id
 
 
-def test_list_scraps(client, auth_headers, sample_scrap, tenant_id):
+def test_list_scraps(test_client, client, auth_headers, sample_scrap, tenant_id):
     """Test liste des rebuts"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/scraps",
         headers=auth_headers
     )
@@ -644,9 +644,9 @@ def test_list_scraps(client, auth_headers, sample_scrap, tenant_id):
 # TESTS PLANIFICATION
 # ============================================================================
 
-def test_create_production_plan(client, auth_headers, tenant_id, user_id, sample_plan_data):
+def test_create_production_plan(test_client, client, auth_headers, tenant_id, user_id, sample_plan_data):
     """Test création d'un plan de production"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/plans",
         json=sample_plan_data,
         headers=auth_headers
@@ -660,9 +660,9 @@ def test_create_production_plan(client, auth_headers, tenant_id, user_id, sample
     assert data["created_by"] == user_id
 
 
-def test_get_production_plan(client, auth_headers, sample_production_plan):
+def test_get_production_plan(test_client, client, auth_headers, sample_production_plan):
     """Test récupération d'un plan de production"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/plans/{sample_production_plan.id}",
         headers=auth_headers
     )
@@ -678,9 +678,9 @@ def test_get_production_plan(client, auth_headers, sample_production_plan):
 # TESTS MAINTENANCE
 # ============================================================================
 
-def test_schedule_maintenance(client, auth_headers, tenant_id, user_id, sample_maintenance_data):
+def test_schedule_maintenance(test_client, client, auth_headers, tenant_id, user_id, sample_maintenance_data):
     """Test planification d'une maintenance"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/maintenance",
         json=sample_maintenance_data,
         headers=auth_headers
@@ -694,9 +694,9 @@ def test_schedule_maintenance(client, auth_headers, tenant_id, user_id, sample_m
     assert data["created_by"] == user_id
 
 
-def test_list_maintenance_schedules(client, auth_headers, sample_maintenance_schedule, tenant_id):
+def test_list_maintenance_schedules(test_client, client, auth_headers, sample_maintenance_schedule, tenant_id):
     """Test liste des maintenances planifiées"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/maintenance",
         headers=auth_headers
     )
@@ -709,9 +709,9 @@ def test_list_maintenance_schedules(client, auth_headers, sample_maintenance_sch
         assert maintenance["tenant_id"] == tenant_id
 
 
-def test_list_due_maintenance(client, auth_headers, sample_maintenance_schedule):
+def test_list_due_maintenance(test_client, client, auth_headers, sample_maintenance_schedule):
     """Test liste des maintenances dues"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/maintenance/due",
         headers=auth_headers
     )
@@ -727,9 +727,9 @@ def test_list_due_maintenance(client, auth_headers, sample_maintenance_schedule)
 # TESTS DASHBOARD
 # ============================================================================
 
-def test_get_production_dashboard(client, auth_headers):
+def test_get_production_dashboard(test_client, client, auth_headers):
     """Test récupération du dashboard de production"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/dashboard",
         headers=auth_headers
     )
@@ -746,18 +746,16 @@ def test_get_production_dashboard(client, auth_headers):
 # TESTS WORKFLOWS COMPLEXES
 # ============================================================================
 
-def test_workflow_manufacturing_order_full_cycle(
-    client,
+def test_workflow_manufacturing_order_full_cycle(test_client, client,
     auth_headers,
     sample_product,
     sample_bom,
-    sample_mo_data
-):
+    sample_mo_data):
     """
     Test workflow complet MO: créer → confirmer → démarrer → produire → terminer
     """
     # 1. Créer ordre de fabrication
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/orders",
         json=sample_mo_data,
         headers=auth_headers
@@ -767,7 +765,7 @@ def test_workflow_manufacturing_order_full_cycle(
     mo_id = mo["id"]
 
     # 2. Confirmer MO
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{mo_id}/confirm",
         headers=auth_headers
     )
@@ -776,7 +774,7 @@ def test_workflow_manufacturing_order_full_cycle(
     assert confirmed["status"] == "CONFIRMED"
 
     # 3. Démarrer MO
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{mo_id}/start",
         headers=auth_headers
     )
@@ -785,7 +783,7 @@ def test_workflow_manufacturing_order_full_cycle(
     assert started["status"] == "IN_PROGRESS"
 
     # 4. Terminer MO
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{mo_id}/complete",
         headers=auth_headers
     )
@@ -794,19 +792,17 @@ def test_workflow_manufacturing_order_full_cycle(
     assert completed["status"] == "DONE"
 
 
-def test_workflow_bom_with_lines(
-    client,
+def test_workflow_bom_with_lines(test_client, client,
     auth_headers,
     sample_product,
     sample_component,
     sample_bom_data,
-    sample_bom_line_data
-):
+    sample_bom_line_data):
     """
     Test workflow: créer BOM → ajouter lignes → activer
     """
     # 1. Créer BOM
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/bom",
         json=sample_bom_data,
         headers=auth_headers
@@ -816,7 +812,7 @@ def test_workflow_bom_with_lines(
     bom_id = bom["id"]
 
     # 2. Ajouter ligne BOM
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/bom/{bom_id}/lines",
         json=sample_bom_line_data,
         headers=auth_headers
@@ -826,7 +822,7 @@ def test_workflow_bom_with_lines(
     assert line["bom_id"] == bom_id
 
     # 3. Activer BOM
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/bom/{bom_id}/activate",
         headers=auth_headers
     )
@@ -835,18 +831,16 @@ def test_workflow_bom_with_lines(
     assert activated["status"] == "ACTIVE"
 
 
-def test_workflow_work_order_with_pause_resume(
-    client,
+def test_workflow_work_order_with_pause_resume(test_client, client,
     auth_headers,
-    sample_work_order
-):
+    sample_work_order):
     """
     Test workflow WO: démarrer → pause → reprendre → terminer
     """
     wo_id = sample_work_order.id
 
     # 1. Démarrer WO
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-orders/{wo_id}/start",
         json={"notes": "Starting"},
         headers=auth_headers
@@ -856,7 +850,7 @@ def test_workflow_work_order_with_pause_resume(
     assert started["status"] == "IN_PROGRESS"
 
     # 2. Pause WO
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-orders/{wo_id}/pause?reason=Break",
         headers=auth_headers
     )
@@ -865,7 +859,7 @@ def test_workflow_work_order_with_pause_resume(
     assert paused["status"] == "PAUSED"
 
     # 3. Reprendre WO
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-orders/{wo_id}/resume",
         headers=auth_headers
     )
@@ -874,13 +868,11 @@ def test_workflow_work_order_with_pause_resume(
     assert resumed["status"] in ["IN_PROGRESS", "PAUSED"]
 
 
-def test_workflow_production_with_consumption_and_output(
-    client,
+def test_workflow_production_with_consumption_and_output(test_client, client,
     auth_headers,
     sample_confirmed_mo,
     sample_component,
-    sample_product
-):
+    sample_product):
     """
     Test workflow: consommer matières → produire → vérifier quantités
     """
@@ -891,7 +883,7 @@ def test_workflow_production_with_consumption_and_output(
         "product_id": str(sample_component.id),
         "quantity": 100
     }
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{mo_id}/consume",
         json=consume_data,
         headers=auth_headers
@@ -904,7 +896,7 @@ def test_workflow_production_with_consumption_and_output(
         "product_id": str(sample_product.id),
         "quantity": 20
     }
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{mo_id}/produce",
         json=produce_data,
         headers=auth_headers
@@ -913,7 +905,7 @@ def test_workflow_production_with_consumption_and_output(
     output = response.json()
 
     # 3. Vérifier MO mis à jour
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/orders/{mo_id}",
         headers=auth_headers
     )
@@ -922,12 +914,10 @@ def test_workflow_production_with_consumption_and_output(
     assert float(mo["quantity_produced"]) >= 20
 
 
-def test_workflow_scrap_and_material_tracking(
-    client,
+def test_workflow_scrap_and_material_tracking(test_client, client,
     auth_headers,
     sample_confirmed_mo,
-    sample_component
-):
+    sample_component):
     """
     Test workflow: enregistrer rebuts → vérifier traçabilité
     """
@@ -939,7 +929,7 @@ def test_workflow_scrap_and_material_tracking(
         "reason": "DEFECTIVE",
         "notes": "Material defect"
     }
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/scraps",
         json=scrap_data,
         headers=auth_headers
@@ -948,7 +938,7 @@ def test_workflow_scrap_and_material_tracking(
     scrap = response.json()
 
     # 2. Lister rebuts du MO
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/scraps?mo_id={sample_confirmed_mo.id}",
         headers=auth_headers
     )
@@ -961,7 +951,7 @@ def test_workflow_scrap_and_material_tracking(
 # TESTS SÉCURITÉ & ISOLATION TENANT
 # ============================================================================
 
-def test_manufacturing_orders_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_manufacturing_orders_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: vérifier l'isolation stricte des MOs par tenant
     """
@@ -995,7 +985,7 @@ def test_manufacturing_orders_tenant_isolation(client, auth_headers, db_session,
     db_session.commit()
 
     # Tenter de récupérer tous les MOs
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/orders",
         headers=auth_headers
     )
@@ -1009,7 +999,7 @@ def test_manufacturing_orders_tenant_isolation(client, auth_headers, db_session,
         assert mo["tenant_id"] != "other-tenant-999"
 
 
-def test_work_centers_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_work_centers_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: isolation des centres de travail par tenant
     """
@@ -1028,7 +1018,7 @@ def test_work_centers_tenant_isolation(client, auth_headers, db_session, tenant_
     db_session.commit()
 
     # Récupérer work centers
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/work-centers",
         headers=auth_headers
     )
@@ -1041,7 +1031,7 @@ def test_work_centers_tenant_isolation(client, auth_headers, db_session, tenant_
         assert wc["tenant_id"] == tenant_id
 
 
-def test_boms_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_boms_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """
     Test CRITIQUE: isolation des nomenclatures par tenant
     """
@@ -1077,7 +1067,7 @@ def test_boms_tenant_isolation(client, auth_headers, db_session, tenant_id):
     db_session.commit()
 
     # Récupérer BOMs
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/bom",
         headers=auth_headers
     )
@@ -1094,10 +1084,10 @@ def test_boms_tenant_isolation(client, auth_headers, db_session, tenant_id):
 # TESTS ERREURS & CAS LIMITES
 # ============================================================================
 
-def test_get_nonexistent_work_center(client, auth_headers):
+def test_get_nonexistent_work_center(test_client, client, auth_headers):
     """Test récupération d'un centre de travail inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/work-centers/{fake_id}",
         headers=auth_headers
     )
@@ -1106,10 +1096,10 @@ def test_get_nonexistent_work_center(client, auth_headers):
     assert "non trouvé" in response.json()["detail"].lower()
 
 
-def test_get_nonexistent_bom(client, auth_headers):
+def test_get_nonexistent_bom(test_client, client, auth_headers):
     """Test récupération d'une BOM inexistante"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/bom/{fake_id}",
         headers=auth_headers
     )
@@ -1117,10 +1107,10 @@ def test_get_nonexistent_bom(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_get_nonexistent_manufacturing_order(client, auth_headers):
+def test_get_nonexistent_manufacturing_order(test_client, client, auth_headers):
     """Test récupération d'un MO inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/orders/{fake_id}",
         headers=auth_headers
     )
@@ -1128,10 +1118,10 @@ def test_get_nonexistent_manufacturing_order(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_get_nonexistent_work_order(client, auth_headers):
+def test_get_nonexistent_work_order(test_client, client, auth_headers):
     """Test récupération d'un WO inexistant"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/work-orders/{fake_id}",
         headers=auth_headers
     )
@@ -1139,10 +1129,10 @@ def test_get_nonexistent_work_order(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_get_nonexistent_routing(client, auth_headers):
+def test_get_nonexistent_routing(test_client, client, auth_headers):
     """Test récupération d'une gamme inexistante"""
     fake_id = uuid4()
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/routings/{fake_id}",
         headers=auth_headers
     )
@@ -1150,16 +1140,16 @@ def test_get_nonexistent_routing(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_start_already_started_mo(client, auth_headers, sample_confirmed_mo):
+def test_start_already_started_mo(test_client, client, auth_headers, sample_confirmed_mo):
     """Test démarrer un MO déjà démarré"""
     # Démarrer une première fois
-    client.post(
+    test_client.post(
         f"/api/v2/production/orders/{sample_confirmed_mo.id}/start",
         headers=auth_headers
     )
 
     # Tenter de démarrer à nouveau
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{sample_confirmed_mo.id}/start",
         headers=auth_headers
     )
@@ -1168,7 +1158,7 @@ def test_start_already_started_mo(client, auth_headers, sample_confirmed_mo):
     assert response.status_code in [200, 400, 409]
 
 
-def test_confirm_draft_mo_without_bom(client, auth_headers, sample_product):
+def test_confirm_draft_mo_without_bom(test_client, client, auth_headers, sample_product):
     """Test confirmer un MO sans BOM (devrait échouer)"""
     # Créer MO sans BOM
     mo_data = {
@@ -1178,7 +1168,7 @@ def test_confirm_draft_mo_without_bom(client, auth_headers, sample_product):
         "scheduled_end": (date.today() + timedelta(days=1)).isoformat()
     }
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/production/orders",
         json=mo_data,
         headers=auth_headers
@@ -1188,7 +1178,7 @@ def test_confirm_draft_mo_without_bom(client, auth_headers, sample_product):
         mo = response.json()
 
         # Tenter de confirmer (devrait échouer si pas de BOM)
-        response = client.post(
+        response = test_client.post(
             f"/api/v2/production/orders/{mo['id']}/confirm",
             headers=auth_headers
         )
@@ -1201,10 +1191,10 @@ def test_confirm_draft_mo_without_bom(client, auth_headers, sample_product):
 # TESTS PAGINATION & FILTRES
 # ============================================================================
 
-def test_list_boms_pagination(client, auth_headers, sample_bom):
+def test_list_boms_pagination(test_client, client, auth_headers, sample_bom):
     """Test pagination de la liste des BOMs"""
     # Page 1
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/bom?page=1&page_size=10",
         headers=auth_headers
     )
@@ -1213,7 +1203,7 @@ def test_list_boms_pagination(client, auth_headers, sample_bom):
     assert page1["page"] == 1
 
     # Page 2
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/bom?page=2&page_size=10",
         headers=auth_headers
     )
@@ -1222,9 +1212,9 @@ def test_list_boms_pagination(client, auth_headers, sample_bom):
     assert page2["page"] == 2
 
 
-def test_list_manufacturing_orders_pagination(client, auth_headers, sample_manufacturing_order):
+def test_list_manufacturing_orders_pagination(test_client, client, auth_headers, sample_manufacturing_order):
     """Test pagination de la liste des MOs"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/production/orders?page=1&page_size=20",
         headers=auth_headers
     )
@@ -1236,9 +1226,9 @@ def test_list_manufacturing_orders_pagination(client, auth_headers, sample_manuf
     assert data["page_size"] == 20
 
 
-def test_list_scraps_with_filters(client, auth_headers, sample_scrap, sample_manufacturing_order):
+def test_list_scraps_with_filters(test_client, client, auth_headers, sample_scrap, sample_manufacturing_order):
     """Test liste des rebuts avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/scraps?mo_id={sample_manufacturing_order.id}",
         headers=auth_headers
     )
@@ -1250,12 +1240,12 @@ def test_list_scraps_with_filters(client, auth_headers, sample_scrap, sample_man
         assert scrap["mo_id"] == str(sample_manufacturing_order.id)
 
 
-def test_list_scraps_with_date_range(client, auth_headers, sample_scrap):
+def test_list_scraps_with_date_range(test_client, client, auth_headers, sample_scrap):
     """Test liste des rebuts avec période"""
     from_date = (date.today() - timedelta(days=7)).isoformat()
     to_date = date.today().isoformat()
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/scraps?from_date={from_date}&to_date={to_date}",
         headers=auth_headers
     )
@@ -1265,9 +1255,9 @@ def test_list_scraps_with_date_range(client, auth_headers, sample_scrap):
     assert isinstance(data, list)
 
 
-def test_list_routings_by_product(client, auth_headers, sample_routing, sample_product):
+def test_list_routings_by_product(test_client, client, auth_headers, sample_routing, sample_product):
     """Test liste des gammes filtrées par produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/routings?product_id={sample_product.id}",
         headers=auth_headers
     )
@@ -1279,9 +1269,9 @@ def test_list_routings_by_product(client, auth_headers, sample_routing, sample_p
         assert routing["product_id"] == str(sample_product.id)
 
 
-def test_list_maintenance_by_work_center(client, auth_headers, sample_maintenance_schedule, sample_work_center):
+def test_list_maintenance_by_work_center(test_client, client, auth_headers, sample_maintenance_schedule, sample_work_center):
     """Test liste des maintenances filtrées par centre de travail"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/maintenance?work_center_id={sample_work_center.id}",
         headers=auth_headers
     )
@@ -1297,12 +1287,12 @@ def test_list_maintenance_by_work_center(client, auth_headers, sample_maintenanc
 # TESTS BUSINESS LOGIC
 # ============================================================================
 
-def test_work_center_status_transitions(client, auth_headers, sample_work_center):
+def test_work_center_status_transitions(test_client, client, auth_headers, sample_work_center):
     """Test transitions de statut centre de travail"""
     wc_id = sample_work_center.id
 
     # AVAILABLE → MAINTENANCE
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-centers/{wc_id}/status/MAINTENANCE",
         headers=auth_headers
     )
@@ -1310,7 +1300,7 @@ def test_work_center_status_transitions(client, auth_headers, sample_work_center
     assert response.json()["status"] == "MAINTENANCE"
 
     # MAINTENANCE → AVAILABLE
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/work-centers/{wc_id}/status/AVAILABLE",
         headers=auth_headers
     )
@@ -1318,10 +1308,10 @@ def test_work_center_status_transitions(client, auth_headers, sample_work_center
     assert response.json()["status"] == "AVAILABLE"
 
 
-def test_bom_status_transitions(client, auth_headers, sample_bom):
+def test_bom_status_transitions(test_client, client, auth_headers, sample_bom):
     """Test transitions de statut BOM"""
     # Activer BOM
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/bom/{sample_bom.id}/activate",
         headers=auth_headers
     )
@@ -1330,7 +1320,7 @@ def test_bom_status_transitions(client, auth_headers, sample_bom):
     assert data["status"] == "ACTIVE"
 
 
-def test_manufacturing_order_quantity_tracking(client, auth_headers, sample_confirmed_mo, sample_product):
+def test_manufacturing_order_quantity_tracking(test_client, client, auth_headers, sample_confirmed_mo, sample_product):
     """Test suivi des quantités produites vs planifiées"""
     mo_id = sample_confirmed_mo.id
 
@@ -1339,7 +1329,7 @@ def test_manufacturing_order_quantity_tracking(client, auth_headers, sample_conf
         "product_id": str(sample_product.id),
         "quantity": 10
     }
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/production/orders/{mo_id}/produce",
         json=produce_data,
         headers=auth_headers
@@ -1347,7 +1337,7 @@ def test_manufacturing_order_quantity_tracking(client, auth_headers, sample_conf
     assert response.status_code == 201
 
     # Vérifier quantités
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/orders/{mo_id}",
         headers=auth_headers
     )
@@ -1360,9 +1350,9 @@ def test_manufacturing_order_quantity_tracking(client, auth_headers, sample_conf
     assert qty_produced <= qty_to_produce
 
 
-def test_work_center_capacity_tracking(client, auth_headers, sample_work_center):
+def test_work_center_capacity_tracking(test_client, client, auth_headers, sample_work_center):
     """Test suivi de la capacité d'un centre de travail"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/work-centers/{sample_work_center.id}",
         headers=auth_headers
     )
@@ -1375,9 +1365,9 @@ def test_work_center_capacity_tracking(client, auth_headers, sample_work_center)
     assert float(wc["capacity_per_hour"]) > 0
 
 
-def test_list_work_centers_by_status(client, auth_headers, sample_work_center):
+def test_list_work_centers_by_status(test_client, client, auth_headers, sample_work_center):
     """Test liste des centres de travail filtrés par statut"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/work-centers?status={WorkCenterStatus.AVAILABLE.value}",
         headers=auth_headers
     )
@@ -1389,9 +1379,9 @@ def test_list_work_centers_by_status(client, auth_headers, sample_work_center):
         assert wc["status"] == WorkCenterStatus.AVAILABLE.value
 
 
-def test_list_boms_by_status(client, auth_headers, sample_bom):
+def test_list_boms_by_status(test_client, client, auth_headers, sample_bom):
     """Test liste des BOMs filtrées par statut"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/production/bom?status={BOMStatus.ACTIVE.value}",
         headers=auth_headers
     )

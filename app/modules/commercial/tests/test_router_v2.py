@@ -24,10 +24,8 @@ TOTAL: 55 tests
 import pytest
 from uuid import uuid4
 from datetime import date, datetime, timedelta
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.main import app
 from app.modules.commercial.models import (
     Customer,
     Contact,
@@ -50,9 +48,9 @@ from app.modules.commercial.models import (
 # TESTS CUSTOMERS
 # ============================================================================
 
-def test_create_customer(client, auth_headers, db_session, tenant_id):
+def test_create_customer(test_client, client, auth_headers, db_session, tenant_id):
     """Test création d'un client"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/customers",
         json={
             "code": "CLI001",
@@ -74,9 +72,9 @@ def test_create_customer(client, auth_headers, db_session, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_create_customer_duplicate_code(client, auth_headers, sample_customer):
+def test_create_customer_duplicate_code(test_client, client, auth_headers, sample_customer):
     """Test création client avec code dupliqué (doit échouer)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/customers",
         json={
             "code": sample_customer.code,  # Code existant
@@ -90,9 +88,9 @@ def test_create_customer_duplicate_code(client, auth_headers, sample_customer):
     assert "déjà utilisé" in response.json()["detail"]
 
 
-def test_list_customers(client, auth_headers, sample_customer, db_session):
+def test_list_customers(test_client, client, auth_headers, sample_customer, db_session):
     """Test liste des clients avec filtres"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/customers?type=CUSTOMER&is_active=true",
         headers=auth_headers
     )
@@ -105,9 +103,9 @@ def test_list_customers(client, auth_headers, sample_customer, db_session):
     assert any(c["code"] == sample_customer.code for c in data["items"])
 
 
-def test_get_customer(client, auth_headers, sample_customer):
+def test_get_customer(test_client, client, auth_headers, sample_customer):
     """Test récupération d'un client"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/customers/{sample_customer.id}",
         headers=auth_headers
     )
@@ -118,9 +116,9 @@ def test_get_customer(client, auth_headers, sample_customer):
     assert data["code"] == sample_customer.code
 
 
-def test_update_customer(client, auth_headers, sample_customer, db_session):
+def test_update_customer(test_client, client, auth_headers, sample_customer, db_session):
     """Test mise à jour d'un client"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/commercial/customers/{sample_customer.id}",
         json={"name": "Client Test UPDATED"},
         headers=auth_headers
@@ -131,7 +129,7 @@ def test_update_customer(client, auth_headers, sample_customer, db_session):
     assert data["name"] == "Client Test UPDATED"
 
 
-def test_convert_prospect_to_customer(client, auth_headers, db_session, tenant_id):
+def test_convert_prospect_to_customer(test_client, client, auth_headers, db_session, tenant_id):
     """Test workflow conversion prospect → client"""
     # Créer un prospect
     prospect = Customer(
@@ -146,7 +144,7 @@ def test_convert_prospect_to_customer(client, auth_headers, db_session, tenant_i
     db_session.commit()
 
     # Convertir en client
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/customers/{prospect.id}/convert",
         headers=auth_headers
     )
@@ -161,15 +159,15 @@ def test_convert_prospect_to_customer(client, auth_headers, db_session, tenant_i
 # TESTS CONTACTS
 # ============================================================================
 
-def test_create_contact(client, auth_headers, sample_customer, tenant_id):
+def test_create_contact(test_client, client, auth_headers, sample_customer, tenant_id):
     """Test création d'un contact"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/contacts",
         json={
             "customer_id": str(sample_customer.id),
             "first_name": "Jean",
             "last_name": "Dupont",
-            "email": "jean.dupont@client.com",
+            "email": "jean.dupont@test_client.com",
             "phone": "+33123456789",
             "position": "Directeur Achat"
         },
@@ -183,9 +181,9 @@ def test_create_contact(client, auth_headers, sample_customer, tenant_id):
     assert data["customer_id"] == str(sample_customer.id)
 
 
-def test_create_contact_invalid_customer(client, auth_headers):
+def test_create_contact_invalid_customer(test_client, client, auth_headers):
     """Test création contact avec client inexistant (doit échouer)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/contacts",
         json={
             "customer_id": str(uuid4()),  # Client inexistant
@@ -198,9 +196,9 @@ def test_create_contact_invalid_customer(client, auth_headers):
     assert response.status_code == 404
 
 
-def test_list_contacts(client, auth_headers, sample_customer, sample_contact):
+def test_list_contacts(test_client, client, auth_headers, sample_customer, sample_contact):
     """Test liste des contacts d'un client"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/customers/{sample_customer.id}/contacts",
         headers=auth_headers
     )
@@ -212,9 +210,9 @@ def test_list_contacts(client, auth_headers, sample_customer, sample_contact):
     assert any(c["id"] == str(sample_contact.id) for c in data)
 
 
-def test_update_contact(client, auth_headers, sample_contact):
+def test_update_contact(test_client, client, auth_headers, sample_contact):
     """Test mise à jour d'un contact"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/commercial/contacts/{sample_contact.id}",
         json={"position": "Directeur Général"},
         headers=auth_headers
@@ -225,7 +223,7 @@ def test_update_contact(client, auth_headers, sample_contact):
     assert data["position"] == "Directeur Général"
 
 
-def test_delete_contact(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_delete_contact(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test suppression d'un contact"""
     contact = Contact(
         id=uuid4(),
@@ -237,7 +235,7 @@ def test_delete_contact(client, auth_headers, db_session, sample_customer, tenan
     db_session.add(contact)
     db_session.commit()
 
-    response = client.delete(
+    response = test_client.delete(
         f"/api/v2/commercial/contacts/{contact.id}",
         headers=auth_headers
     )
@@ -249,9 +247,9 @@ def test_delete_contact(client, auth_headers, db_session, sample_customer, tenan
 # TESTS OPPORTUNITIES
 # ============================================================================
 
-def test_create_opportunity(client, auth_headers, sample_customer, tenant_id):
+def test_create_opportunity(test_client, client, auth_headers, sample_customer, tenant_id):
     """Test création d'une opportunité"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/opportunities",
         json={
             "customer_id": str(sample_customer.id),
@@ -272,9 +270,9 @@ def test_create_opportunity(client, auth_headers, sample_customer, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_list_opportunities(client, auth_headers, sample_opportunity):
+def test_list_opportunities(test_client, client, auth_headers, sample_opportunity):
     """Test liste des opportunités avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/opportunities?status=QUALIFIED",
         headers=auth_headers
     )
@@ -285,9 +283,9 @@ def test_list_opportunities(client, auth_headers, sample_opportunity):
     assert "total" in data
 
 
-def test_get_opportunity(client, auth_headers, sample_opportunity):
+def test_get_opportunity(test_client, client, auth_headers, sample_opportunity):
     """Test récupération d'une opportunité"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/opportunities/{sample_opportunity.id}",
         headers=auth_headers
     )
@@ -297,9 +295,9 @@ def test_get_opportunity(client, auth_headers, sample_opportunity):
     assert data["id"] == str(sample_opportunity.id)
 
 
-def test_update_opportunity(client, auth_headers, sample_opportunity):
+def test_update_opportunity(test_client, client, auth_headers, sample_opportunity):
     """Test mise à jour d'une opportunité"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/commercial/opportunities/{sample_opportunity.id}",
         json={"probability": 0.90},
         headers=auth_headers
@@ -310,9 +308,9 @@ def test_update_opportunity(client, auth_headers, sample_opportunity):
     assert data["probability"] == 0.90
 
 
-def test_win_opportunity(client, auth_headers, sample_opportunity):
+def test_win_opportunity(test_client, client, auth_headers, sample_opportunity):
     """Test workflow opportunité gagnée"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/opportunities/{sample_opportunity.id}/win",
         params={"win_reason": "Meilleure offre"},
         headers=auth_headers
@@ -323,7 +321,7 @@ def test_win_opportunity(client, auth_headers, sample_opportunity):
     assert data["status"] == "WON"
 
 
-def test_lose_opportunity(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_lose_opportunity(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow opportunité perdue"""
     opp = Opportunity(
         id=uuid4(),
@@ -336,7 +334,7 @@ def test_lose_opportunity(client, auth_headers, db_session, sample_customer, ten
     db_session.add(opp)
     db_session.commit()
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/opportunities/{opp.id}/lose",
         params={"loss_reason": "Prix trop élevé"},
         headers=auth_headers
@@ -347,7 +345,7 @@ def test_lose_opportunity(client, auth_headers, db_session, sample_customer, ten
     assert data["status"] == "LOST"
 
 
-def test_opportunity_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_opportunity_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """Test isolation tenant sur opportunités"""
     # Créer opportunité pour autre tenant
     other_customer = Customer(
@@ -371,7 +369,7 @@ def test_opportunity_tenant_isolation(client, auth_headers, db_session, tenant_i
     db_session.commit()
 
     # Tenter d'accéder (doit échouer ou être filtré)
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/opportunities/{other_opp.id}",
         headers=auth_headers
     )
@@ -384,9 +382,9 @@ def test_opportunity_tenant_isolation(client, auth_headers, db_session, tenant_i
 # TESTS DOCUMENTS
 # ============================================================================
 
-def test_create_document_quote(client, auth_headers, sample_customer, tenant_id):
+def test_create_document_quote(test_client, client, auth_headers, sample_customer, tenant_id):
     """Test création d'un devis"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/documents",
         json={
             "customer_id": str(sample_customer.id),
@@ -405,9 +403,9 @@ def test_create_document_quote(client, auth_headers, sample_customer, tenant_id)
     assert "created_by" in data  # Audit trail
 
 
-def test_list_documents(client, auth_headers, sample_document):
+def test_list_documents(test_client, client, auth_headers, sample_document):
     """Test liste des documents avec filtres"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/documents?type=QUOTE",
         headers=auth_headers
     )
@@ -418,9 +416,9 @@ def test_list_documents(client, auth_headers, sample_document):
     assert "total" in data
 
 
-def test_get_document(client, auth_headers, sample_document):
+def test_get_document(test_client, client, auth_headers, sample_document):
     """Test récupération d'un document"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/documents/{sample_document.id}",
         headers=auth_headers
     )
@@ -430,9 +428,9 @@ def test_get_document(client, auth_headers, sample_document):
     assert data["id"] == str(sample_document.id)
 
 
-def test_update_document(client, auth_headers, sample_document):
+def test_update_document(test_client, client, auth_headers, sample_document):
     """Test mise à jour d'un document"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/commercial/documents/{sample_document.id}",
         json={"notes": "Notes mises à jour"},
         headers=auth_headers
@@ -443,7 +441,7 @@ def test_update_document(client, auth_headers, sample_document):
     assert data["notes"] == "Notes mises à jour"
 
 
-def test_delete_document_draft_only(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_delete_document_draft_only(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test suppression document (seuls DRAFT supprimables)"""
     # DRAFT → supprimable
     draft_doc = CommercialDocument(
@@ -458,7 +456,7 @@ def test_delete_document_draft_only(client, auth_headers, db_session, sample_cus
     db_session.add(draft_doc)
     db_session.commit()
 
-    response = client.delete(
+    response = test_client.delete(
         f"/api/v2/commercial/documents/{draft_doc.id}",
         headers=auth_headers
     )
@@ -477,16 +475,16 @@ def test_delete_document_draft_only(client, auth_headers, db_session, sample_cus
     db_session.add(validated_doc)
     db_session.commit()
 
-    response = client.delete(
+    response = test_client.delete(
         f"/api/v2/commercial/documents/{validated_doc.id}",
         headers=auth_headers
     )
     assert response.status_code == 400
 
 
-def test_validate_document_workflow(client, auth_headers, sample_document, db_session):
+def test_validate_document_workflow(test_client, client, auth_headers, sample_document, db_session):
     """Test workflow validation document (DRAFT → VALIDATED)"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/documents/{sample_document.id}/validate",
         headers=auth_headers
     )
@@ -498,7 +496,7 @@ def test_validate_document_workflow(client, auth_headers, sample_document, db_se
     assert "validated_at" in data
 
 
-def test_send_document_workflow(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_send_document_workflow(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow envoi document (VALIDATED → SENT)"""
     doc = CommercialDocument(
         id=uuid4(),
@@ -512,7 +510,7 @@ def test_send_document_workflow(client, auth_headers, db_session, sample_custome
     db_session.add(doc)
     db_session.commit()
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/documents/{doc.id}/send",
         headers=auth_headers
     )
@@ -522,7 +520,7 @@ def test_send_document_workflow(client, auth_headers, db_session, sample_custome
     assert data["status"] == "SENT"
 
 
-def test_convert_quote_to_order(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_convert_quote_to_order(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow conversion devis → commande"""
     quote = CommercialDocument(
         id=uuid4(),
@@ -538,7 +536,7 @@ def test_convert_quote_to_order(client, auth_headers, db_session, sample_custome
     db_session.add(quote)
     db_session.commit()
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/quotes/{quote.id}/convert",
         headers=auth_headers
     )
@@ -549,7 +547,7 @@ def test_convert_quote_to_order(client, auth_headers, db_session, sample_custome
     assert data["total_ht"] == quote.total_ht
 
 
-def test_create_invoice_from_order(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_create_invoice_from_order(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow création facture depuis commande"""
     order = CommercialDocument(
         id=uuid4(),
@@ -565,7 +563,7 @@ def test_create_invoice_from_order(client, auth_headers, db_session, sample_cust
     db_session.add(order)
     db_session.commit()
 
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/orders/{order.id}/invoice",
         headers=auth_headers
     )
@@ -575,9 +573,9 @@ def test_create_invoice_from_order(client, auth_headers, db_session, sample_cust
     assert data["document_type"] == "INVOICE"
 
 
-def test_export_documents_csv(client, auth_headers, sample_document):
+def test_export_documents_csv(test_client, client, auth_headers, sample_document):
     """Test export documents au format CSV"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/documents/export?type=QUOTE",
         headers=auth_headers
     )
@@ -588,7 +586,7 @@ def test_export_documents_csv(client, auth_headers, sample_document):
     assert "documents_" in response.headers["Content-Disposition"]
 
 
-def test_complete_document_workflow(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_complete_document_workflow(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test workflow complet: QUOTE → ORDER → INVOICE"""
     # 1. Créer devis
     quote = CommercialDocument(
@@ -606,7 +604,7 @@ def test_complete_document_workflow(client, auth_headers, db_session, sample_cus
     db_session.commit()
 
     # 2. Valider devis
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/documents/{quote.id}/validate",
         headers=auth_headers
     )
@@ -614,7 +612,7 @@ def test_complete_document_workflow(client, auth_headers, db_session, sample_cus
     assert response.json()["status"] == "VALIDATED"
 
     # 3. Convertir en commande
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/quotes/{quote.id}/convert",
         headers=auth_headers
     )
@@ -623,7 +621,7 @@ def test_complete_document_workflow(client, auth_headers, db_session, sample_cus
     assert order["document_type"] == "ORDER"
 
     # 4. Facturer commande
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/orders/{order['id']}/invoice",
         headers=auth_headers
     )
@@ -636,9 +634,9 @@ def test_complete_document_workflow(client, auth_headers, db_session, sample_cus
 # TESTS LINES
 # ============================================================================
 
-def test_add_document_line(client, auth_headers, sample_document, sample_product):
+def test_add_document_line(test_client, client, auth_headers, sample_document, sample_product):
     """Test ajout d'une ligne à un document"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/documents/{sample_document.id}/lines",
         json={
             "product_id": str(sample_product.id),
@@ -656,7 +654,7 @@ def test_add_document_line(client, auth_headers, sample_document, sample_product
     assert data["unit_price"] == 100.0
 
 
-def test_delete_document_line(client, auth_headers, db_session, sample_document, sample_product, tenant_id):
+def test_delete_document_line(test_client, client, auth_headers, db_session, sample_document, sample_product, tenant_id):
     """Test suppression d'une ligne de document"""
     line = DocumentLine(
         id=uuid4(),
@@ -670,7 +668,7 @@ def test_delete_document_line(client, auth_headers, db_session, sample_document,
     db_session.add(line)
     db_session.commit()
 
-    response = client.delete(
+    response = test_client.delete(
         f"/api/v2/commercial/lines/{line.id}",
         headers=auth_headers
     )
@@ -682,7 +680,7 @@ def test_delete_document_line(client, auth_headers, db_session, sample_document,
 # TESTS PAYMENTS
 # ============================================================================
 
-def test_create_payment(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_create_payment(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test enregistrement d'un paiement sur facture"""
     # Créer une facture
     invoice = CommercialDocument(
@@ -698,7 +696,7 @@ def test_create_payment(client, auth_headers, db_session, sample_customer, tenan
     db_session.add(invoice)
     db_session.commit()
 
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/payments",
         json={
             "document_id": str(invoice.id),
@@ -716,7 +714,7 @@ def test_create_payment(client, auth_headers, db_session, sample_customer, tenan
     assert "recorded_by" in data  # Audit trail
 
 
-def test_list_payments(client, auth_headers, db_session, sample_customer, tenant_id):
+def test_list_payments(test_client, client, auth_headers, db_session, sample_customer, tenant_id):
     """Test liste des paiements d'un document"""
     invoice = CommercialDocument(
         id=uuid4(),
@@ -741,7 +739,7 @@ def test_list_payments(client, auth_headers, db_session, sample_customer, tenant
     db_session.add(payment)
     db_session.commit()
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/documents/{invoice.id}/payments",
         headers=auth_headers
     )
@@ -752,9 +750,9 @@ def test_list_payments(client, auth_headers, db_session, sample_customer, tenant
     assert len(data) >= 1
 
 
-def test_create_payment_invalid_document(client, auth_headers):
+def test_create_payment_invalid_document(test_client, client, auth_headers):
     """Test paiement sur document inexistant (doit échouer)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/payments",
         json={
             "document_id": str(uuid4()),
@@ -772,9 +770,9 @@ def test_create_payment_invalid_document(client, auth_headers):
 # TESTS ACTIVITIES
 # ============================================================================
 
-def test_create_activity(client, auth_headers, sample_customer, tenant_id):
+def test_create_activity(test_client, client, auth_headers, sample_customer, tenant_id):
     """Test création d'une activité (appel, réunion, email)"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/activities",
         json={
             "customer_id": str(sample_customer.id),
@@ -794,9 +792,9 @@ def test_create_activity(client, auth_headers, sample_customer, tenant_id):
     assert "created_by" in data  # Audit trail
 
 
-def test_list_activities(client, auth_headers, sample_activity):
+def test_list_activities(test_client, client, auth_headers, sample_activity):
     """Test liste des activités avec filtres"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/activities?customer_id={sample_activity.customer_id}",
         headers=auth_headers
     )
@@ -807,9 +805,9 @@ def test_list_activities(client, auth_headers, sample_activity):
     assert len(data) >= 1
 
 
-def test_complete_activity(client, auth_headers, sample_activity):
+def test_complete_activity(test_client, client, auth_headers, sample_activity):
     """Test marquage activité comme terminée"""
-    response = client.post(
+    response = test_client.post(
         f"/api/v2/commercial/activities/{sample_activity.id}/complete",
         headers=auth_headers
     )
@@ -819,7 +817,7 @@ def test_complete_activity(client, auth_headers, sample_activity):
     assert data["is_completed"] is True
 
 
-def test_activities_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_activities_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """Test isolation tenant sur activités"""
     other_customer = Customer(
         id=uuid4(),
@@ -842,7 +840,7 @@ def test_activities_tenant_isolation(client, auth_headers, db_session, tenant_id
     db_session.commit()
 
     # Liste ne doit pas contenir activités autre tenant
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/activities",
         headers=auth_headers
     )
@@ -856,9 +854,9 @@ def test_activities_tenant_isolation(client, auth_headers, db_session, tenant_id
 # TESTS PIPELINE
 # ============================================================================
 
-def test_create_pipeline_stage(client, auth_headers, tenant_id):
+def test_create_pipeline_stage(test_client, client, auth_headers, tenant_id):
     """Test création d'une étape de pipeline"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/pipeline/stages",
         json={
             "name": "Qualification",
@@ -874,9 +872,9 @@ def test_create_pipeline_stage(client, auth_headers, tenant_id):
     assert data["order"] == 1
 
 
-def test_list_pipeline_stages(client, auth_headers, sample_pipeline_stage):
+def test_list_pipeline_stages(test_client, client, auth_headers, sample_pipeline_stage):
     """Test liste des étapes de pipeline"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/pipeline/stages",
         headers=auth_headers
     )
@@ -887,9 +885,9 @@ def test_list_pipeline_stages(client, auth_headers, sample_pipeline_stage):
     assert len(data) >= 1
 
 
-def test_get_pipeline_stats(client, auth_headers, sample_opportunity):
+def test_get_pipeline_stats(test_client, client, auth_headers, sample_opportunity):
     """Test statistiques du pipeline"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/pipeline/stats",
         headers=auth_headers
     )
@@ -901,7 +899,7 @@ def test_get_pipeline_stats(client, auth_headers, sample_opportunity):
     assert "win_rate" in data or "stages" in data
 
 
-def test_pipeline_tenant_isolation(client, auth_headers, db_session, tenant_id):
+def test_pipeline_tenant_isolation(test_client, client, auth_headers, db_session, tenant_id):
     """Test isolation tenant sur pipeline"""
     other_stage = PipelineStage(
         id=uuid4(),
@@ -913,7 +911,7 @@ def test_pipeline_tenant_isolation(client, auth_headers, db_session, tenant_id):
     db_session.add(other_stage)
     db_session.commit()
 
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/pipeline/stages",
         headers=auth_headers
     )
@@ -927,9 +925,9 @@ def test_pipeline_tenant_isolation(client, auth_headers, db_session, tenant_id):
 # TESTS PRODUCTS
 # ============================================================================
 
-def test_create_product(client, auth_headers, tenant_id):
+def test_create_product(test_client, client, auth_headers, tenant_id):
     """Test création d'un produit"""
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/products",
         json={
             "code": "PROD001",
@@ -948,9 +946,9 @@ def test_create_product(client, auth_headers, tenant_id):
     assert data["unit_price"] == 99.99
 
 
-def test_list_products(client, auth_headers, sample_product):
+def test_list_products(test_client, client, auth_headers, sample_product):
     """Test liste des produits avec filtres"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/products?is_active=true",
         headers=auth_headers
     )
@@ -961,9 +959,9 @@ def test_list_products(client, auth_headers, sample_product):
     assert "total" in data
 
 
-def test_get_product(client, auth_headers, sample_product):
+def test_get_product(test_client, client, auth_headers, sample_product):
     """Test récupération d'un produit"""
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/products/{sample_product.id}",
         headers=auth_headers
     )
@@ -973,9 +971,9 @@ def test_get_product(client, auth_headers, sample_product):
     assert data["id"] == str(sample_product.id)
 
 
-def test_update_product(client, auth_headers, sample_product):
+def test_update_product(test_client, client, auth_headers, sample_product):
     """Test mise à jour d'un produit"""
-    response = client.put(
+    response = test_client.put(
         f"/api/v2/commercial/products/{sample_product.id}",
         json={"unit_price": 149.99},
         headers=auth_headers
@@ -986,7 +984,7 @@ def test_update_product(client, auth_headers, sample_product):
     assert data["unit_price"] == 149.99
 
 
-def test_products_tenant_isolation(client, auth_headers, db_session):
+def test_products_tenant_isolation(test_client, client, auth_headers, db_session):
     """Test isolation tenant sur produits"""
     other_product = CatalogProduct(
         id=uuid4(),
@@ -998,7 +996,7 @@ def test_products_tenant_isolation(client, auth_headers, db_session):
     db_session.add(other_product)
     db_session.commit()
 
-    response = client.get(
+    response = test_client.get(
         f"/api/v2/commercial/products/{other_product.id}",
         headers=auth_headers
     )
@@ -1010,9 +1008,9 @@ def test_products_tenant_isolation(client, auth_headers, db_session):
 # TESTS DASHBOARD
 # ============================================================================
 
-def test_get_sales_dashboard(client, auth_headers, sample_customer, sample_opportunity):
+def test_get_sales_dashboard(test_client, client, auth_headers, sample_customer, sample_opportunity):
     """Test récupération du dashboard commercial"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/dashboard",
         headers=auth_headers
     )
@@ -1027,9 +1025,9 @@ def test_get_sales_dashboard(client, auth_headers, sample_customer, sample_oppor
 # TESTS EXPORTS CSV
 # ============================================================================
 
-def test_export_customers_csv(client, auth_headers, sample_customer):
+def test_export_customers_csv(test_client, client, auth_headers, sample_customer):
     """Test export clients au format CSV"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/export/customers",
         headers=auth_headers
     )
@@ -1041,9 +1039,9 @@ def test_export_customers_csv(client, auth_headers, sample_customer):
     assert "X-Tenant-ID" in response.headers  # Traçabilité tenant
 
 
-def test_export_contacts_csv(client, auth_headers, sample_contact):
+def test_export_contacts_csv(test_client, client, auth_headers, sample_contact):
     """Test export contacts au format CSV"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/export/contacts",
         headers=auth_headers
     )
@@ -1053,9 +1051,9 @@ def test_export_contacts_csv(client, auth_headers, sample_contact):
     assert "X-Tenant-ID" in response.headers
 
 
-def test_export_opportunities_csv(client, auth_headers, sample_opportunity):
+def test_export_opportunities_csv(test_client, client, auth_headers, sample_opportunity):
     """Test export opportunités au format CSV"""
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/export/opportunities?status=QUALIFIED",
         headers=auth_headers
     )
@@ -1069,10 +1067,10 @@ def test_export_opportunities_csv(client, auth_headers, sample_opportunity):
 # TESTS PERFORMANCE & SECURITY
 # ============================================================================
 
-def test_saas_context_performance(client, auth_headers, benchmark):
+def test_saas_context_performance(test_client, client, auth_headers, benchmark):
     """Test performance du context SaaS (doit être <50ms)"""
     def call_endpoint():
-        return client.get(
+        return test_client.get(
             "/api/v2/commercial/customers",
             headers=auth_headers
         )
@@ -1081,10 +1079,10 @@ def test_saas_context_performance(client, auth_headers, benchmark):
     assert result.status_code == 200
 
 
-def test_audit_trail_automatic(client, auth_headers, sample_customer, db_session):
+def test_audit_trail_automatic(test_client, client, auth_headers, sample_customer, db_session):
     """Test audit trail automatique sur toutes créations"""
     # Créer opportunité
-    response = client.post(
+    response = test_client.post(
         "/api/v2/commercial/opportunities",
         json={
             "customer_id": str(sample_customer.id),
@@ -1100,7 +1098,7 @@ def test_audit_trail_automatic(client, auth_headers, sample_customer, db_session
     assert data["created_by"] is not None
 
 
-def test_tenant_isolation_strict(client, auth_headers, db_session):
+def test_tenant_isolation_strict(test_client, client, auth_headers, db_session):
     """Test isolation stricte entre tenants"""
     # Créer données pour autre tenant
     other_customer = Customer(
@@ -1114,7 +1112,7 @@ def test_tenant_isolation_strict(client, auth_headers, db_session):
     db_session.commit()
 
     # Tenter de lister tous les clients (doit filtrer automatiquement)
-    response = client.get(
+    response = test_client.get(
         "/api/v2/commercial/customers",
         headers=auth_headers
     )

@@ -5,9 +5,9 @@
 - **Modules analysés**: 38
 - **Endpoints v2 totaux**: 1328
 - **Tests totaux**: 2157
-- **Score moyen**: 91.3/100
-- **Modules avec issues**: 21
-- **Issues critiques**: 21
+- **Score moyen**: 96.3/100
+- **Modules avec issues**: 20
+- **Issues critiques**: 2
 
 ## 🎯 Modules par Score
 
@@ -30,43 +30,34 @@
 | triggers | 🟢 100/100 | 39 | 61 | 0 |
 | web | 🟢 100/100 | 34 | 59 | 0 |
 | website | 🟢 100/100 | 43 | 63 | 0 |
+| audit | 🟢 95/100 | 30 | 68 | 1 |
 | backup | 🟢 95/100 | 10 | 22 | 1 |
+| bi | 🟢 95/100 | 49 | 86 | 1 |
+| commercial | 🟢 95/100 | 45 | 54 | 1 |
 | compliance | 🟢 95/100 | 52 | 93 | 1 |
+| ecommerce | 🟢 95/100 | 60 | 107 | 1 |
 | email | 🟢 95/100 | 14 | 28 | 1 |
 | field_service | 🟢 95/100 | 53 | 64 | 1 |
+| finance | 🟢 95/100 | 46 | 53 | 1 |
+| guardian | 🟢 95/100 | 32 | 35 | 1 |
+| helpdesk | 🟢 95/100 | 61 | 103 | 1 |
+| hr | 🟢 95/100 | 45 | 55 | 1 |
+| iam | 🟢 95/100 | 35 | 32 | 1 |
+| inventory | 🟢 95/100 | 42 | 81 | 1 |
 | procurement | 🟢 95/100 | 36 | 65 | 1 |
+| production | 🟢 95/100 | 40 | 70 | 1 |
+| projects | 🟢 95/100 | 50 | 67 | 1 |
+| tenants | 🟢 95/100 | 30 | 38 | 1 |
 | quality | 🟢 93/100 | 56 | 90 | 2 |
-| bi | 🟢 85/100 | 49 | 86 | 2 |
-| commercial | 🟢 85/100 | 45 | 54 | 2 |
-| ecommerce | 🟢 85/100 | 60 | 107 | 2 |
-| finance | 🟢 85/100 | 46 | 53 | 2 |
-| helpdesk | 🟢 85/100 | 61 | 103 | 2 |
-| iam | 🟢 85/100 | 35 | 32 | 2 |
-| projects | 🟢 85/100 | 50 | 67 | 2 |
-| tenants | 🟢 85/100 | 30 | 38 | 2 |
-| audit | 🟡 75/100 | 30 | 68 | 3 |
-| guardian | 🟡 75/100 | 32 | 35 | 3 |
-| hr | 🟡 75/100 | 45 | 55 | 3 |
-| inventory | 🟡 75/100 | 42 | 81 | 3 |
+| automated_accounting | 🟢 80/100 | 31 | 56 | 0 |
 | marketplace | 🟡 75/100 | 12 | 20 | 3 |
-| production | 🟡 75/100 | 40 | 70 | 3 |
-| automated_accounting | 🟡 70/100 | 31 | 56 | 1 |
 
 ## ⚠️ Issues par Sévérité
 
-### 🔴 ERROR (21)
+### 🔴 ERROR (2)
 
-- **audit**: Import manquant: from app.core.dependencies_v2 import get_saas_context
-- **audit**: Prefix /v2/ manquant dans APIRouter
-- **automated_accounting**: Import manquant: from app.core.dependencies_v2 import get_saas_context
-- **bi**: Import manquant: from app.core.dependencies_v2 import get_saas_context
-- **commercial**: Prefix /v2/ manquant dans APIRouter
-- **ecommerce**: Import manquant: from app.core.dependencies_v2 import get_saas_context
-- **finance**: Prefix /v2/ manquant dans APIRouter
-- **guardian**: Import manquant: from app.core.dependencies_v2 import get_saas_context
-- **guardian**: Prefix /v2/ manquant dans APIRouter
-- **helpdesk**: Import manquant: from app.core.dependencies_v2 import get_saas_context
-- ... et 11 autres
+- **marketplace**: Import manquant: from app.core.dependencies_v2 import get_saas_context
+- **marketplace**: Import manquant: from app.core.saas_context import SaaSContext
 
 ### 🟡 WARNING (20)
 
@@ -141,7 +132,7 @@
 ## 💡 Recommandations
 
 ### Priorité Haute
-- Corriger les 21 issues critiques
+- Corriger les 2 issues critiques
 
 ### Actions Suggérées
 1. Vérifier que tous les modules ont router_v2.py

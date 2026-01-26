@@ -17,7 +17,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.saas_context import SaaSContext, get_saas_context
+from app.core.dependencies_v2 import get_saas_context
+from app.core.saas_context import SaaSContext
 
 from .models import AuditAction, AuditCategory, AuditLevel, ComplianceFramework
 from .schemas import (
@@ -47,7 +48,7 @@ from .schemas import (
 )
 from .service import get_audit_service
 
-router = APIRouter(prefix="/audit", tags=["Audit & Benchmark"])
+router = APIRouter(prefix="/v2/audit", tags=["Audit & Benchmark v2"])
 
 
 # ============================================================================
