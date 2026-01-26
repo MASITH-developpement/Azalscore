@@ -72,9 +72,10 @@ class InterventionsService:
     - Rapports automatiques
     """
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id
 
     # ========================================================================
     # NUMÉROTATION TRANSACTIONNELLE
