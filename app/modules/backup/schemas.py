@@ -6,6 +6,7 @@ Schémas Pydantic pour les sauvegardes.
 
 from datetime import datetime
 
+from uuid import UUID
 from pydantic import BaseModel, Field
 
 from .models import BackupFrequency, BackupStatus, BackupType
@@ -47,7 +48,7 @@ class BackupConfigUpdate(BaseModel):
 
 class BackupConfigResponse(BaseModel):
     """Réponse configuration backup."""
-    id: str
+    id: UUID
     tenant_id: str
     encryption_algorithm: str
     frequency: BackupFrequency
@@ -83,7 +84,7 @@ class BackupCreate(BaseModel):
 
 class BackupResponse(BaseModel):
     """Réponse backup."""
-    id: str
+    id: UUID
     tenant_id: str
     reference: str
     backup_type: BackupType
@@ -131,7 +132,7 @@ class RestoreRequest(BaseModel):
 
 class RestoreResponse(BaseModel):
     """Réponse restauration."""
-    id: str
+    id: UUID
     backup_id: str
     tenant_id: str
     status: BackupStatus

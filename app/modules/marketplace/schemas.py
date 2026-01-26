@@ -8,6 +8,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field
 
 from .models import BillingCycle, OrderStatus, PaymentMethod, PlanType
@@ -25,7 +26,7 @@ class PlanFeature(BaseModel):
 
 class CommercialPlanResponse(BaseModel):
     """Réponse plan commercial."""
-    id: str
+    id: UUID
     code: str
     name: str
     plan_type: PlanType
@@ -93,7 +94,7 @@ class CheckoutResponse(BaseModel):
 
 class OrderResponse(BaseModel):
     """Réponse commande."""
-    id: str
+    id: UUID
     order_number: str
     status: OrderStatus
     plan_code: str

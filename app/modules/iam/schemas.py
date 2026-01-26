@@ -8,6 +8,7 @@ Schémas de validation pour les endpoints IAM.
 
 import re
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -65,7 +66,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     """Réponse utilisateur."""
-    id: str
+    id: UUID
     tenant_id: str
     email: str
     username: str | None
@@ -163,7 +164,7 @@ class RoleUpdate(BaseModel):
 
 class RoleResponse(BaseModel):
     """Réponse rôle."""
-    id: str
+    id: UUID
     tenant_id: str
     code: str
     name: str
@@ -224,7 +225,7 @@ class PermissionCreate(PermissionBase):
 
 class PermissionResponse(BaseModel):
     """Réponse permission."""
-    id: str
+    id: UUID
     tenant_id: str
     code: str
     module: str
@@ -284,7 +285,7 @@ class GroupUpdate(BaseModel):
 
 class GroupResponse(BaseModel):
     """Réponse groupe."""
-    id: str
+    id: UUID
     tenant_id: str
     code: str
     name: str
@@ -314,7 +315,7 @@ class GroupMembership(BaseModel):
 
 class SessionResponse(BaseModel):
     """Réponse session."""
-    id: str
+    id: UUID
     token_jti: str
     ip_address: str | None
     user_agent: str | None
@@ -353,7 +354,7 @@ class InvitationCreate(BaseModel):
 
 class InvitationResponse(BaseModel):
     """Réponse invitation."""
-    id: str
+    id: UUID
     tenant_id: str
     email: str
     status: str
@@ -475,7 +476,7 @@ class PasswordPolicyResponse(BaseModel):
 
 class AuditLogResponse(BaseModel):
     """Réponse log audit."""
-    id: str
+    id: UUID
     tenant_id: str
     action: str
     entity_type: str
