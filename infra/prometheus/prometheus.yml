@@ -34,7 +34,7 @@ scrape_configs:
   - job_name: 'azals-api'
     metrics_path: /metrics
     static_configs:
-      - targets: ['api:8000']
+      - targets: ['api:80']
         labels:
           service: azals-api
     relabel_configs:

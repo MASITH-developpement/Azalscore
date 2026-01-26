@@ -138,7 +138,8 @@ const createApiClient = (): AxiosInstance => {
       const isSilentRequest = originalRequest.headers?.['X-Silent-Error'] === 'true';
 
       // GUARDIAN: Créer un incident pour les erreurs significatives
-      if (!isIncidentEndpoint && !isSilentRequest && !originalRequest._incidentCreated) {
+      // Skip les endpoints d'auth (401 attendu quand pas de session)
+      if (!isIncidentEndpoint && !isAuthEndpoint && !isSilentRequest && !originalRequest._incidentCreated) {
         originalRequest._incidentCreated = true;
 
         const status = error.response?.status;

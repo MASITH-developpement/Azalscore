@@ -9,7 +9,7 @@ import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
-import { Select, Input, TextArea } from '@ui/forms';
+import { Select } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
 import { BaseViewStandard } from '@ui/standards';
 import type { TableColumn } from '@/types';
@@ -26,7 +26,8 @@ import {
   InterventionFinancialTab,
   InterventionDocsTab,
   InterventionHistoryTab,
-  InterventionIATab
+  InterventionIATab,
+  InterventionFormView
 } from './components';
 
 // Import shared types
@@ -101,7 +102,7 @@ const useInterventionStats = () => {
   return useQuery({
     queryKey: ['interventions', 'stats'],
     queryFn: async () => {
-      const response = await api.get<{ data: InterventionStats }>('/v1/interventions/stats').then(r => r.data);
+      const response = await api.get<{ data: InterventionStats }>('/v2/interventions/stats').then(r => r.data);
       return response as unknown as InterventionStats;
     }
   });
@@ -117,7 +118,7 @@ const useInterventions = (filters?: { statut?: string; type_intervention?: strin
       if (filters?.priorite) params.append('priorite', filters.priorite);
       if (filters?.client_id) params.append('client_id', filters.client_id);
       const queryString = params.toString();
-      const url = `/v1/interventions${queryString ? `?${queryString}` : ''}`;
+      const url = `/v2/interventions${queryString ? `?${queryString}` : ''}`;
       const response = await api.get<{ data: { items?: Intervention[] } }>(url).then(r => r.data);
       return (response as any)?.items || response as unknown as Intervention[];
     }
@@ -128,7 +129,7 @@ const useDonneursOrdre = () => {
   return useQuery({
     queryKey: ['interventions', 'donneurs-ordre'],
     queryFn: async () => {
-      const response = await api.get<{ data: DonneurOrdre[] }>('/v1/interventions/donneurs-ordre').then(r => r.data);
+      const response = await api.get<{ data: DonneurOrdre[] }>('/v2/interventions/donneurs-ordre').then(r => r.data);
       return response as unknown as DonneurOrdre[];
     }
   });
@@ -158,7 +159,7 @@ const useCreateIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Intervention>) => {
-      return api.post('/v1/interventions', data).then(r => r.data);
+      return api.post('/v2/interventions', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -170,7 +171,7 @@ const useUpdateStatut = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, statut }: { id: string; statut: string }) => {
-      return api.put(`/v1/interventions/${id}`, { statut }).then(r => r.data);
+      return api.put(`/v2/interventions/${id}`, { statut }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -386,12 +387,11 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
 // LIST VIEW
 // ============================================================================
 
-const InterventionsListView: React.FC = () => {
+const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ onNewIntervention }) => {
   const [filterStatut, setFilterStatut] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterPriorite, setFilterPriorite] = useState<string>('');
   const [selectedIntervention, setSelectedIntervention] = useState<Intervention | null>(null);
-  const [showNewModal, setShowNewModal] = useState(false);
 
   const { data: interventions = [], isLoading } = useInterventions({
     statut: filterStatut || undefined,
@@ -461,7 +461,7 @@ const InterventionsListView: React.FC = () => {
               options={[{ value: '', label: 'Toutes priorités' }, ...PRIORITES]}
               className="w-36"
             />
-            <Button onClick={() => setShowNewModal(true)}>Nouvelle intervention</Button>
+            <Button onClick={onNewIntervention}>Nouvelle intervention</Button>
           </div>
         </div>
         <DataTable columns={columns} data={interventions} isLoading={isLoading} keyField="id" />
@@ -475,228 +475,10 @@ const InterventionsListView: React.FC = () => {
         />
       )}
 
-      {/* Modal Creation */}
-      {showNewModal && (
-        <NewInterventionModal onClose={() => setShowNewModal(false)} />
-      )}
     </>
   );
 };
 
-// ============================================================================
-// NEW INTERVENTION MODAL
-// ============================================================================
-
-const NewInterventionModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { data: clients = [] } = useClients();
-  const { data: intervenants = [] } = useIntervenants();
-  const { data: donneursOrdre = [] } = useDonneursOrdre();
-  const createIntervention = useCreateIntervention();
-
-  const [formData, setFormData] = useState({
-    client_id: '',
-    donneur_ordre_id: '',
-    type_intervention: '',
-    priorite: 'NORMAL',
-    titre: '',
-    description: '',
-    date_prevue: '',
-    heure_prevue: '',
-    duree_prevue_minutes: '',
-    intervenant_id: '',
-    adresse_intervention: '',
-    contact_sur_place: '',
-    telephone_contact: '',
-    materiel_necessaire: ''
-  });
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // Combiner date et heure pour date_prevue_debut
-    let date_prevue_debut: string | undefined;
-    if (formData.date_prevue) {
-      const time = formData.heure_prevue || '09:00';
-      date_prevue_debut = `${formData.date_prevue}T${time}:00`;
-    }
-
-    const data = {
-      client_id: formData.client_id,
-      donneur_ordre_id: formData.donneur_ordre_id || undefined,
-      type_intervention: (formData.type_intervention || 'AUTRE') as InterventionType,
-      priorite: (formData.priorite || 'NORMAL') as InterventionPriorite,
-      titre: formData.titre || undefined,
-      description: formData.description || undefined,
-      date_prevue_debut: date_prevue_debut,
-      intervenant_id: formData.intervenant_id || undefined,
-      adresse_ligne1: formData.adresse_intervention || undefined,
-      notes_internes: [
-        formData.contact_sur_place ? `Contact: ${formData.contact_sur_place}` : '',
-        formData.telephone_contact ? `Tél: ${formData.telephone_contact}` : '',
-        formData.materiel_necessaire ? `Matériel: ${formData.materiel_necessaire}` : '',
-      ].filter(Boolean).join('\n') || undefined,
-    };
-
-    createIntervention.mutate(data, {
-      onSuccess: () => onClose()
-    });
-  };
-
-  return (
-    <Modal isOpen={true} onClose={onClose} title="Nouvelle intervention" size="lg">
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Client *</label>
-              <Select
-                value={formData.client_id}
-                onChange={(v) => setFormData({ ...formData, client_id: v })}
-                options={[
-                  { value: '', label: 'Sélectionner...' },
-                  ...clients.map((c: any) => ({ value: c.id, label: c.name }))
-                ]}
-              />
-            </div>
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Donneur d'ordre</label>
-              <Select
-                value={formData.donneur_ordre_id}
-                onChange={(v) => setFormData({ ...formData, donneur_ordre_id: v })}
-                options={[
-                  { value: '', label: 'Aucun' },
-                  ...donneursOrdre.map(d => ({ value: d.id, label: d.nom }))
-                ]}
-              />
-            </div>
-          </div>
-
-          <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Titre *</label>
-            <Input
-              value={formData.titre}
-              onChange={(v) => setFormData({ ...formData, titre: v })}
-              placeholder="Titre de l'intervention"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Type *</label>
-              <Select
-                value={formData.type_intervention}
-                onChange={(v) => setFormData({ ...formData, type_intervention: v })}
-                options={[{ value: '', label: 'Sélectionner...' }, ...TYPES_INTERVENTION]}
-              />
-            </div>
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Priorité *</label>
-              <Select
-                value={formData.priorite}
-                onChange={(v) => setFormData({ ...formData, priorite: v })}
-                options={PRIORITES}
-              />
-            </div>
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Durée prévue (min)</label>
-              <Input
-                type="number"
-                value={formData.duree_prevue_minutes}
-                onChange={(v) => setFormData({ ...formData, duree_prevue_minutes: v })}
-                placeholder="60"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Date prévue</label>
-              <input
-                type="date"
-                className="azals-input"
-                value={formData.date_prevue}
-                onChange={(e) => setFormData({ ...formData, date_prevue: e.target.value })}
-              />
-            </div>
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Heure prévue</label>
-              <input
-                type="time"
-                className="azals-input"
-                value={formData.heure_prevue}
-                onChange={(e) => setFormData({ ...formData, heure_prevue: e.target.value })}
-              />
-            </div>
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Intervenant</label>
-              <Select
-                value={formData.intervenant_id}
-                onChange={(v) => setFormData({ ...formData, intervenant_id: v })}
-                options={[
-                  { value: '', label: 'Non assigné' },
-                  ...intervenants.map((i: any) => ({ value: i.id, label: `${i.first_name} ${i.last_name}` }))
-                ]}
-              />
-            </div>
-          </div>
-
-          <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Adresse d'intervention</label>
-            <Input
-              value={formData.adresse_intervention}
-              onChange={(v) => setFormData({ ...formData, adresse_intervention: v })}
-              placeholder="Adresse complète"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Contact sur place</label>
-              <Input
-                value={formData.contact_sur_place}
-                onChange={(v) => setFormData({ ...formData, contact_sur_place: v })}
-                placeholder="Nom du contact"
-              />
-            </div>
-            <div className="azals-field">
-              <label className="block text-sm font-medium mb-1">Téléphone contact</label>
-              <Input
-                value={formData.telephone_contact}
-                onChange={(v) => setFormData({ ...formData, telephone_contact: v })}
-                placeholder="06 XX XX XX XX"
-              />
-            </div>
-          </div>
-
-          <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Description</label>
-            <TextArea
-              value={formData.description}
-              onChange={(v) => setFormData({ ...formData, description: v })}
-              rows={3}
-              placeholder="Description détaillée de l'intervention..."
-            />
-          </div>
-
-          <div className="azals-field">
-            <label className="block text-sm font-medium mb-1">Matériel nécessaire</label>
-            <TextArea
-              value={formData.materiel_necessaire}
-              onChange={(v) => setFormData({ ...formData, materiel_necessaire: v })}
-              rows={2}
-              placeholder="Liste du matériel requis..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
-            <Button type="submit" disabled={createIntervention.isPending}>Créer l'intervention</Button>
-          </div>
-        </div>
-      </form>
-    </Modal>
-  );
-};
 
 // ============================================================================
 // DONNEURS D'ORDRE VIEW
@@ -784,11 +566,22 @@ const PlanningView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'interventions' | 'planning' | 'donneurs-ordre';
+type View = 'dashboard' | 'interventions' | 'planning' | 'donneurs-ordre' | 'form';
 
 const InterventionsModule: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [editInterventionId, setEditInterventionId] = useState<string | undefined>(undefined);
   const { data: stats } = useInterventionStats();
+
+  const navigateToForm = (interventionId?: string) => {
+    setEditInterventionId(interventionId);
+    setCurrentView('form');
+  };
+
+  const navigateToList = () => {
+    setEditInterventionId(undefined);
+    setCurrentView('interventions');
+  };
 
   const tabs = [
     { id: 'dashboard', label: 'Vue d\'ensemble' },
@@ -799,8 +592,16 @@ const InterventionsModule: React.FC = () => {
 
   const renderContent = () => {
     switch (currentView) {
+      case 'form':
+        return (
+          <InterventionFormView
+            interventionId={editInterventionId}
+            onBack={navigateToList}
+            onSaved={() => navigateToList()}
+          />
+        );
       case 'interventions':
-        return <InterventionsListView />;
+        return <InterventionsListView onNewIntervention={() => navigateToForm()} />;
       case 'planning':
         return <PlanningView />;
       case 'donneurs-ordre':
@@ -861,6 +662,11 @@ const InterventionsModule: React.FC = () => {
         );
     }
   };
+
+  // Form view renders its own PageWrapper
+  if (currentView === 'form') {
+    return renderContent();
+  }
 
   return (
     <PageWrapper title="Interventions" subtitle="Gestion des interventions terrain">

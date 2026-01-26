@@ -157,20 +157,26 @@ export interface DonneurOrdre {
 }
 
 export interface InterventionFormData {
+  // Section 1: Informations Client
   client_id: string;
   donneur_ordre_id?: string;
+  reference_externe?: string;
+  facturer_a: 'donneur_ordre' | 'client_final';
+  adresse_ligne1?: string;
+  adresse_ligne2?: string;
+  code_postal?: string;
+  ville?: string;
+
+  // Section 2: Intervention
   type_intervention: InterventionType;
   priorite: InterventionPriorite;
-  titre: string;
-  description?: string;
-  date_prevue?: string;
-  heure_prevue?: string;
-  duree_prevue_minutes?: number;
+  titre?: string;
+  date_prevue_debut?: string;
+  duree_prevue_heures?: number;
   intervenant_id?: string;
-  adresse_intervention?: string;
-  contact_sur_place?: string;
-  telephone_contact?: string;
-  materiel_necessaire?: string;
+
+  // Section 3: Description
+  description?: string;
 }
 
 export interface Customer {

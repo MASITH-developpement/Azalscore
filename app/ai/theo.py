@@ -346,15 +346,50 @@ class TheoInterface:
             target_modules=detected_modules
         )
 
+    def _format_human_intent(self, intention: IntentionAnalysis) -> str:
+        """Formate l'intention de manière lisible pour un humain"""
+        parts = []
+
+        # Modules ciblés
+        if intention.target_modules:
+            modules_friendly = {
+                'crm': 'gestion des clients',
+                'invoicing': 'facturation',
+                'treasury': 'trésorerie',
+                'hr': 'ressources humaines',
+                'inventory': 'gestion des stocks',
+                'projects': 'gestion de projets',
+            }
+            module_names = [modules_friendly.get(m, m) for m in intention.target_modules]
+            parts.append(f"dans le module **{', '.join(module_names)}**")
+
+        # Actions suggérées
+        if intention.suggested_actions:
+            actions_friendly = {
+                'create': 'créer',
+                'update': 'modifier',
+                'delete': 'supprimer',
+                'view': 'consulter',
+                'analyze': 'analyser',
+            }
+            action_names = [actions_friendly.get(a, a) for a in intention.suggested_actions]
+            parts.append(f"action **{', '.join(action_names)}**")
+
+        if parts:
+            return "Vous souhaitez " + " ".join(parts) + "."
+        return "Je n'ai pas bien compris votre demande."
+
     def _format_clarification_request(self, intention: IntentionAnalysis) -> str:
         """Formate une demande de clarification"""
         message = "J'ai besoin de quelques précisions pour bien comprendre votre demande.\n\n"
 
-        if intention.understood_intent:
-            message += f"Ce que j'ai compris : {intention.understood_intent}\n\n"
+        # Afficher ce qui a été compris de manière lisible
+        human_intent = self._format_human_intent(intention)
+        if human_intent and human_intent != "Je n'ai pas bien compris votre demande.":
+            message += f"✓ **Ce que j'ai compris :** {human_intent}\n\n"
 
         if intention.clarification_questions:
-            message += "Questions :\n"
+            message += "**Questions :**\n"
             for i, q in enumerate(intention.clarification_questions, 1):
                 message += f"{i}. {q}\n"
 
@@ -433,18 +468,21 @@ class TheoInterface:
         actions_taken: List[str]
     ) -> str:
         """Construit la réponse finale"""
-        message = "Voici ce que j'ai fait pour vous :\n\n"
-
-        message += f"**Demande comprise** : {intention.understood_intent}\n"
-        message += f"**Confiance** : {intention.confidence * 100:.0f}%\n\n"
+        # Format lisible de l'intention
+        human_intent = self._format_human_intent(intention)
 
         if actions_taken:
-            message += "**Actions effectuées** :\n"
+            message = f"✓ **Compris !** {human_intent}\n\n"
+            message += "**Actions effectuées :**\n"
             for action in actions_taken:
-                message += f"- {action}\n"
+                message += f"• {action}\n"
         else:
-            message += "Aucune action automatique n'a été effectuée. "
-            message += "Souhaitez-vous que je procède ?"
+            message = f"✓ **Compris !** {human_intent}\n\n"
+            message += "Je suis prêt à procéder. Souhaitez-vous que je continue ?"
+
+        # Afficher niveau de confiance seulement si bas
+        if intention.confidence < 0.7:
+            message += f"\n\n_(Niveau de confiance: {intention.confidence * 100:.0f}%)_"
 
         return message
 

@@ -42,14 +42,12 @@ services:
       DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
     # Port expose en interne pour nginx, pas directement sur l'hote
     expose:
-      - "8000"
-    # ports:
-    #   - "8000:8000"  # Decommenter pour acces direct (dev)
+      - "80"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -9,3 +9,4 @@ export { InterventionFinancialTab } from './InterventionFinancialTab';
 export { InterventionDocsTab } from './InterventionDocsTab';
 export { InterventionHistoryTab } from './InterventionHistoryTab';
 export { InterventionIATab } from './InterventionIATab';
+export { InterventionFormView } from './InterventionFormView';

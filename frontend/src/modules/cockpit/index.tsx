@@ -92,13 +92,13 @@ const useCockpitStats = () => {
         projectsRes,
         facturesRes,
       ] = await Promise.all([
-        api.get('/v1/commercial/customers?limit=1').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/opportunities?limit=200').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/documents?type=QUOTE&limit=200').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/documents?type=ORDER&limit=200').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/interventions?limit=200').catch(() => ({ total: 0, items: [] })),
+        api.get('/v1/commercial/customers?page_size=1').catch(() => ({ total: 0, items: [] })),
+        api.get('/v1/commercial/opportunities?page_size=100').catch(() => ({ total: 0, items: [] })),
+        api.get('/v1/commercial/documents?type=QUOTE&page_size=100').catch(() => ({ total: 0, items: [] })),
+        api.get('/v1/commercial/documents?type=ORDER&page_size=100').catch(() => ({ total: 0, items: [] })),
+        api.get('/v1/interventions?page_size=100').catch(() => ({ total: 0, items: [] })),
         api.get('/v1/projects?limit=200').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/documents?type=INVOICE&limit=200').catch(() => ({ total: 0, items: [] })),
+        api.get('/v1/commercial/documents?type=INVOICE&page_size=100').catch(() => ({ total: 0, items: [] })),
       ]);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

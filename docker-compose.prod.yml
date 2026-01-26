@@ -74,7 +74,7 @@ services:
     env_file:
       - .env.production
     expose:
-      - "8000"
+      - "80"
     volumes:
       - backups_data:/app/backups
     depends_on:
@@ -83,7 +83,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
