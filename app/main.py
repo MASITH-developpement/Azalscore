@@ -141,6 +141,7 @@ from app.modules.marketplace.router import router as marketplace_router
 
 # Module M18 - Mobile App Backend
 from app.modules.mobile.router import router as mobile_router
+from app.modules.mobile.router_v2 import router as mobile_router_v2
 
 # Module M13 - POS (Point de Vente)
 from app.modules.pos.router import router as pos_router
@@ -1099,6 +1100,7 @@ app.include_router(autoconfig_router_v2)
 app.include_router(country_packs_router_v2)
 app.include_router(email_router_v2)
 app.include_router(marketplace_router_v2)
+app.include_router(mobile_router_v2)
 app.include_router(triggers_router_v2)
 app.include_router(web_router_v2)
 app.include_router(website_router_v2)
