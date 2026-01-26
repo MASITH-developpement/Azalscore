@@ -63,7 +63,7 @@ export interface ModuleMeta {
   backend: {
     apiAvailable: boolean;
     lastCheck: string;
-    endpoints?: string[];
+    endpoints?: readonly string[];
   };
   owner: string;
   criticality: 'high' | 'medium' | 'low';

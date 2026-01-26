@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { BaseViewStandard } from '@/ui-engine/layouts/BaseViewStandard';
+import { BaseViewStandard } from '@/ui-engine/standards/BaseViewStandard';
 
 // Import des composants locaux
 import { Tab1View } from './components/Tab1View';
