@@ -135,7 +135,7 @@ class AIConfig:
         # Configuration Audit
         self.audit = AuditConfig(
             enabled=True,  # Toujours actif (conformité AZA-NF-009)
-            log_directory=os.getenv("AZALSCORE_AUDIT_LOG_DIR", "/home/ubuntu/azalscore/logs/ai_audit"),
+            log_directory=os.getenv("AZALSCORE_AUDIT_LOG_DIR", "/app/logs/ai_audit"),
             retention_days=int(os.getenv("AZALSCORE_AUDIT_RETENTION_DAYS", "365")),
             log_sensitive_data=self.environment != Environment.PRODUCTION,
             checksum_enabled=True

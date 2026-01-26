@@ -127,7 +127,7 @@ class AIAuditLogger:
     - Permettre l'export pour audit
     """
 
-    def __init__(self, log_dir: str = "/home/ubuntu/azalscore/logs/ai_audit"):
+    def __init__(self, log_dir: str = "/app/logs/ai_audit"):
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self._events: List[AuditEvent] = []
