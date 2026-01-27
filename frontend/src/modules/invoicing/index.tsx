@@ -22,10 +22,11 @@ import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, FileText, Check, Download, Eye, Edit, Trash2,
-  ArrowRight, RefreshCw, Filter, Search, X, FileSpreadsheet,
+  ArrowRight, Filter, Search, X, FileSpreadsheet,
   AlertCircle, CheckCircle2, Clock, UserPlus, Copy, ShoppingCart,
   DollarSign, Link2, Sparkles
 } from 'lucide-react';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { api } from '@core/api-client';
 import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard, useHasCapability } from '@core/capabilities';
@@ -799,7 +800,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
   const [duplicateTarget, setDuplicateTarget] = useState<Document | null>(null);
   const [transformTarget, setTransformTarget] = useState<Document | null>(null);
 
-  const { data, isLoading, refetch } = useDocuments(type, page, pageSize, filters);
+  const { data, isLoading, error, refetch } = useDocuments(type, page, pageSize, filters);
   const deleteDocument = useDeleteDocument();
   const validateDocument = useValidateDocument();
   const convertQuote = useConvertQuoteToInvoice();
@@ -963,6 +964,8 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
           }}
           onRefresh={refetch}
           emptyMessage={`Aucun ${typeConfig.label.toLowerCase()}`}
+          error={error instanceof Error ? error : null}
+          onRetry={() => refetch()}
         />
       </Card>
 
@@ -1206,10 +1209,7 @@ const DocumentFormPage: React.FC<DocumentFormPageProps> = ({ type }) => {
   if ((isEdit && loadingDocument) || loadingCustomers) {
     return (
       <PageWrapper title={`${isEdit ? 'Modifier' : 'Nouveau'} ${typeConfig.label}`}>
-        <div className="azals-loading">
-          <RefreshCw className="animate-spin" size={24} />
-          <span>Chargement...</span>
-        </div>
+        <LoadingState message="Chargement du formulaire..." />
       </PageWrapper>
     );
   }
@@ -1350,7 +1350,7 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({ type }) => {
   const [validateModal, setValidateModal] = useState(false);
   const [convertModal, setConvertModal] = useState(false);
 
-  const { data: document, isLoading } = useDocument(id || '');
+  const { data: document, isLoading, refetch } = useDocument(id || '');
   const validateDocument = useValidateDocument();
   const convertQuote = useConvertQuoteToInvoice();
 
@@ -1361,10 +1361,7 @@ const DocumentDetailPage: React.FC<DocumentDetailPageProps> = ({ type }) => {
   if (isLoading) {
     return (
       <PageWrapper title={typeConfig.label}>
-        <div className="azals-loading">
-          <RefreshCw className="animate-spin" size={24} />
-          <span>Chargement...</span>
-        </div>
+        <LoadingState onRetry={() => refetch()} message="Chargement du document..." />
       </PageWrapper>
     );
   }
@@ -1669,15 +1666,12 @@ interface InvoicingDetailViewProps {
 const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: document, isLoading, error } = useDocument(id || '');
+  const { data: document, isLoading, error, refetch } = useDocument(id || '');
 
   if (isLoading) {
     return (
       <PageWrapper title="Chargement...">
-        <div className="azals-loading">
-          <RefreshCw className="animate-spin" size={24} />
-          <span>Chargement du document...</span>
-        </div>
+        <LoadingState onRetry={() => refetch()} message="Chargement du document..." />
       </PageWrapper>
     );
   }
@@ -1685,9 +1679,11 @@ const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
   if (error || !document) {
     return (
       <PageWrapper title="Erreur">
-        <div className="azals-alert azals-alert--danger">
-          Document introuvable
-        </div>
+        <ErrorState
+          message="Document introuvable"
+          onRetry={() => refetch()}
+          onBack={() => navigate(-1)}
+        />
       </PageWrapper>
     );
   }
@@ -1860,6 +1856,8 @@ const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error instanceof Error ? error : null}
+      onRetry={() => refetch()}
     />
   );
 };
