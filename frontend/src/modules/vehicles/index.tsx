@@ -18,6 +18,7 @@ import {
   Edit, Trash2, Save, Calculator, AlertCircle,
   ChevronDown, X, FileText, Clock, Sparkles
 } from 'lucide-react';
+import { LoadingState } from '@ui/components/StateViews';
 import { api } from '@core/api-client';
 import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -571,11 +572,15 @@ interface VehicleDetailViewProps {
 }
 
 const VehicleDetailView: React.FC<VehicleDetailViewProps> = ({ vehicleId, onBack, onEdit }) => {
-  const { data: vehicle, isLoading, error } = useVehicule(vehicleId);
+  const { data: vehicle, isLoading, error, refetch } = useVehicule(vehicleId);
   const canEdit = useHasCapability('fleet.edit');
 
   if (isLoading) {
-    return <PageWrapper title="Chargement..."><div className="azals-loading">Chargement...</div></PageWrapper>;
+    return (
+      <PageWrapper title="Chargement...">
+        <LoadingState onRetry={() => refetch()} message="Chargement du vehicule..." />
+      </PageWrapper>
+    );
   }
 
   if (error || !vehicle) {
@@ -729,6 +734,8 @@ const VehicleDetailView: React.FC<VehicleDetailViewProps> = ({ vehicleId, onBack
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error instanceof Error ? error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -876,7 +883,7 @@ const VehiculesListPage: React.FC<{
   const [pageSize, setPageSize] = useState(25);
   const [deleteTarget, setDeleteTarget] = useState<Vehicule | null>(null);
 
-  const { data, isLoading, refetch } = useVehicules(page, pageSize);
+  const { data, isLoading, error, refetch } = useVehicules(page, pageSize);
   const deleteVehicule = useDeleteVehicule();
   const canCreate = useHasCapability('fleet.create');
   const canDelete = useHasCapability('fleet.delete');
@@ -979,6 +986,7 @@ const VehiculesListPage: React.FC<{
           keyField="id"
           actions={actions}
           isLoading={isLoading}
+          error={error instanceof Error ? error : null}
           pagination={{
             page,
             pageSize,
@@ -987,6 +995,7 @@ const VehiculesListPage: React.FC<{
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          onRetry={() => refetch()}
           emptyMessage="Aucun vehicule enregistre"
         />
       </Card>

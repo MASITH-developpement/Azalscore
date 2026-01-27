@@ -25,6 +25,7 @@ import {
   DollarSign, ArrowLeft, Edit, Send, Printer, Trash2, Target,
   User, Sparkles, FileText, CheckSquare
 } from 'lucide-react';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
 // Types et helpers
 import type { Project, Task, TimeEntry, ProjectStats } from './types';
@@ -195,23 +196,19 @@ interface ProjectDetailViewProps {
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack, onEdit }) => {
-  const { data: project, isLoading, error } = useProject(projectId);
+  const { data: project, isLoading, error, refetch } = useProject(projectId);
 
   if (isLoading) {
-    return (
-      <div className="azals-loading">
-        <RefreshCw className="azals-spin" size={32} />
-        <p>Chargement du projet...</p>
-      </div>
-    );
+    return <LoadingState onRetry={() => refetch()} message="Chargement du projet..." />;
   }
 
   if (error || !project) {
     return (
-      <div className="azals-error">
-        <p>Erreur lors du chargement du projet</p>
-        <Button onClick={onBack}>Retour</Button>
-      </div>
+      <ErrorState
+        message="Erreur lors du chargement du projet"
+        onRetry={() => refetch()}
+        onBack={onBack}
+      />
     );
   }
 
@@ -400,6 +397,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
+      error={error instanceof Error ? error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -410,7 +409,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack
 
 const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({ onSelectProject }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: projects = [], isLoading } = useProjects({
+  const { data: projects = [], isLoading, error, refetch } = useProjects({
     status: filterStatus || undefined
   });
 
@@ -496,7 +495,7 @@ const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({
           <Button>Nouveau projet</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -504,7 +503,7 @@ const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({
 const TasksView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterProject, setFilterProject] = useState<string>('');
-  const { data: tasks = [], isLoading } = useTasks({
+  const { data: tasks = [], isLoading, error, refetch } = useTasks({
     status: filterStatus || undefined,
     project_id: filterProject || undefined
   });
@@ -594,7 +593,7 @@ const TasksView: React.FC = () => {
           <Button>Nouvelle tache</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -606,7 +605,7 @@ const TimesheetView: React.FC = () => {
   const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [formHours, setFormHours] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
-  const { data: timeEntries = [], isLoading } = useTimeEntries({
+  const { data: timeEntries = [], isLoading, error: timeError, refetch: timeRefetch } = useTimeEntries({
     project_id: filterProject || undefined
   });
   const { data: projects = [] } = useProjects();
@@ -663,7 +662,7 @@ const TimesheetView: React.FC = () => {
             <Button onClick={() => setShowLogModal(true)}>Saisir du temps</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" />
+        <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" error={timeError instanceof Error ? timeError : null} onRetry={() => timeRefetch()} />
       </Card>
 
       {showLogModal && (

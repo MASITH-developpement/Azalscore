@@ -22,8 +22,9 @@ import {
 import type { TableColumn } from '@/types';
 import {
   Check, Wrench, X, Cog, AlertTriangle, Calendar, BarChart3, Clock,
-  ArrowLeft, Edit, Printer, Package, FileText, Sparkles, RefreshCw
+  ArrowLeft, Edit, Printer, Package, FileText, Sparkles
 } from 'lucide-react';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
 // Types et helpers
 import type { Asset, MaintenanceOrder, MaintenancePlan, MaintenanceDashboard } from './types';
@@ -177,23 +178,19 @@ interface AssetDetailViewProps {
 }
 
 const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onEdit }) => {
-  const { data: asset, isLoading, error } = useAsset(assetId);
+  const { data: asset, isLoading, error, refetch } = useAsset(assetId);
 
   if (isLoading) {
-    return (
-      <div className="azals-loading">
-        <RefreshCw className="azals-spin" size={32} />
-        <p>Chargement de l'equipement...</p>
-      </div>
-    );
+    return <LoadingState onRetry={() => refetch()} message="Chargement de l'equipement..." />;
   }
 
   if (error || !asset) {
     return (
-      <div className="azals-error">
-        <p>Erreur lors du chargement de l'equipement</p>
-        <Button onClick={onBack}>Retour</Button>
-      </div>
+      <ErrorState
+        message="Erreur lors du chargement de l'equipement"
+        onRetry={() => refetch()}
+        onBack={onBack}
+      />
     );
   }
 
@@ -379,6 +376,8 @@ const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onEd
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
+      error={error instanceof Error ? error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -450,7 +449,7 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterCriticality, setFilterCriticality] = useState<string>('');
-  const { data: assets = [], isLoading } = useAssets({
+  const { data: assets = [], isLoading, error, refetch } = useAssets({
     type: filterType || undefined,
     status: filterStatus || undefined,
     criticality: filterCriticality || undefined
@@ -513,7 +512,7 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           <Button onClick={() => setShowModal(true)}>Nouvel equipement</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel equipement" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>

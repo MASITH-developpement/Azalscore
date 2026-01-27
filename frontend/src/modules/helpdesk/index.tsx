@@ -17,6 +17,7 @@ import {
   Inbox, Settings, AlertTriangle, CheckCircle, Clock, Target, Star,
   MessageSquare, FileText, BookOpen, Sparkles, User, Edit
 } from 'lucide-react';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import type { TableColumn } from '@/types';
 import type { Ticket, TicketCategory, KnowledgeArticle, HelpdeskDashboard, TicketPriority, TicketStatus, TicketSource } from './types';
 import {
@@ -157,12 +158,12 @@ interface TicketDetailViewProps {
 }
 
 const TicketDetailView: React.FC<TicketDetailViewProps> = ({ ticketId, onBack }) => {
-  const { data: ticket, isLoading, error } = useTicket(ticketId);
+  const { data: ticket, isLoading, error, refetch } = useTicket(ticketId);
 
   if (isLoading) {
     return (
       <PageWrapper title="Chargement...">
-        <div className="azals-loading">Chargement du ticket...</div>
+        <LoadingState onRetry={() => refetch()} message="Chargement du ticket..." />
       </PageWrapper>
     );
   }
@@ -170,13 +171,11 @@ const TicketDetailView: React.FC<TicketDetailViewProps> = ({ ticketId, onBack })
   if (error || !ticket) {
     return (
       <PageWrapper title="Ticket non trouve">
-        <Card>
-          <div className="azals-empty">
-            <AlertTriangle size={48} />
-            <p>Ce ticket n'existe pas ou a ete supprime.</p>
-            <Button onClick={onBack}>Retour a la liste</Button>
-          </div>
-        </Card>
+        <ErrorState
+          message="Ce ticket n'existe pas ou a ete supprime."
+          onRetry={() => refetch()}
+          onBack={onBack}
+        />
       </PageWrapper>
     );
   }

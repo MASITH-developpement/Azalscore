@@ -18,6 +18,7 @@ import {
   ClipboardList, Calendar, Wrench, CheckCircle, BarChart3, Clock, MapPin,
   User, FileText, History, Sparkles, Package, Euro, AlertTriangle, Play, X
 } from 'lucide-react';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
 // Import tab components
 import {
@@ -393,7 +394,7 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
   const [filterPriorite, setFilterPriorite] = useState<string>('');
   const [selectedIntervention, setSelectedIntervention] = useState<Intervention | null>(null);
 
-  const { data: interventions = [], isLoading } = useInterventions({
+  const { data: interventions = [], isLoading, error: interventionsError, refetch: refetchInterventions } = useInterventions({
     statut: filterStatut || undefined,
     type_intervention: filterType || undefined,
     priorite: filterPriorite || undefined
@@ -464,7 +465,7 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
             <Button onClick={onNewIntervention}>Nouvelle intervention</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={interventions} isLoading={isLoading} keyField="id" />
+        <DataTable columns={columns} data={interventions} isLoading={isLoading} keyField="id" error={interventionsError instanceof Error ? interventionsError : null} onRetry={() => refetchInterventions()} />
       </Card>
 
       {/* Detail View with BaseViewStandard */}
@@ -485,7 +486,7 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
 // ============================================================================
 
 const DonneursOrdreView: React.FC = () => {
-  const { data: donneursOrdre = [], isLoading } = useDonneursOrdre();
+  const { data: donneursOrdre = [], isLoading, error: donneursError, refetch: refetchDonneurs } = useDonneursOrdre();
 
   const columns: TableColumn<DonneurOrdre>[] = [
     { id: 'nom', header: 'Nom', accessor: 'nom' },
@@ -503,7 +504,7 @@ const DonneursOrdreView: React.FC = () => {
         <h3 className="text-lg font-semibold">Donneurs d'ordre</h3>
         <Button>Nouveau donneur d'ordre</Button>
       </div>
-      <DataTable columns={columns} data={donneursOrdre} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={donneursOrdre} isLoading={isLoading} keyField="id" error={donneursError instanceof Error ? donneursError : null} onRetry={() => refetchDonneurs()} />
     </Card>
   );
 };
@@ -513,7 +514,20 @@ const DonneursOrdreView: React.FC = () => {
 // ============================================================================
 
 const PlanningView: React.FC = () => {
-  const { data: interventions = [] } = useInterventions({ statut: 'PLANIFIEE' });
+  const { data: interventions = [], isLoading, error, refetch } = useInterventions({ statut: 'PLANIFIEE' });
+
+  if (isLoading) {
+    return <LoadingState onRetry={() => refetch()} message="Chargement du planning..." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        message={error instanceof Error ? error.message : 'Erreur lors du chargement du planning'}
+        onRetry={() => refetch()}
+      />
+    );
+  }
 
   // Grouper par date
   const interventionsByDate = interventions.reduce((acc: Record<string, Intervention[]>, int: Intervention) => {
@@ -571,7 +585,7 @@ type View = 'dashboard' | 'interventions' | 'planning' | 'donneurs-ordre' | 'for
 const InterventionsModule: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [editInterventionId, setEditInterventionId] = useState<string | undefined>(undefined);
-  const { data: stats } = useInterventionStats();
+  const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useInterventionStats();
 
   const navigateToForm = (interventionId?: string) => {
     setEditInterventionId(interventionId);
@@ -607,6 +621,17 @@ const InterventionsModule: React.FC = () => {
       case 'donneurs-ordre':
         return <DonneursOrdreView />;
       default:
+        if (statsLoading) {
+          return <LoadingState onRetry={() => refetchStats()} message="Chargement des statistiques..." />;
+        }
+        if (statsError) {
+          return (
+            <ErrorState
+              message="Impossible de charger les statistiques"
+              onRetry={() => refetchStats()}
+            />
+          );
+        }
         return (
           <div className="space-y-4">
             <Grid cols={4}>

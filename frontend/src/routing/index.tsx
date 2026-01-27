@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { MainLayout, AuthLayout } from '@ui/layout';
 import { CapabilityGuard } from '@core/capabilities';
 import { useIsAuthenticated } from '@core/auth';
+import { LoadingState } from '@ui/components/StateViews';
 
 // ============================================================
 // LAZY LOADING DES MODULES
@@ -59,8 +60,10 @@ const SettingsPage = lazy(() => import('@/pages/Settings'));
 
 const LoadingFallback: React.FC = () => (
   <div className="azals-loading azals-loading--page">
-    <div className="azals-spinner azals-spinner--lg" />
-    <p>Chargement...</p>
+    <LoadingState
+      onRetry={() => window.location.reload()}
+      message="Chargement du module..."
+    />
   </div>
 );
 

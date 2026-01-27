@@ -8,8 +8,9 @@ import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Package, ShoppingCart, Truck, Tag, Euro, TrendingUp, AlertTriangle,
-  ArrowLeft, Edit, Printer, Clock, FileText, Sparkles, RefreshCw
+  ArrowLeft, Edit, Printer, Clock, FileText, Sparkles
 } from 'lucide-react';
+import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
@@ -224,23 +225,19 @@ const useUpdateOrderStatus = () => {
 const ProductDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: product, isLoading, error } = useProduct(id || '');
+  const { data: product, isLoading, error, refetch } = useProduct(id || '');
 
   if (isLoading) {
-    return (
-      <div className="azals-loading">
-        <RefreshCw className="azals-spin" size={32} />
-        <p>Chargement du produit...</p>
-      </div>
-    );
+    return <LoadingState onRetry={() => refetch()} message="Chargement du produit..." />;
   }
 
   if (error || !product) {
     return (
-      <div className="azals-error">
-        <p>Erreur lors du chargement du produit</p>
-        <Button onClick={() => navigate('/ecommerce')}>Retour</Button>
-      </div>
+      <ErrorState
+        message="Erreur lors du chargement du produit"
+        onRetry={() => refetch()}
+        onBack={() => navigate('/ecommerce')}
+      />
     );
   }
 
@@ -327,23 +324,19 @@ const ProductDetailView: React.FC = () => {
 const OrderDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: order, isLoading, error } = useOrder(id || '');
+  const { data: order, isLoading, error, refetch } = useOrder(id || '');
 
   if (isLoading) {
-    return (
-      <div className="azals-loading">
-        <RefreshCw className="azals-spin" size={32} />
-        <p>Chargement de la commande...</p>
-      </div>
-    );
+    return <LoadingState onRetry={() => refetch()} message="Chargement de la commande..." />;
   }
 
   if (error || !order) {
     return (
-      <div className="azals-error">
-        <p>Erreur lors du chargement de la commande</p>
-        <Button onClick={() => navigate('/ecommerce')}>Retour</Button>
-      </div>
+      <ErrorState
+        message="Erreur lors du chargement de la commande"
+        onRetry={() => refetch()}
+        onBack={() => navigate('/ecommerce')}
+      />
     );
   }
 

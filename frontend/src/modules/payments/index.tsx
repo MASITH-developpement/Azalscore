@@ -17,6 +17,7 @@ import {
   DollarSign, BarChart2, Clock, AlertCircle, Calendar, TrendingUp, RotateCcw,
   CreditCard, FileText, History, Sparkles, ArrowLeft, Info, Receipt
 } from 'lucide-react';
+import { LoadingState } from '@ui/components/StateViews';
 
 // Import types from types.ts
 import type {
@@ -190,15 +191,10 @@ interface PaymentDetailViewProps {
 }
 
 const PaymentDetailView: React.FC<PaymentDetailViewProps> = ({ paymentId, onBack }) => {
-  const { data: payment, isLoading } = usePayment(paymentId);
+  const { data: payment, isLoading, refetch } = usePayment(paymentId);
 
   if (isLoading) {
-    return (
-      <div className="azals-loading-container">
-        <div className="azals-spinner" />
-        <p>Chargement du paiement...</p>
-      </div>
-    );
+    return <LoadingState onRetry={() => refetch()} message="Chargement du paiement..." />;
   }
 
   if (!payment) {
