@@ -328,6 +328,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      status: 'ready', // Explicite : ready + !isAuthenticated = unauthenticated
     });
   },
 }));

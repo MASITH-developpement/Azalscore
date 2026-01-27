@@ -100,10 +100,19 @@ const createApiClient = (): AxiosInstance => {
     },
   });
 
-  // Intercepteur requêtes - Ajout du token
+  // Intercepteur requêtes - Auth gate + Ajout du token
+  // RÈGLE : Aucune requête métier ne part sans token valide.
+  // Les endpoints /auth/* sont exemptés (login, refresh, register).
   client.interceptors.request.use(
     (config) => {
       const token = tokenManager.getAccessToken();
+
+      // Auth gate : bloquer les requêtes métier si pas de token
+      const isAuthEndpoint = config.url?.includes('/auth/') || config.url?.includes('/health');
+      if (!token && !isAuthEndpoint && !config.headers['Skip-Auth']) {
+        return Promise.reject(new Error('AUTH_NOT_READY: No token available. Business requests blocked until authenticated.'));
+      }
+
       if (token && !config.headers['Skip-Auth']) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
