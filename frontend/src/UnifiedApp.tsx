@@ -313,6 +313,26 @@ const VIEW_BASE_PATH: Partial<Record<ViewKey, string>> = {
   'admin': '/admin',
 };
 
+// Reverse mapping: URL path → ViewKey (for URL-based navigation)
+// Uses the FIRST matching ViewKey for each unique path
+const PATH_TO_VIEW: Record<string, ViewKey> = {};
+for (const [viewKey, path] of Object.entries(VIEW_BASE_PATH)) {
+  if (path && !PATH_TO_VIEW[path]) {
+    PATH_TO_VIEW[path] = viewKey as ViewKey;
+  }
+}
+
+/** Determine the ViewKey from the current URL pathname */
+function getViewFromPath(pathname: string): ViewKey | null {
+  // Exact match first, then prefix match (longest prefix wins)
+  for (const [path, viewKey] of Object.entries(PATH_TO_VIEW).sort((a, b) => b[0].length - a[0].length)) {
+    if (pathname === path || pathname.startsWith(path + '/')) {
+      return viewKey;
+    }
+  }
+  return null;
+}
+
 /**
  * Wrapper for modules that use React Router <Routes> internally.
  * Ensures the URL matches the module's expected base path, so that
@@ -475,7 +495,13 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
 // ============================================================
 
 const AppContent: React.FC = () => {
-  const [currentView, setCurrentView] = useState<ViewKey>('saisie');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Initialize view from URL (or default to 'saisie')
+  const [currentView, setCurrentView] = useState<ViewKey>(
+    () => getViewFromPath(location.pathname) || 'saisie'
+  );
   const logout = useAuthStore((state) => state.logout);
   const loadCapabilities = useCapabilitiesStore((state) => state.loadCapabilities);
   const capStatus = useCapabilitiesStore((state) => state.status);
@@ -487,6 +513,25 @@ const AppContent: React.FC = () => {
     }
   }, [capStatus, loadCapabilities]);
 
+  // Sync URL → ViewKey when browser navigates (back/forward)
+  useEffect(() => {
+    const viewFromUrl = getViewFromPath(location.pathname);
+    if (viewFromUrl && viewFromUrl !== currentView) {
+      setCurrentView(viewFromUrl);
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // View change handler: update state + URL
+  const handleViewChange = useCallback((view: ViewKey) => {
+    setCurrentView(view);
+    const basePath = VIEW_BASE_PATH[view];
+    if (basePath) {
+      navigate(basePath);
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
+
   const handleLogout = useCallback(async () => {
     await logout();
     queryClient.clear();
@@ -495,7 +540,7 @@ const AppContent: React.FC = () => {
   return (
     <UnifiedLayout
       currentView={currentView}
-      onViewChange={setCurrentView}
+      onViewChange={handleViewChange}
       onLogout={handleLogout}
     >
       <ViewRenderer viewKey={currentView} />

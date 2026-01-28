@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention, InterventionHistoryEntry } from '../types';
-import { formatDateTime, STATUT_CONFIG } from '../types';
+import { STATUT_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * InterventionHistoryTab - Historique et audit trail de l'intervention

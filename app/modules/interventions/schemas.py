@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import (
     CanalDemande,
+    CorpsEtat,
     InterventionPriorite,
     InterventionStatut,
     TypeIntervention,
@@ -75,6 +76,7 @@ class InterventionBase(BaseModel):
     priorite: InterventionPriorite = InterventionPriorite.NORMAL
     reference_externe: str | None = Field(None, max_length=100)
     canal_demande: CanalDemande | None = None
+    corps_etat: CorpsEtat | None = None
 
     titre: str | None = Field(None, max_length=500)
     description: str | None = None
@@ -93,11 +95,27 @@ class InterventionCreate(InterventionBase):
     Création d'une intervention.
 
     La référence (INT-YYYY-XXXX) est générée automatiquement.
-    Le statut initial est A_PLANIFIER.
+    Le statut initial est DRAFT (brouillon éditable).
     """
     date_prevue_debut: datetime | None = None
     date_prevue_fin: datetime | None = None
+    duree_prevue_minutes: int | None = None
     intervenant_id: UUID | None = None
+    affaire_id: UUID | None = None
+
+    # Contact sur place
+    contact_sur_place: str | None = Field(None, max_length=255)
+    telephone_contact: str | None = Field(None, max_length=50)
+    email_contact: str | None = Field(None, max_length=255)
+
+    # Notes & matériel
+    notes_client: str | None = None
+    materiel_necessaire: str | None = None
+
+    # Facturation
+    facturable: bool = True
+    montant_ht: float | None = None
+    montant_ttc: float | None = None
 
 
 class InterventionUpdate(BaseModel):
@@ -105,22 +123,39 @@ class InterventionUpdate(BaseModel):
     Mise à jour intervention.
 
     ATTENTION: La référence n'est PAS modifiable.
-    Le statut ne peut être changé que via les actions terrain.
+    Le statut ne peut PAS être changé via cette route.
+    Utilisez les actions métier : /valider, /planifier, /demarrer,
+    /terminer, /bloquer, /debloquer, /annuler.
     """
     donneur_ordre_id: UUID | None = None
     projet_id: UUID | None = None
+    affaire_id: UUID | None = None
     type_intervention: TypeIntervention | None = None
     priorite: InterventionPriorite | None = None
     reference_externe: str | None = Field(None, max_length=100)
     canal_demande: CanalDemande | None = None
+    corps_etat: CorpsEtat | None = None
     titre: str | None = Field(None, max_length=500)
     description: str | None = None
     notes_internes: str | None = None
+    notes_client: str | None = None
     adresse_ligne1: str | None = Field(None, max_length=255)
     adresse_ligne2: str | None = Field(None, max_length=255)
     ville: str | None = Field(None, max_length=100)
     code_postal: str | None = Field(None, max_length=20)
     pays: str | None = None
+    contact_sur_place: str | None = Field(None, max_length=255)
+    telephone_contact: str | None = Field(None, max_length=50)
+    email_contact: str | None = Field(None, max_length=255)
+    materiel_necessaire: str | None = None
+    materiel_utilise: str | None = None
+    facturable: bool | None = None
+    montant_ht: float | None = None
+    montant_ttc: float | None = None
+    date_prevue_debut: datetime | None = None
+    date_prevue_fin: datetime | None = None
+    duree_prevue_minutes: int | None = None
+    intervenant_id: UUID | None = None
 
 
 class InterventionPlanifier(BaseModel):
@@ -147,6 +182,7 @@ class InterventionResponse(BaseModel):
     client_id: UUID
     donneur_ordre_id: UUID | None = None
     projet_id: UUID | None = None
+    affaire_id: UUID | None = None
     devis_id: UUID | None = None
     facture_client_id: UUID | None = None
     commande_fournisseur_id: UUID | None = None
@@ -155,12 +191,16 @@ class InterventionResponse(BaseModel):
     priorite: InterventionPriorite
     reference_externe: str | None = None
     canal_demande: CanalDemande | None = None
+    corps_etat: CorpsEtat | None = None
 
     titre: str | None = None
     description: str | None = None
+    notes_internes: str | None = None
+    notes_client: str | None = None
 
     date_prevue_debut: datetime | None = None
     date_prevue_fin: datetime | None = None
+    duree_prevue_minutes: int | None = None
     intervenant_id: UUID | None = None
     planning_event_id: UUID | None = None
 
@@ -174,11 +214,27 @@ class InterventionResponse(BaseModel):
 
     statut: InterventionStatut
 
+    # Blocage
+    motif_blocage: str | None = None
+    date_blocage: datetime | None = None
+    date_deblocage: datetime | None = None
+
     adresse_ligne1: str | None = None
     adresse_ligne2: str | None = None
     ville: str | None = None
     code_postal: str | None = None
     pays: str = "France"
+
+    contact_sur_place: str | None = None
+    telephone_contact: str | None = None
+    email_contact: str | None = None
+
+    materiel_necessaire: str | None = None
+    materiel_utilise: str | None = None
+
+    facturable: bool | None = True
+    montant_ht: Decimal | None = None
+    montant_ttc: Decimal | None = None
 
     created_by: UUID | None = None
     created_at: datetime
@@ -266,7 +322,9 @@ class RapportInterventionUpdate(RapportInterventionBase):
 
     ATTENTION: Impossible si le rapport est signé/verrouillé.
     """
-    pass
+    pieces_remplacees: str | None = None
+    temps_passe_minutes: int | None = None
+    materiel_utilise: str | None = None
 
 
 class RapportInterventionResponse(BaseModel):
@@ -281,6 +339,9 @@ class RapportInterventionResponse(BaseModel):
     resume_actions: str | None = None
     anomalies: str | None = None
     recommandations: str | None = None
+    pieces_remplacees: str | None = None
+    temps_passe_minutes: int | None = None
+    materiel_utilise: str | None = None
     photos: list[dict[str, Any]] = []
 
     signature_client: str | None = None
@@ -342,12 +403,24 @@ class RapportFinalGenerateRequest(BaseModel):
 # STATISTIQUES SCHEMAS
 # ============================================================================
 
+class BlocageRequest(BaseModel):
+    """
+    Action: bloquer_intervention()
+
+    Motif obligatoire pour traçabilité audit-proof.
+    Transition statut: EN_COURS -> BLOQUEE
+    """
+    motif: str = Field(..., min_length=5, max_length=1000, description="Motif du blocage (obligatoire)")
+
+
 class InterventionStats(BaseModel):
     """Statistiques interventions."""
     total: int = 0
+    brouillons: int = 0
     a_planifier: int = 0
     planifiees: int = 0
     en_cours: int = 0
+    bloquees: int = 0
     terminees: int = 0
     duree_moyenne_minutes: float = 0.0
 

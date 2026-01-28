@@ -13,6 +13,7 @@ Responsabilités:
 - Intégration Planning
 """
 
+import logging
 import uuid
 from datetime import datetime
 from uuid import UUID
@@ -44,6 +45,67 @@ from .schemas import (
     RapportInterventionUpdate,
     SignatureRapportRequest,
 )
+
+logger = logging.getLogger(__name__)
+
+# ========================================================================
+# AUDIT LOGGING (AZA-SEC, AZA-DATA)
+# ========================================================================
+
+def _get_audit_service(db: Session, tenant_id: str):
+    """
+    Retourne le service d'audit si disponible.
+
+    Dégradation gracieuse : si le module audit n'est pas chargé,
+    les opérations continuent sans audit (log warning).
+    """
+    try:
+        from app.modules.audit.service import AuditService
+        return AuditService(db=db, tenant_id=tenant_id)
+    except ImportError:
+        logger.warning("[INTERVENTIONS] Module audit non disponible - audit désactivé")
+        return None
+
+
+def _audit_log(
+    db: Session,
+    tenant_id: str,
+    action: str,
+    entity_type: str,
+    entity_id: str | None = None,
+    user_id: str | None = None,
+    description: str | None = None,
+    old_value=None,
+    new_value=None,
+):
+    """
+    Enregistre un événement d'audit pour le module interventions.
+
+    Conforme AZA-SEC-003 : toute mutation est traçable.
+    """
+    audit = _get_audit_service(db, tenant_id)
+    if audit is None:
+        return
+    try:
+        from app.modules.audit.models import AuditAction, AuditCategory, AuditLevel
+        action_enum = getattr(AuditAction, action, AuditAction.UPDATE)
+        audit.log(
+            action=action_enum,
+            module="interventions",
+            entity_type=entity_type,
+            entity_id=str(entity_id) if entity_id else None,
+            user_id=int(user_id) if user_id and str(user_id).isdigit() else None,
+            description=description,
+            old_value=old_value,
+            new_value=new_value,
+            category=AuditCategory.BUSINESS,
+            level=AuditLevel.INFO,
+        )
+    except Exception as e:
+        logger.warning(
+            "[INTERVENTIONS_AUDIT] Échec enregistrement audit: %s",
+            str(e)[:200],
+        )
 
 
 class InterventionWorkflowError(Exception):
@@ -271,7 +333,7 @@ class InterventionsService:
         intervention = Intervention(
             tenant_id=self.tenant_id,
             reference=reference,
-            statut=InterventionStatut.A_PLANIFIER,
+            statut=InterventionStatut.DRAFT,
             created_by=created_by,
             **data.model_dump()
         )
@@ -280,7 +342,28 @@ class InterventionsService:
         self.db.commit()
         self.db.refresh(intervention)
 
+        _audit_log(
+            self.db, self.tenant_id,
+            action="CREATE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Création intervention {reference}",
+            new_value={"reference": reference, "statut": "DRAFT"},
+        )
+
         return intervention
+
+    # Transitions de statut autorisées — state machine 7 états
+    TRANSITIONS_AUTORISEES = {
+        InterventionStatut.DRAFT: {InterventionStatut.A_PLANIFIER, InterventionStatut.ANNULEE},
+        InterventionStatut.A_PLANIFIER: {InterventionStatut.PLANIFIEE, InterventionStatut.ANNULEE},
+        InterventionStatut.PLANIFIEE: {InterventionStatut.EN_COURS, InterventionStatut.A_PLANIFIER, InterventionStatut.ANNULEE},
+        InterventionStatut.EN_COURS: {InterventionStatut.TERMINEE, InterventionStatut.BLOQUEE, InterventionStatut.ANNULEE},
+        InterventionStatut.BLOQUEE: {InterventionStatut.EN_COURS, InterventionStatut.ANNULEE},
+        InterventionStatut.TERMINEE: set(),
+        InterventionStatut.ANNULEE: set(),
+    }
 
     def update_intervention(
         self,
@@ -291,19 +374,43 @@ class InterventionsService:
         Met à jour une intervention.
 
         ATTENTION: La référence n'est JAMAIS modifiable.
-        Le statut ne peut être changé que via les actions terrain.
+        Le statut peut être changé si la transition est autorisée.
         """
         intervention = self.get_intervention(intervention_id)
         if not intervention:
             return None
 
-        # Mise à jour des champs autorisés uniquement
-        for key, value in data.model_dump(exclude_unset=True).items():
+        update_data = data.model_dump(exclude_unset=True)
+
+        # RÈGLE MÉTIER : le statut ne peut PAS être modifié via update générique.
+        # Utiliser les actions métier dédiées : /valider, /planifier, /demarrer,
+        # /terminer, /bloquer, /debloquer, /annuler.
+        if "statut" in update_data:
+            raise InterventionWorkflowError(
+                "Le statut ne peut pas être modifié directement. "
+                "Utilisez les actions métier : /valider, /planifier, /demarrer, "
+                "/terminer, /bloquer, /debloquer, /annuler"
+            )
+
+        # Mise à jour des autres champs
+        old_values = {k: getattr(intervention, k, None) for k in update_data}
+        for key, value in update_data.items():
             setattr(intervention, key, value)
 
         intervention.updated_at = datetime.utcnow()
         self.db.commit()
         self.db.refresh(intervention)
+
+        _audit_log(
+            self.db, self.tenant_id,
+            action="UPDATE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Mise à jour intervention {intervention.reference}",
+            old_value={k: str(v) for k, v in old_values.items() if v is not None},
+            new_value={k: str(v) for k, v in update_data.items() if v is not None},
+        )
 
         return intervention
 
@@ -324,7 +431,374 @@ class InterventionsService:
 
         intervention.deleted_at = datetime.utcnow()
         self.db.commit()
+
+        _audit_log(
+            self.db, self.tenant_id,
+            action="DELETE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Suppression (soft) intervention {intervention.reference}",
+            old_value={"statut": intervention.statut.value},
+        )
+
         return True
+
+    def annuler_intervention(self, intervention_id: UUID) -> Intervention:
+        """
+        Annule une intervention.
+
+        Transition: tout sauf TERMINEE/ANNULEE -> ANNULEE
+        Traçable et auditable.
+        """
+        intervention = self.get_intervention(intervention_id)
+        if not intervention:
+            raise InterventionNotFoundError(
+                f"Intervention {intervention_id} non trouvée"
+            )
+
+        if intervention.statut in (
+            InterventionStatut.TERMINEE,
+            InterventionStatut.ANNULEE,
+        ):
+            raise InterventionWorkflowError(
+                f"Impossible d'annuler une intervention {intervention.statut.value}"
+            )
+
+        old_statut = intervention.statut.value
+        intervention.statut = InterventionStatut.ANNULEE
+        intervention.updated_at = datetime.utcnow()
+
+        self.db.commit()
+        self.db.refresh(intervention)
+
+        _audit_log(
+            self.db, self.tenant_id,
+            action="CANCEL",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Annulation intervention {intervention.reference}",
+            old_value={"statut": old_statut},
+            new_value={"statut": "ANNULEE"},
+        )
+
+        return intervention
+
+    # ========================================================================
+    # VALIDATION (DRAFT -> A_PLANIFIER)
+    # ========================================================================
+
+    def valider_intervention(self, intervention_id: UUID) -> Intervention:
+        """
+        Valide/soumet un brouillon d'intervention.
+
+        Transition: DRAFT -> A_PLANIFIER
+        Vérifie que les champs obligatoires sont remplis (client_id, titre).
+        """
+        intervention = self.get_intervention(intervention_id)
+        if not intervention:
+            raise InterventionNotFoundError(f"Intervention {intervention_id} non trouvée")
+
+        if intervention.statut != InterventionStatut.DRAFT:
+            raise InterventionWorkflowError(
+                f"Seul un brouillon (DRAFT) peut être validé. "
+                f"Statut actuel: {intervention.statut.value}"
+            )
+
+        # Validation métier minimale
+        if not intervention.client_id:
+            raise InterventionWorkflowError("Le client est obligatoire pour valider l'intervention")
+        if not intervention.titre:
+            raise InterventionWorkflowError("Le titre est obligatoire pour valider l'intervention")
+
+        intervention.statut = InterventionStatut.A_PLANIFIER
+        intervention.updated_at = datetime.utcnow()
+
+        self.db.commit()
+        self.db.refresh(intervention)
+
+        _audit_log(
+            self.db, self.tenant_id,
+            action="VALIDATE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Validation brouillon intervention {intervention.reference}",
+            old_value={"statut": "DRAFT"},
+            new_value={"statut": "A_PLANIFIER"},
+        )
+
+        return intervention
+
+    # ========================================================================
+    # BLOCAGE / DÉBLOCAGE
+    # ========================================================================
+
+    def bloquer_intervention(self, intervention_id: UUID, motif: str) -> Intervention:
+        """
+        Bloque une intervention en cours.
+
+        Transition: EN_COURS -> BLOQUEE
+        Motif obligatoire (audit-proof).
+        """
+        intervention = self.get_intervention(intervention_id)
+        if not intervention:
+            raise InterventionNotFoundError(f"Intervention {intervention_id} non trouvée")
+
+        if intervention.statut != InterventionStatut.EN_COURS:
+            raise InterventionWorkflowError(
+                f"Seule une intervention EN_COURS peut être bloquée. "
+                f"Statut actuel: {intervention.statut.value}"
+            )
+
+        if not motif or not motif.strip():
+            raise InterventionWorkflowError("Le motif de blocage est obligatoire")
+
+        now = datetime.utcnow()
+        intervention.statut = InterventionStatut.BLOQUEE
+        intervention.motif_blocage = motif.strip()
+        intervention.date_blocage = now
+        intervention.updated_at = now
+
+        self.db.commit()
+        self.db.refresh(intervention)
+
+        _audit_log(
+            self.db, self.tenant_id,
+            action="UPDATE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Blocage intervention {intervention.reference}: {motif[:100]}",
+            old_value={"statut": "EN_COURS"},
+            new_value={"statut": "BLOQUEE", "motif_blocage": motif[:200]},
+        )
+
+        return intervention
+
+    def debloquer_intervention(self, intervention_id: UUID) -> Intervention:
+        """
+        Débloque une intervention bloquée.
+
+        Transition: BLOQUEE -> EN_COURS
+        Le motif_blocage est préservé pour audit trail.
+        """
+        intervention = self.get_intervention(intervention_id)
+        if not intervention:
+            raise InterventionNotFoundError(f"Intervention {intervention_id} non trouvée")
+
+        if intervention.statut != InterventionStatut.BLOQUEE:
+            raise InterventionWorkflowError(
+                f"Seule une intervention BLOQUEE peut être débloquée. "
+                f"Statut actuel: {intervention.statut.value}"
+            )
+
+        now = datetime.utcnow()
+        old_motif = intervention.motif_blocage
+        intervention.statut = InterventionStatut.EN_COURS
+        intervention.date_deblocage = now
+        intervention.updated_at = now
+
+        self.db.commit()
+        self.db.refresh(intervention)
+
+        _audit_log(
+            self.db, self.tenant_id,
+            action="UPDATE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Déblocage intervention {intervention.reference}",
+            old_value={"statut": "BLOQUEE", "motif_blocage": old_motif},
+            new_value={"statut": "EN_COURS"},
+        )
+
+        return intervention
+
+    # ========================================================================
+    # CALCULS MÉTIER (retard, dérive, risque)
+    # ========================================================================
+
+    def calculer_indicateurs_business(self, intervention: Intervention) -> dict:
+        """
+        Calcule les indicateurs métier en temps réel.
+
+        Retourne:
+        - en_retard: bool
+        - jours_retard: int
+        - derive_duree_minutes: int | None
+        - derive_duree_pct: float | None
+        - indicateur_risque: FAIBLE | MOYEN | ELEVE | CRITIQUE
+        - risque_justification: str (audit-proof)
+        """
+        now = datetime.utcnow()
+        statuts_actifs = {
+            InterventionStatut.A_PLANIFIER,
+            InterventionStatut.PLANIFIEE,
+            InterventionStatut.EN_COURS,
+            InterventionStatut.BLOQUEE,
+        }
+
+        # --- Retard ---
+        en_retard = False
+        jours_retard = 0
+        if intervention.statut in statuts_actifs:
+            date_limite = intervention.date_prevue_fin or intervention.date_prevue_debut
+            if date_limite and now > date_limite:
+                en_retard = True
+                jours_retard = (now - date_limite).days
+
+        # --- Dérive durée ---
+        derive_duree_minutes = None
+        derive_duree_pct = None
+        if intervention.duree_reelle_minutes and intervention.duree_prevue_minutes:
+            derive_duree_minutes = intervention.duree_reelle_minutes - intervention.duree_prevue_minutes
+            if intervention.duree_prevue_minutes > 0:
+                derive_duree_pct = round(
+                    (derive_duree_minutes / intervention.duree_prevue_minutes) * 100, 1
+                )
+
+        # --- Indicateur risque ---
+        score = 0
+        justifications = []
+
+        if en_retard:
+            if jours_retard >= 7:
+                score += 40
+                justifications.append(f"Retard critique: {jours_retard} jours")
+            elif jours_retard >= 3:
+                score += 25
+                justifications.append(f"Retard significatif: {jours_retard} jours")
+            else:
+                score += 10
+                justifications.append(f"Retard léger: {jours_retard} jours")
+
+        if intervention.statut == InterventionStatut.BLOQUEE:
+            score += 30
+            justifications.append(
+                f"Intervention bloquée: {intervention.motif_blocage or 'motif non renseigné'}"
+            )
+
+        if intervention.priorite == InterventionPriorite.URGENT:
+            score += 15
+            justifications.append("Priorité urgente")
+        elif intervention.priorite == InterventionPriorite.HIGH:
+            score += 5
+
+        if derive_duree_pct is not None and derive_duree_pct > 50:
+            score += 15
+            justifications.append(f"Dépassement durée: +{derive_duree_pct}%")
+        elif derive_duree_pct is not None and derive_duree_pct > 20:
+            score += 5
+            justifications.append(f"Dérive durée: +{derive_duree_pct}%")
+
+        if not intervention.intervenant_id and intervention.statut in (
+            InterventionStatut.A_PLANIFIER, InterventionStatut.PLANIFIEE
+        ):
+            score += 10
+            justifications.append("Aucun intervenant assigné")
+
+        if score >= 60:
+            indicateur = "CRITIQUE"
+        elif score >= 35:
+            indicateur = "ELEVE"
+        elif score >= 15:
+            indicateur = "MOYEN"
+        else:
+            indicateur = "FAIBLE"
+
+        return {
+            "en_retard": en_retard,
+            "jours_retard": jours_retard,
+            "derive_duree_minutes": derive_duree_minutes,
+            "derive_duree_pct": derive_duree_pct,
+            "indicateur_risque": indicateur,
+            "risque_justification": " | ".join(justifications) if justifications else "Aucun risque identifié",
+        }
+
+    # ========================================================================
+    # ANALYSE IA (audit-proof)
+    # ========================================================================
+
+    def analyser_ia(self, intervention_id: UUID) -> dict:
+        """
+        Analyse IA d'une intervention.
+
+        Retourne une analyse structurée audit-proof:
+        - indicateurs: dict
+        - resume_ia: str
+        - actions_suggerees: list[dict]
+        - score_preparation: int (0-100)
+        - generated_at: str (ISO datetime pour audit)
+        """
+        intervention = self.get_intervention(intervention_id)
+        if not intervention:
+            raise InterventionNotFoundError(f"Intervention {intervention_id} non trouvée")
+
+        indicateurs = self.calculer_indicateurs_business(intervention)
+
+        # Score de préparation (0-100)
+        score = 100
+        deductions = []
+        if not intervention.intervenant_id:
+            score -= 20
+            deductions.append("Pas d'intervenant (-20)")
+        if not intervention.date_prevue_debut:
+            score -= 20
+            deductions.append("Pas de date prévue (-20)")
+        if not (intervention.adresse_ligne1 or intervention.ville):
+            score -= 15
+            deductions.append("Adresse manquante (-15)")
+        if not intervention.description:
+            score -= 10
+            deductions.append("Description manquante (-10)")
+        if not intervention.materiel_necessaire and intervention.type_intervention and \
+           intervention.type_intervention.value in ('REPARATION', 'INSTALLATION', 'MAINTENANCE'):
+            score -= 10
+            deductions.append("Matériel non défini (-10)")
+        if indicateurs["en_retard"]:
+            score -= 15
+            deductions.append(f"En retard de {indicateurs['jours_retard']}j (-15)")
+        score = max(score, 0)
+
+        # Actions suggérées
+        actions = []
+        statut = intervention.statut
+        if statut == InterventionStatut.DRAFT:
+            actions.append({"action": "valider", "label": "Valider le brouillon", "confiance": 90})
+        if statut == InterventionStatut.A_PLANIFIER:
+            actions.append({"action": "planifier", "label": "Planifier l'intervention", "confiance": 90})
+        if statut == InterventionStatut.PLANIFIEE:
+            actions.append({"action": "demarrer", "label": "Démarrer l'intervention", "confiance": 85})
+        if statut == InterventionStatut.EN_COURS:
+            actions.append({"action": "terminer", "label": "Terminer l'intervention", "confiance": 90})
+        if statut == InterventionStatut.BLOQUEE:
+            actions.append({"action": "debloquer", "label": "Débloquer et reprendre", "confiance": 80})
+        if statut == InterventionStatut.TERMINEE:
+            rapport = self.get_rapport_intervention(intervention_id)
+            if rapport and not rapport.is_signed:
+                actions.append({"action": "signer_rapport", "label": "Faire signer le rapport", "confiance": 85})
+        if indicateurs["en_retard"]:
+            actions.append({"action": "replanifier", "label": "Replanifier (retard)", "confiance": 85})
+
+        # Résumé IA
+        resume_parts = [f"Intervention {intervention.reference}"]
+        resume_parts.append(f"Statut: {intervention.statut.value}")
+        if indicateurs["en_retard"]:
+            resume_parts.append(f"EN RETARD ({indicateurs['jours_retard']}j)")
+        if indicateurs["indicateur_risque"] in ("ELEVE", "CRITIQUE"):
+            resume_parts.append(f"Risque {indicateurs['indicateur_risque']}")
+        resume_parts.append(f"Score préparation: {score}/100")
+
+        return {
+            "indicateurs": indicateurs,
+            "resume_ia": " | ".join(resume_parts),
+            "actions_suggerees": actions,
+            "score_preparation": score,
+            "score_deductions": deductions,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
 
     # ========================================================================
     # PLANIFICATION
@@ -365,6 +839,21 @@ class InterventionsService:
 
         self.db.commit()
         self.db.refresh(intervention)
+
+        _audit_log(
+            self.db, self.tenant_id,
+            action="UPDATE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Planification intervention {intervention.reference}",
+            old_value={"statut": "A_PLANIFIER"},
+            new_value={
+                "statut": "PLANIFIEE",
+                "date_prevue_debut": str(data.date_prevue_debut),
+                "intervenant_id": str(data.intervenant_id),
+            },
+        )
 
         return intervention
 
@@ -559,6 +1048,20 @@ class InterventionsService:
         self.db.commit()
         self.db.refresh(intervention)
 
+        _audit_log(
+            self.db, self.tenant_id,
+            action="UPDATE",
+            entity_type="intervention",
+            entity_id=str(intervention.id),
+            user_id=self.user_id,
+            description=f"Terminaison intervention {intervention.reference} — durée réelle: {intervention.duree_reelle_minutes}min",
+            old_value={"statut": "EN_COURS"},
+            new_value={
+                "statut": "TERMINEE",
+                "duree_reelle_minutes": intervention.duree_reelle_minutes,
+            },
+        )
+
         return intervention
 
     # ========================================================================
@@ -700,6 +1203,16 @@ class InterventionsService:
         self.db.commit()
         self.db.refresh(rapport)
 
+        _audit_log(
+            self.db, self.tenant_id,
+            action="VALIDATE",
+            entity_type="rapport_intervention",
+            entity_id=str(rapport.id),
+            user_id=self.user_id,
+            description=f"Signature rapport intervention {rapport.reference_intervention} par {data.nom_signataire}",
+            new_value={"is_signed": True, "nom_signataire": data.nom_signataire},
+        )
+
         return rapport
 
     # ========================================================================
@@ -810,8 +1323,12 @@ class InterventionsService:
             # La logique métier INTERVENTIONS ne doit PAS être dans Planning
             event_id = uuid.uuid4()
             return event_id
-        except Exception:
+        except Exception as e:
             # En cas d'erreur, on continue sans bloquer
+            logger.warning(
+                "[INTERVENTIONS_PLANNING] Échec création événement planning",
+                extra={"error": str(e)[:300], "consequence": "planning_event_skipped"}
+            )
             return None
 
     def _update_planning_event(self, intervention: Intervention) -> bool:
@@ -822,7 +1339,11 @@ class InterventionsService:
         try:
             # Placeholder pour l'intégration
             return True
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                "[INTERVENTIONS_PLANNING] Échec mise à jour événement planning",
+                extra={"error": str(e)[:300], "consequence": "planning_update_skipped"}
+            )
             return False
 
     def _delete_planning_event(self, intervention: Intervention) -> bool:
@@ -833,23 +1354,43 @@ class InterventionsService:
         try:
             # Placeholder pour l'intégration
             return True
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                "[INTERVENTIONS_PLANNING] Échec suppression événement planning",
+                extra={"error": str(e)[:300], "consequence": "planning_delete_skipped"}
+            )
             return False
 
     # ========================================================================
     # STATISTIQUES
     # ========================================================================
 
-    def get_stats(self) -> InterventionStats:
-        """Calcule les statistiques des interventions."""
+    def get_stats(self) -> dict:
+        """
+        Calcule les statistiques des interventions.
+
+        Retourne un dict enrichi compatible avec le frontend v2 :
+        - a_planifier, planifiees, en_cours
+        - terminees_semaine, terminees_mois
+        - duree_moyenne_minutes, interventions_jour
+        """
+        from datetime import timedelta
+
+        now = datetime.utcnow()
+        start_of_week = now - timedelta(days=now.weekday())
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
         base_query = self.db.query(Intervention).filter(
             Intervention.tenant_id == self.tenant_id,
             Intervention.deleted_at.is_(None)
         )
 
-        total = base_query.count()
-
         # Par statut
+        brouillons = base_query.filter(
+            Intervention.statut == InterventionStatut.DRAFT
+        ).count()
         a_planifier = base_query.filter(
             Intervention.statut == InterventionStatut.A_PLANIFIER
         ).count()
@@ -859,8 +1400,28 @@ class InterventionsService:
         en_cours = base_query.filter(
             Intervention.statut == InterventionStatut.EN_COURS
         ).count()
-        terminees = base_query.filter(
-            Intervention.statut == InterventionStatut.TERMINEE
+        bloquees = base_query.filter(
+            Intervention.statut == InterventionStatut.BLOQUEE
+        ).count()
+
+        # Terminées cette semaine
+        terminees_semaine = base_query.filter(
+            Intervention.statut == InterventionStatut.TERMINEE,
+            Intervention.date_fin >= start_of_week
+        ).count()
+
+        # Terminées ce mois
+        terminees_mois = base_query.filter(
+            Intervention.statut == InterventionStatut.TERMINEE,
+            Intervention.date_fin >= start_of_month
+        ).count()
+
+        # Interventions du jour (planifiées ou en cours aujourd'hui)
+        interventions_jour = base_query.filter(
+            or_(
+                Intervention.date_prevue_debut >= start_of_day,
+                Intervention.statut == InterventionStatut.EN_COURS
+            )
         ).count()
 
         # Durée moyenne
@@ -872,11 +1433,14 @@ class InterventionsService:
             Intervention.duree_reelle_minutes.isnot(None)
         ).scalar() or 0
 
-        return InterventionStats(
-            total=total,
-            a_planifier=a_planifier,
-            planifiees=planifiees,
-            en_cours=en_cours,
-            terminees=terminees,
-            duree_moyenne_minutes=float(avg_duration)
-        )
+        return {
+            "brouillons": brouillons,
+            "a_planifier": a_planifier,
+            "planifiees": planifiees,
+            "en_cours": en_cours,
+            "bloquees": bloquees,
+            "terminees_semaine": terminees_semaine,
+            "terminees_mois": terminees_mois,
+            "duree_moyenne_minutes": float(avg_duration),
+            "interventions_jour": interventions_jour,
+        }

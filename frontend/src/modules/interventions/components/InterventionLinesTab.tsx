@@ -12,7 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention, InterventionEquipeMembre } from '../types';
-import { formatDate, formatDateTime, formatDuration, getDurationVariance, STATUT_CONFIG } from '../types';
+import { getDurationVariance, STATUT_CONFIG } from '../types';
+import { formatDate, formatDateTime, formatDuration } from '@/utils/formatters';
 
 /**
  * InterventionLinesTab - Équipe et suivi de réalisation

@@ -4,21 +4,39 @@
  */
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
 import { Select } from '@ui/forms';
 import { StatCard } from '@ui/dashboards';
+import { Badge } from '@ui/simple';
 import { BaseViewStandard } from '@ui/standards';
 import type { TableColumn } from '@/types';
 import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 import {
   ClipboardList, Calendar, Wrench, CheckCircle, BarChart3, Clock, MapPin,
-  User, FileText, History, Sparkles, Package, Euro, AlertTriangle, Play, X
+  User, FileText, History, Sparkles, Package, Euro, AlertTriangle, Play, X,
+  FileEdit, Lock, Unlock, CheckSquare
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
+
+// Import API hooks (AZA-FE-003: api.ts)
+import {
+  useInterventionStats,
+  useInterventions,
+  useDonneursOrdre,
+  useIntervenants,
+  interventionKeys,
+} from './api';
+
+// Import workflow hooks
+import { usePlanifierIntervention } from './hooks/usePlanningActions';
+import {
+  useValiderIntervention, useDemarrerIntervention, useTerminerIntervention,
+  useBloquerIntervention, useDebloquerIntervention, useAnnulerIntervention
+} from './hooks/useWorkflowActions';
 
 // Import tab components
 import {
@@ -28,52 +46,28 @@ import {
   InterventionDocsTab,
   InterventionHistoryTab,
   InterventionIATab,
-  InterventionFormView
+  InterventionFormView,
+  PlanningView
 } from './components';
 
 // Import shared types
-import type { Intervention, InterventionType, InterventionPriorite, DonneurOrdre, InterventionStats } from './types';
+import type { Intervention, InterventionType, InterventionPriorite, CorpsEtat, DonneurOrdre, InterventionStats } from './types';
 import {
-  STATUT_CONFIG, PRIORITE_CONFIG, TYPE_CONFIG,
-  formatDate, formatDuration, formatCurrency, isLate
+  STATUT_CONFIG, PRIORITE_CONFIG, TYPE_CONFIG, CORPS_ETAT_CONFIG,
+  isLate, canValidate, canBlock, canUnblock
 } from './types';
-
-// ============================================================================
-// LOCAL COMPONENTS
-// ============================================================================
-
-const Badge: React.FC<{ color: string; children: React.ReactNode }> = ({ color, children }) => (
-  <span className={`azals-badge azals-badge--${color}`}>{children}</span>
-);
-
-interface TabNavProps {
-  tabs: { id: string; label: string }[];
-  activeTab: string;
-  onChange: (id: string) => void;
-}
-
-const TabNav: React.FC<TabNavProps> = ({ tabs, activeTab, onChange }) => (
-  <div className="azals-tab-nav">
-    {tabs.map(tab => (
-      <button
-        key={tab.id}
-        className={`azals-tab-nav__item ${activeTab === tab.id ? 'azals-tab-nav__item--active' : ''}`}
-        onClick={() => onChange(tab.id)}
-      >
-        {tab.label}
-      </button>
-    ))}
-  </div>
-);
+import { formatDate, formatDuration, formatCurrency } from '@/utils/formatters';
 
 // ============================================================================
 // CONSTANTES
 // ============================================================================
 
 const STATUTS = [
-  { value: 'A_PLANIFIER', label: 'A planifier' },
+  { value: 'DRAFT', label: 'Brouillon' },
+  { value: 'A_PLANIFIER', label: 'À planifier' },
   { value: 'PLANIFIEE', label: 'Planifiée' },
   { value: 'EN_COURS', label: 'En cours' },
+  { value: 'BLOQUEE', label: 'Bloquée' },
   { value: 'TERMINEE', label: 'Terminée' },
   { value: 'ANNULEE', label: 'Annulée' }
 ];
@@ -96,91 +90,6 @@ const TYPES_INTERVENTION = [
 ];
 
 // ============================================================================
-// API HOOKS
-// ============================================================================
-
-const useInterventionStats = () => {
-  return useQuery({
-    queryKey: ['interventions', 'stats'],
-    queryFn: async () => {
-      const response = await api.get<{ data: InterventionStats }>('/v2/interventions/stats').then(r => r.data);
-      return response as unknown as InterventionStats;
-    }
-  });
-};
-
-const useInterventions = (filters?: { statut?: string; type_intervention?: string; priorite?: string; client_id?: string }) => {
-  return useQuery({
-    queryKey: ['interventions', 'list', filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.statut) params.append('statut', filters.statut);
-      if (filters?.type_intervention) params.append('type_intervention', filters.type_intervention);
-      if (filters?.priorite) params.append('priorite', filters.priorite);
-      if (filters?.client_id) params.append('client_id', filters.client_id);
-      const queryString = params.toString();
-      const url = `/v2/interventions${queryString ? `?${queryString}` : ''}`;
-      const response = await api.get<{ data: { items?: Intervention[] } }>(url).then(r => r.data);
-      return (response as any)?.items || response as unknown as Intervention[];
-    }
-  });
-};
-
-const useDonneursOrdre = () => {
-  return useQuery({
-    queryKey: ['interventions', 'donneurs-ordre'],
-    queryFn: async () => {
-      const response = await api.get<{ data: DonneurOrdre[] }>('/v2/interventions/donneurs-ordre').then(r => r.data);
-      return response as unknown as DonneurOrdre[];
-    }
-  });
-};
-
-const useClients = () => {
-  return useQuery({
-    queryKey: ['clients'],
-    queryFn: async () => {
-      const response = await api.get<{ items: { id: string; name: string }[] }>('/v1/commercial/customers').then(r => r.data);
-      return response?.items || [];
-    }
-  });
-};
-
-const useIntervenants = () => {
-  return useQuery({
-    queryKey: ['intervenants'],
-    queryFn: async () => {
-      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v1/hr/employees').then(r => r.data);
-      return response?.items || [];
-    }
-  });
-};
-
-const useCreateIntervention = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<Intervention>) => {
-      return api.post('/v2/interventions', data).then(r => r.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interventions'] });
-    }
-  });
-};
-
-const useUpdateStatut = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, statut }: { id: string; statut: string }) => {
-      return api.put(`/v2/interventions/${id}`, { statut }).then(r => r.data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interventions'] });
-    }
-  });
-};
-
-// ============================================================================
 // DETAIL VIEW (BaseViewStandard)
 // ============================================================================
 
@@ -190,7 +99,27 @@ interface InterventionDetailViewProps {
 }
 
 const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ intervention, onClose }) => {
-  const updateStatut = useUpdateStatut();
+  // Workflow hooks
+  const valider = useValiderIntervention();
+  const planifier = usePlanifierIntervention();
+  const demarrer = useDemarrerIntervention();
+  const terminer = useTerminerIntervention();
+  const bloquer = useBloquerIntervention();
+  const debloquer = useDebloquerIntervention();
+  const annuler = useAnnulerIntervention();
+  const { data: intervenants = [] } = useIntervenants();
+
+  // Workflow modals state
+  const [showPlanifierModal, setShowPlanifierModal] = useState(false);
+  const [showBloquerModal, setShowBloquerModal] = useState(false);
+  const [showConfirmAnnuler, setShowConfirmAnnuler] = useState(false);
+  const [motifBlocage, setMotifBlocage] = useState('');
+  const [planDate, setPlanDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [planHeureDebut, setPlanHeureDebut] = useState('08:00');
+  const [planHeureFin, setPlanHeureFin] = useState('17:00');
+  const [planIntervenantId, setPlanIntervenantId] = useState('');
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
+
   const statutConfig = STATUT_CONFIG[intervention.statut];
   const prioriteConfig = PRIORITE_CONFIG[intervention.priorite];
   const typeConfig = TYPE_CONFIG[intervention.type_intervention];
@@ -307,8 +236,23 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
     }
   ];
 
-  // Footer actions based on status
+  // Footer actions based on status (state machine 7 états)
   const primaryActions: ActionDefinition[] = [];
+
+  if (canValidate(intervention)) {
+    primaryActions.push({
+      id: 'valider',
+      label: 'Valider',
+      icon: <CheckSquare size={16} />,
+      variant: 'primary' as const,
+      onClick: () => {
+        valider.mutate(intervention.id, {
+          onSuccess: () => onClose(),
+          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur validation'),
+        });
+      }
+    });
+  }
 
   if (intervention.statut === 'A_PLANIFIER') {
     primaryActions.push({
@@ -316,10 +260,7 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       label: 'Planifier',
       icon: <Calendar size={16} />,
       variant: 'primary' as const,
-      onClick: () => {
-        updateStatut.mutate({ id: intervention.id, statut: 'PLANIFIEE' });
-        onClose();
-      }
+      onClick: () => setShowPlanifierModal(true)
     });
   }
 
@@ -330,8 +271,10 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       icon: <Play size={16} />,
       variant: 'warning' as const,
       onClick: () => {
-        updateStatut.mutate({ id: intervention.id, statut: 'EN_COURS' });
-        onClose();
+        demarrer.mutate(intervention.id, {
+          onSuccess: () => onClose(),
+          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur'),
+        });
       }
     });
   }
@@ -343,24 +286,72 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
       icon: <CheckCircle size={16} />,
       variant: 'success' as const,
       onClick: () => {
-        updateStatut.mutate({ id: intervention.id, statut: 'TERMINEE' });
-        onClose();
+        terminer.mutate(intervention.id, {
+          onSuccess: () => onClose(),
+          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur'),
+        });
+      }
+    });
+    primaryActions.push({
+      id: 'bloquer',
+      label: 'Bloquer',
+      icon: <Lock size={16} />,
+      variant: 'danger' as const,
+      onClick: () => setShowBloquerModal(true)
+    });
+  }
+
+  if (canUnblock(intervention)) {
+    primaryActions.push({
+      id: 'debloquer',
+      label: 'Débloquer',
+      icon: <Unlock size={16} />,
+      variant: 'warning' as const,
+      onClick: () => {
+        debloquer.mutate(intervention.id, {
+          onSuccess: () => onClose(),
+          onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur déblocage'),
+        });
       }
     });
   }
 
-  if (intervention.statut !== 'TERMINEE' && intervention.statut !== 'ANNULEE') {
+  if (!['TERMINEE', 'ANNULEE', 'DRAFT'].includes(intervention.statut)) {
     primaryActions.push({
       id: 'annuler',
       label: 'Annuler',
       icon: <X size={16} />,
       variant: 'danger' as const,
-      onClick: () => {
-        updateStatut.mutate({ id: intervention.id, statut: 'ANNULEE' });
-        onClose();
-      }
+      onClick: () => setShowConfirmAnnuler(true)
     });
   }
+
+  const handlePlanifierSubmit = () => {
+    if (!planIntervenantId) {
+      setWorkflowError('Veuillez sélectionner un intervenant');
+      return;
+    }
+    const debut = new Date(`${planDate}T${planHeureDebut}:00`);
+    const fin = new Date(`${planDate}T${planHeureFin}:00`);
+    planifier.mutate({
+      id: intervention.id,
+      data: {
+        date_prevue_debut: debut.toISOString(),
+        date_prevue_fin: fin.toISOString(),
+        intervenant_id: planIntervenantId,
+      }
+    }, {
+      onSuccess: () => { setShowPlanifierModal(false); onClose(); },
+      onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur planification'),
+    });
+  };
+
+  const handleAnnulerConfirm = () => {
+    annuler.mutate(intervention.id, {
+      onSuccess: () => { setShowConfirmAnnuler(false); onClose(); },
+      onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur annulation'),
+    });
+  };
 
   return (
     <Modal isOpen={true} onClose={onClose} title="" size="xl">
@@ -380,6 +371,116 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
         headerActions={headerActions}
         primaryActions={primaryActions}
       />
+
+      {/* Workflow error toast */}
+      {workflowError && (
+        <div className="azals-planning__toast">
+          <AlertTriangle size={16} />
+          <span>{workflowError}</span>
+          <button className="azals-btn azals-btn--ghost azals-btn--icon-only" onClick={() => setWorkflowError(null)}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Modal Planifier */}
+      {showPlanifierModal && (
+        <Modal isOpen onClose={() => setShowPlanifierModal(false)} title="Planifier l'intervention">
+          <div className="azals-modal__body">
+            <p className="text-muted mb-4">
+              {intervention.reference} — {intervention.titre || 'Sans titre'}
+            </p>
+            <div className="azals-field">
+              <label className="azals-field__label">Date <span className="azals-field__required">*</span></label>
+              <input className="azals-input" type="date" value={planDate} onChange={e => setPlanDate(e.target.value)} />
+            </div>
+            <div className="azals-grid azals-grid--cols-2">
+              <div className="azals-field">
+                <label className="azals-field__label">Heure début</label>
+                <input className="azals-input" type="time" value={planHeureDebut} onChange={e => setPlanHeureDebut(e.target.value)} />
+              </div>
+              <div className="azals-field">
+                <label className="azals-field__label">Heure fin</label>
+                <input className="azals-input" type="time" value={planHeureFin} onChange={e => setPlanHeureFin(e.target.value)} />
+              </div>
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Intervenant <span className="azals-field__required">*</span></label>
+              <select className="azals-select" value={planIntervenantId} onChange={e => setPlanIntervenantId(e.target.value)}>
+                <option value="">Choisir un intervenant...</option>
+                {intervenants.map((i: any) => (
+                  <option key={i.id} value={i.id}>{i.first_name} {i.last_name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="azals-modal__footer">
+            <Button variant="secondary" onClick={() => setShowPlanifierModal(false)}>Annuler</Button>
+            <Button onClick={handlePlanifierSubmit} disabled={planifier.isPending}>
+              {planifier.isPending ? 'Planification...' : 'Planifier'}
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Bloquer */}
+      {showBloquerModal && (
+        <Modal isOpen onClose={() => { setShowBloquerModal(false); setMotifBlocage(''); }} title="Bloquer l'intervention">
+          <div className="azals-modal__body">
+            <p className="text-muted mb-4">
+              {intervention.reference} — {intervention.titre || 'Sans titre'}
+            </p>
+            <div className="azals-field">
+              <label className="azals-field__label">Motif du blocage <span className="azals-field__required">*</span></label>
+              <textarea
+                className="azals-input"
+                rows={3}
+                value={motifBlocage}
+                onChange={e => setMotifBlocage(e.target.value)}
+                placeholder="Décrivez le motif du blocage (min. 5 caractères)..."
+              />
+              {motifBlocage.length > 0 && motifBlocage.length < 5 && (
+                <p className="text-danger text-sm mt-1">Le motif doit contenir au moins 5 caractères.</p>
+              )}
+            </div>
+          </div>
+          <div className="azals-modal__footer">
+            <Button variant="secondary" onClick={() => { setShowBloquerModal(false); setMotifBlocage(''); }}>Annuler</Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                bloquer.mutate({ id: intervention.id, motif: motifBlocage }, {
+                  onSuccess: () => { setShowBloquerModal(false); setMotifBlocage(''); onClose(); },
+                  onError: (err: any) => setWorkflowError(err?.response?.data?.detail || err?.message || 'Erreur blocage'),
+                });
+              }}
+              disabled={motifBlocage.length < 5 || bloquer.isPending}
+            >
+              {bloquer.isPending ? 'Blocage...' : 'Confirmer le blocage'}
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Confirmer annulation */}
+      {showConfirmAnnuler && (
+        <Modal isOpen onClose={() => setShowConfirmAnnuler(false)} title="Confirmer l'annulation">
+          <div className="azals-modal__body">
+            <p>
+              Êtes-vous sûr de vouloir annuler l'intervention <strong>{intervention.reference}</strong> ?
+            </p>
+            <p className="text-muted mt-2">
+              Cette action est irréversible.
+            </p>
+          </div>
+          <div className="azals-modal__footer">
+            <Button variant="secondary" onClick={() => setShowConfirmAnnuler(false)}>Non, garder</Button>
+            <Button variant="danger" onClick={handleAnnulerConfirm} disabled={annuler.isPending}>
+              {annuler.isPending ? 'Annulation...' : 'Oui, annuler'}
+            </Button>
+          </div>
+        </Modal>
+      )}
     </Modal>
   );
 };
@@ -394,12 +495,25 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
   const [filterPriorite, setFilterPriorite] = useState<string>('');
   const [selectedIntervention, setSelectedIntervention] = useState<Intervention | null>(null);
 
+  // Workflow: planifier modal from list
+  const [workflowTarget, setWorkflowTarget] = useState<Intervention | null>(null);
+  const [showListPlanifierModal, setShowListPlanifierModal] = useState(false);
+  const [listPlanDate, setListPlanDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [listPlanHeureDebut, setListPlanHeureDebut] = useState('08:00');
+  const [listPlanHeureFin, setListPlanHeureFin] = useState('17:00');
+  const [listPlanIntervenantId, setListPlanIntervenantId] = useState('');
+
   const { data: interventions = [], isLoading, error: interventionsError, refetch: refetchInterventions } = useInterventions({
     statut: filterStatut || undefined,
     type_intervention: filterType || undefined,
     priorite: filterPriorite || undefined
   });
-  const updateStatut = useUpdateStatut();
+  const { data: intervenantsList = [] } = useIntervenants();
+  const validerList = useValiderIntervention();
+  const planifier = usePlanifierIntervention();
+  const demarrer = useDemarrerIntervention();
+  const terminer = useTerminerIntervention();
+  const debloquerList = useDebloquerIntervention();
 
   const columns: TableColumn<Intervention>[] = [
     { id: 'reference', header: 'Référence', accessor: 'reference', render: (v) => (
@@ -411,28 +525,39 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
       const config = TYPE_CONFIG[v as InterventionType];
       return config?.label || (v as string);
     }},
+    { id: 'corps_etat', header: "Corps d'état", accessor: 'corps_etat', render: (v) => {
+      if (!v) return '-';
+      const config = CORPS_ETAT_CONFIG[v as CorpsEtat];
+      return <Badge variant={config?.color || 'default'}>{config?.label || (v as string)}</Badge>;
+    }},
     { id: 'priorite', header: 'Priorité', accessor: 'priorite', render: (v) => {
       const config = PRIORITE_CONFIG[v as InterventionPriorite];
-      return <Badge color={config?.color || 'gray'}>{config?.label || (v as string)}</Badge>;
+      return <Badge variant={config?.color || 'default'}>{config?.label || (v as string)}</Badge>;
     }},
     { id: 'date_prevue', header: 'Date prévue', accessor: 'date_prevue', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'intervenant_name', header: 'Intervenant', accessor: 'intervenant_name', render: (v) => (v as string) || '-' },
     { id: 'statut', header: 'Statut', accessor: 'statut', render: (v) => {
       const config = STATUT_CONFIG[v as keyof typeof STATUT_CONFIG];
-      return <Badge color={config?.color || 'gray'}>{config?.label || (v as string)}</Badge>;
+      return <Badge variant={config?.color || 'default'}>{config?.label || (v as string)}</Badge>;
     }},
     { id: 'duree_prevue_minutes', header: 'Durée', accessor: 'duree_prevue_minutes', render: (v) => (v as number) ? formatDuration(v as number) : '-' },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_v, row) => (
       <div className="flex gap-1">
         <Button size="sm" variant="secondary" onClick={() => setSelectedIntervention(row)}>Détail</Button>
+        {row.statut === 'DRAFT' && (
+          <Button size="sm" variant="primary" onClick={() => validerList.mutate(row.id)}>Valider</Button>
+        )}
         {row.statut === 'A_PLANIFIER' && (
-          <Button size="sm" variant="primary" onClick={() => updateStatut.mutate({ id: row.id, statut: 'PLANIFIEE' })}>Planifier</Button>
+          <Button size="sm" variant="primary" onClick={() => { setWorkflowTarget(row); setShowListPlanifierModal(true); }}>Planifier</Button>
         )}
         {row.statut === 'PLANIFIEE' && (
-          <Button size="sm" variant="warning" onClick={() => updateStatut.mutate({ id: row.id, statut: 'EN_COURS' })}>Démarrer</Button>
+          <Button size="sm" variant="warning" onClick={() => demarrer.mutate(row.id)}>Démarrer</Button>
         )}
         {row.statut === 'EN_COURS' && (
-          <Button size="sm" variant="success" onClick={() => updateStatut.mutate({ id: row.id, statut: 'TERMINEE' })}>Terminer</Button>
+          <Button size="sm" variant="success" onClick={() => terminer.mutate(row.id)}>Terminer</Button>
+        )}
+        {row.statut === 'BLOQUEE' && (
+          <Button size="sm" variant="warning" onClick={() => debloquerList.mutate(row.id)}>Débloquer</Button>
         )}
       </div>
     )}
@@ -476,6 +601,60 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
         />
       )}
 
+      {/* Modal Planifier depuis la liste */}
+      {showListPlanifierModal && workflowTarget && (
+        <Modal isOpen onClose={() => { setShowListPlanifierModal(false); setWorkflowTarget(null); }} title="Planifier l'intervention">
+          <div className="azals-modal__body">
+            <p className="text-muted mb-4">
+              {workflowTarget.reference} — {workflowTarget.titre || 'Sans titre'}
+            </p>
+            <div className="azals-field">
+              <label className="azals-field__label">Date <span className="azals-field__required">*</span></label>
+              <input className="azals-input" type="date" value={listPlanDate} onChange={e => setListPlanDate(e.target.value)} />
+            </div>
+            <div className="azals-grid azals-grid--cols-2">
+              <div className="azals-field">
+                <label className="azals-field__label">Heure début</label>
+                <input className="azals-input" type="time" value={listPlanHeureDebut} onChange={e => setListPlanHeureDebut(e.target.value)} />
+              </div>
+              <div className="azals-field">
+                <label className="azals-field__label">Heure fin</label>
+                <input className="azals-input" type="time" value={listPlanHeureFin} onChange={e => setListPlanHeureFin(e.target.value)} />
+              </div>
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Intervenant <span className="azals-field__required">*</span></label>
+              <select className="azals-select" value={listPlanIntervenantId} onChange={e => setListPlanIntervenantId(e.target.value)}>
+                <option value="">Choisir un intervenant...</option>
+                {intervenantsList.map((i: any) => (
+                  <option key={i.id} value={i.id}>{i.first_name} {i.last_name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="azals-modal__footer">
+            <Button variant="secondary" onClick={() => { setShowListPlanifierModal(false); setWorkflowTarget(null); }}>Annuler</Button>
+            <Button onClick={() => {
+              if (!listPlanIntervenantId) return;
+              const debut = new Date(`${listPlanDate}T${listPlanHeureDebut}:00`);
+              const fin = new Date(`${listPlanDate}T${listPlanHeureFin}:00`);
+              planifier.mutate({
+                id: workflowTarget.id,
+                data: {
+                  date_prevue_debut: debut.toISOString(),
+                  date_prevue_fin: fin.toISOString(),
+                  intervenant_id: listPlanIntervenantId,
+                }
+              }, {
+                onSuccess: () => { setShowListPlanifierModal(false); setWorkflowTarget(null); },
+              });
+            }} disabled={!listPlanIntervenantId || planifier.isPending}>
+              {planifier.isPending ? 'Planification...' : 'Planifier'}
+            </Button>
+          </div>
+        </Modal>
+      )}
+
     </>
   );
 };
@@ -487,6 +666,38 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
 
 const DonneursOrdreView: React.FC = () => {
   const { data: donneursOrdre = [], isLoading, error: donneursError, refetch: refetchDonneurs } = useDonneursOrdre();
+  const queryClient = useQueryClient();
+  const [showCreate, setShowCreate] = useState(false);
+  const [newDonneur, setNewDonneur] = useState({ code: '', nom: '', email: '', telephone: '' });
+  const [createError, setCreateError] = useState('');
+
+  const createDonneur = useMutation({
+    mutationFn: async (data: typeof newDonneur) => {
+      return api.post('/v2/interventions/donneurs-ordre', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
+      setShowCreate(false);
+      setNewDonneur({ code: '', nom: '', email: '', telephone: '' });
+      setCreateError('');
+    },
+    onError: (error: any) => {
+      setCreateError(error?.response?.data?.detail || error?.message || 'Erreur lors de la création');
+    },
+  });
+
+  const handleCreate = () => {
+    if (!newDonneur.nom.trim()) {
+      setCreateError('Le nom est obligatoire');
+      return;
+    }
+    if (!newDonneur.code.trim()) {
+      setCreateError('Le code est obligatoire');
+      return;
+    }
+    setCreateError('');
+    createDonneur.mutate(newDonneur);
+  };
 
   const columns: TableColumn<DonneurOrdre>[] = [
     { id: 'nom', header: 'Nom', accessor: 'nom' },
@@ -494,7 +705,7 @@ const DonneursOrdreView: React.FC = () => {
     { id: 'email', header: 'Email', accessor: 'email', render: (v) => (v as string) || '-' },
     { id: 'telephone', header: 'Téléphone', accessor: 'telephone', render: (v) => (v as string) || '-' },
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
-      <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
+      <Badge variant={(v as boolean) ? 'green' : 'default'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
     )}
   ];
 
@@ -502,77 +713,44 @@ const DonneursOrdreView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Donneurs d'ordre</h3>
-        <Button>Nouveau donneur d'ordre</Button>
+        <Button onClick={() => setShowCreate(true)}>Nouveau donneur d'ordre</Button>
       </div>
       <DataTable columns={columns} data={donneursOrdre} isLoading={isLoading} keyField="id" error={donneursError instanceof Error ? donneursError : null} onRetry={() => refetchDonneurs()} />
-    </Card>
-  );
-};
 
-// ============================================================================
-// PLANNING VIEW
-// ============================================================================
-
-const PlanningView: React.FC = () => {
-  const { data: interventions = [], isLoading, error, refetch } = useInterventions({ statut: 'PLANIFIEE' });
-
-  if (isLoading) {
-    return <LoadingState onRetry={() => refetch()} message="Chargement du planning..." />;
-  }
-
-  if (error) {
-    return (
-      <ErrorState
-        message={error instanceof Error ? error.message : 'Erreur lors du chargement du planning'}
-        onRetry={() => refetch()}
-      />
-    );
-  }
-
-  // Grouper par date
-  const interventionsByDate = interventions.reduce((acc: Record<string, Intervention[]>, int: Intervention) => {
-    const date = int.date_prevue || 'Non planifiée';
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(int);
-    return acc;
-  }, {});
-
-  const dates = Object.keys(interventionsByDate).sort();
-
-  return (
-    <div className="space-y-4">
-      {dates.length === 0 ? (
-        <Card>
-          <div className="text-center py-8 text-gray-500">
-            Aucune intervention planifiée
-          </div>
-        </Card>
-      ) : (
-        dates.map(date => (
-          <Card key={date}>
-            <h4 className="font-semibold mb-3">
-              {date === 'Non planifiée' ? date : formatDate(date)}
-              <Badge color="blue">{interventionsByDate[date].length}</Badge>
-            </h4>
-            <div className="space-y-2">
-              {interventionsByDate[date].map((int: Intervention) => (
-                <div key={int.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{int.titre}</div>
-                    <div className="text-sm text-gray-500">
-                      {int.heure_prevue || '-'} - {int.client_name} - {int.intervenant_name || 'Non assigné'}
-                    </div>
-                  </div>
-                  <Badge color={PRIORITE_CONFIG[int.priorite]?.color || 'gray'}>
-                    {PRIORITE_CONFIG[int.priorite]?.label || int.priorite}
-                  </Badge>
-                </div>
-              ))}
+      {showCreate && (
+        <Modal isOpen onClose={() => { setShowCreate(false); setCreateError(''); }} title="Nouveau donneur d'ordre">
+          <div className="azals-modal__body">
+            {createError && (
+              <div className="azals-alert azals-alert--error mb-4">
+                {createError}
+              </div>
+            )}
+            <div className="azals-field">
+              <label className="azals-field__label">Code <span className="azals-field__required">*</span></label>
+              <input className="azals-input" value={newDonneur.code} onChange={e => setNewDonneur({ ...newDonneur, code: e.target.value })} placeholder="Ex: DO-001" />
             </div>
-          </Card>
-        ))
+            <div className="azals-field">
+              <label className="azals-field__label">Nom <span className="azals-field__required">*</span></label>
+              <input className="azals-input" value={newDonneur.nom} onChange={e => setNewDonneur({ ...newDonneur, nom: e.target.value })} placeholder="Nom du donneur d'ordre" />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Email</label>
+              <input className="azals-input" type="email" value={newDonneur.email} onChange={e => setNewDonneur({ ...newDonneur, email: e.target.value })} placeholder="email@example.com" />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Téléphone</label>
+              <input className="azals-input" type="tel" value={newDonneur.telephone} onChange={e => setNewDonneur({ ...newDonneur, telephone: e.target.value })} placeholder="0612345678" />
+            </div>
+          </div>
+          <div className="azals-modal__footer">
+            <Button variant="secondary" onClick={() => { setShowCreate(false); setCreateError(''); }}>Annuler</Button>
+            <Button onClick={handleCreate} disabled={createDonneur.isPending}>
+              {createDonneur.isPending ? 'Création...' : 'Créer'}
+            </Button>
+          </div>
+        </Modal>
       )}
-    </div>
+    </Card>
   );
 };
 
@@ -634,9 +812,16 @@ const InterventionsModule: React.FC = () => {
         }
         return (
           <div className="space-y-4">
-            <Grid cols={4}>
+            <Grid cols={3}>
               <StatCard
-                title="A planifier"
+                title="Brouillons"
+                value={String(stats?.brouillons || 0)}
+                icon={<FileEdit size={20} />}
+                variant="default"
+                onClick={() => setCurrentView('interventions')}
+              />
+              <StatCard
+                title="À planifier"
                 value={String(stats?.a_planifier || 0)}
                 icon={<ClipboardList size={20} />}
                 variant="default"
@@ -649,11 +834,20 @@ const InterventionsModule: React.FC = () => {
                 variant="default"
                 onClick={() => setCurrentView('planning')}
               />
+            </Grid>
+
+            <Grid cols={3}>
               <StatCard
                 title="En cours"
                 value={String(stats?.en_cours || 0)}
                 icon={<Wrench size={20} />}
                 variant="warning"
+              />
+              <StatCard
+                title="Bloquées"
+                value={String(stats?.bloquees || 0)}
+                icon={<Lock size={20} />}
+                variant="danger"
               />
               <StatCard
                 title="Terminées (semaine)"
@@ -695,11 +889,17 @@ const InterventionsModule: React.FC = () => {
 
   return (
     <PageWrapper title="Interventions" subtitle="Gestion des interventions terrain">
-      <TabNav
-        tabs={tabs}
-        activeTab={currentView}
-        onChange={(id) => setCurrentView(id as View)}
-      />
+      <div className="azals-tab-nav">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`azals-tab-nav__item ${currentView === tab.id ? 'azals-tab-nav__item--active' : ''}`}
+            onClick={() => setCurrentView(tab.id as View)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
       <div className="mt-4">
         {renderContent()}
       </div>

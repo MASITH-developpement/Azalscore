@@ -6,16 +6,17 @@
 import React from 'react';
 import {
   Building2, User, Calendar, Clock, MapPin, FileText,
-  Phone, Mail, AlertTriangle, Wrench, Package
+  Phone, Mail, AlertTriangle, Wrench, Package, Lock, ShieldAlert
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention } from '../types';
 import {
-  formatDate, formatTime, formatDuration, formatAddress,
+  formatAddress,
   PRIORITE_CONFIG, TYPE_CONFIG, STATUT_CONFIG,
   isLate, getDaysUntilIntervention
 } from '../types';
+import { formatDate, formatTime, formatDuration } from '@/utils/formatters';
 
 /**
  * InterventionInfoTab - Informations générales de l'intervention
@@ -24,8 +25,39 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
   const isInterventionLate = isLate(intervention);
   const daysUntil = getDaysUntilIntervention(intervention);
 
+  const risqueColor: Record<string, string> = {
+    MOYEN: 'warning',
+    ELEVE: 'danger',
+    CRITIQUE: 'danger',
+  };
+
   return (
     <div className="azals-std-tab-content">
+      {/* Alerte BLOQUEE */}
+      {intervention.statut === 'BLOQUEE' && (
+        <div className="azals-alert azals-alert--danger mb-4">
+          <Lock size={20} />
+          <div>
+            <strong>Intervention bloquée</strong>
+            <p>{intervention.motif_blocage || 'Motif non renseigné'}</p>
+            {intervention.date_blocage && (
+              <p className="text-sm text-muted mt-1">Bloquée le {formatDate(intervention.date_blocage)}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Alerte risque métier */}
+      {intervention.indicateurs && intervention.indicateurs.indicateur_risque !== 'FAIBLE' && (
+        <div className={`azals-alert azals-alert--${risqueColor[intervention.indicateurs.indicateur_risque] || 'warning'} mb-4`}>
+          <ShieldAlert size={20} />
+          <div>
+            <strong>Risque {intervention.indicateurs.indicateur_risque.toLowerCase()}</strong>
+            <p>{intervention.indicateurs.risque_justification}</p>
+          </div>
+        </div>
+      )}
+
       {/* Alerte retard */}
       {isInterventionLate && (
         <div className="azals-alert azals-alert--danger mb-4">

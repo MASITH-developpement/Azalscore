@@ -9,9 +9,11 @@ import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import { Select, Input, TextArea } from '@ui/forms';
+import { SmartSelector } from '@/components/SmartSelector';
+import type { FieldConfig } from '@/components/SmartSelector';
 import {
   Building2, Wrench, FileText, MapPin,
-  ChevronLeft
+  ChevronLeft, Users
 } from 'lucide-react';
 
 import type { Intervention, InterventionFormData, DonneurOrdre } from '../types';
@@ -38,9 +40,33 @@ const PRIORITES = [
   { value: 'URGENT', label: 'Urgente' }
 ];
 
+const CORPS_ETAT_OPTIONS = [
+  { value: '', label: 'Sélectionner...' },
+  { value: 'ELECTRICITE', label: 'Électricité' },
+  { value: 'PLOMBERIE', label: 'Plomberie' },
+  { value: 'ELECTRICITE_PLOMBERIE', label: 'Électricité + Plomberie' }
+];
+
 const FACTURATION_OPTIONS = [
   { value: 'donneur_ordre', label: "Donneur d'ordre" },
   { value: 'client_final', label: 'Client final' }
+];
+
+// SmartSelector field configs
+const CLIENT_CREATE_FIELDS: FieldConfig[] = [
+  { key: 'name', label: 'Nom / Raison sociale', type: 'text', required: true },
+  { key: 'email', label: 'Email', type: 'email' },
+  { key: 'phone', label: 'Téléphone', type: 'tel' },
+  { key: 'address_line1', label: 'Adresse', type: 'text' },
+  { key: 'city', label: 'Ville', type: 'text' },
+  { key: 'postal_code', label: 'Code postal', type: 'text' },
+];
+
+const DONNEUR_ORDRE_CREATE_FIELDS: FieldConfig[] = [
+  { key: 'nom', label: 'Nom', type: 'text', required: true },
+  { key: 'code', label: 'Code', type: 'text', required: true },
+  { key: 'email', label: 'Email', type: 'email' },
+  { key: 'telephone', label: 'Téléphone', type: 'tel' },
 ];
 
 // ============================================================================
@@ -51,7 +77,7 @@ const useClients = () => {
   return useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/v1/commercial/customers').then(r => r.data);
+      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/v1/commercial/customers');
       return (response as any)?.items || [];
     }
   });
@@ -61,7 +87,7 @@ const useDonneursOrdre = () => {
   return useQuery({
     queryKey: ['interventions', 'donneurs-ordre'],
     queryFn: async () => {
-      const response = await api.get<{ data: DonneurOrdre[] }>('/v2/interventions/donneurs-ordre').then(r => r.data);
+      const response = await api.get<DonneurOrdre[]>('/v2/interventions/donneurs-ordre');
       return response as unknown as DonneurOrdre[];
     }
   });
@@ -71,7 +97,7 @@ const useIntervenants = () => {
   return useQuery({
     queryKey: ['intervenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v1/hr/employees').then(r => r.data);
+      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v1/hr/employees');
       return (response as any)?.items || [];
     }
   });
@@ -81,7 +107,7 @@ const useIntervention = (id?: string) => {
   return useQuery({
     queryKey: ['interventions', 'detail', id],
     queryFn: async () => {
-      const response = await api.get<{ data: Intervention }>(`/v2/interventions/${id}`).then(r => r.data);
+      const response = await api.get<Intervention>(`/v2/interventions/${id}`);
       return response as unknown as Intervention;
     },
     enabled: !!id
@@ -100,7 +126,7 @@ const FormSection: React.FC<{
 }> = ({ title, icon, children }) => (
   <Card>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-      <span style={{ color: 'var(--azals-primary, #2563eb)' }}>{icon}</span>
+      <span style={{ color: 'var(--azals-primary, #1E6EFF)' }}>{icon}</span>
       <h3 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>{title}</h3>
     </div>
     {children}
@@ -143,6 +169,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
     ville: '',
     type_intervention: 'AUTRE',
     priorite: 'NORMAL',
+    corps_etat: undefined,
     titre: '',
     date_prevue_debut: '',
     duree_prevue_heures: undefined,
@@ -176,6 +203,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
         ville: existingIntervention.ville || '',
         type_intervention: existingIntervention.type_intervention || 'AUTRE',
         priorite: existingIntervention.priorite || 'NORMAL',
+        corps_etat: existingIntervention.corps_etat || undefined,
         titre: existingIntervention.titre || '',
         date_prevue_debut: dateDebut,
         duree_prevue_heures: dureeHeures,
@@ -228,6 +256,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
       reference_externe: formData.reference_externe || undefined,
       type_intervention: formData.type_intervention || 'AUTRE',
       priorite: formData.priorite || 'NORMAL',
+      corps_etat: formData.corps_etat || undefined,
       titre: formData.titre || undefined,
       description: formData.description || undefined,
       adresse_ligne1: formData.adresse_ligne1 || undefined,
@@ -242,9 +271,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
     try {
       let result: any;
       if (isEdit && interventionId) {
-        result = await api.put(`/v2/interventions/${interventionId}`, apiData).then(r => r.data);
+        result = await api.put(`/v2/interventions/${interventionId}`, apiData);
       } else {
-        result = await api.post('/v2/interventions', apiData).then(r => r.data);
+        result = await api.post('/v2/interventions', apiData);
       }
 
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -287,14 +316,19 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
           <FormSection title="Informations Client" icon={<Building2 size={20} />}>
             <Grid cols={2} gap="md">
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Donneur d'ordre</label>
-                <Select
+                <SmartSelector
+                  items={(donneursOrdre || []).map((d: DonneurOrdre) => ({ id: d.id, name: d.nom, email: d.email }))}
                   value={formData.donneur_ordre_id || ''}
-                  onChange={(v) => updateField('donneur_ordre_id', v)}
-                  options={[
-                    { value: '', label: 'Aucun' },
-                    ...donneursOrdre.map((d: DonneurOrdre) => ({ value: d.id, label: d.nom }))
-                  ]}
+                  onChange={(value) => updateField('donneur_ordre_id', value)}
+                  label="Donneur d'ordre"
+                  placeholder="Sélectionner un donneur d'ordre..."
+                  displayField="name"
+                  entityName="donneur d'ordre"
+                  entityIcon={<Users size={16} />}
+                  createEndpoint="/v2/interventions/donneurs-ordre"
+                  createFields={DONNEUR_ORDRE_CREATE_FIELDS}
+                  queryKeys={['interventions', 'donneurs-ordre']}
+                  allowCreate={true}
                 />
               </div>
 
@@ -308,20 +342,22 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
               </div>
 
               <div className="azals-field">
-                <label className="block text-sm font-medium mb-1">Client final *</label>
-                <Select
+                <SmartSelector
+                  items={(clients || []).map((c: any) => ({ id: c.id, name: c.name, code: c.code }))}
                   value={formData.client_id}
-                  onChange={(v) => updateField('client_id', v)}
-                  options={[
-                    { value: '', label: 'Sélectionner un client...' },
-                    ...clients.map((c: any) => ({ value: c.id, label: c.name }))
-                  ]}
+                  onChange={(value) => updateField('client_id', value)}
+                  label="Client final *"
+                  placeholder="Sélectionner un client..."
+                  displayField="name"
+                  secondaryField="code"
+                  entityName="client"
+                  entityIcon={<Building2 size={16} />}
+                  createEndpoint="/v1/commercial/customers"
+                  createFields={CLIENT_CREATE_FIELDS}
+                  queryKeys={['clients', 'commercial', 'customers']}
+                  allowCreate={true}
+                  error={errors.client_id}
                 />
-                {errors.client_id && (
-                  <span className="azals-form-error" style={{ color: 'var(--azals-danger, #dc2626)', fontSize: '12px' }}>
-                    {errors.client_id}
-                  </span>
-                )}
               </div>
 
               <div className="azals-field">
@@ -387,6 +423,15 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
                   value={formData.priorite}
                   onChange={(v) => updateField('priorite', v)}
                   options={PRIORITES}
+                />
+              </div>
+
+              <div className="azals-field">
+                <label className="block text-sm font-medium mb-1">Corps d'état</label>
+                <Select
+                  value={formData.corps_etat || ''}
+                  onChange={(v) => updateField('corps_etat', v || undefined)}
+                  options={CORPS_ETAT_OPTIONS}
                 />
               </div>
             </Grid>

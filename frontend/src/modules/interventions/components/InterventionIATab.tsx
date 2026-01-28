@@ -12,11 +12,13 @@ import {
 import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
-import type { Intervention } from '../types';
+import type { Intervention, AnalyseIA } from '../types';
 import {
-  formatDate, formatDuration, isLate, getDaysUntilIntervention,
-  getDurationVariance, canStart, canComplete, canPlan
+  isLate, getDaysUntilIntervention,
+  getDurationVariance, canStart, canComplete, canPlan, canValidate, canUnblock
 } from '../types';
+import { formatDate, formatDuration } from '@/utils/formatters';
+import { useAnalyseIA } from '../api';
 
 /**
  * InterventionIATab - Assistant IA pour l'intervention
@@ -25,12 +27,22 @@ import {
 export const InterventionIATab: React.FC<TabContentProps<Intervention>> = ({ data: intervention }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Générer les insights basés sur les données de l'intervention
+  // Backend IA analysis (audit-proof)
+  const { data: analyseIA, refetch: refetchIA, isLoading: iaLoading } = useAnalyseIA(intervention.id);
+
+  // Fallback: générer les insights localement si l'API ne répond pas
   const insights = generateInsights(intervention);
+
+  // Utiliser les données backend si disponibles
+  const backendScore = analyseIA?.score_preparation;
+  const backendDeductions = analyseIA?.score_deductions || [];
+  const backendActions = analyseIA?.actions_suggerees || [];
+  const backendResume = analyseIA?.resume_ia;
+  const backendIndicateurs = analyseIA?.indicateurs;
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
-    setTimeout(() => setIsAnalyzing(false), 2000);
+    refetchIA().finally(() => setIsAnalyzing(false));
   };
 
   return (
@@ -42,15 +54,19 @@ export const InterventionIATab: React.FC<TabContentProps<Intervention>> = ({ dat
           <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
         </div>
         <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analysé cette intervention et identifié{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
+          {backendResume ? (
+            <p>{backendResume}</p>
+          ) : (
+            <p>
+              J'ai analysé cette intervention et identifié{' '}
+              <strong>{insights.length} points d'attention</strong>.
+              {insights.filter(i => i.type === 'warning').length > 0 && (
+                <span className="text-warning ml-1">
+                  ({insights.filter(i => i.type === 'warning').length} alertes)
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <div className="azals-std-ia-panel__actions">
           <Button
@@ -76,12 +92,12 @@ export const InterventionIATab: React.FC<TabContentProps<Intervention>> = ({ dat
                 className="azals-score-display__bg"
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
-                stroke="#e5e7eb"
+                stroke="var(--azals-border, #e5e7eb)"
                 strokeWidth="3"
               />
               <path
                 className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
+                strokeDasharray={`${backendScore ?? Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}, 100`}
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
                 stroke="var(--azals-primary-500)"
@@ -90,15 +106,21 @@ export const InterventionIATab: React.FC<TabContentProps<Intervention>> = ({ dat
               />
             </svg>
             <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
+              {backendScore ?? Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
             </span>
           </div>
           <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
+            {backendDeductions.length > 0 ? (
+              <ul className="text-sm text-muted" style={{ margin: 0, paddingLeft: '1rem' }}>
+                {backendDeductions.map((d, i) => <li key={i}>{d}</li>)}
+              </ul>
+            ) : (
+              <p>
+                {insights.filter(i => i.type === 'success').length} points positifs,{' '}
+                {insights.filter(i => i.type === 'warning').length} alertes,{' '}
+                {insights.filter(i => i.type === 'suggestion').length} suggestions
+              </p>
+            )}
           </div>
         </div>
       </Card>
@@ -116,53 +138,84 @@ export const InterventionIATab: React.FC<TabContentProps<Intervention>> = ({ dat
         {/* Actions suggérées */}
         <Card title="Actions suggérées" icon={<ChevronRight size={18} />}>
           <div className="azals-suggested-actions">
-            {canPlan(intervention) && (
-              <SuggestedAction
-                title="Planifier l'intervention"
-                description="Définissez une date et assignez un intervenant."
-                confidence={90}
-                icon={<Calendar size={16} />}
-              />
-            )}
-            {canStart(intervention) && (
-              <SuggestedAction
-                title="Démarrer l'intervention"
-                description="L'intervention est planifiée et peut être démarrée."
-                confidence={85}
-                icon={<ChevronRight size={16} />}
-              />
-            )}
-            {canComplete(intervention) && (
-              <SuggestedAction
-                title="Terminer l'intervention"
-                description="Complétez le rapport et clôturez l'intervention."
-                confidence={90}
-                icon={<ChevronRight size={16} />}
-              />
-            )}
-            {intervention.statut === 'TERMINEE' && !intervention.rapport?.is_signed && (
-              <SuggestedAction
-                title="Faire signer le rapport"
-                description="Le rapport n'a pas encore été signé par le client."
-                confidence={85}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {intervention.statut === 'TERMINEE' && !intervention.facture_id && intervention.facturable !== false && (
-              <SuggestedAction
-                title="Facturer l'intervention"
-                description="L'intervention est terminée et peut être facturée."
-                confidence={95}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {isLate(intervention) && (
-              <SuggestedAction
-                title="Replanifier"
-                description="L'intervention est en retard. Définissez une nouvelle date."
-                confidence={85}
-                icon={<AlertTriangle size={16} />}
-              />
+            {/* Backend actions (si disponibles) */}
+            {backendActions.length > 0 ? (
+              backendActions.map((action, idx) => (
+                <SuggestedAction
+                  key={idx}
+                  title={action.label}
+                  description={`Action : ${action.action}`}
+                  confidence={Math.round(action.confiance * 100)}
+                  icon={<ChevronRight size={16} />}
+                />
+              ))
+            ) : (
+              <>
+                {canValidate(intervention) && (
+                  <SuggestedAction
+                    title="Valider le brouillon"
+                    description="Passez l'intervention au statut À planifier."
+                    confidence={90}
+                    icon={<ChevronRight size={16} />}
+                  />
+                )}
+                {canPlan(intervention) && (
+                  <SuggestedAction
+                    title="Planifier l'intervention"
+                    description="Définissez une date et assignez un intervenant."
+                    confidence={90}
+                    icon={<Calendar size={16} />}
+                  />
+                )}
+                {canStart(intervention) && (
+                  <SuggestedAction
+                    title="Démarrer l'intervention"
+                    description="L'intervention est planifiée et peut être démarrée."
+                    confidence={85}
+                    icon={<ChevronRight size={16} />}
+                  />
+                )}
+                {canComplete(intervention) && (
+                  <SuggestedAction
+                    title="Terminer l'intervention"
+                    description="Complétez le rapport et clôturez l'intervention."
+                    confidence={90}
+                    icon={<ChevronRight size={16} />}
+                  />
+                )}
+                {canUnblock(intervention) && (
+                  <SuggestedAction
+                    title="Débloquer l'intervention"
+                    description="L'intervention est bloquée et doit être débloquée pour reprendre."
+                    confidence={95}
+                    icon={<ChevronRight size={16} />}
+                  />
+                )}
+                {intervention.statut === 'TERMINEE' && !intervention.rapport?.is_signed && (
+                  <SuggestedAction
+                    title="Faire signer le rapport"
+                    description="Le rapport n'a pas encore été signé par le client."
+                    confidence={85}
+                    icon={<FileText size={16} />}
+                  />
+                )}
+                {intervention.statut === 'TERMINEE' && !intervention.facture_id && intervention.facturable !== false && (
+                  <SuggestedAction
+                    title="Facturer l'intervention"
+                    description="L'intervention est terminée et peut être facturée."
+                    confidence={95}
+                    icon={<FileText size={16} />}
+                  />
+                )}
+                {isLate(intervention) && (
+                  <SuggestedAction
+                    title="Replanifier"
+                    description="L'intervention est en retard. Définissez une nouvelle date."
+                    confidence={85}
+                    icon={<AlertTriangle size={16} />}
+                  />
+                )}
+              </>
             )}
           </div>
         </Card>

@@ -12,7 +12,7 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention } from '../types';
-import { formatCurrency, formatDate, formatDuration } from '../types';
+import { formatCurrency, formatDate, formatDuration } from '@/utils/formatters';
 
 /**
  * InterventionFinancialTab - Facturation de l'intervention

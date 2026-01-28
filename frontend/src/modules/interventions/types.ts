@@ -4,15 +4,16 @@
  */
 
 import React from 'react';
-import { Calendar, Clock, CheckCircle2, AlertCircle, Play } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, AlertCircle, Play, FileEdit, Lock } from 'lucide-react';
 
 // ============================================================
 // TYPES PRINCIPAUX
 // ============================================================
 
-export type InterventionStatut = 'A_PLANIFIER' | 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | 'ANNULEE';
+export type InterventionStatut = 'DRAFT' | 'A_PLANIFIER' | 'PLANIFIEE' | 'EN_COURS' | 'BLOQUEE' | 'TERMINEE' | 'ANNULEE';
 export type InterventionPriorite = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type InterventionType = 'INSTALLATION' | 'MAINTENANCE' | 'REPARATION' | 'INSPECTION' | 'FORMATION' | 'CONSULTATION' | 'AUTRE';
+export type CorpsEtat = 'ELECTRICITE' | 'PLOMBERIE' | 'ELECTRICITE_PLOMBERIE';
 
 export interface Intervention {
   id: string;
@@ -36,6 +37,7 @@ export interface Intervention {
   // Type et priorité
   type_intervention: InterventionType;
   priorite: InterventionPriorite;
+  corps_etat?: CorpsEtat;
 
   // Détails
   titre: string;
@@ -55,6 +57,14 @@ export interface Intervention {
 
   // Statut
   statut: InterventionStatut;
+
+  // Blocage
+  motif_blocage?: string;
+  date_blocage?: string;
+  date_deblocage?: string;
+
+  // Indicateurs métier (calculés par le backend)
+  indicateurs?: InterventionIndicateurs;
 
   // Réalisation
   date_debut_reelle?: string;
@@ -170,6 +180,7 @@ export interface InterventionFormData {
   // Section 2: Intervention
   type_intervention: InterventionType;
   priorite: InterventionPriorite;
+  corps_etat?: CorpsEtat;
   titre?: string;
   date_prevue_debut?: string;
   duree_prevue_heures?: number;
@@ -192,9 +203,11 @@ export interface Customer {
 // ============================================================
 
 export const STATUT_CONFIG: Record<InterventionStatut, { label: string; color: string; icon: React.ReactNode }> = {
+  DRAFT: { label: 'Brouillon', color: 'gray', icon: React.createElement(FileEdit, { size: 14 }) },
   A_PLANIFIER: { label: 'À planifier', color: 'gray', icon: React.createElement(AlertCircle, { size: 14 }) },
   PLANIFIEE: { label: 'Planifiée', color: 'blue', icon: React.createElement(Calendar, { size: 14 }) },
   EN_COURS: { label: 'En cours', color: 'orange', icon: React.createElement(Play, { size: 14 }) },
+  BLOQUEE: { label: 'Bloquée', color: 'red', icon: React.createElement(Lock, { size: 14 }) },
   TERMINEE: { label: 'Terminée', color: 'green', icon: React.createElement(CheckCircle2, { size: 14 }) },
   ANNULEE: { label: 'Annulée', color: 'gray', icon: React.createElement(AlertCircle, { size: 14 }) },
 };
@@ -216,50 +229,15 @@ export const TYPE_CONFIG: Record<InterventionType, { label: string; color: strin
   AUTRE: { label: 'Autre', color: 'gray' },
 };
 
+export const CORPS_ETAT_CONFIG: Record<CorpsEtat, { label: string; color: string }> = {
+  ELECTRICITE: { label: 'Électricité', color: 'yellow' },
+  PLOMBERIE: { label: 'Plomberie', color: 'blue' },
+  ELECTRICITE_PLOMBERIE: { label: 'Électricité + Plomberie', color: 'purple' },
+};
+
 // ============================================================
 // HELPERS
 // ============================================================
-
-export const formatCurrency = (amount?: number, currency = 'EUR'): string => {
-  if (amount === undefined || amount === null) return '-';
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-  }).format(amount);
-};
-
-export const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (dateStr?: string): string => {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-export const formatTime = (dateStr?: string): string => {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-export const formatDuration = (minutes?: number): string => {
-  if (!minutes) return '-';
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins} min`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h${mins.toString().padStart(2, '0')}`;
-};
 
 export const formatAddress = (intervention: Intervention): string => {
   const parts = [
@@ -273,7 +251,7 @@ export const formatAddress = (intervention: Intervention): string => {
 };
 
 export const isLate = (intervention: Intervention): boolean => {
-  if (intervention.statut === 'TERMINEE' || intervention.statut === 'ANNULEE') {
+  if (['TERMINEE', 'ANNULEE', 'DRAFT'].includes(intervention.statut)) {
     return false;
   }
   if (!intervention.date_prevue && !intervention.date_prevue_fin) {
@@ -313,14 +291,50 @@ export const canPlan = (intervention: Intervention): boolean => {
   return intervention.statut === 'A_PLANIFIER';
 };
 
+export const canValidate = (intervention: Intervention): boolean => {
+  return intervention.statut === 'DRAFT';
+};
+
+export const canBlock = (intervention: Intervention): boolean => {
+  return intervention.statut === 'EN_COURS';
+};
+
+export const canUnblock = (intervention: Intervention): boolean => {
+  return intervention.statut === 'BLOQUEE';
+};
+
+// ============================================================
+// INDICATEURS MÉTIER
+// ============================================================
+
+export interface InterventionIndicateurs {
+  en_retard: boolean;
+  jours_retard: number;
+  derive_duree_minutes: number | null;
+  derive_duree_pct: number | null;
+  indicateur_risque: 'FAIBLE' | 'MOYEN' | 'ELEVE' | 'CRITIQUE';
+  risque_justification: string;
+}
+
+export interface AnalyseIA {
+  indicateurs: InterventionIndicateurs;
+  resume_ia: string;
+  actions_suggerees: { action: string; label: string; confiance: number }[];
+  score_preparation: number;
+  score_deductions: string[];
+  generated_at: string;
+}
+
 // ============================================================
 // STATISTIQUES
 // ============================================================
 
 export interface InterventionStats {
+  brouillons: number;
   a_planifier: number;
   planifiees: number;
   en_cours: number;
+  bloquees: number;
   terminees_semaine: number;
   terminees_mois: number;
   duree_moyenne_minutes: number;
