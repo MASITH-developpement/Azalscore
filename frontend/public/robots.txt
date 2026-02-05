@@ -1,0 +1,19 @@
+# AZALSCORE - robots.txt
+# https://azalscore.com
+
+User-agent: *
+Allow: /login
+Disallow: /cockpit
+Disallow: /admin
+Disallow: /api
+Disallow: /v1
+Disallow: /auth
+Disallow: /health
+Disallow: /metrics
+Disallow: /theo
+Disallow: /grafana
+Disallow: /prometheus
+Disallow: /profile
+Disallow: /settings
+
+Sitemap: https://azalscore.com/sitemap.xml
