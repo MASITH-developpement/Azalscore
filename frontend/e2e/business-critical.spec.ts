@@ -15,30 +15,23 @@ async function login(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState('networkidle');
 
-  // Trouver les champs de login avec selecteurs flexibles
-  const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i], input[placeholder*="identifiant" i]').first();
-  const passwordInput = page.locator('input[type="password"], input[name="password"]').first();
+  // Credentials depuis env ou defaults
+  const tenant = process.env.TEST_TENANT || 'masith';
+  const email = process.env.TEST_USER || 'contact@masith.fr';
+  const password = process.env.TEST_PASSWORD || 'Azals2026!';
 
-  const email = process.env.TEST_USER || 'admin@test.com';
-  const password = process.env.TEST_PASSWORD || 'Test1234!';
-
-  await emailInput.fill(email);
-  await passwordInput.fill(password);
+  // Remplir les 3 champs via leurs IDs
+  await page.fill('#tenant', tenant);
+  await page.fill('#email', email);
+  await page.fill('#password', password);
 
   // Cliquer sur le bouton de connexion
   const submitBtn = page.locator('button[type="submit"], button:has-text("Connexion"), button:has-text("Se connecter"), button:has-text("Login")').first();
   await submitBtn.click();
 
-  // Attendre la redirection vers dashboard/home/cockpit
-  try {
-    await page.waitForURL(/\/(dashboard|home|cockpit|app)/, { timeout: 10000 });
-  } catch {
-    // Si pas de redirection, verifier qu'on n'a pas d'erreur
-    const hasError = await page.locator('text=/error|erreur|invalide|incorrect/i').isVisible();
-    if (hasError) {
-      throw new Error('Login failed - error message visible');
-    }
-  }
+  // Attendre qu'un élément de l'app authentifiée soit visible
+  // Le header AZALSCORE avec le dropdown "Nouvelle saisie" indique un login réussi
+  await page.waitForSelector('.azals-unified-header__selector, [class*="header"] [class*="dropdown"], button:has-text("Nouvelle saisie")', { timeout: 15000 });
 }
 
 test.describe('AZALSCORE Critical Flows', () => {
@@ -54,8 +47,9 @@ test.describe('AZALSCORE Critical Flows', () => {
     await login(page);
 
     // Verifier qu'on est sur une page authentifiee
-    const url = page.url();
-    expect(url).toMatch(/\/(dashboard|home|cockpit|app|purchases|treasury|accounting)/);
+    // Le header avec "Nouvelle saisie" ou le user icon indique le login réussi
+    const isLoggedIn = await page.locator('button:has-text("Nouvelle saisie"), .azals-unified-header__selector').first().isVisible();
+    expect(isLoggedIn).toBeTruthy();
 
     // Pas de message d'erreur
     const bodyText = await page.locator('body').textContent();

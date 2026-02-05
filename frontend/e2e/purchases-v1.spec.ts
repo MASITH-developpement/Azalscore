@@ -23,19 +23,22 @@ import { test, expect, Page } from '@playwright/test';
 
 const DEMO_CREDENTIALS = {
   user: {
-    email: 'demo@azalscore.local',
-    password: 'Demo123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
   admin: {
-    email: 'admin@azalscore.local',
-    password: 'Admin123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
 };
 
 const SELECTORS = {
   // Login
-  emailInput: '#email',
-  passwordInput: '#password',
+  tenantInput: 'input[placeholder*="societe" i], input[placeholder*="société" i], input[placeholder*="identifiant" i], input[name="tenant"]',
+  emailInput: 'input[type="email"], input[name="email"], input[placeholder*="email" i]',
+  passwordInput: 'input[type="password"]',
   loginButton: 'button[type="submit"]',
 
   // Navigation
@@ -89,11 +92,18 @@ const SELECTORS = {
 // HELPERS
 // ============================================================================
 
-async function loginAs(page: Page, credentials: { email: string; password: string }) {
+async function loginAs(page: Page, credentials: { tenant?: string; email: string; password: string }) {
   await page.goto('/login');
-  await page.waitForSelector(SELECTORS.emailInput);
-  await page.fill(SELECTORS.emailInput, credentials.email);
-  await page.fill(SELECTORS.passwordInput, credentials.password);
+  await page.waitForLoadState('networkidle');
+
+  // Remplir le champ tenant si présent
+  const tenantInput = page.locator(SELECTORS.tenantInput).first();
+  if (await tenantInput.isVisible({ timeout: 2000 })) {
+    await tenantInput.fill(credentials.tenant || 'masith');
+  }
+
+  await page.locator(SELECTORS.emailInput).first().fill(credentials.email);
+  await page.locator(SELECTORS.passwordInput).first().fill(credentials.password);
   await page.click(SELECTORS.loginButton);
   await page.waitForURL('**/cockpit', { timeout: 10000 });
 }

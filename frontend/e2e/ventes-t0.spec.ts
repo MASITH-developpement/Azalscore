@@ -25,12 +25,14 @@ import { test, expect, Page } from '@playwright/test';
 
 const DEMO_CREDENTIALS = {
   user: {
-    email: 'demo@azalscore.local',
-    password: 'Demo123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
   admin: {
-    email: 'admin@azalscore.local',
-    password: 'Admin123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
 };
 
@@ -40,8 +42,9 @@ const SELECTORS = {
   appLoading: '[data-app-ready="false"]',
 
   // Login Page
-  emailInput: '#email',
-  passwordInput: '#password',
+  tenantInput: 'input[placeholder*="societe" i], input[placeholder*="société" i], input[placeholder*="identifiant" i], input[name="tenant"]',
+  emailInput: 'input[type="email"], input[name="email"], input[placeholder*="email" i]',
+  passwordInput: 'input[type="password"]',
   loginButton: 'button[type="submit"]',
 
   // Actions
@@ -63,21 +66,27 @@ async function waitForAppReady(page: Page, timeout = 30000): Promise<void> {
 /**
  * Login avec attente déterministe de l'état READY
  */
-async function loginAs(page: Page, credentials: { email: string; password: string }): Promise<void> {
+async function loginAs(page: Page, credentials: { tenant?: string; email: string; password: string }): Promise<void> {
   // 1. Naviguer vers login
   await page.goto('/login');
 
   // 2. Attendre que l'app soit prête (page de login chargée)
   await waitForAppReady(page);
 
-  // 3. Remplir le formulaire
-  await page.fill(SELECTORS.emailInput, credentials.email);
-  await page.fill(SELECTORS.passwordInput, credentials.password);
+  // 3. Remplir le champ tenant si présent
+  const tenantInput = page.locator(SELECTORS.tenantInput).first();
+  if (await tenantInput.isVisible({ timeout: 2000 })) {
+    await tenantInput.fill(credentials.tenant || 'masith');
+  }
 
-  // 4. Soumettre
+  // 4. Remplir le formulaire
+  await page.locator(SELECTORS.emailInput).first().fill(credentials.email);
+  await page.locator(SELECTORS.passwordInput).first().fill(credentials.password);
+
+  // 5. Soumettre
   await page.click(SELECTORS.loginButton);
 
-  // 5. Attendre la redirection ET que l'app soit de nouveau prête
+  // 6. Attendre la redirection ET que l'app soit de nouveau prête
   await page.waitForURL(/\/(cockpit|invoicing|partners)/, { timeout: 15000 });
   await waitForAppReady(page);
 }

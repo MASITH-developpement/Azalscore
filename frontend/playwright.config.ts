@@ -49,7 +49,7 @@ export default defineConfig({
   ],
 
   /* Demarrer le serveur de developpement avant les tests */
-  webServer: {
+  webServer: process.env.SKIP_WEBSERVER ? undefined : {
     command: 'npm run dev',
     cwd: '.',
     url: 'http://localhost:5173',

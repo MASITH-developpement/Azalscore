@@ -14,11 +14,14 @@ async function login(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/login`);
   await page.waitForLoadState('networkidle');
 
-  const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first();
-  const passwordInput = page.locator('input[type="password"]').first();
+  const tenant = process.env.TEST_TENANT || 'masith';
+  const email = process.env.TEST_USER || 'contact@masith.fr';
+  const password = process.env.TEST_PASSWORD || 'Azals2026!';
 
-  await emailInput.fill(process.env.TEST_USER || 'admin@test.com');
-  await passwordInput.fill(process.env.TEST_PASSWORD || 'Test1234!');
+  // Remplir les 3 champs via leurs IDs
+  await page.fill('#tenant', tenant);
+  await page.fill('#email', email);
+  await page.fill('#password', password);
 
   const submitBtn = page.locator('button[type="submit"]').first();
   await submitBtn.click();

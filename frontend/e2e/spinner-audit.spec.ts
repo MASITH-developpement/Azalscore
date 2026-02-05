@@ -21,9 +21,9 @@ import { test, expect, type Page } from '@playwright/test';
 const BASE_URL = 'https://azalscore.com';
 
 // Credentials production
-const PROD_TENANT = 'masith';
-const PROD_EMAIL = 'contact@masith.fr';
-const PROD_PASSWORD = 'Gobelet2026!';
+const PROD_TENANT = process.env.TEST_TENANT || 'masith';
+const PROD_EMAIL = process.env.TEST_USER || 'contact@masith.fr';
+const PROD_PASSWORD = process.env.TEST_PASSWORD || 'Azals2026!';
 
 // Timeout d'attente apres navigation (6 secondes)
 const SPINNER_TIMEOUT_MS = 6000;
