@@ -54,6 +54,7 @@ const FACTURATION_OPTIONS = [
 
 // SmartSelector field configs
 const CLIENT_CREATE_FIELDS: FieldConfig[] = [
+  { key: 'code', label: 'Code client', type: 'text', required: true },
   { key: 'name', label: 'Nom / Raison sociale', type: 'text', required: true },
   { key: 'email', label: 'Email', type: 'email' },
   { key: 'phone', label: 'Téléphone', type: 'tel' },
