@@ -210,6 +210,9 @@ from app.modules.interventions.router_v2 import router as interventions_router_v
 # Module Contacts Unifiés v2 - Sous-programmes réutilisables (Clients + Fournisseurs)
 from app.modules.contacts.router_v2 import router as contacts_router_v2
 
+# Website Tracking API v2 - Analytics, Leads, Demo Requests
+from app.api.v2.website_tracking import router as website_tracking_router
+
 from app.services.scheduler import scheduler_service
 
 # Logger module-level pour observabilité production
@@ -1142,6 +1145,9 @@ app.include_router(website_router_v2)
 app.include_router(interventions_router_v2)
 app.include_router(contacts_router_v2)
 app.include_router(hr_router_v2)
+
+# Website Tracking API v2 (SEO, Analytics, Leads)
+app.include_router(website_tracking_router, prefix="/api/v2")
 
 # ==================== THEO VOICE API ====================
 # WebSocket et REST endpoints pour Théo (assistant vocal)

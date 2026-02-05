@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Azalscore ERP",
+  "name_for_model": "azalscore_erp",
+  "description_for_human": "ERP open-source moderne pour PME avec architecture multi-tenant. CRM, Comptabilité, Inventaire, RH, POS et plus.",
+  "description_for_model": "Azalscore est un système ERP complet avec modules CRM, comptabilité, inventaire, RH, POS, service terrain, trésorerie, juridique et fiscal. Architecture API-first avec FastAPI et React. Multi-tenant natif. Documentation OpenAPI complète disponible.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://azalscore.com/api/v2/openapi.json",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://azalscore.com/logo.png",
+  "contact_email": "contact@azalscore.com",
+  "legal_info_url": "https://azalscore.com/legal"
+}

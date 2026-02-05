@@ -80,8 +80,8 @@ def load_all_models() -> int:
 
 def _load_core_models() -> None:
     """
-    Charge les modeles du core (app.core.models).
-    Ces modeles sont prioritaires (User, Decision, etc.)
+    Charge les modeles du core (app.core.models) et app.models.
+    Ces modeles sont prioritaires (User, Decision, WebsiteVisitor, etc.)
     """
     global _loaded_modules
 
@@ -92,6 +92,14 @@ def _load_core_models() -> None:
         logger.debug("[MODEL_LOADER] Core models charges")
     except ImportError as e:
         logger.warning("[MODEL_LOADER] Impossible de charger core.models: %s", e)
+
+    try:
+        # Import explicite des modeles app.models (Website tracking, etc.)
+        import app.models
+        _loaded_modules.add("app.models")
+        logger.debug("[MODEL_LOADER] App models charges (website tracking)")
+    except ImportError as e:
+        logger.warning("[MODEL_LOADER] Impossible de charger app.models: %s", e)
 
 
 def _load_module_models() -> None:

@@ -25,6 +25,8 @@
     "validate:meta": "tsx ../scripts/frontend/validate-module-meta.ts",
     "validate:menu-route-sync": "tsx ../scripts/frontend/validate-menu-route-sync.ts",
     "validate:all": "npm run lint && npm run type-check && npm run azalscore:lint && npm run validate:modules && npm run validate:meta && npm run validate:menu-route-sync",
+    "generate:sitemap": "tsx scripts/generate-sitemap.ts",
+    "seo:validate": "npm run generate:sitemap",
     "prepare": "husky"
   },
   "dependencies": {

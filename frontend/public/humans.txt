@@ -1,0 +1,20 @@
+/* TEAM */
+Organization: MASITH Développement
+Site: https://azalscore.com
+GitHub: https://github.com/MASITH-developpement
+Location: France
+Contact: contact@azalscore.com
+
+/* SITE */
+Standards: HTML5, CSS3, ES2015+, OpenAPI 3.1, REST, JSON Schema
+Components: React, TypeScript, Vite, TanStack Query
+Backend: Python 3.11+, FastAPI, SQLAlchemy, Alembic
+Database: PostgreSQL 15+
+Infrastructure: Docker, Docker Compose, Nginx
+Deployment: CI/CD with GitHub Actions
+Testing: Pytest, Playwright, Vitest
+
+/* THANKS */
+Open source community
+Contributors and testers
+Users providing feedback

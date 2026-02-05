@@ -1,8 +1,6 @@
-# AZALSCORE - robots.txt
-# https://azalscore.com
-
+# Azalscore ERP - Accessible à tous les bots
 User-agent: *
-Allow: /login
+Allow: /
 Disallow: /cockpit
 Disallow: /admin
 Disallow: /api
@@ -10,10 +8,39 @@ Disallow: /v1
 Disallow: /auth
 Disallow: /health
 Disallow: /metrics
-Disallow: /theo
-Disallow: /grafana
-Disallow: /prometheus
 Disallow: /profile
 Disallow: /settings
 
+# Bots IA - Accès complet aux pages publiques
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Perplexity
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+# Sitemap
 Sitemap: https://azalscore.com/sitemap.xml

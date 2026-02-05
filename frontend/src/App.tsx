@@ -17,6 +17,8 @@ import { initAuditUI } from '@core/audit-ui';
 import { initializeStores, useUIStore } from '@ui/states';
 import { initGuardianErrorHandlers } from '@core/guardian/incident-store';
 import { initInterfaceMode } from './utils/interfaceMode';
+import { WebsiteTracker } from './components/WebsiteTracker';
+import { StructuredData } from './components/StructuredData';
 import './styles/main.css';
 
 // ============================================================
@@ -205,11 +207,15 @@ const AppInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppInitializer>
-        <AppRouter />
-      </AppInitializer>
-    </QueryClientProvider>
+    <>
+      <StructuredData />
+      <WebsiteTracker />
+      <QueryClientProvider client={queryClient}>
+        <AppInitializer>
+          <AppRouter />
+        </AppInitializer>
+      </QueryClientProvider>
+    </>
   );
 };
 
