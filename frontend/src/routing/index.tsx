@@ -50,6 +50,9 @@ const LoginPage = lazy(() => import('@/pages/auth/Login'));
 const TwoFactorPage = lazy(() => import('@/pages/auth/TwoFactor'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPassword'));
 
+// Pages publiques
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
+
 // Pages communes
 const NotFoundPage = lazy(() => import('@/pages/NotFound'));
 const ProfilePage = lazy(() => import('@/pages/Profile'));
@@ -97,6 +100,20 @@ const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
 };
 
 // ============================================================
+// HOME ROUTE WRAPPER (landing page or cockpit)
+// ============================================================
+
+const HomeRoute: React.FC = () => {
+  const isAuthenticated = useIsAuthenticated();
+
+  if (isAuthenticated) {
+    return <Navigate to="/cockpit" replace />;
+  }
+
+  return <LandingPage />;
+};
+
+// ============================================================
 // CAPABILITY ROUTE WRAPPER
 // ============================================================
 
@@ -122,6 +139,9 @@ export const AppRouter: React.FC = () => {
     <BrowserRouter>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
+          {/* Page d'accueil publique */}
+          <Route path="/" element={<HomeRoute />} />
+
           {/* Routes publiques (Auth) */}
           <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
             <Route path="/login" element={<LoginPage />} />
@@ -131,8 +151,6 @@ export const AppRouter: React.FC = () => {
 
           {/* Routes protégées (App) */}
           <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            {/* Redirect racine vers cockpit */}
-            <Route path="/" element={<Navigate to="/cockpit" replace />} />
 
             {/* Cockpit Dirigeant */}
             <Route path="/cockpit" element={
