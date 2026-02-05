@@ -1,24 +1,31 @@
 /**
  * AZALSCORE Module - CRM - Customer IA Tab
  * Onglet Assistant IA pour le client
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Target, Euro, Phone, Mail, FileText
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, Target, Euro, Phone, Mail, FileText, RefreshCw } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Customer } from '../types';
 import {
-  formatCurrency, formatDate,
   CUSTOMER_TYPE_CONFIG,
   isProspect, isActiveCustomer, isChurned, canConvert,
   getCustomerValue, getLeadScore, getLeadScoreLevel
 } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * CustomerIATab - Assistant IA pour le client
@@ -28,144 +35,61 @@ export const CustomerIATab: React.FC<TabContentProps<Customer>> = ({ data: custo
 
   // Générer les insights
   const insights = generateInsights(customer);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(customer);
+
+  // Calcul du score relationnel
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const relationScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const entityLabel = isProspect(customer) ? 'prospect' : 'client';
+  const panelSubtitle = `J'ai analysé ce ${entityLabel} et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tête IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analysé ce {isProspect(customer) ? 'prospect' : 'client'} et identifié{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score client */}
+      {/* Score relationnel - Composant partagé */}
       <Card title="Score relationnel" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+        <IAScoreCircle
+          score={relationScore}
+          label="Relation"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggérées */}
-        <Card title="Actions suggérées" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {canConvert(customer) && (
-              <SuggestedAction
-                title="Convertir en client"
-                description="Ce prospect semble qualifié pour devenir client."
-                confidence={getLeadScore(customer) || 70}
-                icon={<Target size={16} />}
-              />
-            )}
-            {isProspect(customer) && (
-              <SuggestedAction
-                title="Planifier un appel"
-                description="Maintenir le contact pour faire avancer la relation."
-                confidence={80}
-                icon={<Phone size={16} />}
-              />
-            )}
-            {isActiveCustomer(customer) && !customer.last_order_date && (
-              <SuggestedAction
-                title="Créer un devis"
-                description="Proposer une offre commerciale."
-                confidence={85}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {isActiveCustomer(customer) && customer.last_order_date && (
-              <SuggestedAction
-                title="Proposer des produits complémentaires"
-                description="Opportunité de vente croisée basée sur l'historique."
-                confidence={75}
-                icon={<Euro size={16} />}
-              />
-            )}
-            {!customer.email && (
-              <SuggestedAction
-                title="Compléter les coordonnées"
-                description="L'email est manquant pour ce contact."
-                confidence={90}
-                icon={<Mail size={16} />}
-              />
-            )}
-            {isChurned(customer) && (
-              <SuggestedAction
-                title="Relancer le client"
-                description="Client perdu - tentative de réactivation recommandée."
-                confidence={60}
-                icon={<RefreshCw size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -227,7 +151,7 @@ export const CustomerIATab: React.FC<TabContentProps<Customer>> = ({ data: custo
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -237,59 +161,79 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur le client
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(customer: Customer): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (canConvert(customer)) {
+    actions.push({
+      id: 'convert',
+      title: 'Convertir en client',
+      description: 'Ce prospect semble qualifié pour devenir client.',
+      confidence: getLeadScore(customer) || 70,
+      icon: <Target size={16} />,
+      actionLabel: 'Convertir',
+    });
+  }
 
-/**
- * Composant action suggérée
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isProspect(customer)) {
+    actions.push({
+      id: 'call',
+      title: 'Planifier un appel',
+      description: 'Maintenir le contact pour faire avancer la relation.',
+      confidence: 80,
+      icon: <Phone size={16} />,
+      actionLabel: 'Appeler',
+    });
+  }
+
+  if (isActiveCustomer(customer) && !customer.last_order_date) {
+    actions.push({
+      id: 'quote',
+      title: 'Créer un devis',
+      description: 'Proposer une offre commerciale.',
+      confidence: 85,
+      icon: <FileText size={16} />,
+      actionLabel: 'Créer',
+    });
+  }
+
+  if (isActiveCustomer(customer) && customer.last_order_date) {
+    actions.push({
+      id: 'cross-sell',
+      title: 'Proposer des produits complémentaires',
+      description: "Opportunité de vente croisée basée sur l'historique.",
+      confidence: 75,
+      icon: <Euro size={16} />,
+      actionLabel: 'Voir',
+    });
+  }
+
+  if (!customer.email) {
+    actions.push({
+      id: 'complete-email',
+      title: 'Compléter les coordonnées',
+      description: "L'email est manquant pour ce contact.",
+      confidence: 90,
+      icon: <Mail size={16} />,
+      actionLabel: 'Modifier',
+    });
+  }
+
+  if (isChurned(customer)) {
+    actions.push({
+      id: 'reactivate',
+      title: 'Relancer le client',
+      description: 'Client perdu - tentative de réactivation recommandée.',
+      confidence: 60,
+      icon: <RefreshCw size={16} />,
+      actionLabel: 'Relancer',
+    });
+  }
+
+  return actions;
 }
-
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
 
 /**
  * Générer les insights basés sur le client

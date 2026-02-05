@@ -1,24 +1,34 @@
 /**
  * AZALSCORE Module - POS - Session IA Tab
  * Onglet Assistant IA pour la session
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
 import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  RefreshCw, ThumbsUp, ChevronRight, CheckCircle2,
-  Banknote, ShoppingCart, Clock
+  TrendingUp, AlertTriangle, CheckCircle2,
+  Banknote, ShoppingCart, Clock, ThumbsUp
 } from 'lucide-react';
-import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { POSSession } from '../types';
 import {
-  formatCurrency, formatPercent,
   isSessionOpen, isSessionClosed, isSessionSuspended,
   hasCashDifference, hasSignificantDifference, hasTransactions,
-  hasReturns, getCashPaymentPercentage, getCardPaymentPercentage
+  hasReturns, getCashPaymentPercentage
 } from '../types';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * SessionIATab - Assistant IA
@@ -26,150 +36,62 @@ import {
 export const SessionIATab: React.FC<TabContentProps<POSSession>> = ({ data: session }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Générer les insights
   const insights = generateInsights(session);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(session);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const performanceScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé cette session et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse cette session et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Performance de la session */}
+      {/* Performance de la session - Composant partagé */}
       <Card title="Performance" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${Math.min(session.total_transactions, 100)}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke={session.total_transactions >= 50 ? 'var(--azals-success-500)' : session.total_transactions >= 20 ? 'var(--azals-warning-500)' : 'var(--azals-danger-500)'}
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {session.total_transactions}
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+        <IAScoreCircle
+          score={performanceScore}
+          label="Performance"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isSessionOpen(session) && !hasTransactions(session) && (
-              <SuggestedAction
-                title="Premiere vente"
-                description="La session est ouverte mais aucune transaction."
-                confidence={90}
-                icon={<ShoppingCart size={16} />}
-              />
-            )}
-            {isSessionOpen(session) && hasTransactions(session) && (
-              <SuggestedAction
-                title="Session active"
-                description={`${session.total_transactions} transaction(s) enregistree(s).`}
-                confidence={100}
-                icon={<CheckCircle2 size={16} />}
-              />
-            )}
-            {isSessionSuspended(session) && (
-              <SuggestedAction
-                title="Reprendre la session"
-                description="La session est suspendue."
-                confidence={85}
-                icon={<Clock size={16} />}
-              />
-            )}
-            {isSessionOpen(session) && session.total_transactions > 50 && (
-              <SuggestedAction
-                title="Envisager une cloture"
-                description="Session longue avec beaucoup de transactions."
-                confidence={70}
-                icon={<CheckCircle2 size={16} />}
-              />
-            )}
-            {hasSignificantDifference(session) && (
-              <SuggestedAction
-                title="Verifier l'ecart de caisse"
-                description={`Ecart de ${formatCurrency(Math.abs(session.cash_difference || 0))}.`}
-                confidence={100}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-            {hasReturns(session) && (
-              <SuggestedAction
-                title="Retours enregistres"
-                description={`${formatCurrency(session.total_returns)} de retours.`}
-                confidence={75}
-                icon={<Banknote size={16} />}
-              />
-            )}
-            {isSessionClosed(session) && !hasCashDifference(session) && (
-              <SuggestedAction
-                title="Session conforme"
-                description="Caisse equilibree, pas d'anomalie."
-                confidence={100}
-                icon={<ThumbsUp size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -213,7 +135,7 @@ export const SessionIATab: React.FC<TabContentProps<POSSession>> = ({ data: sess
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -223,62 +145,90 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur la session
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(session: POSSession): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isSessionOpen(session) && !hasTransactions(session)) {
+    actions.push({
+      id: 'first-sale',
+      title: 'Première vente',
+      description: 'La session est ouverte mais aucune transaction.',
+      confidence: 90,
+      icon: <ShoppingCart size={16} />,
+      actionLabel: 'Vendre',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isSessionOpen(session) && hasTransactions(session)) {
+    actions.push({
+      id: 'session-active',
+      title: 'Session active',
+      description: `${session.total_transactions} transaction(s) enregistrée(s).`,
+      confidence: 100,
+      icon: <CheckCircle2 size={16} />,
+    });
+  }
+
+  if (isSessionSuspended(session)) {
+    actions.push({
+      id: 'resume',
+      title: 'Reprendre la session',
+      description: 'La session est suspendue.',
+      confidence: 85,
+      icon: <Clock size={16} />,
+      actionLabel: 'Reprendre',
+    });
+  }
+
+  if (isSessionOpen(session) && session.total_transactions > 50) {
+    actions.push({
+      id: 'close',
+      title: 'Envisager une clôture',
+      description: 'Session longue avec beaucoup de transactions.',
+      confidence: 70,
+      icon: <CheckCircle2 size={16} />,
+      actionLabel: 'Clôturer',
+    });
+  }
+
+  if (hasSignificantDifference(session)) {
+    actions.push({
+      id: 'cash-diff',
+      title: "Vérifier l'écart de caisse",
+      description: `Écart de ${formatCurrency(Math.abs(session.cash_difference || 0))}.`,
+      confidence: 100,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Vérifier',
+    });
+  }
+
+  if (hasReturns(session)) {
+    actions.push({
+      id: 'returns',
+      title: 'Retours enregistrés',
+      description: `${formatCurrency(session.total_returns)} de retours.`,
+      confidence: 75,
+      icon: <Banknote size={16} />,
+    });
+  }
+
+  if (isSessionClosed(session) && !hasCashDifference(session)) {
+    actions.push({
+      id: 'ok',
+      title: 'Session conforme',
+      description: 'Caisse équilibrée, pas d\'anomalie.',
+      confidence: 100,
+      icon: <ThumbsUp size={16} />,
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur la session
+ * Générer les insights basés sur la session
  */
 function generateInsights(session: POSSession): Insight[] {
   const insights: Insight[] = [];

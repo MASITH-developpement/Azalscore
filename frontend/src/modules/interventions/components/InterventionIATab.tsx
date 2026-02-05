@@ -1,24 +1,34 @@
 /**
  * AZALSCORE Module - INTERVENTIONS - IA Tab
  * Onglet Assistant IA pour l'intervention
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
 import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Clock, Calendar, MapPin, FileText
+  TrendingUp, AlertTriangle, ChevronRight, Calendar, FileText
 } from 'lucide-react';
-import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
-import type { Intervention, AnalyseIA } from '../types';
+import type { Intervention } from '../types';
 import {
   isLate, getDaysUntilIntervention,
   getDurationVariance, canStart, canComplete, canPlan, canValidate, canUnblock
 } from '../types';
 import { formatDate, formatDuration } from '@/utils/formatters';
 import { useAnalyseIA } from '../api';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedAction,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * InterventionIATab - Assistant IA pour l'intervention
@@ -28,196 +38,76 @@ export const InterventionIATab: React.FC<TabContentProps<Intervention>> = ({ dat
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Backend IA analysis (audit-proof)
-  const { data: analyseIA, refetch: refetchIA, isLoading: iaLoading } = useAnalyseIA(intervention.id);
+  const { data: analyseIA, refetch: refetchIA } = useAnalyseIA(intervention.id);
 
   // Fallback: générer les insights localement si l'API ne répond pas
   const insights = generateInsights(intervention);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
 
   // Utiliser les données backend si disponibles
   const backendScore = analyseIA?.score_preparation;
   const backendDeductions = analyseIA?.score_deductions || [];
   const backendActions = analyseIA?.actions_suggerees || [];
   const backendResume = analyseIA?.resume_ia;
-  const backendIndicateurs = analyseIA?.indicateurs;
+
+  // Calcul du score de préparation
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const preparationScore = backendScore ?? Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(intervention, backendActions);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     refetchIA().finally(() => setIsAnalyzing(false));
   };
 
+  // Construire le sous-titre du panel
+  const panelSubtitle = backendResume ||
+    `J'ai analysé cette intervention et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tête IA proéminent (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          {backendResume ? (
-            <p>{backendResume}</p>
-          ) : (
-            <p>
-              J'ai analysé cette intervention et identifié{' '}
-              <strong>{insights.length} points d'attention</strong>.
-              {insights.filter(i => i.type === 'warning').length > 0 && (
-                <span className="text-warning ml-1">
-                  ({insights.filter(i => i.type === 'warning').length} alertes)
-                </span>
-              )}
-            </p>
-          )}
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de préparation */}
+      {/* Score de préparation - Composant partagé */}
       <Card title="Score de préparation" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-border, #e5e7eb)"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${backendScore ?? Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {backendScore ?? Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            {backendDeductions.length > 0 ? (
-              <ul className="text-sm text-muted" style={{ margin: 0, paddingLeft: '1rem' }}>
-                {backendDeductions.map((d, i) => <li key={i}>{d}</li>)}
-              </ul>
-            ) : (
-              <p>
-                {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-                {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-                {insights.filter(i => i.type === 'suggestion').length} suggestions
-              </p>
-            )}
-          </div>
-        </div>
+        <IAScoreCircle
+          score={preparationScore}
+          label="Préparation"
+          details={
+            backendDeductions.length > 0
+              ? backendDeductions.join(' • ')
+              : `${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`
+          }
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Alertes et suggestions */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggérées */}
-        <Card title="Actions suggérées" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {/* Backend actions (si disponibles) */}
-            {backendActions.length > 0 ? (
-              backendActions.map((action, idx) => (
-                <SuggestedAction
-                  key={idx}
-                  title={action.label}
-                  description={`Action : ${action.action}`}
-                  confidence={Math.round(action.confiance * 100)}
-                  icon={<ChevronRight size={16} />}
-                />
-              ))
-            ) : (
-              <>
-                {canValidate(intervention) && (
-                  <SuggestedAction
-                    title="Valider le brouillon"
-                    description="Passez l'intervention au statut À planifier."
-                    confidence={90}
-                    icon={<ChevronRight size={16} />}
-                  />
-                )}
-                {canPlan(intervention) && (
-                  <SuggestedAction
-                    title="Planifier l'intervention"
-                    description="Définissez une date et assignez un intervenant."
-                    confidence={90}
-                    icon={<Calendar size={16} />}
-                  />
-                )}
-                {canStart(intervention) && (
-                  <SuggestedAction
-                    title="Démarrer l'intervention"
-                    description="L'intervention est planifiée et peut être démarrée."
-                    confidence={85}
-                    icon={<ChevronRight size={16} />}
-                  />
-                )}
-                {canComplete(intervention) && (
-                  <SuggestedAction
-                    title="Terminer l'intervention"
-                    description="Complétez le rapport et clôturez l'intervention."
-                    confidence={90}
-                    icon={<ChevronRight size={16} />}
-                  />
-                )}
-                {canUnblock(intervention) && (
-                  <SuggestedAction
-                    title="Débloquer l'intervention"
-                    description="L'intervention est bloquée et doit être débloquée pour reprendre."
-                    confidence={95}
-                    icon={<ChevronRight size={16} />}
-                  />
-                )}
-                {intervention.statut === 'TERMINEE' && !intervention.rapport?.is_signed && (
-                  <SuggestedAction
-                    title="Faire signer le rapport"
-                    description="Le rapport n'a pas encore été signé par le client."
-                    confidence={85}
-                    icon={<FileText size={16} />}
-                  />
-                )}
-                {intervention.statut === 'TERMINEE' && !intervention.facture_id && intervention.facturable !== false && (
-                  <SuggestedAction
-                    title="Facturer l'intervention"
-                    description="L'intervention est terminée et peut être facturée."
-                    confidence={95}
-                    icon={<FileText size={16} />}
-                  />
-                )}
-                {isLate(intervention) && (
-                  <SuggestedAction
-                    title="Replanifier"
-                    description="L'intervention est en retard. Définissez une nouvelle date."
-                    confidence={85}
-                    icon={<AlertTriangle size={16} />}
-                  />
-                )}
-              </>
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -269,7 +159,7 @@ export const InterventionIATab: React.FC<TabContentProps<Intervention>> = ({ dat
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -279,59 +169,125 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Interface backend action
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
-
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
-
-/**
- * Composant action suggérée
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+interface BackendAction {
+  label: string;
+  action: string;
+  confiance: number;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
+/**
+ * Générer les actions suggérées basées sur l'intervention
+ */
+function generateSuggestedActions(
+  intervention: Intervention,
+  backendActions: BackendAction[]
+): SuggestedActionData[] {
+  // Si des actions backend sont disponibles, les utiliser
+  if (backendActions.length > 0) {
+    return backendActions.map((action, idx) => ({
+      id: `backend-${idx}`,
+      title: action.label,
+      description: `Action : ${action.action}`,
+      confidence: Math.round(action.confiance * 100),
+      icon: <ChevronRight size={16} />,
+    }));
+  }
+
+  // Sinon, générer les actions localement
+  const actions: SuggestedActionData[] = [];
+
+  if (canValidate(intervention)) {
+    actions.push({
+      id: 'validate-draft',
+      title: 'Valider le brouillon',
+      description: 'Passez l\'intervention au statut À planifier.',
+      confidence: 90,
+      icon: <ChevronRight size={16} />,
+      actionLabel: 'Valider',
+    });
+  }
+
+  if (canPlan(intervention)) {
+    actions.push({
+      id: 'plan-intervention',
+      title: 'Planifier l\'intervention',
+      description: 'Définissez une date et assignez un intervenant.',
+      confidence: 90,
+      icon: <Calendar size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
+
+  if (canStart(intervention)) {
+    actions.push({
+      id: 'start-intervention',
+      title: 'Démarrer l\'intervention',
+      description: 'L\'intervention est planifiée et peut être démarrée.',
+      confidence: 85,
+      icon: <ChevronRight size={16} />,
+      actionLabel: 'Démarrer',
+    });
+  }
+
+  if (canComplete(intervention)) {
+    actions.push({
+      id: 'complete-intervention',
+      title: 'Terminer l\'intervention',
+      description: 'Complétez le rapport et clôturez l\'intervention.',
+      confidence: 90,
+      icon: <ChevronRight size={16} />,
+      actionLabel: 'Terminer',
+    });
+  }
+
+  if (canUnblock(intervention)) {
+    actions.push({
+      id: 'unblock-intervention',
+      title: 'Débloquer l\'intervention',
+      description: 'L\'intervention est bloquée et doit être débloquée pour reprendre.',
+      confidence: 95,
+      icon: <ChevronRight size={16} />,
+      actionLabel: 'Débloquer',
+    });
+  }
+
+  if (intervention.statut === 'TERMINEE' && !intervention.rapport?.is_signed) {
+    actions.push({
+      id: 'sign-report',
+      title: 'Faire signer le rapport',
+      description: 'Le rapport n\'a pas encore été signé par le client.',
+      confidence: 85,
+      icon: <FileText size={16} />,
+      actionLabel: 'Signer',
+    });
+  }
+
+  if (intervention.statut === 'TERMINEE' && !intervention.facture_id && intervention.facturable !== false) {
+    actions.push({
+      id: 'invoice-intervention',
+      title: 'Facturer l\'intervention',
+      description: 'L\'intervention est terminée et peut être facturée.',
+      confidence: 95,
+      icon: <FileText size={16} />,
+      actionLabel: 'Facturer',
+    });
+  }
+
+  if (isLate(intervention)) {
+    actions.push({
+      id: 'reschedule',
+      title: 'Replanifier',
+      description: 'L\'intervention est en retard. Définissez une nouvelle date.',
+      confidence: 85,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Replanifier',
+    });
+  }
+
+  return actions;
+}
 
 /**
  * Générer les insights basés sur l'intervention

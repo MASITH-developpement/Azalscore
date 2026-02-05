@@ -1,23 +1,33 @@
 /**
  * AZALSCORE Module - Compliance - Audit IA Tab
  * Onglet Assistant IA pour l'audit
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
 import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  RefreshCw, ThumbsUp, ChevronRight, Play, CheckCircle2,
+  TrendingUp, AlertTriangle, ThumbsUp, Play, CheckCircle2,
   FileText, AlertCircle
 } from 'lucide-react';
-import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Audit } from '../types';
 import {
-  formatPercent, hasCriticalFindings, hasOpenFindings,
-  isAuditCompleted, isAuditInProgress, isAuditPlanned,
-  getNextAuditStatus, AUDIT_STATUS_CONFIG
+  hasCriticalFindings, hasOpenFindings,
+  isAuditCompleted, isAuditInProgress, isAuditPlanned
 } from '../types';
+import { formatPercent } from '@/utils/formatters';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * AuditIATab - Assistant IA
@@ -25,150 +35,62 @@ import {
 export const AuditIATab: React.FC<TabContentProps<Audit>> = ({ data: audit }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Générer les insights
   const insights = generateInsights(audit);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(audit);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const conformityScore = audit.score ?? Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé cet audit et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse cet audit et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de l'audit */}
-      <Card title="Score de conformite" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${audit.score || 0}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke={audit.score && audit.score >= 80 ? 'var(--azals-success-500)' : audit.score && audit.score >= 60 ? 'var(--azals-warning-500)' : 'var(--azals-danger-500)'}
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {audit.score !== undefined ? formatPercent(audit.score) : '-'}
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+      {/* Score de conformité - Composant partagé */}
+      <Card title="Score de conformité" icon={<TrendingUp size={18} />} className="mb-4">
+        <IAScoreCircle
+          score={conformityScore}
+          label="Conformité"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isAuditPlanned(audit) && (
-              <SuggestedAction
-                title="Demarrer l'audit"
-                description="L'audit est planifie et peut etre lance."
-                confidence={90}
-                icon={<Play size={16} />}
-              />
-            )}
-            {isAuditInProgress(audit) && !audit.report_url && (
-              <SuggestedAction
-                title="Generer le rapport"
-                description="L'audit est termine, generez le rapport."
-                confidence={85}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {isAuditInProgress(audit) && audit.report_url && (
-              <SuggestedAction
-                title="Cloturer l'audit"
-                description="Le rapport est disponible, cloturez l'audit."
-                confidence={95}
-                icon={<CheckCircle2 size={16} />}
-              />
-            )}
-            {hasCriticalFindings(audit) && (
-              <SuggestedAction
-                title="Traiter les constats critiques"
-                description={`${audit.critical_findings} constat(s) critique(s) a traiter.`}
-                confidence={100}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-            {hasOpenFindings(audit) && !hasCriticalFindings(audit) && (
-              <SuggestedAction
-                title="Traiter les constats"
-                description="Des constats sont en attente de traitement."
-                confidence={80}
-                icon={<AlertCircle size={16} />}
-              />
-            )}
-            {isAuditCompleted(audit) && !hasOpenFindings(audit) && (
-              <SuggestedAction
-                title="Audit conforme"
-                description="Tous les constats ont ete traites."
-                confidence={100}
-                icon={<ThumbsUp size={16} />}
-              />
-            )}
-            {audit.action_plan_status === 'IN_PROGRESS' && (
-              <SuggestedAction
-                title="Suivre le plan d'action"
-                description={`Progression: ${formatPercent(audit.action_plan_progress || 0)}`}
-                confidence={75}
-                icon={<TrendingUp size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -212,7 +134,7 @@ export const AuditIATab: React.FC<TabContentProps<Audit>> = ({ data: audit }) =>
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -222,62 +144,92 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur l'audit
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(audit: Audit): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isAuditPlanned(audit)) {
+    actions.push({
+      id: 'start',
+      title: "Démarrer l'audit",
+      description: "L'audit est planifié et peut être lancé.",
+      confidence: 90,
+      icon: <Play size={16} />,
+      actionLabel: 'Démarrer',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isAuditInProgress(audit) && !audit.report_url) {
+    actions.push({
+      id: 'report',
+      title: 'Générer le rapport',
+      description: "L'audit est terminé, générez le rapport.",
+      confidence: 85,
+      icon: <FileText size={16} />,
+      actionLabel: 'Générer',
+    });
+  }
+
+  if (isAuditInProgress(audit) && audit.report_url) {
+    actions.push({
+      id: 'close',
+      title: "Clôturer l'audit",
+      description: "Le rapport est disponible, clôturez l'audit.",
+      confidence: 95,
+      icon: <CheckCircle2 size={16} />,
+      actionLabel: 'Clôturer',
+    });
+  }
+
+  if (hasCriticalFindings(audit)) {
+    actions.push({
+      id: 'critical',
+      title: 'Traiter les constats critiques',
+      description: `${audit.critical_findings} constat(s) critique(s) à traiter.`,
+      confidence: 100,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Traiter',
+    });
+  }
+
+  if (hasOpenFindings(audit) && !hasCriticalFindings(audit)) {
+    actions.push({
+      id: 'findings',
+      title: 'Traiter les constats',
+      description: 'Des constats sont en attente de traitement.',
+      confidence: 80,
+      icon: <AlertCircle size={16} />,
+      actionLabel: 'Voir',
+    });
+  }
+
+  if (isAuditCompleted(audit) && !hasOpenFindings(audit)) {
+    actions.push({
+      id: 'ok',
+      title: 'Audit conforme',
+      description: 'Tous les constats ont été traités.',
+      confidence: 100,
+      icon: <ThumbsUp size={16} />,
+    });
+  }
+
+  if (audit.action_plan_status === 'IN_PROGRESS') {
+    actions.push({
+      id: 'action-plan',
+      title: "Suivre le plan d'action",
+      description: `Progression: ${formatPercent(audit.action_plan_progress || 0)}`,
+      confidence: 75,
+      icon: <TrendingUp size={16} />,
+      actionLabel: 'Suivre',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur l'audit
+ * Générer les insights basés sur l'audit
  */
 function generateInsights(audit: Audit): Insight[] {
   const insights: Insight[] = [];

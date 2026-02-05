@@ -1,178 +1,102 @@
 /**
  * AZALSCORE Module - Vehicles - Vehicle IA Tab
- * Onglet Assistant IA pour le vehicule
+ * Onglet Assistant IA pour le véhicule
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Calendar, Wrench, Fuel, Shield, Leaf, Euro
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, AlertTriangle, Calendar, Wrench, Shield, Euro } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Vehicule } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatCurrency, formatKilometers,
+  formatKilometers,
   calculCoutKm, getCO2Km, calculateAverageConsumption,
   getTotalMaintenanceCost, isInspectionDueSoon, isInspectionExpired,
   isInsuranceDueSoon, isRevisionDueSoon, getExpiringDocuments,
   getVehicleAge, FUEL_TYPE_CONFIG
 } from '../types';
 
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
+
 /**
- * VehicleIATab - Assistant IA pour le vehicule
+ * VehicleIATab - Assistant IA pour le véhicule
  */
 export const VehicleIATab: React.FC<TabContentProps<Vehicule>> = ({ data: vehicle }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Generer les insights
+  // Générer les insights
   const insights = generateInsights(vehicle);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(vehicle);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const healthScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé ce véhicule et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse ce vehicule et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score sante vehicule */}
-      <Card title="Sante du vehicule" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+      {/* Score santé véhicule - Composant partagé */}
+      <Card title="Santé du véhicule" icon={<TrendingUp size={18} />} className="mb-4">
+        <IAScoreCircle
+          score={healthScore}
+          label="Santé"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isInspectionExpired(vehicle) && (
-              <SuggestedAction
-                title="Controle technique urgent"
-                description="Le controle technique est expire."
-                confidence={100}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-            {isInspectionDueSoon(vehicle) && !isInspectionExpired(vehicle) && (
-              <SuggestedAction
-                title="Planifier controle technique"
-                description="Le controle technique expire bientot."
-                confidence={95}
-                icon={<Calendar size={16} />}
-              />
-            )}
-            {isInsuranceDueSoon(vehicle) && (
-              <SuggestedAction
-                title="Renouveler assurance"
-                description="L'assurance expire bientot."
-                confidence={90}
-                icon={<Shield size={16} />}
-              />
-            )}
-            {isRevisionDueSoon(vehicle) && (
-              <SuggestedAction
-                title="Planifier revision"
-                description="La prochaine revision approche."
-                confidence={85}
-                icon={<Wrench size={16} />}
-              />
-            )}
-            {getExpiringDocuments(vehicle).length > 0 && (
-              <SuggestedAction
-                title="Renouveler documents"
-                description={`${getExpiringDocuments(vehicle).length} document(s) a renouveler.`}
-                confidence={80}
-                icon={<Shield size={16} />}
-              />
-            )}
-            {vehicle.is_active && (
-              <SuggestedAction
-                title="Optimiser les couts"
-                description="Analyser les donnees pour reduire le cout/km."
-                confidence={70}
-                icon={<Euro size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
-      {/* Analyse detaillee (ERP only) */}
+      {/* Analyse détaillée (ERP only) */}
       <Card
-        title="Analyse detaillee"
+        title="Analyse détaillée"
         icon={<TrendingUp size={18} />}
         className="mt-4 azals-std-field--secondary"
       >
@@ -184,33 +108,33 @@ export const VehicleIATab: React.FC<TabContentProps<Vehicule>> = ({ data: vehicl
             </p>
             <p className="text-sm text-muted">
               {vehicle.type_carburant === 'electrique'
-                ? 'Faibles emissions'
+                ? 'Faibles émissions'
                 : vehicle.type_carburant === 'hybride'
-                ? 'Emissions reduites'
-                : 'Emissions standard'
+                ? 'Émissions réduites'
+                : 'Émissions standard'
               }
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Cout au kilometre</h4>
+            <h4>Coût au kilomètre</h4>
             <p className="text-lg font-medium text-primary">
-              {calculCoutKm(vehicle).total.toFixed(3)} Euro/km
+              {calculCoutKm(vehicle).total.toFixed(3)} €/km
             </p>
             <p className="text-sm text-muted">
-              {calculCoutKm(vehicle).total < 0.40 ? 'Economique' : calculCoutKm(vehicle).total < 0.55 ? 'Moyen' : 'Eleve'}
+              {calculCoutKm(vehicle).total < 0.40 ? 'Économique' : calculCoutKm(vehicle).total < 0.55 ? 'Moyen' : 'Élevé'}
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Emissions CO2</h4>
+            <h4>Émissions CO2</h4>
             <p className="text-lg font-medium text-green-600">
               {getCO2Km(vehicle).toFixed(3)} kg/km
             </p>
             <p className="text-sm text-muted">
-              {getCO2Km(vehicle) < 0.10 ? 'Tres faible' : getCO2Km(vehicle) < 0.18 ? 'Faible' : 'Moyen'}
+              {getCO2Km(vehicle) < 0.10 ? 'Très faible' : getCO2Km(vehicle) < 0.18 ? 'Faible' : 'Moyen'}
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Cout maintenance total</h4>
+            <h4>Coût maintenance total</h4>
             <p className="text-lg font-medium">
               {formatCurrency(getTotalMaintenanceCost(vehicle))}
             </p>
@@ -225,7 +149,7 @@ export const VehicleIATab: React.FC<TabContentProps<Vehicule>> = ({ data: vehicl
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -235,62 +159,82 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur le véhicule
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(vehicle: Vehicule): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isInspectionExpired(vehicle)) {
+    actions.push({
+      id: 'urgent-inspection',
+      title: 'Contrôle technique urgent',
+      description: 'Le contrôle technique est expiré.',
+      confidence: 100,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isInspectionDueSoon(vehicle) && !isInspectionExpired(vehicle)) {
+    actions.push({
+      id: 'plan-inspection',
+      title: 'Planifier contrôle technique',
+      description: 'Le contrôle technique expire bientôt.',
+      confidence: 95,
+      icon: <Calendar size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
+
+  if (isInsuranceDueSoon(vehicle)) {
+    actions.push({
+      id: 'renew-insurance',
+      title: 'Renouveler assurance',
+      description: "L'assurance expire bientôt.",
+      confidence: 90,
+      icon: <Shield size={16} />,
+      actionLabel: 'Renouveler',
+    });
+  }
+
+  if (isRevisionDueSoon(vehicle)) {
+    actions.push({
+      id: 'plan-revision',
+      title: 'Planifier révision',
+      description: 'La prochaine révision approche.',
+      confidence: 85,
+      icon: <Wrench size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
+
+  if (getExpiringDocuments(vehicle).length > 0) {
+    actions.push({
+      id: 'renew-docs',
+      title: 'Renouveler documents',
+      description: `${getExpiringDocuments(vehicle).length} document(s) à renouveler.`,
+      confidence: 80,
+      icon: <Shield size={16} />,
+      actionLabel: 'Voir',
+    });
+  }
+
+  if (vehicle.is_active) {
+    actions.push({
+      id: 'optimize-costs',
+      title: 'Optimiser les coûts',
+      description: 'Analyser les données pour réduire le coût/km.',
+      confidence: 70,
+      icon: <Euro size={16} />,
+      actionLabel: 'Analyser',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur le vehicule
+ * Générer les insights basés sur le véhicule
  */
 function generateInsights(vehicle: Vehicule): Insight[] {
   const insights: Insight[] = [];
@@ -300,32 +244,32 @@ function generateInsights(vehicle: Vehicule): Insight[] {
     insights.push({
       id: 'active',
       type: 'success',
-      title: 'Vehicule actif',
-      description: 'Le vehicule est operationnel.',
+      title: 'Véhicule actif',
+      description: 'Le véhicule est opérationnel.',
     });
   } else {
     insights.push({
       id: 'inactive',
       type: 'warning',
-      title: 'Vehicule inactif',
-      description: 'Le vehicule n\'est pas en service.',
+      title: 'Véhicule inactif',
+      description: "Le véhicule n'est pas en service.",
     });
   }
 
-  // Controle technique
+  // Contrôle technique
   if (isInspectionExpired(vehicle)) {
     insights.push({
       id: 'inspection-expired',
       type: 'warning',
-      title: 'Controle technique expire',
-      description: 'Le controle technique doit etre effectue immediatement.',
+      title: 'Contrôle technique expiré',
+      description: 'Le contrôle technique doit être effectué immédiatement.',
     });
   } else if (isInspectionDueSoon(vehicle)) {
     insights.push({
       id: 'inspection-soon',
       type: 'warning',
-      title: 'Controle technique proche',
-      description: 'Le controle technique expire dans moins de 30 jours.',
+      title: 'Contrôle technique proche',
+      description: 'Le contrôle technique expire dans moins de 30 jours.',
     });
   }
 
@@ -334,25 +278,25 @@ function generateInsights(vehicle: Vehicule): Insight[] {
     insights.push({
       id: 'insurance-soon',
       type: 'warning',
-      title: 'Assurance a renouveler',
-      description: 'L\'assurance expire dans moins de 30 jours.',
+      title: 'Assurance à renouveler',
+      description: "L'assurance expire dans moins de 30 jours.",
     });
   }
 
-  // Revision
+  // Révision
   if (isRevisionDueSoon(vehicle)) {
     insights.push({
       id: 'revision-soon',
       type: 'suggestion',
-      title: 'Revision a planifier',
-      description: 'La prochaine revision approche.',
+      title: 'Révision à planifier',
+      description: 'La prochaine révision approche.',
     });
   } else if (vehicle.date_derniere_revision) {
     insights.push({
       id: 'revision-ok',
       type: 'success',
-      title: 'Entretien a jour',
-      description: `Derniere revision le ${formatDate(vehicle.date_derniere_revision)}.`,
+      title: 'Entretien à jour',
+      description: `Dernière révision le ${formatDate(vehicle.date_derniere_revision)}.`,
     });
   }
 
@@ -364,15 +308,15 @@ function generateInsights(vehicle: Vehicule): Insight[] {
       insights.push({
         id: 'consumption-high',
         type: 'warning',
-        title: 'Consommation elevee',
-        description: `+${diff.toFixed(0)}% par rapport a la valeur theorique.`,
+        title: 'Consommation élevée',
+        description: `+${diff.toFixed(0)}% par rapport à la valeur théorique.`,
       });
     } else if (diff < -5) {
       insights.push({
         id: 'consumption-good',
         type: 'success',
         title: 'Bonne consommation',
-        description: `${Math.abs(diff).toFixed(0)}% sous la valeur theorique.`,
+        description: `${Math.abs(diff).toFixed(0)}% sous la valeur théorique.`,
       });
     }
   }
@@ -383,55 +327,55 @@ function generateInsights(vehicle: Vehicule): Insight[] {
     insights.push({
       id: 'docs-expiring',
       type: 'warning',
-      title: 'Documents a renouveler',
-      description: `${expiringDocs.length} document(s) expire(s) ou expirant bientot.`,
+      title: 'Documents à renouveler',
+      description: `${expiringDocs.length} document(s) expiré(s) ou expirant bientôt.`,
     });
   }
 
-  // Age du vehicule
+  // Âge du véhicule
   const age = getVehicleAge(vehicle);
   if (age !== null && age >= 10) {
     insights.push({
       id: 'old-vehicle',
       type: 'suggestion',
-      title: 'Vehicule ancien',
+      title: 'Véhicule ancien',
       description: `${age} ans - envisager le remplacement.`,
     });
   }
 
-  // Emissions CO2
+  // Émissions CO2
   const co2 = getCO2Km(vehicle);
   if (co2 < 0.10) {
     insights.push({
       id: 'low-co2',
       type: 'success',
-      title: 'Faibles emissions',
-      description: 'Vehicule ecologique avec emissions reduites.',
+      title: 'Faibles émissions',
+      description: 'Véhicule écologique avec émissions réduites.',
     });
   } else if (co2 > 0.20) {
     insights.push({
       id: 'high-co2',
       type: 'suggestion',
-      title: 'Emissions elevees',
-      description: 'Envisager un vehicule moins polluant.',
+      title: 'Émissions élevées',
+      description: 'Envisager un véhicule moins polluant.',
     });
   }
 
-  // Cout au kilometre
+  // Coût au kilomètre
   const coutKm = calculCoutKm(vehicle).total;
   if (coutKm < 0.35) {
     insights.push({
       id: 'low-cost',
       type: 'success',
-      title: 'Cout kilometrique faible',
-      description: 'Vehicule economique a l\'usage.',
+      title: 'Coût kilométrique faible',
+      description: "Véhicule économique à l'usage.",
     });
   } else if (coutKm > 0.55) {
     insights.push({
       id: 'high-cost',
       type: 'suggestion',
-      title: 'Cout kilometrique eleve',
-      description: 'Analyser les postes de depenses.',
+      title: 'Coût kilométrique élevé',
+      description: 'Analyser les postes de dépenses.',
     });
   }
 

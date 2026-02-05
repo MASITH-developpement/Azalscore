@@ -1,24 +1,34 @@
 /**
  * AZALSCORE Module - HR - Employee IA Tab
  * Onglet Assistant IA pour l'employe
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
 import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Calendar, FileText, GraduationCap, Euro
+  TrendingUp, Calendar, FileText, GraduationCap, Euro
 } from 'lucide-react';
-import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Employee } from '../types';
 import {
-  formatDate, formatCurrency, getSeniority, getSeniorityFormatted,
+  getSeniority, getSeniorityFormatted,
   EMPLOYEE_STATUS_CONFIG, CONTRACT_TYPE_CONFIG,
   isActive, isOnLeave, isContractExpiringSoon, isOnProbation,
   getRemainingLeave, getTotalRemainingLeave, getPendingLeaveRequests
 } from '../types';
+import { formatDate } from '@/utils/formatters';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * EmployeeIATab - Assistant IA pour l'employe
@@ -26,8 +36,22 @@ import {
 export const EmployeeIATab: React.FC<TabContentProps<Employee>> = ({ data: employee }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Generer les insights
+  // Générer les insights (conversion vers format partagé)
   const insights = generateInsights(employee);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(employee);
+
+  // Calcul du score d'engagement
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const engagementScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
@@ -36,136 +60,35 @@ export const EmployeeIATab: React.FC<TabContentProps<Employee>> = ({ data: emplo
 
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse le dossier de cet employe et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={`J'ai analysé le dossier de cet employé et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score engagement */}
+      {/* Score engagement - Composant partagé */}
       <Card title="Score d'engagement" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+        <IAScoreCircle
+          score={engagementScore}
+          label="Engagement"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${insights.filter(i => i.type === 'suggestion').length} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isContractExpiringSoon(employee) && (
-              <SuggestedAction
-                title="Renouveler le contrat"
-                description="Le contrat arrive a echeance bientot."
-                confidence={95}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {isOnProbation(employee) && (
-              <SuggestedAction
-                title="Evaluer la periode d'essai"
-                description="Planifier l'entretien de fin de periode d'essai."
-                confidence={90}
-                icon={<Calendar size={16} />}
-              />
-            )}
-            {getPendingLeaveRequests(employee).length > 0 && (
-              <SuggestedAction
-                title="Traiter les demandes de conges"
-                description={`${getPendingLeaveRequests(employee).length} demande(s) en attente.`}
-                confidence={85}
-                icon={<Calendar size={16} />}
-              />
-            )}
-            {getSeniority(employee) >= 1 && !employee.salary && (
-              <SuggestedAction
-                title="Completer le dossier"
-                description="Informations de remuneration manquantes."
-                confidence={80}
-                icon={<Euro size={16} />}
-              />
-            )}
-            {(!employee.documents || employee.documents.length === 0) && (
-              <SuggestedAction
-                title="Ajouter des documents"
-                description="Le dossier employe ne contient aucun document."
-                confidence={75}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {getSeniority(employee) >= 2 && (
-              <SuggestedAction
-                title="Proposer une formation"
-                description="L'employe pourrait beneficier d'une montee en competences."
-                confidence={70}
-                icon={<GraduationCap size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -221,7 +144,7 @@ export const EmployeeIATab: React.FC<TabContentProps<Employee>> = ({ data: emplo
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -231,62 +154,83 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur l'employé
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(employee: Employee): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isContractExpiringSoon(employee)) {
+    actions.push({
+      id: 'renew-contract',
+      title: 'Renouveler le contrat',
+      description: 'Le contrat arrive à échéance bientôt.',
+      confidence: 95,
+      icon: <FileText size={16} />,
+      actionLabel: 'Traiter',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isOnProbation(employee)) {
+    actions.push({
+      id: 'evaluate-probation',
+      title: "Évaluer la période d'essai",
+      description: "Planifier l'entretien de fin de période d'essai.",
+      confidence: 90,
+      icon: <Calendar size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
+
+  const pendingLeaves = getPendingLeaveRequests(employee);
+  if (pendingLeaves.length > 0) {
+    actions.push({
+      id: 'process-leaves',
+      title: 'Traiter les demandes de congés',
+      description: `${pendingLeaves.length} demande(s) en attente.`,
+      confidence: 85,
+      icon: <Calendar size={16} />,
+      actionLabel: 'Voir',
+    });
+  }
+
+  if (getSeniority(employee) >= 1 && !employee.salary) {
+    actions.push({
+      id: 'complete-file',
+      title: 'Compléter le dossier',
+      description: 'Informations de rémunération manquantes.',
+      confidence: 80,
+      icon: <Euro size={16} />,
+      actionLabel: 'Modifier',
+    });
+  }
+
+  if (!employee.documents || employee.documents.length === 0) {
+    actions.push({
+      id: 'add-documents',
+      title: 'Ajouter des documents',
+      description: 'Le dossier employé ne contient aucun document.',
+      confidence: 75,
+      icon: <FileText size={16} />,
+      actionLabel: 'Ajouter',
+    });
+  }
+
+  if (getSeniority(employee) >= 2) {
+    actions.push({
+      id: 'propose-training',
+      title: 'Proposer une formation',
+      description: "L'employé pourrait bénéficier d'une montée en compétences.",
+      confidence: 70,
+      icon: <GraduationCap size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur l'employe
+ * Générer les insights basés sur l'employé
  */
 function generateInsights(employee: Employee): Insight[] {
   const insights: Insight[] = [];

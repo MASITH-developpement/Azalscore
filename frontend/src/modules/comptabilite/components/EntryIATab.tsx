@@ -1,22 +1,30 @@
 /**
- * AZALSCORE Module - Comptabilite - IA Tab
- * Onglet Assistant IA pour l'ecriture comptable
+ * AZALSCORE Module - Comptabilité - IA Tab
+ * Onglet Assistant IA pour l'écriture comptable
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  RefreshCw, ThumbsUp, ThumbsDown, ChevronRight,
-  CheckCircle2, XCircle, BookOpen
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, CheckCircle2, AlertTriangle, BookOpen } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Entry } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 import {
-  formatCurrency, isEntryBalanced, canValidateEntry, canPostEntry,
+  isEntryBalanced, canValidateEntry, canPostEntry,
   ENTRY_STATUS_CONFIG
 } from '../types';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * EntryIATab - Assistant IA
@@ -24,132 +32,68 @@ import {
 export const EntryIATab: React.FC<TabContentProps<Entry>> = ({ data: entry }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Générer les insights
   const insights = generateInsights(entry);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(entry);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const conformityScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé cette écriture comptable et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse cette ecriture comptable et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de conformite */}
-      <Card title="Score de conformite" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+      {/* Score de conformité - Composant partagé */}
+      <Card title="Score de conformité" icon={<TrendingUp size={18} />} className="mb-4">
+        <IAScoreCircle
+          score={conformityScore}
+          label="Conformité"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {entry.status === 'DRAFT' && canValidateEntry(entry) && (
-              <SuggestedAction
-                title="Valider l'ecriture"
-                description="L'ecriture est equilibree et peut etre validee."
-                confidence={95}
-                icon={<CheckCircle2 size={16} />}
-              />
-            )}
-            {entry.status === 'DRAFT' && !isEntryBalanced(entry) && (
-              <SuggestedAction
-                title="Equilibrer l'ecriture"
-                description="Corrigez le desequilibre avant validation."
-                confidence={100}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-            {canPostEntry(entry) && (
-              <SuggestedAction
-                title="Comptabiliser l'ecriture"
-                description="L'ecriture validee peut etre comptabilisee."
-                confidence={90}
-                icon={<BookOpen size={16} />}
-              />
-            )}
-            {entry.status === 'DRAFT' && entry.lines.length === 0 && (
-              <SuggestedAction
-                title="Ajouter des lignes"
-                description="L'ecriture ne contient aucune ligne."
-                confidence={100}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
-      {/* Analyse detaillee (ERP only) */}
+      {/* Analyse détaillée (ERP only) */}
       <Card
-        title="Analyse detaillee"
+        title="Analyse détaillée"
         icon={<TrendingUp size={18} />}
         className="mt-4 azals-std-field--secondary"
       >
@@ -157,29 +101,29 @@ export const EntryIATab: React.FC<TabContentProps<Entry>> = ({ data: entry }) =>
           <div className="azals-analysis-item">
             <h4>Lignes</h4>
             <p className="text-lg font-medium text-primary">{entry.lines.length}</p>
-            <p className="text-sm text-muted">Lignes d'ecriture</p>
+            <p className="text-sm text-muted">Lignes d'écriture</p>
           </div>
           <div className="azals-analysis-item">
             <h4>Comptes</h4>
             <p className="text-lg font-medium">
               {new Set(entry.lines.map(l => l.account_id)).size}
             </p>
-            <p className="text-sm text-muted">Comptes touches</p>
+            <p className="text-sm text-muted">Comptes touchés</p>
           </div>
           <div className="azals-analysis-item">
             <h4>Total mouvement</h4>
             <p className="text-lg font-medium text-blue-600">
               {formatCurrency(entry.total_debit)}
             </p>
-            <p className="text-sm text-muted">Debit = Credit</p>
+            <p className="text-sm text-muted">Débit = Crédit</p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Equilibre</h4>
+            <h4>Équilibre</h4>
             <p className={`text-lg font-medium ${isEntryBalanced(entry) ? 'text-success' : 'text-danger'}`}>
               {isEntryBalanced(entry) ? 'Oui' : 'Non'}
             </p>
             <p className="text-sm text-muted">
-              {isEntryBalanced(entry) ? 'Ecriture equilibree' : 'A corriger'}
+              {isEntryBalanced(entry) ? 'Écriture équilibrée' : 'À corriger'}
             </p>
           </div>
         </div>
@@ -189,7 +133,7 @@ export const EntryIATab: React.FC<TabContentProps<Entry>> = ({ data: entry }) =>
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -199,62 +143,60 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur l'écriture
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(entry: Entry): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (entry.status === 'DRAFT' && canValidateEntry(entry)) {
+    actions.push({
+      id: 'validate',
+      title: "Valider l'écriture",
+      description: "L'écriture est équilibrée et peut être validée.",
+      confidence: 95,
+      icon: <CheckCircle2 size={16} />,
+      actionLabel: 'Valider',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (entry.status === 'DRAFT' && !isEntryBalanced(entry)) {
+    actions.push({
+      id: 'balance',
+      title: "Équilibrer l'écriture",
+      description: 'Corrigez le déséquilibre avant validation.',
+      confidence: 100,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Corriger',
+    });
+  }
+
+  if (canPostEntry(entry)) {
+    actions.push({
+      id: 'post',
+      title: "Comptabiliser l'écriture",
+      description: "L'écriture validée peut être comptabilisée.",
+      confidence: 90,
+      icon: <BookOpen size={16} />,
+      actionLabel: 'Comptabiliser',
+    });
+  }
+
+  if (entry.status === 'DRAFT' && entry.lines.length === 0) {
+    actions.push({
+      id: 'add-lines',
+      title: 'Ajouter des lignes',
+      description: "L'écriture ne contient aucune ligne.",
+      confidence: 100,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Ajouter',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur l'ecriture
+ * Générer les insights basés sur l'écriture
  */
 function generateInsights(entry: Entry): Insight[] {
   const insights: Insight[] = [];
@@ -265,46 +207,46 @@ function generateInsights(entry: Entry): Insight[] {
     insights.push({
       id: 'draft',
       type: 'suggestion',
-      title: 'Ecriture en brouillon',
-      description: 'Validez l\'ecriture une fois terminee.',
+      title: 'Écriture en brouillon',
+      description: "Validez l'écriture une fois terminée.",
     });
   } else if (entry.status === 'VALIDATED') {
     insights.push({
       id: 'validated',
       type: 'success',
-      title: 'Ecriture validee',
-      description: 'Prete a etre comptabilisee.',
+      title: 'Écriture validée',
+      description: 'Prête à être comptabilisée.',
     });
   } else if (entry.status === 'POSTED') {
     insights.push({
       id: 'posted',
       type: 'success',
-      title: 'Ecriture comptabilisee',
-      description: 'Definitivement enregistree dans les comptes.',
+      title: 'Écriture comptabilisée',
+      description: 'Définitivement enregistrée dans les comptes.',
     });
   } else if (entry.status === 'CANCELLED') {
     insights.push({
       id: 'cancelled',
       type: 'warning',
-      title: 'Ecriture annulee',
-      description: 'Cette ecriture a ete annulee.',
+      title: 'Écriture annulée',
+      description: 'Cette écriture a été annulée.',
     });
   }
 
-  // Equilibre
+  // Équilibre
   if (isEntryBalanced(entry)) {
     insights.push({
       id: 'balanced',
       type: 'success',
-      title: 'Ecriture equilibree',
-      description: 'Debit = Credit, conforme aux principes comptables.',
+      title: 'Écriture équilibrée',
+      description: 'Débit = Crédit, conforme aux principes comptables.',
     });
   } else {
     insights.push({
       id: 'unbalanced',
       type: 'warning',
-      title: 'Ecriture desequilibree',
-      description: `Ecart de ${formatCurrency(Math.abs(entry.total_debit - entry.total_credit))} a corriger.`,
+      title: 'Écriture déséquilibrée',
+      description: `Écart de ${formatCurrency(Math.abs(entry.total_debit - entry.total_credit))} à corriger.`,
     });
   }
 
@@ -313,7 +255,7 @@ function generateInsights(entry: Entry): Insight[] {
     insights.push({
       id: 'has-lines',
       type: 'success',
-      title: 'Lignes presentes',
+      title: 'Lignes présentes',
       description: `${entry.lines.length} ligne(s) saisie(s).`,
     });
   } else {
@@ -330,7 +272,7 @@ function generateInsights(entry: Entry): Insight[] {
     insights.push({
       id: 'has-journal',
       type: 'success',
-      title: 'Journal affecte',
+      title: 'Journal affecté',
       description: `Journal: ${entry.journal_code}`,
     });
   }
@@ -340,15 +282,15 @@ function generateInsights(entry: Entry): Insight[] {
     insights.push({
       id: 'has-description',
       type: 'success',
-      title: 'Libelle renseigne',
-      description: 'Le libelle permet d\'identifier l\'operation.',
+      title: 'Libellé renseigné',
+      description: "Le libellé permet d'identifier l'opération.",
     });
   } else {
     insights.push({
       id: 'short-description',
       type: 'suggestion',
-      title: 'Libelle court',
-      description: 'Ajoutez plus de details pour faciliter la recherche.',
+      title: 'Libellé court',
+      description: 'Ajoutez plus de détails pour faciliter la recherche.',
     });
   }
 
@@ -359,7 +301,7 @@ function generateInsights(entry: Entry): Insight[] {
       id: 'multi-accounts',
       type: 'success',
       title: 'Mouvements multiples',
-      description: `${uniqueAccounts} comptes differents impactes.`,
+      description: `${uniqueAccounts} comptes différents impactés.`,
     });
   }
 

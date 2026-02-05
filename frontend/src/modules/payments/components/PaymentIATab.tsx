@@ -1,25 +1,33 @@
 /**
  * AZALSCORE Module - Payments - Payment IA Tab
  * Onglet Assistant IA pour le paiement
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  RefreshCw, ThumbsUp, ThumbsDown, ChevronRight,
-  CheckCircle, XCircle, RotateCcw, Clock, Shield
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, RefreshCw, Shield, RotateCcw, Clock } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Payment } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 import {
-  formatCurrency, getPaymentAgeDays,
+  getPaymentAgeDays,
   isPaymentPending, isPaymentCompleted, isPaymentFailed,
   canRefund, canRetry, hasPartialRefund, hasFullRefund,
   getRefundTotal, getNetAmount,
   PAYMENT_STATUS_CONFIG
 } from '../types';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * PaymentIATab - Assistant IA
@@ -27,141 +35,68 @@ import {
 export const PaymentIATab: React.FC<TabContentProps<Payment>> = ({ data: payment }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Generer les insights
+  // Générer les insights
   const insights = generateInsights(payment);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(payment);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const healthScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé ce paiement et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse ce paiement et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de sante */}
-      <Card title="Sante du paiement" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 25}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+      {/* Score de santé - Composant partagé */}
+      <Card title="Santé du paiement" icon={<TrendingUp size={18} />} className="mb-4">
+        <IAScoreCircle
+          score={healthScore}
+          label="Santé"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isPaymentFailed(payment) && canRetry(payment) && (
-              <SuggestedAction
-                title="Relancer le paiement"
-                description="Tentez de nouveau le paiement apres correction."
-                confidence={95}
-                icon={<RefreshCw size={16} />}
-              />
-            )}
-            {isPaymentCompleted(payment) && !payment.invoice_id && (
-              <SuggestedAction
-                title="Associer une facture"
-                description="Liez ce paiement a une facture pour la comptabilite."
-                confidence={90}
-                icon={<Shield size={16} />}
-              />
-            )}
-            {hasPartialRefund(payment) && (
-              <SuggestedAction
-                title="Verifier le solde"
-                description="Remboursement partiel detecte, verifier le montant restant."
-                confidence={85}
-                icon={<RotateCcw size={16} />}
-              />
-            )}
-            {isPaymentPending(payment) && getPaymentAgeDays(payment) > 1 && (
-              <SuggestedAction
-                title="Paiement en attente"
-                description="Ce paiement est en attente depuis plus de 24h."
-                confidence={80}
-                icon={<Clock size={16} />}
-              />
-            )}
-            {canRefund(payment) && !hasFullRefund(payment) && (
-              <SuggestedAction
-                title="Remboursement possible"
-                description="Ce paiement peut etre rembourse si necessaire."
-                confidence={75}
-                icon={<RotateCcw size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
-      {/* Analyse detaillee (ERP only) */}
+      {/* Analyse détaillée (ERP only) */}
       <Card
-        title="Analyse detaillee"
+        title="Analyse détaillée"
         icon={<TrendingUp size={18} />}
         className="mt-4 azals-std-field--secondary"
       >
@@ -181,16 +116,16 @@ export const PaymentIATab: React.FC<TabContentProps<Payment>> = ({ data: payment
               {formatCurrency(getNetAmount(payment), payment.currency)}
             </p>
             <p className="text-sm text-muted">
-              Apres remboursements
+              Après remboursements
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Age</h4>
+            <h4>Âge</h4>
             <p className="text-lg font-medium text-primary">
               {getPaymentAgeDays(payment)}j
             </p>
             <p className="text-sm text-muted">
-              Depuis la creation
+              Depuis la création
             </p>
           </div>
           <div className="azals-analysis-item">
@@ -199,7 +134,7 @@ export const PaymentIATab: React.FC<TabContentProps<Payment>> = ({ data: payment
               {formatCurrency(getRefundTotal(payment), payment.currency)}
             </p>
             <p className="text-sm text-muted">
-              Total rembourse
+              Total remboursé
             </p>
           </div>
         </div>
@@ -209,7 +144,7 @@ export const PaymentIATab: React.FC<TabContentProps<Payment>> = ({ data: payment
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -219,62 +154,71 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur le paiement
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(payment: Payment): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isPaymentFailed(payment) && canRetry(payment)) {
+    actions.push({
+      id: 'retry',
+      title: 'Relancer le paiement',
+      description: 'Tentez de nouveau le paiement après correction.',
+      confidence: 95,
+      icon: <RefreshCw size={16} />,
+      actionLabel: 'Relancer',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isPaymentCompleted(payment) && !payment.invoice_id) {
+    actions.push({
+      id: 'link-invoice',
+      title: 'Associer une facture',
+      description: 'Liez ce paiement à une facture pour la comptabilité.',
+      confidence: 90,
+      icon: <Shield size={16} />,
+      actionLabel: 'Associer',
+    });
+  }
+
+  if (hasPartialRefund(payment)) {
+    actions.push({
+      id: 'check-balance',
+      title: 'Vérifier le solde',
+      description: 'Remboursement partiel détecté, vérifier le montant restant.',
+      confidence: 85,
+      icon: <RotateCcw size={16} />,
+      actionLabel: 'Vérifier',
+    });
+  }
+
+  if (isPaymentPending(payment) && getPaymentAgeDays(payment) > 1) {
+    actions.push({
+      id: 'pending-alert',
+      title: 'Paiement en attente',
+      description: 'Ce paiement est en attente depuis plus de 24h.',
+      confidence: 80,
+      icon: <Clock size={16} />,
+      actionLabel: 'Voir',
+    });
+  }
+
+  if (canRefund(payment) && !hasFullRefund(payment)) {
+    actions.push({
+      id: 'refund-possible',
+      title: 'Remboursement possible',
+      description: 'Ce paiement peut être remboursé si nécessaire.',
+      confidence: 75,
+      icon: <RotateCcw size={16} />,
+      actionLabel: 'Rembourser',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur le paiement
+ * Générer les insights basés sur le paiement
  */
 function generateInsights(payment: Payment): Insight[] {
   const insights: Insight[] = [];
@@ -284,15 +228,15 @@ function generateInsights(payment: Payment): Insight[] {
     insights.push({
       id: 'completed',
       type: 'success',
-      title: 'Paiement reussi',
-      description: 'Le paiement a ete effectue avec succes.',
+      title: 'Paiement réussi',
+      description: 'Le paiement a été effectué avec succès.',
     });
   } else if (isPaymentFailed(payment)) {
     insights.push({
       id: 'failed',
       type: 'warning',
-      title: 'Paiement echoue',
-      description: payment.error_message || 'Le paiement n\'a pas abouti.',
+      title: 'Paiement échoué',
+      description: payment.error_message || "Le paiement n'a pas abouti.",
     });
   } else if (isPaymentPending(payment)) {
     insights.push({
@@ -308,15 +252,15 @@ function generateInsights(payment: Payment): Insight[] {
     insights.push({
       id: 'full-refund',
       type: 'warning',
-      title: 'Integralement rembourse',
-      description: 'Ce paiement a ete entierement rembourse.',
+      title: 'Intégralement remboursé',
+      description: 'Ce paiement a été entièrement remboursé.',
     });
   } else if (hasPartialRefund(payment)) {
     insights.push({
       id: 'partial-refund',
       type: 'suggestion',
       title: 'Remboursement partiel',
-      description: `${formatCurrency(getRefundTotal(payment), payment.currency)} rembourse.`,
+      description: `${formatCurrency(getRefundTotal(payment), payment.currency)} remboursé.`,
     });
   }
 
@@ -325,15 +269,15 @@ function generateInsights(payment: Payment): Insight[] {
     insights.push({
       id: 'invoice-linked',
       type: 'success',
-      title: 'Facture liee',
-      description: `Associe a la facture ${payment.invoice_number || payment.invoice_id}.`,
+      title: 'Facture liée',
+      description: `Associé à la facture ${payment.invoice_number || payment.invoice_id}.`,
     });
   } else if (isPaymentCompleted(payment)) {
     insights.push({
       id: 'no-invoice',
       type: 'suggestion',
       title: 'Sans facture',
-      description: 'Paiement sans facture associee.',
+      description: 'Paiement sans facture associée.',
     });
   }
 
@@ -342,29 +286,29 @@ function generateInsights(payment: Payment): Insight[] {
     insights.push({
       id: 'customer',
       type: 'success',
-      title: 'Client identifie',
+      title: 'Client identifié',
       description: `Paiement de ${payment.customer_name}.`,
     });
   }
 
-  // Age du paiement en attente
+  // Âge du paiement en attente
   const ageDays = getPaymentAgeDays(payment);
   if (isPaymentPending(payment) && ageDays > 1) {
     insights.push({
       id: 'old-pending',
       type: 'warning',
-      title: 'Attente prolongee',
+      title: 'Attente prolongée',
       description: `En attente depuis ${ageDays} jour(s).`,
     });
   }
 
-  // Methode de paiement securisee
+  // Méthode de paiement sécurisée
   if (payment.method === 'CARD' && payment.metadata?.['3ds_authenticated']) {
     insights.push({
       id: '3ds',
       type: 'success',
       title: '3D Secure',
-      description: 'Authentification 3D Secure validee.',
+      description: 'Authentification 3D Secure validée.',
     });
   }
 

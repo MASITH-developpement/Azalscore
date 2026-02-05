@@ -1,24 +1,31 @@
 /**
  * AZALSCORE Module - Helpdesk - Ticket IA Tab
  * Onglet Assistant IA pour le ticket
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Clock, User, Target, Zap
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, AlertTriangle, Clock, User, Target, Zap, MessageSquare } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Ticket } from '../types';
 import {
-  formatDuration, PRIORITY_CONFIG, STATUS_CONFIG,
+  PRIORITY_CONFIG, STATUS_CONFIG,
   isTicketOverdue, isSlaDueSoon, getTicketAge,
   getPublicMessageCount, getInternalMessageCount,
   getFirstResponseTime, getResolutionTime
 } from '../types';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * TicketIATab - Assistant IA pour le ticket
@@ -26,152 +33,68 @@ import {
 export const TicketIATab: React.FC<TabContentProps<Ticket>> = ({ data: ticket }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Generer les insights
+  // Générer les insights
   const insights = generateInsights(ticket);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(ticket);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const resolutionScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé ce ticket et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse ce ticket et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Suggerer une reponse
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de resolution */}
-      <Card title="Probabilite de resolution" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+      {/* Score de résolution - Composant partagé */}
+      <Card title="Probabilité de résolution" icon={<TrendingUp size={18} />} className="mb-4">
+        <IAScoreCircle
+          score={resolutionScore}
+          label="Résolution"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isTicketOverdue(ticket) && (
-              <SuggestedAction
-                title="Traitement urgent requis"
-                description="Le SLA est depasse. Prioriser ce ticket."
-                confidence={100}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-            {isSlaDueSoon(ticket) && !isTicketOverdue(ticket) && (
-              <SuggestedAction
-                title="SLA proche"
-                description="Repondre rapidement pour respecter le SLA."
-                confidence={95}
-                icon={<Clock size={16} />}
-              />
-            )}
-            {!ticket.assigned_to_id && (
-              <SuggestedAction
-                title="Assigner le ticket"
-                description="Ce ticket n'est pas encore assigne."
-                confidence={90}
-                icon={<User size={16} />}
-              />
-            )}
-            {ticket.status === 'WAITING' && (
-              <SuggestedAction
-                title="Relancer le client"
-                description="En attente de reponse depuis un moment."
-                confidence={85}
-                icon={<MessageSquare size={16} />}
-              />
-            )}
-            {ticket.status === 'RESOLVED' && (
-              <SuggestedAction
-                title="Demander une evaluation"
-                description="Envoyer un sondage de satisfaction."
-                confidence={80}
-                icon={<Target size={16} />}
-              />
-            )}
-            {ticket.status === 'IN_PROGRESS' && (
-              <SuggestedAction
-                title="Mettre a jour le client"
-                description="Informer le client de l'avancement."
-                confidence={75}
-                icon={<Zap size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
-      {/* Analyse detaillee (ERP only) */}
+      {/* Analyse détaillée (ERP only) */}
       <Card
-        title="Analyse detaillee"
+        title="Analyse détaillée"
         icon={<TrendingUp size={18} />}
         className="mt-4 azals-std-field--secondary"
       >
@@ -186,7 +109,7 @@ export const TicketIATab: React.FC<TabContentProps<Ticket>> = ({ data: ticket })
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Priorite</h4>
+            <h4>Priorité</h4>
             <p className={`text-lg font-medium text-${PRIORITY_CONFIG[ticket.priority].color}`}>
               {PRIORITY_CONFIG[ticket.priority].label}
             </p>
@@ -195,7 +118,7 @@ export const TicketIATab: React.FC<TabContentProps<Ticket>> = ({ data: ticket })
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Age du ticket</h4>
+            <h4>Âge du ticket</h4>
             <p className="text-lg font-medium text-primary">
               {getTicketAge(ticket)}
             </p>
@@ -204,12 +127,12 @@ export const TicketIATab: React.FC<TabContentProps<Ticket>> = ({ data: ticket })
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Temps de reponse</h4>
+            <h4>Temps de réponse</h4>
             <p className="text-lg font-medium">
               {getFirstResponseTime(ticket) || 'N/A'}
             </p>
             <p className="text-sm text-muted">
-              Resolution: {getResolutionTime(ticket) || 'En cours'}
+              Résolution: {getResolutionTime(ticket) || 'En cours'}
             </p>
           </div>
         </div>
@@ -219,7 +142,7 @@ export const TicketIATab: React.FC<TabContentProps<Ticket>> = ({ data: ticket })
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -229,62 +152,82 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur le ticket
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(ticket: Ticket): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isTicketOverdue(ticket)) {
+    actions.push({
+      id: 'urgent-treatment',
+      title: 'Traitement urgent requis',
+      description: 'Le SLA est dépassé. Prioriser ce ticket.',
+      confidence: 100,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Traiter',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isSlaDueSoon(ticket) && !isTicketOverdue(ticket)) {
+    actions.push({
+      id: 'sla-close',
+      title: 'SLA proche',
+      description: 'Répondre rapidement pour respecter le SLA.',
+      confidence: 95,
+      icon: <Clock size={16} />,
+      actionLabel: 'Répondre',
+    });
+  }
+
+  if (!ticket.assigned_to_id) {
+    actions.push({
+      id: 'assign',
+      title: 'Assigner le ticket',
+      description: "Ce ticket n'est pas encore assigné.",
+      confidence: 90,
+      icon: <User size={16} />,
+      actionLabel: 'Assigner',
+    });
+  }
+
+  if (ticket.status === 'WAITING') {
+    actions.push({
+      id: 'followup',
+      title: 'Relancer le client',
+      description: 'En attente de réponse depuis un moment.',
+      confidence: 85,
+      icon: <MessageSquare size={16} />,
+      actionLabel: 'Relancer',
+    });
+  }
+
+  if (ticket.status === 'RESOLVED') {
+    actions.push({
+      id: 'survey',
+      title: 'Demander une évaluation',
+      description: 'Envoyer un sondage de satisfaction.',
+      confidence: 80,
+      icon: <Target size={16} />,
+      actionLabel: 'Envoyer',
+    });
+  }
+
+  if (ticket.status === 'IN_PROGRESS') {
+    actions.push({
+      id: 'update-client',
+      title: 'Mettre à jour le client',
+      description: "Informer le client de l'avancement.",
+      confidence: 75,
+      icon: <Zap size={16} />,
+      actionLabel: 'Informer',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur le ticket
+ * Générer les insights basés sur le ticket
  */
 function generateInsights(ticket: Ticket): Insight[] {
   const insights: Insight[] = [];
@@ -294,22 +237,22 @@ function generateInsights(ticket: Ticket): Insight[] {
     insights.push({
       id: 'sla-overdue',
       type: 'warning',
-      title: 'SLA depasse',
-      description: 'Ce ticket a depasse son delai de traitement.',
+      title: 'SLA dépassé',
+      description: 'Ce ticket a dépassé son délai de traitement.',
     });
   } else if (isSlaDueSoon(ticket)) {
     insights.push({
       id: 'sla-soon',
       type: 'warning',
       title: 'SLA proche',
-      description: 'Le delai de traitement approche.',
+      description: 'Le délai de traitement approche.',
     });
   } else if (ticket.sla_due_date) {
     insights.push({
       id: 'sla-ok',
       type: 'success',
-      title: 'SLA respecte',
-      description: 'Le ticket est dans les delais.',
+      title: 'SLA respecté',
+      description: 'Le ticket est dans les délais.',
     });
   }
 
@@ -318,8 +261,8 @@ function generateInsights(ticket: Ticket): Insight[] {
     insights.push({
       id: 'resolved',
       type: 'success',
-      title: 'Ticket resolu',
-      description: 'Le probleme a ete traite.',
+      title: 'Ticket résolu',
+      description: 'Le problème a été traité.',
     });
   } else if (ticket.status === 'IN_PROGRESS') {
     insights.push({
@@ -333,14 +276,14 @@ function generateInsights(ticket: Ticket): Insight[] {
       id: 'waiting',
       type: 'suggestion',
       title: 'En attente',
-      description: 'En attente de reponse du client.',
+      description: 'En attente de réponse du client.',
     });
   } else if (ticket.status === 'OPEN') {
     insights.push({
       id: 'open',
       type: 'suggestion',
       title: 'Ticket ouvert',
-      description: 'Ce ticket necessite une prise en charge.',
+      description: 'Ce ticket nécessite une prise en charge.',
     });
   }
 
@@ -349,49 +292,49 @@ function generateInsights(ticket: Ticket): Insight[] {
     insights.push({
       id: 'unassigned',
       type: 'warning',
-      title: 'Non assigne',
-      description: 'Ce ticket n\'est assigne a personne.',
+      title: 'Non assigné',
+      description: "Ce ticket n'est assigné à personne.",
     });
   } else {
     insights.push({
       id: 'assigned',
       type: 'success',
-      title: 'Ticket assigne',
-      description: `Assigne a ${ticket.assigned_to_name || 'un agent'}.`,
+      title: 'Ticket assigné',
+      description: `Assigné à ${ticket.assigned_to_name || 'un agent'}.`,
     });
   }
 
-  // Premiere reponse
+  // Première réponse
   if (ticket.first_response_at) {
     insights.push({
       id: 'first-response',
       type: 'success',
-      title: 'Premiere reponse envoyee',
-      description: `Repondu en ${getFirstResponseTime(ticket)}.`,
+      title: 'Première réponse envoyée',
+      description: `Répondu en ${getFirstResponseTime(ticket)}.`,
     });
   } else if (ticket.status !== 'CLOSED' && ticket.status !== 'RESOLVED') {
     insights.push({
       id: 'no-response',
       type: 'warning',
-      title: 'Pas de reponse',
-      description: 'Le client n\'a pas encore recu de reponse.',
+      title: 'Pas de réponse',
+      description: "Le client n'a pas encore reçu de réponse.",
     });
   }
 
-  // Priorite
+  // Priorité
   if (ticket.priority === 'URGENT') {
     insights.push({
       id: 'urgent',
       type: 'warning',
-      title: 'Priorite urgente',
-      description: 'Ce ticket necessite une attention immediate.',
+      title: 'Priorité urgente',
+      description: 'Ce ticket nécessite une attention immédiate.',
     });
   } else if (ticket.priority === 'HIGH') {
     insights.push({
       id: 'high-priority',
       type: 'suggestion',
-      title: 'Priorite haute',
-      description: 'Traitement prioritaire recommande.',
+      title: 'Priorité haute',
+      description: 'Traitement prioritaire recommandé.',
     });
   }
 
@@ -402,7 +345,7 @@ function generateInsights(ticket: Ticket): Insight[] {
       id: 'many-messages',
       type: 'suggestion',
       title: 'Conversation longue',
-      description: `${publicMsgs} echanges - Envisager un appel telephonique.`,
+      description: `${publicMsgs} échanges - Envisager un appel téléphonique.`,
     });
   }
 

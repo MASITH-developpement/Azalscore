@@ -1,158 +1,89 @@
 /**
  * AZALSCORE Module - COMMANDES - IA Tab
  * Onglet Assistant IA pour la commande
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Zap, Truck, FileText, Package
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, ChevronRight, Zap, Truck, FileText, Package } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Commande } from '../types';
-import { formatCurrency, formatDate } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * CommandeIATab - Assistant IA pour la commande
- * Fournit des insights, suggestions et analyses automatiques
  */
 export const CommandeIATab: React.FC<TabContentProps<Commande>> = ({ data: commande }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Générer les insights basés sur les données de la commande
+  // Générer les insights
   const insights = generateInsights(commande);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(commande);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const qualityScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé cette commande et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tête IA proéminent (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analysé cette commande et identifié <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de qualité */}
+      {/* Score de qualité - Composant partagé */}
       <Card title="Score de qualité de la commande" icon={<Zap size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+        <IAScoreCircle
+          score={qualityScore}
+          label="Qualité"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Alertes et suggestions */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggérées */}
-        <Card title="Actions suggérées" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {commande.status === 'DRAFT' && (
-              <SuggestedAction
-                title="Valider la commande"
-                description="La commande est complète et peut être validée pour traitement."
-                confidence={85}
-                icon={<ChevronRight size={16} />}
-              />
-            )}
-            {commande.status === 'VALIDATED' && (
-              <>
-                <SuggestedAction
-                  title="Préparer la livraison"
-                  description="La commande est validée, prête pour expédition."
-                  confidence={90}
-                  icon={<Truck size={16} />}
-                />
-                <SuggestedAction
-                  title="Créer une affaire"
-                  description="Suivre cette commande dans le module Affaires."
-                  confidence={75}
-                  icon={<Package size={16} />}
-                />
-              </>
-            )}
-            {commande.status === 'DELIVERED' && (
-              <SuggestedAction
-                title="Créer la facture"
-                description="La commande a été livrée, vous pouvez créer la facture."
-                confidence={95}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {!commande.delivery_date && commande.status === 'VALIDATED' && (
-              <SuggestedAction
-                title="Définir la date de livraison"
-                description="Aucune date de livraison prévue. Planifiez l'expédition."
-                confidence={70}
-                icon={<Truck size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -192,7 +123,7 @@ export const CommandeIATab: React.FC<TabContentProps<Commande>> = ({ data: comma
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -202,59 +133,66 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur la commande
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(commande: Commande): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (commande.status === 'DRAFT') {
+    actions.push({
+      id: 'validate',
+      title: 'Valider la commande',
+      description: 'La commande est complète et peut être validée pour traitement.',
+      confidence: 85,
+      icon: <ChevronRight size={16} />,
+      actionLabel: 'Valider',
+    });
+  }
 
-/**
- * Composant action suggérée
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (commande.status === 'VALIDATED') {
+    actions.push({
+      id: 'ship',
+      title: 'Préparer la livraison',
+      description: 'La commande est validée, prête pour expédition.',
+      confidence: 90,
+      icon: <Truck size={16} />,
+      actionLabel: 'Expédier',
+    });
+
+    actions.push({
+      id: 'affaire',
+      title: 'Créer une affaire',
+      description: 'Suivre cette commande dans le module Affaires.',
+      confidence: 75,
+      icon: <Package size={16} />,
+      actionLabel: 'Créer',
+    });
+  }
+
+  if (commande.status === 'DELIVERED') {
+    actions.push({
+      id: 'invoice',
+      title: 'Créer la facture',
+      description: 'La commande a été livrée, vous pouvez créer la facture.',
+      confidence: 95,
+      icon: <FileText size={16} />,
+      actionLabel: 'Facturer',
+    });
+  }
+
+  if (!commande.delivery_date && commande.status === 'VALIDATED') {
+    actions.push({
+      id: 'set-delivery-date',
+      title: 'Définir la date de livraison',
+      description: "Aucune date de livraison prévue. Planifiez l'expédition.",
+      confidence: 70,
+      icon: <Truck size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
+
+  return actions;
 }
-
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
 
 /**
  * Générer les insights basés sur la commande
@@ -343,7 +281,7 @@ function generateInsights(commande: Commande): Insight[] {
     insights.push({
       id: 'from-quote',
       type: 'success',
-      title: 'Issue d\'un devis',
+      title: "Issue d'un devis",
       description: `Convertie depuis le devis ${commande.parent_number}.`,
     });
   }

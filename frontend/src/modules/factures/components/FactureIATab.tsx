@@ -1,161 +1,96 @@
 /**
  * AZALSCORE Module - FACTURES - IA Tab
  * Onglet Assistant IA pour la facture
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
 import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Zap, CreditCard, Send, FileText
+  TrendingUp, AlertTriangle, ChevronRight, Zap,
+  CreditCard, Send, FileText
 } from 'lucide-react';
-import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Facture } from '../types';
-import { formatCurrency, formatDate, isOverdue, getDaysUntilDue } from '../types';
+import { isOverdue, getDaysUntilDue } from '../types';
+import { formatCurrency } from '@/utils/formatters';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * FactureIATab - Assistant IA pour la facture
- * Fournit des insights, suggestions et analyses automatiques
  */
 export const FactureIATab: React.FC<TabContentProps<Facture>> = ({ data: facture }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Générer les insights basés sur les données de la facture
+  const isCreditNote = facture.type === 'CREDIT_NOTE';
+
+  // Générer les insights
   const insights = generateInsights(facture);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(facture);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const recouvrementScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
-  const isCreditNote = facture.type === 'CREDIT_NOTE';
+  const entityLabel = isCreditNote ? 'cet avoir' : 'cette facture';
+  const panelSubtitle = `J'ai analysé ${entityLabel} et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
 
   return (
     <div className="azals-std-tab-content">
-      {/* En-tête IA proéminent (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analysé {isCreditNote ? 'cet avoir' : 'cette facture'} et identifié{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de qualité */}
+      {/* Score de recouvrement - Composant partagé */}
       <Card title="Score de recouvrement" icon={<Zap size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+        <IAScoreCircle
+          score={recouvrementScore}
+          label="Recouvrement"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Alertes et suggestions */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggérées */}
-        <Card title="Actions suggérées" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {facture.status === 'DRAFT' && (
-              <SuggestedAction
-                title="Valider le document"
-                description={`${isCreditNote ? "L'avoir" : 'La facture'} est complet et peut être validé.`}
-                confidence={85}
-                icon={<ChevronRight size={16} />}
-              />
-            )}
-            {facture.status === 'VALIDATED' && (
-              <SuggestedAction
-                title="Envoyer au client"
-                description="Document validé, prêt pour envoi."
-                confidence={90}
-                icon={<Send size={16} />}
-              />
-            )}
-            {!isCreditNote && ['SENT', 'PARTIAL', 'OVERDUE'].includes(facture.status) && facture.remaining_amount > 0 && (
-              <SuggestedAction
-                title="Enregistrer un paiement"
-                description={`Reste à encaisser: ${formatCurrency(facture.remaining_amount)}.`}
-                confidence={95}
-                icon={<CreditCard size={16} />}
-              />
-            )}
-            {!isCreditNote && facture.status === 'PAID' && (
-              <SuggestedAction
-                title="Comptabiliser"
-                description="Facture soldée, prête pour export comptable."
-                confidence={90}
-                icon={<FileText size={16} />}
-              />
-            )}
-            {!isCreditNote && isOverdue(facture) && (
-              <SuggestedAction
-                title="Relancer le client"
-                description="Échéance dépassée. Envoyez une relance."
-                confidence={85}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -193,7 +128,7 @@ export const FactureIATab: React.FC<TabContentProps<Facture>> = ({ data: facture
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -203,59 +138,69 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur la facture
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(facture: Facture): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
+  const isCreditNote = facture.type === 'CREDIT_NOTE';
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (facture.status === 'DRAFT') {
+    actions.push({
+      id: 'validate',
+      title: 'Valider le document',
+      description: `${isCreditNote ? "L'avoir" : 'La facture'} est complet et peut être validé.`,
+      confidence: 85,
+      icon: <ChevronRight size={16} />,
+      actionLabel: 'Valider',
+    });
+  }
 
-/**
- * Composant action suggérée
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (facture.status === 'VALIDATED') {
+    actions.push({
+      id: 'send',
+      title: 'Envoyer au client',
+      description: 'Document validé, prêt pour envoi.',
+      confidence: 90,
+      icon: <Send size={16} />,
+      actionLabel: 'Envoyer',
+    });
+  }
+
+  if (!isCreditNote && ['SENT', 'PARTIAL', 'OVERDUE'].includes(facture.status) && facture.remaining_amount > 0) {
+    actions.push({
+      id: 'payment',
+      title: 'Enregistrer un paiement',
+      description: `Reste à encaisser: ${formatCurrency(facture.remaining_amount)}.`,
+      confidence: 95,
+      icon: <CreditCard size={16} />,
+      actionLabel: 'Encaisser',
+    });
+  }
+
+  if (!isCreditNote && facture.status === 'PAID') {
+    actions.push({
+      id: 'export',
+      title: 'Comptabiliser',
+      description: 'Facture soldée, prête pour export comptable.',
+      confidence: 90,
+      icon: <FileText size={16} />,
+      actionLabel: 'Exporter',
+    });
+  }
+
+  if (!isCreditNote && isOverdue(facture)) {
+    actions.push({
+      id: 'reminder',
+      title: 'Relancer le client',
+      description: 'Échéance dépassée. Envoyez une relance.',
+      confidence: 85,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Relancer',
+    });
+  }
+
+  return actions;
 }
-
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
 
 /**
  * Générer les insights basés sur la facture
@@ -347,7 +292,7 @@ function generateInsights(facture: Facture): Insight[] {
       id: 'follow-up',
       type: 'suggestion',
       title: 'Suivi recommandé',
-      description: 'Planifiez une relance amiable quelques jours avant l\'échéance.',
+      description: "Planifiez une relance amiable quelques jours avant l'échéance.",
     });
   }
 

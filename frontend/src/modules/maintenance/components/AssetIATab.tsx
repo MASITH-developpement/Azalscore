@@ -1,178 +1,101 @@
 /**
  * AZALSCORE Module - Maintenance - Asset IA Tab
- * Onglet Assistant IA pour l'equipement
+ * Onglet Assistant IA pour l'équipement
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Calendar, Wrench, Package, Shield, Euro
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, Calendar, Wrench, Package, Shield } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Asset } from '../types';
+import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
 import {
-  formatDate, formatCurrency, formatHours,
   ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
   isMaintenanceOverdue, isMaintenanceDueSoon, isWarrantyExpired, isWarrantyExpiringSoon,
   getDaysUntilMaintenance, getAssetAge, getLowStockParts, getExpiringDocuments,
   getTotalMaintenanceCost, getTotalLaborHours, calculateMTBF, calculateMTTR
 } from '../types';
 
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
+
 /**
- * AssetIATab - Assistant IA pour l'equipement
+ * AssetIATab - Assistant IA pour l'équipement
  */
 export const AssetIATab: React.FC<TabContentProps<Asset>> = ({ data: asset }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Generer les insights
+  // Générer les insights
   const insights = generateInsights(asset);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(asset);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const healthScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé cet équipement et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse cet equipement et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score sante equipement */}
-      <Card title="Sante de l'equipement" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+      {/* Score santé équipement - Composant partagé */}
+      <Card title="Santé de l'équipement" icon={<TrendingUp size={18} />} className="mb-4">
+        <IAScoreCircle
+          score={healthScore}
+          label="Santé"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isMaintenanceOverdue(asset) && (
-              <SuggestedAction
-                title="Planifier maintenance urgente"
-                description="La maintenance preventive est en retard."
-                confidence={95}
-                icon={<Wrench size={16} />}
-              />
-            )}
-            {isMaintenanceDueSoon(asset) && !isMaintenanceOverdue(asset) && (
-              <SuggestedAction
-                title="Preparer prochaine maintenance"
-                description={`Maintenance prevue dans ${getDaysUntilMaintenance(asset)} jours.`}
-                confidence={90}
-                icon={<Calendar size={16} />}
-              />
-            )}
-            {getLowStockParts(asset).length > 0 && (
-              <SuggestedAction
-                title="Commander pieces de rechange"
-                description={`${getLowStockParts(asset).length} piece(s) a reapprovisionner.`}
-                confidence={85}
-                icon={<Package size={16} />}
-              />
-            )}
-            {isWarrantyExpiringSoon(asset) && !isWarrantyExpired(asset) && (
-              <SuggestedAction
-                title="Verifier extension garantie"
-                description="La garantie expire bientot."
-                confidence={80}
-                icon={<Shield size={16} />}
-              />
-            )}
-            {getExpiringDocuments(asset).length > 0 && (
-              <SuggestedAction
-                title="Renouveler documents"
-                description={`${getExpiringDocuments(asset).length} document(s) a renouveler.`}
-                confidence={75}
-                icon={<Shield size={16} />}
-              />
-            )}
-            {asset.status === 'OPERATIONAL' && (
-              <SuggestedAction
-                title="Optimiser le plan de maintenance"
-                description="Analyser les donnees pour ajuster les frequences."
-                confidence={70}
-                icon={<TrendingUp size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
-      {/* Analyse detaillee (ERP only) */}
+      {/* Analyse détaillée (ERP only) */}
       <Card
-        title="Analyse detaillee"
+        title="Analyse détaillée"
         icon={<TrendingUp size={18} />}
         className="mt-4 azals-std-field--secondary"
       >
@@ -187,7 +110,7 @@ export const AssetIATab: React.FC<TabContentProps<Asset>> = ({ data: asset }) =>
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Criticite</h4>
+            <h4>Criticité</h4>
             <p className={`text-lg font-medium text-${CRITICALITY_CONFIG[asset.criticality].color}`}>
               {CRITICALITY_CONFIG[asset.criticality].label}
             </p>
@@ -196,7 +119,7 @@ export const AssetIATab: React.FC<TabContentProps<Asset>> = ({ data: asset }) =>
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Cout maintenance</h4>
+            <h4>Coût maintenance</h4>
             <p className="text-lg font-medium text-primary">
               {formatCurrency(getTotalMaintenanceCost(asset))}
             </p>
@@ -205,7 +128,7 @@ export const AssetIATab: React.FC<TabContentProps<Asset>> = ({ data: asset }) =>
             </p>
           </div>
           <div className="azals-analysis-item">
-            <h4>Fiabilite (MTBF)</h4>
+            <h4>Fiabilité (MTBF)</h4>
             <p className="text-lg font-medium">
               {calculateMTBF(asset) ? `${calculateMTBF(asset)}h` : 'N/A'}
             </p>
@@ -220,7 +143,7 @@ export const AssetIATab: React.FC<TabContentProps<Asset>> = ({ data: asset }) =>
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -230,62 +153,82 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur l'équipement
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(asset: Asset): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isMaintenanceOverdue(asset)) {
+    actions.push({
+      id: 'urgent-maintenance',
+      title: 'Planifier maintenance urgente',
+      description: 'La maintenance préventive est en retard.',
+      confidence: 95,
+      icon: <Wrench size={16} />,
+      actionLabel: 'Planifier',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isMaintenanceDueSoon(asset) && !isMaintenanceOverdue(asset)) {
+    actions.push({
+      id: 'prepare-maintenance',
+      title: 'Préparer prochaine maintenance',
+      description: `Maintenance prévue dans ${getDaysUntilMaintenance(asset)} jours.`,
+      confidence: 90,
+      icon: <Calendar size={16} />,
+      actionLabel: 'Préparer',
+    });
+  }
+
+  if (getLowStockParts(asset).length > 0) {
+    actions.push({
+      id: 'order-parts',
+      title: 'Commander pièces de rechange',
+      description: `${getLowStockParts(asset).length} pièce(s) à réapprovisionner.`,
+      confidence: 85,
+      icon: <Package size={16} />,
+      actionLabel: 'Commander',
+    });
+  }
+
+  if (isWarrantyExpiringSoon(asset) && !isWarrantyExpired(asset)) {
+    actions.push({
+      id: 'check-warranty',
+      title: 'Vérifier extension garantie',
+      description: 'La garantie expire bientôt.',
+      confidence: 80,
+      icon: <Shield size={16} />,
+      actionLabel: 'Vérifier',
+    });
+  }
+
+  if (getExpiringDocuments(asset).length > 0) {
+    actions.push({
+      id: 'renew-docs',
+      title: 'Renouveler documents',
+      description: `${getExpiringDocuments(asset).length} document(s) à renouveler.`,
+      confidence: 75,
+      icon: <Shield size={16} />,
+      actionLabel: 'Voir',
+    });
+  }
+
+  if (asset.status === 'OPERATIONAL') {
+    actions.push({
+      id: 'optimize-maintenance',
+      title: 'Optimiser le plan de maintenance',
+      description: 'Analyser les données pour ajuster les fréquences.',
+      confidence: 70,
+      icon: <TrendingUp size={16} />,
+      actionLabel: 'Analyser',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur l'equipement
+ * Générer les insights basés sur l'équipement
  */
 function generateInsights(asset: Asset): Insight[] {
   const insights: Insight[] = [];
@@ -295,22 +238,22 @@ function generateInsights(asset: Asset): Insight[] {
     insights.push({
       id: 'operational',
       type: 'success',
-      title: 'Equipement operationnel',
-      description: 'L\'equipement fonctionne normalement.',
+      title: 'Équipement opérationnel',
+      description: "L'équipement fonctionne normalement.",
     });
   } else if (asset.status === 'UNDER_MAINTENANCE') {
     insights.push({
       id: 'under-maintenance',
       type: 'warning',
       title: 'En maintenance',
-      description: 'L\'equipement est actuellement en maintenance.',
+      description: "L'équipement est actuellement en maintenance.",
     });
   } else if (asset.status === 'OUT_OF_SERVICE') {
     insights.push({
       id: 'out-of-service',
       type: 'warning',
       title: 'Hors service',
-      description: 'L\'equipement est hors service.',
+      description: "L'équipement est hors service.",
     });
   }
 
@@ -321,7 +264,7 @@ function generateInsights(asset: Asset): Insight[] {
       id: 'maintenance-overdue',
       type: 'warning',
       title: 'Maintenance en retard',
-      description: `${days} jour(s) de retard sur la maintenance preventive.`,
+      description: `${days} jour(s) de retard sur la maintenance préventive.`,
     });
   } else if (isMaintenanceDueSoon(asset)) {
     insights.push({
@@ -334,8 +277,8 @@ function generateInsights(asset: Asset): Insight[] {
     insights.push({
       id: 'maintenance-ok',
       type: 'success',
-      title: 'Planning maintenance respecte',
-      description: 'La maintenance preventive est a jour.',
+      title: 'Planning maintenance respecté',
+      description: 'La maintenance préventive est à jour.',
     });
   }
 
@@ -344,14 +287,14 @@ function generateInsights(asset: Asset): Insight[] {
     insights.push({
       id: 'warranty-expired',
       type: 'warning',
-      title: 'Garantie expiree',
-      description: 'L\'equipement n\'est plus sous garantie.',
+      title: 'Garantie expirée',
+      description: "L'équipement n'est plus sous garantie.",
     });
   } else if (isWarrantyExpiringSoon(asset)) {
     insights.push({
       id: 'warranty-expiring',
       type: 'warning',
-      title: 'Garantie bientot expiree',
+      title: 'Garantie bientôt expirée',
       description: `La garantie expire le ${formatDate(asset.warranty_end_date)}.`,
     });
   } else if (asset.warranty_end_date) {
@@ -363,7 +306,7 @@ function generateInsights(asset: Asset): Insight[] {
     });
   }
 
-  // Pieces de rechange
+  // Pièces de rechange
   const lowStockParts = getLowStockParts(asset);
   if (lowStockParts.length > 0) {
     const criticalParts = lowStockParts.filter(p => p.quantity_on_hand === 0);
@@ -371,15 +314,15 @@ function generateInsights(asset: Asset): Insight[] {
       insights.push({
         id: 'parts-critical',
         type: 'warning',
-        title: 'Pieces en rupture',
-        description: `${criticalParts.length} piece(s) de rechange en rupture de stock.`,
+        title: 'Pièces en rupture',
+        description: `${criticalParts.length} pièce(s) de rechange en rupture de stock.`,
       });
     } else {
       insights.push({
         id: 'parts-low',
         type: 'suggestion',
-        title: 'Stock pieces faible',
-        description: `${lowStockParts.length} piece(s) sous le seuil minimum.`,
+        title: 'Stock pièces faible',
+        description: `${lowStockParts.length} pièce(s) sous le seuil minimum.`,
       });
     }
   }
@@ -390,49 +333,49 @@ function generateInsights(asset: Asset): Insight[] {
     insights.push({
       id: 'docs-expiring',
       type: 'warning',
-      title: 'Documents a renouveler',
-      description: `${expiringDocs.length} document(s) expire(s) ou expirant bientot.`,
+      title: 'Documents à renouveler',
+      description: `${expiringDocs.length} document(s) expiré(s) ou expirant bientôt.`,
     });
   }
 
-  // Age de l'equipement
+  // Âge de l'équipement
   const age = getAssetAge(asset);
   if (age !== null && age >= 10) {
     insights.push({
       id: 'old-asset',
       type: 'suggestion',
-      title: 'Equipement ancien',
-      description: `${age} ans - envisager le remplacement ou la renovation.`,
+      title: 'Équipement ancien',
+      description: `${age} ans - envisager le remplacement ou la rénovation.`,
     });
   }
 
-  // Criticite
+  // Criticité
   if (asset.criticality === 'CRITICAL') {
     insights.push({
       id: 'critical-asset',
       type: 'suggestion',
-      title: 'Equipement critique',
-      description: 'Surveillance renforcee recommandee.',
+      title: 'Équipement critique',
+      description: 'Surveillance renforcée recommandée.',
     });
   }
 
-  // Fiabilite
+  // Fiabilité
   const mtbf = calculateMTBF(asset);
   const mttr = calculateMTTR(asset);
   if (mtbf && mtbf < 1000) {
     insights.push({
       id: 'low-mtbf',
       type: 'warning',
-      title: 'Fiabilite faible',
-      description: `MTBF de ${mtbf}h - pannes frequentes.`,
+      title: 'Fiabilité faible',
+      description: `MTBF de ${mtbf}h - pannes fréquentes.`,
     });
   }
   if (mttr && mttr > 8) {
     insights.push({
       id: 'high-mttr',
       type: 'suggestion',
-      title: 'Temps de reparation eleve',
-      description: `MTTR de ${mttr}h - optimiser les procedures.`,
+      title: 'Temps de réparation élevé',
+      description: `MTTR de ${mttr}h - optimiser les procédures.`,
     });
   }
 

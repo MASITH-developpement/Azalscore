@@ -1,25 +1,32 @@
 /**
  * AZALSCORE Module - Production - Order IA Tab
  * Onglet Assistant IA pour l'ordre de fabrication
+ *
+ * Conforme AZA-NF-REUSE: Utilise les composants partagés shared-ia
  */
 
 import React, { useState } from 'react';
-import {
-  Sparkles, TrendingUp, AlertTriangle, Lightbulb,
-  MessageSquare, RefreshCw, ThumbsUp, ThumbsDown,
-  ChevronRight, Clock, Package, Settings, Target
-} from 'lucide-react';
-import { Button } from '@ui/actions';
+import { TrendingUp, AlertTriangle, Clock, Package, Settings, Target } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { ProductionOrder } from '../types';
+import { formatDuration, formatCurrency, formatPercent } from '@/utils/formatters';
 import {
-  formatDuration, formatCurrency, formatPercent,
   ORDER_STATUS_CONFIG, ORDER_PRIORITY_CONFIG,
   isLate, isUrgent, getCompletionRate, getScrapRate,
   getCostVariance, getDurationVariance,
   isDraft, isConfirmed, isInProgress, isDone
 } from '../types';
+
+// Composants partagés IA (AZA-NF-REUSE)
+import {
+  IAPanelHeader,
+  IAScoreCircle,
+  InsightList,
+  SuggestedActionList,
+  type Insight as SharedInsight,
+  type SuggestedActionData,
+} from '@ui/components/shared-ia';
 
 /**
  * OrderIATab - Assistant IA pour l'ordre de fabrication
@@ -27,146 +34,62 @@ import {
 export const OrderIATab: React.FC<TabContentProps<ProductionOrder>> = ({ data: order }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Generer les insights
+  // Générer les insights
   const insights = generateInsights(order);
+  const sharedInsights: SharedInsight[] = insights.map(i => ({
+    id: i.id,
+    type: i.type,
+    title: i.title,
+    description: i.description,
+  }));
+
+  // Générer les actions suggérées
+  const suggestedActions = generateSuggestedActions(order);
+
+  // Calcul du score
+  const positiveCount = insights.filter(i => i.type === 'success').length;
+  const warningCount = insights.filter(i => i.type === 'warning').length;
+  const suggestionCount = insights.filter(i => i.type === 'suggestion').length;
+  const performanceScore = Math.round((positiveCount / Math.max(insights.length, 1)) * 100);
 
   const handleRefreshAnalysis = () => {
     setIsAnalyzing(true);
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const panelSubtitle = `J'ai analysé cet ordre de fabrication et identifié ${insights.length} points d'attention.${warningCount > 0 ? ` (${warningCount} alertes)` : ''}`;
+
   return (
     <div className="azals-std-tab-content">
-      {/* En-tete IA (mode AZALSCORE) */}
-      <div className="azals-std-ia-panel azals-std-azalscore-only">
-        <div className="azals-std-ia-panel__header">
-          <Sparkles size={24} className="azals-std-ia-panel__icon" />
-          <h3 className="azals-std-ia-panel__title">Assistant AZALSCORE IA</h3>
-        </div>
-        <div className="azals-std-ia-panel__content">
-          <p>
-            J'ai analyse cet ordre de fabrication et identifie{' '}
-            <strong>{insights.length} points d'attention</strong>.
-            {insights.filter(i => i.type === 'warning').length > 0 && (
-              <span className="text-warning ml-1">
-                ({insights.filter(i => i.type === 'warning').length} alertes)
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="azals-std-ia-panel__actions">
-          <Button
-            variant="secondary"
-            leftIcon={<RefreshCw size={16} className={isAnalyzing ? 'azals-spin' : ''} />}
-            onClick={handleRefreshAnalysis}
-            disabled={isAnalyzing}
-          >
-            Relancer l'analyse
-          </Button>
-          <Button variant="ghost" leftIcon={<MessageSquare size={16} />}>
-            Poser une question
-          </Button>
-        </div>
-      </div>
+      {/* En-tête IA - Composant partagé */}
+      <IAPanelHeader
+        title="Assistant AZALSCORE IA"
+        subtitle={panelSubtitle}
+        onRefresh={handleRefreshAnalysis}
+        isLoading={isAnalyzing}
+      />
 
-      {/* Score de performance */}
+      {/* Score de performance - Composant partagé */}
       <Card title="Score de performance" icon={<TrendingUp size={18} />} className="mb-4">
-        <div className="azals-score-display">
-          <div className="azals-score-display__circle">
-            <svg viewBox="0 0 36 36" className="azals-score-display__svg">
-              <path
-                className="azals-score-display__bg"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="3"
-              />
-              <path
-                className="azals-score-display__fg"
-                strokeDasharray={`${insights.filter(i => i.type !== 'warning').length * 20}, 100`}
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--azals-primary-500)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="azals-score-display__value">
-              {Math.round((insights.filter(i => i.type !== 'warning').length / Math.max(insights.length, 1)) * 100)}%
-            </span>
-          </div>
-          <div className="azals-score-display__details">
-            <p>
-              {insights.filter(i => i.type === 'success').length} points positifs,{' '}
-              {insights.filter(i => i.type === 'warning').length} alertes,{' '}
-              {insights.filter(i => i.type === 'suggestion').length} suggestions
-            </p>
-          </div>
-        </div>
+        <IAScoreCircle
+          score={performanceScore}
+          label="Performance"
+          details={`${positiveCount} points positifs, ${warningCount} alertes, ${suggestionCount} suggestions`}
+        />
       </Card>
 
       <Grid cols={2} gap="lg">
-        {/* Insights */}
-        <Card title="Insights IA" icon={<Lightbulb size={18} />}>
-          <div className="azals-insights-list">
-            {insights.map((insight) => (
-              <InsightItem key={insight.id} insight={insight} />
-            ))}
-          </div>
+        {/* Insights - Composant partagé */}
+        <Card title="Insights IA">
+          <InsightList insights={sharedInsights} />
         </Card>
 
-        {/* Actions suggerees */}
-        <Card title="Actions suggerees" icon={<ChevronRight size={18} />}>
-          <div className="azals-suggested-actions">
-            {isDraft(order) && (
-              <SuggestedAction
-                title="Confirmer l'ordre"
-                description="Valider l'ordre pour lancer la production."
-                confidence={90}
-                icon={<Target size={16} />}
-              />
-            )}
-            {isConfirmed(order) && (
-              <SuggestedAction
-                title="Demarrer la production"
-                description="Lancer les operations de fabrication."
-                confidence={85}
-                icon={<Settings size={16} />}
-              />
-            )}
-            {isInProgress(order) && getCompletionRate(order) >= 0.9 && (
-              <SuggestedAction
-                title="Cloturer l'ordre"
-                description="La production est presque terminee."
-                confidence={getCompletionRate(order) * 100}
-                icon={<Target size={16} />}
-              />
-            )}
-            {isLate(order) && (
-              <SuggestedAction
-                title="Replanifier"
-                description="L'ordre est en retard, ajuster le planning."
-                confidence={75}
-                icon={<Clock size={16} />}
-              />
-            )}
-            {getScrapRate(order) > 0.05 && (
-              <SuggestedAction
-                title="Analyser les rebuts"
-                description="Taux de rebut eleve - investigation recommandee."
-                confidence={80}
-                icon={<AlertTriangle size={16} />}
-              />
-            )}
-            {!order.responsible_name && (
-              <SuggestedAction
-                title="Assigner un responsable"
-                description="Aucun responsable designe pour cet ordre."
-                confidence={70}
-                icon={<Package size={16} />}
-              />
-            )}
-          </div>
+        {/* Actions suggérées - Composant partagé */}
+        <Card title="Actions suggérées">
+          <SuggestedActionList
+            actions={suggestedActions}
+            emptyMessage="Aucune action suggérée pour le moment"
+          />
         </Card>
       </Grid>
 
@@ -241,7 +164,7 @@ export const OrderIATab: React.FC<TabContentProps<ProductionOrder>> = ({ data: o
 };
 
 /**
- * Types pour les insights
+ * Types pour les insights (local)
  */
 interface Insight {
   id: string;
@@ -251,62 +174,82 @@ interface Insight {
 }
 
 /**
- * Composant item d'insight
+ * Générer les actions suggérées basées sur l'ordre
  */
-const InsightItem: React.FC<{ insight: Insight }> = ({ insight }) => {
-  const getIcon = () => {
-    switch (insight.type) {
-      case 'success':
-        return <ThumbsUp size={16} className="text-success" />;
-      case 'warning':
-        return <AlertTriangle size={16} className="text-warning" />;
-      case 'suggestion':
-        return <Lightbulb size={16} className="text-primary" />;
-    }
-  };
+function generateSuggestedActions(order: ProductionOrder): SuggestedActionData[] {
+  const actions: SuggestedActionData[] = [];
 
-  return (
-    <div className={`azals-insight azals-insight--${insight.type}`}>
-      <div className="azals-insight__icon">{getIcon()}</div>
-      <div className="azals-insight__content">
-        <h4 className="azals-insight__title">{insight.title}</h4>
-        <p className="azals-insight__description">{insight.description}</p>
-      </div>
-    </div>
-  );
-};
+  if (isDraft(order)) {
+    actions.push({
+      id: 'confirm',
+      title: "Confirmer l'ordre",
+      description: "Valider l'ordre pour lancer la production.",
+      confidence: 90,
+      icon: <Target size={16} />,
+      actionLabel: 'Confirmer',
+    });
+  }
 
-/**
- * Composant action suggeree
- */
-interface SuggestedActionProps {
-  title: string;
-  description: string;
-  confidence: number;
-  icon?: React.ReactNode;
+  if (isConfirmed(order)) {
+    actions.push({
+      id: 'start',
+      title: 'Démarrer la production',
+      description: 'Lancer les opérations de fabrication.',
+      confidence: 85,
+      icon: <Settings size={16} />,
+      actionLabel: 'Démarrer',
+    });
+  }
+
+  if (isInProgress(order) && getCompletionRate(order) >= 0.9) {
+    actions.push({
+      id: 'close',
+      title: "Clôturer l'ordre",
+      description: 'La production est presque terminée.',
+      confidence: Math.round(getCompletionRate(order) * 100),
+      icon: <Target size={16} />,
+      actionLabel: 'Clôturer',
+    });
+  }
+
+  if (isLate(order)) {
+    actions.push({
+      id: 'reschedule',
+      title: 'Replanifier',
+      description: "L'ordre est en retard, ajuster le planning.",
+      confidence: 75,
+      icon: <Clock size={16} />,
+      actionLabel: 'Replanifier',
+    });
+  }
+
+  if (getScrapRate(order) > 0.05) {
+    actions.push({
+      id: 'scrap-analysis',
+      title: 'Analyser les rebuts',
+      description: 'Taux de rebut élevé - investigation recommandée.',
+      confidence: 80,
+      icon: <AlertTriangle size={16} />,
+      actionLabel: 'Analyser',
+    });
+  }
+
+  if (!order.responsible_name) {
+    actions.push({
+      id: 'assign',
+      title: 'Assigner un responsable',
+      description: 'Aucun responsable désigné pour cet ordre.',
+      confidence: 70,
+      icon: <Package size={16} />,
+      actionLabel: 'Assigner',
+    });
+  }
+
+  return actions;
 }
 
-const SuggestedAction: React.FC<SuggestedActionProps> = ({ title, description, confidence, icon }) => {
-  return (
-    <div className="azals-suggested-action">
-      <div className="azals-suggested-action__content">
-        <h4>
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h4>
-        <p className="text-muted text-sm">{description}</p>
-      </div>
-      <div className="azals-suggested-action__confidence">
-        <span className={`azals-confidence azals-confidence--${confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'}`}>
-          {confidence}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 /**
- * Generer les insights bases sur l'ordre
+ * Générer les insights basés sur l'ordre
  */
 function generateInsights(order: ProductionOrder): Insight[] {
   const insights: Insight[] = [];
