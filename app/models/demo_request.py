@@ -1,10 +1,9 @@
 """Demo request model for scheduling demos."""
 from sqlalchemy import Column, String, DateTime, Boolean, Text, Date
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
 from datetime import datetime
 
-from app.db.base_class import Base
+from app.db.base import Base
 
 
 class DemoRequest(Base):
@@ -12,7 +11,7 @@ class DemoRequest(Base):
 
     __tablename__ = "demo_requests"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # id is automatically provided by UUIDMixin in Base
     lead_id = Column(UUID(as_uuid=True), nullable=True)
 
     full_name = Column(String, nullable=False)

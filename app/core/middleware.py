@@ -51,6 +51,12 @@ class TenantMiddleware(BaseHTTPMiddleware):
         "/api/v1/ai/status", "/v1/ai/status",
         "/api/v1/ai/theo", "/v1/ai/theo",
         "/api/v1/ai/auth", "/v1/ai/auth",
+        # Website Tracking (public for analytics without auth)
+        "/api/v2/website/track-visit",
+        "/api/v2/website/leads",
+        "/api/v2/website/demo-requests",
+        "/api/v2/website/contact",
+        "/api/v2/website/analytics/summary",
     }
 
     async def dispatch(self, request: Request, call_next):

@@ -6,9 +6,9 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, timedelta
 
-from app.db.session import get_db
+from app.core.database import get_db
 from app.models.website_visitor import WebsiteVisitor
-from app.models.website_lead import WebsiteLead, LeadSource, LeadStatus
+from app.models.website_lead import WebsiteLead
 from app.models.demo_request import DemoRequest
 
 router = APIRouter(prefix="/website", tags=["Website Tracking"])
@@ -37,7 +37,7 @@ class LeadCreate(BaseModel):
     company: Optional[str] = None
     job_title: Optional[str] = None
     message: Optional[str] = None
-    source: LeadSource = LeadSource.WEBSITE_FORM
+    source: str = "website_form"
     visitor_session_id: Optional[str] = None
     company_size: Optional[str] = None
     industry: Optional[str] = None
@@ -132,7 +132,7 @@ async def create_lead(
         visitor_session_id=lead_data.visitor_session_id,
         company_size=lead_data.company_size,
         industry=lead_data.industry,
-        status=LeadStatus.NEW,
+        status="new",
     )
 
     db.add(lead)
@@ -169,8 +169,8 @@ async def create_demo_request(
         phone=demo_data.phone,
         company=demo_data.company,
         company_size=demo_data.company_size,
-        source=LeadSource.DEMO_REQUEST,
-        status=LeadStatus.DEMO_SCHEDULED,
+        source="demo_request",
+        status="demo_scheduled",
         visitor_session_id=demo_data.visitor_session_id,
     )
     db.add(lead)
@@ -212,9 +212,9 @@ async def create_contact_request(
         email=contact_data.email,
         phone=contact_data.phone,
         message=f"{contact_data.subject or 'Contact'}: {contact_data.message}",
-        source=LeadSource.CONTACT_FORM,
+        source="contact_form",
         visitor_session_id=contact_data.visitor_session_id,
-        status=LeadStatus.NEW,
+        status="new",
     )
 
     db.add(lead)

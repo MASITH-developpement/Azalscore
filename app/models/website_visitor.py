@@ -1,10 +1,9 @@
 """Website visitor tracking model for analytics."""
 from sqlalchemy import Column, String, DateTime, Integer, Boolean, Index
-from sqlalchemy.dialects.postgresql import UUID, JSON
-import uuid
+from sqlalchemy.dialects.postgresql import JSON, UUID
 from datetime import datetime
 
-from app.db.base_class import Base
+from app.db.base import Base
 
 
 class WebsiteVisitor(Base):
@@ -12,7 +11,7 @@ class WebsiteVisitor(Base):
 
     __tablename__ = "website_visitors"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # id is automatically provided by UUIDMixin in Base
     session_id = Column(String, unique=True, nullable=False, index=True)
     visitor_ip = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
