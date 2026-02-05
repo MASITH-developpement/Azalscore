@@ -260,6 +260,92 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="landing-section landing-pricing">
+        <div className="landing-container">
+          <h2 className="landing-section-title">Tarifs simples et transparents</h2>
+          <p className="landing-section-subtitle">
+            Sans engagement. Annulez a tout moment.
+          </p>
+          <div className="landing-pricing-grid">
+            {/* Starter */}
+            <div className="landing-pricing-card">
+              <div className="landing-pricing-header">
+                <h3>Starter</h3>
+                <p className="landing-pricing-desc">Pour les TPE et independants</p>
+              </div>
+              <div className="landing-pricing-price">
+                <span className="landing-pricing-amount">29</span>
+                <span className="landing-pricing-currency">€</span>
+                <span className="landing-pricing-period">/mois HT</span>
+              </div>
+              <ul className="landing-pricing-features">
+                <li><Check size={16} /> 1-3 utilisateurs</li>
+                <li><Check size={16} /> Modules essentiels</li>
+                <li><Check size={16} /> Facturation electronique</li>
+                <li><Check size={16} /> Support email</li>
+                <li><Check size={16} /> Mises a jour incluses</li>
+              </ul>
+              <a href="#demo" className="landing-btn landing-btn-outline landing-btn-block">
+                Essayer gratuitement
+              </a>
+            </div>
+
+            {/* Business - Recommended */}
+            <div className="landing-pricing-card landing-pricing-card--popular">
+              <div className="landing-pricing-badge">Populaire</div>
+              <div className="landing-pricing-header">
+                <h3>Business</h3>
+                <p className="landing-pricing-desc">Pour les PME en croissance</p>
+              </div>
+              <div className="landing-pricing-price">
+                <span className="landing-pricing-amount">79</span>
+                <span className="landing-pricing-currency">€</span>
+                <span className="landing-pricing-period">/mois HT</span>
+              </div>
+              <ul className="landing-pricing-features">
+                <li><Check size={16} /> 5-15 utilisateurs</li>
+                <li><Check size={16} /> Tous les modules</li>
+                <li><Check size={16} /> Facturation electronique</li>
+                <li><Check size={16} /> Support prioritaire</li>
+                <li><Check size={16} /> API & integrations</li>
+                <li><Check size={16} /> Rapports avances</li>
+              </ul>
+              <a href="#demo" className="landing-btn landing-btn-primary landing-btn-block">
+                Essayer gratuitement
+              </a>
+            </div>
+
+            {/* Enterprise */}
+            <div className="landing-pricing-card">
+              <div className="landing-pricing-header">
+                <h3>Enterprise</h3>
+                <p className="landing-pricing-desc">Pour les grandes structures</p>
+              </div>
+              <div className="landing-pricing-price">
+                <span className="landing-pricing-amount">Sur devis</span>
+              </div>
+              <ul className="landing-pricing-features">
+                <li><Check size={16} /> Utilisateurs illimites</li>
+                <li><Check size={16} /> Tous les modules</li>
+                <li><Check size={16} /> Facturation electronique</li>
+                <li><Check size={16} /> Support 24/7 dedie</li>
+                <li><Check size={16} /> SLA garanti 99.9%</li>
+                <li><Check size={16} /> Formation sur site</li>
+                <li><Check size={16} /> Personnalisations</li>
+              </ul>
+              <Link to="/contact" className="landing-btn landing-btn-outline landing-btn-block">
+                Nous contacter
+              </Link>
+            </div>
+          </div>
+          <p className="landing-pricing-note">
+            Tous les plans incluent : hebergement securise en France, conformite RGPD,
+            sauvegardes automatiques, chiffrement AES-256.
+          </p>
+        </div>
+      </section>
+
       {/* Demo Request Section */}
       <section id="demo" className="landing-section landing-demo">
         <div className="landing-container">
