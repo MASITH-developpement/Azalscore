@@ -19,8 +19,8 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from app.api.accounting import router as accounting_router
 from app.api.admin_migration import router as admin_migration_router
+from app.api.admin_sequences import router as admin_sequences_router
 from app.api.auth import router as auth_router
 from app.api.branding import router as branding_router
 
@@ -36,7 +36,6 @@ from app.api.partners import router as partners_router
 from app.api.protected import router as protected_router
 from app.api.red_workflow import router as red_workflow_router
 from app.api.tax import router as tax_router
-from app.api.treasury import router as treasury_router
 from app.api.workflows import router as workflows_router
 from app.core.compression import CompressionMiddleware
 from app.core.config import get_settings
@@ -44,6 +43,7 @@ from app.core.database import engine, get_db
 from app.core.dependencies import get_current_user
 from app.core.guards import enforce_startup_security
 from app.core.health import router as health_router
+from app.api.health_business import router as health_business_router
 from app.core.http_errors import register_error_handlers
 from app.core.logging_config import get_logger, setup_logging
 from app.core.metrics import MetricsMiddleware, init_metrics
@@ -122,6 +122,7 @@ from app.modules.helpdesk.router import router as helpdesk_router
 
 # Module M3 - RH (Ressources Humaines)
 from app.modules.hr.router import router as hr_module_router
+from app.modules.hr.router_v2 import router as hr_router_v2
 from app.modules.iam.rbac_middleware import RBACMiddleware
 
 # Module T0 - IAM (Gestion Utilisateurs & Rôles)
@@ -203,7 +204,16 @@ from app.modules.marketplace.router_v2 import router as marketplace_router_v2
 # Module T8 - Site Web Officiel AZALS
 from app.modules.website.router import router as website_router
 from app.modules.website.router_v2 import router as website_router_v2
+# Module Interventions v2 - Router enrichi aligné frontend
+from app.modules.interventions.router_v2 import router as interventions_router_v2
+
+# Module Contacts Unifiés v2 - Sous-programmes réutilisables (Clients + Fournisseurs)
+from app.modules.contacts.router_v2 import router as contacts_router_v2
+
 from app.services.scheduler import scheduler_service
+
+# Logger module-level pour observabilité production
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -238,8 +248,10 @@ async def lifespan(app: FastAPI):
             }
         )
     except Exception as security_error:
-        logger.critical(f"[SECURITY] VIOLATION FATALE: {security_error}")
-        print(str(security_error))
+        logger.critical(
+            "[SECURITY] VIOLATION FATALE — Arrêt immédiat du système",
+            extra={"error": str(security_error), "consequence": "startup_aborted"}
+        )
         raise  # Arret immediat - pas de demarrage sans validation securite
 
     # Initialiser les métriques Prometheus
@@ -257,13 +269,18 @@ async def lifespan(app: FastAPI):
         verify_models_loaded()
         table_count = len(Base.metadata.tables)
         logger.info(
-            f"[MODEL_LOADER] {modules_loaded} modules charges, "
-            f"{table_count} tables ORM enregistrees"
+            "[MODEL_LOADER] Modèles ORM chargés avec succès",
+            extra={
+                "modules_loaded": modules_loaded,
+                "table_count": table_count,
+                "consequence": "orm_ready"
+            }
         )
-        print(f"[OK] Modeles ORM charges: {table_count} tables")
     except (RuntimeError, AssertionError) as model_err:
-        logger.critical(f"[MODEL_LOADER] ECHEC CRITIQUE: {model_err}")
-        print(f"[FATAL] {model_err}")
+        logger.critical(
+            "[MODEL_LOADER] ECHEC CRITIQUE — Impossible de charger les modèles ORM",
+            extra={"error": str(model_err), "consequence": "startup_aborted"}
+        )
         raise  # Arret immediat - pas de demarrage sans modeles
 
     max_retries = 5
@@ -281,9 +298,12 @@ async def lifespan(app: FastAPI):
                     conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
                     conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
                     conn.commit()
-                    logger.info("PostgreSQL extensions pgcrypto et uuid-ossp activees")
+                    logger.info("[DB] Extensions PostgreSQL activées (pgcrypto, uuid-ossp)")
                 except Exception as e:
-                    logger.debug(f"PostgreSQL extension creation skipped (may already exist or not PostgreSQL): {e}")
+                    logger.info(
+                        "[DB] Extensions PostgreSQL non créées — probablement déjà existantes",
+                        extra={"error": str(e)}
+                    )
 
             # =========================================================================
             # GESTION CONFORMITE UUID - DETECTION ET RESET AUTOMATIQUE
@@ -303,15 +323,13 @@ async def lifespan(app: FastAPI):
 
             if db_violation_count > 0:
                 tables_affected = len({v[0] for v in initial_violations})
-                print(f"\n{'='*60}")
-                print("[UUID] BASE LEGACY UUID DETECTEE")
-                print(f"{'='*60}")
-                print(f"Colonnes INT/BIGINT detectees : {db_violation_count}")
-                print(f"Tables affectees : {tables_affected}")
-                print(f"{'='*60}\n")
                 logger.warning(
-                    f"[UUID] Base LEGACY detectee: {db_violation_count} violations, "
-                    f"{tables_affected} tables"
+                    "[UUID] Base LEGACY détectée — colonnes INT/BIGINT non conformes",
+                    extra={
+                        "violation_count": db_violation_count,
+                        "tables_affected": tables_affected,
+                        "consequence": "uuid_compliance_required"
+                    }
                 )
 
             try:
@@ -322,14 +340,17 @@ async def lifespan(app: FastAPI):
                     # Reset effectue - les tables ont deja ete recreees par le manager
                     db_uuid_status = "UUID-native"
                     db_violation_count = 0
-                    print(f"\n{'='*60}")
-                    print("[OK] BASE UUID-NATIVE VALIDEE")
-                    print(f"{'='*60}")
-                    print("[OK] Reset UUID effectue - tables recreees avec UUID")
-                    # Passer directement a la validation schema
                     tables_created = len(uuid_manager.get_all_tables())
                     tables_existed = 0
-                    print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
+                    logger.info(
+                        "[UUID] Reset UUID effectué — base recréée en mode UUID-native",
+                        extra={
+                            "tables_created": tables_created,
+                            "tables_existed": tables_existed,
+                            "db_status": "UUID-native",
+                            "consequence": "schema_validation_next"
+                        }
+                    )
 
                     # Skip la creation manuelle des tables - deja fait par le manager
                     # Aller directement a la validation schema
@@ -340,11 +361,14 @@ async def lifespan(app: FastAPI):
                             strict=_settings.is_production
                         )
                         if schema_valid:
-                            print("[OK] Schema valide - Toutes les PK/FK utilisent UUID")
+                            logger.info("[UUID] Schéma validé — toutes les PK/FK utilisent UUID")
                         else:
-                            print("[WARN] Schema: Avertissements detectes (voir logs)")
+                            logger.warning("[UUID] Schéma: avertissements détectés — consulter les logs détaillés")
                     except Exception as schema_err:
-                        print(f"[WARN] Validation schema ignoree: {schema_err}")
+                        logger.warning(
+                            "[UUID] Validation schéma ignorée",
+                            extra={"error": str(schema_err), "consequence": "schema_not_validated"}
+                        )
 
                     break  # Sortir de la boucle de retry
 
@@ -352,29 +376,39 @@ async def lifespan(app: FastAPI):
                     # Base deja conforme - verrou UUID silencieux
                     db_uuid_status = "UUID-native"
                     db_violation_count = 0
-                    print("[OK] Base de donnees conforme UUID")
-                    print("[OK] Colonnes INT/BIGINT detectees : 0")
-                    print("[OK] Verrou UUID : ACTIF (silencieux)")
+                    logger.info(
+                        "[UUID] Base conforme UUID — verrou actif",
+                        extra={"violations": 0, "lock": "active"}
+                    )
                 else:
                     # Mode non-strict avec violations - NE PAS mentir sur l'etat
                     db_uuid_status = "LEGACY (violations ignorees)"
                     db_violation_count = len(uuid_manager.violations)
-                    print("[WARN] Violations UUID ignorees (mode non-strict)")
-                    print(f"[WARN] Colonnes INT/BIGINT : {db_violation_count}")
-                    print("[WARN] Base de donnees : INCOMPATIBLE UUID")
+                    logger.warning(
+                        "[UUID] Violations UUID ignorées — mode non-strict actif",
+                        extra={
+                            "violation_count": db_violation_count,
+                            "db_status": "INCOMPATIBLE",
+                            "consequence": "legacy_mode_active"
+                        }
+                    )
 
             except UUIDComplianceError as uuid_err:
                 # Violations detectees et mode strict - arreter le demarrage
                 db_uuid_status = "INCOMPATIBLE (blocage strict)"
-                logger.critical(f"[UUID] {uuid_err}")
-                print(str(uuid_err))
+                logger.critical(
+                    "[UUID] Violations détectées en mode strict — démarrage bloqué",
+                    extra={"error": str(uuid_err), "consequence": "startup_aborted"}
+                )
                 raise RuntimeError(str(uuid_err))
 
             except UUIDResetBlockedError as reset_err:
                 # Reset bloque (production ou non autorise)
                 db_uuid_status = "INCOMPATIBLE (reset bloque)"
-                logger.critical(f"[UUID_RESET] {reset_err}")
-                print(str(reset_err))
+                logger.critical(
+                    "[UUID_RESET] Reset bloqué — production ou non autorisé",
+                    extra={"error": str(reset_err), "consequence": "startup_aborted"}
+                )
                 raise RuntimeError(str(reset_err))
 
             # Create tables with multi-pass retry for FK dependencies
@@ -417,12 +451,20 @@ async def lifespan(app: FastAPI):
 
             # Report final errors
             if pending_tables:
-                print(f"[WARN] {len(pending_tables)} tables non creees:")
-                for table in pending_tables:
-                    err = last_errors.get(table.name, "Unknown error")
-                    print(f"  - {table.name}: {err}")
+                failed_tables = {t.name: last_errors.get(t.name, "Unknown error") for t in pending_tables}
+                logger.error(
+                    "[DB] Tables non créées après retries",
+                    extra={
+                        "failed_count": len(pending_tables),
+                        "failed_tables": failed_tables,
+                        "consequence": "partial_schema"
+                    }
+                )
 
-            print(f"[OK] Base de donnees connectee (creees: {tables_created}, existantes: {tables_existed})")
+            logger.info(
+                "[DB] Connexion base de données établie",
+                extra={"tables_created": tables_created, "tables_existed": tables_existed}
+            )
 
             # VERROU ANTI-RÉGRESSION: Valider le schéma UUID
             try:
@@ -433,23 +475,38 @@ async def lifespan(app: FastAPI):
                     strict=_settings.is_production
                 )
                 if schema_valid:
-                    print("[OK] Schema valide - Toutes les PK/FK utilisent UUID")
+                    logger.info("[SCHEMA] Validé — toutes les PK/FK utilisent UUID")
                 else:
-                    print("[WARN] Schema: Avertissements detectes (voir logs)")
+                    logger.warning("[SCHEMA] Avertissements détectés — consulter les logs détaillés")
             except Exception as schema_err:
-                print(f"[WARN] Validation schema ignoree: {schema_err}")
+                logger.warning(
+                    "[SCHEMA] Validation ignorée",
+                    extra={"error": str(schema_err), "consequence": "schema_not_validated"}
+                )
 
             break
 
         except Exception as e:
-            print(f"[...] Connexion DB tentative {attempt + 1}/{max_retries}: {e}")
+            logger.error(
+                "[DB] Échec connexion base de données",
+                extra={
+                    "attempt": attempt + 1,
+                    "max_retries": max_retries,
+                    "error": str(e),
+                    "consequence": "retry" if attempt < max_retries - 1 else "degraded_startup"
+                }
+            )
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
             else:
-                print("[WARN] DB non disponible, l'app demarre quand meme")
+                logger.critical(
+                    "[DB] Base de données non disponible après tous les retries — démarrage dégradé",
+                    extra={"max_retries": max_retries, "consequence": "no_database"}
+                )
 
     # Démarrer le scheduler
     scheduler_service.start()
+    logger.info("[SCHEDULER] Service de planification démarré")
 
     # =========================================================================
     # DEMARRAGE TERMINE - AFFICHAGE ETAT REEL
@@ -460,78 +517,36 @@ async def lifespan(app: FastAPI):
     current_branch = get_current_git_branch() or "unknown"
     security_locked = "LOCKED" if _settings.is_production or current_branch == "main" else "UNLOCKED"
 
-    print(f"\n{'='*60}")
+    startup_context = {
+        "version": AZALS_VERSION,
+        "environment": _settings.environment,
+        "branch": current_branch,
+        "security_status": security_locked,
+        "uuid_lock": "active",
+        "database": db_uuid_status,
+        "violations": db_violation_count,
+        "tables": len(Base.metadata.tables)
+    }
 
     if db_violation_count == 0 and db_uuid_status == "UUID-native":
         # Base conforme - startup complet
-        print("[AZALS] APPLICATION STARTUP COMPLETE")
-        print(f"{'='*60}")
-        print(f"Version            : {AZALS_VERSION}")
-        print(f"Environnement      : {_settings.environment}")
-        print(f"Branche Git        : {current_branch}")
-        print(f"Securite           : {security_locked}")
-        print("Verrou UUID        : ACTIF")
-        print("Violations UUID    : 0")
-        print("Base de donnees    : UUID-native")
-        print(f"ORM                : {len(Base.metadata.tables)} tables")
-        print(f"{'='*60}")
-        print(f"[SECURITY] ENV={_settings.environment} | VERSION={AZALS_VERSION} | BRANCH={current_branch} | STATUS={security_locked}")
-        print(f"{'='*60}\n")
-
         logger.info(
-            "[STARTUP] Application startup complete - Base UUID-native",
-            extra={
-                "version": AZALS_VERSION,
-                "environment": _settings.environment,
-                "branch": current_branch,
-                "security_status": security_locked,
-                "uuid_lock": "active",
-                "database": "uuid-native",
-                "violations": 0,
-                "tables": len(Base.metadata.tables)
-            }
+            "[STARTUP] APPLICATION STARTUP COMPLETE — Base UUID-native, système opérationnel",
+            extra=startup_context
         )
     else:
         # Base non conforme - avertissement explicite
-        print("[AZALS] DEMARRAGE EN MODE DEGRADE")
-        print(f"{'='*60}")
-        print(f"Version            : {AZALS_VERSION}")
-        print(f"Environnement      : {_settings.environment}")
-        print(f"Branche Git        : {current_branch}")
-        print(f"Securite           : {security_locked}")
-        print("Verrou UUID        : ACTIF")
-        print(f"Violations UUID    : {db_violation_count}")
-        print(f"Base de donnees    : {db_uuid_status}")
-        print(f"{'='*60}")
-        print("[WARN] BASE NON CONFORME UUID - RESET REQUIS")
-        print(f"{'='*60}")
-        print("Pour corriger, executez :")
-        print("  ./scripts/run_dev.sh")
-        print("OU :")
-        print("  export AZALS_ENV=dev")
-        print("  export DB_AUTO_RESET_ON_VIOLATION=true")
-        print("  # Relancez l'application")
-        print(f"{'='*60}")
-        print(f"[SECURITY] ENV={_settings.environment} | VERSION={AZALS_VERSION} | BRANCH={current_branch} | STATUS={security_locked}")
-        print(f"{'='*60}\n")
-
         logger.warning(
-            "[STARTUP] Demarrage en mode degrade - Base LEGACY",
-            extra={
-                "version": AZALS_VERSION,
-                "environment": _settings.environment,
-                "branch": current_branch,
-                "security_status": security_locked,
-                "uuid_lock": "active",
-                "database": db_uuid_status,
-                "violations": db_violation_count
-            }
+            "[STARTUP] DÉMARRAGE EN MODE DÉGRADÉ — Base non conforme UUID, reset requis",
+            extra=startup_context
         )
 
     yield
 
     # Arrêter le scheduler à l'arrêt
+    logger.info("[SHUTDOWN] Arrêt du scheduler en cours")
     scheduler_service.shutdown()
+    logger.info("[SHUTDOWN] Application arrêtée proprement")
 
 # SÉCURITÉ: Configuration dynamique selon environnement
 _settings = get_settings()
@@ -542,7 +557,7 @@ _redoc_url = "/redoc" if _settings.is_development else None
 _openapi_url = "/openapi.json" if _settings.is_development else None
 
 if _settings.is_production:
-    print("[SECURE] PRODUCTION MODE: API docs desactivees")
+    logger.info("[SECURE] MODE PRODUCTION — docs API désactivées (/docs, /redoc, /openapi.json)")
 
 app = FastAPI(
     title="AZALS",
@@ -571,51 +586,67 @@ register_error_handlers(app)
 
 # 1. Error Handling (s'exécute en tout dernier - capture toutes les erreurs)
 app.add_middleware(ErrorHandlingMiddleware)
+logger.info("[MIDDLEWARE] ErrorHandlingMiddleware activé")
 
 # 2. Platform Rate Limiting - Protection DDoS et abuse API
 # SÉCURITÉ P1: Limites globales par IP (1000/min), par tenant (5000/min), plateforme (50000/min)
 from app.core.rate_limiter import setup_platform_rate_limiting
-if _settings.environment == "production":
-    setup_platform_rate_limiting(app, ip_limit=1000, tenant_limit=5000, global_limit=50000)
-else:
-    # Limites plus permissives en dev/staging
-    setup_platform_rate_limiting(app, ip_limit=10000, tenant_limit=50000, global_limit=500000)
+setup_platform_rate_limiting(app, ip_limit=1000, tenant_limit=5000, global_limit=50000)
+logger.info(
+    "[MIDDLEWARE] Rate Limiting activé — PRODUCTION",
+    extra={"ip_limit": 1000, "tenant_limit": 5000, "global_limit": 50000}
+)
 
 # 3. CSRF Protection - Anti Cross-Site Request Forgery
 # SÉCURITÉ: Vérifie les tokens CSRF pour POST/PUT/DELETE/PATCH
 from app.core.csrf_middleware import setup_csrf_middleware
 # En mode audit pour le moment (enforce=False), activer en production après tests
 setup_csrf_middleware(app, enforce=False)
+logger.warning(
+    "[MIDDLEWARE] CSRF en mode AUDIT (enforce=False) — protection non active",
+    extra={"enforce": False, "consequence": "csrf_not_enforced", "action_required": "activer enforce=True après tests"}
+)
 
 # 4. Compression
 app.add_middleware(CompressionMiddleware, minimum_size=1024, compress_level=6)
+logger.info("[MIDDLEWARE] Compression activée", extra={"min_size": 1024, "level": 6})
 
-# 3. Metrics
+# 5. Metrics
 app.add_middleware(MetricsMiddleware)
+logger.info("[MIDDLEWARE] MetricsMiddleware activé")
 
-# 4. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
+# 6. RBAC Middleware - Contrôle d'accès basé sur les rôles (BETA)
 # Note: Le middleware RBAC vérifie les permissions après authentification
 # Pour la bêta, les routes non configurées génèrent un warning mais passent
 # En production, activer deny-by-default dans rbac_middleware.py
 app.add_middleware(RBACMiddleware)
+logger.warning(
+    "[MIDDLEWARE] RBAC en mode BETA — deny-by-default NON activé",
+    extra={"mode": "beta", "consequence": "rbac_permissive", "action_required": "activer deny-by-default"}
+)
 
-# 5. CoreAuthMiddleware - Parse JWT et crée SaaSContext via CORE
+# 7. CoreAuthMiddleware - Parse JWT et crée SaaSContext via CORE
 # IMPORTANT: Doit s'exécuter AVANT RBAC pour que request.state.saas_context soit disponible
 # NOUVEAU: Utilise CORE.authenticate() au lieu de logique dupliquée
 app.add_middleware(CoreAuthMiddleware)
+logger.info("[MIDDLEWARE] CoreAuthMiddleware activé (JWT + SaaSContext)")
 
-# 6. TenantMiddleware - Validation X-Tenant-ID
+# 8. TenantMiddleware - Validation X-Tenant-ID
 app.add_middleware(TenantMiddleware)
+logger.info("[MIDDLEWARE] TenantMiddleware activé (X-Tenant-ID)")
 
-# 7. GUARDIAN Middleware - Interception automatique des erreurs
+# 9. GUARDIAN Middleware - Interception automatique des erreurs
 # S'exécute après Tenant pour avoir accès au tenant_id
 setup_guardian_middleware(app, environment=_settings.environment)
+logger.info("[MIDDLEWARE] Guardian activé", extra={"environment": _settings.environment})
 
-# 6. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
+# 10. CORS en dernier (s'exécute en premier pour gérer OPTIONS preflight)
 setup_cors(app)
+logger.info("[MIDDLEWARE] CORS configuré")
 
-# 7. Request Logging (si LOG_VERBOSE=true ou LOG_REQUESTS=true)
+# 11. Request Logging (si LOG_VERBOSE=true ou LOG_REQUESTS=true)
 setup_request_logging(app)
+logger.info("[MIDDLEWARE] Request Logging configuré")
 
 # NOTE: health_router and metrics_router sont inclus après api_v1 pour éviter
 # les problèmes de "No response returned" lors du démarrage
@@ -643,6 +674,11 @@ api_v1.include_router(tax_router)
 api_v1.include_router(hr_router)
 api_v1.include_router(legal_router)
 api_v1.include_router(admin_migration_router)  # TEMPORAIRE pour migration
+logger.warning(
+    "[ROUTER] admin_migration_router monté — marqué TEMPORAIRE, à retirer après migration",
+    extra={"router": "admin_migration", "status": "temporary", "action_required": "remove_after_migration"}
+)
+api_v1.include_router(admin_sequences_router)  # Administration des sequences de numerotation
 api_v1.include_router(partners_router)  # Alias vers module commercial (clients, fournisseurs, contacts)
 api_v1.include_router(invoicing_router)  # Alias vers module commercial (devis, factures, avoirs)
 api_v1.include_router(branding_router)  # Gestion favicon, logo, branding
@@ -696,11 +732,8 @@ api_v1.include_router(procurement_router)
 # Module M4 - Achats (Purchases) - Backend complet
 api_v1.include_router(purchases_router)
 
-# Module ACCOUNTING - Comptabilité Générale - Backend complet
-api_v1.include_router(accounting_router)
-
-# Module TREASURY - Trésorerie - Backend complet
-api_v1.include_router(treasury_router)
+# NOTE: accounting_router et treasury_router déjà montés aux lignes précédentes
+# Suppression des doublons pour éviter conflits de routes en production
 
 # Module M5 - Stock (Inventaire + Logistique)
 api_v1.include_router(inventory_router)
@@ -1106,6 +1139,9 @@ app.include_router(stripe_router_v2)
 app.include_router(triggers_router_v2)
 app.include_router(web_router_v2)
 app.include_router(website_router_v2)
+app.include_router(interventions_router_v2)
+app.include_router(contacts_router_v2)
+app.include_router(hr_router_v2)
 
 # ==================== THEO VOICE API ====================
 # WebSocket et REST endpoints pour Théo (assistant vocal)
@@ -1113,15 +1149,19 @@ try:
     from app.theo.api import theo_router, theo_rest_router
     app.include_router(theo_router)
     app.include_router(theo_rest_router, prefix="/v1")
-    print("[THEO] Voice API routes registered")
+    logger.info("[THEO] Voice API routes enregistrées (WebSocket + REST)")
 except ImportError as e:
-    print(f"[THEO] Voice API not available: {e}")
+    logger.warning(
+        "[THEO] Voice API non disponible — module non installé",
+        extra={"error": str(e), "consequence": "theo_voice_disabled"}
+    )
 
 
 # ==================== ROUTES OBSERVABILITE ====================
 # Routes publiques pour monitoring (pas de tenant/auth required)
 # IMPORTANT: Inclure APRÈS api_v1 pour éviter les conflits de routes
 app.include_router(health_router)
+app.include_router(health_business_router)
 app.include_router(metrics_router)
 
 
@@ -1130,6 +1170,8 @@ app.include_router(metrics_router)
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 from app.core.database import engine
 from sqlalchemy import text
+
+logger.info("[ROUTES] Health/Metrics fallback routes enregistrées (/health, /health/ready, /health/live, /metrics)")
 
 
 @app.get("/health")
@@ -1140,7 +1182,10 @@ async def health_check_fallback():
             conn.execute(text("SELECT 1"))
         db_ok = True
     except Exception as e:
-        logger.warning(f"Health check database connection failed: {e}")
+        logger.error(
+            "[HEALTH] Échec connexion DB lors du health check",
+            extra={"error": str(e), "consequence": "status_degraded"}
+        )
         db_ok = False
 
     return {
@@ -1158,7 +1203,10 @@ async def health_ready_fallback():
             conn.execute(text("SELECT 1"))
         return {"status": "ready"}
     except Exception as e:
-        logger.warning(f"Readiness probe database check failed: {e}")
+        logger.error(
+            "[HEALTH] Readiness probe échouée — base de données indisponible",
+            extra={"error": str(e), "consequence": "not_ready"}
+        )
         return {"status": "not_ready", "reason": "Database unavailable"}
 
 
@@ -1176,13 +1224,21 @@ async def metrics_fallback():
         media_type=CONTENT_TYPE_LATEST
     )
 
-# ==================== FRONTEND STATIQUE ====================
+# ==================== FRONTEND STATIQUE (LEGACY) ====================
+# En production Docker, le frontend est un conteneur séparé (React SPA via Nginx).
+# Ce bloc ne s'active QUE si le dossier ui/ existe dans le conteneur API,
+# ce qui ne devrait PAS être le cas en production standard.
 
 # Chemin vers le dossier UI
 UI_DIR = Path(__file__).parent.parent / "ui"
 
 # Servir les fichiers statiques (CSS, JS) depuis /ui
 if UI_DIR.exists():
+    logger.warning(
+        "[LEGACY] Dossier ui/ détecté — frontend statique legacy activé. "
+        "En production Docker standard, le frontend est un conteneur séparé.",
+        extra={"ui_dir": str(UI_DIR), "consequence": "legacy_static_routes_active"}
+    )
     app.mount("/static", StaticFiles(directory=str(UI_DIR)), name="static")
 
     @app.get("/")
@@ -1192,22 +1248,6 @@ if UI_DIR.exists():
         if index_path.exists():
             return FileResponse(index_path)
         return {"message": "Interface frontend non disponible"}
-
-    @app.get("/dashboard")
-    async def serve_dashboard():
-        """Servir le dashboard"""
-        dashboard_path = UI_DIR / "dashboard.html"
-        if dashboard_path.exists():
-            return FileResponse(dashboard_path)
-        return {"message": "Dashboard non disponible"}
-
-    @app.get("/treasury")
-    async def serve_treasury():
-        """Servir la page Trésorerie"""
-        treasury_path = UI_DIR / "treasury.html"
-        if treasury_path.exists():
-            return FileResponse(treasury_path)
-        return {"message": "Page Trésorerie non disponible"}
 
     @app.get("/favicon.ico")
     async def serve_favicon_ico():
@@ -1249,6 +1289,8 @@ if UI_DIR.exists():
                 }
             )
         return FileResponse(UI_DIR / "favicon.png", status_code=404)
+else:
+    logger.info("[FRONTEND] Pas de dossier ui/ — frontend servi par conteneur séparé (mode production standard)")
 
 
 # ===========================================================================
@@ -1312,37 +1354,8 @@ if ERRORS_DIR.exists():
 
 
 # ===========================================================================
-# ROUTE DE TEST DES ERREURS (DEV UNIQUEMENT)
+# ROUTE DE TEST DES ERREURS — SUPPRIMÉES (PRODUCTION STRICTE)
 # ===========================================================================
-# Permet de tester les handlers d'erreur sans modifier la logique metier
-# DESACTIVEE en production
+# Les routes /test-errors/* ont été supprimées conformément à la politique
+# de production stricte. Aucun endpoint de test ne doit exister en prod.
 # ===========================================================================
-
-if _settings.is_development:
-    @app.get("/test-errors/401")
-    async def test_error_401():
-        """Test: Declanche une erreur 401"""
-        from fastapi import HTTPException
-        raise HTTPException(status_code=401, detail="Test unauthorized")
-
-    @app.get("/test-errors/403")
-    async def test_error_403():
-        """Test: Declanche une erreur 403"""
-        from fastapi import HTTPException
-        raise HTTPException(status_code=403, detail="Test forbidden")
-
-    @app.get("/test-errors/404")
-    async def test_error_404():
-        """Test: Declanche une erreur 404"""
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Test not found")
-
-    @app.get("/test-errors/500")
-    async def test_error_500():
-        """Test: Declanche une erreur 500"""
-        raise RuntimeError("Test internal server error")
-
-    @app.get("/test-errors/422")
-    async def test_error_422(required_param: int):
-        """Test: Declanche une erreur 422 (appeler sans parametres)"""
-        return {"value": required_param}
