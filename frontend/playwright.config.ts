@@ -1,6 +1,6 @@
 /**
  * AZALSCORE - Configuration Playwright E2E Tests
- * Module CRM T0 - Validation Frontend
+ * Suite complete de tests business critical
  */
 
 import { defineConfig, devices } from '@playwright/test';
@@ -13,21 +13,26 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 1 : 3,
+  timeout: 30000,
+  expect: {
+    timeout: 5000,
+  },
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'playwright-report/results.json' }],
     ['list']
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    headless: true,
   },
 
-  /* Configure les projets pour navigateurs multiples */
+  /* Configure les projets pour navigateurs */
   projects: [
     {
       name: 'chromium',
@@ -37,16 +42,18 @@ export default defineConfig({
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
 
-  /* Démarrer le serveur de développement avant les tests */
+  /* Demarrer le serveur de developpement avant les tests */
   webServer: {
-    command: 'VITE_DEMO_MODE=true npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-    env: {
-      VITE_DEMO_MODE: 'true',
-    },
+    command: 'npm run dev',
+    cwd: '.',
+    url: 'http://localhost:5173',
+    reuseExistingServer: true,
+    timeout: 60000,
   },
 });
