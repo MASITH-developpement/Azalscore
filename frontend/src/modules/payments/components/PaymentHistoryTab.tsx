@@ -11,8 +11,9 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Payment, PaymentHistoryEntry } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 import {
-  formatDateTime, PAYMENT_STATUS_CONFIG,
+  PAYMENT_STATUS_CONFIG,
   getMethodLabel
 } from '../types';
 

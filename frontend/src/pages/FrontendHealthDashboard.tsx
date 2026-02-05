@@ -135,7 +135,7 @@ const MetricCard: React.FC<{
   title: string;
   value: number;
   color?: string;
-}> = ({ title, value, color = '#3b82f6' }) => {
+}> = ({ title, value, color = 'var(--azals-primary-600)' }) => {
   return (
     <div
       style={{
@@ -231,7 +231,7 @@ export const FrontendHealthDashboard: React.FC = () => {
           marginBottom: '2rem',
         }}
       >
-        <MetricCard title="Total Modules" value={metrics.totalModules} color="#3b82f6" />
+        <MetricCard title="Total Modules" value={metrics.totalModules} color="var(--azals-primary-600)" />
         <MetricCard
           title="Exposés Frontend"
           value={metrics.exposedFrontend}

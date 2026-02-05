@@ -31,7 +31,8 @@ import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Import types et composants tabs
 import type { Commande, CommandeFormData, Customer, DocumentStatus, DocumentLine } from './types';
-import { STATUS_CONFIG, formatCurrency, formatDate } from './types';
+import { STATUS_CONFIG } from './types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   CommandeInfoTab,
   CommandeLinesTab,
@@ -233,7 +234,7 @@ const CommandeListView: React.FC<{
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<{ status?: string; search?: string }>({});
 
-  const { data, isLoading, refetch } = useCommandesList(page, pageSize, filters);
+  const { data, isLoading, error, refetch } = useCommandesList(page, pageSize, filters);
 
   const columns: TableColumn<Commande>[] = [
     {
@@ -337,6 +338,8 @@ const CommandeListView: React.FC<{
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
           emptyMessage="Aucune commande"
         />
       </Card>
@@ -353,7 +356,7 @@ const CommandeDetailView: React.FC<{
   onBack: () => void;
   onEdit: () => void;
 }> = ({ commandeId, onBack, onEdit }) => {
-  const { data: commande, isLoading } = useCommande(commandeId);
+  const { data: commande, isLoading, error, refetch } = useCommande(commandeId);
   const validateCommande = useValidateCommande();
   const markDelivered = useMarkDelivered();
   const createInvoice = useCreateInvoice();
@@ -635,6 +638,8 @@ const CommandeDetailView: React.FC<{
       secondaryActions={secondaryActions}
       backAction={{ label: 'Retour', onClick: onBack }}
       isLoading={isLoading}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };

@@ -11,8 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { BankAccount } from '../types';
+import { formatDate, formatDateTime, formatIBAN, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatDateTime, formatIBAN, formatCurrency,
   ACCOUNT_TYPE_CONFIG
 } from '../types';
 

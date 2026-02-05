@@ -8,7 +8,8 @@ import { FileText, Building2, Calendar, Tag, AlertTriangle } from 'lucide-react'
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseInvoice } from '../types';
-import { INVOICE_STATUS_CONFIG, formatDate, formatDateTime, isOverdue, getDaysUntilDue } from '../types';
+import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 
 /**
  * InvoiceInfoTab - Informations generales

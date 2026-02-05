@@ -10,9 +10,10 @@ import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseInvoice } from '../types';
 import {
-  formatCurrency, calculateVATBreakdown, INVOICE_STATUS_CONFIG,
+  calculateVATBreakdown, INVOICE_STATUS_CONFIG,
   canPayInvoice, isOverdue, getDaysUntilDue
 } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * InvoiceFinancialTab - Financier

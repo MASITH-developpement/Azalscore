@@ -505,9 +505,10 @@ class AIClassificationService:
         self.db.refresh(classification)
 
         logger.info(
-            f"Document {document_id} classified with "
-            f"confidence {classification.overall_confidence.value} "
-            f"({classification.overall_confidence_score}%)"
+            "Document %s classified with "
+            "confidence %s "
+            "(%s%%)",
+            document_id, classification.overall_confidence.value, classification.overall_confidence_score
         )
 
         return classification
@@ -580,7 +581,7 @@ class AIClassificationService:
         self.db.commit()
 
         logger.info(
-            f"Classification {classification_id} corrected by user {corrected_by}"
+            "Classification %s corrected by user %s", classification_id, corrected_by
         )
 
     def get_ai_performance_stats(

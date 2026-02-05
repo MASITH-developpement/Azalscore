@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Devis, DevisHistoryEntry } from '../types';
-import { formatDateTime, STATUS_CONFIG } from '../types';
+import { STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * DevisHistoryTab - Historique et audit trail du devis

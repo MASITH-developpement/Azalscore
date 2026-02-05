@@ -29,13 +29,13 @@ import { LoadingState, ErrorState } from '@ui/components/StateViews';
 // Types et helpers
 import type { Asset, MaintenanceOrder, MaintenancePlan, MaintenanceDashboard } from './types';
 import {
-  formatDate, formatCurrency, formatHours,
   ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
   ORDER_TYPE_CONFIG, ORDER_STATUS_CONFIG, PRIORITY_CONFIG, FREQUENCY_CONFIG,
   getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon,
   isWarrantyExpired, getAssetAge, getTotalMaintenanceCost, getOrderCountByStatus,
   getLowStockParts
 } from './types';
+import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
 
 // Composants tabs
 import {
@@ -376,7 +376,7 @@ const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onEd
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
-      error={error instanceof Error ? error : null}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
       onRetry={() => refetch()}
     />
   );
@@ -512,7 +512,7 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           <Button onClick={() => setShowModal(true)}>Nouvel equipement</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel equipement" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>

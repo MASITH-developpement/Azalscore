@@ -10,10 +10,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Azalscore',
-        short_name: 'Azalscore',
-        description: 'ERP SaaS Multi-tenant - Gestion complète entreprise',
-        theme_color: '#1e40af',
+        name: 'AZALSCORE',
+        short_name: 'AZALSCORE',
+        description: 'ERP SaaS Multi-tenant - Gestion d\'entreprise',
+        lang: 'fr',
+        theme_color: '#1E6EFF',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'any',
@@ -39,6 +40,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\./i,

@@ -11,7 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Product } from '../types';
-import { formatDate, formatCurrency, formatQuantity } from '../types';
+import { formatQuantity } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 
 /**
  * ProductInfoTab - Informations générales de l'article

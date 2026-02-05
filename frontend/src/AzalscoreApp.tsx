@@ -18,6 +18,8 @@ import { useTranslation } from './modules/i18n';
 import { LogOut, Loader2, ChevronDown, Plus, Users, Package, Truck, Wrench, X, LayoutGrid, User, Settings, Search, FileText, ShoppingCart, Star, Clock, Copy, ArrowRight, Database, AlertTriangle } from 'lucide-react';
 import { setInterfaceMode } from './utils/interfaceMode';
 import { isDemoMode, setDemoMode } from './utils/demoMode';
+import { COLORS } from '@core/design-tokens';
+import { logError } from '@core/error-handling';
 import { getRecents, addRecent, getFavorites, toggleFavorite, isFavorite, type RecentItem, type FavoriteItem } from './utils/recentsFavorites';
 import './styles/azalscore.css';
 
@@ -90,7 +92,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
               icon: <Users size={16} />,
             });
           });
-        } catch (e) { /* ignore */ }
+        } catch (e) { logError(e, 'GlobalSearch.searchClients'); }
 
         // Search documents (invoices/quotes)
         try {
@@ -105,7 +107,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
               icon: <FileText size={16} />,
             });
           });
-        } catch (e) { /* ignore */ }
+        } catch (e) { logError(e, 'GlobalSearch.searchDocuments'); }
 
         // Search products
         try {
@@ -120,7 +122,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
               icon: <Package size={16} />,
             });
           });
-        } catch (e) { /* ignore */ }
+        } catch (e) { logError(e, 'GlobalSearch.searchProducts'); }
 
         setResults(searchResults);
         setSelectedIndex(0);
@@ -441,7 +443,7 @@ const VIEW_CONTEXT_ACTIONS: Record<ViewKey, ContextAction[]> = {
 };
 
 const CONTEXT_ACTION_CONFIG: Record<ContextAction, { label: string; icon: React.ReactNode; color: string }> = {
-  client: { label: 'Client', icon: <Users size={16} />, color: '#3b82f6' },
+  client: { label: 'Client', icon: <Users size={16} />, color: COLORS.primary },
   supplier: { label: 'Fournisseur', icon: <Truck size={16} />, color: '#8b5cf6' },
   article: { label: 'Article', icon: <Package size={16} />, color: '#10b981' },
   intervenant: { label: 'Intervenant', icon: <Wrench size={16} />, color: '#f59e0b' },

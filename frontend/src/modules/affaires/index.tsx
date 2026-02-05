@@ -20,6 +20,7 @@ import {
   SmartField, SmartForm, useModulePermissions,
 } from '@ui/simple';
 import type { FieldMode, ContextMode, EntityConfig } from '@ui/simple';
+import { ErrorState } from '../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES & CONFIG
@@ -123,7 +124,7 @@ const List: React.FC<{
   canCreate: boolean;
 }> = ({ onSelect, onCreate, canCreate }) => {
   const [search, setSearch] = useState('');
-  const { data: affaires = [], isLoading } = useAffaires(search);
+  const { data: affaires = [], isLoading, error, refetch } = useAffaires(search);
 
   const stats = useMemo(() => {
     const a = affaires as Affaire[];
@@ -136,6 +137,7 @@ const List: React.FC<{
   }, [affaires]);
 
   if (isLoading) return <Loading />;
+  if (error) return <ErrorState message={error instanceof Error ? error.message : undefined} onRetry={() => refetch()} />;
 
   return (
     <Page>
@@ -205,7 +207,7 @@ interface FormViewProps {
 }
 
 const FormView: React.FC<FormViewProps> = ({ id, onBack, onSaved, contextMode }) => {
-  const { data, isLoading } = useAffaire(id);
+  const { data, isLoading, error, refetch } = useAffaire(id);
   const save = useSaveAffaire();
   const permissions = useModulePermissions('projects');
 
@@ -247,6 +249,7 @@ const FormView: React.FC<FormViewProps> = ({ id, onBack, onSaved, contextMode })
 
   // Chargement
   if (id && isLoading) return <Loading />;
+  if (id && error) return <ErrorState message={error instanceof Error ? error.message : undefined} onRetry={() => refetch()} />;
   if (id && !affaire) {
     return (
       <Page>

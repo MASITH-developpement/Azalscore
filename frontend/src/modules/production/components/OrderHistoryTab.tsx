@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { ProductionOrder, OrderHistoryEntry } from '../types';
-import { formatDateTime, ORDER_STATUS_CONFIG } from '../types';
+import { ORDER_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * OrderHistoryTab - Historique de l'ordre de fabrication

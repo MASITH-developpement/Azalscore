@@ -306,7 +306,7 @@ class AuditLogger:
             result: success, failure, pending
         """
         self.logger.info(
-            f"Audit: {action} {resource_type} {resource_id}",
+            "Audit: %s %s %s", action, resource_type, resource_id,
             tenant_id=tenant_id,
             user_id=user_id,
             operation=f"audit_{action}",
@@ -333,7 +333,7 @@ class AuditLogger:
         Critique pour la traçabilité des décisions sensibles.
         """
         self.logger.warning(
-            f"RED POINT: Decision {decision_id} - {action}",
+            "RED POINT: Decision %s - %s", decision_id, action,
             tenant_id=tenant_id,
             operation="red_point_action",
             extra_data={

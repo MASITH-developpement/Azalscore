@@ -37,6 +37,7 @@ import { PageWrapper, Card, Grid } from '@ui/layout';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
 import { Modal, Select, Input } from '@ui/forms';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 import { useAuth } from '@core/auth';
 
 // ============================================================
@@ -678,7 +679,7 @@ export const BankConnections: React.FC = () => {
     null
   );
 
-  const { data, isLoading } = useBankConnections();
+  const { data, isLoading, error: bankError, refetch: refetchBank } = useBankConnections();
   const createConnection = useCreateConnection();
   const syncConnection = useSyncConnection();
   const syncAll = useSyncAll();
@@ -757,6 +758,17 @@ export const BankConnections: React.FC = () => {
           <div className="azals-spinner" />
           <p>Chargement...</p>
         </div>
+      </PageWrapper>
+    );
+  }
+
+  if (bankError) {
+    return (
+      <PageWrapper title="Connexions bancaires">
+        <ErrorState
+          message={bankError instanceof Error ? bankError.message : undefined}
+          onRetry={() => { refetchBank(); }}
+        />
       </PageWrapper>
     );
   }

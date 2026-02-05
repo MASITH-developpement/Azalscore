@@ -85,7 +85,7 @@ class AIOrchestrator:
                 self._module_clients[AIModule.GPT] = OpenAI(api_key=openai_key)
                 logger.info("[ORCHESTRATOR] GPT client initialized")
             except Exception as e:
-                logger.warning(f"[ORCHESTRATOR] Failed to init GPT: {e}")
+                logger.warning("[ORCHESTRATOR] Failed to init GPT: %s", e)
 
         # Anthropic (Claude)
         anthropic_key = os.getenv("ANTHROPIC_API_KEY")
@@ -97,7 +97,7 @@ class AIOrchestrator:
                 )
                 logger.info("[ORCHESTRATOR] Claude client initialized")
             except Exception as e:
-                logger.warning(f"[ORCHESTRATOR] Failed to init Claude: {e}")
+                logger.warning("[ORCHESTRATOR] Failed to init Claude: %s", e)
 
     def call(self, request: AICallRequest) -> AICallResult:
         """

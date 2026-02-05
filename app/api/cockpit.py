@@ -5,6 +5,7 @@ API pour le tableau de bord exécutif.
 Données agrégées de tous les modules.
 """
 
+import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
@@ -16,6 +17,8 @@ from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/cockpit", tags=["Cockpit Dirigeant"])
 
@@ -131,7 +134,8 @@ def get_kpis(db: Session, tenant_id: str) -> list[DashboardKPI]:
             trend=round(trend, 1),
             status=status
         ))
-    except Exception:
+    except Exception as e:
+        logger.error("[COCKPIT] Échec calcul KPI revenue", extra={"kpi": "revenue", "error": str(e)[:200], "consequence": "fallback_zero"})
         kpis.append(DashboardKPI(id="revenue", label="CA du mois", value=0, unit="EUR", trend=0, status="green"))
 
     # Factures en attente
@@ -145,7 +149,8 @@ def get_kpis(db: Session, tenant_id: str) -> list[DashboardKPI]:
         pending_count = int(result.scalar() or 0)
         status = "green" if pending_count < 10 else "orange" if pending_count < 25 else "red"
         kpis.append(DashboardKPI(id="invoices", label="Factures en attente", value=pending_count, status=status))
-    except Exception:
+    except Exception as e:
+        logger.error("[COCKPIT] Échec calcul KPI invoices", extra={"kpi": "invoices", "error": str(e)[:200], "consequence": "fallback_zero"})
         kpis.append(DashboardKPI(id="invoices", label="Factures en attente", value=0, status="green"))
 
     # Trésorerie
@@ -157,7 +162,8 @@ def get_kpis(db: Session, tenant_id: str) -> list[DashboardKPI]:
         treasury = float(result.scalar() or 0)
         status = "green" if treasury > 10000 else "orange" if treasury > 0 else "red"
         kpis.append(DashboardKPI(id="treasury", label="Trésorerie", value=treasury, unit="EUR", status=status))
-    except Exception:
+    except Exception as e:
+        logger.error("[COCKPIT] Échec calcul KPI treasury", extra={"kpi": "treasury", "error": str(e)[:200], "consequence": "fallback_zero"})
         kpis.append(DashboardKPI(id="treasury", label="Trésorerie", value=0, unit="EUR", status="green"))
 
     # Impayés
@@ -172,7 +178,8 @@ def get_kpis(db: Session, tenant_id: str) -> list[DashboardKPI]:
         overdue = float(result.scalar() or 0)
         status = "green" if overdue == 0 else "orange" if overdue < 5000 else "red"
         kpis.append(DashboardKPI(id="overdue", label="Impayés", value=overdue, unit="EUR", status=status))
-    except Exception:
+    except Exception as e:
+        logger.error("[COCKPIT] Échec calcul KPI overdue", extra={"kpi": "overdue", "error": str(e)[:200], "consequence": "fallback_zero"})
         kpis.append(DashboardKPI(id="overdue", label="Impayés", value=0, unit="EUR", status="green"))
 
     return kpis
@@ -202,8 +209,8 @@ def get_alerts(db: Session, tenant_id: str) -> list[Alert]:
                 action_url="/invoicing?filter=overdue",
                 created_at=now
             ))
-    except Exception:
-        pass  # Non-critical: alertes ne bloquent pas le dashboard
+    except Exception as e:
+        logger.warning("[COCKPIT] Échec récupération alertes factures échues", extra={"alert": "overdue_invoices", "error": str(e)[:200], "consequence": "alert_skipped"})
 
     # Alertes factures à échéance proche
     try:
@@ -226,8 +233,8 @@ def get_alerts(db: Session, tenant_id: str) -> list[Alert]:
                 action_url="/invoicing?filter=due_soon",
                 created_at=now
             ))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("[COCKPIT] Échec récupération alertes échéances proches", extra={"alert": "invoices_due_soon", "error": str(e)[:200], "consequence": "alert_skipped"})
 
     # Alertes tickets support non résolus
     try:
@@ -247,8 +254,8 @@ def get_alerts(db: Session, tenant_id: str) -> list[Alert]:
                 action_url="/support?filter=urgent",
                 created_at=now
             ))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("[COCKPIT] Échec récupération alertes tickets support", extra={"alert": "urgent_tickets", "error": str(e)[:200], "consequence": "alert_skipped"})
 
     return alerts
 
@@ -274,7 +281,8 @@ def get_treasury_summary(db: Session, tenant_id: str) -> TreasurySummary:
         pending = float(result.scalar() or 0)
 
         return TreasurySummary(balance=balance, forecast_30d=forecast, pending_payments=pending)
-    except Exception:
+    except Exception as e:
+        logger.error("[COCKPIT] Échec calcul résumé trésorerie", extra={"section": "treasury_summary", "error": str(e)[:200], "consequence": "fallback_zero"})
         return TreasurySummary(balance=0, forecast_30d=0, pending_payments=0)
 
 
@@ -316,7 +324,8 @@ def get_sales_summary(db: Session, tenant_id: str) -> SalesSummary:
             pending_invoices=pending,
             overdue_invoices=overdue
         )
-    except Exception:
+    except Exception as e:
+        logger.error("[COCKPIT] Échec calcul résumé ventes", extra={"section": "sales_summary", "error": str(e)[:200], "consequence": "fallback_zero"})
         return SalesSummary(month_revenue=0, prev_month_revenue=0, pending_invoices=0, overdue_invoices=0)
 
 
@@ -342,7 +351,8 @@ def get_activity_summary(db: Session, tenant_id: str) -> ActivitySummary:
         interventions = int(result.scalar() or 0)
 
         return ActivitySummary(open_quotes=quotes, pending_orders=orders, scheduled_interventions=interventions)
-    except Exception:
+    except Exception as e:
+        logger.error("[COCKPIT] Échec calcul résumé activité", extra={"section": "activity_summary", "error": str(e)[:200], "consequence": "fallback_zero"})
         return ActivitySummary(open_quotes=0, pending_orders=0, scheduled_interventions=0)
 
 
@@ -399,8 +409,8 @@ def get_pending_decisions(
                 created_at=row[4],
                 action_url=f"/commercial/quotes/{row[0]}"
             ))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("[COCKPIT] Échec récupération devis en attente", extra={"decision": "quotes", "error": str(e)[:200], "consequence": "decision_skipped"})
 
     # Factures importantes à valider
     try:
@@ -424,8 +434,8 @@ def get_pending_decisions(
                 created_at=row[4],
                 action_url=f"/invoicing/{row[0]}"
             ))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("[COCKPIT] Échec récupération factures à valider", extra={"decision": "invoices", "error": str(e)[:200], "consequence": "decision_skipped"})
 
     # Tickets support critiques
     try:
@@ -448,8 +458,8 @@ def get_pending_decisions(
                 created_at=row[4],
                 action_url=f"/support/tickets/{row[0]}"
             ))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("[COCKPIT] Échec récupération tickets support critiques", extra={"decision": "support", "error": str(e)[:200], "consequence": "decision_skipped"})
 
     total = len(decisions)
     paginated = decisions[skip:skip + limit]

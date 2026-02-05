@@ -86,7 +86,7 @@ class GuardianService:
             self.db.add(config)
             self.db.commit()
             self.db.refresh(config)
-            logger.info(f"GUARDIAN config created for tenant {self.tenant_id}")
+            logger.info("GUARDIAN config created for tenant %s", self.tenant_id)
 
         self._config = config
         return config
@@ -106,7 +106,7 @@ class GuardianService:
         self.db.refresh(config)
         self._config = config
 
-        logger.info(f"GUARDIAN config updated for tenant {self.tenant_id}")
+        logger.info("GUARDIAN config updated for tenant %s", self.tenant_id)
         return config
 
     # =========================================================================
@@ -380,7 +380,7 @@ class GuardianService:
         env_allowed = error.environment.value in config.auto_correction_environments
         if not env_allowed:
             logger.info(
-                f"GUARDIAN: Auto-correction not allowed for environment {error.environment.value}"
+                "GUARDIAN: Auto-correction not allowed for environment %s", error.environment.value
             )
             return
 
@@ -400,12 +400,12 @@ class GuardianService:
         # Rechercher une règle applicable
         rule = self._find_applicable_rule(error)
         if not rule:
-            logger.debug(f"GUARDIAN: No applicable rule found for error {error.error_uid}")
+            logger.debug("GUARDIAN: No applicable rule found for error %s", error.error_uid)
             return
 
         # Vérifier le cooldown de la règle
         if not self._check_rule_cooldown(rule):
-            logger.info(f"GUARDIAN: Rule {rule.rule_uid} is in cooldown period")
+            logger.info("GUARDIAN: Rule %s is in cooldown period", rule.rule_uid)
             return
 
         # Créer l'entrée du registre AVANT d'appliquer la correction
@@ -606,7 +606,7 @@ class GuardianService:
                 rule.failed_executions += 1
 
         except Exception as e:
-            logger.exception(f"GUARDIAN: Error applying correction {registry.correction_uid}")
+            logger.exception("GUARDIAN: Error applying correction %s", registry.correction_uid)
             registry.status = CorrectionStatus.FAILED
             registry.correction_successful = False
             registry.correction_result = f"Exception: {str(e)}"
@@ -622,7 +622,7 @@ class GuardianService:
             self.db.commit()
 
             logger.info(
-                f"GUARDIAN: Correction {registry.correction_uid} completed",
+                "GUARDIAN: Correction %s completed", registry.correction_uid,
                 extra={
                     "status": registry.status.value,
                     "success": registry.correction_successful,
@@ -639,7 +639,7 @@ class GuardianService:
         action = registry.correction_action
         config = rule.action_config or {}
 
-        logger.info(f"GUARDIAN: Executing action {action.value}")
+        logger.info("GUARDIAN: Executing action %s", action.value)
 
         # Actions supportées
         action_handlers = {
@@ -657,7 +657,7 @@ class GuardianService:
         # Actions nécessitant validation manuelle
         if action in [CorrectionAction.SERVICE_RESTART, CorrectionAction.DATABASE_REPAIR,
                       CorrectionAction.DATA_MIGRATION, CorrectionAction.AUTO_FIX]:
-            logger.warning(f"GUARDIAN: Action {action.value} requires manual execution")
+            logger.warning("GUARDIAN: Action %s requires manual execution", action.value)
             registry.status = CorrectionStatus.BLOCKED
             self._update_decision_trail(registry, "BLOCKED", "GUARDIAN",
                                         f"Action {action.value} requires manual execution")
@@ -758,7 +758,7 @@ class GuardianService:
         except Exception as e:
             test.result = TestResult.ERROR
             test.error_message = str(e)
-            logger.exception(f"GUARDIAN: Test {test_type} failed with exception")
+            logger.exception("GUARDIAN: Test %s failed with exception", test_type)
 
         finally:
             test.completed_at = datetime.utcnow()
@@ -820,7 +820,7 @@ class GuardianService:
         via les champs rolled_back, rollback_at, rollback_reason.
         """
         logger.warning(
-            f"GUARDIAN: Performing rollback for correction {registry.correction_uid}",
+            "GUARDIAN: Performing rollback for correction %s", registry.correction_uid,
             extra={"reason": reason, "tenant_id": self.tenant_id}
         )
 
@@ -909,8 +909,9 @@ class GuardianService:
         self.db.refresh(registry)
 
         logger.info(
-            f"GUARDIAN: Correction {registry.correction_uid} "
-            f"{'approved' if approved else 'rejected'} by user {user_id}"
+            "GUARDIAN: Correction %s "
+            "%s by user %s",
+            registry.correction_uid, 'approved' if approved else 'rejected', user_id
         )
 
         return registry

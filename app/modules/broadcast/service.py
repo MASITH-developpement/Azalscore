@@ -6,12 +6,15 @@ Service métier pour la gestion des diffusions automatiques.
 """
 
 import json
+import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     BroadcastExecution,
@@ -867,8 +870,15 @@ class BroadcastService:
             try:
                 hour, minute = map(int, broadcast.send_time.split(":"))
                 next_run = next_run.replace(hour=hour, minute=minute, second=0)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "[BROADCAST_SCHEDULE] Format send_time invalide",
+                    extra={
+                        "send_time": str(broadcast.send_time),
+                        "error": str(e)[:200],
+                        "consequence": "default_time_used"
+                    }
+                )
 
         # S'assurer que c'est dans le futur
         if next_run <= now:

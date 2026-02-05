@@ -220,47 +220,6 @@ export const CASH_MOVEMENT_TYPE_CONFIG: Record<CashMovement['type'], { label: st
 // ============================================================================
 
 /**
- * Formater un montant en euros
- */
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(amount);
-};
-
-/**
- * Formater une date
- */
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formater une date et heure
- */
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formater une heure
- */
-export const formatTime = (date: string): string => {
-  return new Date(date).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-/**
- * Formater un pourcentage
- */
-export const formatPercent = (value: number): string => {
-  return `${value.toFixed(1)}%`;
-};
-
-/**
  * Formater un nombre
  */
 export const formatNumber = (value: number): string => {

@@ -466,8 +466,9 @@ class OCRService:
         self.db.refresh(ocr_result)
 
         logger.info(
-            f"OCR completed for document {document_id} "
-            f"with confidence {overall_confidence}%"
+            "OCR completed for document %s "
+            "with confidence %s%%",
+            document_id, overall_confidence
         )
 
         return ocr_result

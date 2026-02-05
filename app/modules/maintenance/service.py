@@ -347,21 +347,9 @@ class MaintenanceService:
 
     def _generate_wo_number(self) -> str:
         """Générer un numéro d'ordre de travail."""
-        today = date.today()
-        prefix = f"WO-{today.strftime('%Y%m')}"
-
-        last_wo = self.db.query(WorkOrder).filter(
-            WorkOrder.tenant_id == self.tenant_id,
-            WorkOrder.wo_number.like(f"{prefix}%")
-        ).order_by(desc(WorkOrder.wo_number)).first()
-
-        if last_wo:
-            last_num = int(last_wo.wo_number.split("-")[-1])
-            new_num = last_num + 1
-        else:
-            new_num = 1
-
-        return f"{prefix}-{new_num:04d}"
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, str(self.tenant_id))
+        return seq.next_reference("ORDRE_MAINTENANCE")
 
     def create_work_order(self, data: WorkOrderCreate) -> WorkOrder:
         """Créer un ordre de travail."""

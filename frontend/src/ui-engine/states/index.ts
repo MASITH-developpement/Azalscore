@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import type { ModuleInfo, Tenant } from '@/types';
 import { api } from '@core/api-client';
+import { logError } from '@core/error-handling';
 
 // ============================================================
 // UI GLOBAL STATE
@@ -180,8 +181,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         ),
         unreadCount: Math.max(0, state.unreadCount - 1),
       }));
-    } catch {
-      // Ignore
+    } catch (error) {
+      logError(error, 'UIStates.retryAction');
     }
   },
 
@@ -192,8 +193,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         notifications: state.notifications.map((n) => ({ ...n, read: true })),
         unreadCount: 0,
       }));
-    } catch {
-      // Ignore
+    } catch (error) {
+      logError(error, 'UIStates.retryAll');
     }
   },
 }));

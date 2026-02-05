@@ -195,18 +195,6 @@ export const STATUS_CONFIG = {
 // HELPERS
 // ============================================================================
 
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-export const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
 export const getPartnerAge = (partner: Partner): string => {
   const created = new Date(partner.created_at);
   const now = new Date();

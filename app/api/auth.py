@@ -10,7 +10,7 @@ SÉCURITÉ P1-4: Rate limiting distribué via Redis en production.
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -73,6 +73,11 @@ class UserLogin(BaseModel):
     """Schéma pour la connexion."""
     email: EmailStr
     password: str
+
+    @field_validator('password', mode='before')
+    @classmethod
+    def strip_password(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
 
 
 class TokenResponse(BaseModel):
@@ -218,6 +223,14 @@ def login(
     client_ip = get_client_ip(request)
     auth_rate_limiter.check_login_rate(client_ip, user_data.email)
 
+    # DEBUG TEMPORAIRE: diagnostiquer les échecs de login navigateur
+    import logging
+    _login_logger = logging.getLogger("app.auth.login_debug")
+    _login_logger.warning(
+        f"[LOGIN_DEBUG] email='{user_data.email}' email_len={len(user_data.email)} "
+        f"pwd_len={len(user_data.password)} tenant={tenant_id} ip={client_ip}"
+    )
+
     # SÉCURITÉ P0-3: Recherche de l'utilisateur DANS LE TENANT UNIQUEMENT
     # Correction: ajout du filtre tenant_id pour isolation multi-tenant
     user = db.query(User).filter(
@@ -227,6 +240,7 @@ def login(
 
     if not user:
         # Enregistrer l'échec (timing constant pour éviter user enumeration)
+        _login_logger.warning(f"[LOGIN_DEBUG] USER NOT FOUND for email='{user_data.email}' tenant={tenant_id}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -235,6 +249,7 @@ def login(
 
     # Vérification du mot de passe
     if not verify_password(user_data.password, user.password_hash):
+        _login_logger.warning(f"[LOGIN_DEBUG] PASSWORD MISMATCH for email='{user_data.email}' pwd_len={len(user_data.password)}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -682,7 +697,7 @@ def refresh_access_token(
             payload = decode_access_token(data.refresh_token)
         except Exception as decode_error:
             logger.warning(
-                f"[GUARDIAN] Refresh token decode failed: {decode_error}",
+                "[GUARDIAN] Refresh token decode failed: %s", decode_error,
                 extra={
                     "client_ip": client_ip,
                     "error_type": "token_decode_error",
@@ -735,7 +750,7 @@ def refresh_access_token(
             user = db.query(User).filter(User.id == int(user_id)).first()
         except Exception as db_error:
             logger.error(
-                f"[GUARDIAN] Database error during refresh: {db_error}",
+                "[GUARDIAN] Database error during refresh: %s", db_error,
                 extra={
                     "client_ip": client_ip,
                     "user_id": user_id,
@@ -751,7 +766,7 @@ def refresh_access_token(
 
         if not user:
             logger.warning(
-                f"[GUARDIAN] Refresh token for non-existent user: {user_id}",
+                "[GUARDIAN] Refresh token for non-existent user: %s", user_id,
                 extra={"client_ip": client_ip, "user_id": user_id, "path": "/auth/refresh"}
             )
             raise HTTPException(
@@ -761,7 +776,7 @@ def refresh_access_token(
 
         if not user.is_active:
             logger.warning(
-                f"[GUARDIAN] Refresh token for inactive user: {user_id}",
+                "[GUARDIAN] Refresh token for inactive user: %s", user_id,
                 extra={"client_ip": client_ip, "user_id": user_id, "path": "/auth/refresh"}
             )
             raise HTTPException(
@@ -790,7 +805,7 @@ def refresh_access_token(
             )
         except Exception as token_error:
             logger.error(
-                f"[GUARDIAN] Token creation failed: {token_error}",
+                "[GUARDIAN] Token creation failed: %s", token_error,
                 extra={
                     "client_ip": client_ip,
                     "user_id": str(user.id),
@@ -805,7 +820,7 @@ def refresh_access_token(
             )
 
         logger.info(
-            f"[GUARDIAN] Token refreshed successfully for user: {user.id}",
+            "[GUARDIAN] Token refreshed successfully for user: %s", user.id,
             extra={"client_ip": client_ip, "user_id": str(user.id)}
         )
 
@@ -821,7 +836,7 @@ def refresh_access_token(
     except Exception as unexpected_error:
         # GUARDIAN: Catch-all - JAMAIS de 500 sur /auth/refresh
         logger.error(
-            f"[GUARDIAN] UNEXPECTED error in refresh endpoint: {unexpected_error}",
+            "[GUARDIAN] UNEXPECTED error in refresh endpoint: %s", unexpected_error,
             extra={
                 "client_ip": client_ip,
                 "error_type": "unexpected_error",
@@ -881,7 +896,7 @@ def get_current_user_info(
     except Exception as e:
         # GUARDIAN: Log l'erreur mais retourne 401, pas 500
         logger.error(
-            f"[GUARDIAN] Unexpected error in /auth/me: {e}",
+            "[GUARDIAN] Unexpected error in /auth/me: %s", e,
             extra={
                 "client_ip": client_ip,
                 "error_type": "unexpected_error",
@@ -911,6 +926,8 @@ def get_user_capabilities(
         "partners.clients.view", "partners.clients.create", "partners.clients.edit", "partners.clients.delete",
         "partners.suppliers.view", "partners.suppliers.create", "partners.suppliers.edit", "partners.suppliers.delete",
         "partners.contacts.view", "partners.contacts.create", "partners.contacts.edit", "partners.contacts.delete",
+        # Contacts Unifiés (module contacts)
+        "contacts.view", "contacts.create", "contacts.edit", "contacts.delete",
         # Invoicing - generiques ET specifiques par type (quotes, invoices, credits)
         "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete", "invoicing.send",
         "invoicing.quotes.view", "invoicing.quotes.create", "invoicing.quotes.edit", "invoicing.quotes.delete", "invoicing.quotes.send",
@@ -926,6 +943,11 @@ def get_user_capabilities(
         "purchases.orders.view", "purchases.orders.create", "purchases.orders.edit", "purchases.orders.delete",
         # Projects
         "projects.view", "projects.create", "projects.edit", "projects.delete",
+        # HR - Ressources Humaines
+        "hr.view", "hr.create", "hr.edit", "hr.delete",
+        "hr.employees.view", "hr.employees.create", "hr.employees.edit", "hr.employees.delete",
+        "hr.payroll.view", "hr.payroll.create", "hr.payroll.edit",
+        "hr.leave.view", "hr.leave.create", "hr.leave.approve",
         # Interventions - generiques ET specifiques (tickets)
         "interventions.view", "interventions.create", "interventions.edit",
         "interventions.tickets.view", "interventions.tickets.create", "interventions.tickets.edit", "interventions.tickets.delete",
@@ -941,6 +963,29 @@ def get_user_capabilities(
         "payments.view", "payments.create",
         # Mobile
         "mobile.view",
+        # Inventory - Stock
+        "inventory.view", "inventory.create", "inventory.edit", "inventory.delete",
+        "inventory.warehouses.view", "inventory.warehouses.create", "inventory.warehouses.edit",
+        "inventory.products.view", "inventory.products.create", "inventory.products.edit",
+        "inventory.movements.view", "inventory.movements.create",
+        # Production
+        "production.view", "production.create", "production.edit", "production.delete",
+        # Quality
+        "quality.view", "quality.create", "quality.edit",
+        # Maintenance (GMAO)
+        "maintenance.view", "maintenance.create", "maintenance.edit", "maintenance.delete",
+        # Point de Vente (POS)
+        "pos.view", "pos.create", "pos.edit",
+        # Abonnements
+        "subscriptions.view", "subscriptions.create", "subscriptions.edit", "subscriptions.delete",
+        # Helpdesk
+        "helpdesk.view", "helpdesk.create", "helpdesk.edit",
+        # Business Intelligence
+        "bi.view", "bi.create", "bi.edit",
+        # Conformité
+        "compliance.view", "compliance.edit",
+        # CRM
+        "crm.view", "crm.create", "crm.edit", "crm.delete",
         # Admin - avec create pour roles
         "admin.view", "admin.users.view", "admin.users.create", "admin.users.edit", "admin.users.delete",
         "admin.roles.view", "admin.roles.create", "admin.roles.edit", "admin.roles.delete",

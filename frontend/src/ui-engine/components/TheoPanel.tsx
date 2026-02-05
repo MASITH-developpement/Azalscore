@@ -24,251 +24,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useTheo, type TheoMessage, type TheoState } from '@core/theo';
-
-// ============================================================
-// STYLES (inline pour éviter les conflits)
-// ============================================================
-
-const styles = {
-  panel: {
-    position: 'fixed' as const,
-    bottom: '20px',
-    right: '20px',
-    width: '400px',
-    maxHeight: '600px',
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    zIndex: 9998,
-    overflow: 'hidden',
-    transition: 'all 0.3s ease',
-  },
-  panelMinimized: {
-    height: '60px',
-    maxHeight: '60px',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '16px 20px',
-    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-    color: '#ffffff',
-  },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  headerIcon: {
-    width: '32px',
-    height: '32px',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: '10px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontWeight: 600,
-    fontSize: '16px',
-    margin: 0,
-  },
-  headerSubtitle: {
-    fontSize: '12px',
-    opacity: 0.8,
-    margin: 0,
-  },
-  headerActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  headerBtn: {
-    width: '32px',
-    height: '32px',
-    border: 'none',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: '8px',
-    color: '#ffffff',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background-color 0.2s',
-  },
-  messages: {
-    flex: 1,
-    overflowY: 'auto' as const,
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-    maxHeight: '400px',
-    minHeight: '200px',
-  },
-  messageWrapper: {
-    display: 'flex',
-    gap: '10px',
-    maxWidth: '90%',
-  },
-  messageUser: {
-    alignSelf: 'flex-end' as const,
-    flexDirection: 'row-reverse' as const,
-  },
-  messageTheo: {
-    alignSelf: 'flex-start' as const,
-  },
-  messageAvatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarUser: {
-    backgroundColor: '#e0e7ff',
-    color: '#4f46e5',
-  },
-  avatarTheo: {
-    backgroundColor: '#f3e8ff',
-    color: '#9333ea',
-  },
-  avatarSystem: {
-    backgroundColor: '#fee2e2',
-    color: '#dc2626',
-  },
-  messageBubble: {
-    padding: '12px 16px',
-    borderRadius: '16px',
-    fontSize: '14px',
-    lineHeight: '1.5',
-  },
-  bubbleUser: {
-    backgroundColor: '#4f46e5',
-    color: '#ffffff',
-    borderBottomRightRadius: '4px',
-  },
-  bubbleTheo: {
-    backgroundColor: '#f3f4f6',
-    color: '#1f2937',
-    borderBottomLeftRadius: '4px',
-  },
-  bubbleSystem: {
-    backgroundColor: '#fef2f2',
-    color: '#991b1b',
-    borderBottomLeftRadius: '4px',
-  },
-  timestamp: {
-    fontSize: '11px',
-    color: '#9ca3af',
-    marginTop: '4px',
-  },
-  inputArea: {
-    padding: '16px',
-    borderTop: '1px solid #e5e7eb',
-    backgroundColor: '#fafafa',
-  },
-  inputWrapper: {
-    display: 'flex',
-    alignItems: 'flex-end',
-    gap: '10px',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    border: '2px solid #e5e7eb',
-    padding: '8px 12px',
-    transition: 'border-color 0.2s',
-  },
-  inputWrapperFocused: {
-    borderColor: '#6366f1',
-  },
-  input: {
-    flex: 1,
-    border: 'none',
-    outline: 'none',
-    fontSize: '14px',
-    resize: 'none' as const,
-    maxHeight: '100px',
-    minHeight: '24px',
-    fontFamily: 'inherit',
-    backgroundColor: 'transparent',
-  },
-  sendBtn: {
-    width: '36px',
-    height: '36px',
-    border: 'none',
-    backgroundColor: '#4f46e5',
-    borderRadius: '10px',
-    color: '#ffffff',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.2s',
-    flexShrink: 0,
-  },
-  sendBtnDisabled: {
-    backgroundColor: '#d1d5db',
-    cursor: 'not-allowed',
-  },
-  stateIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
-    fontSize: '13px',
-    color: '#6b7280',
-  },
-  confirmationBox: {
-    display: 'flex',
-    gap: '8px',
-    marginTop: '8px',
-  },
-  confirmBtn: {
-    padding: '8px 16px',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    transition: 'all 0.2s',
-  },
-  confirmBtnYes: {
-    backgroundColor: '#10b981',
-    color: '#ffffff',
-  },
-  confirmBtnNo: {
-    backgroundColor: '#ef4444',
-    color: '#ffffff',
-  },
-  emptyState: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 20px',
-    textAlign: 'center' as const,
-    color: '#6b7280',
-  },
-  emptyIcon: {
-    width: '64px',
-    height: '64px',
-    backgroundColor: '#f3e8ff',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '16px',
-    color: '#9333ea',
-  },
-};
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // ============================================================
 // STATE INDICATOR
@@ -280,7 +36,7 @@ const StateIndicator: React.FC<{ state: TheoState }> = ({ state }) => {
   const indicators: Record<TheoState, { icon: React.ReactNode; text: string }> = {
     idle: { icon: null, text: '' },
     listening: { icon: <MessageSquare size={14} />, text: 'En écoute...' },
-    thinking: { icon: <Loader2 size={14} className="animate-spin" />, text: 'Theo réfléchit...' },
+    thinking: { icon: <Loader2 size={14} className="azals-spin" />, text: 'Theo réfléchit...' },
     responding: { icon: <Bot size={14} />, text: 'Theo répond...' },
     clarifying: { icon: <AlertCircle size={14} />, text: 'Clarification requise' },
     error: { icon: <AlertCircle size={14} />, text: 'Erreur' },
@@ -289,7 +45,7 @@ const StateIndicator: React.FC<{ state: TheoState }> = ({ state }) => {
   const { icon, text } = indicators[state];
 
   return (
-    <div style={styles.stateIndicator}>
+    <div className="azals-theo-state">
       {icon}
       <span>{text}</span>
     </div>
@@ -310,20 +66,7 @@ const Message: React.FC<MessageProps> = ({ message, onConfirm, showConfirmation 
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
 
-  const wrapperStyle = {
-    ...styles.messageWrapper,
-    ...(isUser ? styles.messageUser : styles.messageTheo),
-  };
-
-  const avatarStyle = {
-    ...styles.messageAvatar,
-    ...(isUser ? styles.avatarUser : isSystem ? styles.avatarSystem : styles.avatarTheo),
-  };
-
-  const bubbleStyle = {
-    ...styles.messageBubble,
-    ...(isUser ? styles.bubbleUser : isSystem ? styles.bubbleSystem : styles.bubbleTheo),
-  };
+  const roleModifier = isUser ? 'user' : isSystem ? 'system' : 'theo';
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('fr-FR', {
@@ -333,25 +76,40 @@ const Message: React.FC<MessageProps> = ({ message, onConfirm, showConfirmation 
   };
 
   return (
-    <div style={wrapperStyle}>
-      <div style={avatarStyle}>
+    <div
+      className={clsx(
+        'azals-theo-message',
+        `azals-theo-message--${roleModifier}`
+      )}
+    >
+      <div
+        className={clsx(
+          'azals-theo-message__avatar',
+          `azals-theo-message__avatar--${roleModifier}`
+        )}
+      >
         {isUser ? <User size={16} /> : isSystem ? <AlertCircle size={16} /> : <Bot size={16} />}
       </div>
       <div>
-        <div style={bubbleStyle}>
+        <div
+          className={clsx(
+            'azals-theo-message__bubble',
+            `azals-theo-message__bubble--${roleModifier}`
+          )}
+        >
           {message.content}
         </div>
         {showConfirmation && message.metadata?.requires_confirmation && onConfirm && (
-          <div style={styles.confirmationBox}>
+          <div className="azals-theo-confirmation">
             <button
-              style={{ ...styles.confirmBtn, ...styles.confirmBtnYes }}
+              className="azals-theo-confirmation__btn azals-theo-confirmation__btn--yes"
               onClick={() => onConfirm(true)}
             >
               <CheckCircle size={14} />
               Confirmer
             </button>
             <button
-              style={{ ...styles.confirmBtn, ...styles.confirmBtnNo }}
+              className="azals-theo-confirmation__btn azals-theo-confirmation__btn--no"
               onClick={() => onConfirm(false)}
             >
               <XCircle size={14} />
@@ -359,7 +117,7 @@ const Message: React.FC<MessageProps> = ({ message, onConfirm, showConfirmation 
             </button>
           </div>
         )}
-        <div style={styles.timestamp}>{formatTime(message.timestamp)}</div>
+        <div className="azals-theo-message__timestamp">{formatTime(message.timestamp)}</div>
       </div>
     </div>
   );
@@ -387,8 +145,11 @@ export const TheoPanel: React.FC = () => {
 
   const [input, setInput] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useFocusTrap(panelRef, { enabled: isOpen, onEscape: close });
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -424,56 +185,64 @@ export const TheoPanel: React.FC = () => {
 
   if (!isOpen) return null;
 
-  const panelStyle = {
-    ...styles.panel,
-    ...(isMinimized ? styles.panelMinimized : {}),
-  };
-
   return (
-    <div style={panelStyle} role="dialog" aria-label="Assistant IA Theo">
+    <div
+      ref={panelRef}
+      className={clsx(
+        'azals-theo-panel',
+        isMinimized && 'azals-theo-panel--minimized'
+      )}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Assistant IA Theo"
+    >
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <div style={styles.headerIcon}>
+      <div className="azals-theo-header">
+        <div className="azals-theo-header__left">
+          <div className="azals-theo-header__icon">
             <Sparkles size={18} />
           </div>
           <div>
-            <h3 style={styles.headerTitle}>Theo</h3>
+            <h3 className="azals-theo-header__title">Theo</h3>
             {!isMinimized && (
-              <p style={styles.headerSubtitle}>Assistant IA AZALSCORE</p>
+              <p className="azals-theo-header__subtitle">Assistant IA AZALSCORE</p>
             )}
           </div>
         </div>
-        <div style={styles.headerActions}>
+        <div className="azals-theo-header__actions">
           {!isMinimized && (
             <>
               <button
-                style={styles.headerBtn}
+                className="azals-theo-header__btn"
                 onClick={handleNewSession}
                 title="Nouvelle conversation"
+                aria-label="Nouvelle conversation"
               >
                 <RefreshCw size={16} />
               </button>
               <button
-                style={styles.headerBtn}
+                className="azals-theo-header__btn"
                 onClick={clearMessages}
                 title="Effacer les messages"
+                aria-label="Effacer les messages"
               >
                 <Trash2 size={16} />
               </button>
             </>
           )}
           <button
-            style={styles.headerBtn}
+            className="azals-theo-header__btn"
             onClick={isMinimized ? maximize : minimize}
             title={isMinimized ? 'Agrandir' : 'Réduire'}
+            aria-label={isMinimized ? 'Agrandir' : 'Réduire'}
           >
             {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
           </button>
           <button
-            style={styles.headerBtn}
+            className="azals-theo-header__btn"
             onClick={close}
             title="Fermer"
+            aria-label="Fermer l'assistant"
           >
             <X size={16} />
           </button>
@@ -484,14 +253,14 @@ export const TheoPanel: React.FC = () => {
       {!isMinimized && (
         <>
           {/* Messages */}
-          <div style={styles.messages}>
+          <div className="azals-theo-messages">
             {messages.length === 0 ? (
-              <div style={styles.emptyState}>
-                <div style={styles.emptyIcon}>
+              <div className="azals-theo-empty">
+                <div className="azals-theo-empty__icon">
                   <Bot size={32} />
                 </div>
-                <p style={{ margin: 0, fontWeight: 500 }}>Bienvenue !</p>
-                <p style={{ margin: '8px 0 0', fontSize: '13px' }}>
+                <p className="azals-theo-empty__title">Bienvenue !</p>
+                <p className="azals-theo-empty__description">
                   Posez votre question ou décrivez ce que vous souhaitez faire.
                 </p>
               </div>
@@ -514,16 +283,16 @@ export const TheoPanel: React.FC = () => {
           <StateIndicator state={state} />
 
           {/* Input Area */}
-          <div style={styles.inputArea}>
+          <div className="azals-theo-input-area">
             <div
-              style={{
-                ...styles.inputWrapper,
-                ...(inputFocused ? styles.inputWrapperFocused : {}),
-              }}
+              className={clsx(
+                'azals-theo-input-wrapper',
+                inputFocused && 'azals-theo-input-wrapper--focused'
+              )}
             >
               <textarea
                 ref={inputRef}
-                style={styles.input}
+                className="azals-theo-input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -534,16 +303,14 @@ export const TheoPanel: React.FC = () => {
                 disabled={state === 'thinking'}
               />
               <button
-                style={{
-                  ...styles.sendBtn,
-                  ...((!input.trim() || state === 'thinking') ? styles.sendBtnDisabled : {}),
-                }}
+                className="azals-theo-send-btn"
                 onClick={handleSend}
                 disabled={!input.trim() || state === 'thinking'}
                 title="Envoyer"
+                aria-label="Envoyer le message"
               >
                 {state === 'thinking' ? (
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={18} className="azals-spin" />
                 ) : (
                   <Send size={18} />
                 )}

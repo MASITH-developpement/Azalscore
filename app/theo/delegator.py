@@ -73,7 +73,7 @@ class TheoDelegator:
         for adapter in adapters:
             self._registry.register(adapter)
 
-        logger.info(f"[Delegator] Initialized {len(adapters)} adapters")
+        logger.info("[Delegator] Initialized %s adapters", len(adapters))
 
     async def delegate(
         self,
@@ -90,7 +90,7 @@ class TheoDelegator:
         Returns:
             AdapterResult avec le message vocal
         """
-        logger.info(f"[Delegator] Processing intent: {intent.category}/{intent.action}")
+        logger.info("[Delegator] Processing intent: %s/%s", intent.category, intent.action)
 
         # 1. Trouver l'adapter et l'action
         adapter_name, action_name = self._resolve_adapter(intent)
@@ -104,7 +104,7 @@ class TheoDelegator:
         # 2. Récupérer l'adapter
         adapter = self._registry.get(adapter_name)
         if not adapter:
-            logger.error(f"[Delegator] Adapter not found: {adapter_name}")
+            logger.error("[Delegator] Adapter not found: %s", adapter_name)
             return AdapterResult(
                 status=ActionStatus.ERROR,
                 message="Module indisponible"
@@ -116,11 +116,11 @@ class TheoDelegator:
         # 4. Exécuter
         try:
             result = await adapter.execute(action_name, params, context)
-            logger.info(f"[Delegator] Result: {result.status}")
+            logger.info("[Delegator] Result: %s", result.status)
             return result
 
         except Exception as e:
-            logger.error(f"[Delegator] Execution error: {e}")
+            logger.error("[Delegator] Execution error: %s", e)
             return AdapterResult(
                 status=ActionStatus.ERROR,
                 message=f"Erreur lors de l'exécution: {str(e)}"

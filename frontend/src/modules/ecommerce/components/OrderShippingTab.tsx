@@ -9,9 +9,10 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Order } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 import {
   ORDER_STATUS_CONFIG, SHIPPING_STATUS_CONFIG, CARRIERS,
-  formatDateTime, canShipOrder
+  canShipOrder
 } from '../types';
 
 /**

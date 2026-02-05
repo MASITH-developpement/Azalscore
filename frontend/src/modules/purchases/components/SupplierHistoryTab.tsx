@@ -8,7 +8,8 @@ import { Clock, User, Edit, Plus, CheckCircle2, XCircle, ArrowRight } from 'luci
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Supplier, PurchaseHistoryEntry } from '../types';
-import { formatDateTime, SUPPLIER_STATUS_CONFIG } from '../types';
+import { SUPPLIER_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * SupplierHistoryTab - Historique

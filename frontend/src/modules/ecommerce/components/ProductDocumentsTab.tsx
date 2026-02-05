@@ -9,7 +9,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Product } from '../types';
-import { formatFileSize, formatDateTime } from '../types';
+import { formatFileSize } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * ProductDocumentsTab - Documents et images

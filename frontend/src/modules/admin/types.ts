@@ -207,37 +207,6 @@ export const PERMISSION_CATEGORY_CONFIG: Record<string, { label: string; color: 
 // ============================================================================
 
 /**
- * Formater une date
- */
-export const formatDate = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formater une date/heure
- */
-export const formatDateTime = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formater heure uniquement
- */
-export const formatTime = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-};
-
-/**
- * Formater un pourcentage
- */
-export const formatPercent = (value: number): string => {
-  return `${Math.round(value)}%`;
-};
-
-/**
  * Formater des bytes
  */
 export const formatBytes = (bytes: number): string => {

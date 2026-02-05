@@ -145,7 +145,7 @@ class NavigationAdapter(BaseAdapter):
         context: Dict[str, Any]
     ) -> AdapterResult:
         """Exécute une action de navigation."""
-        logger.info(f"[NavigationAdapter] Execute: {action_name} with {params}")
+        logger.info("[NavigationAdapter] Execute: %s with %s", action_name, params)
 
         handlers = {
             "aller_a": self._handle_aller_a,
@@ -162,7 +162,7 @@ class NavigationAdapter(BaseAdapter):
         try:
             return await handler(params, context)
         except Exception as e:
-            logger.error(f"[NavigationAdapter] Error: {e}")
+            logger.error("[NavigationAdapter] Error: %s", e)
             return self._voice_error(f"Erreur: {str(e)}")
 
     async def confirm(

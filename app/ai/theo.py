@@ -115,7 +115,7 @@ class TheoInterface:
             "pending_intention": None
         }
 
-        logger.info(f"[THEO] New session started: {session_id}")
+        logger.info("[THEO] New session started: %s", session_id)
 
         return session_id
 
@@ -435,7 +435,7 @@ class TheoInterface:
                 response_message = self._build_response(intention, actions_taken)
 
             except Exception as e:
-                logger.error(f"[THEO] Error processing intention: {e}")
+                logger.error("[THEO] Error processing intention: %s", e)
                 return TheoResponse(
                     session_id=session_id,
                     message=f"Une erreur s'est produite lors du traitement: {str(e)}",
@@ -497,7 +497,7 @@ class TheoInterface:
         if session_id in self._sessions:
             self._sessions[session_id]["ended_at"] = datetime.utcnow().isoformat()
             self._sessions[session_id]["state"] = ConversationState.COMPLETED
-            logger.info(f"[THEO] Session ended: {session_id}")
+            logger.info("[THEO] Session ended: %s", session_id)
             return True
         return False
 

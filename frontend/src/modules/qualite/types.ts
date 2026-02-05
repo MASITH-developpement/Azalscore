@@ -226,28 +226,6 @@ export const INSPECTION_STATUSES = [
 // ============================================================
 
 /**
- * Formatage date
- */
-export const formatDate = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formatage date/heure
- */
-export const formatDateTime = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formatage monnaie
- */
-export const formatCurrency = (value: number): string =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
-
-/**
  * Obtenir la configuration du type de NC
  */
 export const getNCTypeConfig = (type: NCType) => {

@@ -15,6 +15,7 @@ import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard, MetricComparison } from '@ui/dashboards';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
+import { ErrorState } from '../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES
@@ -131,7 +132,7 @@ const useBalance = (period?: string) => {
 
 export const AccountingDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { data: summary, isLoading } = useAccountingSummary();
+  const { data: summary, isLoading, error, refetch } = useAccountingSummary();
 
   const formatCurrency = (value: number, currency = 'EUR') =>
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value);
@@ -179,6 +180,8 @@ export const AccountingDashboard: React.FC = () => {
         <div className="azals-loading">
           <div className="azals-spinner" />
         </div>
+      ) : error ? (
+        <ErrorState message={error instanceof Error ? error.message : undefined} onRetry={() => refetch()} />
       ) : (
         <>
           <section className="azals-section">
@@ -262,7 +265,7 @@ export const JournalPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
-  const { data, isLoading, refetch } = useJournalEntries(page, pageSize);
+  const { data, isLoading, error, refetch } = useJournalEntries(page, pageSize);
 
   const columns: TableColumn<JournalEntry>[] = [
     {
@@ -346,6 +349,8 @@ export const JournalPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
           emptyMessage="Aucune écriture"
         />
       </Card>
@@ -358,7 +363,7 @@ export const JournalPage: React.FC = () => {
 // ============================================================
 
 export const LedgerPage: React.FC = () => {
-  const { data, isLoading } = useLedger();
+  const { data, isLoading, error, refetch } = useLedger();
 
   const columns: TableColumn<LedgerAccount>[] = [
     {
@@ -422,6 +427,8 @@ export const LedgerPage: React.FC = () => {
           data={data?.items || []}
           keyField="account_number"
           isLoading={isLoading}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
           emptyMessage="Aucun compte"
         />
       </Card>
@@ -434,7 +441,7 @@ export const LedgerPage: React.FC = () => {
 // ============================================================
 
 export const BalancePage: React.FC = () => {
-  const { data, isLoading } = useBalance();
+  const { data, isLoading, error, refetch } = useBalance();
 
   const columns: TableColumn<BalanceEntry>[] = [
     {
@@ -501,6 +508,8 @@ export const BalancePage: React.FC = () => {
           data={data?.items || []}
           keyField="account_number"
           isLoading={isLoading}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
           emptyMessage="Aucune donnée"
         />
       </Card>

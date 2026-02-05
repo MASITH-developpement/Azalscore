@@ -8,7 +8,8 @@ import { Clock, User, CheckCircle2, Truck, CreditCard, XCircle, ArrowRight, Pack
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Order, OrderHistoryEntry } from '../types';
-import { formatDateTime, ORDER_STATUS_CONFIG } from '../types';
+import { ORDER_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * OrderHistoryTab - Historique

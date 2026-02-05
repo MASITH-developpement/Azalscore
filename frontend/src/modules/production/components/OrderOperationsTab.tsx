@@ -12,8 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { ProductionOrder, WorkOrder } from '../types';
+import { formatDuration, formatDateTime } from '@/utils/formatters';
 import {
-  formatDuration, formatDateTime,
   WORK_ORDER_STATUS_CONFIG
 } from '../types';
 

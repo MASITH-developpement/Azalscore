@@ -12,9 +12,10 @@ import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Subscription } from '../types';
 import {
-  formatCurrency, getMonthlyEquivalent, getYearlyEquivalent,
+  getMonthlyEquivalent, getYearlyEquivalent,
   INTERVAL_CONFIG
 } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * SubscriptionPlanTab - Details du plan

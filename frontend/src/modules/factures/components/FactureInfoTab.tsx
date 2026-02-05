@@ -12,9 +12,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Facture } from '../types';
 import {
-  formatDate, formatCurrency, STATUS_CONFIG, TYPE_CONFIG,
+  STATUS_CONFIG, TYPE_CONFIG,
   PAYMENT_METHODS, isOverdue, getDaysUntilDue
 } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 
 /**
  * FactureInfoTab - Informations générales de la facture

@@ -153,9 +153,10 @@ class AIAuditLogger:
         self._write_to_file(event)
 
         logger.info(
-            f"[AUDIT] {event.event_type.value}: {event.source_module} -> "
-            f"{event.target_module or 'N/A'} | {event.action} | "
-            f"{'SUCCESS' if event.success else 'FAILED'}"
+            "[AUDIT] %s: %s -> "
+            "%s | %s | "
+            "%s",
+            event.event_type.value, event.source_module, event.target_module or 'N/A', event.action, 'SUCCESS' if event.success else 'FAILED'
         )
 
         return event.id

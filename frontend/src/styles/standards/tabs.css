@@ -250,7 +250,7 @@
    RESPONSIVE
    ============================================================ */
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .azals-std-tabs__list {
     padding: 0 var(--azals-std-gap-md);
   }

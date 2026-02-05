@@ -8,7 +8,7 @@ import { Euro, TrendingUp, TrendingDown, Percent, Calculator } from 'lucide-reac
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Devis } from '../types';
-import { formatCurrency } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * DevisFinancialTab - Récapitulatif financier du devis

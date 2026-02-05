@@ -8,7 +8,8 @@ import { ShoppingCart, Package, Percent, Calculator } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Document, DocumentLine } from '../types';
-import { formatCurrency, formatPercent, calculateLineTotal } from '../types';
+import { calculateLineTotal } from '../types';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 
 /**
  * InvoicingLinesTab - Lignes du document

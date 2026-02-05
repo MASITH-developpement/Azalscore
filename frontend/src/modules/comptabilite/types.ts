@@ -297,26 +297,6 @@ export const FORECAST_TYPE_CONFIG: Record<ForecastType, {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-export function formatCurrency(amount: number, currency = 'EUR'): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency
-  }).format(amount);
-}
-
-export function formatDate(dateStr: string): string {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-}
-
-export function formatDateTime(dateStr: string): string {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'short'
-  });
-}
-
 export function formatAccountCode(code: string): string {
   // Format: XXX.XXX.XXX
   if (!code) return '-';

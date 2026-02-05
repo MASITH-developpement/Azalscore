@@ -236,7 +236,7 @@ def log_performance(logger: logging.Logger | None = None, level: str = "INFO"):
             except Exception as e:
                 elapsed = time.perf_counter() - start
                 logger.error(
-                    f"{func.__name__} failed: {e}",
+                    "%s failed: %s", func.__name__, e,
                     extra={
                         "function": func.__name__,
                         "duration_ms": round(elapsed * 1000, 2),
@@ -277,7 +277,7 @@ def log_performance_async(logger: logging.Logger | None = None, level: str = "IN
             except Exception as e:
                 elapsed = time.perf_counter() - start
                 logger.error(
-                    f"{func.__name__} failed: {e}",
+                    "%s failed: %s", func.__name__, e,
                     extra={
                         "function": func.__name__,
                         "duration_ms": round(elapsed * 1000, 2),

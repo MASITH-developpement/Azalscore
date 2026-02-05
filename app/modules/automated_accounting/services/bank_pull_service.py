@@ -295,7 +295,7 @@ class BankPullService:
         # Synchronise les comptes disponibles
         self._sync_accounts(connection)
 
-        logger.info(f"Bank connection created: {connection.id} ({institution_name})")
+        logger.info("Bank connection created: %s (%s)", connection.id, institution_name)
 
         return connection
 
@@ -318,7 +318,7 @@ class BankPullService:
         if connection:
             self.db.delete(connection)
             self.db.commit()
-            logger.info(f"Bank connection deleted: {connection_id}")
+            logger.info("Bank connection deleted: %s", connection_id)
 
     def _get_decrypted_access_token(self, connection: BankConnection) -> str:
         """Déchiffre et retourne l'access token d'une connexion."""
@@ -588,7 +588,7 @@ class BankPullService:
                 connection.status = BankConnectionStatus.ACTIVE
 
                 self.db.commit()
-                logger.info(f"Token refreshed for connection {connection.id}")
+                logger.info("Token refreshed for connection %s", connection.id)
             else:
                 connection.status = BankConnectionStatus.EXPIRED
                 self.db.commit()

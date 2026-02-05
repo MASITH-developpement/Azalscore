@@ -47,9 +47,9 @@ import type { Document as InvoicingDocument } from './types';
 import {
   DOCUMENT_STATUS_CONFIG, DOCUMENT_TYPE_CONFIG,
   TRANSFORM_WORKFLOW as TRANSFORM_WORKFLOW_TYPES,
-  formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil,
   getDaysUntilDue, isDocumentOverdue, canTransformDocument
 } from './types';
+import { formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '@/utils/formatters';
 import {
   InvoicingInfoTab,
   InvoicingLinesTab,
@@ -964,7 +964,7 @@ const DocumentListPage: React.FC<DocumentListPageProps> = ({ type }) => {
           }}
           onRefresh={refetch}
           emptyMessage={`Aucun ${typeConfig.label.toLowerCase()}`}
-          error={error instanceof Error ? error : null}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
           onRetry={() => refetch()}
         />
       </Card>
@@ -1856,7 +1856,7 @@ const InvoicingDetailView: React.FC<InvoicingDetailViewProps> = ({ type }) => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
-      error={error instanceof Error ? error : null}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
       onRetry={() => refetch()}
     />
   );

@@ -204,9 +204,9 @@ class RateLimiter:
                         "pip install redis for production."
                     )
                 except Exception as e:
-                    logger.warning(f"[RATE_LIMITER] Redis connection failed: {e}")
+                    logger.warning("[RATE_LIMITER] Redis connection failed: %s", e)
         except Exception as e:
-            logger.warning(f"[RATE_LIMITER] Settings load failed: {e}")
+            logger.warning("[RATE_LIMITER] Settings load failed: %s", e)
 
         # Fallback to memory
         return MemoryRateLimiterBackend()
@@ -484,7 +484,7 @@ class PlatformRateLimitMiddleware:
         allowed, count = self._limiter.check_rate("platform:global", "all", self.global_limit, self.window)
         if not allowed:
             logger.critical(
-                f"[RATE_LIMIT] Platform global limit reached: {count}/{self.global_limit}"
+                "[RATE_LIMIT] Platform global limit reached: %s/%s", count, self.global_limit
             )
             response = JSONResponse(
                 status_code=503,
@@ -541,7 +541,7 @@ def setup_platform_rate_limiting(
         global_limit=global_limit
     )
     logger.info(
-        f"[RATE_LIMIT] Platform limits configured: "
+        "[RATE_LIMIT] Platform limits configured: "
         f"IP={ip_limit}/min, Tenant={tenant_limit}/min, Global={global_limit}/min"
     )
 

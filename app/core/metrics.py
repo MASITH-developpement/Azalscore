@@ -5,11 +5,14 @@ Métriques pour monitoring et alerting.
 Endpoint /metrics pour scraping Prometheus.
 """
 
+import logging
 import time
 from collections.abc import Callable
 from functools import wraps
 
 from fastapi import APIRouter, Request, Response
+
+logger = logging.getLogger(__name__)
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, Gauge, Histogram, Info, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -180,7 +183,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             status_code = response.status_code
             return response
-        except Exception:
+        except Exception as e:
+            logger.error(
+                "[METRICS_MIDDLEWARE] Exception non capturée dans le traitement requête",
+                extra={"path": request.url.path, "method": method, "error": str(e)[:300], "consequence": "status_500"}
+            )
             status_code = 500
             raise
         finally:
@@ -388,7 +395,11 @@ def track_ai_inference(model: str, operation: str):
             success = True
             try:
                 return await func(*args, **kwargs)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[AI_INFERENCE_FAILED] Échec inférence IA",
+                    extra={"model": model, "operation": operation, "error": str(e)[:300], "consequence": "inference_failed"}
+                )
                 success = False
                 raise
             finally:

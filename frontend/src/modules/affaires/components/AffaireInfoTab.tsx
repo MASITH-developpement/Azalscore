@@ -12,9 +12,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Affaire } from '../types';
 import {
-  formatDate, formatPercent, PRIORITY_CONFIG, STATUS_CONFIG,
+  PRIORITY_CONFIG, STATUS_CONFIG,
   isLate, getDaysRemaining
 } from '../types';
+import { formatDate, formatPercent } from '@/utils/formatters';
 
 /**
  * AffaireInfoTab - Informations générales de l'affaire

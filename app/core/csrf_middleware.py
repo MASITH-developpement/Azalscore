@@ -64,8 +64,12 @@ def _get_csrf_secret() -> str:
         from app.core.config import get_settings
         settings = get_settings()
         return getattr(settings, 'csrf_secret', None) or settings.secret_key
-    except Exception:
+    except Exception as e:
         # Fallback pour tests
+        logger.warning(
+            "[CSRF_CONFIG] Échec chargement secret CSRF depuis settings",
+            extra={"error": str(e)[:200], "consequence": "fallback_secret_used"}
+        )
         return "csrf-secret-fallback-not-for-production"
 
 
@@ -192,9 +196,10 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         if not is_valid:
             logger.warning(
-                f"[CSRF] Validation failed: {error} | "
-                f"Path: {path} | Method: {request.method} | "
-                f"IP: {request.client.host if request.client else 'unknown'}"
+                "[CSRF] Validation failed: %s | "
+                "Path: %s | Method: %s | "
+                "IP: %s",
+                error, path, request.method, request.client.host if request.client else 'unknown'
             )
 
             if self.enforce:
@@ -234,7 +239,7 @@ def setup_csrf_middleware(app, enforce: bool = True):
                  Si False, mode audit (log seulement).
     """
     app.add_middleware(CSRFMiddleware, enforce=enforce)
-    logger.info(f"[CSRF] Middleware configured (enforce={enforce})")
+    logger.info("[CSRF] Middleware configured (enforce=%s)", enforce)
 
 
 __all__ = [

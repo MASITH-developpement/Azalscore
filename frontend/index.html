@@ -22,11 +22,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
     <!-- Title - Valeur par défaut Azalscore (multi-tenant prêt mais désactivé) -->
-    <!-- build:20260128-v2 -->
+    <!-- build:20260128-v3 -->
     <title>AZALSCORE</title>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // SW auto-update: reload when a new service worker takes control
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+          window.location.reload();
+        });
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

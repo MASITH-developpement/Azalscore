@@ -12,10 +12,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Employee } from '../types';
 import {
-  formatDate, formatCurrency,
   CONTRACT_TYPE_CONFIG,
   isFixedTerm, isContractExpiringSoon, isOnProbation
 } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 
 /**
  * EmployeeContractTab - Contrat et remuneration

@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Ticket, TicketHistoryEntry } from '../types';
-import { formatDateTime, STATUS_CONFIG, PRIORITY_CONFIG } from '../types';
+import { STATUS_CONFIG, PRIORITY_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * TicketHistoryTab - Historique du ticket

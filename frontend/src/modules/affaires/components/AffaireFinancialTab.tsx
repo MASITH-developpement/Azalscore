@@ -12,7 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Affaire } from '../types';
-import { formatCurrency, formatPercent, getBudgetStatus } from '../types';
+import { getBudgetStatus } from '../types';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 
 /**
  * AffaireFinancialTab - Budget et facturation de l'affaire

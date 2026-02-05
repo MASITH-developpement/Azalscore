@@ -8,7 +8,8 @@ import { Wallet, CheckCircle2, Clock, AlertTriangle, XCircle, ArrowRight } from 
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Seller, Payout } from '../types';
-import { formatCurrency, formatDate, PAYOUT_STATUS_CONFIG } from '../types';
+import { PAYOUT_STATUS_CONFIG } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * SellerPayoutsTab - Paiements du vendeur

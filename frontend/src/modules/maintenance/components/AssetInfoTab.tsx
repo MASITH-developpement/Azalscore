@@ -11,8 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Asset, AssetMeter } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatCurrency,
   ASSET_TYPE_CONFIG, ASSET_STATUS_CONFIG, CRITICALITY_CONFIG,
   getAssetAge, isWarrantyExpired, isWarrantyExpiringSoon,
   getDaysUntilMaintenance, isMaintenanceOverdue, isMaintenanceDueSoon

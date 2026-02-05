@@ -237,21 +237,6 @@ export const PAYMENT_METHODS: Record<PaymentMethod, {
 // FONCTIONS UTILITAIRES
 // ============================================================
 
-export const formatCurrency = (value: number, currency = 'EUR'): string =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value);
-
-export const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('fr-FR');
-
-export const formatDateTime = (date: string): string =>
-  new Date(date).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
 export const formatAddress = (address?: Address): string => {
   if (!address) return '';
   const parts = [

@@ -167,9 +167,10 @@ class TheoOrchestrator:
         intent = self._detector.detect(transcription, detection_context)
 
         logger.info(
-            f"Session {session_id}: Detected intent "
-            f"{intent.category.value}/{intent.action.value} "
-            f"(confidence: {intent.confidence:.2f})"
+            "Session %s: Detected intent "
+            "%s/%s "
+            "(confidence: %s)",
+            session_id, intent.category.value, intent.action.value, intent.confidence
         )
 
         # 4. Router selon l'intention
@@ -427,7 +428,7 @@ class TheoOrchestrator:
             delegator = _get_delegator()
             result = await delegator.delegate(intent, context)
 
-            logger.info(f"Delegator result: {result.status}")
+            logger.info("Delegator result: %s", result.status)
 
             # Mapper les résultats de l'adapter vers OrchestratorResult
             from app.theo.adapters.base import ActionStatus
@@ -482,7 +483,7 @@ class TheoOrchestrator:
                 )
 
         except Exception as e:
-            logger.error(f"Delegation error: {e}")
+            logger.error("Delegation error: %s", e)
 
             # Fallback vers registre de capacités si le délégateur échoue
             capability = self._registry.resolve(intent.capability_required)
@@ -503,8 +504,15 @@ class TheoOrchestrator:
                             action_result=result,
                             visual_state="confirmation"
                         )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(
+                        "[THEO_FALLBACK] Échec exécution capability fallback",
+                        extra={
+                            "capability": intent.capability_required,
+                            "error": str(e)[:300],
+                            "consequence": "fallback_to_error_response"
+                        }
+                    )
 
             return OrchestratorResult(
                 type=OrchestratorResultType.ERROR,

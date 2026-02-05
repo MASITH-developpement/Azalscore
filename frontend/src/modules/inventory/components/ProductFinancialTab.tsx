@@ -11,8 +11,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Product, Movement } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
-  formatCurrency, formatQuantity, formatDate,
+  formatQuantity,
   MOVEMENT_TYPE_CONFIG, getStockValue
 } from '../types';
 

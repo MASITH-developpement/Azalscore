@@ -9,10 +9,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Audit, AuditFinding } from '../types';
 import {
-  formatDate,
   FINDING_SEVERITY_CONFIG, FINDING_STATUS_CONFIG,
   isFindingOpen, isFindingCritical
 } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * AuditFindingsTab - Constats de l'audit

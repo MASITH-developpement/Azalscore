@@ -11,9 +11,9 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention } from '../types';
 import {
-  formatDate, formatDateTime, formatDuration,
-  getActualDuration, getDurationVariance, isInterventionLate, isInterventionToday
+  getActualDuration, getDurationVariance, isInterventionLate, isInterventionToday, formatDuration as formatDur
 } from '../types';
+import { formatDate, formatDateTime, formatDuration } from '@/utils/formatters';
 
 /**
  * InterventionPlanningTab - Planification
@@ -33,7 +33,7 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
           <div>
             <strong>Intervention en retard</strong>
             <p className="text-sm">
-              La date prevue ({formatDate(intervention.date_prevue)}) est passee mais l'intervention n'a pas demarre.
+              La date prevue ({intervention.date_prevue_debut ? formatDateTime(intervention.date_prevue_debut) : '-'}) est passee mais l'intervention n'a pas demarre.
             </p>
           </div>
         </div>
@@ -46,8 +46,8 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
           <div>
             <strong>Intervention prevue aujourd'hui</strong>
             <p className="text-sm">
-              {intervention.heure_debut ? `A ${intervention.heure_debut}` : 'Horaire non precise'}
-              {intervention.intervenant_nom && ` - ${intervention.intervenant_nom}`}
+              {intervention.date_prevue_debut ? formatDateTime(intervention.date_prevue_debut) : 'Horaire non precise'}
+              {intervention.intervenant_name && ` - ${intervention.intervenant_name}`}
             </p>
           </div>
         </div>
@@ -57,30 +57,23 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
         {/* Planification */}
         <Card title="Planification" icon={<Calendar size={18} />}>
           <dl className="azals-dl">
-            <dt><Calendar size={14} /> Date prevue</dt>
+            <dt><Calendar size={14} /> Date debut</dt>
             <dd className={isLate ? 'text-warning' : ''}>
-              {intervention.date_prevue ? formatDate(intervention.date_prevue) : '-'}
+              {intervention.date_prevue_debut ? formatDateTime(intervention.date_prevue_debut) : '-'}
               {isLate && <span className="ml-2 text-warning">(en retard)</span>}
             </dd>
 
-            {intervention.heure_debut && (
+            {intervention.date_prevue_fin && (
               <>
-                <dt><Clock size={14} /> Heure de debut</dt>
-                <dd>{intervention.heure_debut}</dd>
+                <dt><Clock size={14} /> Date fin</dt>
+                <dd>{formatDateTime(intervention.date_prevue_fin)}</dd>
               </>
             )}
 
-            {intervention.heure_fin && (
-              <>
-                <dt><Clock size={14} /> Heure de fin</dt>
-                <dd>{intervention.heure_fin}</dd>
-              </>
-            )}
-
-            <dt><Timer size={14} /> Duree estimee</dt>
+            <dt><Timer size={14} /> Duree prevue</dt>
             <dd>
-              {intervention.duree_estimee_minutes
-                ? formatDuration(intervention.duree_estimee_minutes)
+              {intervention.duree_prevue_minutes
+                ? formatDuration(intervention.duree_prevue_minutes)
                 : '-'}
             </dd>
           </dl>
@@ -88,10 +81,10 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
 
         {/* Intervenant */}
         <Card title="Intervenant" icon={<User size={18} />}>
-          {intervention.intervenant_nom ? (
+          {intervention.intervenant_name ? (
             <dl className="azals-dl">
               <dt><User size={14} /> Technicien</dt>
-              <dd>{intervention.intervenant_nom}</dd>
+              <dd>{intervention.intervenant_name}</dd>
             </dl>
           ) : (
             <div className="azals-empty azals-empty--sm">
@@ -103,10 +96,10 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
       </Grid>
 
       {/* Execution */}
-      {(intervention.date_arrivee || intervention.date_debut_intervention || intervention.date_fin_intervention) && (
+      {(intervention.date_arrivee_site || intervention.date_demarrage || intervention.date_fin) && (
         <Card title="Execution" icon={<Play size={18} />} className="mt-4">
           <div className="azals-timeline">
-            {intervention.date_arrivee && (
+            {intervention.date_arrivee_site && (
               <div className="azals-timeline__entry">
                 <div className="azals-timeline__icon">
                   <CheckCircle size={16} className="text-primary" />
@@ -114,13 +107,13 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
                 <div className="azals-timeline__content">
                   <span className="azals-timeline__action">Arrivee sur site</span>
                   <span className="azals-timeline__time text-muted">
-                    {formatDateTime(intervention.date_arrivee)}
+                    {formatDateTime(intervention.date_arrivee_site)}
                   </span>
                 </div>
               </div>
             )}
 
-            {intervention.date_debut_intervention && (
+            {intervention.date_demarrage && (
               <div className="azals-timeline__entry">
                 <div className="azals-timeline__icon">
                   <Play size={16} className="text-success" />
@@ -128,13 +121,13 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
                 <div className="azals-timeline__content">
                   <span className="azals-timeline__action">Debut intervention</span>
                   <span className="azals-timeline__time text-muted">
-                    {formatDateTime(intervention.date_debut_intervention)}
+                    {formatDateTime(intervention.date_demarrage)}
                   </span>
                 </div>
               </div>
             )}
 
-            {intervention.date_fin_intervention && (
+            {intervention.date_fin && (
               <div className="azals-timeline__entry azals-timeline__entry--last">
                 <div className="azals-timeline__icon">
                   <CheckCircle size={16} className="text-success" />
@@ -142,7 +135,7 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
                 <div className="azals-timeline__content">
                   <span className="azals-timeline__action">Fin intervention</span>
                   <span className="azals-timeline__time text-muted">
-                    {formatDateTime(intervention.date_fin_intervention)}
+                    {formatDateTime(intervention.date_fin)}
                   </span>
                 </div>
               </div>
@@ -160,10 +153,10 @@ export const InterventionPlanningTab: React.FC<TabContentProps<Intervention>> = 
         >
           <Grid cols={3} gap="md">
             <div className="azals-stat">
-              <span className="azals-stat__label">Duree estimee</span>
+              <span className="azals-stat__label">Duree prevue</span>
               <span className="azals-stat__value">
-                {intervention.duree_estimee_minutes
-                  ? formatDuration(intervention.duree_estimee_minutes)
+                {intervention.duree_prevue_minutes
+                  ? formatDuration(intervention.duree_prevue_minutes)
                   : '-'}
               </span>
             </div>

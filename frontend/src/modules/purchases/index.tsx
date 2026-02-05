@@ -66,12 +66,14 @@ import {
   SUPPLIER_STATUS_CONFIG as SUPPLIER_STATUS,
   ORDER_STATUS_CONFIG as ORDER_STATUS,
   INVOICE_STATUS_CONFIG as INVOICE_STATUS,
-  formatCurrency as formatCurrencyFn,
-  formatDate as formatDateFn,
   canEditOrder, canValidateOrder, canCreateInvoiceFromOrder,
   canEditInvoice, canValidateInvoice, canPayInvoice,
   isOverdue,
 } from './types';
+import {
+  formatCurrency as formatCurrencyFn,
+  formatDate as formatDateFn,
+} from '@/utils/formatters';
 
 // ============================================================================
 // TYPES
@@ -103,6 +105,7 @@ interface Supplier {
 }
 
 interface SupplierCreate {
+  code: string;
   name: string;
   contact_name?: string;
   email?: string;
@@ -244,6 +247,7 @@ const TVA_RATES = [
 
 // Configuration pour création inline de fournisseur
 const SUPPLIER_CREATE_FIELDS: FieldConfig[] = [
+  { key: 'code', label: 'Code', type: 'text', required: true },
   { key: 'name', label: 'Nom', type: 'text', required: true },
   { key: 'contact_name', label: 'Contact', type: 'text' },
   { key: 'email', label: 'Email', type: 'email' },
@@ -1097,7 +1101,7 @@ export const SuppliersListPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<FilterState>({});
 
-  const { data, isLoading, refetch } = useSuppliers(page, pageSize, filters);
+  const { data, isLoading, error: suppliersError, refetch } = useSuppliers(page, pageSize, filters);
   const deleteMutation = useDeleteSupplier();
 
   const handleDelete = async (supplier: Supplier) => {
@@ -1178,6 +1182,8 @@ export const SuppliersListPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={suppliersError instanceof Error ? suppliersError : null}
+          onRetry={() => refetch()}
         />
       </Card>
     </PageWrapper>
@@ -1191,13 +1197,14 @@ export const SuppliersListPage: React.FC = () => {
 export const SupplierFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const isNew = id === 'new';
+  const isNew = !id;
 
   const { data: supplier, isLoading } = useSupplier(id || '');
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
 
   const [form, setForm] = useState<SupplierCreate>({
+    code: '',
     name: '',
     contact_name: '',
     email: '',
@@ -1214,6 +1221,7 @@ export const SupplierFormPage: React.FC = () => {
   useEffect(() => {
     if (supplier) {
       setForm({
+        code: supplier.code || '',
         name: supplier.name,
         contact_name: supplier.contact_name || '',
         email: supplier.email || '',
@@ -1264,6 +1272,18 @@ export const SupplierFormPage: React.FC = () => {
       <form onSubmit={handleSubmit}>
         <Card title="Informations générales">
           <Grid cols={2} gap="md">
+            <div className="azals-field">
+              <label className="azals-field__label">Code *</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+                required
+                maxLength={50}
+                placeholder="ex: FOURN001"
+              />
+            </div>
             <div className="azals-field">
               <label className="azals-field__label">Nom *</label>
               <input
@@ -1514,7 +1534,7 @@ export const OrdersListPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<FilterState>({});
 
-  const { data, isLoading, refetch } = usePurchaseOrders(page, pageSize, filters);
+  const { data, isLoading, error: ordersError, refetch } = usePurchaseOrders(page, pageSize, filters);
   const { data: suppliers } = useSuppliersLookup();
   const deleteMutation = useDeletePurchaseOrder();
   const validateMutation = useValidatePurchaseOrder();
@@ -1635,6 +1655,8 @@ export const OrdersListPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={ordersError instanceof Error ? ordersError : null}
+          onRetry={() => refetch()}
         />
       </Card>
     </PageWrapper>
@@ -1648,7 +1670,7 @@ export const OrdersListPage: React.FC = () => {
 export const OrderFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const isNew = id === 'new';
+  const isNew = !id;
 
   const { data: order, isLoading } = usePurchaseOrder(id || '');
   const { data: suppliers } = useSuppliersLookup();
@@ -2016,7 +2038,7 @@ export const InvoicesListPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<FilterState>({});
 
-  const { data, isLoading, refetch } = usePurchaseInvoices(page, pageSize, filters);
+  const { data, isLoading, error: invoicesError, refetch } = usePurchaseInvoices(page, pageSize, filters);
   const { data: suppliers } = useSuppliersLookup();
   const deleteMutation = useDeletePurchaseInvoice();
   const validateMutation = useValidatePurchaseInvoice();
@@ -2143,6 +2165,8 @@ export const InvoicesListPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={invoicesError instanceof Error ? invoicesError : null}
+          onRetry={() => refetch()}
         />
       </Card>
     </PageWrapper>
@@ -2156,7 +2180,7 @@ export const InvoicesListPage: React.FC = () => {
 export const InvoiceFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const isNew = id === 'new';
+  const isNew = !id;
 
   const { data: invoice, isLoading } = usePurchaseInvoice(id || '');
   const { data: suppliers } = useSuppliersLookup();
@@ -2514,7 +2538,7 @@ export const InvoiceDetailPage: React.FC = () => {
 const SupplierDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: supplier, isLoading, error } = useSupplier(id || '');
+  const { data: supplier, isLoading, error, refetch } = useSupplier(id || '');
   const deleteMutation = useDeleteSupplier();
 
   if (isLoading) {
@@ -2585,6 +2609,8 @@ const SupplierDetailView: React.FC = () => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -2595,7 +2621,7 @@ const SupplierDetailView: React.FC = () => {
 const OrderDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: order, isLoading, error } = usePurchaseOrder(id || '');
+  const { data: order, isLoading, error, refetch } = usePurchaseOrder(id || '');
   const deleteMutation = useDeletePurchaseOrder();
   const validateMutation = useValidatePurchaseOrder();
   const createInvoiceMutation = useCreateInvoiceFromOrder();
@@ -2678,6 +2704,8 @@ const OrderDetailView: React.FC = () => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -2688,7 +2716,7 @@ const OrderDetailView: React.FC = () => {
 const InvoiceDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: invoice, isLoading, error } = usePurchaseInvoice(id || '');
+  const { data: invoice, isLoading, error, refetch } = usePurchaseInvoice(id || '');
   const deleteMutation = useDeletePurchaseInvoice();
   const validateMutation = useValidatePurchaseInvoice();
 
@@ -2773,6 +2801,8 @@ const InvoiceDetailView: React.FC = () => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };

@@ -11,8 +11,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Product, Lot, Serial, StockByLocation } from '../types';
+import { formatDate } from '@/utils/formatters';
 import {
-  formatDate, formatQuantity, isLotExpired, isLotExpiringSoon,
+  formatQuantity, isLotExpired, isLotExpiringSoon,
   getDaysUntilExpiry, LOT_STATUS_CONFIG, SERIAL_STATUS_CONFIG
 } from '../types';
 

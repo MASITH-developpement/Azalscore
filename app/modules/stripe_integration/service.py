@@ -921,7 +921,7 @@ class StripeService:
         - admin_last_name: Nom (optionnel)
         - country: Pays (défaut: FR)
         """
-        logger.info(f"Processing checkout.session.completed: {data.get('id')}")
+        logger.info("Processing checkout.session.completed: %s", data.get('id'))
 
         # Extraire les informations
         customer_email = data.get("customer_email") or data.get("customer_details", {}).get("email")
@@ -951,7 +951,7 @@ class StripeService:
         # Vérifier si le tenant existe déjà
         existing_tenant = self._get_tenant_by_email(admin_email)
         if existing_tenant:
-            logger.info(f"Tenant already exists for email {admin_email}, skipping creation")
+            logger.info("Tenant already exists for email %s, skipping creation", admin_email)
             return
 
         # Créer le tenant et l'admin
@@ -968,9 +968,9 @@ class StripeService:
         )
 
         if result:
-            logger.info(f"Tenant {tenant_id} created successfully for {admin_email}")
+            logger.info("Tenant %s created successfully for %s", tenant_id, admin_email)
         else:
-            logger.error(f"Failed to create tenant for {admin_email}")
+            logger.error("Failed to create tenant for %s", admin_email)
 
     def _handle_subscription_created(self, data: dict):
         """
@@ -979,7 +979,7 @@ class StripeService:
         Alternative à checkout.session.completed pour les souscriptions
         créées directement via API ou Customer Portal.
         """
-        logger.info(f"Processing subscription.created: {data.get('id')}")
+        logger.info("Processing subscription.created: %s", data.get('id'))
 
         customer_id = data.get("customer")
         subscription_id = data.get("id")
@@ -1006,7 +1006,7 @@ class StripeService:
 
         Gère les changements de plan, renouvellements, etc.
         """
-        logger.info(f"Processing subscription.updated: {data.get('id')}")
+        logger.info("Processing subscription.updated: %s", data.get('id'))
 
         subscription_id = data.get("id")
         status = data.get("status")
@@ -1018,7 +1018,7 @@ class StripeService:
             tenant_id = self._find_tenant_by_subscription(subscription_id)
 
         if not tenant_id:
-            logger.warning(f"No tenant found for subscription {subscription_id}")
+            logger.warning("No tenant found for subscription %s", subscription_id)
             return
 
         # Mettre à jour selon le statut
@@ -1037,7 +1037,7 @@ class StripeService:
 
         Le tenant est suspendu mais pas supprimé (conservation des données).
         """
-        logger.info(f"Processing subscription.deleted: {data.get('id')}")
+        logger.info("Processing subscription.deleted: %s", data.get('id'))
 
         subscription_id = data.get("id")
         metadata = data.get("metadata", {})
@@ -1048,7 +1048,7 @@ class StripeService:
 
         if tenant_id:
             self._suspend_tenant(tenant_id, reason="subscription_cancelled")
-            logger.info(f"Tenant {tenant_id} suspended due to subscription cancellation")
+            logger.info("Tenant %s suspended due to subscription cancellation", tenant_id)
 
     def _handle_invoice_paid(self, data: dict):
         """
@@ -1056,7 +1056,7 @@ class StripeService:
 
         Réactive le tenant si suspendu pour non-paiement.
         """
-        logger.info(f"Processing invoice.paid: {data.get('id')}")
+        logger.info("Processing invoice.paid: %s", data.get('id'))
 
         subscription_id = data.get("subscription")
         if not subscription_id:
@@ -1079,7 +1079,7 @@ class StripeService:
         Marque le tenant comme ayant un problème de paiement.
         Après plusieurs échecs, le tenant sera suspendu.
         """
-        logger.info(f"Processing invoice.payment_failed: {data.get('id')}")
+        logger.info("Processing invoice.payment_failed: %s", data.get('id'))
 
         subscription_id = data.get("subscription")
         attempt_count = data.get("attempt_count", 1)
@@ -1095,7 +1095,7 @@ class StripeService:
             # Suspendre après 3 tentatives échouées
             if attempt_count >= 3:
                 self._suspend_tenant(tenant_id, reason="payment_failed_multiple")
-                logger.warning(f"Tenant {tenant_id} suspended after {attempt_count} payment failures")
+                logger.warning("Tenant %s suspended after %s payment failures", tenant_id, attempt_count)
 
     # ========================================================================
     # HELPERS POUR PROVISIONING TENANT
@@ -1245,7 +1245,7 @@ class StripeService:
 
         self.db.commit()
 
-        logger.info(f"Provisioned tenant {tenant_id} with admin {admin_email}")
+        logger.info("Provisioned tenant %s with admin %s", tenant_id, admin_email)
 
         return {
             "tenant_id": tenant_id,
@@ -1318,7 +1318,7 @@ class StripeService:
             tenant.suspended_at = None
             tenant.updated_at = datetime.utcnow()
             self.db.commit()
-            logger.info(f"Tenant {tenant_id} activated")
+            logger.info("Tenant %s activated", tenant_id)
 
     def _suspend_tenant(self, tenant_id: str, reason: str):
         """Suspend un tenant."""
@@ -1333,7 +1333,7 @@ class StripeService:
             tenant.extra_data["suspension_reason"] = reason
             tenant.updated_at = datetime.utcnow()
             self.db.commit()
-            logger.info(f"Tenant {tenant_id} suspended: {reason}")
+            logger.info("Tenant %s suspended: %s", tenant_id, reason)
 
     def _mark_tenant_payment_issue(self, tenant_id: str, attempt_count: int = 1):
         """Marque un tenant comme ayant un problème de paiement."""

@@ -317,7 +317,7 @@ class RBACMiddleware(BaseHTTPMiddleware):
             # Route non configurée dans RBAC → passer en mode bêta
             # Les endpoints gèrent leur propre authentification via get_current_user
             # En production, activer deny-by-default ci-dessous:
-            # logger.warning(f"Route non configurée dans RBAC: {method} {path}")
+            # logger.warning("Route non configurée dans RBAC: %s %s", method, path)
             # return JSONResponse(
             #     status_code=403,
             #     content={"detail": "Route non autorisée"}
@@ -402,8 +402,11 @@ class RBACMiddleware(BaseHTTPMiddleware):
         if hasattr(user, 'standard_role') and user.standard_role:
             try:
                 return StandardRole(user.standard_role)
-            except ValueError:
-                pass
+            except ValueError as e:
+                logger.warning(
+                    "[RBAC_MW] Rôle standard_role invalide, fallback legacy",
+                    extra={"standard_role": user.standard_role, "error": str(e)[:200], "consequence": "fallback_legacy_role"}
+                )
 
         # Mapper depuis le rôle legacy
         if hasattr(user, 'role'):
@@ -432,10 +435,11 @@ class RBACMiddleware(BaseHTTPMiddleware):
         tenant_id = getattr(request.state, 'tenant_id', 'unknown') if hasattr(request, 'state') else 'unknown'
 
         logger.warning(
-            f"RBAC DENIED: method={request.method} path={request.url.path} "
-            f"user_id={user_id} tenant_id={tenant_id} "
-            f"module={route_perm.module.value} action={route_perm.action.value} "
-            f"reason={reason}"
+            "RBAC DENIED: method=%s path=%s "
+            "user_id=%s tenant_id=%s "
+            "module=%s action=%s "
+            "reason=%s",
+            request.method, request.url.path, user_id, tenant_id, route_perm.module.value, route_perm.action.value, reason
         )
 
 

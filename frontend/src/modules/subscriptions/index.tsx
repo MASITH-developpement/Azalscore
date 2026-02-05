@@ -25,11 +25,11 @@ import type {
   SubscriptionStatus
 } from './types';
 import {
-  formatCurrency, formatDate, formatPercent,
   INTERVALS, SUBSCRIPTION_STATUS, INVOICE_STATUS,
   SUBSCRIPTION_STATUS_CONFIG, INTERVAL_CONFIG,
   getDaysUntilRenewal, willCancel, getPaidInvoicesCount
 } from './types';
+import { formatCurrency, formatDate, formatPercent } from '@/utils/formatters';
 
 // Import tab components
 import {

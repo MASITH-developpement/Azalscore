@@ -45,6 +45,7 @@ import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge, StatCard } from '@ui/dashboards';
 import { Modal, Select, TextArea } from '@ui/forms';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 import type { TableColumn } from '@/types';
 
 // ============================================================
@@ -605,8 +606,8 @@ export const ExpertDashboard: React.FC = () => {
     'VALIDATE' | 'REJECT' | null
   >(null);
 
-  const { data: dashboard, isLoading: dashboardLoading } = useExpertDashboard();
-  const { data: validationQueue, isLoading: queueLoading } = useValidationQueue(
+  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useExpertDashboard();
+  const { data: validationQueue, isLoading: queueLoading, error: queueError, refetch: refetchQueue } = useValidationQueue(
     page,
     20,
     confidenceFilter ? { confidence: confidenceFilter } : {}
@@ -769,6 +770,17 @@ export const ExpertDashboard: React.FC = () => {
           <div className="azals-spinner" />
           <p>Chargement...</p>
         </div>
+      </PageWrapper>
+    );
+  }
+
+  if (dashboardError) {
+    return (
+      <PageWrapper title="Validation & Supervision">
+        <ErrorState
+          message={dashboardError instanceof Error ? dashboardError.message : undefined}
+          onRetry={() => { refetchDashboard(); }}
+        />
       </PageWrapper>
     );
   }

@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Plus, Trash2, ChevronDown, Loader2, X, UserPlus, Package } from 'lucide-react';
 import { api } from '@core/api-client';
 import { useTranslation } from '../i18n';
+import { ErrorState } from '../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES
@@ -641,8 +642,8 @@ interface WorksheetProps {
 
 export const Worksheet: React.FC<WorksheetProps> = ({ defaultType }) => {
   const { t } = useTranslation();
-  const { data: clients = [], isLoading: loadingClients } = useClients();
-  const { data: products = [], isLoading: loadingProducts } = useProducts();
+  const { data: clients = [], isLoading: loadingClients, error: clientsError, refetch: refetchClients } = useClients();
+  const { data: products = [], isLoading: loadingProducts, error: productsError, refetch: refetchProducts } = useProducts();
   const saveDocument = useSaveDocument();
 
   // Mapper defaultType vers DocumentType
@@ -716,6 +717,21 @@ export const Worksheet: React.FC<WorksheetProps> = ({ defaultType }) => {
         <Loader2 className="azals-ws-loading__spinner" size={32} />
         <span>{t('worksheet.loading')}</span>
       </div>
+    );
+  }
+
+  if (clientsError || productsError) {
+    return (
+      <ErrorState
+        message={
+          clientsError instanceof Error
+            ? clientsError.message
+            : productsError instanceof Error
+            ? productsError.message
+            : undefined
+        }
+        onRetry={() => { refetchClients(); refetchProducts(); }}
+      />
     );
   }
 

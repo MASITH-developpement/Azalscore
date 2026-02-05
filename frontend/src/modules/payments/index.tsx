@@ -25,11 +25,11 @@ import type {
   PaymentMethod as PaymentMethodType, PaymentStatus
 } from './types';
 import {
-  formatCurrency, formatDate, formatDateTime,
   PAYMENT_METHODS, PAYMENT_STATUS, REFUND_STATUS,
   PAYMENT_STATUS_CONFIG, METHOD_CONFIG,
   getMethodLabel, getMethodIcon
 } from './types';
+import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
 
 // Import tab components
 import {

@@ -136,7 +136,7 @@ class AIAuthManager:
         """
         # Vérifier le rate limiting
         if self._is_rate_limited(username):
-            logger.warning(f"[AUTH] Rate limited: {username}")
+            logger.warning("[AUTH] Rate limited: %s", username)
             return None
 
         # Vérifier les identifiants
@@ -162,7 +162,7 @@ class AIAuthManager:
 
         if not hmac.compare_digest(provided_hash, expected_password_hash):
             self._record_failed_attempt(username)
-            logger.warning(f"[AUTH] Invalid password for: {username}")
+            logger.warning("[AUTH] Invalid password for: %s", username)
             return None
 
         # Créer une session partielle (MFA requis)
@@ -187,7 +187,7 @@ class AIAuthManager:
         if user_config.get("mfa_required", True):
             self._initiate_mfa(user_config["user_id"], user_config["email"])
 
-        logger.info(f"[AUTH] Password auth success for: {username}, MFA pending")
+        logger.info("[AUTH] Password auth success for: %s, MFA pending", username)
 
         return session
 
@@ -210,19 +210,19 @@ class AIAuthManager:
         """
         session = self._sessions.get(session_id)
         if not session:
-            logger.warning(f"[AUTH] MFA verification: session not found")
+            logger.warning("[AUTH] MFA verification: session not found")
             return None
 
         # Vérifier le code en attente
         pending = self._pending_mfa.get(session.user_id)
         if not pending:
-            logger.warning(f"[AUTH] No pending MFA for user: {session.user_id}")
+            logger.warning("[AUTH] No pending MFA for user: %s", session.user_id)
             return None
 
         # Vérifier l'expiration
         if datetime.utcnow() > pending.expires_at:
             del self._pending_mfa[session.user_id]
-            logger.warning(f"[AUTH] MFA code expired for: {session.user_id}")
+            logger.warning("[AUTH] MFA code expired for: %s", session.user_id)
             return None
 
         # Vérifier les tentatives
@@ -230,12 +230,12 @@ class AIAuthManager:
         if pending.attempts > pending.max_attempts:
             del self._pending_mfa[session.user_id]
             self._invalidate_session(session_id)
-            logger.warning(f"[AUTH] MFA max attempts exceeded for: {session.user_id}")
+            logger.warning("[AUTH] MFA max attempts exceeded for: %s", session.user_id)
             return None
 
         # Vérifier le code
         if not hmac.compare_digest(code, pending.code):
-            logger.warning(f"[AUTH] Invalid MFA code for: {session.user_id}")
+            logger.warning("[AUTH] Invalid MFA code for: %s", session.user_id)
             return None
 
         # MFA réussi - mettre à jour la session
@@ -263,7 +263,7 @@ class AIAuthManager:
             session_id=session_id
         )
 
-        logger.info(f"[AUTH] MFA verified for: {session.user_id}")
+        logger.info("[AUTH] MFA verified for: %s", session.user_id)
 
         return session
 
@@ -350,7 +350,7 @@ class AIAuthManager:
 
         # En production: envoyer le code par email
         # Pour la démo, on le logue (À NE PAS FAIRE EN PRODUCTION!)
-        logger.info(f"[AUTH] MFA code for {email}: {code}")
+        logger.info("[AUTH] MFA code for %s: %s", email, code)
 
         # TODO: Implémenter l'envoi réel par email
         # self._send_email(email, "Code de vérification AZALSCORE", f"Votre code: {code}")

@@ -5,12 +5,15 @@ Analyse transverse multi-module pour vision globale.
 Détection d'anomalies et recommendations intelligentes.
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 
 class AnomalyType(str, Enum):
@@ -210,8 +213,16 @@ class Analytics360Service:
                 ))
                 score -= 25
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(
+                "[ANALYTICS_360] Erreur analyse module finance",
+                extra={
+                    "module": "finance",
+                    "period_days": period_days,
+                    "error": str(e)[:300],
+                    "consequence": "finance_score_degraded"
+                }
+            )
 
         status = "healthy" if score >= 80 else "warning" if score >= 60 else "critical"
         return ModuleHealth(module="finance", score=max(score, 0), status=status, metrics=metrics, anomalies=anomalies)

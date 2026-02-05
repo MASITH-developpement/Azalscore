@@ -11,8 +11,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Vehicule } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatKilometers, formatCurrency,
+  formatKilometers,
   FUEL_TYPE_CONFIG, FUEL_TYPE_ICONS,
   getVehicleAge, getAverageYearlyMileage
 } from '../types';

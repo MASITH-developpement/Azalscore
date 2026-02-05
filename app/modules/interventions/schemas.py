@@ -37,8 +37,8 @@ class DonneurOrdreBase(BaseModel):
 
 
 class DonneurOrdreCreate(DonneurOrdreBase):
-    """Création donneur d'ordre."""
-    pass
+    """Création donneur d'ordre. Le code est auto-généré si non fourni."""
+    code: str | None = Field(None, max_length=50)  # Optionnel, auto-généré si vide
 
 
 class DonneurOrdreUpdate(BaseModel):

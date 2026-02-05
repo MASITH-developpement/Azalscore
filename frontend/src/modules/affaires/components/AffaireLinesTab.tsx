@@ -12,7 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Affaire, TeamMember, AffaireIntervention } from '../types';
-import { formatDate, formatDuration } from '../types';
+import { formatDuration } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * AffaireLinesTab - Interventions et ressources de l'affaire

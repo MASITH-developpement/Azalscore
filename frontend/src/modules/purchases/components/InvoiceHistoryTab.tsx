@@ -8,7 +8,7 @@ import { Clock, User, Edit, Plus, CheckCircle2, XCircle, CreditCard, ArrowRight 
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseInvoice, PurchaseHistoryEntry } from '../types';
-import { formatDateTime } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * InvoiceHistoryTab - Historique

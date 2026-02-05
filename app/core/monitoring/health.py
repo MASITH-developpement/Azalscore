@@ -88,7 +88,7 @@ def check_database(db: Session = None) -> ComponentHealth:
                 "overflow": pool.overflow(),
             }
         except AttributeError as e:
-            logger.debug(f"Could not retrieve pool info (pool may not support these methods): {e}")
+            logger.debug("Could not retrieve pool info (pool may not support these methods): %s", e)
 
         return ComponentHealth(
             name="database",

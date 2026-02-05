@@ -189,28 +189,6 @@ export const PAYOUT_STATUS_CONFIG: Record<PayoutStatus, { label: string; color: 
 // HELPERS DE FORMATAGE
 // ============================================================================
 
-export const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-export const formatPercent = (value: number): string => {
-  return `${value.toFixed(1)}%`;
-};
-
 export const formatRating = (rating: number | undefined): string => {
   if (rating === undefined || rating === null) return '-';
   return `${rating.toFixed(1)}/5`;

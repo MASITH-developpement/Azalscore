@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthenticatedQuery } from '@/ui-engine/hooks';
 import {
   Package, ShoppingCart, Truck, Tag, Euro, TrendingUp, AlertTriangle,
   ArrowLeft, Edit, Printer, Clock, FileText, Sparkles
@@ -31,8 +32,9 @@ import type { TableColumn } from '@/types';
 import type { Product, Order, Category, Shipping, OrderItem } from './types';
 import {
   PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG, SHIPPING_STATUS_CONFIG,
-  formatCurrency, formatDate, formatDateTime, isLowStock, isOutOfStock, calculateMargin
+  isLowStock, isOutOfStock, calculateMargin
 } from './types';
+import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
 
 // Composants tabs
 import {

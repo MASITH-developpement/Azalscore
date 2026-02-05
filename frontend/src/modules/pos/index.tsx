@@ -16,10 +16,10 @@ import {
 } from 'lucide-react';
 import type { POSSession as POSSessionType } from './types';
 import {
-  formatCurrency as formatCurrencyTyped, formatDateTime as formatDateTimeTyped,
   formatSessionDuration, SESSION_STATUS_CONFIG,
   isSessionOpen, isSessionClosed, hasCashDifference
 } from './types';
+import { formatCurrency as formatCurrencyTyped, formatDateTime as formatDateTimeTyped } from '@/utils/formatters';
 import {
   SessionInfoTab, SessionTransactionsTab, SessionCashTab,
   SessionHistoryTab, SessionIATab
@@ -265,7 +265,7 @@ const useSession = (id: string) => {
 // ============================================================================
 
 const StoresView: React.FC = () => {
-  const { data: stores = [], isLoading } = useStores();
+  const { data: stores = [], isLoading, error, refetch } = useStores();
 
   const columns: TableColumn<POSStore>[] = [
     { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -282,7 +282,7 @@ const StoresView: React.FC = () => {
         <h3 className="text-lg font-semibold">Magasins</h3>
         <Button>Nouveau magasin</Button>
       </div>
-      <DataTable columns={columns} data={stores} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={stores} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -290,7 +290,7 @@ const StoresView: React.FC = () => {
 const TerminalsView: React.FC = () => {
   const { data: stores = [] } = useStores();
   const [filterStore, setFilterStore] = useState<string>('');
-  const { data: terminals = [], isLoading } = useTerminals(filterStore || undefined);
+  const { data: terminals = [], isLoading, error, refetch } = useTerminals(filterStore || undefined);
 
   const columns: TableColumn<POSTerminal>[] = [
     { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -317,7 +317,7 @@ const TerminalsView: React.FC = () => {
           <Button>Nouveau terminal</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={terminals} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={terminals} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -327,7 +327,7 @@ const SessionsView: React.FC = () => {
   const { data: stores = [] } = useStores();
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterStore, setFilterStore] = useState<string>('');
-  const { data: sessions = [], isLoading } = useSessions({
+  const { data: sessions = [], isLoading, error, refetch } = useSessions({
     status: filterStatus || undefined,
     store_id: filterStore || undefined
   });
@@ -388,7 +388,7 @@ const SessionsView: React.FC = () => {
           <Button onClick={() => setShowModal(true)}>Ouvrir session</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={sessions} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={sessions} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Ouvrir une session">
         <div className="space-y-4">
@@ -421,7 +421,7 @@ const SessionsView: React.FC = () => {
 const TransactionsView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterPayment, setFilterPayment] = useState<string>('');
-  const { data: transactions = [], isLoading } = useTransactions();
+  const { data: transactions = [], isLoading, error, refetch } = useTransactions();
 
   const filteredData = transactions.filter(t => {
     if (filterType && t.type !== filterType) return false;
@@ -464,7 +464,7 @@ const TransactionsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -476,7 +476,7 @@ const TransactionsView: React.FC = () => {
 const SessionDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: session, isLoading, error } = useSession(id || '');
+  const { data: session, isLoading, error, refetch } = useSession(id || '');
   const closeSession = useCloseSession();
 
   if (isLoading) {
@@ -678,6 +678,8 @@ const SessionDetailView: React.FC = () => {
       headerActions={headerActions}
       primaryActions={primaryActions}
       secondaryActions={secondaryActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };

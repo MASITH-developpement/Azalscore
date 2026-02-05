@@ -81,6 +81,30 @@ export const useCreateIntervention = () => {
   });
 };
 
+export const useUpdateIntervention = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Intervention> }) => {
+      return api.put(`/v2/interventions/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: interventionKeys.all });
+    },
+  });
+};
+
+export const useDeleteIntervention = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return api.delete(`/v2/interventions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: interventionKeys.all });
+    },
+  });
+};
+
 // ============================================================================
 // HOOKS - DONNEURS D'ORDRE
 // ============================================================================
@@ -91,6 +115,30 @@ export const useDonneursOrdre = () => {
     queryFn: async () => {
       const response = await api.get<DonneurOrdre[]>('/v2/interventions/donneurs-ordre');
       return response as unknown as DonneurOrdre[];
+    },
+  });
+};
+
+export const useUpdateDonneurOrdre = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<DonneurOrdre> }) => {
+      return api.put(`/v2/interventions/donneurs-ordre/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
+    },
+  });
+};
+
+export const useDeleteDonneurOrdre = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return api.delete(`/v2/interventions/donneurs-ordre/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
     },
   });
 };

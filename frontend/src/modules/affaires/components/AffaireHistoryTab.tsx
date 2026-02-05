@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Affaire, AffaireHistoryEntry } from '../types';
-import { formatDateTime, STATUS_CONFIG } from '../types';
+import { STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * AffaireHistoryTab - Historique et audit trail de l'affaire

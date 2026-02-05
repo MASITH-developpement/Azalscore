@@ -13,10 +13,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Employee, LeaveRequest, LeaveBalance, LeaveType } from '../types';
 import {
-  formatDate,
   LEAVE_TYPE_CONFIG, LEAVE_STATUS_CONFIG,
   getRemainingLeave, getTotalRemainingLeave, getPendingLeaveRequests
 } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * EmployeeLeavesTab - Conges et absences

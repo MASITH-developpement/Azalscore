@@ -11,9 +11,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention } from '../types';
 import {
-  formatDate, formatCurrency, getFullAddress,
-  STATUT_CONFIG, PRIORITE_CONFIG
+  getFullAddress,
+  STATUT_CONFIG, PRIORITE_CONFIG, TYPE_INTERVENTION_CONFIG
 } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 
 /**
  * InterventionInfoTab - Informations generales
@@ -36,25 +37,25 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
         {/* Client / Donneur d'ordre */}
         <Card title="Client / Donneur d'ordre" icon={<Building2 size={18} />}>
           <dl className="azals-dl">
-            {intervention.client_nom && (
+            {intervention.client_name && (
               <>
                 <dt><Building2 size={14} /> Client</dt>
-                <dd>{intervention.client_nom}</dd>
+                <dd>{intervention.client_name}</dd>
               </>
             )}
-            {intervention.donneur_ordre_nom && (
+            {intervention.donneur_ordre_name && (
               <>
                 <dt><User size={14} /> Donneur d'ordre</dt>
-                <dd>{intervention.donneur_ordre_nom}</dd>
+                <dd>{intervention.donneur_ordre_name}</dd>
               </>
             )}
-            {intervention.projet_nom && (
+            {intervention.projet_name && (
               <>
                 <dt><Tag size={14} /> Projet</dt>
-                <dd>{intervention.projet_nom}</dd>
+                <dd>{intervention.projet_name}</dd>
               </>
             )}
-            {!intervention.client_nom && !intervention.donneur_ordre_nom && (
+            {!intervention.client_name && !intervention.donneur_ordre_name && (
               <p className="text-muted">Aucun client associe</p>
             )}
           </dl>
@@ -66,11 +67,18 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
             <dl className="azals-dl">
               <dt><MapPin size={14} /> Adresse</dt>
               <dd>
-                <div>{intervention.adresse_intervention}</div>
+                <div>{intervention.adresse_ligne1}</div>
+                {intervention.adresse_ligne2 && <div>{intervention.adresse_ligne2}</div>}
                 {(intervention.code_postal || intervention.ville) && (
                   <div>{intervention.code_postal} {intervention.ville}</div>
                 )}
               </dd>
+              {intervention.contact_sur_place && (
+                <>
+                  <dt><User size={14} /> Contact</dt>
+                  <dd>{intervention.contact_sur_place} {intervention.telephone_contact && `- ${intervention.telephone_contact}`}</dd>
+                </>
+              )}
             </dl>
           ) : (
             <p className="text-muted">Aucune adresse renseignee</p>
@@ -98,22 +106,28 @@ export const InterventionInfoTab: React.FC<TabContentProps<Intervention>> = ({ d
         </Grid>
       </Card>
 
-      {/* Estimation (ERP only) */}
+      {/* Type et facturation */}
       <Card
-        title="Estimation"
+        title="Facturation"
         icon={<Calendar size={18} />}
         className="mt-4 azals-std-field--secondary"
       >
-        <Grid cols={2} gap="md">
+        <Grid cols={3} gap="md">
           <div className="azals-stat">
-            <span className="azals-stat__label">Montant estime</span>
-            <span className="azals-stat__value">
-              {intervention.montant_estime ? formatCurrency(intervention.montant_estime) : '-'}
+            <span className="azals-stat__label">Type</span>
+            <span className={`azals-badge azals-badge--${TYPE_INTERVENTION_CONFIG[intervention.type_intervention]?.color || 'gray'}`}>
+              {TYPE_INTERVENTION_CONFIG[intervention.type_intervention]?.label || intervention.type_intervention}
             </span>
           </div>
           <div className="azals-stat">
-            <span className="azals-stat__label">Cree le</span>
-            <span className="azals-stat__value">{formatDate(intervention.created_at)}</span>
+            <span className="azals-stat__label">Montant HT</span>
+            <span className="azals-stat__value">
+              {intervention.montant_ht ? formatCurrency(intervention.montant_ht) : '-'}
+            </span>
+          </div>
+          <div className="azals-stat">
+            <span className="azals-stat__label">Facturable</span>
+            <span className="azals-stat__value">{intervention.facturable !== false ? 'Oui' : 'Non'}</span>
           </div>
         </Grid>
       </Card>

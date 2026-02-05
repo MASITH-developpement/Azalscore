@@ -10,8 +10,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Payment } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 import {
-  formatCurrency, getMethodLabel, getMethodIcon,
+  getMethodLabel, getMethodIcon,
   METHOD_CONFIG
 } from '../types';
 

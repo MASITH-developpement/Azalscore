@@ -403,6 +403,26 @@ async def update_donneur_ordre(
     return _serialize_donneur(donneur)
 
 
+@router.delete(
+    "/donneurs-ordre/{donneur_id}",
+    summary="Supprimer un donneur d'ordre (v2)",
+)
+async def delete_donneur_ordre(
+    donneur_id: UUID,
+    service: InterventionsService = Depends(_get_service),
+    context: SaaSContext = Depends(get_saas_context),
+):
+    """Supprime un donneur d'ordre. Accès écriture requis."""
+    _require_write_access(context)
+    success = service.delete_donneur_ordre(donneur_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Donneur d'ordre non trouvé",
+        )
+    return {"message": "Donneur d'ordre supprimé"}
+
+
 # ============================================================================
 # STATISTIQUES (AVANT /{id} pour éviter conflit de route)
 # ============================================================================

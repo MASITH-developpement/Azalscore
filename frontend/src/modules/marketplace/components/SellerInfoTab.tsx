@@ -11,7 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Seller } from '../types';
-import { formatDate, formatPercent, formatRating, SELLER_STATUS_CONFIG } from '../types';
+import { formatRating, SELLER_STATUS_CONFIG } from '../types';
+import { formatDate, formatPercent } from '@/utils/formatters';
 
 /**
  * SellerInfoTab - Informations generales

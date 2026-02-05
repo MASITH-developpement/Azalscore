@@ -15,7 +15,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 9998;
+  z-index: var(--azals-z-palette);
   animation: azals-overlay-enter 0.2s ease;
 }
 
@@ -40,11 +40,11 @@
   width: 90%;
   max-width: 640px;
   max-height: 60vh;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-2xl);
-  z-index: 9999;
+  background: var(--azals-bg);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-xl);
+  box-shadow: var(--azals-shadow-lg);
+  z-index: var(--azals-z-guardian);
   display: flex;
   flex-direction: column;
   animation: azals-palette-enter 0.2s ease;
@@ -70,11 +70,11 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--azals-border);
 }
 
 .azals-command-palette__search-icon {
-  color: var(--color-text-tertiary);
+  color: var(--azals-gray-400);
   flex-shrink: 0;
 }
 
@@ -84,11 +84,11 @@
   outline: none;
   background: transparent;
   font-size: 1rem;
-  color: var(--color-text-primary);
+  color: var(--azals-text);
 }
 
 .azals-command-palette__input::placeholder {
-  color: var(--color-text-tertiary);
+  color: var(--azals-gray-400);
 }
 
 /* ============================================================
@@ -104,7 +104,7 @@
 .azals-command-palette__empty {
   padding: 3rem 1rem;
   text-align: center;
-  color: var(--color-text-tertiary);
+  color: var(--azals-gray-400);
   font-size: 0.875rem;
 }
 
@@ -125,7 +125,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-tertiary);
+  color: var(--azals-gray-400);
   padding: 0.5rem 0.75rem 0.25rem;
   margin: 0;
 }
@@ -142,23 +142,23 @@
   padding: 0.75rem;
   border: none;
   background: transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--azals-radius-md);
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s ease;
+  transition: background var(--azals-transition-fast);
 }
 
 .azals-command-palette__item:hover,
 .azals-command-palette__item--selected {
-  background: var(--color-background-hover);
+  background: var(--azals-bg-secondary);
 }
 
 .azals-command-palette__item--selected {
-  background: var(--color-primary-light);
+  background: var(--azals-primary-50);
 }
 
 .azals-command-palette__item-icon {
-  color: var(--color-text-secondary);
+  color: var(--azals-text-secondary);
   flex-shrink: 0;
 }
 
@@ -170,7 +170,7 @@
 .azals-command-palette__item-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--azals-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -178,7 +178,7 @@
 
 .azals-command-palette__item-description {
   font-size: 0.75rem;
-  color: var(--color-text-tertiary);
+  color: var(--azals-gray-400);
   margin-top: 0.125rem;
   white-space: nowrap;
   overflow: hidden;
@@ -194,16 +194,16 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1.25rem;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--azals-border);
   font-size: 0.75rem;
-  color: var(--color-text-tertiary);
+  color: var(--azals-gray-400);
 }
 
 .azals-command-palette__footer kbd {
   padding: 0.125rem 0.375rem;
-  background: var(--color-background-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  background: var(--azals-bg-secondary);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-sm);
   font-family: inherit;
   font-size: 0.75rem;
   font-weight: 600;

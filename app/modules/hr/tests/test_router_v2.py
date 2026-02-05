@@ -994,12 +994,9 @@ def test_hr_documents_tenant_isolation(test_client, client, auth_headers, db_ses
 # TESTS DASHBOARD
 # ============================================================================
 
-def test_get_hr_dashboard(test_client, client, auth_headers, sample_employee):
-    """Test récupération du dashboard RH"""
-    response = test_client.get(
-        "/api/v2/hr/dashboard",
-        headers=auth_headers
-    )
+def test_get_hr_dashboard(test_client, sample_employee):
+    """Test récupération du dashboard RH (mock_saas_context autouse)"""
+    response = test_client.get("/api/v2/hr/dashboard")
 
     assert response.status_code == 200
     data = response.json()

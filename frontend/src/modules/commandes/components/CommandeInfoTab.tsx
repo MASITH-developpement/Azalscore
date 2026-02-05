@@ -11,7 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Commande } from '../types';
-import { formatDate, formatAddress, STATUS_CONFIG } from '../types';
+import { formatAddress, STATUS_CONFIG } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * CommandeInfoTab - Informations générales de la commande

@@ -9,10 +9,10 @@ import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Seller, MarketplaceProduct } from '../types';
 import {
-  formatCurrency, formatDate,
   PRODUCT_STATUS_CONFIG,
   isProductLowStock, isProductOutOfStock
 } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * SellerProductsTab - Produits du vendeur

@@ -12,9 +12,9 @@ import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Subscription, SubscriptionHistoryEntry } from '../types';
 import {
-  formatDateTime, formatCurrency,
   SUBSCRIPTION_STATUS_CONFIG
 } from '../types';
+import { formatDateTime, formatCurrency } from '@/utils/formatters';
 
 /**
  * SubscriptionHistoryTab - Historique

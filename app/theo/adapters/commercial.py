@@ -127,7 +127,7 @@ class CommercialAdapter(BaseAdapter):
         context: Dict[str, Any]
     ) -> AdapterResult:
         """Exécute une action commerciale."""
-        logger.info(f"[CommercialAdapter] Execute: {action_name} with {params}")
+        logger.info("[CommercialAdapter] Execute: %s with %s", action_name, params)
 
         handlers = {
             "creer_devis": self._handle_creer_devis,
@@ -145,7 +145,7 @@ class CommercialAdapter(BaseAdapter):
         try:
             return await handler(params, context)
         except Exception as e:
-            logger.error(f"[CommercialAdapter] Error: {e}")
+            logger.error("[CommercialAdapter] Error: %s", e)
             return self._voice_error(f"Erreur lors de l'exécution: {str(e)}")
 
     async def confirm(
@@ -155,7 +155,7 @@ class CommercialAdapter(BaseAdapter):
         context: Dict[str, Any]
     ) -> AdapterResult:
         """Confirme une action en attente."""
-        logger.info(f"[CommercialAdapter] Confirm: {action_name}")
+        logger.info("[CommercialAdapter] Confirm: %s", action_name)
 
         # Récupérer l'action en attente
         pending = context.get("pending_action", {})

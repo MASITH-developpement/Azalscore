@@ -11,8 +11,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Vehicule } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 import {
-  calculCoutKm, getCO2Km, formatCurrencyKm, formatCurrency, formatKilometers,
+  calculCoutKm, getCO2Km, formatCurrencyKm, formatKilometers,
   getTotalMaintenanceCost, getTotalMileageCost, getTotalCO2Emissions
 } from '../types';
 

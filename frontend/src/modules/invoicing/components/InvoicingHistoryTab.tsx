@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Document, DocumentHistoryEntry } from '../types';
-import { formatDateTime, DOCUMENT_TYPE_CONFIG } from '../types';
+import { DOCUMENT_TYPE_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * InvoicingHistoryTab - Historique

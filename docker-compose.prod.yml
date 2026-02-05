@@ -77,6 +77,7 @@ services:
       - "80"
     volumes:
       - backups_data:/app/backups
+      - ./app:/app/app:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,6 +118,8 @@ services:
     image: azals/frontend:${VERSION:-latest}
     container_name: azals_frontend
     restart: always
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
       interval: 30s
@@ -280,10 +283,12 @@ services:
   # cAdvisor - Métriques containers (CPU, RAM, I/O)
   # ============================================================
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
     container_name: azals_cadvisor
     restart: always
     privileged: true
+    group_add:
+      - "999"  # GID du groupe docker sur l'hôte
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro

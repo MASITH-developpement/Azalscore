@@ -12,9 +12,9 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Audit } from '../types';
 import {
-  formatDate, formatPercent,
   AUDIT_TYPE_CONFIG, AUDIT_STATUS_CONFIG, getAuditScoreColor
 } from '../types';
+import { formatDate, formatPercent } from '@/utils/formatters';
 
 /**
  * AuditInfoTab - Informations generales

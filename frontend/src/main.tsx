@@ -35,7 +35,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         justifyContent: 'center',
         minHeight: '100vh',
         background: '#f5f6f8',
-        fontFamily: 'system-ui, sans-serif',
+        fontFamily: "'Inter', system-ui, sans-serif",
         color: '#6b7280'
       }}>
         Chargement...
@@ -56,9 +56,16 @@ if ('serviceWorker' in navigator) {
       .register('/sw.js')
       .then((registration) => {
         console.log('SW registered:', registration.scope);
+        // Check for updates every 60 seconds
+        setInterval(() => registration.update(), 60 * 1000);
       })
       .catch((error) => {
         console.log('SW registration failed:', error);
       });
+  });
+
+  // When a new SW takes control, reload to get fresh assets
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
   });
 }

@@ -8,7 +8,8 @@ import { FileText, Building2, Calendar, Tag } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseOrder } from '../types';
-import { ORDER_STATUS_CONFIG, formatDate, formatDateTime } from '../types';
+import { ORDER_STATUS_CONFIG } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 
 /**
  * OrderInfoTab - Informations generales

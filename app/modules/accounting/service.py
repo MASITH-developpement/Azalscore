@@ -678,15 +678,7 @@ class AccountingService:
     # ========================================================================
 
     def _generate_entry_number(self, journal_code: str, entry_date: datetime.datetime) -> str:
-        """Générer un numéro d'écriture unique (ex: VT-2024-001)."""
-        year = entry_date.year
-
-        # Compter les écritures existantes pour ce journal et cette année
-        count = self.db.query(AccountingJournalEntry).filter(
-            AccountingJournalEntry.tenant_id == self.tenant_id,
-            AccountingJournalEntry.journal_code == journal_code,
-            extract('year', AccountingJournalEntry.entry_date) == year
-        ).count()
-
-        next_number = count + 1
-        return f"{journal_code}-{year}-{next_number:03d}"
+        """Générer un numéro d'écriture unique (ex: PC-2024-00001)."""
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, self.tenant_id)
+        return seq.next_reference("PIECE_COMPTABLE")

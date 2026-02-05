@@ -34,11 +34,12 @@ import type {
   InventoryDashboard, MovementType, MovementStatus
 } from './types';
 import {
-  formatCurrency, formatDate, formatQuantity,
+  formatQuantity,
   MOVEMENT_TYPE_CONFIG, MOVEMENT_STATUS_CONFIG,
   PICKING_TYPE_CONFIG, PICKING_STATUS_CONFIG,
   isLowStock, isOutOfStock, isOverstock, getStockLevel, getStockLevelLabel
 } from './types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 // Composants tabs
 import {
@@ -214,7 +215,7 @@ interface ProductDetailViewProps {
 }
 
 const ProductDetailView: React.FC<ProductDetailViewProps> = ({ productId, onBack }) => {
-  const { data: product, isLoading, error } = useProduct(productId);
+  const { data: product, isLoading, error, refetch } = useProduct(productId);
   const queryClient = useQueryClient();
 
   if (isLoading) {
@@ -423,6 +424,8 @@ const ProductDetailView: React.FC<ProductDetailViewProps> = ({ productId, onBack
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -436,7 +439,7 @@ interface ProductsViewProps {
 }
 
 const ProductsView: React.FC<ProductsViewProps> = ({ onSelectProduct }) => {
-  const { data: products = [], isLoading } = useProducts();
+  const { data: products = [], isLoading, error, refetch } = useProducts();
   const { data: categories = [] } = useCategories();
   const createProduct = useCreateProduct();
   const [showModal, setShowModal] = useState(false);
@@ -504,7 +507,7 @@ const ProductsView: React.FC<ProductsViewProps> = ({ onSelectProduct }) => {
         <h3 className="text-lg font-semibold">Articles</h3>
         <Button onClick={() => setShowModal(true)}>Nouvel article</Button>
       </div>
-      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel article" size="lg">
         <form onSubmit={handleSubmit}>
@@ -596,7 +599,7 @@ const ProductsView: React.FC<ProductsViewProps> = ({ onSelectProduct }) => {
 };
 
 const WarehousesView: React.FC = () => {
-  const { data: warehouses = [], isLoading } = useWarehouses();
+  const { data: warehouses = [], isLoading, error: whError, refetch: whRefetch } = useWarehouses();
   const { data: locations = [] } = useLocations();
 
   const columns: TableColumn<Warehouse>[] = [
@@ -628,13 +631,13 @@ const WarehousesView: React.FC = () => {
         <h3 className="text-lg font-semibold">Entrepôts</h3>
         <Button>Nouvel entrepôt</Button>
       </div>
-      <DataTable columns={columns} data={warehouses} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={warehouses} isLoading={isLoading} keyField="id" error={whError instanceof Error ? whError : null} onRetry={() => whRefetch()} />
     </Card>
   );
 };
 
 const MovementsView: React.FC = () => {
-  const { data: movements = [], isLoading } = useMovements();
+  const { data: movements = [], isLoading, error: mvError, refetch: mvRefetch } = useMovements();
   const { data: products = [] } = useProducts();
   const { data: locations = [] } = useLocations();
   const createMovement = useCreateMovement();
@@ -692,7 +695,7 @@ const MovementsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Mouvements de stock</h3>
         <Button onClick={() => setShowModal(true)}>Nouveau mouvement</Button>
       </div>
-      <DataTable columns={columns} data={movements} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={movements} isLoading={isLoading} keyField="id" error={mvError instanceof Error ? mvError : null} onRetry={() => mvRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau mouvement" size="lg">
         <form onSubmit={handleSubmit}>
@@ -775,7 +778,7 @@ const MovementsView: React.FC = () => {
 };
 
 const PickingsView: React.FC = () => {
-  const { data: pickings = [], isLoading } = usePickings();
+  const { data: pickings = [], isLoading, error: pickError, refetch: pickRefetch } = usePickings();
 
   const columns: TableColumn<Picking>[] = [
     { id: 'number', header: 'N°', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -806,13 +809,13 @@ const PickingsView: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Préparations</h3>
       </div>
-      <DataTable columns={columns} data={pickings} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={pickings} isLoading={isLoading} keyField="id" error={pickError instanceof Error ? pickError : null} onRetry={() => pickRefetch()} />
     </Card>
   );
 };
 
 const InventoryCountsView: React.FC = () => {
-  const { data: counts = [], isLoading } = useInventoryCounts();
+  const { data: counts = [], isLoading, error: countError, refetch: countRefetch } = useInventoryCounts();
 
   const columns: TableColumn<InventoryCount>[] = [
     { id: 'number', header: 'N°', accessor: 'number', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -841,7 +844,7 @@ const InventoryCountsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Inventaires</h3>
         <Button>Nouvel inventaire</Button>
       </div>
-      <DataTable columns={columns} data={counts} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={counts} isLoading={isLoading} keyField="id" error={countError instanceof Error ? countError : null} onRetry={() => countRefetch()} />
     </Card>
   );
 };

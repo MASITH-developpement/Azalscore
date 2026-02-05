@@ -31,7 +31,8 @@ import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 
 // Import types et composants tabs
 import type { Devis, DevisFormData, Customer, DocumentStatus, DocumentLine } from './types';
-import { STATUS_CONFIG, formatCurrency, formatDate } from './types';
+import { STATUS_CONFIG } from './types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   DevisInfoTab,
   DevisLinesTab,
@@ -218,7 +219,7 @@ const DevisListView: React.FC<{
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<{ status?: string; search?: string }>({});
 
-  const { data, isLoading, refetch } = useDevisList(page, pageSize, filters);
+  const { data, isLoading, error, refetch } = useDevisList(page, pageSize, filters);
 
   const columns: TableColumn<Devis>[] = [
     {
@@ -331,6 +332,8 @@ const DevisListView: React.FC<{
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
           emptyMessage="Aucun devis"
         />
       </Card>
@@ -347,7 +350,7 @@ const DevisDetailView: React.FC<{
   onBack: () => void;
   onEdit: () => void;
 }> = ({ devisId, onBack, onEdit }) => {
-  const { data: devis, isLoading } = useDevis(devisId);
+  const { data: devis, isLoading, error, refetch } = useDevis(devisId);
   const validateDevis = useValidateDevis();
   const sendDevis = useSendDevis();
   const convertToOrder = useConvertToOrder();
@@ -588,6 +591,8 @@ const DevisDetailView: React.FC<{
       secondaryActions={secondaryActions}
       backAction={{ label: 'Retour', onClick: onBack }}
       isLoading={isLoading}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };

@@ -7,6 +7,7 @@
  */
 
 import React from 'react';
+import clsx from 'clsx';
 import { Loader2, ArrowLeft, Search, Plus, Eye, Edit, Trash2, Check } from 'lucide-react';
 
 // ============================================================
@@ -149,7 +150,7 @@ export function SimpleTable<T extends Record<string, any>>({
       <thead>
         <tr>
           {columns.map((col) => (
-            <th key={String(col.key)} style={{ textAlign: col.align || 'left' }}>
+            <th key={String(col.key)} className={clsx('azals-ws-table__cell', col.align && col.align !== 'left' && `azals-ws-table__cell--${col.align}`)}>
               {col.header}
             </th>
           ))}
@@ -166,11 +167,14 @@ export function SimpleTable<T extends Record<string, any>>({
           data.map((row) => (
             <tr
               key={String(row[keyField])}
-              onClick={() => onRowClick?.(row)}
-              style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+              className={clsx(onRowClick && 'azals-ws-table__row--clickable')}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              role={onRowClick ? 'button' : undefined}
+              tabIndex={onRowClick ? 0 : undefined}
+              onKeyDown={onRowClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(row); } } : undefined}
             >
               {columns.map((col) => (
-                <td key={String(col.key)} style={{ textAlign: col.align || 'left' }}>
+                <td key={String(col.key)} className={clsx('azals-ws-table__cell', col.align && col.align !== 'left' && `azals-ws-table__cell--${col.align}`)}>
                   {col.render ? col.render(row) : row[col.key as keyof T]}
                 </td>
               ))}
@@ -382,7 +386,7 @@ export const Grid: React.FC<{ children: React.ReactNode; cols?: 2 | 3 | 4 }> = (
   children,
   cols = 2,
 }) => (
-  <div className="azals-ws-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+  <div className={clsx('azals-ws-grid', `azals-ws-grid--cols-${cols}`)}>
     {children}
   </div>
 );

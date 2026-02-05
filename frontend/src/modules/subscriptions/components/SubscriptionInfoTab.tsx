@@ -11,11 +11,11 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Subscription } from '../types';
 import {
-  formatCurrency, formatDate, formatDateTime,
   getSubscriptionAge, getDaysUntilRenewal, getTrialDaysRemaining,
   isInTrial, willCancel, isPastDue,
   SUBSCRIPTION_STATUS_CONFIG, INTERVAL_CONFIG
 } from '../types';
+import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatters';
 
 /**
  * SubscriptionInfoTab - Informations generales

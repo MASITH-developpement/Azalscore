@@ -11,9 +11,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Document } from '../types';
 import {
-  formatCurrency, formatDate, formatPercent, getDaysUntilDue, isDocumentOverdue,
+  getDaysUntilDue, isDocumentOverdue,
   PAYMENT_TERMS, PAYMENT_METHODS
 } from '../types';
+import { formatCurrency, formatDate, formatPercent } from '@/utils/formatters';
 
 /**
  * InvoicingFinancialTab - Informations financieres

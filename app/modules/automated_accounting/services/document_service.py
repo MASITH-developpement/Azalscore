@@ -87,7 +87,7 @@ class DocumentService:
             # Vérifie les doublons
             existing = self.ocr_service.check_duplicate(file_hash)
             if existing:
-                logger.warning(f"Duplicate document detected: {existing.id}")
+                logger.warning("Duplicate document detected: %s", existing.id)
                 self._create_alert(
                     alert_type=AlertType.DUPLICATE_SUSPECTED,
                     title="Document en double détecté",
@@ -117,7 +117,7 @@ class DocumentService:
         self.db.commit()
         self.db.refresh(document)
 
-        logger.info(f"Document created: {document.id} ({document_type.value})")
+        logger.info("Document created: %s (%s)", document.id, document_type.value)
 
         # Lance le traitement automatique si fichier fourni
         if file_path or file_content:
@@ -153,21 +153,21 @@ class DocumentService:
             raise ValueError("No file path available for processing")
 
         # 1. OCR - Extraction du texte
-        logger.info(f"Starting OCR for document {document_id}")
+        logger.info("Starting OCR for document %s", document_id)
         self.ocr_service.process_document(document_id, file_path)
 
         # Recharge le document après OCR
         self.db.refresh(document)
 
         # 2. Classification IA
-        logger.info(f"Starting AI classification for document {document_id}")
+        logger.info("Starting AI classification for document %s", document_id)
         self.ai_service.classify_document(document_id)
 
         # Recharge après classification
         self.db.refresh(document)
 
         # 3. Génération de l'écriture comptable
-        logger.info(f"Generating accounting entry for document {document_id}")
+        logger.info("Generating accounting entry for document %s", document_id)
         auto_entry = self.accounting_service.process_document(document_id)
 
         # Recharge final
@@ -177,9 +177,10 @@ class DocumentService:
         self._check_and_create_alerts(document)
 
         logger.info(
-            f"Document {document_id} processed successfully. "
-            f"Status: {document.status.value}, "
-            f"Auto-validated: {auto_entry.auto_validated}"
+            "Document %s processed successfully. "
+            "Status: %s, "
+            "Auto-validated: %s",
+            document_id, document.status.value, auto_entry.auto_validated
         )
 
         return document

@@ -11,8 +11,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Project, TeamMember } from '../types';
+import { formatDate, formatCurrency, formatPercent } from '@/utils/formatters';
 import {
-  formatDate, formatCurrency, formatPercent, formatProjectDuration,
+  formatProjectDuration,
   PROJECT_STATUS_CONFIG, PRIORITY_CONFIG, TEAM_ROLE_CONFIG,
   getDaysRemaining, isProjectOverdue, isProjectNearDeadline
 } from '../types';

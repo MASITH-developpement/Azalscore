@@ -9,7 +9,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Order } from '../types';
-import { formatDateTime, formatFileSize } from '../types';
+import { formatFileSize } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * OrderDocumentsTab - Documents

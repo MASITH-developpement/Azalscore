@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { POSSession, SessionHistoryEntry } from '../types';
-import { formatDateTime, SESSION_STATUS_CONFIG } from '../types';
+import { SESSION_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * SessionHistoryTab - Historique de la session

@@ -38,10 +38,10 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick }) => {
 
   const trendColor =
     kpi.trend === 'up'
-      ? 'text-green-600'
+      ? 'azals-kpi-card__trend--up'
       : kpi.trend === 'down'
-      ? 'text-red-600'
-      : 'text-gray-500';
+      ? 'azals-kpi-card__trend--down'
+      : 'azals-kpi-card__trend--neutral';
 
   return (
     <div
@@ -52,6 +52,7 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onClick }) => {
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
     >
       <div className="azals-kpi-card__header">
         <span className="azals-kpi-card__label">{kpi.label}</span>
@@ -482,6 +483,8 @@ export const StatCard: React.FC<StatCardProps> = ({
       })}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
     >
       {icon && <div className="azals-stat-card__icon">{icon}</div>}
       <div className="azals-stat-card__content">

@@ -41,7 +41,7 @@ class DailyReportService:
         start_date = report_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = start_date + timedelta(days=1)
 
-        logger.info(f"[GUARDIAN] Generating daily report for {start_date.date()} - tenant: {self.tenant_id}")
+        logger.info("[GUARDIAN] Generating daily report for %s - tenant: %s", start_date.date(), self.tenant_id)
 
         # Vérifier si un rapport existe déjà
         existing_report = self.db.query(GuardianDailyReport).filter(
@@ -50,7 +50,7 @@ class DailyReportService:
         ).first()
 
         if existing_report:
-            logger.info(f"[GUARDIAN] Report already exists: {existing_report.report_uid}")
+            logger.info("[GUARDIAN] Report already exists: %s", existing_report.report_uid)
             return existing_report
 
         # Collecter les statistiques des incidents
@@ -95,7 +95,7 @@ class DailyReportService:
         self.db.commit()
         self.db.refresh(report)
 
-        logger.info(f"[GUARDIAN] Daily report generated: {report.report_uid}")
+        logger.info("[GUARDIAN] Daily report generated: %s", report.report_uid)
         return report
 
     def _get_incidents_stats(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
@@ -282,11 +282,11 @@ def generate_all_daily_reports(db: Session) -> int:
                 service.generate_daily_report()
                 reports_generated += 1
             except Exception as e:
-                logger.error(f"[GUARDIAN] Failed to generate report for tenant {tenant.id}: {e}")
+                logger.error("[GUARDIAN] Failed to generate report for tenant %s: %s", tenant.id, e)
 
-        logger.info(f"[GUARDIAN] Daily reports generated: {reports_generated}/{len(tenants)}")
+        logger.info("[GUARDIAN] Daily reports generated: %s/%s", reports_generated, len(tenants))
         return reports_generated
 
     except Exception as e:
-        logger.error(f"[GUARDIAN] Daily report generation failed: {e}")
+        logger.error("[GUARDIAN] Daily report generation failed: %s", e)
         return 0

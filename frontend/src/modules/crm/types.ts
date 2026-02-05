@@ -238,34 +238,6 @@ export const ACTIVITY_STATUS_CONFIG: Record<ActivityStatus, { label: string; col
 };
 
 // ============================================================================
-// HELPERS - Formatage
-// ============================================================================
-
-export const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-export const formatDate = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-export const formatPercent = (value: number): string => {
-  return `${value.toFixed(1)}%`;
-};
-
-// ============================================================================
 // HELPERS - Calculs et vérifications
 // ============================================================================
 

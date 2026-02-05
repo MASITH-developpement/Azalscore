@@ -40,6 +40,7 @@ import { PageWrapper, Card, Grid } from '@ui/layout';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
 import { Modal, Input, TextArea, Select } from '@ui/forms';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 import { useAuth } from '@core/auth';
 
 // ============================================================
@@ -844,7 +845,7 @@ export const DocumentDetail: React.FC = () => {
     'validate' | 'reject' | null
   >(null);
 
-  const { data: document, isLoading } = useDocumentDetail(documentId || '');
+  const { data: document, isLoading, error: documentError, refetch: refetchDocument } = useDocumentDetail(documentId || '');
   const validateDocument = useValidateDocument();
   const rejectDocument = useRejectDocument();
   const updateContext = useUpdateDocumentContext();
@@ -889,6 +890,18 @@ export const DocumentDetail: React.FC = () => {
           <div className="azals-spinner" />
           <p>Chargement du document...</p>
         </div>
+      </PageWrapper>
+    );
+  }
+
+  if (documentError) {
+    return (
+      <PageWrapper title="Erreur">
+        <ErrorState
+          message={documentError instanceof Error ? documentError.message : undefined}
+          onRetry={() => { refetchDocument(); }}
+          onBack={() => navigate(-1)}
+        />
       </PageWrapper>
     );
   }

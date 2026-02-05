@@ -295,44 +295,6 @@ export const WORK_ORDER_STATUS_CONFIG: Record<WorkOrderStatus, { label: string; 
 // ============================================================================
 
 /**
- * Formater une date
- */
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formater une date avec heure
- */
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formater un montant en euros
- */
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-/**
- * Formater une duree en minutes
- */
-export const formatDuration = (minutes: number): string => {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
-};
-
-/**
- * Formater un pourcentage
- */
-export const formatPercent = (value: number, decimals: number = 0): string => {
-  return `${(value * 100).toFixed(decimals)}%`;
-};
-
-/**
  * Formater une quantite
  */
 export const formatQuantity = (qty: number, unit?: string): string => {

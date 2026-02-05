@@ -163,35 +163,6 @@ export const PRIORITY_CONFIG: Record<AffairePriority, { label: string; color: st
 // HELPERS
 // ============================================================
 
-export const formatCurrency = (amount?: number, currency = 'EUR'): string => {
-  if (amount === undefined || amount === null) return '-';
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-  }).format(amount);
-};
-
-export const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (dateStr?: string): string => {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-export const formatPercent = (value?: number): string => {
-  if (value === undefined || value === null) return '-';
-  return `${Math.round(value)}%`;
-};
-
 export const formatDuration = (hours?: number): string => {
   if (!hours) return '-';
   if (hours < 1) return `${Math.round(hours * 60)} min`;

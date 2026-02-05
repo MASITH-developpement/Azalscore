@@ -11,8 +11,9 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Product, ProductHistoryEntry, Movement } from '../types';
+import { formatDateTime, formatDate } from '@/utils/formatters';
 import {
-  formatDateTime, formatDate, formatQuantity,
+  formatQuantity,
   MOVEMENT_TYPE_CONFIG, MOVEMENT_STATUS_CONFIG
 } from '../types';
 

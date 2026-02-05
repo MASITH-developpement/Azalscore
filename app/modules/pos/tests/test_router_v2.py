@@ -25,8 +25,7 @@ def test_create_store(test_client, mock_saas_context, store_data, sample_store):
     """Test création d'un magasin."""
     with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
         with patch.object(POSService, "create_store", return_value=sample_store) as mock_create:
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/stores",
                 json=store_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -45,8 +44,7 @@ def test_list_stores(test_client, mock_saas_context, sample_store):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/stores",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -64,8 +62,7 @@ def test_list_stores_with_filters(test_client, mock_saas_context, sample_store):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/stores?is_active=true",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -81,8 +78,7 @@ def test_get_store(test_client, mock_saas_context, sample_store):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/stores/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -99,8 +95,7 @@ def test_get_store_not_found(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/stores/999",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -116,8 +111,7 @@ def test_update_store(test_client, mock_saas_context, sample_store):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.patch(
+            response = test_client.patch(
                 "/v2/pos/stores/1",
                 json={"name": "Magasin Modifié"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -135,8 +129,7 @@ def test_delete_store(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.delete(
+            response = test_client.delete(
                 "/v2/pos/stores/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -151,8 +144,7 @@ def test_store_pagination(test_client, mock_saas_context, sample_store):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/stores?skip=0&limit=10",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -172,8 +164,7 @@ def test_create_terminal(test_client, mock_saas_context, terminal_data, sample_t
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/terminals",
                 json=terminal_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -189,8 +180,7 @@ def test_list_terminals(test_client, mock_saas_context, sample_terminal):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/terminals",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -205,8 +195,7 @@ def test_list_terminals_with_filters(test_client, mock_saas_context, sample_term
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/terminals?store_id=1&status=ONLINE",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -221,8 +210,7 @@ def test_get_terminal(test_client, mock_saas_context, sample_terminal):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/terminals/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -237,8 +225,7 @@ def test_get_terminal_not_found(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/terminals/999",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -254,8 +241,7 @@ def test_update_terminal(test_client, mock_saas_context, sample_terminal):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.patch(
+            response = test_client.patch(
                 "/v2/pos/terminals/1",
                 json={"name": "Terminal Modifié"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -272,8 +258,7 @@ def test_update_terminal_status(test_client, mock_saas_context, sample_terminal)
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.patch(
+            response = test_client.patch(
                 "/v2/pos/terminals/1",
                 json={"status": "OFFLINE"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -289,8 +274,7 @@ def test_delete_terminal(test_client, mock_saas_context, sample_terminal):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.delete(
+            response = test_client.delete(
                 "/v2/pos/terminals/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -305,8 +289,7 @@ def test_terminal_pagination(test_client, mock_saas_context, sample_terminal):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/terminals?skip=0&limit=10",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -321,8 +304,7 @@ def test_terminal_assignment_to_store(test_client, mock_saas_context, sample_ter
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/terminals",
                 json={
                     "store_id": 1,
@@ -347,8 +329,7 @@ def test_open_session(test_client, mock_saas_context, session_data, sample_sessi
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/sessions/open",
                 json=session_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -364,8 +345,7 @@ def test_open_session_duplicate(test_client, mock_saas_context, session_data):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        with pytest.raises(ValueError):
+            with pytest.raises(ValueError):
                 response = test_client.post(
                     "/v2/pos/sessions/open",
                     json=session_data,
@@ -381,8 +361,7 @@ def test_close_session(test_client, mock_saas_context, sample_session):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/sessions/1/close?closed_by_id=1",
                 json={"actual_cash": "150.00"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -398,8 +377,7 @@ def test_close_session_not_open(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        with pytest.raises(ValueError):
+            with pytest.raises(ValueError):
                 response = test_client.post(
                     "/v2/pos/sessions/1/close?closed_by_id=1",
                     json={"actual_cash": "150.00"},
@@ -414,8 +392,7 @@ def test_list_sessions(test_client, mock_saas_context, sample_session):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/sessions",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -430,8 +407,7 @@ def test_list_sessions_with_filters(test_client, mock_saas_context, sample_sessi
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/sessions?terminal_id=1&status=OPEN&date_from=2026-01-01&date_to=2026-01-31",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -446,8 +422,7 @@ def test_get_session(test_client, mock_saas_context, sample_session):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/sessions/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -462,8 +437,7 @@ def test_get_session_not_found(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/sessions/999",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -478,8 +452,7 @@ def test_get_session_dashboard(test_client, mock_saas_context, sample_session):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/sessions/1/dashboard",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -494,8 +467,7 @@ def test_session_pagination(test_client, mock_saas_context, sample_session):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/sessions?skip=0&limit=10",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -514,8 +486,7 @@ def test_create_transaction(test_client, mock_saas_context, transaction_data, sa
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/transactions?session_id=1&cashier_id=1",
                 json=transaction_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -531,8 +502,7 @@ def test_list_transactions(test_client, mock_saas_context, sample_transaction):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/transactions",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -547,8 +517,7 @@ def test_list_transactions_with_filters(test_client, mock_saas_context, sample_t
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/transactions?session_id=1&status=COMPLETED&date_from=2026-01-01&date_to=2026-01-31",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -563,8 +532,7 @@ def test_get_transaction(test_client, mock_saas_context, sample_transaction):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/transactions/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -579,8 +547,7 @@ def test_get_transaction_not_found(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/transactions/999",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -596,8 +563,7 @@ def test_pay_transaction(test_client, mock_saas_context, sample_transaction, pay
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/transactions/1/pay",
                 json=payment_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -614,8 +580,7 @@ def test_pay_transaction_partial(test_client, mock_saas_context, sample_transact
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/transactions/1/pay",
                 json={"payment_method": "CASH", "amount": "10.00"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -632,8 +597,7 @@ def test_void_transaction(test_client, mock_saas_context, sample_transaction):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/transactions/1/void?reason=Erreur&voided_by_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -649,8 +613,7 @@ def test_refund_transaction(test_client, mock_saas_context, sample_transaction):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/transactions/1/refund?session_id=1&cashier_id=1&reason=Retour",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -665,8 +628,7 @@ def test_transaction_pagination(test_client, mock_saas_context, sample_transacti
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/transactions?skip=0&limit=10",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -687,8 +649,7 @@ def test_transaction_with_multiple_items(test_client, mock_saas_context, sample_
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/transactions?session_id=1&cashier_id=1",
                 json=multi_item_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -710,8 +671,7 @@ def test_transaction_with_discount(test_client, mock_saas_context, sample_transa
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/transactions?session_id=1&cashier_id=1",
                 json=discount_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -731,8 +691,7 @@ def test_create_hold(test_client, mock_saas_context, hold_data, sample_hold):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/hold?session_id=1&held_by_id=1",
                 json=hold_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -748,8 +707,7 @@ def test_list_hold_transactions(test_client, mock_saas_context, sample_hold):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/hold",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -764,8 +722,7 @@ def test_resume_hold_transaction(test_client, mock_saas_context, sample_hold):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/hold/1/resume",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -780,8 +737,7 @@ def test_resume_hold_not_found(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/hold/999/resume",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -796,8 +752,7 @@ def test_delete_hold(test_client, mock_saas_context, sample_hold):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.delete(
+            response = test_client.delete(
                 "/v2/pos/hold/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -812,8 +767,7 @@ def test_hold_pagination(test_client, mock_saas_context, sample_hold):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/hold?session_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -832,8 +786,7 @@ def test_create_cash_movement_in(test_client, mock_saas_context, cash_movement_d
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/cash-movements?session_id=1&performed_by_id=1",
                 json=cash_movement_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -850,8 +803,7 @@ def test_create_cash_movement_out(test_client, mock_saas_context, sample_cash_mo
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/cash-movements?session_id=1&performed_by_id=1",
                 json={"movement_type": "OUT", "amount": "30.00", "reason": "Retrait"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -867,8 +819,7 @@ def test_list_cash_movements(test_client, mock_saas_context, sample_cash_movemen
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/cash-movements?session_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -883,8 +834,7 @@ def test_list_cash_movements_with_filters(test_client, mock_saas_context, sample
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/cash-movements?session_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -899,8 +849,7 @@ def test_cash_movement_pagination(test_client, mock_saas_context, sample_cash_mo
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/cash-movements?session_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -919,8 +868,7 @@ def test_cash_movement_balance_tracking(test_client, mock_saas_context, sample_c
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/cash-movements?session_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -941,8 +889,7 @@ def test_create_quick_key(test_client, mock_saas_context, quick_key_data, sample
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/quick-keys",
                 json=quick_key_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -958,8 +905,7 @@ def test_list_quick_keys(test_client, mock_saas_context, sample_quick_key):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/quick-keys",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -974,8 +920,7 @@ def test_list_quick_keys_by_terminal(test_client, mock_saas_context, sample_quic
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/quick-keys?store_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1003,8 +948,7 @@ def test_delete_quick_key(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.delete(
+            response = test_client.delete(
                 "/v2/pos/quick-keys/1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1019,8 +963,7 @@ def test_quick_key_position_unique(test_client, mock_saas_context, quick_key_dat
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        with pytest.raises(ValueError):
+            with pytest.raises(ValueError):
                 response = test_client.post(
                     "/v2/pos/quick-keys",
                     json=quick_key_data,
@@ -1039,8 +982,7 @@ def test_create_pos_user(test_client, mock_saas_context, user_data, sample_user)
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/users",
                 json=user_data,
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -1056,8 +998,7 @@ def test_list_pos_users(test_client, mock_saas_context, sample_user):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/users",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1072,8 +1013,7 @@ def test_login_pos_user(test_client, mock_saas_context, sample_user):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/users/login",
                 json={"employee_code": "EMP001", "pin_code": "1234"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -1089,8 +1029,7 @@ def test_login_pos_user_invalid(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/users/login",
                 json={"employee_code": "EMP001", "pin_code": "wrong"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -1107,8 +1046,7 @@ def test_update_pos_user(test_client, mock_saas_context, sample_user):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.patch(
+            response = test_client.patch(
                 "/v2/pos/users/1",
                 json={"first_name": "Jane"},
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
@@ -1125,8 +1063,7 @@ def test_pos_user_permissions(test_client, mock_saas_context, sample_user):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.post(
+            response = test_client.post(
                 "/v2/pos/users",
                 json={
                     **sample_user,
@@ -1160,8 +1097,7 @@ def test_get_daily_report(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 f"/v2/pos/reports/daily/{date.today()}?store_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1184,8 +1120,7 @@ def test_get_daily_report_specific_date(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 f"/v2/pos/reports/daily/2026-01-20?store_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1214,8 +1149,7 @@ def test_daily_report_structure(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 f"/v2/pos/reports/daily/{date.today()}?store_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1245,8 +1179,7 @@ def test_daily_report_calculations(test_client, mock_saas_context):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 f"/v2/pos/reports/daily/{date.today()}?store_id=1",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1265,8 +1198,7 @@ def test_get_dashboard(test_client, mock_saas_context, sample_dashboard):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/dashboard",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )
@@ -1281,8 +1213,7 @@ def test_dashboard_structure(test_client, mock_saas_context, sample_dashboard):
 
     with patch("app.modules.pos.router_v2.get_pos_service", return_value=mock_service):
         with patch("app.modules.pos.router_v2.get_saas_context", return_value=mock_saas_context):
-                        
-                        response = test_client.get(
+            response = test_client.get(
                 "/v2/pos/dashboard",
                 headers={"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant-001"}
             )

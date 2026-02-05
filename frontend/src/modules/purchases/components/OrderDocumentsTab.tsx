@@ -9,7 +9,7 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseOrder } from '../types';
-import { formatDate } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * OrderDocumentsTab - Documents

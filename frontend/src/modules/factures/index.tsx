@@ -36,8 +36,9 @@ import type {
 } from './types';
 import {
   STATUS_CONFIG, TYPE_CONFIG, PAYMENT_METHODS,
-  formatCurrency, formatDate, isOverdue, getDaysUntilDue
+  isOverdue, getDaysUntilDue
 } from './types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   FactureInfoTab,
   FactureLinesTab,
@@ -240,7 +241,7 @@ const FactureListView: React.FC<{
   const [filters, setFilters] = useState<{ type?: FactureType; status?: string; search?: string }>({});
   const [activeTab, setActiveTab] = useState<'INVOICE' | 'CREDIT_NOTE' | 'ALL'>('INVOICE');
 
-  const { data, isLoading, refetch } = useFacturesList(page, pageSize, {
+  const { data, isLoading, error, refetch } = useFacturesList(page, pageSize, {
     type: activeTab === 'ALL' ? undefined : activeTab,
     status: filters.status,
     search: filters.search,
@@ -399,6 +400,8 @@ const FactureListView: React.FC<{
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
           emptyMessage="Aucune facture"
         />
       </Card>
@@ -416,7 +419,7 @@ const FactureDetailView: React.FC<{
   onEdit: () => void;
   onAddPayment: () => void;
 }> = ({ factureId, onBack, onEdit, onAddPayment }) => {
-  const { data: facture, isLoading } = useFacture(factureId);
+  const { data: facture, isLoading, error, refetch } = useFacture(factureId);
   const { data: payments } = useFacturePayments(factureId);
   const validateFacture = useValidateFacture();
   const sendFacture = useSendFacture();
@@ -712,6 +715,8 @@ const FactureDetailView: React.FC<{
       secondaryActions={secondaryActions}
       backAction={{ label: 'Retour', onClick: onBack }}
       isLoading={isLoading}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };

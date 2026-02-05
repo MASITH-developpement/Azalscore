@@ -380,26 +380,6 @@ export const INVENTORY_COUNT_STATUS_CONFIG: Record<InventoryCountStatus, { label
 // HELPERS - Formatage
 // ============================================================================
 
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-export const formatDate = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
 export const formatQuantity = (qty: number, unit?: string): string => {
   const formatted = new Intl.NumberFormat('fr-FR').format(qty);
   return unit ? `${formatted} ${unit}` : formatted;

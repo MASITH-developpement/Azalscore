@@ -12,7 +12,7 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { ProductionOrder, OrderDocument } from '../types';
-import { formatDate } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * OrderDocsTab - Documents de l'ordre de fabrication

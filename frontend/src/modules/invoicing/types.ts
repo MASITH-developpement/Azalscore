@@ -7,8 +7,10 @@
 // TYPES
 // ============================================================================
 
-export type DocumentType = 'QUOTE' | 'ORDER' | 'INVOICE';
-export type DocumentStatus = 'DRAFT' | 'VALIDATED' | 'SENT' | 'PAID' | 'CANCELLED';
+export type DocumentType = 'QUOTE' | 'ORDER' | 'INVOICE' | 'CREDIT_NOTE' | 'PROFORMA' | 'DELIVERY';
+export type DocumentStatus = 'DRAFT' | 'PENDING' | 'VALIDATED' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'DELIVERED' | 'INVOICED' | 'PAID' | 'CANCELLED';
+export type PaymentMethod = 'BANK_TRANSFER' | 'CHECK' | 'CREDIT_CARD' | 'CASH' | 'DIRECT_DEBIT' | 'PAYPAL' | 'OTHER';
+export type PaymentTerms = 'IMMEDIATE' | 'NET_15' | 'NET_30' | 'NET_45' | 'NET_60' | 'NET_90' | 'END_OF_MONTH' | 'CUSTOM';
 
 export interface DocumentLine {
   id: string;
@@ -38,23 +40,40 @@ export interface Document {
   customer_id: string;
   customer_name?: string;
   customer_email?: string;
+  opportunity_id?: string;
   date: string;
   due_date?: string;
   validity_date?: string;
+  delivery_date?: string;
   subtotal: number;
   discount_percent: number;
   discount_amount: number;
   tax_amount: number;
   total: number;
   currency: string;
+  paid_amount?: number;
+  remaining_amount?: number;
+  // Addresses
+  billing_address?: AddressData;
+  shipping_address?: AddressData;
+  // Shipping
+  shipping_method?: string;
+  shipping_cost?: number;
+  tracking_number?: string;
+  // Terms
   notes?: string;
   internal_notes?: string;
-  payment_terms?: string;
-  payment_method?: string;
+  terms?: string;
+  payment_terms?: PaymentTerms;
+  payment_method?: PaymentMethod;
   reference?: string;
+  // Relations
   parent_id?: string;
   parent_number?: string;
+  invoice_id?: string;
   children?: DocumentChild[];
+  // Workflow
+  assigned_to?: string;
   validated_by?: string;
   validated_by_name?: string;
   validated_at?: string;
@@ -62,6 +81,8 @@ export interface Document {
   paid_at?: string;
   cancelled_at?: string;
   cancelled_reason?: string;
+  pdf_url?: string;
+  // Meta
   created_by: string;
   created_by_name?: string;
   created_at: string;
@@ -75,6 +96,15 @@ export interface Document {
   stats?: DocumentStats;
   history?: DocumentHistoryEntry[];
   related_documents?: RelatedDocument[];
+}
+
+export interface AddressData {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  postal_code?: string;
+  state?: string;
+  country?: string;
 }
 
 export interface DocumentChild {
@@ -137,13 +167,18 @@ export interface LineFormData {
 
 export const DOCUMENT_STATUS_CONFIG: Record<DocumentStatus, {
   label: string;
-  color: 'gray' | 'blue' | 'green' | 'orange' | 'red' | 'purple';
+  color: 'gray' | 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'cyan' | 'yellow';
   description: string;
 }> = {
   DRAFT: {
     label: 'Brouillon',
     color: 'gray',
     description: 'Document en cours de redaction'
+  },
+  PENDING: {
+    label: 'En attente',
+    color: 'yellow',
+    description: 'Document en attente de validation'
   },
   VALIDATED: {
     label: 'Valide',
@@ -154,6 +189,26 @@ export const DOCUMENT_STATUS_CONFIG: Record<DocumentStatus, {
     label: 'Envoye',
     color: 'purple',
     description: 'Document envoye au client'
+  },
+  ACCEPTED: {
+    label: 'Accepte',
+    color: 'cyan',
+    description: 'Document accepte par le client'
+  },
+  REJECTED: {
+    label: 'Rejete',
+    color: 'red',
+    description: 'Document rejete par le client'
+  },
+  DELIVERED: {
+    label: 'Livre',
+    color: 'blue',
+    description: 'Marchandises livrees'
+  },
+  INVOICED: {
+    label: 'Facture',
+    color: 'orange',
+    description: 'Facture generee'
   },
   PAID: {
     label: 'Paye',
@@ -171,7 +226,7 @@ export const DOCUMENT_TYPE_CONFIG: Record<DocumentType, {
   label: string;
   labelPlural: string;
   prefix: string;
-  color: 'blue' | 'orange' | 'green';
+  color: 'blue' | 'orange' | 'green' | 'purple' | 'cyan' | 'red';
 }> = {
   QUOTE: {
     label: 'Devis',
@@ -190,6 +245,24 @@ export const DOCUMENT_TYPE_CONFIG: Record<DocumentType, {
     labelPlural: 'Factures',
     prefix: 'FAC',
     color: 'green'
+  },
+  CREDIT_NOTE: {
+    label: 'Avoir',
+    labelPlural: 'Avoirs',
+    prefix: 'AVO',
+    color: 'red'
+  },
+  PROFORMA: {
+    label: 'Proforma',
+    labelPlural: 'Proformas',
+    prefix: 'PRO',
+    color: 'purple'
+  },
+  DELIVERY: {
+    label: 'Bon de livraison',
+    labelPlural: 'Bons de livraison',
+    prefix: 'BL',
+    color: 'cyan'
   }
 };
 
@@ -198,7 +271,9 @@ export const TRANSFORM_WORKFLOW: Partial<Record<DocumentType, {
   label: string;
 }>> = {
   QUOTE: { target: 'ORDER', label: 'Transformer en commande' },
-  ORDER: { target: 'INVOICE', label: 'Transformer en facture' }
+  PROFORMA: { target: 'ORDER', label: 'Transformer en commande' },
+  ORDER: { target: 'INVOICE', label: 'Transformer en facture' },
+  DELIVERY: { target: 'INVOICE', label: 'Transformer en facture' }
 };
 
 export const TVA_RATES = [
@@ -208,50 +283,34 @@ export const TVA_RATES = [
   { value: 20, label: '20%' }
 ];
 
-export const PAYMENT_TERMS = [
-  { value: 'immediate', label: 'Comptant' },
-  { value: 'net15', label: 'Net 15 jours' },
-  { value: 'net30', label: 'Net 30 jours' },
-  { value: 'net45', label: 'Net 45 jours' },
-  { value: 'net60', label: 'Net 60 jours' },
-  { value: 'end_of_month', label: 'Fin de mois' }
+export const PAYMENT_TERMS_OPTIONS: { value: PaymentTerms; label: string }[] = [
+  { value: 'IMMEDIATE', label: 'Comptant' },
+  { value: 'NET_15', label: 'Net 15 jours' },
+  { value: 'NET_30', label: 'Net 30 jours' },
+  { value: 'NET_45', label: 'Net 45 jours' },
+  { value: 'NET_60', label: 'Net 60 jours' },
+  { value: 'NET_90', label: 'Net 90 jours' },
+  { value: 'END_OF_MONTH', label: 'Fin de mois' },
+  { value: 'CUSTOM', label: 'Personnalise' }
 ];
 
-export const PAYMENT_METHODS = [
-  { value: 'bank_transfer', label: 'Virement bancaire' },
-  { value: 'check', label: 'Cheque' },
-  { value: 'card', label: 'Carte bancaire' },
-  { value: 'cash', label: 'Especes' },
-  { value: 'direct_debit', label: 'Prelevement' }
+export const PAYMENT_METHODS_OPTIONS: { value: PaymentMethod; label: string }[] = [
+  { value: 'BANK_TRANSFER', label: 'Virement bancaire' },
+  { value: 'CHECK', label: 'Cheque' },
+  { value: 'CREDIT_CARD', label: 'Carte bancaire' },
+  { value: 'CASH', label: 'Especes' },
+  { value: 'DIRECT_DEBIT', label: 'Prelevement' },
+  { value: 'PAYPAL', label: 'PayPal' },
+  { value: 'OTHER', label: 'Autre' }
 ];
+
+// Legacy exports for compatibility
+export const PAYMENT_TERMS = PAYMENT_TERMS_OPTIONS;
+export const PAYMENT_METHODS = PAYMENT_METHODS_OPTIONS;
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
-
-export function formatCurrency(amount: number, currency = 'EUR'): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency
-  }).format(amount);
-}
-
-export function formatDate(dateStr: string): string {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-}
-
-export function formatDateTime(dateStr: string): string {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'short'
-  });
-}
-
-export function formatPercent(value: number): string {
-  return `${value.toFixed(1)}%`;
-}
 
 export function calculateLineTotal(line: LineFormData): {
   subtotal: number;

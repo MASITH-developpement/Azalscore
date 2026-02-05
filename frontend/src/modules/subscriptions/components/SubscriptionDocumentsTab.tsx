@@ -11,7 +11,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Subscription } from '../types';
-import { formatCurrency, formatDate, getPaidInvoicesCount } from '../types';
+import { getPaidInvoicesCount } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * SubscriptionDocumentsTab - Documents

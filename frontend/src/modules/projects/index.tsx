@@ -30,12 +30,12 @@ import { LoadingState, ErrorState } from '@ui/components/StateViews';
 // Types et helpers
 import type { Project, Task, TimeEntry, ProjectStats } from './types';
 import {
-  formatDate, formatCurrency, formatHours, formatPercent,
   PROJECT_STATUS_CONFIG, TASK_STATUS_CONFIG, PRIORITY_CONFIG,
   getDaysRemaining, getBudgetUsedPercent, getTaskCountByStatus,
   getTotalLoggedHours, isProjectOverdue, isProjectNearDeadline,
   isBudgetOverrun
 } from './types';
+import { formatDate, formatCurrency, formatHours, formatPercent } from '@/utils/formatters';
 
 // Composants tabs
 import {
@@ -397,7 +397,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
-      error={error instanceof Error ? error : null}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
       onRetry={() => refetch()}
     />
   );
@@ -495,7 +495,7 @@ const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({
           <Button>Nouveau projet</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -593,7 +593,7 @@ const TasksView: React.FC = () => {
           <Button>Nouvelle tache</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };

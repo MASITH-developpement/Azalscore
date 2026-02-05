@@ -8,7 +8,8 @@ import { Euro, TrendingUp, FileText, CreditCard } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseOrder } from '../types';
-import { formatCurrency, calculateVATBreakdown, ORDER_STATUS_CONFIG } from '../types';
+import { calculateVATBreakdown, ORDER_STATUS_CONFIG } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * OrderFinancialTab - Financier

@@ -199,7 +199,7 @@ class BackupService:
             backup.status = BackupStatus.FAILED
             backup.error_message = str(e)
             self.db.commit()
-            logger.error(f"Erreur backup {reference}: {e}")
+            logger.error("Erreur backup %s: %s", reference, e)
 
         return backup
 
@@ -262,7 +262,7 @@ class BackupService:
             # Nettoyer les anciens backups
             self._cleanup_old_backups(config)
 
-            logger.info(f"Backup {backup.reference} terminé: {backup.file_size} bytes")
+            logger.info("Backup %s terminé: %s bytes", backup.reference, backup.file_size)
 
         except Exception as e:
             backup.status = BackupStatus.FAILED
@@ -301,7 +301,7 @@ class BackupService:
                 rows = [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
                 data[table] = rows
             except Exception as e:
-                logger.warning(f"Table {table} non trouvée ou erreur: {e}")
+                logger.warning("Table %s non trouvée ou erreur: %s", table, e)
 
         return data
 
@@ -321,7 +321,7 @@ class BackupService:
                 try:
                     os.remove(backup.file_path)
                 except Exception as e:
-                    logger.warning(f"Impossible de supprimer {backup.file_path}: {e}")
+                    logger.warning("Impossible de supprimer %s: %s", backup.file_path, e)
             backup.status = BackupStatus.DELETED
             self.db.commit()
 
@@ -370,7 +370,7 @@ class BackupService:
             restore_log.status = BackupStatus.FAILED
             restore_log.error_message = str(e)
             self.db.commit()
-            logger.error(f"Erreur restauration: {e}")
+            logger.error("Erreur restauration: %s", e)
 
         return restore_log
 
@@ -416,7 +416,7 @@ class BackupService:
             backup.restore_count += 1
 
             self.db.commit()
-            logger.info(f"Restauration {restore_log.id} terminée")
+            logger.info("Restauration %s terminée", restore_log.id)
 
         except Exception as e:
             restore_log.status = BackupStatus.FAILED

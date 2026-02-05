@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Seller, SellerHistoryEntry } from '../types';
-import { formatDateTime, SELLER_STATUS_CONFIG } from '../types';
+import { SELLER_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * SellerHistoryTab - Historique

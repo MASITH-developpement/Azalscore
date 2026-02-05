@@ -11,9 +11,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { NonConformance } from '../types';
 import {
-  formatDate, getNCAge,
+  getNCAge,
   NC_TYPE_CONFIG, NC_ORIGIN_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG
 } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * NCInfoTab - Informations generales

@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { NonConformance, NCHistoryEntry } from '../types';
-import { formatDateTime, NC_STATUS_CONFIG } from '../types';
+import { NC_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * NCHistoryTab - Historique

@@ -177,7 +177,7 @@ class CapabilityRegistry:
         name = provider.name
 
         if name in self._providers:
-            logger.warning(f"Provider '{name}' already registered, updating")
+            logger.warning("Provider '%s' already registered, updating", name)
 
         config = ProviderConfig(
             provider=provider,
@@ -206,8 +206,9 @@ class CapabilityRegistry:
                 self._default_providers[cap] = name
 
         logger.info(
-            f"Registered provider '{name}' with capabilities: "
-            f"{[c.value for c in provider.capabilities]}"
+            "Registered provider '%s' with capabilities: "
+            "%s",
+            name, [c.value for c in provider.capabilities]
         )
 
     def unregister(self, provider_name: str) -> bool:
@@ -227,7 +228,7 @@ class CapabilityRegistry:
                 del self._default_providers[cap]
 
         del self._providers[provider_name]
-        logger.info(f"Unregistered provider '{provider_name}'")
+        logger.info("Unregistered provider '%s'", provider_name)
         return True
 
     def resolve(
@@ -288,7 +289,7 @@ class CapabilityRegistry:
                 )
 
         # 4. Aucun provider disponible
-        logger.warning(f"No available provider for capability '{capability.value}'")
+        logger.warning("No available provider for capability '%s'", capability.value)
         return None
 
     def get_all_capabilities(self) -> Dict[CapabilityType, List[str]]:
@@ -311,7 +312,7 @@ class CapabilityRegistry:
         if provider_name not in self._providers:
             return False
         self._providers[provider_name].enabled = enabled
-        logger.info(f"Provider '{provider_name}' {'enabled' if enabled else 'disabled'}")
+        logger.info("Provider '%s' %s", provider_name, 'enabled' if enabled else 'disabled')
         return True
 
     def set_healthy(self, provider_name: str, healthy: bool) -> bool:
@@ -331,7 +332,7 @@ class CapabilityRegistry:
                 self.set_healthy(name, healthy)
                 results[name] = healthy
             except Exception as e:
-                logger.error(f"Health check failed for '{name}': {e}")
+                logger.error("Health check failed for '%s': %s", name, e)
                 self.set_healthy(name, False)
                 results[name] = False
         return results

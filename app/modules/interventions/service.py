@@ -145,49 +145,17 @@ class InterventionsService:
 
     def _generate_reference(self) -> str:
         """
-        Génère une référence INT-YYYY-XXXX de manière transactionnelle.
-
-        Utilise SELECT FOR UPDATE pour éviter les conflits concurrents.
-        La numérotation est incrémentée par tenant et par année.
+        Génère une référence INT-YYYY-XXXX via le système centralisé.
         """
-        current_year = datetime.utcnow().year
-
-        # Récupérer ou créer la séquence avec verrouillage
-        sequence = self.db.query(InterventionSequence).filter(
-            InterventionSequence.tenant_id == self.tenant_id,
-            InterventionSequence.year == current_year
-        ).with_for_update().first()
-
-        if not sequence:
-            # Créer nouvelle séquence pour cette année
-            sequence = InterventionSequence(
-                tenant_id=self.tenant_id,
-                year=current_year,
-                last_number=0
-            )
-            self.db.add(sequence)
-            self.db.flush()
-
-        # Incrémenter le numéro
-        sequence.last_number += 1
-        new_number = sequence.last_number
-
-        # Générer la référence
-        reference = f"INT-{current_year}-{new_number:04d}"
-
-        return reference
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, self.tenant_id)
+        return seq.next_reference("INTERVENTION")
 
     def _generate_rapport_final_reference(self) -> str:
-        """Génère une référence pour le rapport final."""
-        current_year = datetime.utcnow().year
-
-        # Compter les rapports finaux existants pour cette année
-        count = self.db.query(RapportFinal).filter(
-            RapportFinal.tenant_id == self.tenant_id,
-            RapportFinal.reference.like(f"RFINAL-{current_year}-%")
-        ).count()
-
-        return f"RFINAL-{current_year}-{count + 1:04d}"
+        """Génère une référence pour le rapport final via le système centralisé."""
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, self.tenant_id)
+        return seq.next_reference("RAPPORT_INTERVENTION")
 
     # ========================================================================
     # DONNEURS D'ORDRE
@@ -210,10 +178,19 @@ class InterventionsService:
         ).first()
 
     def create_donneur_ordre(self, data: DonneurOrdreCreate) -> DonneurOrdre:
-        """Crée un donneur d'ordre."""
+        """Crée un donneur d'ordre avec code auto-généré si non fourni."""
+        from app.core.sequences import SequenceGenerator
+
+        data_dict = data.model_dump()
+
+        # Auto-génère le code si non fourni ou vide
+        if not data_dict.get('code'):
+            seq = SequenceGenerator(self.db, self.tenant_id)
+            data_dict['code'] = seq.next_reference("DONNEUR_ORDRE")
+
         donneur = DonneurOrdre(
             tenant_id=self.tenant_id,
-            **data.model_dump()
+            **data_dict
         )
         self.db.add(donneur)
         self.db.commit()
@@ -236,6 +213,16 @@ class InterventionsService:
         self.db.commit()
         self.db.refresh(donneur)
         return donneur
+
+    def delete_donneur_ordre(self, donneur_id: UUID) -> bool:
+        """Supprime un donneur d'ordre (soft delete via is_active=False)."""
+        donneur = self.get_donneur_ordre(donneur_id)
+        if not donneur:
+            return False
+
+        donneur.is_active = False
+        self.db.commit()
+        return True
 
     # ========================================================================
     # INTERVENTIONS - CRUD

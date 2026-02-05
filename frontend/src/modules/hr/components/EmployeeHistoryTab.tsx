@@ -12,9 +12,10 @@ import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Employee, EmployeeHistoryEntry } from '../types';
 import {
-  formatDateTime, formatDate, getFullName,
+  getFullName,
   CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG
 } from '../types';
+import { formatDateTime, formatDate } from '@/utils/formatters';
 
 /**
  * EmployeeHistoryTab - Historique de l'employe

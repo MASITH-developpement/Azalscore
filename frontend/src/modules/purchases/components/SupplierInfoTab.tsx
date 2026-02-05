@@ -8,7 +8,8 @@ import { Building2, Mail, Phone, MapPin, CreditCard, FileText } from 'lucide-rea
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Supplier } from '../types';
-import { SUPPLIER_STATUS_CONFIG, getPaymentTermsLabel, formatDate } from '../types';
+import { SUPPLIER_STATUS_CONFIG, getPaymentTermsLabel } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * SupplierInfoTab - Informations generales

@@ -28,8 +28,9 @@ import type { PaginatedResponse, TableColumn } from '@/types';
 import type { Partner, Client } from './types';
 import {
   PARTNER_TYPE_CONFIG, CLIENT_TYPE_CONFIG,
-  formatCurrency, formatDate, getPartnerAgeDays, hasContacts, getContactsCount
+  getPartnerAgeDays, hasContacts, getContactsCount
 } from './types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   PartnerInfoTab,
   PartnerContactsTab,
@@ -105,7 +106,7 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
   const [pageSize, setPageSize] = useState(25);
   const [showCreate, setShowCreate] = useState(false);
 
-  const { data, isLoading, refetch } = usePartners(type, page, pageSize);
+  const { data, isLoading, error, refetch } = usePartners(type, page, pageSize);
   const createPartner = useCreatePartner(type);
 
   const columns: TableColumn<PartnerLegacy>[] = [
@@ -186,6 +187,8 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
         />
       </Card>
 
@@ -216,7 +219,7 @@ export const ClientsPage: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'clients', page, pageSize],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PartnerLegacy>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
@@ -336,6 +339,8 @@ export const ClientsPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
         />
       </Card>
 
@@ -377,7 +382,7 @@ export const ContactsPage: React.FC = () => {
   });
 
   // Récupérer les contacts
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'contacts', page, pageSize],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<any>>(`/v1/partners/contacts?page=${page}&page_size=${pageSize}`);
@@ -493,6 +498,8 @@ export const ContactsPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
         />
       </Card>
 
@@ -580,7 +587,7 @@ interface PartnerDetailViewProps {
 const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partnerType }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: partner, isLoading, error } = usePartner(partnerType, id);
+  const { data: partner, isLoading, error, refetch } = usePartner(partnerType, id);
 
   if (isLoading) {
     return (
@@ -757,6 +764,8 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partnerType }) =>
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };

@@ -12,8 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Project, Task, TaskStatus } from '../types';
+import { formatDate, formatHours } from '@/utils/formatters';
 import {
-  formatDate, formatHours,
   TASK_STATUS_CONFIG, PRIORITY_CONFIG,
   getTaskCountByStatus, getOverdueTasks
 } from '../types';

@@ -9,7 +9,8 @@ import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseInvoice } from '../types';
-import { formatCurrency, formatPercent, calculateLineTotal, canEditInvoice } from '../types';
+import { calculateLineTotal, canEditInvoice } from '../types';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 
 /**
  * InvoiceLinesTab - Lignes de facture

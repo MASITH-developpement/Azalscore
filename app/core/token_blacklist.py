@@ -13,7 +13,6 @@ SÉCURITÉ:
 import os
 import threading
 import time
-from datetime import datetime
 from typing import Optional
 
 from app.core.logging_config import get_logger
@@ -70,7 +69,7 @@ class TokenBlacklist:
                 logger.warning("[TOKEN_BLACKLIST] Package redis non installé, fallback mémoire")
                 self._redis_client = None
             except Exception as e:
-                logger.warning(f"[TOKEN_BLACKLIST] Redis indisponible ({e}), fallback mémoire")
+                logger.warning("[TOKEN_BLACKLIST] Redis indisponible (%s), fallback mémoire", e)
                 self._redis_client = None
         else:
             if env == "production":
@@ -116,17 +115,17 @@ class TokenBlacklist:
             try:
                 key = f"token_blacklist:{jti}"
                 self._redis_client.setex(key, ttl, "1")
-                logger.debug(f"[TOKEN_BLACKLIST] Token {jti[:16]}... blacklisté (Redis, TTL={ttl}s)")
+                logger.debug("[TOKEN_BLACKLIST] Token %s... blacklisté (Redis, TTL=%ss)", jti[:16], ttl)
                 return True
             except Exception as e:
-                logger.warning(f"[TOKEN_BLACKLIST] Erreur Redis, fallback mémoire: {e}")
+                logger.warning("[TOKEN_BLACKLIST] Erreur Redis, fallback mémoire: %s", e)
 
         # Fallback mémoire
         with self._memory_lock:
             self._memory_store[jti] = exp_timestamp
             self._maybe_cleanup()
 
-        logger.debug(f"[TOKEN_BLACKLIST] Token {jti[:16]}... blacklisté (mémoire, TTL={ttl}s)")
+        logger.debug("[TOKEN_BLACKLIST] Token %s... blacklisté (mémoire, TTL=%ss)", jti[:16], ttl)
         return True
 
     def is_blacklisted(self, jti: str) -> bool:
@@ -149,7 +148,7 @@ class TokenBlacklist:
                 result = self._redis_client.exists(key)
                 return bool(result)
             except Exception as e:
-                logger.warning(f"[TOKEN_BLACKLIST] Erreur Redis, fallback mémoire: {e}")
+                logger.warning("[TOKEN_BLACKLIST] Erreur Redis, fallback mémoire: %s", e)
 
         # Vérification mémoire
         with self._memory_lock:
@@ -182,7 +181,7 @@ class TokenBlacklist:
                 key = f"token_blacklist:{jti}"
                 self._redis_client.delete(key)
             except Exception as e:
-                logger.warning(f"[TOKEN_BLACKLIST] Erreur Redis lors de suppression: {e}")
+                logger.warning("[TOKEN_BLACKLIST] Erreur Redis lors de suppression: %s", e)
 
         # Mémoire
         with self._memory_lock:
@@ -205,7 +204,7 @@ class TokenBlacklist:
             del self._memory_store[jti]
 
         if expired:
-            logger.debug(f"[TOKEN_BLACKLIST] Nettoyage: {len(expired)} tokens expirés supprimés")
+            logger.debug("[TOKEN_BLACKLIST] Nettoyage: %s tokens expirés supprimés", len(expired))
 
     def count(self) -> int:
         """Retourne le nombre de tokens blacklistés."""
@@ -213,8 +212,11 @@ class TokenBlacklist:
             try:
                 keys = self._redis_client.keys("token_blacklist:*")
                 return len(keys)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "[TOKEN_BLACKLIST] Redis count échoué, fallback mémoire",
+                    extra={"error": str(e)[:200], "consequence": "memory_store_count_used"}
+                )
 
         with self._memory_lock:
             return len(self._memory_store)
@@ -227,7 +229,7 @@ class TokenBlacklist:
                 if keys:
                     self._redis_client.delete(*keys)
             except Exception as e:
-                logger.warning(f"[TOKEN_BLACKLIST] Erreur Redis lors de clear: {e}")
+                logger.warning("[TOKEN_BLACKLIST] Erreur Redis lors de clear: %s", e)
 
         with self._memory_lock:
             self._memory_store.clear()

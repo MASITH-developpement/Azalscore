@@ -8,8 +8,8 @@ import { FileText, Calendar, Book, User, Link2 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Entry } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 import {
-  formatDate, formatDateTime,
   ENTRY_STATUS_CONFIG, JOURNAL_TYPE_CONFIG, getJournalTypeLabel
 } from '../types';
 

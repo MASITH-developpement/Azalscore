@@ -23,6 +23,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useCapabilities } from '@core/capabilities';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // ============================================================
 // TYPES
@@ -224,8 +225,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const paletteRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { capabilities } = useCapabilities();
+
+  useFocusTrap(paletteRef, { enabled: isOpen, onEscape: onClose });
 
   // Filtrer les commandes selon les capacités et la recherche
   const filteredCommands = useMemo(() => {
@@ -321,7 +325,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       <div className="azals-command-palette__overlay" onClick={onClose} />
 
       {/* Palette */}
-      <div className="azals-command-palette">
+      <div
+        ref={paletteRef}
+        className="azals-command-palette"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Palette de commandes"
+      >
         {/* Search input */}
         <div className="azals-command-palette__search">
           <Search size={20} className="azals-command-palette__search-icon" />

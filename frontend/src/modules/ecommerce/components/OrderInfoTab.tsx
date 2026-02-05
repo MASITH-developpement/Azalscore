@@ -8,9 +8,10 @@ import { ShoppingCart, User, MapPin, CreditCard, Globe } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Order } from '../types';
+import { formatCurrency, formatDateTime } from '@/utils/formatters';
 import {
   ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG,
-  formatCurrency, formatDateTime, ORDER_SOURCES, PAYMENT_METHODS
+  ORDER_SOURCES, PAYMENT_METHODS
 } from '../types';
 
 /**

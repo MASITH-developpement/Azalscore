@@ -12,8 +12,9 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Customer, Contact } from '../types';
 import {
-  formatDate, CUSTOMER_TYPE_CONFIG, getContactFullName
+  CUSTOMER_TYPE_CONFIG, getContactFullName
 } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * CustomerInfoTab - Informations générales du client

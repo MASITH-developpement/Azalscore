@@ -8,7 +8,8 @@ import { PieChart, TrendingUp, Target, Building2 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Entry, EntryLine } from '../types';
-import { formatCurrency, formatAccountCode } from '../types';
+import { formatAccountCode } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * EntryAnalyticsTab - Analytique

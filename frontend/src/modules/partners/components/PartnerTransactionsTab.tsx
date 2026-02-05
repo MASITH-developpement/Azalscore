@@ -11,7 +11,7 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Partner, Client } from '../types';
-import { formatCurrency, formatDate } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * PartnerTransactionsTab - Transactions

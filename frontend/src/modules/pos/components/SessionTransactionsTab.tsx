@@ -13,10 +13,11 @@ import { Select } from '@ui/forms';
 import type { TabContentProps } from '@ui/standards';
 import type { POSSession, POSTransaction } from '../types';
 import {
-  formatCurrency, formatDateTime, formatTime, formatNumber,
+  formatNumber,
   TRANSACTION_TYPE_CONFIG, TRANSACTION_STATUS_CONFIG, PAYMENT_METHOD_CONFIG,
   isSaleTransaction, isReturnTransaction, isVoidedTransaction
 } from '../types';
+import { formatCurrency, formatDateTime, formatTime } from '@/utils/formatters';
 
 /**
  * SessionTransactionsTab - Transactions de la session

@@ -121,7 +121,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             log_data["headers"] = self._filter_headers(headers)
 
         logger.info(
-            f"[REQUEST] {request.method} {path}",
+            "[REQUEST] %s %s", request.method, path,
             extra=log_data
         )
 
@@ -133,7 +133,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             error = e
             logger.error(
-                f"[REQUEST] {request.method} {path} - Exception: {type(e).__name__}: {e}",
+                "[REQUEST] %s %s - Exception: %s: %s", request.method, path, type(e).__name__, e,
                 extra={
                     "event": "request_error",
                     "method": request.method,

@@ -12,10 +12,11 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Employee } from '../types';
 import {
-  formatDate, getFullName, getSeniorityFormatted, getAge,
+  getFullName, getSeniorityFormatted, getAge,
   CONTRACT_TYPE_CONFIG, EMPLOYEE_STATUS_CONFIG,
   isContractExpiringSoon, isOnProbation, isActive
 } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * EmployeeInfoTab - Informations generales de l'employe

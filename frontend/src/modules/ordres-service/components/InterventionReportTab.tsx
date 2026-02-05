@@ -11,8 +11,9 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention } from '../types';
 import {
-  formatCurrency, formatDuration, getActualDuration, getAmountVariance, getDurationVariance
+  getActualDuration, getAmountVariance, getDurationVariance
 } from '../types';
+import { formatCurrency, formatDuration } from '@/utils/formatters';
 
 /**
  * InterventionReportTab - Compte-rendu
@@ -76,8 +77,8 @@ export const InterventionReportTab: React.FC<TabContentProps<Intervention>> = ({
             <div className="azals-stat">
               <span className="azals-stat__label">Duree estimee</span>
               <span className="azals-stat__value">
-                {intervention.duree_estimee_minutes
-                  ? formatDuration(intervention.duree_estimee_minutes)
+                {intervention.duree_prevue_minutes
+                  ? formatDuration(intervention.duree_prevue_minutes)
                   : '-'}
               </span>
             </div>
@@ -104,16 +105,16 @@ export const InterventionReportTab: React.FC<TabContentProps<Intervention>> = ({
             <div className="azals-stat">
               <span className="azals-stat__label">Montant estime</span>
               <span className="azals-stat__value">
-                {intervention.montant_estime
-                  ? formatCurrency(intervention.montant_estime)
+                {intervention.montant_ht
+                  ? formatCurrency(intervention.montant_ht)
                   : '-'}
               </span>
             </div>
             <div className="azals-stat">
               <span className="azals-stat__label">Montant reel</span>
               <span className="azals-stat__value">
-                {intervention.montant_reel
-                  ? formatCurrency(intervention.montant_reel)
+                {intervention.montant_ttc
+                  ? formatCurrency(intervention.montant_ttc)
                   : '-'}
               </span>
             </div>

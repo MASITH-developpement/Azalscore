@@ -49,16 +49,25 @@ class PurchasesService:
     # ========================================================================
 
     def create_supplier(self, data: SupplierCreate, user_id: UUID) -> PurchaseSupplier:
-        """Créer un fournisseur."""
-        # Vérifier si le code existe déjà
-        existing = self.get_supplier_by_code(data.code)
-        if existing:
-            raise ValueError(f"Un fournisseur avec le code {data.code} existe déjà")
+        """Créer un fournisseur avec code auto-généré si non fourni."""
+        from app.core.sequences import SequenceGenerator
+
+        data_dict = data.model_dump(exclude_unset=False)
+
+        # Auto-génère le code si non fourni ou vide
+        if not data_dict.get('code'):
+            seq = SequenceGenerator(self.db, self.tenant_id)
+            data_dict['code'] = seq.next_reference("FOURNISSEUR")
+        else:
+            # Vérifier si le code existe déjà
+            existing = self.get_supplier_by_code(data_dict['code'])
+            if existing:
+                raise ValueError(f"Un fournisseur avec le code {data_dict['code']} existe déjà")
 
         supplier = PurchaseSupplier(
             tenant_id=self.tenant_id,
             created_by=user_id,
-            **data.model_dump(exclude_unset=False)
+            **data_dict
         )
         self.db.add(supplier)
         self.db.commit()
@@ -214,25 +223,10 @@ class PurchasesService:
         ).first()
 
     def get_next_order_number(self) -> str:
-        """Générer le prochain numéro de commande (CA-2024-001)."""
-        year = datetime.now().year
-        prefix = f"CA-{year}-"
-
-        last_order = self.db.query(LegacyPurchaseOrder).filter(
-            LegacyPurchaseOrder.tenant_id == self.tenant_id,
-            LegacyPurchaseOrder.number.like(f"{prefix}%")
-        ).order_by(desc(LegacyPurchaseOrder.number)).first()
-
-        if last_order:
-            try:
-                last_number = int(last_order.number.split("-")[-1])
-                next_number = last_number + 1
-            except ValueError:
-                next_number = 1
-        else:
-            next_number = 1
-
-        return f"{prefix}{next_number:03d}"
+        """Générer le prochain numéro de commande via système centralisé."""
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, self.tenant_id)
+        return seq.next_reference("COMMANDE_FOURNISSEUR")
 
     def list_orders(
         self,

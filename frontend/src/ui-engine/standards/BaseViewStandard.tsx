@@ -31,6 +31,7 @@ import { MainInfoBar } from './MainInfoBar';
 import { TabsStandard } from './TabsStandard';
 import { SidebarSummary } from './SidebarSummary';
 import { FooterActions } from './FooterActions';
+import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import type { BaseViewStandardProps } from './types';
 
 /**
@@ -85,6 +86,12 @@ export function BaseViewStandard<T>({
   onDataChange,
   onTabChange,
   isLoading,
+  error,
+  onRetry,
+  isEmpty,
+  emptyTitle,
+  emptyMessage,
+  emptyAction,
   className,
 }: BaseViewStandardProps<T>): React.ReactElement {
   // État de l'onglet actif
@@ -109,14 +116,37 @@ export function BaseViewStandard<T>({
     [onDataChange]
   );
 
-  // Affichage de chargement
+  // Loading state with timeout
   if (isLoading) {
     return (
       <div className={clsx('azals-std-view azals-std-view--loading', className)}>
-        <div className="azals-loading">
-          <div className="azals-spinner azals-spinner--lg" />
-          <p>Chargement...</p>
-        </div>
+        <LoadingState onRetry={onRetry} />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className={clsx('azals-std-view azals-std-view--error', className)}>
+        <ErrorState
+          message={error.message}
+          onRetry={onRetry}
+          onBack={backAction?.onClick}
+        />
+      </div>
+    );
+  }
+
+  // Empty state
+  if (isEmpty) {
+    return (
+      <div className={clsx('azals-std-view azals-std-view--empty', className)}>
+        <EmptyState
+          title={emptyTitle}
+          message={emptyMessage}
+          action={emptyAction}
+        />
       </div>
     );
   }

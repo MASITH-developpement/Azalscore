@@ -25,7 +25,7 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import Any, Callable, Dict, Generic, Optional, Type, TypeVar
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -80,7 +80,7 @@ def require_entity(
         detail = f"{entity_name} non trouve"
         if entity_id is not None:
             detail = f"{entity_name} avec id={entity_id} non trouve"
-        logger.warning(f"[REQUIRE_ENTITY] {detail}")
+        logger.warning("[REQUIRE_ENTITY] %s", detail)
         raise HTTPException(status_code=status_code, detail=detail)
     return entity
 
@@ -269,7 +269,7 @@ class CRUDMixin:
         self.db.add(entity)
         self.db.commit()
         self.db.refresh(entity)
-        logger.debug(f"[CRUD] Created {type(entity).__name__} id={entity.id}")
+        logger.debug("[CRUD] Created %s id=%s", type(entity).__name__, entity.id)
         return entity
 
     def update(self, entity: T) -> T:
@@ -284,7 +284,7 @@ class CRUDMixin:
         """
         self.db.commit()
         self.db.refresh(entity)
-        logger.debug(f"[CRUD] Updated {type(entity).__name__} id={entity.id}")
+        logger.debug("[CRUD] Updated %s id=%s", type(entity).__name__, entity.id)
         return entity
 
     def delete(self, entity: T) -> bool:
@@ -301,7 +301,7 @@ class CRUDMixin:
         entity_type = type(entity).__name__
         self.db.delete(entity)
         self.db.commit()
-        logger.debug(f"[CRUD] Deleted {entity_type} id={entity_id}")
+        logger.debug("[CRUD] Deleted %s id=%s", entity_type, entity_id)
         return True
 
     def soft_delete(self, entity: T, field: str = "is_deleted") -> T:
@@ -336,7 +336,11 @@ class CRUDMixin:
             yield entity
             self.db.commit()
             self.db.refresh(entity)
-        except Exception:
+        except Exception as e:
+            logger.error(
+                "[CRUD_PERSIST] Échec persistance entité — rollback",
+                extra={"error": str(e)[:300], "consequence": "transaction_rolled_back"}
+            )
             self.db.rollback()
             raise
 
@@ -407,7 +411,7 @@ def update_model(
         updated_fields.append(field)
 
     if updated_fields:
-        logger.debug(f"[UPDATE_MODEL] Updated fields: {updated_fields}")
+        logger.debug("[UPDATE_MODEL] Updated fields: %s", updated_fields)
 
     return model_instance
 
@@ -499,7 +503,7 @@ def handle_service_errors(
                 status_code = final_map.get(type(e), default_status)
                 if log_errors:
                     logger.warning(
-                        f"[SERVICE_ERROR] {type(e).__name__}: {e}",
+                        "[SERVICE_ERROR] %s: %s", type(e).__name__, e,
                         extra={"status_code": status_code}
                     )
                 raise HTTPException(status_code=status_code, detail=str(e))
@@ -514,7 +518,7 @@ def handle_service_errors(
                 status_code = final_map.get(type(e), default_status)
                 if log_errors:
                     logger.warning(
-                        f"[SERVICE_ERROR] {type(e).__name__}: {e}",
+                        "[SERVICE_ERROR] %s: %s", type(e).__name__, e,
                         extra={"status_code": status_code}
                     )
                 raise HTTPException(status_code=status_code, detail=str(e))
@@ -579,8 +583,6 @@ class ServiceFactory:
 
         Note: Les imports sont faits ici pour eviter les imports circulaires.
         """
-        from app.core.dependencies import get_current_user
-
         kwargs = {"db": db}
 
         # Ajouter tenant_id si requis

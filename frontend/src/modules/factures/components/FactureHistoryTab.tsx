@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Facture, FactureHistoryEntry, Payment } from '../types';
-import { formatDateTime, formatCurrency, STATUS_CONFIG, PAYMENT_METHODS } from '../types';
+import { STATUS_CONFIG, PAYMENT_METHODS } from '../types';
+import { formatDateTime, formatCurrency } from '@/utils/formatters';
 
 /**
  * FactureHistoryTab - Historique et audit trail de la facture

@@ -8,7 +8,7 @@ import { Clock, User, Edit, Plus, Tag, Package, ArrowRight } from 'lucide-react'
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Product, ProductHistoryEntry } from '../types';
-import { formatDateTime } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * ProductHistoryTab - Historique

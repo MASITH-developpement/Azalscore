@@ -386,7 +386,7 @@ class EmailService:
         if config.provider == "smtp":
             success = self._send_via_smtp(config, email_log)
         else:
-            logger.warning(f"Provider {config.provider} non implémenté")
+            logger.warning("Provider %s non implémenté", config.provider)
             success = False
 
         if success:

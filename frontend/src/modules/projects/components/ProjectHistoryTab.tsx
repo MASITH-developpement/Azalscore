@@ -11,8 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Project, ProjectHistoryEntry, Milestone } from '../types';
+import { formatDateTime, formatDate } from '@/utils/formatters';
 import {
-  formatDateTime, formatDate,
   PROJECT_STATUS_CONFIG, MILESTONE_STATUS_CONFIG
 } from '../types';
 

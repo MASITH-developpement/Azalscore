@@ -25,7 +25,17 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=settings.db_pool_size,
     max_overflow=settings.db_max_overflow,
-    echo=settings.debug  # Log SQL en mode debug
+    echo=False  # PRODUCTION: pas de log SQL verbeux
+)
+
+logger.info(
+    "[DB] Engine SQLAlchemy créé",
+    extra={
+        "pool_size": settings.db_pool_size,
+        "max_overflow": settings.db_max_overflow,
+        "pool_pre_ping": True,
+        "echo": False
+    }
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -71,7 +81,7 @@ def get_db_with_rls(tenant_id: str):
                 text("SET LOCAL app.current_tenant_id = :tenant_id"),
                 {"tenant_id": tenant_id}
             )
-            logger.debug(f"[RLS] Tenant context set: {tenant_id}")
+            logger.debug("[RLS] Tenant context set: %s", tenant_id)
         yield db
     finally:
         db.close()
@@ -93,7 +103,7 @@ def set_rls_context(db, tenant_id: str) -> None:
             text("SET LOCAL app.current_tenant_id = :tenant_id"),
             {"tenant_id": tenant_id}
         )
-        logger.debug(f"[RLS] Tenant context set on existing session: {tenant_id}")
+        logger.debug("[RLS] Tenant context set on existing session: %s", tenant_id)
 
 
 def check_database_connection() -> bool:
@@ -105,14 +115,23 @@ def check_database_connection() -> bool:
         with engine.connect() as conn:
             result = conn.execute(text("SELECT 1"))
             result.fetchone()
-        logger.info("Connexion à la base de données : OK")
+        logger.info("[DB] Vérification connexion base de données — OK")
         return True
     except OperationalError as e:
-        logger.error(f"Erreur de connexion à la base de données : {e}")
+        logger.error(
+            "[DB] Échec connexion base de données — erreur opérationnelle",
+            extra={"error": str(e)[:500], "consequence": "db_unavailable"}
+        )
         return False
     except SQLAlchemyError as e:
-        logger.error(f"Erreur SQLAlchemy : {e}")
+        logger.error(
+            "[DB] Échec connexion base de données — erreur SQLAlchemy",
+            extra={"error": str(e)[:500], "consequence": "db_unavailable"}
+        )
         return False
     except Exception as e:
-        logger.exception(f"Erreur inattendue lors du check DB : {e}")
+        logger.exception(
+            "[DB] Échec connexion base de données — erreur inattendue",
+            extra={"error": str(e)[:500], "consequence": "db_unavailable"}
+        )
         return False

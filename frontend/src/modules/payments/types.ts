@@ -212,18 +212,6 @@ export const SAVED_METHOD_TYPE_CONFIG: Record<SavedMethodType, {
 // HELPERS
 // ============================================================================
 
-export const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
 export const getPaymentAge = (payment: Payment): string => {
   const created = new Date(payment.created_at);
   const now = new Date();

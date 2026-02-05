@@ -9,7 +9,8 @@ import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseOrder } from '../types';
-import { formatCurrency, formatPercent, calculateLineTotal, canEditOrder } from '../types';
+import { calculateLineTotal, canEditOrder } from '../types';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 
 /**
  * OrderLinesTab - Lignes de commande

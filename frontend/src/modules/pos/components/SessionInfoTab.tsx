@@ -12,10 +12,11 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { POSSession } from '../types';
 import {
-  formatCurrency, formatDateTime, formatTime, formatNumber,
+  formatNumber,
   formatSessionDuration, SESSION_STATUS_CONFIG,
   getCashPaymentPercentage, getCardPaymentPercentage
 } from '../types';
+import { formatCurrency, formatDateTime, formatTime } from '@/utils/formatters';
 
 /**
  * SessionInfoTab - Informations generales

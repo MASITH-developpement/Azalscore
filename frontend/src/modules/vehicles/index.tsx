@@ -31,10 +31,11 @@ import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '
 import { isDemoMode } from '../../utils/demoMode';
 import type { Vehicule, FuelType, CoutKmDetail } from './types';
 import {
-  calculCoutKm, getCO2Km, formatCurrencyKm, formatCurrency, formatKilometers,
+  calculCoutKm, getCO2Km, formatCurrencyKm, formatKilometers,
   FUEL_TYPE_LABELS, FUEL_TYPE_ICONS, FUEL_TYPE_CONFIG,
-  DEFAULT_CO2_KM, formatDate
+  DEFAULT_CO2_KM
 } from './types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import {
   VehicleInfoTab,
   VehicleCostsTab,
@@ -734,7 +735,7 @@ const VehicleDetailView: React.FC<VehicleDetailViewProps> = ({ vehicleId, onBack
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
-      error={error instanceof Error ? error : null}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
       onRetry={() => refetch()}
     />
   );
@@ -986,7 +987,7 @@ const VehiculesListPage: React.FC<{
           keyField="id"
           actions={actions}
           isLoading={isLoading}
-          error={error instanceof Error ? error : null}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
           pagination={{
             page,
             pageSize,

@@ -13,11 +13,11 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Customer, Opportunity } from '../types';
 import {
-  formatCurrency, formatDate,
   OPPORTUNITY_STATUS_CONFIG,
   isOpportunityOpen, isOpportunityWon, isOpportunityLost,
   getWeightedValue, getDaysToClose, isOverdue
 } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * CustomerOpportunitiesTab - Opportunités du client

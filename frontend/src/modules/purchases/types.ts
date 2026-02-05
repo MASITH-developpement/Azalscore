@@ -222,35 +222,6 @@ export const TVA_RATES = [
 ];
 
 // ============================================================================
-// HELPERS - Formatting
-// ============================================================================
-
-export const formatCurrency = (value: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-  }).format(value);
-};
-
-export const formatDate = (dateStr: string): string => {
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (dateStr: string): string => {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-export const formatPercent = (value: number): string => {
-  return `${value.toFixed(1)}%`;
-};
-
-// ============================================================================
 // HELPERS - Line Calculations
 // ============================================================================
 

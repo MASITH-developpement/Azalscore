@@ -6,6 +6,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthenticatedQuery } from '@/ui-engine/hooks';
 import {
   Users, UserPlus, Phone, Mail, Building2, MapPin,
   TrendingUp, Target, Calendar, Clock, Euro,
@@ -34,10 +35,10 @@ import type {
   CustomerType, OpportunityStatus
 } from './types';
 import {
-  formatCurrency, formatDate,
   CUSTOMER_TYPE_CONFIG, OPPORTUNITY_STATUS_CONFIG,
   isProspect, isActiveCustomer, canConvert, getCustomerValue
 } from './types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 // Composants tabs
 import {

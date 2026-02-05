@@ -117,7 +117,7 @@ class AIGuardianService:
         Returns:
             AIIncident créé
         """
-        logger.info(f"[AI_GUARDIAN] MODE A - Détection incident: {error_type} dans {module}")
+        logger.info("[AI_GUARDIAN] MODE A - Détection incident: %s dans %s", error_type, module)
 
         # Générer signature unique pour déduplication
         signature = self._generate_error_signature(error_type, error_message, module)
@@ -125,7 +125,7 @@ class AIGuardianService:
         # Vérifier si incident similaire récent (< 5 min)
         recent = self._find_recent_similar_incident(signature)
         if recent:
-            logger.debug(f"[AI_GUARDIAN] Incident similaire récent ignoré: {recent.incident_uid}")
+            logger.debug("[AI_GUARDIAN] Incident similaire récent ignoré: %s", recent.incident_uid)
             return recent
 
         # Déterminer sévérité
@@ -158,8 +158,9 @@ class AIGuardianService:
         self.db.refresh(incident)
 
         logger.info(
-            f"[AI_GUARDIAN] Incident créé: {incident.incident_uid} "
-            f"(severity={severity.value}, module={module})"
+            "[AI_GUARDIAN] Incident créé: %s "
+            "(severity=%s, module=%s)",
+            incident.incident_uid, severity.value, module
         )
 
         # Mettre à jour le score du module
@@ -174,7 +175,7 @@ class AIGuardianService:
             incident.status = IncidentStatus.ANALYZING.value
             incident.analysis_started_at = datetime.utcnow()
             self.db.commit()
-            logger.info(f"[AI_GUARDIAN] Analyse démarrée: {incident.incident_uid}")
+            logger.info("[AI_GUARDIAN] Analyse démarrée: %s", incident.incident_uid)
         return incident
 
     def complete_analysis(
@@ -229,8 +230,9 @@ class AIGuardianService:
         self.db.commit()
 
         logger.info(
-            f"[AI_GUARDIAN] Analyse terminée: {incident.incident_uid} "
-            f"(status={status.value}, duration={incident.duration_ms}ms)"
+            "[AI_GUARDIAN] Analyse terminée: %s "
+            "(status=%s, duration=%sms)",
+            incident.incident_uid, status.value, incident.duration_ms
         )
 
         return incident
@@ -453,7 +455,7 @@ class AIGuardianService:
         Returns:
             AIAuditReport avec le rapport complet
         """
-        logger.info(f"[AI_GUARDIAN] MODE B - Audit mensuel {year}-{month:02d}")
+        logger.info("[AI_GUARDIAN] MODE B - Audit mensuel %s-%s", year, month)
 
         # Période
         period_start = datetime(year, month, 1)
@@ -511,14 +513,15 @@ class AIGuardianService:
             report.completed_at = datetime.utcnow()
 
             logger.info(
-                f"[AI_GUARDIAN] Audit terminé: {report.report_uid} "
-                f"({report.modules_audited} modules, score moyen={report.avg_score:.1f})"
+                "[AI_GUARDIAN] Audit terminé: %s "
+                "(%s modules, score moyen=%s)",
+                report.report_uid, report.modules_audited, report.avg_score
             )
 
         except Exception as e:
             report.status = AuditStatus.FAILED.value
             report.completed_at = datetime.utcnow()
-            logger.error(f"[AI_GUARDIAN] Échec audit: {e}")
+            logger.error("[AI_GUARDIAN] Échec audit: %s", e)
 
         self.db.commit()
         self.db.refresh(report)
@@ -663,7 +666,7 @@ class AIGuardianService:
         Returns:
             AISLAMetric avec tous les indicateurs
         """
-        logger.info(f"[AI_GUARDIAN] MODE C - Calcul SLA ({period_type})")
+        logger.info("[AI_GUARDIAN] MODE C - Calcul SLA (%s)", period_type)
 
         now = datetime.utcnow()
 
@@ -725,8 +728,9 @@ class AIGuardianService:
         self.db.refresh(metric)
 
         logger.info(
-            f"[AI_GUARDIAN] SLA calculé: {metric.metric_uid} "
-            f"(uptime={metric.uptime_percent:.2f}%, incidents={metric.total_incidents})"
+            "[AI_GUARDIAN] SLA calculé: %s "
+            "(uptime=%s%%, incidents=%s)",
+            metric.metric_uid, metric.uptime_percent, metric.total_incidents
         )
 
         return metric

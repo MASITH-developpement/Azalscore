@@ -213,7 +213,7 @@ const useDataSources = () => {
 
 const DashboardsView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
-  const { data: dashboards = [], isLoading } = useDashboards(filterType || undefined);
+  const { data: dashboards = [], isLoading, error: dashboardsError, refetch: refetchDashboards } = useDashboards(filterType || undefined);
 
   const columns: TableColumn<Dashboard>[] = [
     { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -246,7 +246,7 @@ const DashboardsView: React.FC = () => {
           <Button>Nouveau tableau</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={dashboards} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={dashboards} isLoading={isLoading} keyField="id" error={dashboardsError instanceof Error ? dashboardsError : null} onRetry={() => refetchDashboards()} />
     </Card>
   );
 };
@@ -254,7 +254,7 @@ const DashboardsView: React.FC = () => {
 const ReportsView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
-  const { data: reports = [], isLoading } = useReports({
+  const { data: reports = [], isLoading, error: reportsError, refetch: refetchReports } = useReports({
     type: filterType || undefined,
     category: filterCategory || undefined
   });
@@ -303,13 +303,13 @@ const ReportsView: React.FC = () => {
           <Button>Nouveau rapport</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={reports} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={reports} isLoading={isLoading} keyField="id" error={reportsError instanceof Error ? reportsError : null} onRetry={() => refetchReports()} />
     </Card>
   );
 };
 
 const DataSourcesView: React.FC = () => {
-  const { data: dataSources = [], isLoading } = useDataSources();
+  const { data: dataSources = [], isLoading, error: dataSourcesError, refetch: refetchDataSources } = useDataSources();
 
   const columns: TableColumn<DataSource>[] = [
     { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -328,7 +328,7 @@ const DataSourcesView: React.FC = () => {
         <h3 className="text-lg font-semibold">Sources de donnees</h3>
         <Button>Nouvelle source</Button>
       </div>
-      <DataTable columns={columns} data={dataSources} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={dataSources} isLoading={isLoading} keyField="id" error={dataSourcesError instanceof Error ? dataSourcesError : null} onRetry={() => refetchDataSources()} />
     </Card>
   );
 };

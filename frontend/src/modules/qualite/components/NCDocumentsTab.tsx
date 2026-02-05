@@ -11,7 +11,7 @@ import { Button } from '@ui/actions';
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { NonConformance, NCDocument } from '../types';
-import { formatDate } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * NCDocumentsTab - Documents

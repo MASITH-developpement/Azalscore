@@ -258,20 +258,6 @@ export const CARRIERS = [
 // HELPERS FORMATAGE
 // ============================================================================
 
-export const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-export const formatDate = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR');
-};
-
 export const formatWeight = (weight?: number): string => {
   if (!weight) return '-';
   if (weight >= 1000) {

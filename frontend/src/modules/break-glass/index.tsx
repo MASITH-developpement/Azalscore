@@ -26,6 +26,7 @@ import { useCanBreakGlass } from '@core/capabilities';
 import { trackBreakGlassEvent } from '@core/audit-ui';
 import { PageWrapper, Card } from '@ui/layout';
 import { Button } from '@ui/actions';
+import { ErrorState } from '../../ui-engine/components/StateViews';
 import type { BreakGlassScope, BreakGlassChallenge, BreakGlassRequest } from '@/types';
 
 // ============================================================
@@ -175,8 +176,8 @@ const Level2Confirmation: React.FC<Level2Props> = ({
   onCancel,
   isLoadingChallenge,
 }) => {
-  const { data: tenants } = useTenantsList();
-  const { data: modules } = useModulesList();
+  const { data: tenants, error: tenantsError, refetch: refetchTenants } = useTenantsList();
+  const { data: modules, error: modulesError, refetch: refetchModules } = useModulesList();
 
   const isPhraseCorrect = challenge && typedPhrase.trim() === challenge.confirmation_phrase;
 
@@ -191,6 +192,19 @@ const Level2Confirmation: React.FC<Level2Props> = ({
       {/* Sélection du périmètre */}
       <div className="azals-break-glass__section">
         <h3>Périmètre d'intervention</h3>
+
+        {(tenantsError || modulesError) && (
+          <ErrorState
+            message={
+              tenantsError instanceof Error
+                ? tenantsError.message
+                : modulesError instanceof Error
+                ? modulesError.message
+                : 'Impossible de charger les options de périmètre.'
+            }
+            onRetry={() => { refetchTenants(); refetchModules(); }}
+          />
+        )}
 
         <div className="azals-break-glass__form-group">
           <label>Client (tenant)</label>

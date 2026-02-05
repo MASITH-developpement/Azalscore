@@ -18,11 +18,12 @@ import type { TableColumn } from '@/types';
 import type { AdminUser, Role } from './types';
 import {
   USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
-  hasTwoFactorEnabled, mustChangePassword, formatDateTime
+  hasTwoFactorEnabled, mustChangePassword
 } from './types';
+import { formatDateTime } from '@/utils/formatters';
 import {
   UserInfoTab, UserPermissionsTab, UserActivityTab,
-  UserHistoryTab, UserIATab
+  UserHistoryTab, UserIATab, SequencesView
 } from './components';
 
 // ============================================================================
@@ -774,7 +775,7 @@ const BackupsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'audit' | 'backups';
+type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'sequences' | 'audit' | 'backups';
 
 const AdminDashboardView: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -786,6 +787,7 @@ const AdminDashboardView: React.FC = () => {
     { id: 'permissions', label: 'Permissions' },
     { id: 'roles', label: 'Roles' },
     { id: 'tenants', label: 'Tenants' },
+    { id: 'sequences', label: 'Numerotation' },
     { id: 'audit', label: 'Audit' },
     { id: 'backups', label: 'Sauvegardes' }
   ];
@@ -800,6 +802,8 @@ const AdminDashboardView: React.FC = () => {
         return <RolesView />;
       case 'tenants':
         return <TenantsView />;
+      case 'sequences':
+        return <SequencesView />;
       case 'audit':
         return <AuditView />;
       case 'backups':

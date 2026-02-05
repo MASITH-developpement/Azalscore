@@ -10,6 +10,8 @@
 @import './standards/_variables.css';
 @import './standards/base-view.css';
 @import './standards/tabs.css';
+@import './standards/stat-cards.css';
+@import './standards/tab-nav.css';
 @import './standards/mode-erp.css';
 @import './standards/mode-azalscore.css';
 
@@ -19,29 +21,35 @@
 
 @import './top-menu.css';
 @import './command-palette.css';
+@import './theo-panel.css';
+@import './theo-voice-panel.css';
+@import './guardian-panel.css';
+@import './cockpit.css';
+@import './state-views.css';
+@import './planning.css';
 
 /* ============================================================
    CSS VARIABLES (DESIGN TOKENS)
    ============================================================ */
 
 :root {
-  /* Colors - Primary */
-  --azals-primary-50: #eff6ff;
-  --azals-primary-100: #dbeafe;
-  --azals-primary-200: #bfdbfe;
-  --azals-primary-300: #93c5fd;
-  --azals-primary-400: #60a5fa;
-  --azals-primary-500: #3b82f6;
-  --azals-primary-600: #2563eb;
-  --azals-primary-700: #1d4ed8;
-  --azals-primary-800: #1e40af;
-  --azals-primary-900: #1e3a8a;
+  /* Colors - Primary (Charte AZALSCORE: #1E6EFF) */
+  --azals-primary-50: #EFF6FF;
+  --azals-primary-100: #DBEAFE;
+  --azals-primary-200: #BFDBFE;
+  --azals-primary-300: #7DB4FF;
+  --azals-primary-400: #4D94FF;
+  --azals-primary-500: #1E6EFF;
+  --azals-primary-600: #1E6EFF;
+  --azals-primary-700: #1A5FDB;
+  --azals-primary-800: #1650B8;
+  --azals-primary-900: #123F94;
 
   /* Colors - Semantic */
   --azals-success: #10b981;
   --azals-warning: #f59e0b;
   --azals-danger: #ef4444;
-  --azals-info: #3b82f6;
+  --azals-info: #1E6EFF;
 
   /* Colors - Neutral */
   --azals-gray-50: #f9fafb;
@@ -71,8 +79,8 @@
   --azals-spacing-xl: 2rem;
   --azals-spacing-2xl: 3rem;
 
-  /* Typography */
-  --azals-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Typography (Charte AZALSCORE: Inter) */
+  --azals-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --azals-font-size-xs: 0.75rem;
   --azals-font-size-sm: 0.875rem;
   --azals-font-size-md: 1rem;
@@ -99,9 +107,43 @@
   --azals-transition-slow: 300ms ease;
 
   /* Z-Index */
+  --azals-z-sidebar-overlay: 40;
+  --azals-z-sidebar: 50;
+  --azals-z-banner: 99;
+  --azals-z-header: 100;
+  --azals-z-popover: 200;
   --azals-z-dropdown: 1000;
   --azals-z-modal: 1100;
   --azals-z-toast: 1200;
+  --azals-z-quick-create: 2000;
+  --azals-z-palette: 9998;
+  --azals-z-guardian: 9999;
+
+  /* Action Color (used by context-bar buttons) */
+  --action-color: var(--azals-primary);
+
+  /* Extended color palette */
+  --azals-violet-500: #8b5cf6;
+  --azals-violet-600: #7c3aed;
+  --azals-violet-700: #4f46e5;
+  --azals-indigo-500: #6366f1;
+  --azals-pink-50: #fce7f3;
+  --azals-pink-500: #ec4899;
+  --azals-pink-600: #db2777;
+  --azals-pink-800: #9d174d;
+  --azals-amber-100: #fef3c7;
+  --azals-amber-600: #d97706;
+  --azals-amber-700: #b45309;
+  --azals-amber-800: #92400e;
+  --azals-amber-900: #713f12;
+  --azals-red-800: #991b1b;
+  --azals-green-100: #d1fae5;
+  --azals-white: #ffffff;
+  --azals-demo-red: #8B0000;
+  --azals-demo-red-dark: #660000;
+
+  /* Transition tokens */
+  --azals-transition-instant: 100ms ease;
 }
 
 /* Dark Theme */
@@ -174,7 +216,7 @@ body {
   border-bottom: 1px solid var(--azals-border);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--azals-z-header);
 }
 
 .azals-header__left,
@@ -199,7 +241,7 @@ body {
   color: var(--azals-text);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .azals-header__menu-toggle {
     display: flex;
   }
@@ -313,8 +355,8 @@ body {
    ============================================================ */
 
 .azals-header--demo {
-  background: #8B0000 !important;
-  border-bottom-color: #660000 !important;
+  background: var(--azals-demo-red) !important; /* Demo mode dark red */
+  border-bottom-color: var(--azals-demo-red-dark) !important; /* Demo mode darker red */
 }
 
 .azals-header--demo .azals-header__logo-text {
@@ -359,13 +401,13 @@ body {
   overflow-y: auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .azals-sidebar {
     position: fixed;
     top: 64px;
     left: 0;
     bottom: 0;
-    z-index: 50;
+    z-index: var(--azals-z-sidebar);
     transform: translateX(-100%);
     transition: transform var(--azals-transition-normal);
   }
@@ -379,7 +421,7 @@ body {
     inset: 0;
     top: 64px;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 40;
+    z-index: var(--azals-z-sidebar-overlay);
   }
 }
 
@@ -632,7 +674,16 @@ body {
 }
 
 .azals-btn--danger:hover:not(:disabled) {
-  background: #dc2626;
+  background: var(--azals-red);
+}
+
+.azals-btn--success {
+  background: var(--azals-success);
+  color: white;
+}
+
+.azals-btn--success:hover:not(:disabled) {
+  background: var(--azals-green);
 }
 
 .azals-btn--ghost {
@@ -920,6 +971,10 @@ body {
   margin-top: var(--azals-spacing-sm);
 }
 
+.azals-kpi-card__trend--up { color: var(--azals-success, #16a34a); }
+.azals-kpi-card__trend--down { color: var(--azals-danger, #dc2626); }
+.azals-kpi-card__trend--neutral { color: var(--azals-gray-500, #6b7280); }
+
 /* ============================================================
    ALERTS
    ============================================================ */
@@ -967,7 +1022,7 @@ body {
   border: 2px solid var(--azals-border);
   border-top-color: var(--azals-primary-600);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: azals-spin 0.8s linear infinite;
 }
 
 .azals-spinner--lg {
@@ -981,12 +1036,12 @@ body {
   height: 16px;
 }
 
-@keyframes spin {
+@keyframes azals-spin {
   to { transform: rotate(360deg); }
 }
 
 .azals-spin {
-  animation: spin 1s linear infinite;
+  animation: azals-spin 1s linear infinite;
 }
 
 /* ============================================================
@@ -1880,4 +1935,47 @@ body {
 .flex { display: flex; }
 .justify-between { justify-content: space-between; }
 .items-center { align-items: center; }
-.animate-spin { animation: spin 1s linear infinite; }
+.animate-spin { animation: azals-spin 1s linear infinite; }
+
+/* ============================================================
+   SIMPLE TABLE - Clickable rows & Cell alignment (M6 + M7)
+   ============================================================ */
+
+.azals-ws-table__row--clickable {
+  cursor: pointer;
+}
+
+.azals-ws-table__row--clickable:hover {
+  background-color: var(--azals-bg-hover, #f9fafb);
+}
+
+.azals-ws-table__cell--center {
+  text-align: center;
+}
+
+.azals-ws-table__cell--right {
+  text-align: right;
+}
+
+/* ============================================================
+   TABLE ROW KEYBOARD ACTIVATION
+   ============================================================ */
+
+.azals-table__row--clickable {
+  cursor: pointer;
+}
+.azals-table__row--clickable:hover {
+  background-color: var(--azals-bg-hover, #f9fafb);
+}
+
+/* ============================================================
+   GRID COLUMN UTILITIES
+   ============================================================ */
+
+.azals-ws-grid--cols-1 { grid-template-columns: repeat(1, 1fr); }
+.azals-ws-grid--cols-2 { grid-template-columns: repeat(2, 1fr); }
+.azals-ws-grid--cols-3 { grid-template-columns: repeat(3, 1fr); }
+.azals-ws-grid--cols-4 { grid-template-columns: repeat(4, 1fr); }
+.azals-ws-grid--cols-5 { grid-template-columns: repeat(5, 1fr); }
+.azals-ws-grid--cols-6 { grid-template-columns: repeat(6, 1fr); }
+

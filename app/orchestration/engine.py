@@ -127,7 +127,7 @@ class OrchestrationEngine:
         # Résolution du DAG (ordre d'exécution)
         execution_order = self._resolve_dag(steps_config)
 
-        logger.info(f"Orchestration: Executing DAG {module_id} with {len(steps_config)} steps")
+        logger.info("Orchestration: Executing DAG %s with %s steps", module_id, len(steps_config))
 
         # Exécution des steps dans l'ordre
         for step_config in execution_order:
@@ -136,7 +136,7 @@ class OrchestrationEngine:
             # Vérification de la condition (si présente)
             if "condition" in step_config:
                 if not self._evaluate_condition(step_config["condition"], result.context):
-                    logger.info(f"Step {step_id} skipped (condition false)")
+                    logger.info("Step %s skipped (condition false)", step_id)
                     result.steps[step_id] = StepResult(
                         step_id=step_id,
                         status=StepStatus.SKIPPED
@@ -153,7 +153,7 @@ class OrchestrationEngine:
 
             # Gestion de l'échec
             if step_result.status == StepStatus.FAILED:
-                logger.error(f"Step {step_id} failed: {step_result.error}")
+                logger.error("Step %s failed: %s", step_id, step_result.error)
                 result.status = ExecutionStatus.FAILED
                 result.error = f"Step {step_id} failed: {step_result.error}"
                 break  # Arrêt de l'exécution
@@ -167,8 +167,9 @@ class OrchestrationEngine:
             result.status = ExecutionStatus.COMPLETED
 
         logger.info(
-            f"Orchestration: DAG {module_id} completed in {result.duration_ms}ms "
-            f"with status {result.status.value}"
+            "Orchestration: DAG %s completed in %sms "
+            "with status %s",
+            module_id, result.duration_ms, result.status.value
         )
 
         return result
@@ -221,10 +222,10 @@ class OrchestrationEngine:
             result = safe_eval(resolved_condition)
             return bool(result)
         except SafeExpressionError as e:
-            logger.warning(f"Unsafe condition rejected: {condition} -> {e}")
+            logger.warning("Unsafe condition rejected: %s -> %s", condition, e)
             return False
         except Exception as e:
-            logger.warning(f"Condition evaluation failed: {condition} -> {e}")
+            logger.warning("Condition evaluation failed: %s -> %s", condition, e)
             return False
 
     def _resolve_variables(self, template: str, context: Dict[str, Any]) -> str:
@@ -267,7 +268,7 @@ class OrchestrationEngine:
                 if isinstance(value, dict) and key in value:
                     value = value[key]
                 else:
-                    logger.warning(f"Variable not found: {match}")
+                    logger.warning("Variable not found: %s", match)
                     value = None
                     break
 
@@ -328,8 +329,9 @@ class OrchestrationEngine:
 
             try:
                 logger.info(
-                    f"Step {step_id}: Executing {program_ref} "
-                    f"(attempt {attempt + 1}/{retry_max + 1})"
+                    "Step %s: Executing %s "
+                    "(attempt %s/%s)",
+                    step_id, program_ref, attempt + 1, retry_max + 1
                 )
 
                 # Exécution du sous-programme
@@ -354,7 +356,7 @@ class OrchestrationEngine:
             except Exception as e:
                 last_error = str(e)
                 logger.warning(
-                    f"Step {step_id}: Attempt {attempt + 1} failed: {e}"
+                    "Step %s: Attempt %s failed: %s", step_id, attempt + 1, e
                 )
 
                 if attempt < retry_max:
@@ -364,7 +366,7 @@ class OrchestrationEngine:
 
         # Échec après tous les retries -> essayer fallback
         if fallback_ref:
-            logger.info(f"Step {step_id}: Trying fallback {fallback_ref}")
+            logger.info("Step %s: Trying fallback %s", step_id, fallback_ref)
             try:
                 fallback_program = load_program(fallback_ref)
                 output = fallback_program.execute(inputs)
@@ -383,7 +385,7 @@ class OrchestrationEngine:
                     program_id=fallback_ref
                 )
             except Exception as fallback_error:
-                logger.error(f"Step {step_id}: Fallback failed: {fallback_error}")
+                logger.error("Step %s: Fallback failed: %s", step_id, fallback_error)
                 last_error = f"{last_error} | Fallback failed: {fallback_error}"
 
         # Échec définitif

@@ -25,11 +25,12 @@ import type {
   ProductionOrder, WorkOrder, ProductionDashboard
 } from './types';
 import {
-  formatDate, formatCurrency, formatDuration, formatQuantity, formatPercent,
+  formatQuantity,
   WORK_CENTER_TYPE_CONFIG, BOM_STATUS_CONFIG, ORDER_STATUS_CONFIG,
   ORDER_PRIORITY_CONFIG, WORK_ORDER_STATUS_CONFIG,
   isLate, isUrgent, getCompletionRate, isDraft, canConfirm, canStart, canComplete
 } from './types';
+import { formatDate, formatCurrency, formatDuration, formatPercent } from '@/utils/formatters';
 import {
   OrderInfoTab, OrderOperationsTab, OrderMaterialsTab,
   OrderDocsTab, OrderHistoryTab, OrderIATab
@@ -262,7 +263,7 @@ interface ProductionOrderDetailViewProps {
 }
 
 const ProductionOrderDetailView: React.FC<ProductionOrderDetailViewProps> = ({ orderId, onBack, onEdit }) => {
-  const { data: order, isLoading, error } = useProductionOrder(orderId);
+  const { data: order, isLoading, error, refetch } = useProductionOrder(orderId);
   const confirmOrder = useConfirmOrder();
   const startOrder = useStartOrder();
   const completeOrder = useCompleteOrder();
@@ -432,6 +433,8 @@ const ProductionOrderDetailView: React.FC<ProductionOrderDetailViewProps> = ({ o
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -441,7 +444,7 @@ const ProductionOrderDetailView: React.FC<ProductionOrderDetailViewProps> = ({ o
 // ============================================================================
 
 const WorkCentersView: React.FC = () => {
-  const { data: workCenters = [], isLoading } = useWorkCenters();
+  const { data: workCenters = [], isLoading, error, refetch } = useWorkCenters();
   const createWorkCenter = useCreateWorkCenter();
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<WorkCenter>>({});
@@ -487,7 +490,7 @@ const WorkCentersView: React.FC = () => {
           <Button onClick={() => setShowModal(true)}>Nouveau poste</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau poste de travail">
         <form onSubmit={handleSubmit}>
@@ -552,7 +555,7 @@ const WorkCentersView: React.FC = () => {
 };
 
 const BOMsView: React.FC = () => {
-  const { data: boms = [], isLoading } = useBOMs();
+  const { data: boms = [], isLoading, error, refetch } = useBOMs();
   const [filterStatus, setFilterStatus] = useState<string>('');
 
   const filteredData = filterStatus
@@ -592,7 +595,7 @@ const BOMsView: React.FC = () => {
           <Button>Nouvelle nomenclature</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -604,7 +607,7 @@ interface ProductionOrdersViewProps {
 const ProductionOrdersView: React.FC<ProductionOrdersViewProps> = ({ onSelectOrder }) => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterPriority, setFilterPriority] = useState<string>('');
-  const { data: orders = [], isLoading } = useProductionOrders({
+  const { data: orders = [], isLoading, error, refetch } = useProductionOrders({
     status: filterStatus || undefined,
     priority: filterPriority || undefined
   });
@@ -686,7 +689,7 @@ const ProductionOrdersView: React.FC<ProductionOrdersViewProps> = ({ onSelectOrd
           <Button onClick={() => setShowModal(true)}>Nouvel OF</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel ordre de fabrication">
         <form onSubmit={handleSubmit}>
@@ -740,7 +743,7 @@ const ProductionOrdersView: React.FC<ProductionOrdersViewProps> = ({ onSelectOrd
 
 const WorkOrdersView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: workOrders = [], isLoading } = useWorkOrders();
+  const { data: workOrders = [], isLoading, error, refetch } = useWorkOrders();
 
   const filteredData = filterStatus
     ? workOrders.filter(wo => wo.status === filterStatus)
@@ -769,7 +772,7 @@ const WorkOrdersView: React.FC = () => {
           className="w-48"
         />
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };

@@ -94,13 +94,10 @@ class QualityService:
     # ========================================================================
 
     def _generate_nc_number(self) -> str:
-        """Génère un numéro de non-conformité"""
-        year = datetime.now().year
-        count = self.db.query(func.count(NonConformance.id)).filter(
-            NonConformance.tenant_id == self.tenant_id,
-            func.extract("year", NonConformance.created_at) == year
-        ).scalar() or 0
-        return f"NC-{year}-{count + 1:05d}"
+        """Génère un numéro de non-conformité via le système centralisé."""
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, str(self.tenant_id))
+        return seq.next_reference("NON_CONFORMITE")
 
     def create_non_conformance(self, data: NonConformanceCreate) -> NonConformance:
         """Crée une nouvelle non-conformité"""
@@ -453,13 +450,10 @@ class QualityService:
     # ========================================================================
 
     def _generate_control_number(self) -> str:
-        """Génère un numéro de contrôle"""
-        year = datetime.now().year
-        count = self.db.query(func.count(QualityControl.id)).filter(
-            QualityControl.tenant_id == self.tenant_id,
-            func.extract("year", QualityControl.created_at) == year
-        ).scalar() or 0
-        return f"QC-{year}-{count + 1:05d}"
+        """Génère un numéro de contrôle via le système centralisé."""
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, str(self.tenant_id))
+        return seq.next_reference("INSPECTION")
 
     def create_control(self, data: ControlCreate) -> QualityControl:
         """Crée un contrôle qualité"""

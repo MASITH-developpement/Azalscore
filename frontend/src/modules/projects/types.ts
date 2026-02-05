@@ -195,46 +195,6 @@ export const MILESTONE_STATUS_CONFIG: Record<string, { label: string; color: str
 // ============================================================================
 
 /**
- * Formate une date en francais
- */
-export const formatDate = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formate une date avec heure
- */
-export const formatDateTime = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formate un montant en devise
- */
-export const formatCurrency = (amount?: number, currency = 'EUR'): string => {
-  if (amount === undefined || amount === null) return '-';
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-/**
- * Formate les heures
- */
-export const formatHours = (hours?: number): string => {
-  if (hours === undefined || hours === null) return '-';
-  return `${hours.toFixed(1)}h`;
-};
-
-/**
- * Formate un pourcentage
- */
-export const formatPercent = (value?: number): string => {
-  if (value === undefined || value === null) return '-';
-  return `${Math.round(value)}%`;
-};
-
-/**
  * Calcule la duree du projet en jours
  */
 export const getProjectDuration = (project: Project): number | null => {
@@ -412,9 +372,4 @@ export default {
   PROJECT_STATUS_CONFIG,
   TASK_STATUS_CONFIG,
   PRIORITY_CONFIG,
-  formatDate,
-  formatDateTime,
-  formatCurrency,
-  formatHours,
-  formatPercent
 };

@@ -863,9 +863,9 @@ async def create_incident(
                     f.write(base64.b64decode(base64_data))
 
                 has_screenshot = True
-                logger.info(f"[GUARDIAN] Screenshot saved: {screenshot_path}")
+                logger.info("[GUARDIAN] Screenshot saved: %s", screenshot_path)
             except Exception as screenshot_error:
-                logger.warning(f"[GUARDIAN] Screenshot save failed: {screenshot_error}")
+                logger.warning("[GUARDIAN] Screenshot save failed: %s", screenshot_error)
                 screenshot_path = None
                 has_screenshot = False
 
@@ -894,7 +894,7 @@ async def create_incident(
         db.refresh(incident)
 
         logger.info(
-            f"[GUARDIAN] Incident created: {incident.incident_uid}",
+            "[GUARDIAN] Incident created: %s", incident.incident_uid,
             extra={
                 "tenant_id": tenant_id,
                 "incident_type": data.type,
@@ -924,7 +924,7 @@ async def create_incident(
         # GUARDIAN: JAMAIS de 500 sur cet endpoint
         # Log l'erreur mais retourne un succès partiel
         logger.error(
-            f"[GUARDIAN] Incident creation failed: {e}",
+            "[GUARDIAN] Incident creation failed: %s", e,
             extra={
                 "tenant_id": tenant_id,
                 "error_type": type(e).__name__,

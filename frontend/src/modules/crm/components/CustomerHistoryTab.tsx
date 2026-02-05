@@ -12,10 +12,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Customer, CustomerHistoryEntry, Activity } from '../types';
 import {
-  formatDateTime, formatDate,
   CUSTOMER_TYPE_CONFIG,
   ACTIVITY_TYPE_CONFIG, ACTIVITY_STATUS_CONFIG
 } from '../types';
+import { formatDateTime, formatDate } from '@/utils/formatters';
 
 /**
  * CustomerHistoryTab - Historique et activités du client

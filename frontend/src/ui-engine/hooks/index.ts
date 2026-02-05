@@ -10,3 +10,9 @@ export {
   setUIMode,
   type UIMode,
 } from './useUIMode';
+
+export { useFocusTrap, type FocusTrapOptions } from './useFocusTrap';
+
+export { useQueryState, type QueryState, type UseQueryStateOptions, type UseQueryStateResult } from './useQueryState';
+
+export { useAuthenticatedQuery, type AuthenticatedQueryOptions } from './useAuthenticatedQuery';

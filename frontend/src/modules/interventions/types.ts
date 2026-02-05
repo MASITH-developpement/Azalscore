@@ -159,10 +159,11 @@ export interface InterventionHistoryEntry {
 
 export interface DonneurOrdre {
   id: string;
+  code: string;
   nom: string;
+  type?: string;
   email?: string;
   telephone?: string;
-  entreprise?: string;
   is_active: boolean;
 }
 

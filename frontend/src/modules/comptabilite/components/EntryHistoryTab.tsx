@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Entry, EntryHistoryEntry } from '../types';
-import { formatDateTime, ENTRY_STATUS_CONFIG } from '../types';
+import { ENTRY_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * EntryHistoryTab - Historique

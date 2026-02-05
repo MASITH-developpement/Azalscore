@@ -173,7 +173,7 @@ class WhisperSTTService(STTService):
             )
 
         except Exception as e:
-            logger.error(f"Whisper transcription error: {e}")
+            logger.error("Whisper transcription error: %s", e)
             raise
 
     async def transcribe_stream(
@@ -199,7 +199,7 @@ class WhisperSTTService(STTService):
             # Simple test avec un petit audio vide
             return True
         except Exception as e:
-            logger.error(f"Whisper health check failed: {e}")
+            logger.error("Whisper health check failed: %s", e)
             return False
 
 

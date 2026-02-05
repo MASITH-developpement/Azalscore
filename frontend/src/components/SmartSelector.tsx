@@ -189,20 +189,36 @@ export function SmartSelector<T extends SelectorItem>({
 
       {/* Selected value display */}
       <div
-        className={`azals-smart-selector__trigger ${disabled ? 'disabled' : ''} ${error ? 'error' : ''}`}
+        className={`azals-smart-selector__trigger ${disabled ? 'azals-smart-selector__disabled' : ''} ${error ? 'azals-smart-selector__error' : ''}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
+        role="combobox"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          } else if (e.key === 'Escape') {
+            setIsOpen(false);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setIsOpen(true);
+          }
+        }}
       >
         {selectedItem ? (
           <div className="azals-smart-selector__value">
-            <span className="name">{String(selectedItem[displayField])}</span>
+            <span className="azals-smart-selector__name">{String(selectedItem[displayField])}</span>
             {secondaryField && selectedItem[secondaryField] && (
-              <span className="secondary">{String(selectedItem[secondaryField])}</span>
+              <span className="azals-smart-selector__secondary">{String(selectedItem[secondaryField])}</span>
             )}
           </div>
         ) : (
-          <span className="placeholder">{placeholder}</span>
+          <span className="azals-smart-selector__placeholder">{placeholder}</span>
         )}
-        <ChevronDown size={18} className={isOpen ? 'rotate' : ''} />
+        <ChevronDown size={18} className={isOpen ? 'azals-smart-selector__rotate' : ''} />
       </div>
 
       {error && <span className="azals-smart-selector__error">{error}</span>}
@@ -212,14 +228,15 @@ export function SmartSelector<T extends SelectorItem>({
         <div className="azals-smart-selector__dropdown">
           {/* Create new option */}
           {allowCreate && (
-            <div
+            <button
+              type="button"
               className="azals-smart-selector__new"
               onClick={() => setShowCreate(!showCreate)}
             >
               {entityIcon || <Plus size={16} />}
               <span>Nouveau {entityName}</span>
-              <Plus size={14} className="plus" />
-            </div>
+              <Plus size={14} className="azals-smart-selector__plus" />
+            </button>
           )}
 
           {/* Create form */}
@@ -249,12 +266,12 @@ export function SmartSelector<T extends SelectorItem>({
                 </button>
                 <button
                   type="button"
-                  className="primary"
+                  className="azals-smart-selector__primary"
                   onClick={handleCreate}
                   disabled={createMutation.isPending}
                 >
                   {createMutation.isPending ? (
-                    <Loader2 size={14} className="spin" />
+                    <Loader2 size={14} className="azals-smart-selector__spin" />
                   ) : (
                     <Check size={14} />
                   )}
@@ -284,22 +301,25 @@ export function SmartSelector<T extends SelectorItem>({
               </div>
 
               {/* Items list */}
-              <div className="azals-smart-selector__list">
+              <div className="azals-smart-selector__list" role="listbox">
                 {filtered.length === 0 ? (
                   <div className="azals-smart-selector__empty">
                     Aucun résultat
                   </div>
                 ) : (
                   filtered.map(item => (
-                    <div
+                    <button
+                      type="button"
                       key={item.id}
-                      className={`azals-smart-selector__item ${item.id === value ? 'selected' : ''}`}
+                      role="option"
+                      aria-selected={item.id === value}
+                      className={`azals-smart-selector__item ${item.id === value ? 'azals-smart-selector__selected' : ''}`}
                       onClick={() => handleSelect(item)}
                     >
-                      <span className="name">{String(item[displayField])}</span>
-                      {item.code && <span className="code">{item.code}</span>}
-                      {item.id === value && <Check size={14} className="check" />}
-                    </div>
+                      <span className="azals-smart-selector__name">{String(item[displayField])}</span>
+                      {item.code && <span className="azals-smart-selector__code">{item.code}</span>}
+                      {item.id === value && <Check size={14} className="azals-smart-selector__check" />}
+                    </button>
                   ))
                 )}
               </div>

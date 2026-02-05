@@ -11,7 +11,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { BankAccount, Transaction } from '../types';
-import { formatCurrency, formatDate, isTransactionReconciled } from '../types';
+import { isTransactionReconciled } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * AccountReconciliationTab - Rapprochement bancaire

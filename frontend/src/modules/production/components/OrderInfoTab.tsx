@@ -11,8 +11,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { ProductionOrder } from '../types';
+import { formatDate, formatDateTime, formatDuration, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatDateTime, formatQuantity, formatDuration, formatCurrency,
+  formatQuantity,
   ORDER_STATUS_CONFIG, ORDER_PRIORITY_CONFIG,
   isLate, isUrgent, getCompletionRate
 } from '../types';

@@ -211,7 +211,7 @@ class CompanionRegistry:
     def register(self, companion: Companion) -> None:
         """Enregistre un compagnon."""
         self._companions[companion.id] = companion
-        logger.info(f"Registered companion: {companion.id} ({companion.display_name})")
+        logger.info("Registered companion: %s (%s)", companion.id, companion.display_name)
 
     def unregister(self, companion_id: str) -> bool:
         """Désenregistre un compagnon."""
@@ -280,7 +280,7 @@ class CompanionRegistry:
 
             return count
         except Exception as e:
-            logger.error(f"Failed to load companions from {path}: {e}")
+            logger.error("Failed to load companions from %s: %s", path, e)
             return 0
 
     def _parse_companion(self, data: Dict[str, Any]) -> Optional[Companion]:
@@ -313,7 +313,7 @@ class CompanionRegistry:
                 metadata=data.get("metadata", {})
             )
         except Exception as e:
-            logger.error(f"Failed to parse companion: {e}")
+            logger.error("Failed to parse companion: %s", e)
             return None
 
     def status(self) -> Dict[str, Any]:

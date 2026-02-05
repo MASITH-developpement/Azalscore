@@ -8,7 +8,8 @@ import { Package, Tag, Barcode, Scale, Box } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Product } from '../types';
-import { PRODUCT_STATUS_CONFIG, formatCurrency, formatWeight, calculateMargin } from '../types';
+import { PRODUCT_STATUS_CONFIG, formatWeight, calculateMargin } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * ProductInfoTab - Informations generales

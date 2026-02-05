@@ -80,12 +80,21 @@ export const PermissionsManager: React.FC = () => {
           <Search size={16} />
           <input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="azals-pm-users__list">
+        <div className="azals-pm-users__list" role="listbox" aria-label="Liste des utilisateurs">
           {filtered.map((u: any) => (
             <div
               key={u.id}
+              role="option"
+              tabIndex={0}
+              aria-selected={userId === u.id}
               className={`azals-pm-users__item ${userId === u.id ? 'azals-pm-users__item--active' : ''}`}
               onClick={() => setUserId(u.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setUserId(u.id);
+                }
+              }}
             >
               <strong>{u.first_name} {u.last_name}</strong>
               <span>{u.email}</span>

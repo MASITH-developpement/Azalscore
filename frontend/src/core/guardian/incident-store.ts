@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { logError } from '@core/error-handling';
 
 // ============================================================
 // TYPES
@@ -92,7 +93,8 @@ const getUserId = (): string | null => {
     try {
       const parsed = JSON.parse(authData);
       return parsed.id?.toString() || null;
-    } catch {
+    } catch (error) {
+      logError(error, 'Guardian.loadIncidents');
       return null;
     }
   }

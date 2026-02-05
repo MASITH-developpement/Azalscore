@@ -11,7 +11,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Document, RelatedDocument } from '../types';
-import { formatDate, formatCurrency, DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG } from '../types';
+import { DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 
 /**
  * InvoicingDocumentsTab - Documents lies

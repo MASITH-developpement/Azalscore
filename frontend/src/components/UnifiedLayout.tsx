@@ -41,7 +41,8 @@ export type ViewKey =
   | 'helpdesk' | 'bi' | 'compliance' | 'web'
   | 'compta' | 'tresorerie'
   | 'cockpit'
-  | 'admin';
+  | 'admin'
+  | 'profile' | 'settings';
 
 interface MenuItem {
   key: ViewKey;
@@ -223,14 +224,26 @@ const Header: React.FC<HeaderProps> = ({
 
           {userMenuOpen && (
             <div className="azals-unified-header__user-dropdown">
-              <a href="/profile" className="azals-unified-header__user-item">
+              <button
+                className="azals-unified-header__user-item"
+                onClick={() => {
+                  onViewChange('profile' as ViewKey);
+                  setUserMenuOpen(false);
+                }}
+              >
                 <User size={16} />
                 <span>Mon profil</span>
-              </a>
-              <a href="/settings" className="azals-unified-header__user-item">
+              </button>
+              <button
+                className="azals-unified-header__user-item"
+                onClick={() => {
+                  onViewChange('settings' as ViewKey);
+                  setUserMenuOpen(false);
+                }}
+              >
                 <Settings size={16} />
                 <span>Paramètres</span>
-              </a>
+              </button>
 
               <hr className="azals-unified-header__divider" />
 

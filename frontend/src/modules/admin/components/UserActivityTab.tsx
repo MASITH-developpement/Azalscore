@@ -11,7 +11,7 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { AdminUser, UserSession } from '../types';
-import { formatDateTime, formatDate, formatTime } from '../types';
+import { formatDateTime, formatDate, formatTime } from '@/utils/formatters';
 
 /**
  * UserActivityTab - Activite utilisateur

@@ -12,9 +12,10 @@ import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Subscription, SubscriptionInvoice } from '../types';
 import {
-  formatCurrency, formatDate, getTotalPaid, getPaidInvoicesCount,
+  getTotalPaid, getPaidInvoicesCount,
   INVOICE_STATUS_CONFIG
 } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * SubscriptionBillingTab - Facturation

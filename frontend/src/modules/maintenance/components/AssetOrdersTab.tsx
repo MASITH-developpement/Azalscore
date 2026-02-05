@@ -12,8 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Asset, MaintenanceOrder, MaintenanceOrderStatus } from '../types';
+import { formatDate, formatCurrency, formatHours } from '@/utils/formatters';
 import {
-  formatDate, formatCurrency, formatHours,
   ORDER_TYPE_CONFIG, ORDER_STATUS_CONFIG, PRIORITY_CONFIG,
   getOrderCountByStatus
 } from '../types';

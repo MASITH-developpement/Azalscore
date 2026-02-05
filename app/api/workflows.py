@@ -6,11 +6,14 @@ Permet d'exécuter des workflows DAG déclaratifs
 Conformité : AZA-NF-003, Architecture cible
 """
 
+import logging
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import json
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from app.orchestration import execute_dag, ExecutionResult
 from app.core.dependencies import get_current_user
@@ -170,7 +173,16 @@ async def list_workflows(
                     "description": dag.get("description"),
                     "steps_count": len(dag.get("steps", []))
                 })
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[WORKFLOWS] Erreur lecture fichier workflow DAG",
+                    extra={
+                        "workflow_file": str(workflow_file),
+                        "module": module_name,
+                        "error": str(e)[:300],
+                        "consequence": "workflow_skipped"
+                    }
+                )
                 continue
 
         if module_workflows:

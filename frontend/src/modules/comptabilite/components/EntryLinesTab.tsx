@@ -8,7 +8,8 @@ import { List, Calculator, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Entry, EntryLine } from '../types';
-import { formatCurrency, formatAccountCode, isEntryBalanced } from '../types';
+import { formatAccountCode, isEntryBalanced } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * EntryLinesTab - Lignes de l'ecriture

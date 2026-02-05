@@ -12,7 +12,7 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Affaire, AffaireDocument } from '../types';
-import { formatDate } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * AffaireDocsTab - Gestion des documents attachés

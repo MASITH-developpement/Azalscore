@@ -161,7 +161,7 @@ class AccountingRulesEngine:
         """
         doc_type = document.document_type
         if doc_type not in self.ENTRY_TEMPLATES:
-            logger.warning(f"No template for document type {doc_type}")
+            logger.warning("No template for document type %s", doc_type)
             return []
 
         template = self.ENTRY_TEMPLATES[doc_type]
@@ -222,7 +222,7 @@ class AccountingRulesEngine:
 
         if abs(total_debit - total_credit) > Decimal("0.01"):
             logger.warning(
-                f"Entry imbalance: debit={total_debit}, credit={total_credit}"
+                "Entry imbalance: debit=%s, credit=%s", total_debit, total_credit
             )
             # Ajout d'une ligne d'écart si nécessaire
             diff = total_debit - total_credit
@@ -411,9 +411,10 @@ class AutoAccountingService:
         self.db.refresh(auto_entry)
 
         logger.info(
-            f"Auto entry created for document {document_id} "
-            f"with confidence {confidence_level.value} "
-            f"(auto_validated={auto_validated})"
+            "Auto entry created for document %s "
+            "with confidence %s "
+            "(auto_validated=%s)",
+            document_id, confidence_level.value, auto_validated
         )
 
         return auto_entry
@@ -645,7 +646,7 @@ class AutoAccountingService:
         ).first()
 
         if not journal:
-            logger.error(f"Journal {journal_code} not found")
+            logger.error("Journal %s not found", journal_code)
             return None
 
         # Récupère l'exercice fiscal en cours
@@ -695,7 +696,7 @@ class AutoAccountingService:
             ).first()
 
             if not account:
-                logger.warning(f"Account {line.account_code} not found, creating...")
+                logger.warning("Account %s not found, creating...", line.account_code)
                 # Crée le compte si nécessaire
                 account = self._create_account_if_needed(line.account_code, line.account_name)
 

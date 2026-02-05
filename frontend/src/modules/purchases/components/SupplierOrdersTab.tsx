@@ -9,7 +9,8 @@ import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Supplier, PurchaseOrder } from '../types';
-import { ORDER_STATUS_CONFIG, formatCurrency, formatDate } from '../types';
+import { ORDER_STATUS_CONFIG } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * SupplierOrdersTab - Commandes du fournisseur

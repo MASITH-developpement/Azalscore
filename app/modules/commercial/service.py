@@ -61,11 +61,20 @@ class CommercialService:
     # ========================================================================
 
     def create_customer(self, data: CustomerCreate, user_id: UUID) -> Customer:
-        """Créer un client."""
+        """Créer un client avec code auto-généré si non fourni."""
+        from app.core.sequences import SequenceGenerator
+
+        data_dict = data.model_dump(by_alias=True, exclude_unset=False)
+
+        # Auto-génère le code si non fourni ou vide
+        if not data_dict.get('code'):
+            seq = SequenceGenerator(self.db, self.tenant_id)
+            data_dict['code'] = seq.next_reference("CLIENT")
+
         customer = Customer(
             tenant_id=self.tenant_id,
             created_by=user_id,
-            **data.model_dump(by_alias=True, exclude_unset=False)
+            **data_dict
         )
         self.db.add(customer)
         self.db.commit()
@@ -405,25 +414,22 @@ class CommercialService:
     # ========================================================================
 
     def _generate_document_number(self, doc_type: DocumentType) -> str:
-        """Générer un numéro de document."""
-        year = datetime.now().year
-        prefix = {
-            DocumentType.QUOTE: "DEV",
-            DocumentType.ORDER: "CMD",
-            DocumentType.INVOICE: "FAC",
-            DocumentType.CREDIT_NOTE: "AVO",
-            DocumentType.PROFORMA: "PRO",
-            DocumentType.DELIVERY: "BL",
-        }.get(doc_type, "DOC")
+        """Générer un numéro de document via le système centralisé."""
+        from app.core.sequences import SequenceGenerator
 
-        # Compter les documents existants
-        count = self.db.query(CommercialDocument).filter(
-            CommercialDocument.tenant_id == self.tenant_id,
-            CommercialDocument.type == doc_type,
-            func.extract('year', CommercialDocument.date) == year
-        ).count()
+        # Mapping type document -> type séquence
+        entity_type_map = {
+            DocumentType.QUOTE: "DEVIS",
+            DocumentType.ORDER: "COMMANDE_CLIENT",
+            DocumentType.INVOICE: "FACTURE_VENTE",
+            DocumentType.CREDIT_NOTE: "AVOIR_CLIENT",
+            DocumentType.PROFORMA: "PROFORMA",
+            DocumentType.DELIVERY: "BON_LIVRAISON",
+        }
 
-        return f"{prefix}-{year}-{str(count + 1).zfill(5)}"
+        entity_type = entity_type_map.get(doc_type, "DOCUMENT")
+        seq = SequenceGenerator(self.db, self.tenant_id)
+        return seq.next_reference(entity_type)
 
     def _calculate_line_totals(self, line: DocumentLine) -> None:
         """Calculer les totaux d'une ligne."""

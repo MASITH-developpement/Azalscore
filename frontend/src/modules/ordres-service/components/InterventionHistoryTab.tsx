@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Intervention, InterventionHistoryEntry } from '../types';
-import { formatDateTime, STATUT_CONFIG } from '../types';
+import { STATUT_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * InterventionHistoryTab - Historique
@@ -168,53 +169,54 @@ function generateHistoryFromIntervention(intervention: Intervention): Interventi
   });
 
   // Planification
-  if (intervention.date_prevue) {
+  if (intervention.date_prevue_debut) {
     history.push({
       id: 'planned',
       timestamp: intervention.updated_at || intervention.created_at,
       action: 'Intervention planifiee',
-      details: `Prevue le ${new Date(intervention.date_prevue).toLocaleDateString('fr-FR')}${intervention.intervenant_nom ? ` - ${intervention.intervenant_nom}` : ''}`,
+      details: `Prevue le ${new Date(intervention.date_prevue_debut).toLocaleDateString('fr-FR')}${intervention.intervenant_name ? ` - ${intervention.intervenant_name}` : ''}`,
     });
   }
 
   // Arrivee sur site
-  if (intervention.date_arrivee) {
+  if (intervention.date_arrivee_site) {
     history.push({
       id: 'arrival',
-      timestamp: intervention.date_arrivee,
+      timestamp: intervention.date_arrivee_site,
       action: 'Arrivee sur site',
-      user_name: intervention.intervenant_nom,
+      user_name: intervention.intervenant_name,
     });
   }
 
   // Debut intervention
-  if (intervention.date_debut_intervention) {
+  if (intervention.date_demarrage) {
     history.push({
       id: 'started',
-      timestamp: intervention.date_debut_intervention,
+      timestamp: intervention.date_demarrage,
       action: 'Intervention demarree',
-      user_name: intervention.intervenant_nom,
+      user_name: intervention.intervenant_name,
     });
   }
 
   // Photos ajoutees
-  if (intervention.photos && intervention.photos.length > 0) {
+  const photos = intervention.rapport?.photos || [];
+  if (photos.length > 0) {
     history.push({
       id: 'photos',
-      timestamp: intervention.date_fin_intervention || intervention.updated_at || intervention.created_at,
+      timestamp: intervention.date_fin || intervention.updated_at || intervention.created_at,
       action: 'Photos ajoutees',
-      details: `${intervention.photos.length} photo(s) ajoutee(s)`,
+      details: `${photos.length} photo(s) ajoutee(s)`,
     });
   }
 
   // Fin intervention
-  if (intervention.date_fin_intervention) {
+  if (intervention.date_fin) {
     history.push({
       id: 'completed',
-      timestamp: intervention.date_fin_intervention,
+      timestamp: intervention.date_fin,
       action: 'Intervention terminee',
-      user_name: intervention.intervenant_nom,
-      details: intervention.commentaire_cloture?.substring(0, 100),
+      user_name: intervention.intervenant_name,
+      details: intervention.rapport?.travaux_realises?.substring(0, 100),
     });
   }
 

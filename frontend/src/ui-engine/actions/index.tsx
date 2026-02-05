@@ -4,11 +4,12 @@
  * AUCUNE décision métier - exécution uniquement
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { X, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { X, AlertTriangle, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import { trackAction } from '@core/audit-ui';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import type { ActionButton } from '@/types';
 
 // ============================================================
@@ -250,11 +251,15 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   variant = 'warning',
   isLoading,
 }) => {
-  const Icon = variant === 'danger' ? AlertTriangle : AlertTriangle;
+  const Icon = variant === 'danger' ? AlertTriangle : AlertCircle;
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(dialogRef, { enabled: true, onEscape: onCancel });
 
   return (
     <div className="azals-modal-overlay" onClick={onCancel}>
       <div
+        ref={dialogRef}
         className="azals-modal azals-modal--confirm"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
@@ -305,11 +310,16 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   size = 'md',
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(dialogRef, { enabled: isOpen, onEscape: onClose });
+
   if (!isOpen) return null;
 
   return (
     <div className="azals-modal-overlay" onClick={onClose}>
       <div
+        ref={dialogRef}
         className={clsx('azals-modal', `azals-modal--${size}`)}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
@@ -359,29 +369,162 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   align = 'right',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Collect only the enabled, visible items for keyboard navigation
+  const enabledItems = items.filter((item) => !item.disabled);
+
+  // Focus the correct menu item when focusedIndex changes
+  useEffect(() => {
+    if (isOpen && focusedIndex >= 0 && itemRefs.current[focusedIndex]) {
+      itemRefs.current[focusedIndex]?.focus();
+    }
+  }, [isOpen, focusedIndex]);
+
+  // Reset focused index when menu closes
+  useEffect(() => {
+    if (!isOpen) {
+      setFocusedIndex(-1);
+    }
+  }, [isOpen]);
+
+  const openMenu = useCallback(() => {
+    setIsOpen(true);
+    setFocusedIndex(0);
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
+    setFocusedIndex(-1);
+    // Return focus to trigger
+    triggerRef.current?.focus();
+  }, []);
+
+  const toggleMenu = useCallback(() => {
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  }, [isOpen, openMenu, closeMenu]);
+
+  // Keyboard handler for the trigger element
+  const handleTriggerKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          toggleMenu();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          closeMenu();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          if (!isOpen) {
+            openMenu();
+          }
+          break;
+      }
+    },
+    [isOpen, toggleMenu, openMenu, closeMenu]
+  );
+
+  // Keyboard handler for the menu items
+  const handleMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent, index: number) => {
+      const itemCount = itemRefs.current.length;
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex((prev) => (prev + 1) % itemCount);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex((prev) => (prev - 1 + itemCount) % itemCount);
+          break;
+        case 'Home':
+          e.preventDefault();
+          setFocusedIndex(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setFocusedIndex(itemCount - 1);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          closeMenu();
+          break;
+        case 'Tab':
+          // Close menu on Tab to allow natural focus flow
+          closeMenu();
+          break;
+        case 'Enter':
+        case ' ': {
+          e.preventDefault();
+          const item = items[index];
+          if (item && !item.disabled) {
+            item.onClick();
+            closeMenu();
+          }
+          break;
+        }
+      }
+    },
+    [items, closeMenu]
+  );
+
+  // Reset item refs array when items change
+  itemRefs.current = [];
 
   return (
     <div className="azals-dropdown">
-      <div onClick={() => setIsOpen(!isOpen)}>{trigger}</div>
+      <div
+        ref={triggerRef}
+        onClick={toggleMenu}
+        onKeyDown={handleTriggerKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+      >
+        {trigger}
+      </div>
 
       {isOpen && (
         <>
           <div
             className="azals-dropdown__overlay"
-            onClick={() => setIsOpen(false)}
+            onClick={closeMenu}
           />
-          <div className={clsx('azals-dropdown__menu', `azals-dropdown__menu--${align}`)}>
-            {items.map((item) => (
+          <div
+            ref={menuRef}
+            className={clsx('azals-dropdown__menu', `azals-dropdown__menu--${align}`)}
+            role="menu"
+          >
+            {items.map((item, index) => (
               <CapabilityGuard key={item.id} capability={item.capability}>
                 <button
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
                   className={clsx('azals-dropdown__item', {
                     'azals-dropdown__item--danger': item.variant === 'danger',
                   })}
                   onClick={() => {
                     item.onClick();
-                    setIsOpen(false);
+                    closeMenu();
                   }}
+                  onKeyDown={(e) => handleMenuKeyDown(e, index)}
                   disabled={item.disabled}
+                  role="menuitem"
+                  tabIndex={focusedIndex === index ? 0 : -1}
                 >
                   {item.icon && <span className="azals-dropdown__item-icon">{item.icon}</span>}
                   <span>{item.label}</span>

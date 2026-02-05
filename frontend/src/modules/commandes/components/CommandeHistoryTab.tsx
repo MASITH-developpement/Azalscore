@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Commande, CommandeHistoryEntry } from '../types';
-import { formatDateTime, STATUS_CONFIG } from '../types';
+import { STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * CommandeHistoryTab - Historique et audit trail de la commande

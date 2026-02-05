@@ -11,7 +11,7 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Commande } from '../types';
-import { formatCurrency } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * CommandeFinancialTab - Récapitulatif financier

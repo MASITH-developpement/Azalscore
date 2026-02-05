@@ -8,7 +8,7 @@ import { Package, Percent, Calculator } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Order, OrderItem } from '../types';
-import { formatCurrency } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * OrderItemsTab - Articles commandes

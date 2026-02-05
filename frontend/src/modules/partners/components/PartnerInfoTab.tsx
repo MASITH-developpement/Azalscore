@@ -10,8 +10,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Partner, Client } from '../types';
+import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatDateTime, formatCurrency,
   getFullAddress, getPartnerAge,
   CLIENT_TYPE_CONFIG
 } from '../types';

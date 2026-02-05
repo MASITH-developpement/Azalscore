@@ -2,20 +2,26 @@
  * AZALSCORE Module - Cockpit
  * ==========================
  *
- * Vue globale du flux commercial avec suivi en temps réel.
- * Tableau de bord exécutif montrant le pipeline commercial.
+ * Vue globale du flux commercial avec suivi en temps reel.
+ * Tableau de bord executif montrant le pipeline commercial.
  *
- * Flux: CRM → DEV → COM/ODS → AFF → FAC/AVO → CPT
+ * Flux: CRM -> DEV -> COM/ODS -> AFF -> FAC/AVO -> CPT
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, FileText, Package, Wrench, Briefcase, Receipt, Calculator,
   TrendingUp, TrendingDown, ArrowRight, RefreshCw, Eye, AlertTriangle,
   Clock, CheckCircle2, XCircle, Euro, Calendar, ChevronRight, Activity
 } from 'lucide-react';
+import { clsx } from 'clsx';
 import { api } from '@core/api-client';
+import { COLORS } from '@core/design-tokens';
+import { Card } from '@ui/layout';
+import { Button } from '@ui/actions';
+import { ErrorState } from '../../ui-engine/components/StateViews';
+import '../../styles/cockpit.css';
 
 // ============================================================
 // TYPES
@@ -45,12 +51,12 @@ interface RecentItem {
 // ============================================================
 
 const FLUX_STEPS = [
-  { id: 'crm', label: 'CRM', icon: Users, color: '#8b5cf6', description: 'Prospects & Clients' },
-  { id: 'devis', label: 'Devis', icon: FileText, color: '#3b82f6', description: 'Propositions' },
-  { id: 'commandes', label: 'Commandes', icon: Package, color: '#10b981', description: 'Commandes client' },
-  { id: 'ordres-service', label: 'ODS', icon: Wrench, color: '#f59e0b', description: 'Interventions' },
-  { id: 'affaires', label: 'Affaires', icon: Briefcase, color: '#6366f1', description: 'Projets' },
-  { id: 'factures', label: 'Factures', icon: Receipt, color: '#ec4899', description: 'Facturation' },
+  { id: 'crm', label: 'CRM', icon: Users, color: COLORS.crm, description: 'Prospects & Clients' },
+  { id: 'devis', label: 'Devis', icon: FileText, color: COLORS.devis, description: 'Propositions' },
+  { id: 'commandes', label: 'Commandes', icon: Package, color: COLORS.commandes, description: 'Commandes client' },
+  { id: 'ordres-service', label: 'ODS', icon: Wrench, color: COLORS.ods, description: 'Interventions' },
+  { id: 'affaires', label: 'Affaires', icon: Briefcase, color: COLORS.affaires, description: 'Projets' },
+  { id: 'factures', label: 'Factures', icon: Receipt, color: COLORS.factures, description: 'Facturation' },
 ] as const;
 
 // ============================================================
@@ -74,6 +80,14 @@ const navigateToModule = (module: string, params?: Record<string, string>) => {
   }));
 };
 
+// Keyboard handler for interactive elements
+const handleKeyActivate = (callback: () => void) => (e: React.KeyboardEvent) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    callback();
+  }
+};
+
 // ============================================================
 // API HOOKS
 // ============================================================
@@ -82,7 +96,7 @@ const useCockpitStats = () => {
   return useQuery({
     queryKey: ['cockpit-stats'],
     queryFn: async () => {
-      // Récupérer les stats de chaque module
+      // Recuperer les stats de chaque module
       const [
         customersRes,
         opportunitiesRes,
@@ -167,7 +181,7 @@ const useRecentActivity = () => {
   return useQuery({
     queryKey: ['cockpit-recent'],
     queryFn: async () => {
-      // Récupérer les items récents de chaque module
+      // Recuperer les items recents de chaque module
       const [devisRes, commandesRes, interventionsRes, facturesRes] = await Promise.all([
         api.get('/v1/commercial/documents?type=QUOTE&limit=5').catch(() => ({ items: [] })),
         api.get('/v1/commercial/documents?type=ORDER&limit=5').catch(() => ({ items: [] })),
@@ -249,7 +263,7 @@ const useRecentActivity = () => {
 // COMPOSANTS
 // ============================================================
 
-// Card d'étape du flux
+// Card d'etape du flux
 const FluxStepCard: React.FC<{
   step: typeof FLUX_STEPS[number];
   stats: FluxStats;
@@ -264,7 +278,7 @@ const FluxStepCard: React.FC<{
           main: stats.crm.clients,
           mainLabel: 'Clients',
           sub: stats.crm.opportunites,
-          subLabel: 'Opportunités',
+          subLabel: 'Opportunites',
         };
       case 'devis':
         return {
@@ -302,7 +316,7 @@ const FluxStepCard: React.FC<{
           main: stats.factures.total,
           mainLabel: 'Factures',
           sub: stats.factures.en_attente,
-          subLabel: 'À payer',
+          subLabel: 'A payer',
           montant: stats.factures.montant_total,
         };
       default:
@@ -314,154 +328,99 @@ const FluxStepCard: React.FC<{
 
   return (
     <div
+      className={clsx('azals-cockpit-step', `azals-cockpit-step--${step.id}`)}
       onClick={onNavigate}
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '20px',
-        border: '1px solid #e5e7eb',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        minWidth: '160px',
-        flex: 1,
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
+      onKeyDown={handleKeyActivate(onNavigate)}
+      role="button"
+      tabIndex={0}
+      aria-label={`${step.label} - ${stepStats.main} ${stepStats.mainLabel}`}
     >
-      {/* Icône et label */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-        <div style={{
-          width: '44px',
-          height: '44px',
-          borderRadius: '10px',
-          backgroundColor: `${step.color}15`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <Icon size={22} style={{ color: step.color }} />
+      {/* Icone et label */}
+      <div className="azals-cockpit-step__header">
+        <div className="azals-cockpit-step__icon">
+          <Icon size={22} />
         </div>
         <div>
-          <div style={{ fontWeight: 600, fontSize: '16px', color: '#111827' }}>{step.label}</div>
-          <div style={{ fontSize: '12px', color: '#6b7280' }}>{step.description}</div>
+          <div className="azals-cockpit-step__label">{step.label}</div>
+          <div className="azals-cockpit-step__desc">{step.description}</div>
         </div>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div className="azals-cockpit-step__stats">
         <div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: step.color }}>{stepStats.main}</div>
-          <div style={{ fontSize: '12px', color: '#6b7280' }}>{stepStats.mainLabel}</div>
+          <div className="azals-cockpit-step__main-value">{stepStats.main}</div>
+          <div className="azals-cockpit-step__main-label">{stepStats.mainLabel}</div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '18px', fontWeight: 600, color: '#374151' }}>{stepStats.sub}</div>
-          <div style={{ fontSize: '11px', color: '#9ca3af' }}>{stepStats.subLabel}</div>
+        <div className="azals-cockpit-step__sub">
+          <div className="azals-cockpit-step__sub-value">{stepStats.sub}</div>
+          <div className="azals-cockpit-step__sub-label">{stepStats.subLabel}</div>
         </div>
       </div>
 
       {/* Montant si applicable */}
       {stepStats.montant !== undefined && (
-        <div style={{
-          marginTop: '12px',
-          paddingTop: '12px',
-          borderTop: '1px solid #f3f4f6',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
-          <Euro size={14} style={{ color: '#6b7280' }} />
-          <span style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>
+        <div className="azals-cockpit-step__montant">
+          <Euro size={14} className="azals-cockpit-step__montant-icon" />
+          <span className="azals-cockpit-step__montant-value">
             {formatCurrency(stepStats.montant)}
           </span>
         </div>
       )}
 
       {/* Bouton voir */}
-      <div style={{
-        marginTop: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        color: step.color,
-        fontSize: '13px',
-        fontWeight: 500,
-      }}>
+      <div className="azals-cockpit-step__cta">
         <Eye size={14} />
-        <span>Voir détails</span>
+        <span>Voir details</span>
         <ChevronRight size={14} />
       </div>
     </div>
   );
 };
 
-// Flèche entre les étapes
+// Fleche entre les etapes
 const FluxArrow: React.FC = () => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '0 8px',
-  }}>
-    <ArrowRight size={24} style={{ color: '#d1d5db' }} />
+  <div className="azals-cockpit-arrow">
+    <ArrowRight size={24} />
   </div>
 );
 
-// Activité récente
+// Activite recente
 const RecentActivityItem: React.FC<{ item: RecentItem }> = ({ item }) => {
-  const typeConfig: Record<string, { color: string; icon: React.ReactNode; module: string }> = {
-    devis: { color: '#3b82f6', icon: <FileText size={14} />, module: 'devis' },
-    commande: { color: '#10b981', icon: <Package size={14} />, module: 'commandes' },
-    ods: { color: '#f59e0b', icon: <Wrench size={14} />, module: 'ordres-service' },
-    affaire: { color: '#6366f1', icon: <Briefcase size={14} />, module: 'affaires' },
-    facture: { color: '#ec4899', icon: <Receipt size={14} />, module: 'factures' },
+  const typeConfig: Record<string, { icon: React.ReactNode; module: string }> = {
+    devis: { icon: <FileText size={14} />, module: 'devis' },
+    commande: { icon: <Package size={14} />, module: 'commandes' },
+    ods: { icon: <Wrench size={14} />, module: 'ordres-service' },
+    affaire: { icon: <Briefcase size={14} />, module: 'affaires' },
+    facture: { icon: <Receipt size={14} />, module: 'factures' },
   };
 
   const config = typeConfig[item.type] || typeConfig.devis;
+  const handleNavigate = () => navigateToModule(config.module, { id: item.id });
 
   return (
     <div
-      onClick={() => navigateToModule(config.module, { id: item.id })}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '12px',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        transition: 'background-color 0.2s',
-      }}
-      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+      className={clsx('azals-cockpit-recent-item', `azals-cockpit-recent-item--${item.type}`)}
+      onClick={handleNavigate}
+      onKeyDown={handleKeyActivate(handleNavigate)}
+      role="button"
+      tabIndex={0}
+      aria-label={`${item.reference} - ${item.label}`}
     >
-      <div style={{
-        width: '32px',
-        height: '32px',
-        borderRadius: '8px',
-        backgroundColor: `${config.color}15`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: config.color,
-      }}>
+      <div className="azals-cockpit-recent-item__icon">
         {config.icon}
       </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontWeight: 500, color: config.color }}>{item.reference}</span>
-          <span style={{ fontSize: '12px', color: '#6b7280' }}>{item.label}</span>
+      <div className="azals-cockpit-recent-item__body">
+        <div className="azals-cockpit-recent-item__top">
+          <span className="azals-cockpit-recent-item__ref">{item.reference}</span>
+          <span className="azals-cockpit-recent-item__label">{item.label}</span>
         </div>
-        <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+        <div className="azals-cockpit-recent-item__meta">
           {formatDate(item.date)}
-          {item.montant && ` • ${formatCurrency(item.montant)}`}
+          {item.montant && ` \u2022 ${formatCurrency(item.montant)}`}
         </div>
       </div>
-      <ChevronRight size={16} style={{ color: '#d1d5db' }} />
+      <ChevronRight size={16} className="azals-cockpit-recent-item__chevron" />
     </div>
   );
 };
@@ -472,44 +431,26 @@ const GlobalKPICard: React.FC<{
   value: string | number;
   trend?: number;
   icon: React.ReactNode;
-  color: string;
-}> = ({ label, value, trend, icon, color }) => (
-  <div style={{
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    border: '1px solid #e5e7eb',
-  }}>
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-      <div style={{
-        width: '48px',
-        height: '48px',
-        borderRadius: '12px',
-        backgroundColor: `${color}15`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: color,
-      }}>
+  colorVariant: string;
+}> = ({ label, value, trend, icon, colorVariant }) => (
+  <div className="azals-cockpit-kpi">
+    <div className="azals-cockpit-kpi__top">
+      <div className={clsx('azals-cockpit-kpi__icon', `azals-cockpit-kpi__icon--${colorVariant}`)}>
         {icon}
       </div>
       {trend !== undefined && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          color: trend >= 0 ? '#10b981' : '#ef4444',
-          fontSize: '13px',
-          fontWeight: 500,
-        }}>
+        <div className={clsx('azals-cockpit-kpi__trend', {
+          'azals-cockpit-kpi__trend--up': trend >= 0,
+          'azals-cockpit-kpi__trend--down': trend < 0,
+        })}>
           {trend >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
           {Math.abs(trend)}%
         </div>
       )}
     </div>
-    <div style={{ marginTop: '16px' }}>
-      <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>{value}</div>
-      <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>{label}</div>
+    <div className="azals-cockpit-kpi__body">
+      <div className="azals-cockpit-kpi__value">{value}</div>
+      <div className="azals-cockpit-kpi__label">{label}</div>
     </div>
   </div>
 );
@@ -519,8 +460,8 @@ const GlobalKPICard: React.FC<{
 // ============================================================
 
 export const CockpitModule: React.FC = () => {
-  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useCockpitStats();
-  const { data: recentItems, isLoading: recentLoading } = useRecentActivity();
+  const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useCockpitStats();
+  const { data: recentItems, isLoading: recentLoading, error: recentError, refetch: refetchRecent } = useRecentActivity();
 
   const defaultStats: FluxStats = {
     crm: { prospects: 0, clients: 0, opportunites: 0 },
@@ -545,102 +486,79 @@ export const CockpitModule: React.FC = () => {
     };
   }, [currentStats]);
 
+  if (statsError) {
+    return (
+      <div className="azals-cockpit">
+        <ErrorState
+          message={statsError instanceof Error ? statsError.message : undefined}
+          onRetry={() => { refetchStats(); }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f9fafb', minHeight: '100vh' }}>
+    <div className="azals-cockpit">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-      }}>
+      <div className="azals-cockpit-header">
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, color: '#111827' }}>
+          <h1 className="azals-cockpit-header__title">
             Cockpit
           </h1>
-          <p style={{ color: '#6b7280', margin: '4px 0 0 0' }}>
+          <p className="azals-cockpit-header__subtitle">
             Vue globale du flux commercial
           </p>
         </div>
-        <button
-          onClick={() => refetchStats()}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 16px',
-            backgroundColor: 'white',
-            color: '#374151',
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
+        <Button
+          variant="secondary"
+          leftIcon={<RefreshCw size={16} />}
+          onClick={() => { refetchStats(); refetchRecent(); }}
         >
-          <RefreshCw size={16} />
           Actualiser
-        </button>
+        </Button>
       </div>
 
       {/* KPIs Globaux */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '16px',
-        marginBottom: '24px',
-      }}>
+      <div className="azals-cockpit-kpis">
         <GlobalKPICard
           label="CA Total"
           value={formatCurrency(globalKPIs.caTotal)}
           trend={12}
           icon={<Euro size={24} />}
-          color="#10b981"
+          colorVariant="success"
         />
         <GlobalKPICard
-          label="À encaisser"
+          label="A encaisser"
           value={formatCurrency(globalKPIs.facturesEnAttente)}
           icon={<Receipt size={24} />}
-          color="#f59e0b"
+          colorVariant="warning"
         />
         <GlobalKPICard
           label="Taux conversion devis"
           value={`${globalKPIs.tauxConversion}%`}
           trend={5}
           icon={<TrendingUp size={24} />}
-          color="#3b82f6"
+          colorVariant="devis"
         />
         <GlobalKPICard
           label="Affaires en cours"
           value={globalKPIs.affairesEnCours}
           icon={<Activity size={24} />}
-          color="#8b5cf6"
+          colorVariant="crm"
         />
       </div>
 
       {/* Pipeline du flux */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-        border: '1px solid #e5e7eb',
-      }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px', color: '#111827' }}>
-          Pipeline Commercial
-        </h2>
-
+      <Card
+        title="Pipeline Commercial"
+        className="azals-cockpit-pipeline"
+      >
         {statsLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+          <div className="azals-cockpit-loading">
             Chargement...
           </div>
         ) : (
-          <div style={{
-            display: 'flex',
-            alignItems: 'stretch',
-            gap: '0',
-            overflowX: 'auto',
-            paddingBottom: '8px',
-          }}>
+          <div className="azals-cockpit-pipeline__flow">
             {FLUX_STEPS.map((step, index) => (
               <React.Fragment key={step.id}>
                 <FluxStepCard
@@ -653,100 +571,79 @@ export const CockpitModule: React.FC = () => {
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Contenu principal */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+      <div className="azals-cockpit-content">
         {/* Alertes et actions */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid #e5e7eb',
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px', color: '#111827' }}>
-            Actions prioritaires
-          </h2>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <Card title="Actions prioritaires">
+          <div className="azals-cockpit-actions__list">
             {/* Devis en attente */}
             {currentStats.devis.en_attente > 0 && (
               <div
+                className="azals-cockpit-action azals-cockpit-action--warning"
                 onClick={() => navigateToModule('devis', { status: 'SENT' })}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '16px',
-                  backgroundColor: '#fef3c7',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                }}
+                onKeyDown={handleKeyActivate(() => navigateToModule('devis', { status: 'SENT' }))}
+                role="button"
+                tabIndex={0}
+                aria-label={`${currentStats.devis.en_attente} devis en attente de reponse`}
               >
-                <Clock size={20} style={{ color: '#d97706' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, color: '#92400e' }}>
-                    {currentStats.devis.en_attente} devis en attente de réponse
+                <Clock size={20} className="azals-cockpit-action__icon" />
+                <div className="azals-cockpit-action__body">
+                  <div className="azals-cockpit-action__title">
+                    {currentStats.devis.en_attente} devis en attente de reponse
                   </div>
-                  <div style={{ fontSize: '13px', color: '#b45309' }}>
+                  <div className="azals-cockpit-action__subtitle">
                     Relancer les clients
                   </div>
                 </div>
-                <ChevronRight size={18} style={{ color: '#d97706' }} />
+                <ChevronRight size={18} className="azals-cockpit-action__chevron" />
               </div>
             )}
 
-            {/* Interventions à planifier */}
+            {/* Interventions a planifier */}
             {currentStats.ods.a_planifier > 0 && (
               <div
+                className="azals-cockpit-action azals-cockpit-action--info"
                 onClick={() => navigateToModule('ordres-service', { status: 'A_PLANIFIER' })}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '16px',
-                  backgroundColor: '#dbeafe',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                }}
+                onKeyDown={handleKeyActivate(() => navigateToModule('ordres-service', { status: 'A_PLANIFIER' }))}
+                role="button"
+                tabIndex={0}
+                aria-label={`${currentStats.ods.a_planifier} intervention(s) a planifier`}
               >
-                <Calendar size={20} style={{ color: '#2563eb' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, color: '#1e40af' }}>
-                    {currentStats.ods.a_planifier} intervention(s) à planifier
+                <Calendar size={20} className="azals-cockpit-action__icon" />
+                <div className="azals-cockpit-action__body">
+                  <div className="azals-cockpit-action__title">
+                    {currentStats.ods.a_planifier} intervention(s) a planifier
                   </div>
-                  <div style={{ fontSize: '13px', color: '#3b82f6' }}>
+                  <div className="azals-cockpit-action__subtitle">
                     Assigner les techniciens
                   </div>
                 </div>
-                <ChevronRight size={18} style={{ color: '#2563eb' }} />
+                <ChevronRight size={18} className="azals-cockpit-action__chevron" />
               </div>
             )}
 
-            {/* Factures à encaisser */}
+            {/* Factures a encaisser */}
             {currentStats.factures.en_attente > 0 && (
               <div
+                className="azals-cockpit-action azals-cockpit-action--danger"
                 onClick={() => navigateToModule('factures', { status: 'SENT' })}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '16px',
-                  backgroundColor: '#fce7f3',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                }}
+                onKeyDown={handleKeyActivate(() => navigateToModule('factures', { status: 'SENT' }))}
+                role="button"
+                tabIndex={0}
+                aria-label={`${currentStats.factures.en_attente} facture(s) en attente de paiement`}
               >
-                <Receipt size={20} style={{ color: '#db2777' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, color: '#9d174d' }}>
+                <Receipt size={20} className="azals-cockpit-action__icon" />
+                <div className="azals-cockpit-action__body">
+                  <div className="azals-cockpit-action__title">
                     {currentStats.factures.en_attente} facture(s) en attente de paiement
                   </div>
-                  <div style={{ fontSize: '13px', color: '#ec4899' }}>
-                    {formatCurrency(currentStats.factures.montant_total - currentStats.factures.montant_encaisse)} à encaisser
+                  <div className="azals-cockpit-action__subtitle">
+                    {formatCurrency(currentStats.factures.montant_total - currentStats.factures.montant_encaisse)} a encaisser
                   </div>
                 </div>
-                <ChevronRight size={18} style={{ color: '#db2777' }} />
+                <ChevronRight size={18} className="azals-cockpit-action__chevron" />
               </div>
             )}
 
@@ -754,57 +651,43 @@ export const CockpitModule: React.FC = () => {
             {currentStats.devis.en_attente === 0 &&
              currentStats.ods.a_planifier === 0 &&
              currentStats.factures.en_attente === 0 && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '32px',
-                color: '#6b7280',
-              }}>
-                <CheckCircle2 size={48} style={{ color: '#10b981', marginBottom: '12px' }} />
-                <div style={{ fontWeight: 500 }}>Aucune action prioritaire</div>
-                <div style={{ fontSize: '13px' }}>Tout est sous contrôle</div>
+              <div className="azals-cockpit-actions__empty">
+                <CheckCircle2 size={48} className="azals-cockpit-actions__empty-icon" />
+                <div className="azals-cockpit-actions__empty-title">Aucune action prioritaire</div>
+                <div className="azals-cockpit-actions__empty-subtitle">Tout est sous controle</div>
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
-        {/* Activité récente */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid #e5e7eb',
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', color: '#111827' }}>
-            Activité récente
-          </h2>
-
-          {recentLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+        {/* Activite recente */}
+        <Card title="Activite recente">
+          {recentError ? (
+            <ErrorState
+              message={recentError instanceof Error ? recentError.message : undefined}
+              onRetry={() => { refetchRecent(); }}
+            />
+          ) : recentLoading ? (
+            <div className="azals-cockpit-loading">
               Chargement...
             </div>
           ) : recentItems && recentItems.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div className="azals-cockpit-recent__list">
               {recentItems.map((item) => (
                 <RecentActivityItem key={`${item.type}-${item.id}`} item={item} />
               ))}
             </div>
           ) : (
-            <div style={{
-              textAlign: 'center',
-              padding: '32px',
-              color: '#9ca3af',
-            }}>
-              Aucune activité récente
+            <div className="azals-cockpit-empty">
+              Aucune activite recente
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );
 };
 
-// Export pour la compatibilité avec l'ancien code
+// Export pour la compatibilite avec l'ancien code
 export const CockpitPage = CockpitModule;
 export default CockpitModule;

@@ -86,11 +86,81 @@ const translations: Record<string, Record<string, string>> = {
     'status.paid': 'Payé',
     'status.cancelled': 'Annulé',
 
-    // Interventions
+    // Interventions - Statuts
     'intervention.status.pending': 'À planifier',
     'intervention.status.planned': 'Planifiée',
     'intervention.status.inProgress': 'En cours',
     'intervention.status.completed': 'Terminée',
+    'intervention.status.cancelled': 'Annulée',
+
+    // Interventions - Types
+    'intervention.type.installation': 'Installation',
+    'intervention.type.maintenance': 'Maintenance',
+    'intervention.type.reparation': 'Réparation',
+    'intervention.type.inspection': 'Inspection',
+    'intervention.type.formation': 'Formation',
+    'intervention.type.consultation': 'Consultation',
+    'intervention.type.autre': 'Autre',
+
+    // Interventions - Priorités
+    'intervention.priority.low': 'Basse',
+    'intervention.priority.normal': 'Normale',
+    'intervention.priority.high': 'Haute',
+    'intervention.priority.urgent': 'Urgente',
+
+    // Interventions - Corps d'état
+    'intervention.trade.electricite': 'Électricité',
+    'intervention.trade.plomberie': 'Plomberie',
+    'intervention.trade.electricite_plomberie': 'Électricité + Plomberie',
+
+    // Interventions - Module UI
+    'intervention.title': 'Interventions',
+    'intervention.subtitle': 'Gestion des interventions terrain',
+    'intervention.tab.dashboard': 'Vue d\'ensemble',
+    'intervention.tab.list': 'Interventions',
+    'intervention.tab.planning': 'Planning',
+    'intervention.tab.donneurs': 'Donneurs d\'ordre',
+    'intervention.new': 'Nouvelle intervention',
+    'intervention.detail': 'Détail',
+    'intervention.planifier': 'Planifier',
+    'intervention.demarrer': 'Démarrer',
+    'intervention.terminer': 'Terminer',
+    'intervention.annuler': 'Annuler',
+    'intervention.filter.allStatuts': 'Tous statuts',
+    'intervention.filter.allTypes': 'Tous types',
+    'intervention.filter.allPriorities': 'Toutes priorités',
+    'intervention.planifier.title': 'Planifier l\'intervention',
+    'intervention.planifier.date': 'Date',
+    'intervention.planifier.heureDebut': 'Heure début',
+    'intervention.planifier.heureFin': 'Heure fin',
+    'intervention.planifier.intervenant': 'Intervenant',
+    'intervention.planifier.selectIntervenant': 'Choisir un intervenant...',
+    'intervention.planifier.submit': 'Planifier',
+    'intervention.planifier.submitting': 'Planification...',
+    'intervention.planifier.errorIntervenant': 'Veuillez sélectionner un intervenant',
+    'intervention.annuler.title': 'Confirmer l\'annulation',
+    'intervention.annuler.confirm': 'Êtes-vous sûr de vouloir annuler l\'intervention {reference} ?',
+    'intervention.annuler.irreversible': 'Cette action est irréversible.',
+    'intervention.annuler.keep': 'Non, garder',
+    'intervention.annuler.confirmBtn': 'Oui, annuler',
+    'intervention.annuler.submitting': 'Annulation...',
+    'intervention.stats.aPlanifier': 'À planifier',
+    'intervention.stats.planifiees': 'Planifiées',
+    'intervention.stats.enCours': 'En cours',
+    'intervention.stats.termineesSemaine': 'Terminées (semaine)',
+    'intervention.stats.termineesMois': 'Terminées (mois)',
+    'intervention.stats.dureeMoyenne': 'Durée moyenne',
+    'intervention.stats.aujourdhui': 'Aujourd\'hui',
+    'intervention.stats.loading': 'Chargement des statistiques...',
+    'intervention.stats.error': 'Impossible de charger les statistiques',
+
+    // Interventions - Donneurs d'ordre
+    'intervention.donneurs.title': 'Donneurs d\'ordre',
+    'intervention.donneurs.new': 'Nouveau donneur d\'ordre',
+    'intervention.donneurs.create': 'Créer',
+    'intervention.donneurs.creating': 'Création...',
+    'intervention.donneurs.errorNom': 'Le nom est obligatoire',
+    'intervention.donneurs.errorCode': 'Le code est obligatoire',
 
     // Profil utilisateur
     'user.profile': 'Mon profil',

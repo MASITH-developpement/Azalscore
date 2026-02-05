@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Set
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from jose import jwt, JWTError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -212,7 +212,7 @@ class SaaSCore:
             user_id = UUID(user_id_str)
 
         except JWTError as e:
-            logger.warning(f"JWT decode error: {e}")
+            logger.warning("JWT decode error: %s", e)
             return Result.fail("Invalid or expired token", "AUTH_INVALID_TOKEN")
 
         # Récupérer utilisateur
@@ -387,8 +387,9 @@ class SaaSCore:
         )
 
         logger.info(
-            f"Module {module_code} activated for tenant {context.tenant_id} "
-            f"by user {context.user_id}"
+            "Module %s activated for tenant %s "
+            "by user %s",
+            module_code, context.tenant_id, context.user_id
         )
 
         return Result.ok(tenant_module)
@@ -438,8 +439,9 @@ class SaaSCore:
         )
 
         logger.info(
-            f"Module {module_code} deactivated for tenant {context.tenant_id} "
-            f"by user {context.user_id}"
+            "Module %s deactivated for tenant %s "
+            "by user %s",
+            module_code, context.tenant_id, context.user_id
         )
 
         return Result.ok({"module_code": module_code, "status": "DISABLED"})
@@ -515,7 +517,7 @@ class SaaSCore:
             return result
         except Exception as e:
             logger.error(
-                f"Error executing action {action}: {e}",
+                "Error executing action %s: %s", action, e,
                 exc_info=True
             )
             return Result.fail(
@@ -550,7 +552,7 @@ class SaaSCore:
             return executor_class(self.db)
 
         except (ImportError, AttributeError) as e:
-            logger.error(f"Failed to load executor for module {module_code}: {e}")
+            logger.error("Failed to load executor for module %s: %s", module_code, e)
             raise ImportError(
                 f"Module executor not found: app.modules.{module_code}.executor.ModuleExecutor"
             )
@@ -587,7 +589,7 @@ class SaaSCore:
             self.db.commit()
 
         except Exception as e:
-            logger.error(f"Failed to write audit entry: {e}", exc_info=True)
+            logger.error("Failed to write audit entry: %s", e, exc_info=True)
             # Ne pas bloquer l'exécution si l'audit échoue
             # (mais logger l'erreur pour investigation)
 

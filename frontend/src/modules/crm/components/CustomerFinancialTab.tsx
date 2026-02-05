@@ -11,7 +11,7 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Customer } from '../types';
-import { formatCurrency, formatDate } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * CustomerFinancialTab - Données financières du client

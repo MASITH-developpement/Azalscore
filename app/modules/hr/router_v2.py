@@ -42,6 +42,7 @@ from .schemas import (
     LeaveBalanceResponse,
     LeaveRequestCreate,
     LeaveRequestResponse,
+    LeaveRequestUpdate,
     PayrollPeriodCreate,
     PayrollPeriodResponse,
     PayslipCreate,
@@ -58,7 +59,7 @@ from .schemas import (
     TrainingParticipantResponse,
     TrainingResponse,
 )
-from .service import get_hr_service
+from .service import get_hr_service, HRDashboardError
 
 router = APIRouter(prefix="/v2/hr", tags=["RH - Ressources Humaines"])
 
@@ -148,6 +149,33 @@ def update_department(
     return service.update_department(department_id, data)
 
 
+@router.delete("/departments/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_department(
+    department_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    Supprimer un département (soft delete).
+
+    Requires: Admin ou Dirigeant
+    """
+    # Vérifier les droits admin
+    if not context.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seuls les administrateurs peuvent supprimer des départements"
+        )
+
+    service = get_hr_service(db, context.tenant_id)
+    try:
+        success = service.delete_department(department_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Département non trouvé")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 # =============================================================================
 # POSTES
 # =============================================================================
@@ -221,6 +249,33 @@ def update_position(
     return service.update_position(position_id, data)
 
 
+@router.delete("/positions/{position_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_position(
+    position_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    Supprimer un poste (soft delete).
+
+    Requires: Admin ou Dirigeant
+    """
+    # Vérifier les droits admin
+    if not context.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seuls les administrateurs peuvent supprimer des postes"
+        )
+
+    service = get_hr_service(db, context.tenant_id)
+    try:
+        success = service.delete_position(position_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Poste non trouvé")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 # =============================================================================
 # EMPLOYÉS
 # =============================================================================
@@ -239,7 +294,7 @@ def create_employee(
     - current_user → context
     """
     service = get_hr_service(db, context.tenant_id)
-    return service.create_employee(data, created_by=context.user_id)
+    return service.create_employee(data)
 
 
 @router.get("/employees", response_model=EmployeeList)
@@ -269,10 +324,8 @@ def list_employees(
         page_size=page_size
     )
     return EmployeeList(
-        employees=employees,
-        total=total,
-        page=page,
-        page_size=page_size
+        items=employees,
+        total=total
     )
 
 
@@ -310,7 +363,31 @@ def update_employee(
     - current_user.id → context.user_id
     """
     service = get_hr_service(db, context.tenant_id)
-    return service.update_employee(employee_id, data, updated_by=context.user_id)
+    return service.update_employee(employee_id, data)
+
+
+@router.delete("/employees/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_employee(
+    employee_id: UUID,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    Supprimer un employé (soft delete - désactivation).
+
+    Requires: Admin ou Dirigeant
+    """
+    # Vérifier les droits admin
+    if not context.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seuls les administrateurs peuvent supprimer des employés"
+        )
+
+    service = get_hr_service(db, context.tenant_id)
+    success = service.delete_employee(employee_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Employé non trouvé")
 
 
 @router.post("/employees/{employee_id}/terminate", response_model=EmployeeResponse)
@@ -397,6 +474,37 @@ def get_employee_contracts(
 # DEMANDES DE CONGÉS
 # =============================================================================
 
+from pydantic import BaseModel as PydanticBaseModel
+
+class LeaveRequestSimpleCreate(PydanticBaseModel):
+    """Schema simplifié pour création de congé via frontend."""
+    employee_id: UUID
+    type: str
+    start_date: date
+    end_date: date
+    reason: str | None = None
+
+
+@router.post("/leave-requests", response_model=LeaveRequestResponse, status_code=status.HTTP_201_CREATED)
+def create_leave_request_simple(
+    data: LeaveRequestSimpleCreate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    Créer une demande de congé (endpoint simplifié).
+    """
+    from .models import LeaveType
+    service = get_hr_service(db, context.tenant_id)
+    leave_data = LeaveRequestCreate(
+        leave_type=LeaveType(data.type),
+        start_date=data.start_date,
+        end_date=data.end_date,
+        reason=data.reason
+    )
+    return service.create_leave_request(data.employee_id, leave_data)
+
+
 @router.post("/employees/{employee_id}/leave-requests", response_model=LeaveRequestResponse, status_code=status.HTTP_201_CREATED)
 def create_leave_request(
     employee_id: UUID,
@@ -430,12 +538,45 @@ def list_leave_requests(
     - tenant_id → context.tenant_id
     """
     service = get_hr_service(db, context.tenant_id)
-    return service.list_leave_requests(
+    items, total = service.list_leave_requests(
         employee_id=employee_id,
         status=status,
-        from_date=from_date,
-        to_date=to_date
+        start_date=from_date,
+        end_date=to_date
     )
+    # Convert SQLAlchemy objects to dicts with proper field names
+    items_response = []
+    for item in items:
+        data = LeaveRequestResponse.model_validate(item)
+        # Get employee name from relationship if available
+        if item.employee:
+            data.employee_name = f"{item.employee.first_name} {item.employee.last_name}"
+        # Convert to dict with alias names (type instead of leave_type)
+        items_response.append(data.model_dump(by_alias=True))
+    return {"items": items_response, "total": total}
+
+
+@router.put("/leave-requests/{leave_id}", response_model=LeaveRequestResponse)
+def update_leave_request(
+    leave_id: UUID,
+    data: LeaveRequestUpdate,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """
+    ✅ Mettre à jour une demande de congé.
+
+    Seules les demandes REJECTED ou PENDING peuvent être modifiées.
+    Utilisez resubmit=true pour remettre une demande refusée en attente.
+    """
+    service = get_hr_service(db, context.tenant_id)
+    result = service.update_leave_request(leave_id, data)
+    if result is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Demande de congé introuvable ou ne peut pas être modifiée (seules PENDING et REJECTED sont modifiables)"
+        )
+    return result
 
 
 @router.post("/leave-requests/{leave_id}/approve", response_model=LeaveRequestResponse)
@@ -452,7 +593,10 @@ def approve_leave_request(
     - current_user.id → context.user_id
     """
     service = get_hr_service(db, context.tenant_id)
-    return service.approve_leave_request(leave_id, approved_by=context.user_id)
+    result = service.approve_leave_request(leave_id, approver_id=context.user_id)
+    if result is None:
+        raise HTTPException(status_code=400, detail="Demande de congé introuvable ou déjà traitée")
+    return result
 
 
 @router.post("/leave-requests/{leave_id}/reject", response_model=LeaveRequestResponse)
@@ -470,11 +614,14 @@ def reject_leave_request(
     - current_user.id → context.user_id
     """
     service = get_hr_service(db, context.tenant_id)
-    return service.reject_leave_request(
+    result = service.reject_leave_request(
         leave_id=leave_id,
-        rejection_reason=rejection_reason,
-        rejected_by=context.user_id
+        approver_id=context.user_id,
+        reason=rejection_reason
     )
+    if result is None:
+        raise HTTPException(status_code=400, detail="Demande de congé introuvable ou déjà traitée")
+    return result
 
 
 @router.get("/employees/{employee_id}/leave-balance", response_model=list[LeaveBalanceResponse])
@@ -659,8 +806,26 @@ def list_time_entries(
     service = get_hr_service(db, context.tenant_id)
     return service.list_time_entries(
         employee_id=employee_id,
-        from_date=from_date,
-        to_date=to_date
+        start_date=from_date,
+        end_date=to_date
+    )
+
+
+# Alias pour compatibilité frontend
+@router.get("/timesheets", response_model=list[TimeEntryResponse])
+def list_timesheets(
+    employee_id: UUID | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context)
+):
+    """Alias de /time-entries pour compatibilité frontend."""
+    service = get_hr_service(db, context.tenant_id)
+    return service.list_time_entries(
+        employee_id=employee_id,
+        start_date=from_date,
+        end_date=to_date
     )
 
 
@@ -939,6 +1104,17 @@ def get_hr_dashboard(
 
     Changements:
     - tenant_id → context.tenant_id
+    - Gestion d'erreur conforme AZA-API-002
     """
-    service = get_hr_service(db, context.tenant_id)
-    return service.get_hr_dashboard()
+    try:
+        service = get_hr_service(db, context.tenant_id)
+        return service.get_hr_dashboard()
+    except HRDashboardError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": e.code,
+                "message": e.message,
+                "tenant_id": e.tenant_id
+            }
+        )

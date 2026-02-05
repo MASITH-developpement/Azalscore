@@ -65,7 +65,7 @@ class CoreAuthMiddleware(BaseHTTPMiddleware):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             # Pas de token - continuer sans authentification
-            logger.debug(f"[CoreAuthMiddleware] No token for {path}")
+            logger.debug("[CoreAuthMiddleware] No token for %s", path)
             return await call_next(request)
 
         token = auth_header.split(" ", 1)[1]
@@ -75,7 +75,7 @@ class CoreAuthMiddleware(BaseHTTPMiddleware):
         if not tenant_id:
             # Pas de tenant_id - impossible d'authentifier
             # (TenantMiddleware devrait avoir injecté tenant_id)
-            logger.warning(f"[CoreAuthMiddleware] Missing tenant_id for {path}")
+            logger.warning("[CoreAuthMiddleware] Missing tenant_id for %s", path)
             return await call_next(request)
 
         # Extraire informations de requête pour audit trail
@@ -106,18 +106,20 @@ class CoreAuthMiddleware(BaseHTTPMiddleware):
                 request.state.role = saas_context.role
 
                 logger.debug(
-                    f"[CoreAuthMiddleware] Authenticated {saas_context.user_id} "
-                    f"for tenant {tenant_id} (role: {saas_context.role.value})"
+                    "[CoreAuthMiddleware] Authenticated %s "
+                    "for tenant %s (role: %s)",
+                    saas_context.user_id, tenant_id, saas_context.role.value
                 )
             else:
                 # Authentification échouée - continuer sans contexte
                 logger.warning(
-                    f"[CoreAuthMiddleware] Authentication failed for {path}: "
-                    f"{result.error} ({result.error_code})"
+                    "[CoreAuthMiddleware] Authentication failed for %s: "
+                    "%s (%s)",
+                    path, result.error, result.error_code
                 )
 
         except Exception as e:
-            logger.error(f"[CoreAuthMiddleware] Error during authentication: {e}", exc_info=True)
+            logger.error("[CoreAuthMiddleware] Error during authentication: %s", e, exc_info=True)
         finally:
             db.close()
 

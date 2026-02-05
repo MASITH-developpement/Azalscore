@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { api, tokenManager, setTenantId, clearTenantId } from '@core/api-client';
-import type { User, AuthTokens, AuthState } from '@/types';
+import type { User, AuthTokens, AuthState, TypedAuthState } from '@/types';
 
 // ============================================================
 // MODE DÉMO (développement sans backend)
@@ -366,6 +366,36 @@ export const useUser = (): User | null => {
 
 export const useIsAuthenticated = (): boolean => {
   return useAuthStore((state) => state.isAuthenticated);
+};
+
+// ============================================================
+// HOOK TYPE-SAFE — DISCRIMINATED UNION
+// ============================================================
+
+/**
+ * Hook type-safe qui derive un TypedAuthState du store existant.
+ * Le discriminant 'authenticated' garantit que user est non-null.
+ *
+ * Usage:
+ * const auth = useTypedAuth();
+ * if (auth.status === 'authenticated') {
+ *   auth.user.email; // OK — garanti non-null par le discriminant
+ * }
+ */
+export const useTypedAuth = (): TypedAuthState => {
+  return useAuthStore((state) => {
+    if (state.status === 'idle') return { status: 'idle' as const };
+    if (state.status === 'loading' || state.isLoading) return { status: 'loading' as const };
+    if (state.error) return { status: 'error' as const, error: state.error };
+    if (state.isAuthenticated && state.user) {
+      return {
+        status: 'authenticated' as const,
+        user: state.user,
+        tenantId: state.user.tenant_id,
+      };
+    }
+    return { status: 'unauthenticated' as const };
+  });
 };
 
 // ============================================================

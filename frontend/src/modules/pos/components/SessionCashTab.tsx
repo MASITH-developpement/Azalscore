@@ -12,10 +12,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { POSSession, CashMovement } from '../types';
 import {
-  formatCurrency, formatDateTime, formatTime,
   CASH_MOVEMENT_TYPE_CONFIG,
   hasCashDifference, hasSignificantDifference, isSessionClosed
 } from '../types';
+import { formatCurrency, formatDateTime, formatTime } from '@/utils/formatters';
 
 /**
  * SessionCashTab - Gestion de caisse

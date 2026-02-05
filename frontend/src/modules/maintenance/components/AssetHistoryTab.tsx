@@ -11,8 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Asset, AssetHistoryEntry } from '../types';
+import { formatDateTime, formatDate } from '@/utils/formatters';
 import {
-  formatDateTime, formatDate,
   ASSET_STATUS_CONFIG, ORDER_STATUS_CONFIG
 } from '../types';
 

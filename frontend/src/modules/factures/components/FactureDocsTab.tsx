@@ -12,7 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Facture, FactureDocument } from '../types';
-import { formatDate, TYPE_CONFIG } from '../types';
+import { TYPE_CONFIG } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * FactureDocsTab - Gestion des documents attachés

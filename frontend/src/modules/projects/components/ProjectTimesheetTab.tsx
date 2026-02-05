@@ -12,8 +12,8 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Project, TimeEntry } from '../types';
+import { formatDate, formatHours, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatHours, formatCurrency,
   getTotalLoggedHours, getBillableHours, getBillableAmount,
   getTotalEstimatedHours
 } from '../types';

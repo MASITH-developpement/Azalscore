@@ -36,14 +36,16 @@ import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } fro
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
 import type { BankAccount as BankAccountType, Transaction as TransactionType, TreasurySummary, ForecastData } from './types';
 import {
+  ACCOUNT_TYPE_CONFIG,
+  ACCOUNT_STATUS_CONFIG
+} from './types';
+import {
   formatCurrency as formatCurrencyHelper,
   formatDate as formatDateHelper,
   formatDateTime,
   formatIBAN,
-  maskIBAN,
-  ACCOUNT_TYPE_CONFIG,
-  ACCOUNT_STATUS_CONFIG
-} from './types';
+  maskIBAN
+} from '@/utils/formatters';
 import {
   AccountInfoTab,
   AccountTransactionsTab,
@@ -144,7 +146,7 @@ const useBankAccount = (id: string) => {
 const BankAccountDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: account, isLoading, error } = useBankAccount(id!);
+  const { data: account, isLoading, error, refetch } = useBankAccount(id!);
 
   if (isLoading) {
     return (
@@ -300,6 +302,8 @@ const BankAccountDetailView: React.FC = () => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -442,7 +446,7 @@ export const TreasuryDashboard: React.FC = () => {
 
 export const BankAccountsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data, isLoading } = useBankAccounts();
+  const { data, isLoading, error, refetch } = useBankAccounts();
 
   const handleViewAccount = (account: BankAccount) => {
     navigate(`/treasury/accounts/${account.id}`);
@@ -517,6 +521,8 @@ export const BankAccountsPage: React.FC = () => {
           data={data?.items || []}
           keyField="id"
           isLoading={isLoading}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
           onRowClick={handleViewAccount}
         />
       </Card>

@@ -227,7 +227,7 @@ class ElevenLabsTTSService(TTSService):
             )
 
         except Exception as e:
-            logger.error(f"ElevenLabs synthesis error: {e}")
+            logger.error("ElevenLabs synthesis error: %s", e)
             raise
 
     async def synthesize_stream(
@@ -264,7 +264,7 @@ class ElevenLabsTTSService(TTSService):
                 yield chunk
 
         except Exception as e:
-            logger.error(f"ElevenLabs streaming error: {e}")
+            logger.error("ElevenLabs streaming error: %s", e)
             raise
 
     async def health_check(self) -> bool:
@@ -275,7 +275,7 @@ class ElevenLabsTTSService(TTSService):
             voices = await client.voices.get_all()
             return len(voices.voices) > 0
         except Exception as e:
-            logger.error(f"ElevenLabs health check failed: {e}")
+            logger.error("ElevenLabs health check failed: %s", e)
             return False
 
 
@@ -367,7 +367,7 @@ class GoogleTTSService(TTSService):
             )
 
         except Exception as e:
-            logger.error(f"Google TTS synthesis error: {e}")
+            logger.error("Google TTS synthesis error: %s", e)
             raise
 
     async def synthesize_stream(
@@ -387,7 +387,7 @@ class GoogleTTSService(TTSService):
             client = self._get_client()
             return True
         except Exception as e:
-            logger.error(f"Google TTS health check failed: {e}")
+            logger.error("Google TTS health check failed: %s", e)
             return False
 
 

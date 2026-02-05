@@ -11,8 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Ticket } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 import {
-  formatDate, formatDateTime,
   PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
   isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
   getTicketAge, getFirstResponseTime, getResolutionTime

@@ -3,7 +3,7 @@
  * Gestion des interventions terrain - Migré vers BaseViewStandard
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -18,7 +18,7 @@ import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } fro
 import {
   ClipboardList, Calendar, Wrench, CheckCircle, BarChart3, Clock, MapPin,
   User, FileText, History, Sparkles, Package, Euro, AlertTriangle, Play, X,
-  FileEdit, Lock, Unlock, CheckSquare
+  FileEdit, Lock, Unlock, CheckSquare, Edit, Trash2
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 
@@ -28,6 +28,9 @@ import {
   useInterventions,
   useDonneursOrdre,
   useIntervenants,
+  useDeleteIntervention,
+  useUpdateDonneurOrdre,
+  useDeleteDonneurOrdre,
   interventionKeys,
 } from './api';
 
@@ -489,7 +492,7 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
 // LIST VIEW
 // ============================================================================
 
-const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ onNewIntervention }) => {
+const InterventionsListView: React.FC<{ onNewIntervention?: () => void; onEditIntervention?: (id: string) => void }> = ({ onNewIntervention, onEditIntervention }) => {
   const [filterStatut, setFilterStatut] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterPriorite, setFilterPriorite] = useState<string>('');
@@ -514,6 +517,15 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
   const demarrer = useDemarrerIntervention();
   const terminer = useTerminerIntervention();
   const debloquerList = useDebloquerIntervention();
+  const deleteIntervention = useDeleteIntervention();
+
+  const canEdit = (row: Intervention) => ['DRAFT', 'A_PLANIFIER', 'PLANIFIEE'].includes(row.statut);
+
+  const handleDelete = async (row: Intervention) => {
+    if (window.confirm(`Supprimer l'intervention ${row.reference} ?`)) {
+      await deleteIntervention.mutateAsync(row.id);
+    }
+  };
 
   const columns: TableColumn<Intervention>[] = [
     { id: 'reference', header: 'Référence', accessor: 'reference', render: (v) => (
@@ -542,8 +554,26 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void }> = ({ o
     }},
     { id: 'duree_prevue_minutes', header: 'Durée', accessor: 'duree_prevue_minutes', render: (v) => (v as number) ? formatDuration(v as number) : '-' },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_v, row) => (
-      <div className="flex gap-1">
+      <div className="flex gap-1 items-center">
         <Button size="sm" variant="secondary" onClick={() => setSelectedIntervention(row)}>Détail</Button>
+        {canEdit(row) && onEditIntervention && (
+          <button
+            className="p-1 hover:bg-gray-100 rounded"
+            onClick={() => onEditIntervention(row.id)}
+            title="Modifier"
+          >
+            <Edit size={14} className="text-gray-600" />
+          </button>
+        )}
+        {canEdit(row) && (
+          <button
+            className="p-1 hover:bg-red-100 rounded"
+            onClick={() => handleDelete(row)}
+            title="Supprimer"
+          >
+            <Trash2 size={14} className="text-red-500" />
+          </button>
+        )}
         {row.statut === 'DRAFT' && (
           <Button size="sm" variant="primary" onClick={() => validerList.mutate(row.id)}>Valider</Button>
         )}
@@ -668,17 +698,69 @@ const DonneursOrdreView: React.FC = () => {
   const { data: donneursOrdre = [], isLoading, error: donneursError, refetch: refetchDonneurs } = useDonneursOrdre();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-  const [newDonneur, setNewDonneur] = useState({ code: '', nom: '', email: '', telephone: '' });
+  const [showEdit, setShowEdit] = useState(false);
+  const [editingDonneur, setEditingDonneur] = useState<DonneurOrdre | null>(null);
+  const [formData, setFormData] = useState({ code: '', nom: '', email: '', telephone: '' });
   const [createError, setCreateError] = useState('');
 
+  const updateFormField = useCallback((field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const closeCreateModal = useCallback(() => {
+    setShowCreate(false);
+    setCreateError('');
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setShowEdit(false);
+    setEditingDonneur(null);
+  }, []);
+
+  const [editFormData, setEditFormData] = useState({ nom: '', code: '', email: '', telephone: '' });
+  const updateEditFormField = useCallback((field: string, value: string) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const updateDonneur = useUpdateDonneurOrdre();
+  const deleteDonneur = useDeleteDonneurOrdre();
+
+  const handleEdit = (donneur: DonneurOrdre) => {
+    setEditingDonneur(donneur);
+    setEditFormData({
+      nom: donneur.nom || '',
+      code: donneur.code || '',
+      email: donneur.email || '',
+      telephone: donneur.telephone || '',
+    });
+    setShowEdit(true);
+  };
+
+  const handleDelete = async (donneur: DonneurOrdre) => {
+    if (window.confirm(`Supprimer le donneur d'ordre "${donneur.nom}" ?`)) {
+      try {
+        await deleteDonneur.mutateAsync(donneur.id);
+      } catch (error: any) {
+        alert(`Erreur lors de la suppression: ${error?.response?.data?.detail || error?.message || 'Erreur inconnue'}`);
+      }
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDonneur) return;
+    await updateDonneur.mutateAsync({ id: editingDonneur.id, data: editFormData });
+    setShowEdit(false);
+    setEditingDonneur(null);
+  };
+
   const createDonneur = useMutation({
-    mutationFn: async (data: typeof newDonneur) => {
+    mutationFn: async (data: typeof formData) => {
       return api.post('/v2/interventions/donneurs-ordre', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
       setShowCreate(false);
-      setNewDonneur({ code: '', nom: '', email: '', telephone: '' });
+      setFormData({ nom: '', code: '', email: '', telephone: '' });
       setCreateError('');
     },
     onError: (error: any) => {
@@ -687,25 +769,40 @@ const DonneursOrdreView: React.FC = () => {
   });
 
   const handleCreate = () => {
-    if (!newDonneur.nom.trim()) {
+    if (!formData.nom.trim()) {
       setCreateError('Le nom est obligatoire');
       return;
     }
-    if (!newDonneur.code.trim()) {
-      setCreateError('Le code est obligatoire');
-      return;
-    }
     setCreateError('');
-    createDonneur.mutate(newDonneur);
+    // Le code sera auto-généré par le backend si non fourni
+    createDonneur.mutate(formData);
   };
 
   const columns: TableColumn<DonneurOrdre>[] = [
+    { id: 'code', header: 'Code', accessor: 'code' },
     { id: 'nom', header: 'Nom', accessor: 'nom' },
-    { id: 'entreprise', header: 'Entreprise', accessor: 'entreprise', render: (v) => (v as string) || '-' },
     { id: 'email', header: 'Email', accessor: 'email', render: (v) => (v as string) || '-' },
     { id: 'telephone', header: 'Téléphone', accessor: 'telephone', render: (v) => (v as string) || '-' },
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
       <Badge variant={(v as boolean) ? 'green' : 'default'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
+    )},
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_v, row) => (
+      <div className="flex gap-1 items-center">
+        <button
+          className="p-1 hover:bg-gray-100 rounded"
+          onClick={() => handleEdit(row)}
+          title="Modifier"
+        >
+          <Edit size={14} className="text-gray-600" />
+        </button>
+        <button
+          className="p-1 hover:bg-red-100 rounded"
+          onClick={() => handleDelete(row)}
+          title="Supprimer"
+        >
+          <Trash2 size={14} className="text-red-500" />
+        </button>
+      </div>
     )}
   ];
 
@@ -718,7 +815,7 @@ const DonneursOrdreView: React.FC = () => {
       <DataTable columns={columns} data={donneursOrdre} isLoading={isLoading} keyField="id" error={donneursError instanceof Error ? donneursError : null} onRetry={() => refetchDonneurs()} />
 
       {showCreate && (
-        <Modal isOpen onClose={() => { setShowCreate(false); setCreateError(''); }} title="Nouveau donneur d'ordre">
+        <Modal isOpen onClose={closeCreateModal} title="Nouveau donneur d'ordre">
           <div className="azals-modal__body">
             {createError && (
               <div className="azals-alert azals-alert--error mb-4">
@@ -726,26 +823,56 @@ const DonneursOrdreView: React.FC = () => {
               </div>
             )}
             <div className="azals-field">
-              <label className="azals-field__label">Code <span className="azals-field__required">*</span></label>
-              <input className="azals-input" value={newDonneur.code} onChange={e => setNewDonneur({ ...newDonneur, code: e.target.value })} placeholder="Ex: DO-001" />
+              <label className="azals-field__label" htmlFor="donneur-nom">Nom <span className="azals-field__required">*</span></label>
+              <input id="donneur-nom" className="azals-input" value={formData.nom} onChange={e => updateFormField('nom', e.target.value)} placeholder="Nom du donneur d'ordre" autoFocus />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Nom <span className="azals-field__required">*</span></label>
-              <input className="azals-input" value={newDonneur.nom} onChange={e => setNewDonneur({ ...newDonneur, nom: e.target.value })} placeholder="Nom du donneur d'ordre" />
+              <label className="azals-field__label" htmlFor="donneur-code">Code <span className="text-gray-400 text-xs">(auto si vide)</span></label>
+              <input id="donneur-code" className="azals-input" value={formData.code} onChange={e => updateFormField('code', e.target.value)} placeholder="Auto: DO-0001" />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Email</label>
-              <input className="azals-input" type="email" value={newDonneur.email} onChange={e => setNewDonneur({ ...newDonneur, email: e.target.value })} placeholder="email@example.com" />
+              <label className="azals-field__label" htmlFor="donneur-email">Email</label>
+              <input id="donneur-email" className="azals-input" type="email" value={formData.email} onChange={e => updateFormField('email', e.target.value)} placeholder="email@example.com" />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Téléphone</label>
-              <input className="azals-input" type="tel" value={newDonneur.telephone} onChange={e => setNewDonneur({ ...newDonneur, telephone: e.target.value })} placeholder="0612345678" />
+              <label className="azals-field__label" htmlFor="donneur-telephone">Téléphone</label>
+              <input id="donneur-telephone" className="azals-input" type="tel" value={formData.telephone} onChange={e => updateFormField('telephone', e.target.value)} placeholder="0612345678" />
             </div>
           </div>
           <div className="azals-modal__footer">
-            <Button variant="secondary" onClick={() => { setShowCreate(false); setCreateError(''); }}>Annuler</Button>
+            <Button variant="secondary" onClick={closeCreateModal}>Annuler</Button>
             <Button onClick={handleCreate} disabled={createDonneur.isPending}>
               {createDonneur.isPending ? 'Création...' : 'Créer'}
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal édition */}
+      {showEdit && editingDonneur && (
+        <Modal isOpen onClose={closeEditModal} title="Modifier le donneur d'ordre">
+          <div className="azals-modal__body">
+            <div className="azals-field">
+              <label className="azals-field__label" htmlFor="edit-donneur-code">Code</label>
+              <input id="edit-donneur-code" className="azals-input" value={editFormData.code} disabled />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label" htmlFor="edit-donneur-nom">Nom <span className="azals-field__required">*</span></label>
+              <input id="edit-donneur-nom" className="azals-input" value={editFormData.nom} onChange={e => updateEditFormField('nom', e.target.value)} autoFocus />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label" htmlFor="edit-donneur-email">Email</label>
+              <input id="edit-donneur-email" className="azals-input" type="email" value={editFormData.email} onChange={e => updateEditFormField('email', e.target.value)} />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label" htmlFor="edit-donneur-telephone">Téléphone</label>
+              <input id="edit-donneur-telephone" className="azals-input" type="tel" value={editFormData.telephone} onChange={e => updateEditFormField('telephone', e.target.value)} />
+            </div>
+          </div>
+          <div className="azals-modal__footer">
+            <Button variant="secondary" onClick={closeEditModal}>Annuler</Button>
+            <Button onClick={handleSaveEdit} disabled={updateDonneur.isPending}>
+              {updateDonneur.isPending ? 'Enregistrement...' : 'Enregistrer'}
             </Button>
           </div>
         </Modal>
@@ -793,7 +920,7 @@ const InterventionsModule: React.FC = () => {
           />
         );
       case 'interventions':
-        return <InterventionsListView onNewIntervention={() => navigateToForm()} />;
+        return <InterventionsListView onNewIntervention={() => navigateToForm()} onEditIntervention={(id) => navigateToForm(id)} />;
       case 'planning':
         return <PlanningView />;
       case 'donneurs-ordre':

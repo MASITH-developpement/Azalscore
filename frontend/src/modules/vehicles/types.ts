@@ -245,32 +245,6 @@ export const formatCurrencyKm = (amount: number): string => {
 };
 
 /**
- * Formatage monnaie standard
- */
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(amount);
-};
-
-/**
- * Formatage date
- */
-export const formatDate = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formatage date/heure
- */
-export const formatDateTime = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
  * Formatage kilometrage
  */
 export const formatKilometers = (km: number): string => {

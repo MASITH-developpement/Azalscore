@@ -18,11 +18,11 @@ import type {
   Audit as AuditType, AuditFinding, AuditDocument, AuditHistoryEntry
 } from './types';
 import {
-  formatDate, formatPercent,
   AUDIT_TYPE_CONFIG, AUDIT_STATUS_CONFIG,
   isAuditCompleted, isAuditInProgress, hasCriticalFindings,
   hasOpenFindings, getAuditScoreColor
 } from './types';
+import { formatDate, formatPercent } from '@/utils/formatters';
 import {
   AuditInfoTab, AuditFindingsTab, AuditDocumentsTab,
   AuditHistoryTab, AuditIATab
@@ -301,7 +301,7 @@ const useAudit = (id: string) => {
 const PoliciesView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: policies = [], isLoading } = usePolicies({
+  const { data: policies = [], isLoading, error, refetch } = usePolicies({
     type: filterType || undefined,
     status: filterStatus || undefined
   });
@@ -345,7 +345,7 @@ const PoliciesView: React.FC = () => {
           <Button>Nouvelle politique</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={policies} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={policies} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -354,7 +354,7 @@ const AuditsView: React.FC = () => {
   const navigate = useNavigate();
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: audits = [], isLoading } = useAudits({
+  const { data: audits = [], isLoading, error, refetch } = useAudits({
     type: filterType || undefined,
     status: filterStatus || undefined
   });
@@ -410,7 +410,7 @@ const AuditsView: React.FC = () => {
           <Button>Planifier audit</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={audits} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={audits} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -418,7 +418,7 @@ const AuditsView: React.FC = () => {
 const GDPRView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: requests = [], isLoading } = useGDPRRequests({
+  const { data: requests = [], isLoading, error, refetch } = useGDPRRequests({
     type: filterType || undefined,
     status: filterStatus || undefined
   });
@@ -529,7 +529,7 @@ const ConsentsView: React.FC = () => {
 const AuditDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: audit, isLoading, error } = useAudit(id || '');
+  const { data: audit, isLoading, error, refetch } = useAudit(id || '');
 
   if (isLoading) {
     return (
@@ -738,6 +738,8 @@ const AuditDetailView: React.FC = () => {
       headerActions={headerActions}
       primaryActions={primaryActions}
       secondaryActions={secondaryActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };

@@ -10,7 +10,7 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { BankAccount, AccountHistoryEntry } from '../types';
-import { formatDateTime, formatCurrency } from '../types';
+import { formatDateTime, formatCurrency } from '@/utils/formatters';
 
 /**
  * AccountHistoryTab - Historique

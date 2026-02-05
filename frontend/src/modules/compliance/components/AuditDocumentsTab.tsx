@@ -9,7 +9,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Audit, AuditDocument } from '../types';
-import { formatDate, formatDateTime, formatFileSize } from '../types';
+import { formatFileSize } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 
 /**
  * AuditDocumentsTab - Documents de l'audit

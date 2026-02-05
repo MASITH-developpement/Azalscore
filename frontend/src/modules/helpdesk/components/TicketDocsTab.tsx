@@ -12,7 +12,7 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Ticket, TicketAttachment } from '../types';
-import { formatDate, formatDateTime } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 
 /**
  * TicketDocsTab - Documents du ticket

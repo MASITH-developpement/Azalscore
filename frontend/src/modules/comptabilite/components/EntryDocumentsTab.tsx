@@ -9,7 +9,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Entry, RelatedEntry } from '../types';
-import { formatDate, formatCurrency, ENTRY_STATUS_CONFIG } from '../types';
+import { ENTRY_STATUS_CONFIG } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 
 /**
  * EntryDocumentsTab - Documents lies

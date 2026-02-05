@@ -51,7 +51,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except RequestValidationError as e:
             # Erreurs de validation Pydantic (requêtes malformées)
-            logger.warning(f"Validation error on {request.url.path}: {e}")
+            logger.warning(
+                "[ERROR_MW] Erreur de validation requête — données malformées",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "RequestValidationError",
+                    "error": str(e)[:500],
+                    "consequence": "422_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 content={
@@ -63,7 +72,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except ValidationError as e:
             # Erreurs de validation Pydantic (modèles internes)
-            logger.warning(f"Pydantic validation error on {request.url.path}: {e}")
+            logger.warning(
+                "[ERROR_MW] Erreur de validation Pydantic — modèle interne invalide",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "ValidationError",
+                    "error": str(e)[:500],
+                    "consequence": "422_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 content={
@@ -76,7 +94,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         except ValueError as e:
             # Erreurs de valeur (business logic validation)
             # C'est le type d'erreur principal levé par le code métier pur
-            logger.warning(f"ValueError on {request.url.path}: {e}")
+            logger.warning(
+                "[ERROR_MW] Erreur métier (ValueError) — validation business échouée",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "ValueError",
+                    "error": str(e)[:500],
+                    "consequence": "400_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
@@ -87,7 +114,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except IntegrityError as e:
             # Erreurs d'intégrité base de données (contraintes)
-            logger.error(f"Database integrity error on {request.url.path}: {e}")
+            logger.error(
+                "[ERROR_MW] Erreur d'intégrité DB — contrainte violée",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "IntegrityError",
+                    "error": str(e.orig)[:500] if hasattr(e, 'orig') else str(e)[:500],
+                    "consequence": "409_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_409_CONFLICT,
                 content={
@@ -99,7 +135,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except OperationalError as e:
             # Erreurs opérationnelles base de données (connexion, etc.)
-            logger.error(f"Database operational error on {request.url.path}: {e}")
+            logger.error(
+                "[ERROR_MW] Erreur opérationnelle DB — connexion ou infrastructure",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "OperationalError",
+                    "error": str(e)[:500],
+                    "consequence": "503_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 content={
@@ -110,7 +155,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except DataError as e:
             # Erreurs de données base de données (type mismatch, etc.)
-            logger.error(f"Database data error on {request.url.path}: {e}")
+            logger.error(
+                "[ERROR_MW] Erreur de données DB — type mismatch ou format invalide",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "DataError",
+                    "error": str(e)[:500],
+                    "consequence": "400_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
@@ -121,7 +175,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except PermissionError as e:
             # Erreurs de permission
-            logger.warning(f"Permission error on {request.url.path}: {e}")
+            logger.warning(
+                "[ERROR_MW] Erreur de permission — accès refusé",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "PermissionError",
+                    "error": str(e)[:500],
+                    "consequence": "403_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={
@@ -132,7 +195,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except FileNotFoundError as e:
             # Erreurs de fichier non trouvé
-            logger.warning(f"File not found on {request.url.path}: {e}")
+            logger.warning(
+                "[ERROR_MW] Ressource non trouvée (FileNotFoundError)",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "FileNotFoundError",
+                    "error": str(e)[:500],
+                    "consequence": "404_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={
@@ -143,7 +215,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except NotImplementedError as e:
             # Fonctionnalités non implémentées
-            logger.warning(f"Not implemented on {request.url.path}: {e}")
+            logger.warning(
+                "[ERROR_MW] Fonctionnalité non implémentée",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "NotImplementedError",
+                    "error": str(e)[:500],
+                    "consequence": "501_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_501_NOT_IMPLEMENTED,
                 content={
@@ -154,7 +235,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except TimeoutError as e:
             # Erreurs de timeout
-            logger.error(f"Timeout error on {request.url.path}: {e}")
+            logger.error(
+                "[ERROR_MW] Timeout — opération trop longue",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": "TimeoutError",
+                    "error": str(e)[:500],
+                    "consequence": "504_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 content={
@@ -165,7 +255,16 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             # Erreur générique inattendue
-            logger.exception(f"Unhandled exception on {request.url.path}: {e}")
+            logger.exception(
+                "[ERROR_MW] EXCEPTION NON GÉRÉE — erreur inattendue",
+                extra={
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_type": type(e).__name__,
+                    "error": str(e)[:500],
+                    "consequence": "500_response"
+                }
+            )
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={

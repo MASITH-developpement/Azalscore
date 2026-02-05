@@ -113,39 +113,6 @@ export const ACCOUNT_STATUS_CONFIG = {
 };
 
 // ============================================================================
-// HELPERS DE FORMATAGE
-// ============================================================================
-
-export const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-export const formatIBAN = (iban: string): string => {
-  // Format IBAN with spaces every 4 characters
-  return iban.replace(/(.{4})/g, '$1 ').trim();
-};
-
-export const maskIBAN = (iban: string): string => {
-  // Show first 4 and last 4 characters
-  if (iban.length <= 8) return iban;
-  return `${iban.slice(0, 4)} **** **** ${iban.slice(-4)}`;
-};
-
-// ============================================================================
 // HELPERS METIER
 // ============================================================================
 

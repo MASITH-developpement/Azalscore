@@ -129,7 +129,7 @@ class TreasuryAdapter(BaseAdapter):
         context: Dict[str, Any]
     ) -> AdapterResult:
         """Exécute une action de trésorerie."""
-        logger.info(f"[TreasuryAdapter] Execute: {action_name} with {params}")
+        logger.info("[TreasuryAdapter] Execute: %s with %s", action_name, params)
 
         handlers = {
             "solde_tresorerie": self._handle_solde,
@@ -147,7 +147,7 @@ class TreasuryAdapter(BaseAdapter):
         try:
             return await handler(params, context)
         except Exception as e:
-            logger.error(f"[TreasuryAdapter] Error: {e}")
+            logger.error("[TreasuryAdapter] Error: %s", e)
             return self._voice_error(f"Erreur: {str(e)}")
 
     async def confirm(

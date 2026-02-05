@@ -11,7 +11,8 @@ import { Button } from '@ui/actions';
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Ticket, TicketMessage } from '../types';
-import { formatDateTime, getPublicMessageCount, getInternalMessageCount } from '../types';
+import { getPublicMessageCount, getInternalMessageCount } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * TicketMessagesTab - Conversation du ticket

@@ -564,7 +564,7 @@ async def process_due_broadcasts(
             )
             executions.append(execution)
         except Exception as e:
-            logger.error(f"Failed to execute broadcast {broadcast.id}: {e}")
+            logger.error("Failed to execute broadcast %s: %s", broadcast.id, e)
             # Continue with other broadcasts
 
     return executions

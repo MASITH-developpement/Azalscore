@@ -8,7 +8,7 @@ import { Package, Hash, Percent, Info } from 'lucide-react';
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Facture, DocumentLine } from '../types';
-import { formatCurrency } from '../types';
+import { formatCurrency } from '@/utils/formatters';
 
 /**
  * FactureLinesTab - Affichage des lignes de la facture

@@ -291,7 +291,7 @@ class Guardian:
             success=True
         ))
 
-        logger.warning(f"[GUARDIAN ALERT] {severity.value}: {message}")
+        logger.warning("[GUARDIAN ALERT] %s: %s", severity.value, message)
 
     def get_pending_alerts(self) -> List[Dict[str, Any]]:
         """Récupère les alertes non acquittées"""

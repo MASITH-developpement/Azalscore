@@ -11,7 +11,7 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Partner, PartnerHistoryEntry } from '../types';
-import { formatDateTime } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * PartnerHistoryTab - Historique

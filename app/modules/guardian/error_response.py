@@ -109,10 +109,10 @@ def build_error_response(
                     )
                 except Exception as e:
                     # Échec silencieux, on continue vers JSON
-                    logger.debug(f"Impossible de servir le fichier HTML {html_path}: {e}")
+                    logger.debug("Impossible de servir le fichier HTML %s: %s", html_path, e)
     except Exception as e:
         # Sécurité: si même la vérification du path échoue, on continue
-        logger.debug(f"Erreur lors de la vérification du fichier HTML: {e}")
+        logger.debug("Erreur lors de la vérification du fichier HTML: %s", e)
 
     # Réponse JSON (fallback toujours disponible)
     json_content = {

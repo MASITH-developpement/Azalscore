@@ -96,13 +96,13 @@ class TheoWebSocketManager:
         await websocket.accept()
         self._connections[session_id] = websocket
         self._audio_buffers[session_id] = b""
-        logger.info(f"[TheoWS] Connected: {session_id}")
+        logger.info("[TheoWS] Connected: %s", session_id)
 
     def disconnect(self, session_id: str) -> None:
         """Déconnecte une session."""
         self._connections.pop(session_id, None)
         self._audio_buffers.pop(session_id, None)
-        logger.info(f"[TheoWS] Disconnected: {session_id}")
+        logger.info("[TheoWS] Disconnected: %s", session_id)
 
     async def send(
         self,
@@ -264,9 +264,9 @@ async def theo_websocket(
                 await handle_control(session_id, session, message.payload)
 
     except WebSocketDisconnect:
-        logger.info(f"[TheoWS] Client disconnected: {session_id}")
+        logger.info("[TheoWS] Client disconnected: %s", session_id)
     except Exception as e:
-        logger.error(f"[TheoWS] Error: {e}")
+        logger.error("[TheoWS] Error: %s", e)
         await ws_manager.send(
             session_id,
             WSMessage(
@@ -339,7 +339,7 @@ async def handle_audio_end(
         await process_transcription(session_id, session, orchestrator, result.text)
 
     except Exception as e:
-        logger.error(f"[TheoWS] STT error: {e}")
+        logger.error("[TheoWS] STT error: %s", e)
         await ws_manager.send(
             session_id,
             WSMessage(
@@ -550,7 +550,7 @@ async def stream_tts_response(
         )
 
     except Exception as e:
-        logger.error(f"[TheoWS] TTS error: {e}")
+        logger.error("[TheoWS] TTS error: %s", e)
         # Pas d'erreur critique - le texte a déjà été envoyé
 
 

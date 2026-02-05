@@ -11,8 +11,9 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Vehicule, VehicleHistoryEntry, MaintenanceLog, MileageLog } from '../types';
+import { formatDateTime, formatDate, formatCurrency } from '@/utils/formatters';
 import {
-  formatDateTime, formatDate, formatCurrency, formatKilometers,
+  formatKilometers,
   MAINTENANCE_TYPE_CONFIG
 } from '../types';
 

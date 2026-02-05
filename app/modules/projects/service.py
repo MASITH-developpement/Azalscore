@@ -83,9 +83,16 @@ class ProjectsService:
 
     def create_project(self, data: ProjectCreate) -> Project:
         """Créer un projet."""
+        # Auto-générer le code si non fourni
+        from app.core.sequences import SequenceGenerator
+        code = data.code
+        if not code:
+            seq = SequenceGenerator(self.db, self.tenant_id)
+            code = seq.next_reference("PROJET")
+
         project = Project(
             tenant_id=self.tenant_id,
-            code=data.code,
+            code=code,
             name=data.name,
             description=data.description,
             category=data.category,

@@ -756,8 +756,11 @@ Message automatique AZALS
             try:
                 hour, minute = map(int, report.schedule_time.split(':'))
                 next_gen = next_gen.replace(hour=hour, minute=minute)
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+                logger.warning(
+                    "[TRIGGERS] Format schedule_time invalide",
+                    extra={"schedule_time": report.schedule_time, "error": str(e)[:200], "consequence": "default_time_kept"}
+                )
 
         return next_gen
 
@@ -919,11 +922,11 @@ Message automatique AZALS
             return json.loads(decrypted)
         except (ValueError, TypeError) as e:
             # Peut-être données anciennes non chiffrées
-            logger.debug(f"Decryption failed for webhook {webhook_id}, trying unencrypted: {e}")
+            logger.debug("Decryption failed for webhook %s, trying unencrypted: %s", webhook_id, e)
             try:
                 return json.loads(webhook.auth_config)
             except json.JSONDecodeError as e:
-                logger.warning(f"Failed to parse auth_config for webhook {webhook_id}: {e}")
+                logger.warning("Failed to parse auth_config for webhook %s: %s", webhook_id, e)
                 return None
 
     def list_webhooks(self) -> list[WebhookEndpoint]:

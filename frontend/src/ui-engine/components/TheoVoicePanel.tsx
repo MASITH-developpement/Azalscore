@@ -1,22 +1,26 @@
 /**
- * THÉO — Voice Panel Component
+ * THEO -- Voice Panel Component
  * =============================
- * Interface vocale pour Théo.
- * Micro, indicateur d'état, transcript, réponses.
+ * Interface vocale pour Theo.
+ * Micro, indicateur d'etat, transcript, reponses.
  */
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, X, Pause, Play, RefreshCw } from 'lucide-react';
 import { useTheoVoice, VoiceState, CompanionId } from '@core/theo/voice';
+import { COLORS } from '@core/design-tokens';
+import { clsx } from 'clsx';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import '@/styles/theo-voice-panel.css';
 
 // ============================================================
 // COMPANION AVATARS
 // ============================================================
 
 const COMPANION_AVATARS: Record<CompanionId, { name: string; color: string; initial: string }> = {
-  theo: { name: 'Théo', color: '#6366f1', initial: 'T' },
-  lea: { name: 'Léa', color: '#ec4899', initial: 'L' },
-  alex: { name: 'Alex', color: '#10b981', initial: 'A' },
+  theo: { name: 'Theo', color: COLORS.affaires, initial: 'T' },
+  lea: { name: 'Lea', color: COLORS.factures, initial: 'L' },
+  alex: { name: 'Alex', color: COLORS.success, initial: 'A' },
 };
 
 // ============================================================
@@ -31,53 +35,51 @@ interface StateIndicatorProps {
 const StateIndicator: React.FC<StateIndicatorProps> = ({ state, companionId }) => {
   const companion = COMPANION_AVATARS[companionId];
 
-  const stateStyles: Record<VoiceState, { ring: string; pulse: boolean; label: string }> = {
-    idle: { ring: 'ring-gray-300', pulse: false, label: 'Prêt' },
-    listening: { ring: 'ring-green-500', pulse: true, label: 'J\'écoute...' },
-    processing: { ring: 'ring-blue-500', pulse: true, label: 'Je réfléchis...' },
-    speaking: { ring: 'ring-purple-500', pulse: true, label: 'Je parle...' },
-    awaiting: { ring: 'ring-amber-500', pulse: false, label: 'Tu confirmes ?' },
-    paused: { ring: 'ring-gray-400', pulse: false, label: 'En pause' },
-    error: { ring: 'ring-red-500', pulse: false, label: 'Erreur' },
+  const stateLabels: Record<VoiceState, string> = {
+    idle: 'Pret',
+    listening: 'J\'ecoute...',
+    processing: 'Je reflechis...',
+    speaking: 'Je parle...',
+    awaiting: 'Tu confirmes ?',
+    paused: 'En pause',
+    error: 'Erreur',
   };
 
-  const { ring, pulse, label } = stateStyles[state];
+  const label = stateLabels[state];
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="azals-theo-voice-indicator">
       {/* Avatar */}
       <div
-        className={`
-          relative w-24 h-24 rounded-full ring-4 ${ring}
-          transition-all duration-300 flex items-center justify-center
-          ${pulse ? 'animate-pulse' : ''}
-        `}
-        style={{ backgroundColor: companion.color }}
+        className={clsx(
+          'azals-theo-voice-avatar',
+          `azals-theo-voice-avatar--${state}`
+        )}
+        style={{ '--companion-color': companion.color } as React.CSSProperties}
       >
-        <span className="text-4xl font-bold text-white">
+        <span className="azals-theo-voice-avatar__initial">
           {companion.initial}
         </span>
 
         {/* Pulse ring for listening */}
         {state === 'listening' && (
           <div
-            className="absolute inset-0 rounded-full animate-ping opacity-30"
-            style={{ backgroundColor: companion.color }}
+            className="azals-theo-voice-avatar__ping"
           />
         )}
 
         {/* Sound waves for speaking */}
         {state === 'speaking' && (
-          <div className="absolute -right-1 -bottom-1">
-            <Volume2 className="w-6 h-6 text-white animate-bounce" />
+          <div className="azals-theo-voice-avatar__wave">
+            <Volume2 size={24} />
           </div>
         )}
       </div>
 
       {/* Companion name and state */}
-      <div className="text-center">
-        <div className="text-lg font-semibold text-gray-800">{companion.name}</div>
-        <div className="text-sm text-gray-500">{label}</div>
+      <div className="azals-theo-voice-info">
+        <div className="azals-theo-voice-info__name">{companion.name}</div>
+        <div className="azals-theo-voice-info__state">{label}</div>
       </div>
     </div>
   );
@@ -104,22 +106,18 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({
     <button
       onClick={isListening ? onStop : onStart}
       disabled={disabled}
-      className={`
-        w-20 h-20 rounded-full flex items-center justify-center
-        transition-all duration-200 shadow-lg
-        ${isListening
-          ? 'bg-red-500 hover:bg-red-600 scale-110'
-          : 'bg-indigo-600 hover:bg-indigo-700'
-        }
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        active:scale-95
-      `}
-      title={isListening ? 'Arrêter l\'écoute' : 'Appuyer pour parler'}
+      className={clsx(
+        'azals-theo-voice-btn',
+        isListening ? 'azals-theo-voice-btn--listening' : 'azals-theo-voice-btn--idle',
+        disabled && 'azals-theo-voice-btn--disabled'
+      )}
+      title={isListening ? 'Arreter l\'ecoute' : 'Appuyer pour parler'}
+      aria-label={isListening ? 'Arreter l\'ecoute' : 'Appuyer pour parler'}
     >
       {isListening ? (
-        <MicOff className="w-10 h-10 text-white" />
+        <MicOff className="azals-theo-voice-btn__icon" />
       ) : (
-        <Mic className="w-10 h-10 text-white" />
+        <Mic className="azals-theo-voice-btn__icon" />
       )}
     </button>
   );
@@ -138,10 +136,10 @@ const TranscriptDisplay: React.FC<TranscriptProps> = ({ text, isListening }) => 
   if (!text && !isListening) return null;
 
   return (
-    <div className="bg-gray-100 rounded-lg p-4 min-h-[60px]">
-      <div className="text-sm text-gray-500 mb-1">Tu dis :</div>
-      <div className="text-gray-800">
-        {text || (isListening ? <span className="text-gray-400 italic">En écoute...</span> : '')}
+    <div className="azals-theo-voice-transcript">
+      <div className="azals-theo-voice-transcript__label">Tu dis :</div>
+      <div className="azals-theo-voice-transcript__text">
+        {text || (isListening ? <span className="azals-theo-voice-transcript__placeholder">En ecoute...</span> : '')}
       </div>
     </div>
   );
@@ -161,22 +159,22 @@ const ResponseDisplay: React.FC<ResponseProps> = ({ text, isAwaiting, onConfirm 
   if (!text) return null;
 
   return (
-    <div className="bg-indigo-50 rounded-lg p-4">
-      <div className="text-sm text-indigo-600 mb-1">Théo :</div>
-      <div className="text-gray-800">{text}</div>
+    <div className="azals-theo-voice-response">
+      <div className="azals-theo-voice-response__label">Theo :</div>
+      <div className="azals-theo-voice-response__text">{text}</div>
 
       {/* Confirmation buttons */}
       {isAwaiting && (
-        <div className="flex gap-3 mt-4">
+        <div className="azals-theo-voice-confirm">
           <button
             onClick={() => onConfirm(true)}
-            className="flex-1 py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+            className="azals-theo-voice-confirm__btn azals-theo-voice-confirm__btn--yes"
           >
             Oui
           </button>
           <button
             onClick={() => onConfirm(false)}
-            className="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            className="azals-theo-voice-confirm__btn azals-theo-voice-confirm__btn--no"
           >
             Non
           </button>
@@ -199,7 +197,7 @@ const CompanionSelector: React.FC<CompanionSelectorProps> = ({ current, onSelect
   const companions: CompanionId[] = ['theo', 'lea', 'alex'];
 
   return (
-    <div className="flex gap-2">
+    <div className="azals-theo-voice-companions">
       {companions.map((id) => {
         const companion = COMPANION_AVATARS[id];
         const isSelected = id === current;
@@ -208,18 +206,17 @@ const CompanionSelector: React.FC<CompanionSelectorProps> = ({ current, onSelect
           <button
             key={id}
             onClick={() => onSelect(id)}
-            className={`
-              w-10 h-10 rounded-full flex items-center justify-center
-              transition-all duration-200
-              ${isSelected
-                ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110'
-                : 'opacity-60 hover:opacity-100'
-              }
-            `}
-            style={{ backgroundColor: companion.color }}
+            className={clsx(
+              'azals-theo-voice-companion-btn',
+              isSelected
+                ? 'azals-theo-voice-companion-btn--selected'
+                : 'azals-theo-voice-companion-btn--unselected'
+            )}
+            style={{ '--companion-color': companion.color } as React.CSSProperties}
             title={companion.name}
+            aria-label={`Choisir ${companion.name}`}
           >
-            <span className="text-white font-semibold">{companion.initial}</span>
+            <span className="azals-theo-voice-companion-btn__initial">{companion.initial}</span>
           </button>
         );
       })}
@@ -255,6 +252,9 @@ export const TheoVoicePanel: React.FC<TheoVoicePanelProps> = ({ onClose }) => {
     resume,
     setCompanion,
   } = useTheoVoice();
+
+  const overlayRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(overlayRef, { enabled: true, onEscape: onClose });
 
   // Auto-connect on mount
   useEffect(() => {
@@ -302,18 +302,23 @@ export const TheoVoicePanel: React.FC<TheoVoicePanelProps> = ({ onClose }) => {
   }, [disconnect, connect]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div ref={overlayRef} className="azals-theo-voice-overlay" role="dialog" aria-modal="true" aria-label="Assistant Vocal">
+      <div className="azals-theo-voice-panel">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Assistant Vocal</h2>
+        <div className="azals-theo-voice-header">
+          <h2 className="azals-theo-voice-header__title">Assistant Vocal</h2>
 
-          <div className="flex items-center gap-2">
+          <div className="azals-theo-voice-header__actions">
             {/* Connection status */}
             <div
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-green-500' : connectionState === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
-              }`}
+              className={clsx(
+                'azals-theo-voice-status-dot',
+                isConnected
+                  ? 'azals-theo-voice-status-dot--connected'
+                  : connectionState === 'connecting'
+                  ? 'azals-theo-voice-status-dot--connecting'
+                  : 'azals-theo-voice-status-dot--disconnected'
+              )}
               title={connectionState}
             />
 
@@ -321,10 +326,11 @@ export const TheoVoicePanel: React.FC<TheoVoicePanelProps> = ({ onClose }) => {
             {connectionState === 'error' && (
               <button
                 onClick={handleReconnect}
-                className="p-2 text-gray-400 hover:text-gray-600"
+                className="azals-theo-voice-icon-btn"
                 title="Reconnecter"
+                aria-label="Reconnecter"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw size={16} />
               </button>
             )}
 
@@ -332,16 +338,17 @@ export const TheoVoicePanel: React.FC<TheoVoicePanelProps> = ({ onClose }) => {
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600"
+                className="azals-theo-voice-icon-btn"
+                aria-label="Fermer"
               >
-                <X className="w-5 h-5" />
+                <X size={20} />
               </button>
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="azals-theo-voice-content">
           {/* State indicator */}
           <StateIndicator state={voiceState} companionId={companionId} />
 
@@ -356,7 +363,7 @@ export const TheoVoicePanel: React.FC<TheoVoicePanelProps> = ({ onClose }) => {
           />
 
           {/* Voice button */}
-          <div className="flex justify-center">
+          <div className="azals-theo-voice-btn-wrapper">
             <VoiceButton
               isListening={isListening}
               onStart={startListening}
@@ -366,26 +373,27 @@ export const TheoVoicePanel: React.FC<TheoVoicePanelProps> = ({ onClose }) => {
           </div>
 
           {/* Hint */}
-          <div className="text-center text-sm text-gray-400">
-            Maintiens <kbd className="px-2 py-1 bg-gray-100 rounded">Espace</kbd> pour parler
+          <div className="azals-theo-voice-hint">
+            Maintiens <kbd className="azals-theo-voice-hint__kbd">Espace</kbd> pour parler
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
+        <div className="azals-theo-voice-footer">
           {/* Companion selector */}
           <CompanionSelector current={companionId} onSelect={setCompanion} />
 
           {/* Pause/Resume */}
           <button
             onClick={voiceState === 'paused' ? resume : pause}
-            className="p-2 text-gray-400 hover:text-gray-600"
+            className="azals-theo-voice-icon-btn"
             title={voiceState === 'paused' ? 'Reprendre' : 'Pause'}
+            aria-label={voiceState === 'paused' ? 'Reprendre' : 'Pause'}
           >
             {voiceState === 'paused' ? (
-              <Play className="w-5 h-5" />
+              <Play size={20} />
             ) : (
-              <Pause className="w-5 h-5" />
+              <Pause size={20} />
             )}
           </button>
         </div>

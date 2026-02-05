@@ -12,8 +12,9 @@ import { Button } from '@ui/actions';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Vehicule, FuelLog } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import {
-  formatDate, formatCurrency, formatKilometers,
+  formatKilometers,
   calculateAverageConsumption, FUEL_TYPE_ICONS
 } from '../types';
 

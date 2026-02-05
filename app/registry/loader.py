@@ -35,9 +35,9 @@ try:
     if _SCHEMA_PATH.exists():
         with open(_SCHEMA_PATH, 'r', encoding='utf-8') as f:
             _MANIFEST_SCHEMA = json.load(f)
-        logger.info(f"[REGISTRY] JSON Schema loaded from {_SCHEMA_PATH}")
+        logger.info("[REGISTRY] JSON Schema loaded from %s", _SCHEMA_PATH)
     else:
-        logger.warning(f"[REGISTRY] JSON Schema not found at {_SCHEMA_PATH}, using basic validation")
+        logger.warning("[REGISTRY] JSON Schema not found at %s, using basic validation", _SCHEMA_PATH)
 except ImportError:
     logger.warning("[REGISTRY] jsonschema package not installed, using basic validation only")
 
@@ -107,7 +107,7 @@ class Program:
         """Validation formelle avec JSON Schema (P1)."""
         try:
             jsonschema.validate(instance=self.manifest, schema=_MANIFEST_SCHEMA)
-            logger.debug(f"[REGISTRY] Manifest validated with JSON Schema: {self.manifest.get('id')}")
+            logger.debug("[REGISTRY] Manifest validated with JSON Schema: %s", self.manifest.get('id'))
         except jsonschema.ValidationError as e:
             raise ManifestValidationError(
                 f"Manifest invalide (JSON Schema): {e.message} "
@@ -115,7 +115,7 @@ class Program:
                 f"in {self.manifest_path}"
             )
         except jsonschema.SchemaError as e:
-            logger.error(f"[REGISTRY] Invalid JSON Schema: {e}")
+            logger.error("[REGISTRY] Invalid JSON Schema: %s", e)
             # Fallback to basic validation if schema is broken
             self._validate_basic()
 
@@ -276,7 +276,7 @@ class RegistryLoader:
               tests/
         """
         if not self.registry_path.exists():
-            logger.warning(f"Registry path does not exist: {self.registry_path}")
+            logger.warning("Registry path does not exist: %s", self.registry_path)
             return
 
         # Recherche récursive de tous les manifest.json
@@ -299,10 +299,10 @@ class RegistryLoader:
                 # Stocker aussi sans version pour résolution "latest"
                 self._programs[program_id] = program
 
-                logger.info(f"Registry: Loaded {full_id}")
+                logger.info("Registry: Loaded %s", full_id)
 
             except Exception as e:
-                logger.error(f"Failed to load program from {manifest_path}: {e}")
+                logger.error("Failed to load program from %s: %s", manifest_path, e)
                 # RÈGLE AZALSCORE : En cas de doute, non-conformité retenue
                 # On refuse le sous-programme au lieu de le charger partiellement
 

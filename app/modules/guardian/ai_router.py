@@ -190,7 +190,7 @@ async def create_incident(
 
     Ne nécessite pas d'authentification (appel interne).
     """
-    logger.info(f"[AI_ROUTER] Incident signalé: {data.error_type} dans {data.module}")
+    logger.info("[AI_ROUTER] Incident signalé: %s dans %s", data.error_type, data.module)
 
     tenant_id = getattr(request.state, "tenant_id", None)
     service = get_ai_guardian_service(db, tenant_id)
@@ -278,7 +278,7 @@ async def run_audit(
     - Dette technique estimée
     - Recommandations (sans action)
     """
-    logger.info(f"[AI_ROUTER] Audit demandé: {data.year}-{data.month:02d}")
+    logger.info("[AI_ROUTER] Audit demandé: %s-%s", data.year, data.month)
 
     tenant_id = getattr(request.state, "tenant_id", None)
     service = get_ai_guardian_service(db, tenant_id)
@@ -355,7 +355,7 @@ async def calculate_sla(
     - Isolation multi-tenant
     - Intégrité des données
     """
-    logger.info(f"[AI_ROUTER] Calcul SLA: {data.period_type}")
+    logger.info("[AI_ROUTER] Calcul SLA: %s", data.period_type)
 
     service = get_service(request, db)
 

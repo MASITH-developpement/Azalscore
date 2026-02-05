@@ -4,13 +4,14 @@
  * La validation métier reste côté backend
  */
 
-import React, { useId } from 'react';
+import React, { useId, useRef } from 'react';
 import { useForm, Controller, UseFormReturn, FieldValues, Path, DefaultValues, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { clsx } from 'clsx';
 import { Eye, EyeOff, Calendar, Upload, X } from 'lucide-react';
 import type { FormField, SelectOption } from '@/types';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // ============================================================
 // TYPES
@@ -124,6 +125,7 @@ const TextInput: React.FC<TextInputProps> = ({
           className="azals-input__toggle"
           onClick={() => setShowPassword(!showPassword)}
           tabIndex={-1}
+          aria-label="Afficher/masquer le mot de passe"
         >
           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
@@ -599,11 +601,15 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   size = 'md',
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, { enabled: isOpen, onEscape: onClose });
+
   if (!isOpen) return null;
 
   return (
     <div className="azals-modal-overlay" onClick={onClose}>
       <div
+        ref={dialogRef}
         className={clsx('azals-modal', `azals-modal--${size}`)}
         onClick={(e) => e.stopPropagation()}
         role="dialog"

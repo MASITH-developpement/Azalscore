@@ -133,15 +133,3 @@ export interface DevisDocument {
   created_by?: string;
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
-
-export const formatCurrency = (value: number, currency = 'EUR'): string =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value);
-
-export const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('fr-FR');
-
-export const formatDateTime = (date: string): string =>
-  new Date(date).toLocaleString('fr-FR');

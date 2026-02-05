@@ -236,7 +236,7 @@ class AdapterRegistry:
     def register(self, adapter: BaseAdapter) -> None:
         """Enregistre un adapter."""
         self._adapters[adapter.name] = adapter
-        logger.info(f"Registered adapter: {adapter.name}")
+        logger.info("Registered adapter: %s", adapter.name)
 
     def get(self, name: str) -> Optional[BaseAdapter]:
         """Récupère un adapter par nom."""

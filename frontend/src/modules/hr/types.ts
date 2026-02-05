@@ -29,6 +29,7 @@ export interface Department {
   manager_name?: string;
   parent_id?: string;
   parent_name?: string;
+  cost_center?: string;
   employee_count?: number;
   is_active: boolean;
   created_at: string;
@@ -45,11 +46,14 @@ export interface Position {
   description?: string;
   department_id?: string;
   department_name?: string;
+  category?: string;
   level: number;
   min_salary?: number;
   max_salary?: number;
+  requirements?: string[];
   is_active: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 /**
@@ -128,7 +132,52 @@ export interface LeaveRequest {
 }
 
 /**
- * Entree de feuille de temps
+ * Entree de temps (correspond au backend TimeEntry)
+ */
+export interface TimeEntry {
+  id: string;
+  employee_id: string;
+  employee_name?: string;
+  date: string;
+  start_time?: string;
+  end_time?: string;
+  break_duration: number;
+  worked_hours: number;
+  overtime_hours: number;
+  project_id?: string;
+  project_name?: string;
+  task_description?: string;
+  is_approved: boolean;
+  approved_by?: string;
+  approved_by_name?: string;
+  approved_at?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * @deprecated Utiliser TimeEntry a la place
+ * Feuille de temps (conserve pour compatibilite)
+ */
+export interface Timesheet {
+  id: string;
+  employee_id: string;
+  employee_name?: string;
+  period_start: string;
+  period_end: string;
+  total_hours: number;
+  overtime_hours: number;
+  status: TimesheetStatus;
+  entries: TimeEntry[];
+  submitted_at?: string;
+  approved_at?: string;
+  approved_by_id?: string;
+  approved_by_name?: string;
+  created_at: string;
+}
+
+/**
+ * @deprecated Utiliser TimeEntry a la place
  */
 export interface TimesheetEntry {
   id: string;
@@ -143,62 +192,70 @@ export interface TimesheetEntry {
 }
 
 /**
- * Feuille de temps
- */
-export interface Timesheet {
-  id: string;
-  employee_id: string;
-  employee_name?: string;
-  period_start: string;
-  period_end: string;
-  total_hours: number;
-  overtime_hours: number;
-  status: TimesheetStatus;
-  entries: TimesheetEntry[];
-  submitted_at?: string;
-  approved_at?: string;
-  approved_by_id?: string;
-  approved_by_name?: string;
-  created_at: string;
-}
-
-/**
  * Employe
  */
 export interface Employee {
   id: string;
   employee_number: string;
+  user_id?: string;
+
+  // Informations personnelles
   first_name: string;
   last_name: string;
-  email: string;
-  phone?: string;
-  mobile?: string;
-  address?: string;
-  city?: string;
-  postal_code?: string;
-  country?: string;
+  maiden_name?: string;
+  gender?: 'M' | 'F' | 'OTHER';
   birth_date?: string;
   birth_place?: string;
   nationality?: string;
   social_security_number?: string;
+
+  // Contact
+  email?: string;
+  personal_email?: string;
+  phone?: string;
+  mobile?: string;
+
+  // Adresse
+  address_line1?: string;
+  address_line2?: string;
+  address?: string; // Alias pour compatibilité
+  postal_code?: string;
+  city?: string;
+  country?: string;
+
+  // Organisation
   department_id?: string;
   department_name?: string;
   position_id?: string;
   position_title?: string;
   manager_id?: string;
   manager_name?: string;
-  hire_date: string;
-  seniority_date?: string;
+  work_location?: string;
+
+  // Contrat
   contract_type: ContractType;
+  hire_date: string;
+  start_date?: string;
   contract_start_date?: string;
   contract_end_date?: string;
   probation_end_date?: string;
+  seniority_date?: string;
   status: EmployeeStatus;
-  salary?: number;
-  salary_currency?: string;
+
+  // Rémunération
+  gross_salary?: number;
+  salary?: number; // Alias pour compatibilité
+  currency?: string;
+  weekly_hours?: number;
+
+  // Informations bancaires
   bank_name?: string;
-  bank_iban?: string;
-  bank_bic?: string;
+  iban?: string;
+  bank_iban?: string; // Alias pour compatibilité
+  bic?: string;
+  bank_bic?: string; // Alias pour compatibilité
+
+  // Données annexes
   emergency_contacts?: EmergencyContact[];
   leave_balances?: LeaveBalance[];
   leave_requests?: LeaveRequest[];
@@ -208,7 +265,11 @@ export interface Employee {
   skills?: string[];
   certifications?: string[];
   notes?: string;
+  tags?: string[];
   photo_url?: string;
+  is_active?: boolean;
+
+  // Métadonnées
   created_at: string;
   updated_at?: string;
   created_by?: string;
@@ -218,16 +279,41 @@ export interface Employee {
  * Dashboard RH
  */
 export interface HRDashboard {
+  // Effectifs
   total_employees: number;
   active_employees: number;
-  on_leave: number;
+  on_leave_employees: number;
+  new_hires_this_month: number;
+  departures_this_month: number;
+
+  // Contrats
+  cdi_count: number;
+  cdd_count: number;
+  probation_ending_soon: number;
+  contracts_ending_soon: number;
+
+  // Congés
   pending_leave_requests: number;
-  contracts_expiring_soon: number;
-  new_hires_month: number;
-  terminations_month: number;
-  departments_count: number;
-  positions_count?: number;
-  average_seniority?: number;
+  employees_on_leave_today: number;
+  average_leave_balance: number;
+
+  // Paie
+  current_payroll_status: string;
+  last_payroll_total: number;
+  average_salary: number;
+
+  // Formation
+  trainings_in_progress: number;
+  employees_trained_this_year: number;
+
+  // Évaluations
+  pending_evaluations: number;
+  overdue_evaluations?: number;
+
+  // Répartition
+  by_department: Record<string, number>;
+  by_contract_type: Record<string, number>;
+  by_gender?: Record<string, number>;
 }
 
 // ============================================================================
@@ -275,34 +361,6 @@ export const TIMESHEET_STATUS_CONFIG: Record<TimesheetStatus, { label: string; c
 // ============================================================================
 // HELPERS
 // ============================================================================
-
-/**
- * Formater une date
- */
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formater une date avec heure
- */
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formater un montant en euros
- */
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-/**
- * Formater un nombre d'heures
- */
-export const formatHours = (hours: number): string => {
-  return `${hours}h`;
-};
 
 /**
  * Obtenir le nom complet de l'employe

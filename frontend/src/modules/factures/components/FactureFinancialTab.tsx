@@ -12,7 +12,8 @@ import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Facture, Payment } from '../types';
-import { formatCurrency, formatDate, PAYMENT_METHODS, isOverdue } from '../types';
+import { PAYMENT_METHODS, isOverdue } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * FactureFinancialTab - Récapitulatif financier et paiements

@@ -197,22 +197,6 @@ export const INTERVAL_CONFIG: Record<SubscriptionInterval, {
 // HELPERS
 // ============================================================================
 
-export const formatCurrency = (amount: number, currency = 'EUR'): string => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-export const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-export const formatDateTime = (date: string): string => {
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-export const formatPercent = (value: number): string => {
-  return `${value.toFixed(1)}%`;
-};
-
 export const getSubscriptionAge = (subscription: Subscription): string => {
   const start = new Date(subscription.start_date);
   const now = new Date();

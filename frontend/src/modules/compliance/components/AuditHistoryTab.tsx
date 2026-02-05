@@ -11,7 +11,8 @@ import {
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Audit, AuditHistoryEntry } from '../types';
-import { formatDateTime, AUDIT_STATUS_CONFIG } from '../types';
+import { AUDIT_STATUS_CONFIG } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * AuditHistoryTab - Historique de l'audit

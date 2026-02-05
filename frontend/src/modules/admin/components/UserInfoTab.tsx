@@ -12,10 +12,11 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { AdminUser } from '../types';
 import {
-  formatDate, formatDateTime, getUserFullName,
+  getUserFullName,
   USER_STATUS_CONFIG, hasTwoFactorEnabled, mustChangePassword,
   getPasswordAgeDays, isPasswordOld
 } from '../types';
+import { formatDate, formatDateTime } from '@/utils/formatters';
 
 /**
  * UserInfoTab - Informations utilisateur

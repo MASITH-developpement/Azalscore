@@ -11,9 +11,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { NonConformance } from '../types';
 import {
-  formatDate, getNCAgeDays, isNCOverdue,
+  getNCAgeDays, isNCOverdue,
   NC_STATUS_CONFIG, SEVERITY_CONFIG
 } from '../types';
+import { formatDate } from '@/utils/formatters';
 
 /**
  * NCStatsTab - Statistiques

@@ -272,7 +272,7 @@ class SessionManager:
         if user_id:
             self._user_sessions[user_id] = session_id
 
-        logger.info(f"Created session {session_id} for user {user_id}")
+        logger.info("Created session %s for user %s", session_id, user_id)
         return session
 
     def get(self, session_id: str) -> Optional[TheoSession]:
@@ -301,7 +301,7 @@ class SessionManager:
             del self._user_sessions[session.user_id]
 
         del self._sessions[session_id]
-        logger.info(f"Closed session {session_id}")
+        logger.info("Closed session %s", session_id)
         return True
 
     def end(self, session_id: str) -> bool:

@@ -11,7 +11,8 @@ import {
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { ProductionOrder, MaterialConsumption, ProductionOutput } from '../types';
-import { formatQuantity, formatDateTime } from '../types';
+import { formatQuantity } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * OrderMaterialsTab - Materiaux et consommations

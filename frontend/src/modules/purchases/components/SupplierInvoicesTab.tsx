@@ -9,7 +9,8 @@ import { Card } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
 import type { Supplier, PurchaseInvoice } from '../types';
-import { INVOICE_STATUS_CONFIG, formatCurrency, formatDate, isOverdue, getDaysUntilDue } from '../types';
+import { INVOICE_STATUS_CONFIG, isOverdue, getDaysUntilDue } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * SupplierInvoicesTab - Factures du fournisseur

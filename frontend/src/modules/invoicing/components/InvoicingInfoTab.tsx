@@ -11,9 +11,10 @@ import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Document } from '../types';
 import {
-  formatDate, formatCurrency, DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG,
+  DOCUMENT_TYPE_CONFIG, DOCUMENT_STATUS_CONFIG,
   PAYMENT_TERMS, PAYMENT_METHODS
 } from '../types';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 
 /**
  * InvoicingInfoTab - Informations generales

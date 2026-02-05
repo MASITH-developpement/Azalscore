@@ -21,12 +21,12 @@ import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import type { TableColumn } from '@/types';
 import type { Ticket, TicketCategory, KnowledgeArticle, HelpdeskDashboard, TicketPriority, TicketStatus, TicketSource } from './types';
 import {
-  formatDate, formatDateTime, formatDuration,
   PRIORITIES, STATUSES, SOURCES,
   PRIORITY_CONFIG, STATUS_CONFIG, SOURCE_CONFIG,
   isTicketOverdue, isSlaDueSoon, getTimeUntilSla,
   getTicketAge, getPublicMessageCount
 } from './types';
+import { formatDate, formatDateTime, formatDuration } from '@/utils/formatters';
 import {
   TicketInfoTab,
   TicketMessagesTab,

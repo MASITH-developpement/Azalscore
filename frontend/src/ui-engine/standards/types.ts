@@ -310,6 +310,18 @@ export interface BaseViewStandardProps<T = unknown> {
   onTabChange?: (tabId: string) => void;
   /** État de chargement */
   isLoading?: boolean;
+  /** Error object from React Query */
+  error?: Error | null;
+  /** Retry callback */
+  onRetry?: () => void;
+  /** Whether data is empty (overrides auto-detection) */
+  isEmpty?: boolean;
+  /** Empty state title */
+  emptyTitle?: string;
+  /** Empty state message */
+  emptyMessage?: string;
+  /** Empty state action */
+  emptyAction?: { label: string; onClick: () => void; icon?: React.ReactNode };
   /** Classes CSS additionnelles */
   className?: string;
 }

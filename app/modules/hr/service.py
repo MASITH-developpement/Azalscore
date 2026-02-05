@@ -5,12 +5,18 @@ AZALS MODULE M3 - Service RH
 Service métier pour la gestion des ressources humaines.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, or_
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     Contract,
@@ -114,6 +120,29 @@ class HRService:
         self.db.refresh(dept)
         return dept
 
+    def delete_department(self, dept_id: UUID) -> bool:
+        """Supprimer un département (soft delete).
+
+        Retourne False si des employés sont rattachés.
+        """
+        dept = self.get_department(dept_id)
+        if not dept:
+            return False
+
+        # Vérifier s'il y a des employés rattachés
+        employee_count = self.db.query(Employee).filter(
+            Employee.department_id == dept_id,
+            Employee.tenant_id == self.tenant_id,
+            Employee.is_active == True
+        ).count()
+        if employee_count > 0:
+            raise ValueError(f"Impossible de supprimer: {employee_count} employé(s) rattaché(s)")
+
+        # Soft delete
+        dept.is_active = False
+        self.db.commit()
+        return True
+
     # =========================================================================
     # POSTES
     # =========================================================================
@@ -170,15 +199,46 @@ class HRService:
         self.db.refresh(position)
         return position
 
+    def delete_position(self, position_id: UUID) -> bool:
+        """Supprimer un poste (soft delete).
+
+        Retourne False si des employés sont rattachés.
+        """
+        position = self.get_position(position_id)
+        if not position:
+            return False
+
+        # Vérifier s'il y a des employés rattachés
+        employee_count = self.db.query(Employee).filter(
+            Employee.position_id == position_id,
+            Employee.tenant_id == self.tenant_id,
+            Employee.is_active == True
+        ).count()
+        if employee_count > 0:
+            raise ValueError(f"Impossible de supprimer: {employee_count} employé(s) rattaché(s)")
+
+        # Soft delete
+        position.is_active = False
+        self.db.commit()
+        return True
+
     # =========================================================================
     # EMPLOYÉS
     # =========================================================================
 
     def create_employee(self, data: EmployeeCreate) -> Employee:
-        """Créer un employé."""
+        """Créer un employé avec numéro auto-généré si non fourni."""
+        from app.core.sequences import SequenceGenerator
+
+        # Auto-génère le numéro si non fourni
+        employee_number = data.employee_number
+        if not employee_number:
+            seq = SequenceGenerator(self.db, self.tenant_id)
+            employee_number = seq.next_reference("EMPLOYE")
+
         employee = Employee(
             tenant_id=self.tenant_id,
-            employee_number=data.employee_number,
+            employee_number=employee_number,
             user_id=data.user_id,
             first_name=data.first_name,
             last_name=data.last_name,
@@ -233,14 +293,17 @@ class HRService:
     def list_employees(
         self,
         department_id: UUID | None = None,
+        position_id: UUID | None = None,
         status: EmployeeStatus | None = None,
         manager_id: UUID | None = None,
         search: str | None = None,
         is_active: bool = True,
-        skip: int = 0,
-        limit: int = 50
+        skip: int | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        page_size: int | None = None
     ) -> tuple[list[Employee], int]:
-        """Lister les employés."""
+        """Lister les employés avec filtres et pagination."""
         query = self.db.query(Employee).filter(
             Employee.tenant_id == self.tenant_id,
             Employee.is_active == is_active
@@ -248,6 +311,8 @@ class HRService:
 
         if department_id:
             query = query.filter(Employee.department_id == department_id)
+        if position_id:
+            query = query.filter(Employee.position_id == position_id)
         if status:
             query = query.filter(Employee.status == status)
         if manager_id:
@@ -263,7 +328,16 @@ class HRService:
             )
 
         total = query.count()
-        items = query.order_by(Employee.last_name, Employee.first_name).offset(skip).limit(limit).all()
+
+        # Support page/page_size ou skip/limit
+        if page is not None and page_size is not None:
+            offset = (page - 1) * page_size
+            items = query.order_by(Employee.last_name, Employee.first_name).offset(offset).limit(page_size).all()
+        else:
+            offset = skip or 0
+            lim = limit or 50
+            items = query.order_by(Employee.last_name, Employee.first_name).offset(offset).limit(lim).all()
+
         return items, total
 
     def update_employee(self, employee_id: UUID, data: EmployeeUpdate) -> Employee | None:
@@ -277,6 +351,18 @@ class HRService:
         self.db.commit()
         self.db.refresh(employee)
         return employee
+
+    def delete_employee(self, employee_id: UUID) -> bool:
+        """Supprimer un employé (soft delete)."""
+        employee = self.get_employee(employee_id)
+        if not employee:
+            return False
+
+        # Soft delete
+        employee.is_active = False
+        employee.status = EmployeeStatus.TERMINATED
+        self.db.commit()
+        return True
 
     def terminate_employee(
         self,
@@ -397,7 +483,7 @@ class HRService:
         leave = LeaveRequest(
             tenant_id=self.tenant_id,
             employee_id=employee_id,
-            type=data.type,
+            type=data.leave_type,
             start_date=data.start_date,
             end_date=data.end_date,
             start_half_day=data.start_half_day,
@@ -409,7 +495,7 @@ class HRService:
         self.db.add(leave)
 
         # Mettre à jour le solde pending
-        self._update_leave_balance(employee_id, data.type, pending_delta=days_count)
+        self._update_leave_balance(employee_id, data.leave_type, pending_delta=days_count)
 
         self.db.commit()
         self.db.refresh(leave)
@@ -456,13 +542,23 @@ class HRService:
                 employee_id=employee_id,
                 year=year,
                 leave_type=leave_type,
-                entitled_days=Decimal("25") if leave_type == LeaveType.PAID else Decimal("0")
+                entitled_days=Decimal("25") if leave_type == LeaveType.PAID else Decimal("0"),
+                pending_days=Decimal("0"),
+                taken_days=Decimal("0"),
+                carried_over=Decimal("0"),
+                remaining_days=Decimal("25") if leave_type == LeaveType.PAID else Decimal("0")
             )
             self.db.add(balance)
 
-        balance.pending_days += pending_delta
-        balance.taken_days += taken_delta
-        balance.remaining_days = balance.entitled_days + balance.carried_over - balance.taken_days - balance.pending_days
+        # Ensure values are not None before arithmetic
+        current_pending = balance.pending_days or Decimal("0")
+        current_taken = balance.taken_days or Decimal("0")
+        current_entitled = balance.entitled_days or Decimal("0")
+        current_carried = balance.carried_over or Decimal("0")
+
+        balance.pending_days = current_pending + pending_delta
+        balance.taken_days = current_taken + taken_delta
+        balance.remaining_days = current_entitled + current_carried - balance.taken_days - balance.pending_days
 
     def approve_leave_request(
         self,
@@ -520,6 +616,92 @@ class HRService:
             leave.type,
             pending_delta=-leave.days_count
         )
+
+        self.db.commit()
+        self.db.refresh(leave)
+        return leave
+
+    def update_leave_request(
+        self,
+        leave_id: UUID,
+        data: "LeaveRequestUpdate"
+    ) -> LeaveRequest | None:
+        """Mettre à jour une demande de congé.
+
+        Seules les demandes REJECTED ou PENDING peuvent être modifiées.
+        Si resubmit=True, le statut est remis à PENDING.
+        """
+        from app.modules.hr.schemas import LeaveRequestUpdate
+
+        leave = self.db.query(LeaveRequest).filter(
+            LeaveRequest.id == leave_id,
+            LeaveRequest.tenant_id == self.tenant_id
+        ).first()
+
+        if not leave:
+            return None
+
+        # Seules les demandes REJECTED ou PENDING peuvent être modifiées
+        if leave.status not in [LeaveStatus.PENDING, LeaveStatus.REJECTED]:
+            return None
+
+        old_days_count = leave.days_count
+        old_leave_type = leave.type
+        old_status = leave.status
+
+        # Mise à jour des champs fournis
+        if data.leave_type is not None:
+            leave.type = data.leave_type
+        if data.start_date is not None:
+            leave.start_date = data.start_date
+        if data.end_date is not None:
+            leave.end_date = data.end_date
+        if data.start_half_day is not None:
+            leave.start_half_day = data.start_half_day
+        if data.end_half_day is not None:
+            leave.end_half_day = data.end_half_day
+        if data.reason is not None:
+            leave.reason = data.reason
+        if data.replacement_id is not None:
+            leave.replacement_id = data.replacement_id
+
+        # Recalculer le nombre de jours si les dates ont changé
+        new_days_count = self._calculate_leave_days(
+            leave.start_date,
+            leave.end_date,
+            leave.start_half_day,
+            leave.end_half_day
+        )
+        leave.days_count = new_days_count
+
+        # Gestion du resubmit (remettre en PENDING)
+        if data.resubmit and leave.status == LeaveStatus.REJECTED:
+            leave.status = LeaveStatus.PENDING
+            leave.rejection_reason = None
+            leave.approved_by = None
+            leave.approved_at = None
+            # Ajouter aux pending days
+            self._update_leave_balance(
+                leave.employee_id,
+                leave.type,
+                pending_delta=new_days_count
+            )
+        elif leave.status == LeaveStatus.PENDING:
+            # Ajuster les pending days si le nombre de jours a changé
+            days_diff = new_days_count - old_days_count
+            if days_diff != 0 or old_leave_type != leave.type:
+                # Retirer l'ancien montant
+                self._update_leave_balance(
+                    leave.employee_id,
+                    old_leave_type,
+                    pending_delta=-old_days_count
+                )
+                # Ajouter le nouveau montant
+                self._update_leave_balance(
+                    leave.employee_id,
+                    leave.type,
+                    pending_delta=new_days_count
+                )
 
         self.db.commit()
         self.db.refresh(leave)
@@ -740,7 +922,7 @@ class HRService:
         entry = HRTimeEntry(
             tenant_id=self.tenant_id,
             employee_id=employee_id,
-            date=data.date,
+            date=data.entry_date,
             start_time=data.start_time,
             end_time=data.end_time,
             break_duration=data.break_duration,
@@ -998,141 +1180,213 @@ class HRService:
     # DASHBOARD
     # =========================================================================
 
-    def get_dashboard(self) -> HRDashboard:
-        """Générer le dashboard RH."""
-        today = date.today()
-        first_of_month = today.replace(day=1)
+    def _safe_enum_value(self, enum_val) -> str:
+        """Extraction sécurisée de la valeur d'un enum."""
+        if enum_val is None:
+            return "OTHER"
+        if hasattr(enum_val, 'value'):
+            return str(enum_val.value)
+        return str(enum_val)
 
-        # Effectifs
-        total = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.is_active
-        ).count()
+    def get_hr_dashboard(self) -> HRDashboard:
+        """
+        Générer le dashboard RH.
 
-        active = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.status == EmployeeStatus.ACTIVE
-        ).count()
+        Conforme AZA-BE-004 : Gestion d'erreur avec logging structuré.
+        Conforme AZA-SEC-004 : Journalisation avec tenant_id.
+        """
+        try:
+            today = date.today()
+            first_of_month = today.replace(day=1)
 
-        on_leave = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.status == EmployeeStatus.ON_LEAVE
-        ).count()
+            # Effectifs
+            total = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.is_active
+            ).count()
 
-        new_hires = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.hire_date >= first_of_month
-        ).count()
+            active = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.status == EmployeeStatus.ACTIVE
+            ).count()
 
-        departures = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.end_date >= first_of_month,
-            Employee.status == EmployeeStatus.TERMINATED
-        ).count()
+            on_leave = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.status == EmployeeStatus.ON_LEAVE
+            ).count()
 
-        # Contrats
-        cdi = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.contract_type == ContractType.CDI,
-            Employee.is_active
-        ).count()
+            new_hires = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.hire_date >= first_of_month
+            ).count()
 
-        cdd = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.contract_type == ContractType.CDD,
-            Employee.is_active
-        ).count()
+            departures = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.end_date >= first_of_month,
+                Employee.status == EmployeeStatus.TERMINATED
+            ).count()
 
-        probation_soon = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.probation_end_date.between(today, today + timedelta(days=30))
-        ).count()
+            # Contrats
+            cdi = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.contract_type == ContractType.CDI,
+                Employee.is_active
+            ).count()
 
-        contracts_ending = self.db.query(Employee).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.end_date.between(today, today + timedelta(days=30))
-        ).count()
+            cdd = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.contract_type == ContractType.CDD,
+                Employee.is_active
+            ).count()
 
-        # Congés
-        pending_leaves = self.db.query(LeaveRequest).filter(
-            LeaveRequest.tenant_id == self.tenant_id,
-            LeaveRequest.status == LeaveStatus.PENDING
-        ).count()
+            probation_soon = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.probation_end_date.between(today, today + timedelta(days=30))
+            ).count()
 
-        on_leave_today = self.db.query(LeaveRequest).filter(
-            LeaveRequest.tenant_id == self.tenant_id,
-            LeaveRequest.status == LeaveStatus.APPROVED,
-            LeaveRequest.start_date <= today,
-            LeaveRequest.end_date >= today
-        ).count()
+            contracts_ending = self.db.query(Employee).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.end_date.between(today, today + timedelta(days=30))
+            ).count()
 
-        # Évaluations
-        pending_evals = self.db.query(Evaluation).filter(
-            Evaluation.tenant_id == self.tenant_id,
-            Evaluation.status.in_([EvaluationStatus.SCHEDULED, EvaluationStatus.IN_PROGRESS])
-        ).count()
+            # Congés
+            pending_leaves = self.db.query(LeaveRequest).filter(
+                LeaveRequest.tenant_id == self.tenant_id,
+                LeaveRequest.status == LeaveStatus.PENDING
+            ).count()
 
-        overdue_evals = self.db.query(Evaluation).filter(
-            Evaluation.tenant_id == self.tenant_id,
-            Evaluation.status == EvaluationStatus.SCHEDULED,
-            Evaluation.scheduled_date < today
-        ).count()
+            on_leave_today = self.db.query(LeaveRequest).filter(
+                LeaveRequest.tenant_id == self.tenant_id,
+                LeaveRequest.status == LeaveStatus.APPROVED,
+                LeaveRequest.start_date <= today,
+                LeaveRequest.end_date >= today
+            ).count()
 
-        # Formations en cours
-        trainings = self.db.query(Training).filter(
-            Training.tenant_id == self.tenant_id,
-            Training.status == TrainingStatus.IN_PROGRESS
-        ).count()
+            # Évaluations
+            pending_evals = self.db.query(Evaluation).filter(
+                Evaluation.tenant_id == self.tenant_id,
+                Evaluation.status.in_([EvaluationStatus.SCHEDULED, EvaluationStatus.IN_PROGRESS])
+            ).count()
 
-        # Salaire moyen
-        avg_salary = self.db.query(func.avg(Employee.gross_salary)).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.is_active,
-            Employee.gross_salary.isnot(None)
-        ).scalar() or Decimal("0")
+            overdue_evals = self.db.query(Evaluation).filter(
+                Evaluation.tenant_id == self.tenant_id,
+                Evaluation.status == EvaluationStatus.SCHEDULED,
+                Evaluation.scheduled_date < today
+            ).count()
 
-        # Répartition par département
-        dept_counts = self.db.query(
-            Department.name,
-            func.count(Employee.id)
-        ).join(Employee, Employee.department_id == Department.id).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.is_active
-        ).group_by(Department.name).all()
+            # Formations en cours
+            trainings = self.db.query(Training).filter(
+                Training.tenant_id == self.tenant_id,
+                Training.status == TrainingStatus.IN_PROGRESS
+            ).count()
 
-        by_department = {d[0]: d[1] for d in dept_counts}
+            # Salaire moyen
+            avg_salary_result = self.db.query(func.avg(Employee.gross_salary)).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.is_active,
+                Employee.gross_salary.isnot(None)
+            ).scalar()
+            avg_salary = Decimal(str(avg_salary_result)) if avg_salary_result else Decimal("0")
 
-        # Répartition par type de contrat
-        contract_counts = self.db.query(
-            Employee.contract_type,
-            func.count(Employee.id)
-        ).filter(
-            Employee.tenant_id == self.tenant_id,
-            Employee.is_active,
-            Employee.contract_type.isnot(None)
-        ).group_by(Employee.contract_type).all()
+            # Répartition par département (avec LEFT JOIN pour éviter erreur si pas de dept)
+            dept_counts = self.db.query(
+                Department.name,
+                func.count(Employee.id)
+            ).outerjoin(Employee, Employee.department_id == Department.id).filter(
+                Department.tenant_id == self.tenant_id,
+                or_(Employee.tenant_id == self.tenant_id, Employee.id.is_(None)),
+                or_(Employee.is_active, Employee.id.is_(None))
+            ).group_by(Department.name).all()
 
-        by_contract = {str(c[0].value) if c[0] else "OTHER": c[1] for c in contract_counts}
+            by_department = {d[0]: d[1] for d in dept_counts if d[0]}
 
-        return HRDashboard(
-            total_employees=total,
-            active_employees=active,
-            on_leave_employees=on_leave,
-            new_hires_this_month=new_hires,
-            departures_this_month=departures,
-            cdi_count=cdi,
-            cdd_count=cdd,
-            probation_ending_soon=probation_soon,
-            contracts_ending_soon=contracts_ending,
-            pending_leave_requests=pending_leaves,
-            employees_on_leave_today=on_leave_today,
-            average_salary=avg_salary,
-            trainings_in_progress=trainings,
-            pending_evaluations=pending_evals,
-            overdue_evaluations=overdue_evals,
-            by_department=by_department,
-            by_contract_type=by_contract
-        )
+            # Répartition par type de contrat (sécurisé)
+            contract_counts = self.db.query(
+                Employee.contract_type,
+                func.count(Employee.id)
+            ).filter(
+                Employee.tenant_id == self.tenant_id,
+                Employee.is_active,
+                Employee.contract_type.isnot(None)
+            ).group_by(Employee.contract_type).all()
+
+            by_contract = {
+                self._safe_enum_value(c[0]): c[1]
+                for c in contract_counts
+            }
+
+            logger.info(
+                "HR Dashboard généré avec succès",
+                extra={
+                    "tenant_id": self.tenant_id,
+                    "total_employees": total,
+                    "active_employees": active
+                }
+            )
+
+            return HRDashboard(
+                total_employees=total,
+                active_employees=active,
+                on_leave_employees=on_leave,
+                new_hires_this_month=new_hires,
+                departures_this_month=departures,
+                cdi_count=cdi,
+                cdd_count=cdd,
+                probation_ending_soon=probation_soon,
+                contracts_ending_soon=contracts_ending,
+                pending_leave_requests=pending_leaves,
+                employees_on_leave_today=on_leave_today,
+                average_salary=avg_salary,
+                trainings_in_progress=trainings,
+                pending_evaluations=pending_evals,
+                overdue_evaluations=overdue_evals,
+                by_department=by_department,
+                by_contract_type=by_contract
+            )
+
+        except SQLAlchemyError as e:
+            logger.error(
+                "Erreur BDD lors de la génération du dashboard HR",
+                extra={
+                    "tenant_id": self.tenant_id,
+                    "error_type": type(e).__name__,
+                    "error_detail": str(e)
+                },
+                exc_info=True
+            )
+            raise HRDashboardError(
+                code="HR_DASHBOARD_DB_ERROR",
+                message="Erreur de base de données lors de la génération du dashboard RH",
+                tenant_id=self.tenant_id
+            ) from e
+
+        except Exception as e:
+            logger.error(
+                "Erreur inattendue lors de la génération du dashboard HR",
+                extra={
+                    "tenant_id": self.tenant_id,
+                    "error_type": type(e).__name__,
+                    "error_detail": str(e)
+                },
+                exc_info=True
+            )
+            raise HRDashboardError(
+                code="HR_DASHBOARD_UNEXPECTED_ERROR",
+                message="Erreur inattendue lors de la génération du dashboard RH",
+                tenant_id=self.tenant_id
+            ) from e
+
+
+class HRDashboardError(Exception):
+    """
+    Exception structurée pour les erreurs du dashboard HR.
+    Conforme AZA-API-002 : Code d'erreur typé.
+    """
+    def __init__(self, code: str, message: str, tenant_id: str):
+        self.code = code
+        self.message = message
+        self.tenant_id = tenant_id
+        super().__init__(f"[{code}] {message} (tenant: {tenant_id})")
 
 
 def get_hr_service(db: Session, tenant_id: str) -> HRService:

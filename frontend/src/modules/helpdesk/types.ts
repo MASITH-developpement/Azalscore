@@ -3,6 +3,8 @@
  * Types et utilitaires pour le support client
  */
 
+import { formatDuration } from '@/utils/formatters';
+
 // ============================================================
 // TYPES DE BASE
 // ============================================================
@@ -166,31 +168,6 @@ export const SOURCES = [
 // ============================================================
 // FONCTIONS UTILITAIRES
 // ============================================================
-
-/**
- * Formatage date
- */
-export const formatDate = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formatage date/heure
- */
-export const formatDateTime = (date: string | undefined): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formatage duree en heures
- */
-export const formatDuration = (hours: number): string => {
-  if (hours < 1) return `${Math.round(hours * 60)}min`;
-  if (hours < 24) return `${hours.toFixed(1)}h`;
-  return `${(hours / 24).toFixed(1)}j`;
-};
 
 /**
  * Obtenir la configuration du statut

@@ -5,9 +5,12 @@ Types compatibles PostgreSQL ET SQLite pour les tests.
 """
 
 import json as json_lib
+import logging
 import uuid
 
 from sqlalchemy import String, Text, TypeDecorator
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.dialects.postgresql import JSON as PG_JSON
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -61,7 +64,13 @@ class UniversalUUID(TypeDecorator):
             return uuid.UUID(str(value))
         except (ValueError, AttributeError):
             # Handle corrupted UUID data gracefully
-            print(f"[WARNING] Invalid UUID value in database: {value!r}, generating new UUID")
+            logger.warning(
+                "[TYPES] Valeur UUID corrompue en base — UUID régénéré",
+                extra={
+                    "corrupted_value": repr(value)[:100],
+                    "consequence": "new_uuid_generated"
+                }
+            )
             return uuid.uuid4()
 
 

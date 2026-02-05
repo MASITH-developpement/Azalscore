@@ -29,7 +29,8 @@ import {
 
 // Types from module types file
 import type { Entry as EntryType } from './types';
-import { formatCurrency as formatCurrencyFn, formatDate as formatDateFn, ENTRY_STATUS_CONFIG, isEntryBalanced } from './types';
+import { ENTRY_STATUS_CONFIG, isEntryBalanced } from './types';
+import { formatCurrency as formatCurrencyFn, formatDate as formatDateFn } from '@/utils/formatters';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -381,7 +382,7 @@ const AccountsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Plan Comptable</h3>
         <Button onClick={() => setShowModal(true)}>Nouveau compte</Button>
       </div>
-      <DataTable columns={columns} data={accounts} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={accounts} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau compte">
         <form onSubmit={handleSubmit}>
@@ -448,7 +449,7 @@ const JournalsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Journaux</h3>
         <Button onClick={() => setShowModal(true)}>Nouveau journal</Button>
       </div>
-      <DataTable columns={columns} data={journals} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={journals} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau journal">
         <form onSubmit={handleSubmit}>
@@ -549,7 +550,7 @@ const EntriesView: React.FC = () => {
         <h3 className="text-lg font-semibold">Ecritures comptables</h3>
         <Button onClick={() => setShowModal(true)}>Nouvelle ecriture</Button>
       </div>
-      <DataTable columns={columns} data={entries} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={entries} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvelle ecriture" size="lg">
         <form onSubmit={handleSubmit}>
@@ -654,7 +655,7 @@ const BankView: React.FC = () => {
     <div className="space-y-4">
       <Card>
         <h3 className="text-lg font-semibold mb-4">Comptes bancaires</h3>
-        <DataTable columns={bankColumns} data={bankAccounts} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+        <DataTable columns={bankColumns} data={bankAccounts} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
       </Card>
 
       {selectedBank && (
@@ -688,7 +689,7 @@ const CashForecastView: React.FC = () => {
   return (
     <Card>
       <h3 className="text-lg font-semibold mb-4">Previsions de tresorerie</h3>
-      <DataTable columns={columns} data={forecasts} isLoading={isLoading} keyField="id" error={error instanceof Error ? error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={forecasts} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -866,7 +867,7 @@ const EntryDetailView: React.FC = () => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
-      error={error instanceof Error ? error : null}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
       onRetry={() => refetch()}
     />
   );

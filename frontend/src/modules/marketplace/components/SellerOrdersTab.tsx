@@ -8,7 +8,8 @@ import { ShoppingCart, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { Seller, MarketplaceOrder } from '../types';
-import { formatCurrency, formatDate, ORDER_STATUS_CONFIG } from '../types';
+import { ORDER_STATUS_CONFIG } from '../types';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 
 /**
  * SellerOrdersTab - Commandes du vendeur

@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/ui-engine/layouts/MainLayout';
+import { Palette, Globe, Bell, Settings, Save, RotateCcw, Trash2 } from 'lucide-react';
 
 export default function SettingsModule() {
   const [settings, setSettings] = useState({
@@ -33,204 +34,127 @@ export default function SettingsModule() {
     <MainLayout title="Paramètres">
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         {/* Apparence */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '2rem',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-            🎨 Apparence
-          </h2>
+        <div className="azals-card" style={{ marginBottom: 'var(--azals-spacing-lg)' }}>
+          <div className="azals-card__body">
+            <h2 className="azals-card__title" style={{ marginBottom: 'var(--azals-spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--azals-spacing-sm)' }}>
+              <Palette size={20} /> Apparence
+            </h2>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>
-              Thème
-            </label>
-            <select
-              value={settings.theme}
-              onChange={(e) => handleSelect('theme', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                fontSize: '1rem',
-              }}
-            >
-              <option value="light">Clair</option>
-              <option value="dark">Sombre</option>
-              <option value="auto">Automatique</option>
-            </select>
-          </div>
+            <div className="azals-form-field" style={{ marginBottom: 'var(--azals-spacing-lg)' }}>
+              <label>Thème</label>
+              <select
+                className="azals-select"
+                value={settings.theme}
+                onChange={(e) => handleSelect('theme', e.target.value)}
+              >
+                <option value="light">Clair</option>
+                <option value="dark">Sombre</option>
+                <option value="auto">Automatique</option>
+              </select>
+            </div>
 
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={settings.compactView}
-                onChange={() => handleToggle('compactView')}
-                style={{ marginRight: '0.5rem', width: '1.25rem', height: '1.25rem' }}
-              />
-              <span>Vue compacte</span>
-            </label>
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 'var(--azals-spacing-sm)' }}>
+                <input
+                  type="checkbox"
+                  className="azals-checkbox"
+                  checked={settings.compactView}
+                  onChange={() => handleToggle('compactView')}
+                />
+                <span>Vue compacte</span>
+              </label>
+            </div>
           </div>
         </div>
 
         {/* Langue et Région */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '2rem',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-            🌍 Langue et Région
-          </h2>
+        <div className="azals-card" style={{ marginBottom: 'var(--azals-spacing-lg)' }}>
+          <div className="azals-card__body">
+            <h2 className="azals-card__title" style={{ marginBottom: 'var(--azals-spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--azals-spacing-sm)' }}>
+              <Globe size={20} /> Langue et Région
+            </h2>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>
-              Langue
-            </label>
-            <select
-              value={settings.language}
-              onChange={(e) => handleSelect('language', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                fontSize: '1rem',
-              }}
-            >
-              <option value="fr">Français</option>
-              <option value="en">English</option>
-              <option value="es">Español</option>
-            </select>
+            <div className="azals-form-field">
+              <label>Langue</label>
+              <select
+                className="azals-select"
+                value={settings.language}
+                onChange={(e) => handleSelect('language', e.target.value)}
+              >
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Notifications */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '2rem',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-            🔔 Notifications
-          </h2>
+        <div className="azals-card" style={{ marginBottom: 'var(--azals-spacing-lg)' }}>
+          <div className="azals-card__body">
+            <h2 className="azals-card__title" style={{ marginBottom: 'var(--azals-spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--azals-spacing-sm)' }}>
+              <Bell size={20} /> Notifications
+            </h2>
 
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={settings.notifications}
-                onChange={() => handleToggle('notifications')}
-                style={{ marginRight: '0.5rem', width: '1.25rem', height: '1.25rem' }}
-              />
-              <div>
-                <div style={{ fontWeight: '500' }}>Notifications push</div>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                  Recevoir des notifications dans le navigateur
+            <div style={{ display: 'grid', gap: 'var(--azals-spacing-md)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 'var(--azals-spacing-sm)' }}>
+                <input
+                  type="checkbox"
+                  className="azals-checkbox"
+                  checked={settings.notifications}
+                  onChange={() => handleToggle('notifications')}
+                />
+                <div>
+                  <div className="font-medium">Notifications push</div>
+                  <div className="text-muted" style={{ fontSize: 'var(--azals-font-size-sm)' }}>
+                    Recevoir des notifications dans le navigateur
+                  </div>
                 </div>
-              </div>
-            </label>
+              </label>
 
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={settings.emailAlerts}
-                onChange={() => handleToggle('emailAlerts')}
-                style={{ marginRight: '0.5rem', width: '1.25rem', height: '1.25rem' }}
-              />
-              <div>
-                <div style={{ fontWeight: '500' }}>Alertes email</div>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                  Recevoir des emails pour les événements importants
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 'var(--azals-spacing-sm)' }}>
+                <input
+                  type="checkbox"
+                  className="azals-checkbox"
+                  checked={settings.emailAlerts}
+                  onChange={() => handleToggle('emailAlerts')}
+                />
+                <div>
+                  <div className="font-medium">Alertes email</div>
+                  <div className="text-muted" style={{ fontSize: 'var(--azals-font-size-sm)' }}>
+                    Recevoir des emails pour les événements importants
+                  </div>
                 </div>
-              </div>
-            </label>
+              </label>
+            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '2rem',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-            ⚙️ Actions
-          </h2>
+        <div className="azals-card" style={{ marginBottom: 'var(--azals-spacing-lg)' }}>
+          <div className="azals-card__body">
+            <h2 className="azals-card__title" style={{ marginBottom: 'var(--azals-spacing-lg)', display: 'flex', alignItems: 'center', gap: 'var(--azals-spacing-sm)' }}>
+              <Settings size={20} /> Actions
+            </h2>
 
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            <button
-              style={{
-                padding: '0.75rem',
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.375rem',
-                fontWeight: '500',
-                cursor: 'pointer',
-              }}
-            >
-              💾 Enregistrer les paramètres
-            </button>
+            <div style={{ display: 'grid', gap: 'var(--azals-spacing-md)' }}>
+              <button className="azals-btn azals-btn--success">
+                <Save size={16} /> Enregistrer les paramètres
+              </button>
 
-            <button
-              style={{
-                padding: '0.75rem',
-                backgroundColor: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.375rem',
-                fontWeight: '500',
-                cursor: 'pointer',
-              }}
-            >
-              🔄 Réinitialiser aux valeurs par défaut
-            </button>
+              <button className="azals-btn azals-btn--ghost">
+                <RotateCcw size={16} /> Réinitialiser aux valeurs par défaut
+              </button>
 
-            <button
-              style={{
-                padding: '0.75rem',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.375rem',
-                fontWeight: '500',
-                cursor: 'pointer',
-              }}
-            >
-              🗑️ Supprimer le compte
-            </button>
+              <button className="azals-btn azals-btn--danger">
+                <Trash2 size={16} /> Supprimer le compte
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Footer Info */}
-        <div
-          style={{
-            marginTop: '1.5rem',
-            padding: '1rem',
-            textAlign: 'center',
-            color: '#9ca3af',
-            fontSize: '0.875rem',
-          }}
-        >
+        <div className="text-muted text-center" style={{ fontSize: 'var(--azals-font-size-sm)', padding: 'var(--azals-spacing-md)' }}>
           <p>Version AZALSCORE 1.0.0</p>
           <p>Dernière mise à jour: 2026-01-23</p>
         </div>

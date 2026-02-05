@@ -260,38 +260,6 @@ export const DOCUMENT_TYPE_CONFIG: Record<string, { label: string; color: string
 // ============================================================================
 
 /**
- * Formate une date en francais
- */
-export const formatDate = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-/**
- * Formate une date avec heure
- */
-export const formatDateTime = (date?: string): string => {
-  if (!date) return '-';
-  return new Date(date).toLocaleString('fr-FR');
-};
-
-/**
- * Formate un montant en devise
- */
-export const formatCurrency = (amount?: number, currency = 'EUR'): string => {
-  if (amount === undefined || amount === null) return '-';
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
-};
-
-/**
- * Formate les heures
- */
-export const formatHours = (hours?: number): string => {
-  if (hours === undefined || hours === null) return '-';
-  return `${hours.toFixed(1)}h`;
-};
-
-/**
  * Calcule l'age de l'equipement en annees
  */
 export const getAssetAge = (asset: Asset): number | null => {
@@ -451,8 +419,4 @@ export default {
   ORDER_TYPE_CONFIG,
   ORDER_STATUS_CONFIG,
   PRIORITY_CONFIG,
-  formatDate,
-  formatDateTime,
-  formatCurrency,
-  formatHours
 };

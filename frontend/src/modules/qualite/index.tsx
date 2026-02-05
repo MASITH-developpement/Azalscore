@@ -23,11 +23,12 @@ import type {
   NCType, NCOrigin, NCSeverity, NCStatus, QCType, InspectionStatus
 } from './types';
 import {
-  formatDate, getNCAge, getNCAgeDays, isNCOverdue, canEditNC, canCloseNC, getDocumentCount,
+  getNCAge, getNCAgeDays, isNCOverdue, canEditNC, canCloseNC, getDocumentCount,
   NC_TYPE_CONFIG, NC_ORIGIN_CONFIG, SEVERITY_CONFIG, NC_STATUS_CONFIG,
   QC_TYPE_CONFIG, INSPECTION_STATUS_CONFIG,
   NC_TYPES, NC_ORIGINS, SEVERITIES, NC_STATUSES, QC_TYPES, INSPECTION_STATUSES
 } from './types';
+import { formatDate } from '@/utils/formatters';
 import {
   NCInfoTab,
   NCAnalysisTab,
@@ -36,6 +37,7 @@ import {
   NCStatsTab,
   NCIATab
 } from './components';
+import { ErrorState } from '../../ui-engine/components/StateViews';
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -172,12 +174,20 @@ const NCDetailView: React.FC<{
   onBack: () => void;
   onEdit: (id: string) => void;
 }> = ({ ncId, onBack, onEdit }) => {
-  const { data: nc, isLoading } = useNonConformance(ncId);
+  const { data: nc, isLoading, error, refetch } = useNonConformance(ncId);
   const updateStatus = useUpdateNCStatus();
   const closeNC = useCloseNC();
 
   if (isLoading) {
     return <PageWrapper title="Chargement..."><div className="azals-loading">Chargement...</div></PageWrapper>;
+  }
+
+  if (error) {
+    return (
+      <PageWrapper title="Erreur">
+        <ErrorState message={error instanceof Error ? error.message : undefined} onRetry={() => refetch()} />
+      </PageWrapper>
+    );
   }
 
   if (!nc) {
@@ -334,6 +344,8 @@ const NCDetailView: React.FC<{
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -346,7 +358,7 @@ const NonConformancesView: React.FC<{ onSelectNC: (id: string) => void }> = ({ o
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterSeverity, setFilterSeverity] = useState<string>('');
-  const { data: ncs = [], isLoading } = useNonConformances({
+  const { data: ncs = [], isLoading, error: ncsError, refetch: refetchNCs } = useNonConformances({
     type: filterType || undefined,
     status: filterStatus || undefined,
     severity: filterSeverity || undefined
@@ -416,7 +428,7 @@ const NonConformancesView: React.FC<{ onSelectNC: (id: string) => void }> = ({ o
           <Button onClick={() => setShowModal(true)}>Nouvelle NC</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={ncs} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={ncs} isLoading={isLoading} keyField="id" error={ncsError instanceof Error ? ncsError : null} onRetry={() => refetchNCs()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvelle non-conformite" size="lg">
         <form onSubmit={handleSubmit}>
@@ -485,7 +497,7 @@ const NonConformancesView: React.FC<{ onSelectNC: (id: string) => void }> = ({ o
 
 const QCRulesView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
-  const { data: rules = [], isLoading } = useQCRules({ type: filterType || undefined });
+  const { data: rules = [], isLoading, error: rulesError, refetch: refetchRules } = useQCRules({ type: filterType || undefined });
 
   const columns: TableColumn<QCRule>[] = [
     { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono">{v as string}</code> },
@@ -517,7 +529,7 @@ const QCRulesView: React.FC = () => {
           <Button>Nouvelle regle</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={rules} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={rules} isLoading={isLoading} keyField="id" error={rulesError instanceof Error ? rulesError : null} onRetry={() => refetchRules()} />
     </Card>
   );
 };
@@ -525,7 +537,7 @@ const QCRulesView: React.FC = () => {
 const InspectionsView: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: inspections = [], isLoading } = useQCInspections({
+  const { data: inspections = [], isLoading, error: inspectionsError, refetch: refetchInspections } = useQCInspections({
     type: filterType || undefined,
     status: filterStatus || undefined
   });
@@ -572,7 +584,7 @@ const InspectionsView: React.FC = () => {
           <Button>Nouvelle inspection</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={inspections} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={inspections} isLoading={isLoading} keyField="id" error={inspectionsError instanceof Error ? inspectionsError : null} onRetry={() => refetchInspections()} />
     </Card>
   );
 };

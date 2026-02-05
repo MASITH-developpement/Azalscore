@@ -19,9 +19,13 @@ import type {
 } from './types';
 import {
   SELLER_STATUS_CONFIG, PRODUCT_STATUS_CONFIG, ORDER_STATUS_CONFIG, PAYOUT_STATUS_CONFIG,
-  formatCurrency as formatCurrencyHelper, formatDate as formatDateHelper, formatPercent as formatPercentHelper,
   formatRating, isSellerActive, isSellerPending
 } from './types';
+import {
+  formatCurrency as formatCurrencyHelper,
+  formatDate as formatDateHelper,
+  formatPercent as formatPercentHelper
+} from '@/utils/formatters';
 import {
   SellerInfoTab, SellerProductsTab, SellerOrdersTab,
   SellerPayoutsTab, SellerHistoryTab, SellerIATab
@@ -212,7 +216,7 @@ const useSeller = (id: string) => {
 const SellerDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: seller, isLoading, error } = useSeller(id!);
+  const { data: seller, isLoading, error, refetch } = useSeller(id!);
 
   if (isLoading) {
     return (
@@ -364,6 +368,8 @@ const SellerDetailView: React.FC = () => {
       infoBarItems={infoBarItems}
       sidebarSections={sidebarSections}
       headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
     />
   );
 };
@@ -375,7 +381,7 @@ const SellerDetailView: React.FC = () => {
 const SellersView: React.FC = () => {
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const { data: sellers = [], isLoading } = useSellers({
+  const { data: sellers = [], isLoading, error: sellersError, refetch: refetchSellers } = useSellers({
     status: filterStatus || undefined
   });
   const updateStatus = useUpdateSellerStatus();
@@ -430,7 +436,7 @@ const SellersView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={sellers} isLoading={isLoading} keyField="id" onRowClick={handleViewSeller} />
+      <DataTable columns={columns} data={sellers} isLoading={isLoading} keyField="id" onRowClick={handleViewSeller} error={sellersError instanceof Error ? sellersError : null} onRetry={() => refetchSellers()} />
     </Card>
   );
 };
@@ -438,7 +444,7 @@ const SellersView: React.FC = () => {
 const ProductsView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterSeller, setFilterSeller] = useState<string>('');
-  const { data: products = [], isLoading } = useMarketplaceProducts({
+  const { data: products = [], isLoading, error: productsError, refetch: refetchProducts } = useMarketplaceProducts({
     status: filterStatus || undefined,
     seller_id: filterSeller || undefined
   });
@@ -494,7 +500,7 @@ const ProductsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" error={productsError instanceof Error ? productsError : null} onRetry={() => refetchProducts()} />
     </Card>
   );
 };
@@ -502,7 +508,7 @@ const ProductsView: React.FC = () => {
 const OrdersView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterSeller, setFilterSeller] = useState<string>('');
-  const { data: orders = [], isLoading } = useMarketplaceOrders({
+  const { data: orders = [], isLoading, error: ordersError, refetch: refetchOrders } = useMarketplaceOrders({
     status: filterStatus || undefined,
     seller_id: filterSeller || undefined
   });
@@ -545,7 +551,7 @@ const OrdersView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" error={ordersError instanceof Error ? ordersError : null} onRetry={() => refetchOrders()} />
     </Card>
   );
 };
@@ -553,7 +559,7 @@ const OrdersView: React.FC = () => {
 const PayoutsView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterSeller, setFilterSeller] = useState<string>('');
-  const { data: payouts = [], isLoading } = usePayouts({
+  const { data: payouts = [], isLoading, error: payoutsError, refetch: refetchPayouts } = usePayouts({
     status: filterStatus || undefined,
     seller_id: filterSeller || undefined
   });
@@ -603,7 +609,7 @@ const PayoutsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={payouts} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={payouts} isLoading={isLoading} keyField="id" error={payoutsError instanceof Error ? payoutsError : null} onRetry={() => refetchPayouts()} />
     </Card>
   );
 };

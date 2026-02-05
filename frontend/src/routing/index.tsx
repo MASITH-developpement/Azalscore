@@ -32,6 +32,7 @@ const AdminRoutes = lazy(() => import('@modules/admin'));
 const BreakGlassPage = lazy(() => import('@modules/break-glass'));
 
 // Modules métier additionnels
+const ContactsRoutes = lazy(() => import('@modules/contacts'));
 const HRRoutes = lazy(() => import('@modules/hr'));
 const CRMRoutes = lazy(() => import('@modules/crm'));
 const InventoryRoutes = lazy(() => import('@modules/inventory'));
@@ -224,6 +225,13 @@ export const AppRouter: React.FC = () => {
             <Route path="/hr/*" element={
               <CapabilityRoute capability="hr.view">
                 <HRRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Contacts Unifiés */}
+            <Route path="/contacts/*" element={
+              <CapabilityRoute capability="contacts.view">
+                <ContactsRoutes />
               </CapabilityRoute>
             } />
 

@@ -8,7 +8,7 @@ import { Clock, User, Edit, Plus, CheckCircle2, XCircle, Send, Package, ArrowRig
 import { Card } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
 import type { PurchaseOrder, PurchaseHistoryEntry } from '../types';
-import { formatDateTime } from '../types';
+import { formatDateTime } from '@/utils/formatters';
 
 /**
  * OrderHistoryTab - Historique
