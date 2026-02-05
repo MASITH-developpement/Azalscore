@@ -16,6 +16,8 @@ import { ShieldX } from 'lucide-react';
 import { LoadingState } from './ui-engine/components/StateViews';
 import { tokenManager, setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
+import LandingPage from './pages/LandingPage';
+import { MentionsLegales, Confidentialite, CGV, Contact } from './pages/legal';
 import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
 import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import './styles/main.css';
@@ -572,9 +574,20 @@ const UnifiedApp: React.FC = () => {
     );
   }
 
-  // Non authentifié
+  // Non authentifié - afficher landing page, pages légales ou login
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
+          <Route path="/cgv" element={<CGV />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
   }
 
   // Authentifié

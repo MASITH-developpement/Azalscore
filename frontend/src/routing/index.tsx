@@ -50,8 +50,8 @@ const LoginPage = lazy(() => import('@/pages/auth/Login'));
 const TwoFactorPage = lazy(() => import('@/pages/auth/TwoFactor'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPassword'));
 
-// Pages publiques
-const LandingPage = lazy(() => import('@/pages/LandingPage'));
+// Pages publiques - import direct pour page d'accueil (performance critique)
+import LandingPage from '@/pages/LandingPage';
 
 // Pages communes
 const NotFoundPage = lazy(() => import('@/pages/NotFound'));

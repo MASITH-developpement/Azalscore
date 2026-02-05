@@ -314,10 +314,10 @@ export const LandingPage: React.FC = () => {
               <span>AZALSCORE</span>
             </div>
             <div className="landing-footer-links">
-              <a href="/mentions-legales">Mentions legales</a>
-              <a href="/confidentialite">Confidentialite</a>
-              <a href="/cgv">CGV</a>
-              <a href="/contact">Contact</a>
+              <Link to="/mentions-legales">Mentions legales</Link>
+              <Link to="/confidentialite">Confidentialite</Link>
+              <Link to="/cgv">CGV</Link>
+              <Link to="/contact">Contact</Link>
             </div>
             <p className="landing-footer-copy">
               &copy; 2026 AZALSCORE - MASITH Developpement. Tous droits reserves.

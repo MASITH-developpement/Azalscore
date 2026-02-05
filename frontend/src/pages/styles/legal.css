@@ -1,0 +1,629 @@
+/**
+ * AZALSCORE - Styles Pages Légales
+ * Styles pour mentions légales, confidentialité, CGV et contact
+ */
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
+.legal-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1e293b;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.legal-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.legal-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.legal-back-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.legal-back-link:hover {
+  color: #1e40af;
+}
+
+.legal-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.legal-logo .logo-azal {
+  color: #1e40af;
+}
+
+.legal-logo .logo-score {
+  color: #64748b;
+}
+
+/* ============================================================
+   CONTENT
+   ============================================================ */
+
+.legal-content {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  width: 100%;
+}
+
+.legal-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.legal-updated {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 3rem;
+}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+
+.legal-section {
+  margin-bottom: 2.5rem;
+}
+
+.legal-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.legal-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.legal-section p {
+  line-height: 1.75;
+  margin-bottom: 1rem;
+  color: #475569;
+}
+
+.legal-section ul {
+  margin: 0.75rem 0 1rem 1.5rem;
+  line-height: 1.75;
+}
+
+.legal-section li {
+  margin-bottom: 0.5rem;
+  color: #475569;
+}
+
+.legal-section a {
+  color: #1e40af;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.legal-section a:hover {
+  color: #1e3a8a;
+  text-decoration: underline;
+}
+
+.legal-section address {
+  font-style: normal;
+  line-height: 1.75;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+/* ============================================================
+   TABLE (CGV)
+   ============================================================ */
+
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+}
+
+.legal-table th {
+  background: #1e40af;
+  color: white;
+  font-weight: 600;
+}
+
+.legal-table td {
+  background: white;
+}
+
+.legal-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.legal-footer {
+  background: #0f172a;
+  padding: 2rem;
+  margin-top: auto;
+}
+
+.legal-footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.legal-footer p {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.legal-footer-nav {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legal-footer-nav a {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.legal-footer-nav a:hover {
+  color: white;
+}
+
+/* ============================================================
+   CONTACT PAGE SPECIFIC
+   ============================================================ */
+
+.contact-page .contact-content {
+  max-width: 1200px;
+}
+
+.contact-intro {
+  font-size: 1.125rem;
+  color: #64748b;
+  max-width: 600px;
+  margin-bottom: 3rem;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 3rem;
+}
+
+/* Form Section */
+.contact-form-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.contact-form-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #1e293b;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #94a3b8;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-consent {
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.form-consent a {
+  color: #1e40af;
+  text-decoration: none;
+}
+
+.form-consent a:hover {
+  text-decoration: underline;
+}
+
+.contact-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.contact-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.contact-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.contact-submit .spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success & Error */
+.contact-success {
+  text-align: center;
+  padding: 2rem;
+}
+
+.contact-success svg {
+  color: #10b981;
+  margin-bottom: 1rem;
+}
+
+.contact-success h3 {
+  font-size: 1.5rem;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+
+.contact-success p {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+.contact-btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: #f1f5f9;
+  color: #334155;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.contact-btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.contact-error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
+/* Info Section */
+.contact-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.contact-info-section h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.contact-info-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.contact-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;
+  border-radius: 10px;
+  color: #1e40af;
+  flex-shrink: 0;
+}
+
+.contact-info-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.25rem;
+}
+
+.contact-info-content p {
+  margin: 0;
+  color: #334155;
+}
+
+.contact-info-content a {
+  color: #1e40af;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.contact-info-content a:hover {
+  text-decoration: underline;
+}
+
+.contact-info-content address {
+  font-style: normal;
+  color: #475569;
+  line-height: 1.5;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+.contact-info-note {
+  font-size: 0.8125rem;
+  color: #64748b !important;
+  margin-top: 0.25rem !important;
+}
+
+.contact-support-box,
+.contact-demo-box {
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.contact-support-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.contact-demo-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.contact-support-box h3,
+.contact-demo-box h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: #0f172a;
+}
+
+.contact-support-box p,
+.contact-demo-box p {
+  font-size: 0.875rem;
+  color: #475569;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.contact-support-link,
+.contact-demo-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: gap 0.2s;
+}
+
+.contact-support-link {
+  color: #059669;
+}
+
+.contact-demo-link {
+  color: #1e40af;
+}
+
+.contact-support-link:hover,
+.contact-demo-link:hover {
+  gap: 0.25rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-info-section {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .legal-header {
+    padding: 1rem;
+  }
+
+  .legal-content {
+    padding: 2rem 1rem;
+  }
+
+  .legal-content h1 {
+    font-size: 2rem;
+  }
+
+  .legal-section h2 {
+    font-size: 1.25rem;
+  }
+
+  .legal-footer-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .legal-footer-nav {
+    justify-content: center;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-form-section {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .legal-header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .legal-back-link {
+    order: 1;
+  }
+
+  .legal-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .legal-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
