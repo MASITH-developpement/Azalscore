@@ -1,0 +1,45 @@
+/**
+ * AZALSCORE UI Standard - Tab Navigation
+ * ========================================
+ * Navigation par onglets pour les vues de modules.
+ * Utilisé par : interventions, BI, RH, maintenance, projets, comptabilité,
+ *               production, inventaire, qualité, helpdesk, payments, admin,
+ *               compliance, marketplace, subscriptions, POS
+ *
+ * Classes :
+ *   .azals-tab-nav                Container (flex row avec bordure basse)
+ *   .azals-tab-nav__item          Onglet individuel
+ *   .azals-tab-nav__item--active  Onglet actif (souligné + couleur primary)
+ */
+
+.azals-tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--azals-border);
+  margin-bottom: var(--azals-spacing-lg);
+}
+
+.azals-tab-nav__item {
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+  color: var(--azals-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color var(--azals-transition-fast), border-color var(--azals-transition-fast);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.azals-tab-nav__item:hover {
+  color: var(--azals-primary-500);
+}
+
+.azals-tab-nav__item--active {
+  color: var(--azals-primary-600);
+  border-bottom-color: var(--azals-primary-500);
+  font-weight: 600;
+}

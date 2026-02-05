@@ -1,0 +1,116 @@
+/**
+ * AZALSCORE UI Standard - Stat Cards
+ * ===================================
+ * Cartes statistiques pour les dashboards de modules.
+ * Utilisé par : interventions, véhicules, maintenance, projets, affaires, BI
+ *
+ * Classes :
+ *   .azals-stat-card                    Container principal
+ *   .azals-stat-card--{variant}         success | warning | danger
+ *   .azals-stat-card--clickable         Carte cliquable
+ *   .azals-stat-card--active            Carte sélectionnée
+ *   .azals-stat-card__icon              Zone icône
+ *   .azals-stat-card__icon--{color}     blue | green | orange | purple | red | gray
+ *   .azals-stat-card__content           Zone texte
+ *   .azals-stat-card__title             Libellé principal
+ *   .azals-stat-card__label             Libellé alternatif (même style que title)
+ *   .azals-stat-card__value             Valeur numérique
+ *   .azals-stat-card__subtitle          Sous-texte
+ *   .azals-stat-card__trend             Indicateur tendance
+ *   .azals-stat-card__trend--{dir}      up | down | neutral
+ */
+
+.azals-stat-card {
+  background: var(--azals-bg);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-lg);
+  box-shadow: var(--azals-shadow-sm);
+  padding: var(--azals-spacing-md) var(--azals-spacing-lg);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--azals-spacing-md);
+  transition: box-shadow var(--azals-transition-fast), border-color var(--azals-transition-fast);
+}
+
+.azals-stat-card--clickable {
+  cursor: pointer;
+}
+.azals-stat-card--clickable:hover {
+  box-shadow: var(--azals-shadow-md);
+  border-color: var(--azals-primary-300);
+}
+
+.azals-stat-card--active {
+  border-color: var(--azals-primary-500);
+  box-shadow: 0 0 0 2px var(--azals-primary-100);
+}
+
+/* ---- Icon ---- */
+
+.azals-stat-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--azals-radius-lg);
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-500);
+  flex-shrink: 0;
+}
+
+.azals-stat-card__icon--blue   { background: #eff6ff; color: #2563eb; }
+.azals-stat-card__icon--green  { background: #f0fdf4; color: #16a34a; }
+.azals-stat-card__icon--orange { background: #fff7ed; color: #ea580c; }
+.azals-stat-card__icon--purple { background: #f5f3ff; color: #7c3aed; }
+.azals-stat-card__icon--red    { background: #fef2f2; color: #dc2626; }
+.azals-stat-card__icon--gray   { background: var(--azals-gray-100); color: var(--azals-gray-400); }
+
+/* ---- Content ---- */
+
+.azals-stat-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.azals-stat-card__title,
+.azals-stat-card__label {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+  font-weight: 500;
+}
+
+.azals-stat-card__value {
+  font-size: var(--azals-font-size-xl);
+  font-weight: 700;
+  color: var(--azals-gray-900);
+  line-height: 1.2;
+}
+
+.azals-stat-card__subtitle,
+.azals-stat-card__sub {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+}
+
+/* ---- Trend ---- */
+
+.azals-stat-card__trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--azals-font-size-sm);
+  font-weight: 600;
+  margin-left: auto;
+}
+.azals-stat-card__trend--up      { color: var(--azals-success); }
+.azals-stat-card__trend--down    { color: var(--azals-danger); }
+.azals-stat-card__trend--neutral { color: var(--azals-text-secondary); }
+
+/* ---- Variants (bordure latérale colorée) ---- */
+
+.azals-stat-card--success { border-left: 3px solid var(--azals-success); }
+.azals-stat-card--warning { border-left: 3px solid var(--azals-warning); }
+.azals-stat-card--danger  { border-left: 3px solid var(--azals-danger); }
