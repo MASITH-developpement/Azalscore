@@ -120,17 +120,18 @@ test.describe('Audit spinners PRODUCTION — Routes publiques', () => {
 // TESTS : Routes authentifiees (login production)
 // ============================================================
 
+// Modules testés via navigation URL directe (plus fiable que le menu)
 const MODULES_TO_TEST = [
-  { label: 'Nouvelle saisie', viewKey: 'saisie' },
-  { label: 'Devis', viewKey: 'gestion-devis' },
-  { label: 'Commandes', viewKey: 'gestion-commandes' },
-  { label: 'Factures', viewKey: 'gestion-factures' },
-  { label: 'Paiements', viewKey: 'gestion-paiements' },
-  { label: 'Interventions', viewKey: 'gestion-interventions' },
-  { label: 'CRM / Clients', viewKey: 'crm' },
-  { label: 'Achats', viewKey: 'achats' },
-  { label: 'Projets', viewKey: 'projets' },
-  { label: 'Cockpit Dirigeant', viewKey: 'cockpit' },
+  { route: '/invoicing', label: 'Facturation' },
+  { route: '/purchases', label: 'Achats' },
+  { route: '/treasury', label: 'Trésorerie' },
+  { route: '/accounting', label: 'Comptabilité' },
+  { route: '/partners', label: 'Partenaires' },
+  { route: '/interventions', label: 'Interventions' },
+  { route: '/cockpit', label: 'Cockpit' },
+  { route: '/inventory', label: 'Stock' },
+  { route: '/hr', label: 'RH' },
+  { route: '/admin', label: 'Admin' },
 ];
 
 test.describe('Audit spinners PRODUCTION — Routes authentifiees', () => {
@@ -140,13 +141,13 @@ test.describe('Audit spinners PRODUCTION — Routes authentifiees', () => {
 
   // Vue initiale apres login
   test('Vue initiale apres login — pas de spinner apres 6s', async ({ page }) => {
-    await assertNoActiveSpinner(page, 'Vue initiale (saisie)');
+    await assertNoActiveSpinner(page, 'Vue initiale');
   });
 
-  // Chaque module via navigation menu
+  // Chaque module via navigation URL directe
   for (const mod of MODULES_TO_TEST) {
-    test(`${mod.label} (${mod.viewKey}) — pas de spinner apres 6s`, async ({ page }) => {
-      await navigateToModule(page, mod.label);
+    test(`${mod.label} (${mod.route}) — pas de spinner apres 6s`, async ({ page }) => {
+      await page.goto(`${BASE_URL}${mod.route}`);
       await assertNoActiveSpinner(page, mod.label);
     });
   }
