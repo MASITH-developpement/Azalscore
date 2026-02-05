@@ -221,11 +221,12 @@ const CGV: React.FC = () => {
             l'application. MASITH Développement ne revendique aucun droit sur ces données.
           </p>
 
-          <h3>8.3 Open Source</h3>
+          <h3>8.3 Logiciel propriétaire</h3>
           <p>
-            Certains composants d'AZALSCORE sont distribués sous licence open source.
-            Les conditions spécifiques sont détaillées dans les fichiers LICENSE
-            correspondants.
+            AZALSCORE est un logiciel propriétaire développé par MASITH Développement.
+            Toute reproduction, copie ou distribution non autorisée est interdite.
+            L'abonnement confère uniquement un droit d'utilisation, non une licence
+            de propriété.
           </p>
         </section>
 

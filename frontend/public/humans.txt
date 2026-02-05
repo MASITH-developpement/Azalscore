@@ -1,7 +1,6 @@
 /* TEAM */
-Organization: MASITH Développement
+Developer: MASITH Developpement
 Site: https://azalscore.com
-GitHub: https://github.com/MASITH-developpement
 Location: France
 Contact: contact@azalscore.com
 
@@ -14,7 +13,7 @@ Infrastructure: Docker, Docker Compose, Nginx
 Deployment: CI/CD with GitHub Actions
 Testing: Pytest, Playwright, Vitest
 
-/* THANKS */
-Open source community
-Contributors and testers
-Users providing feedback
+/* SOFTWARE */
+Type: Proprietary SaaS ERP
+Compliance: RGPD, Facturation electronique 2026
+Hosting: France (OVHcloud)

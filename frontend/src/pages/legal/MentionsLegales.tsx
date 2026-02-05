@@ -77,9 +77,10 @@ const MentionsLegales: React.FC = () => {
             éléments du site est interdite, sauf autorisation écrite préalable.
           </p>
           <p>
-            Le code source d'AZALSCORE ERP est distribué sous licence open source.
-            Les conditions d'utilisation sont détaillées dans le fichier LICENSE
-            du dépôt de code.
+            AZALSCORE ERP est un logiciel propriétaire. Toute reproduction, copie,
+            distribution ou utilisation non autorisée du code source est strictement
+            interdite et constitue une contrefaçon sanctionnée par le Code de la
+            propriété intellectuelle.
           </p>
         </section>
 

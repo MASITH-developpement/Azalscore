@@ -144,7 +144,7 @@ export const LandingPage: React.FC = () => {
           <div className="landing-hero-stats">
             <div className="landing-stat">
               <span className="landing-stat-value">100%</span>
-              <span className="landing-stat-label">Open Source</span>
+              <span className="landing-stat-label">Francais</span>
             </div>
             <div className="landing-stat">
               <span className="landing-stat-value">20+</span>

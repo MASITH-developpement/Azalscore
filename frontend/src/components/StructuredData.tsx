@@ -6,53 +6,47 @@ export const StructuredData = () => {
         "@type": "SoftwareApplication",
         "name": "Azalscore ERP",
         "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web, Windows, macOS, Linux",
+        "operatingSystem": "Web",
         "offers": {
           "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "EUR"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "ratingCount": "156"
+          "price": "49",
+          "priceCurrency": "EUR",
+          "priceValidUntil": "2026-12-31",
+          "availability": "https://schema.org/InStock"
         },
         "softwareVersion": "2.0",
-        "description": "ERP open-source complet pour PME avec CRM, comptabilité, inventaire, RH, POS et plus. Architecture multi-tenant moderne.",
-        "featureList": "CRM, Comptabilité, Gestion de Stock, RH, Point de Vente, Service Terrain, Trésorerie, Multi-tenant, API REST",
+        "description": "ERP SaaS francais pour PME : CRM, comptabilite, facturation electronique 2026, inventaire, RH, POS. Conforme RGPD, heberge en France.",
+        "featureList": "CRM, Comptabilite, Facturation electronique, Gestion de Stock, RH, Point de Vente, Tresorerie, Multi-tenant, API REST, RGPD",
         "url": "https://azalscore.com",
-        "downloadUrl": "https://github.com/MASITH-developpement/Azalscore",
-        "screenshot": "https://azalscore.com/screenshot.png",
+        "screenshot": "https://azalscore.com/og-image.png",
         "maintainer": {
           "@type": "Organization",
-          "name": "MASITH Développement"
-        }
+          "name": "MASITH Developpement"
+        },
+        "applicationSuite": "AZALSCORE",
+        "countriesSupported": "FR"
       },
       {
         "@type": "Organization",
-        "name": "MASITH Développement",
+        "name": "MASITH Developpement",
         "url": "https://azalscore.com",
-        "logo": "https://azalscore.com/logo.png",
-        "sameAs": [
-          "https://github.com/MASITH-developpement",
-          "https://www.linkedin.com/company/azalscore"
-        ],
+        "logo": "https://azalscore.com/pwa-512x512.png",
         "contactPoint": {
           "@type": "ContactPoint",
           "contactType": "customer support",
           "email": "contact@azalscore.com",
-          "availableLanguage": ["French", "English"]
+          "availableLanguage": ["French"]
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "FR"
         }
       },
       {
         "@type": "WebSite",
         "name": "Azalscore ERP",
         "url": "https://azalscore.com",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://azalscore.com/search?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
+        "inLanguage": "fr-FR"
       }
     ]
   };
