@@ -35,10 +35,10 @@ const DEMO_CREDENTIALS = {
 };
 
 const SELECTORS = {
-  // Login
-  tenantInput: 'input[placeholder*="societe" i], input[placeholder*="société" i], input[placeholder*="identifiant" i], input[name="tenant"]',
-  emailInput: 'input[type="email"], input[name="email"], input[placeholder*="email" i]',
-  passwordInput: 'input[type="password"]',
+  // Login - utilise les IDs du formulaire
+  tenantInput: '#tenant',
+  emailInput: '#email',
+  passwordInput: '#password',
   loginButton: 'button[type="submit"]',
 
   // Navigation
@@ -96,16 +96,16 @@ async function loginAs(page: Page, credentials: { tenant?: string; email: string
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
 
-  // Remplir le champ tenant si présent
-  const tenantInput = page.locator(SELECTORS.tenantInput).first();
-  if (await tenantInput.isVisible({ timeout: 2000 })) {
-    await tenantInput.fill(credentials.tenant || 'masith');
-  }
+  // Remplir les 3 champs du formulaire via leurs IDs
+  await page.fill(SELECTORS.tenantInput, credentials.tenant || 'masith');
+  await page.fill(SELECTORS.emailInput, credentials.email);
+  await page.fill(SELECTORS.passwordInput, credentials.password);
 
-  await page.locator(SELECTORS.emailInput).first().fill(credentials.email);
-  await page.locator(SELECTORS.passwordInput).first().fill(credentials.password);
+  // Soumettre
   await page.click(SELECTORS.loginButton);
-  await page.waitForURL('**/cockpit', { timeout: 10000 });
+
+  // Attendre qu'un élément de l'app authentifiée soit visible
+  await page.waitForSelector('.azals-unified-header__selector, button:has-text("Nouvelle saisie")', { timeout: 15000 });
 }
 
 async function navigateToPurchases(page: Page) {
