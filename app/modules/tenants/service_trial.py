@@ -354,7 +354,8 @@ class TrialRegistrationService:
     # TARIFICATION
     # ========================================================================
 
-    def get_pricing(self) -> TrialPricingResponse:
+    @staticmethod
+    def get_pricing() -> TrialPricingResponse:
         """Retourner les informations de tarification."""
         plans = [
             TrialPricingPlan(
