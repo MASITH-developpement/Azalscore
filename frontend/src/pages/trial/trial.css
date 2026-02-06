@@ -1,0 +1,1055 @@
+/**
+ * AZALSCORE - Trial Registration Styles
+ * Styles pour le formulaire d'inscription multi-etapes
+ */
+
+/* ==========================================================================
+   PAGE LAYOUT
+   ========================================================================== */
+
+.trial-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.trial-header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 24px;
+}
+
+.trial-header-content {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trial-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.trial-logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.trial-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.trial-header-login {
+  color: #1E6EFF;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.trial-header-login:hover {
+  text-decoration: underline;
+}
+
+.trial-main {
+  flex: 1;
+  padding: 40px 24px 80px;
+}
+
+.trial-container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.trial-content {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.trial-footer {
+  background: #f8faff;
+  border-top: 1px solid #e5e7eb;
+  padding: 24px;
+}
+
+.trial-footer-content {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.trial-footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.trial-footer-links a {
+  color: #64748b;
+  text-decoration: none;
+}
+
+.trial-footer-links a:hover {
+  color: #1E6EFF;
+}
+
+/* ==========================================================================
+   PROGRESS BAR
+   ========================================================================== */
+
+.trial-progress {
+  margin-bottom: 32px;
+}
+
+.trial-progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.trial-progress-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.trial-progress-step--upcoming {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+
+.trial-progress-step--current {
+  background: #1E6EFF;
+  color: white;
+  box-shadow: 0 0 0 4px rgba(30, 110, 255, 0.2);
+}
+
+.trial-progress-step--completed {
+  background: #10b981;
+  color: white;
+}
+
+.trial-progress-line {
+  width: 48px;
+  height: 3px;
+  background: #e5e7eb;
+  margin: 0 4px;
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+
+.trial-progress-line--completed {
+  background: #10b981;
+}
+
+.trial-progress-title {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   FORM STYLES
+   ========================================================================== */
+
+.trial-form {
+  padding: 40px;
+}
+
+.trial-form-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.trial-form-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+}
+
+.trial-form-header p {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.trial-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.trial-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trial-form-field--full {
+  grid-column: 1 / -1;
+}
+
+.trial-form-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.trial-form-field label svg {
+  color: #9ca3af;
+}
+
+.trial-form-field .required {
+  color: #ef4444;
+}
+
+.trial-form-field input,
+.trial-form-field select {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #1a1a2e;
+  transition: all 0.2s ease;
+}
+
+.trial-form-field input:focus,
+.trial-form-field select:focus {
+  outline: none;
+  border-color: #1E6EFF;
+  box-shadow: 0 0 0 3px rgba(30, 110, 255, 0.1);
+}
+
+.trial-form-field input.error,
+.trial-form-field select.error {
+  border-color: #ef4444;
+}
+
+.trial-form-field input::placeholder {
+  color: #9ca3af;
+}
+
+.trial-form-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+}
+
+.trial-form-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.trial-form-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trial-form-slider input[type="range"] {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  -webkit-appearance: none;
+  background: #e5e7eb;
+}
+
+.trial-form-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1E6EFF;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.trial-form-slider-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1E6EFF;
+  min-width: 100px;
+}
+
+.trial-form-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #b91c1c;
+  margin-bottom: 24px;
+}
+
+.trial-form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+.trial-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.trial-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.trial-btn-primary {
+  background: linear-gradient(135deg, #1E6EFF 0%, #0052CC 100%);
+  color: white;
+}
+
+.trial-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0052CC 0%, #003D99 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 110, 255, 0.3);
+}
+
+.trial-btn-outline {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.trial-btn-outline:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.trial-btn-lg {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+}
+
+/* ==========================================================================
+   CHECKBOX
+   ========================================================================== */
+
+.trial-form-field--checkbox {
+  margin-bottom: 16px;
+}
+
+.trial-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.trial-checkbox input {
+  display: none;
+}
+
+.trial-checkbox-mark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.trial-checkbox input:checked + .trial-checkbox-mark {
+  background: #1E6EFF;
+  border-color: #1E6EFF;
+}
+
+.trial-checkbox input:checked + .trial-checkbox-mark::after {
+  content: '';
+  width: 6px;
+  height: 10px;
+  border: 2px solid white;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.trial-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9375rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.trial-checkbox-label a {
+  color: #1E6EFF;
+  text-decoration: none;
+}
+
+.trial-checkbox-label a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   CAPTCHA
+   ========================================================================== */
+
+.trial-form-field--captcha {
+  margin-top: 24px;
+}
+
+.trial-captcha-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* ==========================================================================
+   VALIDATION SUMMARY
+   ========================================================================== */
+
+.trial-validation-summary {
+  background: #f8faff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.trial-validation-summary h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px;
+}
+
+.trial-validation-summary dl {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 8px 12px;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.trial-validation-summary dt {
+  color: #64748b;
+}
+
+.trial-validation-summary dd {
+  color: #1a1a2e;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ==========================================================================
+   EMAIL VERIFICATION
+   ========================================================================== */
+
+.trial-email-verification {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.trial-email-icon {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 24px;
+  background: #f0f7ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1E6EFF;
+}
+
+.trial-email-icon--verified {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.trial-email-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.trial-email-status--waiting {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.trial-email-status--pending {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.trial-email-status--success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.trial-email-info {
+  margin-bottom: 24px;
+}
+
+.trial-email-info p {
+  color: #64748b;
+  margin: 0 0 4px;
+}
+
+.trial-email-info strong {
+  font-size: 1.125rem;
+  color: #1a1a2e;
+}
+
+.trial-email-instructions {
+  text-align: left;
+  background: #f8faff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.trial-email-instructions h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 12px;
+}
+
+.trial-email-instructions ol {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: #475569;
+}
+
+.trial-email-instructions li {
+  margin-bottom: 8px;
+}
+
+.trial-email-tips {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.875rem;
+}
+
+.trial-email-tips ul {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   PAYMENT
+   ========================================================================== */
+
+.trial-payment-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 60px 0;
+  color: #64748b;
+}
+
+.trial-payment-badges {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.trial-payment-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trial-payment-badge svg {
+  color: #10b981;
+}
+
+.trial-payment-info {
+  display: flex;
+  gap: 16px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.trial-payment-info svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.trial-payment-info strong {
+  display: block;
+  color: #065f46;
+  margin-bottom: 4px;
+}
+
+.trial-payment-info p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #047857;
+}
+
+.trial-payment-element {
+  margin-bottom: 24px;
+}
+
+/* ==========================================================================
+   PRICING
+   ========================================================================== */
+
+.trial-pricing-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.trial-pricing-benefit {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f8faff;
+  border-radius: 12px;
+}
+
+.trial-pricing-benefit-icon {
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1E6EFF;
+  flex-shrink: 0;
+}
+
+.trial-pricing-benefit h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 4px;
+}
+
+.trial-pricing-benefit p {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.trial-pricing-section {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.trial-pricing-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.trial-pricing-subtitle {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9375rem;
+  margin: 0 0 24px;
+}
+
+.trial-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.trial-pricing-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  text-align: center;
+}
+
+.trial-pricing-card--popular {
+  border-color: #1E6EFF;
+  box-shadow: 0 0 0 1px #1E6EFF;
+}
+
+.trial-pricing-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1E6EFF;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 10px;
+}
+
+.trial-pricing-card h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 12px;
+}
+
+.trial-pricing-price {
+  margin-bottom: 16px;
+}
+
+.trial-pricing-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.trial-pricing-currency {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.trial-pricing-period {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.trial-pricing-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.trial-pricing-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: #475569;
+  padding: 4px 0;
+}
+
+.trial-pricing-features li svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   SUCCESS
+   ========================================================================== */
+
+.trial-success {
+  text-align: center;
+}
+
+.trial-success-icon {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 24px;
+  background: #dcfce7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #16a34a;
+}
+
+.trial-success-header {
+  margin-bottom: 32px;
+}
+
+.trial-success-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+}
+
+.trial-success-header p {
+  font-size: 1.125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.trial-success-card {
+  background: #f8faff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.trial-success-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.trial-success-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.trial-success-credential {
+  display: flex;
+  gap: 12px;
+}
+
+.trial-success-credential-icon {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1E6EFF;
+  flex-shrink: 0;
+}
+
+.trial-success-credential-content label {
+  display: block;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.trial-success-credential-content strong {
+  color: #1a1a2e;
+}
+
+.trial-success-password {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trial-success-password code {
+  background: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Monaco', monospace;
+  font-size: 1rem;
+  color: #1a1a2e;
+}
+
+.trial-success-copy {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: #64748b;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.trial-success-copy:hover {
+  background: #e5e7eb;
+  color: #1a1a2e;
+}
+
+.trial-success-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.trial-success-info {
+  display: flex;
+  gap: 12px;
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.trial-success-info svg {
+  color: #1E6EFF;
+  flex-shrink: 0;
+}
+
+.trial-success-info strong {
+  display: block;
+  font-size: 0.875rem;
+  color: #1a1a2e;
+  margin-bottom: 2px;
+}
+
+.trial-success-info p {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.trial-success-tenant {
+  margin-bottom: 24px;
+  color: #64748b;
+}
+
+.trial-success-actions {
+  margin-bottom: 32px;
+}
+
+.trial-success-next-steps {
+  text-align: left;
+  background: #f8faff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.trial-success-next-steps h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 12px;
+}
+
+.trial-success-next-steps ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #475569;
+}
+
+.trial-success-next-steps li {
+  margin-bottom: 8px;
+}
+
+.trial-success-support {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.trial-success-support a {
+  color: #1E6EFF;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trial-success-support a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .trial-form {
+    padding: 24px;
+  }
+
+  .trial-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trial-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .trial-form-actions .trial-btn {
+    width: 100%;
+  }
+
+  .trial-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trial-footer-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}

@@ -113,7 +113,7 @@ export const LandingPage: React.FC = () => {
             <Link to="/login" className="landing-btn landing-btn-outline">
               Connexion
             </Link>
-            <Link to="/login" className="landing-btn landing-btn-primary">
+            <Link to="/essai-gratuit" className="landing-btn landing-btn-primary">
               Essai gratuit
               <ArrowRight size={16} />
             </Link>
@@ -133,7 +133,7 @@ export const LandingPage: React.FC = () => {
             puissante.
           </p>
           <div className="landing-hero-actions">
-            <Link to="/login" className="landing-btn landing-btn-primary landing-btn-lg">
+            <Link to="/essai-gratuit" className="landing-btn landing-btn-primary landing-btn-lg">
               Commencer gratuitement
               <ArrowRight size={20} />
             </Link>
@@ -384,7 +384,7 @@ export const LandingPage: React.FC = () => {
         <div className="landing-container">
           <h2>Pret a simplifier votre gestion ?</h2>
           <p>Rejoignez les entreprises qui font confiance a AZALSCORE.</p>
-          <Link to="/login" className="landing-btn landing-btn-primary landing-btn-lg">
+          <Link to="/essai-gratuit" className="landing-btn landing-btn-primary landing-btn-lg">
             Commencer maintenant
             <ArrowRight size={20} />
           </Link>

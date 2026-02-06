@@ -66,6 +66,16 @@ class InvitationStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"
 
 
+class TrialRegistrationStatus(str, enum.Enum):
+    """Statuts d'inscription d'essai."""
+    PENDING = "PENDING"            # Inscription créée, email non vérifié
+    EMAIL_SENT = "EMAIL_SENT"      # Email de vérification envoyé
+    EMAIL_VERIFIED = "EMAIL_VERIFIED"  # Email vérifié, en attente paiement
+    PAYMENT_PENDING = "PAYMENT_PENDING"  # En attente de configuration carte
+    COMPLETED = "COMPLETED"        # Inscription terminée, tenant créé
+    EXPIRED = "EXPIRED"            # Inscription expirée (24h)
+
+
 # ============================================================================
 # MODÈLES
 # ============================================================================
@@ -346,3 +356,62 @@ class TenantOnboarding(Base):
 
     # Audit
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class TrialRegistration(Base):
+    """Inscription d'essai gratuit en attente de finalisation."""
+    __tablename__ = "trial_registrations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+
+    # Informations personnelles
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(50))
+    mobile: Mapped[str | None] = mapped_column(String(50))
+
+    # Informations entreprise
+    company_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    address_line1: Mapped[str] = mapped_column(String(255), nullable=False)
+    address_line2: Mapped[str | None] = mapped_column(String(255))
+    postal_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    city: Mapped[str] = mapped_column(String(100), nullable=False)
+    country: Mapped[str] = mapped_column(String(2), default="FR", nullable=False)
+    language: Mapped[str] = mapped_column(String(5), default="fr", nullable=False)
+    activity: Mapped[str | None] = mapped_column(String(255))
+    revenue_range: Mapped[str | None] = mapped_column(String(50))
+    max_users: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    siret: Mapped[str | None] = mapped_column(String(20))
+
+    # Vérifications
+    email_verification_token: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    captcha_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    cgv_accepted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    cgu_accepted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Stripe
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255))
+    stripe_setup_intent_id: Mapped[str | None] = mapped_column(String(255))
+    stripe_payment_method_id: Mapped[str | None] = mapped_column(String(255))
+
+    # Statut
+    status: Mapped[str] = mapped_column(
+        Enum(TrialRegistrationStatus),
+        default=TrialRegistrationStatus.PENDING,
+        nullable=False,
+        index=True
+    )
+
+    # Tenant créé (si complété)
+    tenant_id: Mapped[str | None] = mapped_column(String(50), index=True)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)  # 24h après création
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    # IP et User-Agent pour audit/sécurité
+    ip_address: Mapped[str | None] = mapped_column(String(45))
+    user_agent: Mapped[str | None] = mapped_column(Text)

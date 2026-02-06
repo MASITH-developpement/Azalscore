@@ -180,6 +180,7 @@ from app.modules.subscriptions.router import router as subscriptions_router
 
 # Module T9 - Gestion des Tenants (Multi-Tenancy)
 from app.modules.tenants.router import router as tenants_router
+from app.modules.tenants.api_trial import router as trial_router
 
 # Module AI Assistant - Assistant IA Transverse
 from app.modules.ai_assistant.router_v2 import router as ai_assistant_router_v2
@@ -1129,6 +1130,9 @@ def create_admin_user(
 
 # Monter l'API v1 sur l'app principale
 app.include_router(api_v1)
+
+# Trial Registration (public endpoints - no auth required)
+app.include_router(trial_router)
 
 # ==================== ROUTERS V2 (CORE SaaS) ====================
 # Routers migrés vers CORE SaaS v2

@@ -57,6 +57,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
         "/api/v2/website/demo-requests",
         "/api/v2/website/contact",
         "/api/v2/website/analytics/summary",
+        # Trial Registration (public for self-service signup)
+        "/api/v2/public/trial",
     }
 
     async def dispatch(self, request: Request, call_next):

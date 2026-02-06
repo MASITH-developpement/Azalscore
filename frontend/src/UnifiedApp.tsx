@@ -18,6 +18,7 @@ import { tokenManager, setTenantId } from '@core/api-client';
 import { useAuthStore } from '@core/auth';
 import LandingPage from './pages/LandingPage';
 import { MentionsLegales, Confidentialite, CGV, Contact } from './pages/legal';
+import { TrialRegistration } from './pages/trial';
 import { useCapabilities, useIsCapabilitiesReady, useCapabilitiesStore } from '@core/capabilities';
 import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import './styles/main.css';
@@ -580,6 +581,7 @@ const UnifiedApp: React.FC = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/essai-gratuit" element={<TrialRegistration />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/confidentialite" element={<Confidentialite />} />
           <Route path="/cgv" element={<CGV />} />
