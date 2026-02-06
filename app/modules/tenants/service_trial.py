@@ -407,7 +407,7 @@ class TrialRegistrationService:
         ]
 
         return TrialPricingResponse(
-            trial_days=self.TRIAL_DURATION_DAYS,
+            trial_days=TrialRegistrationService.TRIAL_DURATION_DAYS,
             plans=plans,
         )
 
