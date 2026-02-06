@@ -47,6 +47,7 @@ from .schemas import (
     SubscriptionListResponse,
     SubscriptionPauseRequest,
     SubscriptionResponse,
+    SubscriptionStatsResponse,
     SubscriptionUpdate,
     UsageRecordCreate,
     UsageRecordResponse,
@@ -591,6 +592,31 @@ def list_webhooks(
     # Cette fonction n'existe pas dans le service original
     # Il faudrait l'implémenter
     return []
+
+
+# ============================================================================
+# STATS
+# ============================================================================
+
+@router.get("/stats", response_model=SubscriptionStatsResponse)
+def get_stats(
+    service: SubscriptionService = Depends(get_subscription_service)
+):
+    """Statistiques abonnements simplifié."""
+    dashboard = service.get_dashboard()
+    plans_data = service.list_plans(is_active=True, skip=0, limit=1000)
+    total_plans = plans_data[1] if plans_data else 0
+
+    return SubscriptionStatsResponse(
+        total_plans=total_plans,
+        active_subscriptions=dashboard.total_active,
+        trial_subscriptions=dashboard.trialing,
+        mrr=dashboard.mrr,
+        arr=dashboard.arr,
+        churn_rate=dashboard.churn_rate,
+        new_subscribers_month=dashboard.canceled_this_month,
+        revenue_this_month=dashboard.new_mrr + dashboard.expansion_mrr,
+    )
 
 
 # ============================================================================
