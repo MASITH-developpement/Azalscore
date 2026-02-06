@@ -7,7 +7,7 @@ Aucune authentification requise (PUBLIC_PATHS).
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.tenants.schemas_trial import (
@@ -55,10 +55,10 @@ def get_client_info(request: Request) -> tuple[str, str]:
     L'inscription expire après 24 heures si l'email n'est pas vérifié.
     """,
 )
-async def create_trial_registration(
+def create_trial_registration(
     data: TrialRegistrationCreate,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> TrialRegistrationResponse:
     """Créer une nouvelle inscription d'essai."""
     ip_address, user_agent = get_client_info(request)
@@ -66,7 +66,7 @@ async def create_trial_registration(
     service = TrialRegistrationService(db)
 
     try:
-        registration = await service.create_registration(
+        registration = service.create_registration(
             data=data,
             ip_address=ip_address,
             user_agent=user_agent,
@@ -102,15 +102,15 @@ async def create_trial_registration(
     Une fois vérifié, l'utilisateur peut procéder au paiement.
     """,
 )
-async def verify_trial_email(
+def verify_trial_email(
     data: TrialEmailVerification,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> TrialEmailVerificationResponse:
     """Vérifier le token email."""
     service = TrialRegistrationService(db)
 
     try:
-        registration = await service.verify_email(token=data.token)
+        registration = service.verify_email(token=data.token)
 
         return TrialEmailVerificationResponse(
             verified=True,
@@ -138,15 +138,15 @@ async def verify_trial_email(
     Prérequis: l'email doit être vérifié.
     """,
 )
-async def setup_trial_payment(
+def setup_trial_payment(
     data: TrialPaymentSetupRequest,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> TrialPaymentSetupResponse:
     """Créer un SetupIntent Stripe."""
     service = TrialRegistrationService(db)
 
     try:
-        result = await service.create_payment_setup(
+        result = service.create_payment_setup(
             registration_id=data.registration_id,
         )
 
@@ -179,15 +179,15 @@ async def setup_trial_payment(
     - SetupIntent Stripe confirmé (carte enregistrée)
     """,
 )
-async def complete_trial_registration(
+def complete_trial_registration(
     data: TrialCompleteRequest,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> TrialCompleteResponse:
     """Finaliser l'inscription et créer le tenant."""
     service = TrialRegistrationService(db)
 
     try:
-        result = await service.complete_registration(
+        result = service.complete_registration(
             registration_id=data.registration_id,
             setup_intent_id=data.setup_intent_id,
         )
@@ -220,7 +220,7 @@ async def complete_trial_registration(
     les fonctionnalités incluses, et les informations sur l'essai gratuit.
     """,
 )
-async def get_trial_pricing() -> TrialPricingResponse:
+def get_trial_pricing() -> TrialPricingResponse:
     """Obtenir les informations de tarification."""
     # Pas besoin de DB pour les tarifs statiques
     return TrialRegistrationService.get_pricing()
@@ -237,15 +237,13 @@ async def get_trial_pricing() -> TrialPricingResponse:
     revient sur la page après une interruption.
     """,
 )
-async def get_registration_status(
+def get_registration_status(
     registration_id: str,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> TrialRegistrationStatus:
     """Obtenir le statut d'une inscription."""
     from datetime import datetime, timezone
     from uuid import UUID
-
-    from sqlalchemy import select
 
     from app.modules.tenants.models import TrialRegistration
 
@@ -257,10 +255,9 @@ async def get_registration_status(
             detail="ID d'inscription invalide.",
         )
 
-    result = await db.execute(
-        select(TrialRegistration).where(TrialRegistration.id == reg_uuid)
-    )
-    registration = result.scalar_one_or_none()
+    registration = db.query(TrialRegistration).filter(
+        TrialRegistration.id == reg_uuid
+    ).first()
 
     if not registration:
         raise HTTPException(

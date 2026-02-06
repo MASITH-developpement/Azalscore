@@ -8,7 +8,7 @@ Service pour gérer le flux d'inscription à l'essai gratuit.
 import secrets
 import smtplib
 import httpx
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Any
@@ -28,10 +28,6 @@ from .models import (
 from .schemas import TenantCreate
 from .schemas_trial import (
     TrialRegistrationCreate,
-    TrialRegistrationResponse,
-    TrialEmailVerificationResponse,
-    TrialPaymentSetupResponse,
-    TrialCompleteResponse,
     TrialPricingResponse,
     TrialPricingPlan,
 )
@@ -69,7 +65,7 @@ class TrialRegistrationService:
         data: TrialRegistrationCreate,
         ip_address: str | None = None,
         user_agent: str | None = None,
-    ) -> TrialRegistrationResponse:
+    ) -> TrialRegistration:
         """
         Créer une inscription d'essai et envoyer l'email de vérification.
 
@@ -117,7 +113,7 @@ class TrialRegistrationService:
             cgu_accepted=data.cgu_accepted,
             # Statut
             status=TrialRegistrationStatus.PENDING,
-            expires_at=datetime.utcnow() + timedelta(hours=self.REGISTRATION_EXPIRY_HOURS),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=self.REGISTRATION_EXPIRY_HOURS),
             # Audit
             ip_address=ip_address,
             user_agent=user_agent,
@@ -134,18 +130,13 @@ class TrialRegistrationService:
         registration.status = TrialRegistrationStatus.EMAIL_SENT
         self.db.commit()
 
-        return TrialRegistrationResponse(
-            registration_id=str(registration.id),
-            email=registration.email,
-            email_sent=True,
-            expires_at=registration.expires_at,
-        )
+        return registration
 
     # ========================================================================
     # VÉRIFICATION EMAIL
     # ========================================================================
 
-    def verify_email(self, token: str) -> TrialEmailVerificationResponse:
+    def verify_email(self, token: str) -> TrialRegistration:
         """Vérifier l'email avec le token."""
         registration = self.db.query(TrialRegistration).filter(
             and_(
@@ -154,27 +145,24 @@ class TrialRegistrationService:
                     TrialRegistrationStatus.PENDING,
                     TrialRegistrationStatus.EMAIL_SENT
                 ]),
-                TrialRegistration.expires_at > datetime.utcnow()
+                TrialRegistration.expires_at > datetime.now(timezone.utc)
             )
         ).first()
 
         if not registration:
             raise ValueError("Token invalide ou expiré")
 
-        registration.email_verified_at = datetime.utcnow()
+        registration.email_verified_at = datetime.now(timezone.utc)
         registration.status = TrialRegistrationStatus.EMAIL_VERIFIED
         self.db.commit()
 
-        return TrialEmailVerificationResponse(
-            verified=True,
-            registration_id=str(registration.id),
-        )
+        return registration
 
     # ========================================================================
     # CONFIGURATION PAIEMENT STRIPE
     # ========================================================================
 
-    def create_payment_setup(self, registration_id: str) -> TrialPaymentSetupResponse:
+    def create_payment_setup(self, registration_id: str) -> dict[str, Any]:
         """
         Créer un SetupIntent Stripe pour enregistrer la carte.
 
@@ -228,12 +216,12 @@ class TrialRegistrationService:
         registration.status = TrialRegistrationStatus.PAYMENT_PENDING
         self.db.commit()
 
-        return TrialPaymentSetupResponse(
-            client_secret=setup_intent.client_secret,
-            setup_intent_id=setup_intent.id,
-            publishable_key=settings.STRIPE_PUBLISHABLE_KEY,
-            customer_id=customer_id,
-        )
+        return {
+            "client_secret": setup_intent.client_secret,
+            "setup_intent_id": setup_intent.id,
+            "publishable_key": settings.STRIPE_PUBLISHABLE_KEY,
+            "customer_id": customer_id,
+        }
 
     # ========================================================================
     # FINALISATION INSCRIPTION
@@ -243,7 +231,7 @@ class TrialRegistrationService:
         self,
         registration_id: str,
         setup_intent_id: str,
-    ) -> TrialCompleteResponse:
+    ) -> dict[str, Any]:
         """
         Finaliser l'inscription après validation du paiement.
 
@@ -307,7 +295,7 @@ class TrialRegistrationService:
                 "trial_registration": {
                     "activity": registration.activity,
                     "revenue_range": registration.revenue_range,
-                    "registered_at": datetime.utcnow().isoformat(),
+                    "registered_at": datetime.now(timezone.utc).isoformat(),
                 }
             }
         )
@@ -330,25 +318,24 @@ class TrialRegistrationService:
 
         # Marquer inscription comme complétée
         registration.status = TrialRegistrationStatus.COMPLETED
-        registration.completed_at = datetime.utcnow()
+        registration.completed_at = datetime.now(timezone.utc)
         registration.tenant_id = tenant_id
         self.db.commit()
 
         # Calculer fin d'essai
-        trial_ends_at = datetime.utcnow() + timedelta(days=self.TRIAL_DURATION_DAYS)
+        trial_ends_at = datetime.now(timezone.utc) + timedelta(days=self.TRIAL_DURATION_DAYS)
 
         # Envoyer email de bienvenue
         self._send_welcome_email(registration, tenant_id, temp_password, trial_ends_at)
 
-        return TrialCompleteResponse(
-            success=True,
-            tenant_id=tenant_id,
-            tenant_name=registration.company_name,
-            admin_email=registration.email,
-            temporary_password=temp_password,
-            login_url=f"{settings.app_url}/login",
-            trial_ends_at=trial_ends_at,
-        )
+        return {
+            "tenant_id": tenant_id,
+            "tenant_name": registration.company_name,
+            "admin_email": registration.email,
+            "temporary_password": temp_password,
+            "login_url": f"{settings.app_url}/login",
+            "trial_ends_at": trial_ends_at,
+        }
 
     # ========================================================================
     # TARIFICATION
@@ -429,7 +416,7 @@ class TrialRegistrationService:
         if not registration:
             raise ValueError("Inscription non trouvée")
 
-        if registration.expires_at < datetime.utcnow() and registration.status != TrialRegistrationStatus.COMPLETED:
+        if registration.expires_at < datetime.now(timezone.utc) and registration.status != TrialRegistrationStatus.COMPLETED:
             registration.status = TrialRegistrationStatus.EXPIRED
             self.db.commit()
             raise ValueError("Inscription expirée")
@@ -453,7 +440,7 @@ class TrialRegistrationService:
                     TrialRegistrationStatus.EXPIRED,
                     TrialRegistrationStatus.COMPLETED
                 ]),
-                TrialRegistration.expires_at > datetime.utcnow()
+                TrialRegistration.expires_at > datetime.now(timezone.utc)
             )
         ).first()
         if existing_registration:
@@ -534,7 +521,7 @@ class TrialRegistrationService:
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                 <p style="font-size: 12px; color: #999;">
                     AZALSCORE - Gestion d'entreprise simplifiée<br>
-                    © 2026 MASITH Développement
+                    (c) 2026 MASITH Développement
                 </p>
             </div>
         </body>
@@ -594,7 +581,7 @@ class TrialRegistrationService:
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                 <p style="font-size: 12px; color: #999;">
                     AZALSCORE - Gestion d'entreprise simplifiée<br>
-                    © 2026 MASITH Développement
+                    (c) 2026 MASITH Développement
                 </p>
             </div>
         </body>
