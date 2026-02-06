@@ -17,7 +17,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from app.core.config import settings
+from app.core.config import get_settings
 from .models import (
     Tenant,
     TenantStatus,
@@ -181,6 +181,7 @@ class TrialRegistrationService:
         Prérequis: email vérifié
         """
         import stripe
+        settings = get_settings()
 
         registration = self._get_registration(registration_id)
 
@@ -254,6 +255,7 @@ class TrialRegistrationService:
         6. Envoyer email de bienvenue
         """
         import stripe
+        settings = get_settings()
 
         registration = self._get_registration(registration_id)
 
@@ -458,6 +460,7 @@ class TrialRegistrationService:
 
     def _verify_hcaptcha(self, token: str) -> bool:
         """Vérifier le token hCaptcha."""
+        settings = get_settings()
         if not hasattr(settings, 'HCAPTCHA_SECRET_KEY') or not settings.HCAPTCHA_SECRET_KEY:
             # En dev, accepter tous les tokens
             return True
@@ -504,6 +507,7 @@ class TrialRegistrationService:
 
     def _send_verification_email(self, registration: TrialRegistration, token: str) -> None:
         """Envoyer l'email de vérification."""
+        settings = get_settings()
         verification_url = f"{settings.FRONTEND_URL}/essai-gratuit/verify?token={token}"
 
         subject = "Vérifiez votre adresse email - AZALSCORE"
@@ -546,6 +550,7 @@ class TrialRegistrationService:
         trial_ends_at: datetime,
     ) -> None:
         """Envoyer l'email de bienvenue avec les identifiants."""
+        settings = get_settings()
         login_url = f"{settings.FRONTEND_URL}/login"
 
         subject = "Votre compte AZALSCORE est prêt !"
@@ -599,6 +604,7 @@ class TrialRegistrationService:
 
     def _send_smtp_email(self, to_email: str, subject: str, body_html: str) -> None:
         """Envoyer un email via SMTP."""
+        settings = get_settings()
         if not hasattr(settings, 'SMTP_HOST') or not settings.SMTP_HOST:
             # En dev, juste logger
             print(f"[EMAIL] Would send to {to_email}: {subject}")
