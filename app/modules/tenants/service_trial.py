@@ -346,7 +346,7 @@ class TrialRegistrationService:
             tenant_name=registration.company_name,
             admin_email=registration.email,
             temporary_password=temp_password,
-            login_url=f"{settings.FRONTEND_URL}/login",
+            login_url=f"{settings.app_url}/login",
             trial_ends_at=trial_ends_at,
         )
 
@@ -509,7 +509,7 @@ class TrialRegistrationService:
     def _send_verification_email(self, registration: TrialRegistration, token: str) -> None:
         """Envoyer l'email de vérification."""
         settings = get_settings()
-        verification_url = f"{settings.FRONTEND_URL}/essai-gratuit/verify?token={token}"
+        verification_url = f"{settings.app_url}/essai-gratuit/verify?token={token}"
 
         subject = "Vérifiez votre adresse email - AZALSCORE"
         body_html = f"""
@@ -552,7 +552,7 @@ class TrialRegistrationService:
     ) -> None:
         """Envoyer l'email de bienvenue avec les identifiants."""
         settings = get_settings()
-        login_url = f"{settings.FRONTEND_URL}/login"
+        login_url = f"{settings.app_url}/login"
 
         subject = "Votre compte AZALSCORE est prêt !"
         body_html = f"""
