@@ -533,6 +533,18 @@ class MetricsTrend(BaseModel):
 # DASHBOARD SCHEMAS
 # ============================================================================
 
+class SubscriptionStatsResponse(BaseModel):
+    """Stats abonnements simplifié pour le frontend."""
+    total_plans: int = 0
+    active_subscriptions: int = 0
+    trial_subscriptions: int = 0
+    mrr: Decimal = Decimal("0")
+    arr: Decimal = Decimal("0")
+    churn_rate: Decimal = Decimal("0")
+    new_subscribers_month: int = 0
+    revenue_this_month: Decimal = Decimal("0")
+
+
 class SubscriptionDashboard(BaseModel):
     """Dashboard abonnements."""
     # Revenus
