@@ -36,6 +36,7 @@ import {
   CalendarClock,
   HeadphonesIcon,
   Contact,
+  Bot,
   type LucideIcon,
 } from 'lucide-react';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
@@ -72,6 +73,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   pos: MonitorSmartphone,
   subscriptions: CalendarClock,
   helpdesk: HeadphonesIcon,
+  marceau: Bot,
 };
 
 // ============================================================
@@ -89,6 +91,13 @@ const MENU_SECTIONS: MenuSection[] = [
         icon: 'dashboard',
         path: '/cockpit',
         capability: 'cockpit.view',
+      },
+      {
+        id: 'marceau',
+        label: 'Marceau IA',
+        icon: 'marceau',
+        path: '/marceau',
+        capability: 'marceau.view',
       },
     ],
   },
@@ -558,13 +567,24 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
 }) => {
   const { capabilities } = useCapabilities();
 
+  // DEBUG: Log les capabilities utilisées par le menu
+  React.useEffect(() => {
+    console.log('[Menu] Section:', section.title, 'Capabilities count:', capabilities.length);
+    console.log('[Menu] accounting.view in capabilities:', capabilities.includes('accounting.view'));
+  }, [capabilities, section.title]);
+
   // Filtrer les items selon les capacités
   // CRITICAL: Utiliser `capabilities` directement pour que le memo se recalcule
   const visibleItems = useMemo(() => {
-    return section.items.filter((item) => {
+    const filtered = section.items.filter((item) => {
       if (!item.capability) return true;
-      return capabilities.includes(item.capability);
+      const hasCapability = capabilities.includes(item.capability);
+      if (item.id === 'accounting') {
+        console.log('[Menu] Filtering accounting:', item.capability, '=', hasCapability);
+      }
+      return hasCapability;
     });
+    return filtered;
   }, [section.items, capabilities]);
 
   // Ne pas afficher la section si aucun item visible
