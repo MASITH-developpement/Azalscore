@@ -16,6 +16,7 @@ import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
 import { useUIMode } from '@ui/hooks/useUIMode';
 import { isDemoMode, setDemoMode } from '../../utils/demoMode';
+import { MarceauChat } from '@modules/marceau/components/MarceauChat';
 
 // ============================================================
 // TYPES
@@ -255,6 +256,9 @@ export const MainLayout: React.FC<LayoutProps> = ({ children }) => {
 
       <ErrorToaster />
       <GuardianPanelContainer />
+
+      {/* Marceau AI Chat Widget */}
+      <MarceauChat position="bottom-right" />
     </div>
   );
 };

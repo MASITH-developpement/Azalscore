@@ -44,6 +44,7 @@ const SubscriptionsRoutes = lazy(() => import('@modules/subscriptions'));
 const HelpdeskRoutes = lazy(() => import('@modules/helpdesk'));
 const BIRoutes = lazy(() => import('@modules/bi'));
 const ComplianceRoutes = lazy(() => import('@modules/compliance'));
+const MarceauRoutes = lazy(() => import('@modules/marceau'));
 
 // Pages Auth
 const LoginPage = lazy(() => import('@/pages/auth/Login'));
@@ -320,6 +321,13 @@ export const AppRouter: React.FC = () => {
             <Route path="/compliance/*" element={
               <CapabilityRoute capability="compliance.view">
                 <ComplianceRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Marceau AI Assistant */}
+            <Route path="/marceau/*" element={
+              <CapabilityRoute capability="marceau.view">
+                <MarceauRoutes />
               </CapabilityRoute>
             } />
 

@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
+from app.api.admin import router as admin_dashboard_router
 from app.api.admin_migration import router as admin_migration_router
 from app.api.admin_sequences import router as admin_sequences_router
 from app.api.auth import router as auth_router
@@ -206,6 +207,9 @@ from app.modules.marketplace.router_v2 import router as marketplace_router_v2
 # Module T8 - Site Web Officiel AZALS
 from app.modules.website.router import router as website_router
 from app.modules.website.router_v2 import router as website_router_v2
+
+# Module MARCEAU - Agent IA Polyvalent (9 modules metiers)
+from app.modules.marceau.router import router as marceau_router
 # Module Interventions v2 - Router enrichi aligné frontend
 from app.modules.interventions.router_v2 import router as interventions_router_v2
 
@@ -684,6 +688,7 @@ logger.warning(
     extra={"router": "admin_migration", "status": "temporary", "action_required": "remove_after_migration"}
 )
 api_v1.include_router(admin_sequences_router)  # Administration des sequences de numerotation
+api_v1.include_router(admin_dashboard_router)  # Administration dashboard (stats systeme)
 api_v1.include_router(partners_router)  # Alias vers module commercial (clients, fournisseurs, contacts)
 api_v1.include_router(invoicing_router)  # Alias vers module commercial (devis, factures, avoirs)
 api_v1.include_router(branding_router)  # Gestion favicon, logo, branding
@@ -808,6 +813,9 @@ api_v1.include_router(email_router)
 
 # Module BACKUP - Sauvegardes chiffrees AES-256
 api_v1.include_router(backup_router)
+
+# Module MARCEAU - Agent IA Polyvalent (Telephonie, Marketing, SEO, Commercial, etc.)
+api_v1.include_router(marceau_router)
 
 # Module MARKETPLACE - Site marchand & provisioning automatique
 api_v1.include_router(marketplace_router)
