@@ -56,6 +56,7 @@ const ComplianceModule = lazy(() => import('./modules/compliance'));
 const WebModule = lazy(() => import('./modules/web'));
 const ProfileModule = lazy(() => import('./modules/profile'));
 const SettingsModule = lazy(() => import('./modules/settings'));
+const MarceauModule = lazy(() => import('./modules/marceau'));
 
 // ============================================================
 // VIEW KEY → CAPABILITY MAPPING
@@ -453,6 +454,10 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
       case 'cockpit':
         return <CockpitView />;
 
+      // IA
+      case 'marceau':
+        return <MarceauModule />;
+
       // Système
       case 'admin':
         return <AdminModule />;
@@ -578,17 +583,20 @@ const UnifiedApp: React.FC = () => {
   // Non authentifié - afficher landing page, pages légales ou login
   if (!isAuthenticated) {
     return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/essai-gratuit" element={<TrialRegistration />} />
-          <Route path="/mentions-legales" element={<MentionsLegales />} />
-          <Route path="/confidentialite" element={<Confidentialite />} />
-          <Route path="/cgv" element={<CGV />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="*" element={<LandingPage />} />
-        </Routes>
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/essai-gratuit" element={<TrialRegistration />} />
+            <Route path="/essai-gratuit/verify" element={<TrialRegistration />} />
+            <Route path="/mentions-legales" element={<MentionsLegales />} />
+            <Route path="/confidentialite" element={<Confidentialite />} />
+            <Route path="/cgv" element={<CGV />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="*" element={<LandingPage />} />
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
     );
   }
 

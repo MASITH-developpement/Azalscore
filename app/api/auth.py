@@ -747,7 +747,9 @@ def refresh_access_token(
 
         # Recherche utilisateur avec gestion d'erreur DB
         try:
-            user = db.query(User).filter(User.id == int(user_id)).first()
+            from uuid import UUID
+            user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == user_uuid).first()
         except Exception as db_error:
             logger.error(
                 "[GUARDIAN] Database error during refresh: %s", db_error,
@@ -912,13 +914,49 @@ def get_current_user_info(
 
 @router.get("/capabilities")
 def get_user_capabilities(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Retourne les capacites/permissions de l'utilisateur connecte.
     Utilise pour le controle d'acces cote frontend.
+
+    PRIORITÉ:
+    1. Si l'utilisateur a des permissions IAM personnalisées -> les utiliser
+    2. Sinon -> utiliser les capabilities par défaut du rôle
     """
-    # Toutes les capacites disponibles
+    from sqlalchemy import text
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Vérifier si l'utilisateur a des permissions IAM personnalisées
+    try:
+        result = db.execute(text("""
+            SELECT permission_code FROM iam_user_permissions
+            WHERE user_id = :user_id
+        """), {"user_id": str(current_user.id)})
+        iam_permissions = [row[0] for row in result]
+
+        logger.info(f"[AUTH] User {current_user.id}: found {len(iam_permissions)} IAM permissions")
+
+        if iam_permissions:
+            # L'utilisateur a des permissions IAM personnalisées
+            role_name = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+            has_accounting = 'accounting.view' in iam_permissions
+            logger.info(f"[AUTH] Returning IAM permissions, accounting.view={has_accounting}")
+            return {
+                "capabilities": iam_permissions,
+                "role": role_name,
+                "source": "iam"
+            }
+        else:
+            logger.info(f"[AUTH] No IAM permissions, using role-based capabilities")
+    except Exception as e:
+        # En cas d'erreur, fallback sur les capabilities du rôle
+        logger.warning(f"[AUTH] Erreur lecture permissions IAM: {e}")
+
+    # Fallback: Toutes les capacites disponibles (par role)
     ALL_CAPABILITIES = [
         "cockpit.view", "cockpit.decisions.view",
         # Partners - permissions generiques ET specifiques (frontend utilise les deux)
@@ -1000,10 +1038,19 @@ def get_user_capabilities(
         "iam.permission.read",
         "iam.invitation.create",
         "iam.policy.read", "iam.policy.update",
+        # Marceau IA Assistant
+        "marceau.view", "marceau.chat",
+        "marceau.conversations.view", "marceau.conversations.manage",
+        "marceau.actions.view", "marceau.actions.validate",
+        "marceau.memory.view", "marceau.memory.manage",
+        "marceau.settings.view", "marceau.settings.manage",
+        "marceau.admin",
     ]
 
     # Capacites basees sur le role
     role_capabilities = {
+        "SUPERADMIN": ALL_CAPABILITIES,  # Super admin - acces complet
+        "SUPER_ADMIN": ALL_CAPABILITIES,  # Alias super admin
         "DIRIGEANT": ALL_CAPABILITIES,  # Acces complet
         "DAF": [
             "cockpit.view", "treasury.view", "treasury.create", "treasury.transfer.execute",
@@ -1025,10 +1072,11 @@ def get_user_capabilities(
     role_name = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     capabilities = role_capabilities.get(role_name, ["cockpit.view"])
 
-    return {"data": {
+    # Retourner directement les capabilities sans enveloppe "data"
+    return {
         "capabilities": capabilities,
         "role": role_name,
-    }}
+    }
 
 
 # ===== CHANGEMENT DE MOT DE PASSE =====
