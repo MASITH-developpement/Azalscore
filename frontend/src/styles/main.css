@@ -3,6 +3,9 @@
  * Design System unifié Web + Mobile
  */
 
+/* Tailwind CSS v4 */
+@import "tailwindcss";
+
 /* ============================================================
    IMPORTS - UI STANDARDS
    ============================================================ */

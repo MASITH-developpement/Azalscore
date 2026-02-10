@@ -407,6 +407,46 @@ docker network connect azalscore_azals_internal azals_api
 
 ---
 
+## Systeme CSS - Tailwind v4
+
+Le projet utilise **Tailwind CSS v4** pour generer les classes utilitaires CSS automatiquement.
+
+### Configuration
+
+1. **Fichiers de configuration:**
+   - `/frontend/postcss.config.js` - Plugin PostCSS pour Tailwind
+   - `/frontend/tailwind.config.js` - Configuration Tailwind (content paths)
+
+2. **Import dans le CSS principal:**
+   ```css
+   /* /frontend/src/styles/main.css */
+   @import "tailwindcss";
+   ```
+
+3. **Packages requis:**
+   ```bash
+   npm install -D tailwindcss @tailwindcss/postcss autoprefixer
+   ```
+
+### Fonctionnement
+
+- Tailwind scanne tous les fichiers dans `src/**/*.{js,ts,jsx,tsx}`
+- Il genere automatiquement les classes CSS utilisees (JIT - Just In Time)
+- Les classes non utilisees ne sont PAS incluses dans le bundle final
+- Compatible avec les classes existantes du design system AZALS
+
+### Classes disponibles
+
+Toutes les classes utilitaires Tailwind standard:
+- Layout: `flex`, `grid`, `block`, `inline-flex`
+- Spacing: `p-4`, `m-2`, `gap-3`, `space-x-2`
+- Colors: `bg-blue-100`, `text-gray-500`, `border-green-500`
+- Typography: `text-sm`, `font-medium`, `text-center`
+- Borders: `rounded-lg`, `border`, `border-2`
+- Effects: `shadow-lg`, `opacity-50`, `hover:bg-blue-600`
+
+---
+
 ## Architecture Menu Frontend
 
 ### Deux systemes de menu coexistent:
