@@ -183,9 +183,9 @@ class MarceauAction(Base):
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Module et type d'action
-    module = Column(Enum(ModuleName), nullable=False)
+    module = Column(Enum(ModuleName, values_callable=lambda x: [e.value for e in x]), nullable=False)
     action_type = Column(String(100), nullable=False)  # call_received, quote_created, etc.
-    status = Column(Enum(ActionStatus), default=ActionStatus.PENDING, nullable=False)
+    status = Column(Enum(ActionStatus, values_callable=lambda x: [e.value for e in x]), default=ActionStatus.PENDING, nullable=False)
 
     # Donnees d'entree/sortie
     input_data = Column(JSON, default={})
@@ -242,7 +242,7 @@ class MarceauMemory(Base):
     tenant_id = Column(String(255), nullable=False, index=True)
 
     # Type de memoire
-    memory_type = Column(Enum(MemoryType), nullable=False)
+    memory_type = Column(Enum(MemoryType, values_callable=lambda x: [e.value for e in x]), nullable=False)
 
     # Contenu
     content = Column(Text, nullable=False)
@@ -311,7 +311,7 @@ class MarceauConversation(Base):
     satisfaction_score = Column(Float, nullable=True)  # Note client 1-5
 
     # Resultat
-    outcome = Column(Enum(ConversationOutcome), nullable=True)
+    outcome = Column(Enum(ConversationOutcome, values_callable=lambda x: [e.value for e in x]), nullable=True)
 
     # Fichiers
     recording_url = Column(String(500), nullable=True)
@@ -444,7 +444,7 @@ class MarceauScheduledTask(Base):
     description = Column(Text, nullable=True)
 
     # Module et action
-    module = Column(Enum(ModuleName), nullable=False)
+    module = Column(Enum(ModuleName, values_callable=lambda x: [e.value for e in x]), nullable=False)
     action_type = Column(String(100), nullable=False)
     action_params = Column(JSON, default={})
 
