@@ -56,6 +56,10 @@ import {
   InvoiceDocumentsTab, InvoiceHistoryTab, InvoiceIATab,
 } from './components';
 
+// Auto-enrichissement fournisseur (SIRET + Adresse)
+import { SiretLookup, AddressAutocomplete, CompanyAutocomplete } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
+
 // Import types from module types file
 import type {
   Supplier as SupplierType,
@@ -247,7 +251,7 @@ const TVA_RATES = [
 
 // Configuration pour création inline de fournisseur
 const SUPPLIER_CREATE_FIELDS: FieldConfig[] = [
-  { key: 'code', label: 'Code', type: 'text', required: true },
+  { key: 'code', label: 'Code (auto)', type: 'text', required: false },
   { key: 'name', label: 'Nom', type: 'text', required: true },
   { key: 'contact_name', label: 'Contact', type: 'text' },
   { key: 'email', label: 'Email', type: 'email' },
@@ -283,7 +287,8 @@ const useSuppliers = (page = 1, pageSize = 25, filters?: FilterState) => {
       const response = await api.get<PaginatedResponse<Supplier>>(
         `/v1/purchases/suppliers?${params.toString()}`
       );
-      return response.data;
+      // Handle both wrapped { data: ... } and direct response formats
+      return (response as any)?.data ?? response ?? { items: [], total: 0, page: 1, pages: 0 };
     },
   });
 };
@@ -293,7 +298,7 @@ const useSupplier = (id: string) => {
     queryKey: ['purchases', 'suppliers', id],
     queryFn: async () => {
       const response = await api.get<Supplier>(`/v1/purchases/suppliers/${id}`);
-      return response.data;
+      return (response as any)?.data ?? response;
     },
     enabled: !!id && id !== 'new',
   });
@@ -306,7 +311,8 @@ const useSuppliersLookup = () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
         '/v1/purchases/suppliers?page_size=500&status=APPROVED'
       );
-      return response.data.items;
+      const data = (response as any)?.data ?? response;
+      return data?.items ?? [];
     },
   });
 };
@@ -317,7 +323,7 @@ const useCreateSupplier = () => {
   return useMutation({
     mutationFn: async (data: SupplierCreate) => {
       const response = await api.post<Supplier>('/v1/purchases/suppliers', data);
-      return response.data;
+      return (response as any)?.data ?? response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -331,7 +337,7 @@ const useUpdateSupplier = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<SupplierCreate> }) => {
       const response = await api.put<Supplier>(`/v1/purchases/suppliers/${id}`, data);
-      return response.data;
+      return (response as any)?.data ?? response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -1248,6 +1254,31 @@ export const SupplierFormPage: React.FC = () => {
     }
   };
 
+  // Handler pour l'enrichissement depuis recherche par nom
+  const handleCompanySelect = (fields: EnrichedContactFields) => {
+    setForm((prev) => ({
+      ...prev,
+      name: fields.name || fields.company_name || prev.name,
+      address: fields.address_line1 || fields.address || prev.address,
+      city: fields.city || prev.city,
+      postal_code: fields.postal_code || prev.postal_code,
+      tax_id: fields.siret || fields.siren || prev.tax_id,
+    }));
+  };
+
+  // Handler pour l'enrichissement SIRET/SIREN (reutilise le meme handler)
+  const handleSiretEnrich = handleCompanySelect;
+
+  // Handler pour l'autocomplete adresse
+  const handleAddressSelect = (suggestion: AddressSuggestion) => {
+    setForm((prev) => ({
+      ...prev,
+      address: suggestion.address_line1 || suggestion.label.split(',')[0] || prev.address,
+      postal_code: suggestion.postal_code || prev.postal_code,
+      city: suggestion.city || prev.city,
+    }));
+  };
+
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   if (!isNew && isLoading) {
@@ -1273,25 +1304,24 @@ export const SupplierFormPage: React.FC = () => {
         <Card title="Informations générales">
           <Grid cols={2} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Code *</label>
+              <label className="azals-field__label">Code (auto-généré)</label>
               <input
                 type="text"
                 className="azals-input"
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
-                required
                 maxLength={50}
-                placeholder="ex: FOURN001"
+                placeholder="Généré automatiquement"
+                disabled={!form.code}
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">Nom *</label>
-              <input
-                type="text"
-                className="azals-input"
+              <label className="azals-field__label">Nom * (autocomplete entreprise)</label>
+              <CompanyAutocomplete
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
+                onChange={(value: string) => setForm({ ...form, name: value })}
+                onSelect={handleCompanySelect}
+                placeholder="Tapez le nom d'une entreprise..."
               />
             </div>
             <div className="azals-field">
@@ -1322,12 +1352,10 @@ export const SupplierFormPage: React.FC = () => {
               />
             </div>
             <div className="azals-field">
-              <label className="azals-field__label">N° TVA / SIRET</label>
-              <input
-                type="text"
-                className="azals-input"
+              <label className="azals-field__label">N° TVA / SIRET - Remplissage auto INSEE</label>
+              <SiretLookup
                 value={form.tax_id}
-                onChange={(e) => setForm({ ...form, tax_id: e.target.value })}
+                onEnrich={handleSiretEnrich}
               />
             </div>
             <div className="azals-field">
@@ -1348,12 +1376,12 @@ export const SupplierFormPage: React.FC = () => {
         <Card title="Adresse">
           <Grid cols={2} gap="md">
             <div className="azals-field" style={{ gridColumn: 'span 2' }}>
-              <label className="azals-field__label">Adresse</label>
-              <input
-                type="text"
-                className="azals-input"
+              <label className="azals-field__label">Adresse - Autocomplete France</label>
+              <AddressAutocomplete
                 value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                onChange={(value) => setForm({ ...form, address: value })}
+                onSelect={handleAddressSelect}
+                placeholder="Rechercher une adresse..."
               />
             </div>
             <div className="azals-field">
@@ -1776,7 +1804,7 @@ export const OrderFormPage: React.FC = () => {
           <Grid cols={3} gap="md">
             <div className="azals-field">
               <SmartSelector
-                items={(suppliers || []).map(s => ({ ...s, id: s.id, name: s.name }))}
+                items={(suppliers || []).map((s: SupplierType) => ({ ...s, id: s.id, name: s.name }))}
                 value={supplierId}
                 onChange={(value) => setSupplierId(value)}
                 label="Fournisseur *"
@@ -2286,7 +2314,7 @@ export const InvoiceFormPage: React.FC = () => {
           <Grid cols={3} gap="md">
             <div className="azals-field">
               <SmartSelector
-                items={(suppliers || []).map(s => ({ ...s, id: s.id, name: s.name }))}
+                items={(suppliers || []).map((s: SupplierType) => ({ ...s, id: s.id, name: s.name }))}
                 value={supplierId}
                 onChange={(value) => setSupplierId(value)}
                 label="Fournisseur *"
@@ -2562,7 +2590,7 @@ const SupplierDetailView: React.FC = () => {
     );
   }
 
-  const statusConfig = SUPPLIER_STATUS[supplier.status] || { label: supplier.status, color: 'gray' };
+  const statusConfig = SUPPLIER_STATUS_CONFIG[supplier.status] || { label: supplier.status, color: 'gray' };
 
   const tabs: TabDefinition<SupplierType>[] = [
     { id: 'info', label: 'Informations', icon: <Building2 size={16} />, component: SupplierInfoTab },
@@ -2602,7 +2630,7 @@ const SupplierDetailView: React.FC = () => {
     <BaseViewStandard<SupplierType>
       title={`${supplier.code} - ${supplier.name}`}
       subtitle="Fiche fournisseur"
-      status={{ label: statusConfig.label, color: statusConfig.color }}
+      status={{ label: statusConfig.label, color: statusConfig.color as 'gray' | 'green' | 'yellow' | 'red' }}
       data={supplier}
       view="detail"
       tabs={tabs}
@@ -2697,7 +2725,7 @@ const OrderDetailView: React.FC = () => {
     <BaseViewStandard<PurchaseOrderType>
       title={`Commande ${order.number}`}
       subtitle={`${order.supplier_code} - ${order.supplier_name}`}
-      status={{ label: statusConfig.label, color: statusConfig.color }}
+      status={{ label: statusConfig.label, color: statusConfig.color as 'gray' | 'green' | 'yellow' | 'red' }}
       data={order}
       view="detail"
       tabs={tabs}
@@ -2794,7 +2822,7 @@ const InvoiceDetailView: React.FC = () => {
     <BaseViewStandard<PurchaseInvoiceType>
       title={`Facture ${invoice.number}`}
       subtitle={`${invoice.supplier_code} - ${invoice.supplier_name}`}
-      status={{ label: statusConfig.label, color: statusConfig.color }}
+      status={{ label: statusConfig.label, color: statusConfig.color as 'gray' | 'green' | 'yellow' | 'red' }}
       data={invoice}
       view="detail"
       tabs={tabs}

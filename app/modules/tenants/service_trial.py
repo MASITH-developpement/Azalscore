@@ -5,6 +5,7 @@ AZALS MODULE T9 - Service Trial Registration
 Service pour gérer le flux d'inscription à l'essai gratuit.
 """
 
+import logging
 import secrets
 import smtplib
 import httpx
@@ -13,6 +14,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Any
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -145,7 +148,7 @@ class TrialRegistrationService:
                     TrialRegistrationStatus.PENDING,
                     TrialRegistrationStatus.EMAIL_SENT
                 ]),
-                TrialRegistration.expires_at > datetime.now(timezone.utc)
+                TrialRegistration.expires_at > datetime.utcnow()
             )
         ).first()
 
@@ -157,6 +160,43 @@ class TrialRegistrationService:
         self.db.commit()
 
         return registration
+
+    def resend_verification_email(self, registration_id: str) -> None:
+        """
+        Renvoyer l'email de vérification.
+
+        Limité à 3 renvois max.
+        """
+        registration = self._get_registration(registration_id)
+
+        # Vérifier que l'email n'est pas déjà vérifié
+        if registration.email_verified_at:
+            raise ValueError("Email déjà vérifié")
+
+        # Vérifier le statut
+        if registration.status not in [
+            TrialRegistrationStatus.PENDING,
+            TrialRegistrationStatus.EMAIL_SENT
+        ]:
+            raise ValueError("Impossible de renvoyer l'email pour cette inscription")
+
+        # Vérifier l'expiration (gérer naive vs aware)
+        if registration.expires_at:
+            expires_at = registration.expires_at
+            if expires_at.tzinfo is not None:
+                expires_at = expires_at.replace(tzinfo=None)
+            if expires_at < datetime.utcnow():
+                raise ValueError("Inscription expirée")
+
+        # Générer un nouveau token
+        import secrets
+        new_token = secrets.token_urlsafe(32)
+        registration.email_verification_token = new_token
+        registration.status = TrialRegistrationStatus.EMAIL_SENT
+        self.db.commit()
+
+        # Envoyer l'email
+        self._send_verification_email(registration, new_token)
 
     # ========================================================================
     # CONFIGURATION PAIEMENT STRIPE
@@ -271,7 +311,8 @@ class TrialRegistrationService:
         temp_password = secrets.token_urlsafe(12)
 
         # Créer le tenant via TenantService
-        tenant_service = TenantService(self.db)
+        # Note: actor_id=None car pas encore d'utilisateur, actor_email pour traçabilité
+        tenant_service = TenantService(self.db, actor_id=None, actor_email=registration.email)
 
         tenant_data = TenantCreate(
             tenant_id=tenant_id,
@@ -336,6 +377,282 @@ class TrialRegistrationService:
             "login_url": f"{settings.app_url}/login",
             "trial_ends_at": trial_ends_at,
         }
+
+    # ========================================================================
+    # CODE PROMO
+    # ========================================================================
+
+    # Codes promo valides: code -> (plan, durée en jours, message)
+    PROMO_CODES = {
+        "1911197017072004": ("ENTERPRISE", 36500, "Accès ENTERPRISE illimité activé !"),  # 100 ans = illimité
+    }
+
+    # Email admin pour approbation des codes promo
+    PROMO_ADMIN_EMAIL = "contact@stephane-moreau.fr"
+
+    def complete_with_promo(
+        self,
+        registration_id: str,
+        promo_code: str,
+    ) -> dict[str, Any]:
+        """
+        Demander un accès via code promo.
+
+        Envoie un email de confirmation à l'admin qui doit approuver ou refuser.
+        """
+        settings = get_settings()
+
+        # Vérifier le code promo
+        promo_code_clean = promo_code.strip().replace(" ", "").replace("-", "")
+        if promo_code_clean not in self.PROMO_CODES:
+            raise ValueError("Code promo invalide")
+
+        registration = self._get_registration(registration_id)
+
+        # Vérifier prérequis
+        if not registration.email_verified_at:
+            raise ValueError("Email non vérifié")
+
+        if registration.status == TrialRegistrationStatus.COMPLETED:
+            raise ValueError("Inscription déjà finalisée")
+
+        if registration.status == TrialRegistrationStatus.PROMO_PENDING:
+            raise ValueError("Une demande est déjà en attente d'approbation")
+
+        # Générer token d'approbation
+        approval_token = secrets.token_urlsafe(32)
+
+        # Sauvegarder le code promo et le token
+        registration.promo_code = promo_code_clean
+        registration.promo_approval_token = approval_token
+        registration.status = TrialRegistrationStatus.PROMO_PENDING
+        self.db.commit()
+
+        # Envoyer email de demande d'approbation
+        self._send_promo_approval_request(registration, approval_token)
+
+        return {
+            "status": "pending_approval",
+            "message": "Votre demande a été envoyée. Vous recevrez un email lorsqu'elle sera traitée.",
+        }
+
+    def approve_promo_request(self, approval_token: str) -> dict[str, Any]:
+        """Approuver une demande de code promo et créer le compte."""
+        settings = get_settings()
+
+        # Trouver l'inscription
+        registration = self.db.query(TrialRegistration).filter(
+            TrialRegistration.promo_approval_token == approval_token,
+            TrialRegistration.status == TrialRegistrationStatus.PROMO_PENDING
+        ).first()
+
+        if not registration:
+            raise ValueError("Demande non trouvée ou déjà traitée")
+
+        promo_code = registration.promo_code
+        if promo_code not in self.PROMO_CODES:
+            raise ValueError("Code promo invalide")
+
+        plan, duration_days, message = self.PROMO_CODES[promo_code]
+
+        # Générer tenant_id unique
+        tenant_id = self._generate_tenant_id(registration.company_name)
+
+        # Générer mot de passe temporaire
+        temp_password = secrets.token_urlsafe(12)
+
+        # Créer le tenant via TenantService
+        # Note: actor_id=None car pas encore d'utilisateur, actor_email pour traçabilité
+        tenant_service = TenantService(self.db, actor_id=None, actor_email=registration.email)
+
+        tenant_data = TenantCreate(
+            tenant_id=tenant_id,
+            name=registration.company_name,
+            address_line1=registration.address_line1,
+            address_line2=registration.address_line2,
+            city=registration.city,
+            postal_code=registration.postal_code,
+            country=registration.country,
+            email=registration.email,
+            phone=registration.phone or registration.mobile,
+            siret=registration.siret,
+            plan=plan,
+            language=registration.language,
+            max_users=9999,  # Illimité
+            extra_data={
+                "promo_code": promo_code,
+                "promo_plan": plan,
+                "promo_duration_days": duration_days,
+                "trial_registration_id": str(registration.id),
+                "demo_mode_enabled": False,
+                "trial_registration": {
+                    "activity": registration.activity,
+                    "revenue_range": registration.revenue_range,
+                    "registered_at": datetime.now(timezone.utc).isoformat(),
+                }
+            }
+        )
+
+        tenant = tenant_service.create_tenant(tenant_data)
+
+        # Démarrer la période
+        tenant_service.start_trial(tenant_id, duration_days)
+
+        # Activer tous les modules
+        from .schemas import ModuleActivation
+        for module_code in self.DEMO_MODULES:
+            try:
+                tenant_service.activate_module(
+                    tenant_id,
+                    ModuleActivation(module_code=module_code, module_name=f"Module {module_code}")
+                )
+            except Exception:
+                pass
+
+        # Marquer inscription comme complétée
+        registration.status = TrialRegistrationStatus.COMPLETED
+        registration.completed_at = datetime.now(timezone.utc)
+        registration.tenant_id = tenant_id
+        registration.promo_approval_token = None
+        self.db.commit()
+
+        # Calculer fin d'essai
+        trial_ends_at = datetime.now(timezone.utc) + timedelta(days=duration_days)
+
+        # Envoyer email de bienvenue
+        self._send_welcome_email(registration, tenant_id, temp_password, trial_ends_at)
+
+        return {
+            "tenant_id": tenant_id,
+            "tenant_name": registration.company_name,
+            "admin_email": registration.email,
+            "message": f"Compte créé pour {registration.company_name}",
+        }
+
+    def reject_promo_request(self, approval_token: str) -> dict[str, Any]:
+        """Refuser une demande de code promo."""
+        registration = self.db.query(TrialRegistration).filter(
+            TrialRegistration.promo_approval_token == approval_token,
+            TrialRegistration.status == TrialRegistrationStatus.PROMO_PENDING
+        ).first()
+
+        if not registration:
+            raise ValueError("Demande non trouvée ou déjà traitée")
+
+        # Marquer comme refusée
+        registration.status = TrialRegistrationStatus.PROMO_REJECTED
+        registration.promo_approval_token = None
+        self.db.commit()
+
+        # Envoyer email au demandeur
+        self._send_promo_rejection_email(registration)
+
+        return {
+            "message": f"Demande refusée pour {registration.company_name}",
+        }
+
+    def _send_promo_approval_request(self, registration, approval_token: str) -> None:
+        """Envoyer email de demande d'approbation à l'admin."""
+        settings = get_settings()
+        admin_email = self.PROMO_ADMIN_EMAIL
+
+        approve_url = f"{settings.app_url}/api/v2/public/trial/promo-approve/{approval_token}"
+        reject_url = f"{settings.app_url}/api/v2/public/trial/promo-reject/{approval_token}"
+
+        subject = f"[AZALSCORE] Demande d'accès gratuit - {registration.company_name}"
+
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #1E6EFF;">Demande d'accès gratuit AZALSCORE</h2>
+
+                <p>Une demande d'accès gratuit a été soumise avec le code promo <strong>{registration.promo_code}</strong>.</p>
+
+                <h3>Informations du demandeur :</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Entreprise</strong></td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">{registration.company_name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Contact</strong></td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">{registration.first_name} {registration.last_name}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Email</strong></td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">{registration.email}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Téléphone</strong></td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">{registration.phone or registration.mobile or 'Non renseigné'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Adresse</strong></td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">
+                            {registration.address_line1}<br>
+                            {(registration.address_line2 + '<br>') if registration.address_line2 else ''}
+                            {registration.postal_code} {registration.city}<br>
+                            {registration.country}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>SIRET</strong></td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">{registration.siret or 'Non renseigné'}</td>
+                    </tr>
+                </table>
+
+                <div style="margin-top: 30px; text-align: center;">
+                    <a href="{approve_url}" style="display: inline-block; padding: 15px 30px; background-color: #22c55e; color: white; text-decoration: none; border-radius: 8px; margin-right: 10px; font-weight: bold;">
+                        ✓ APPROUVER
+                    </a>
+                    <a href="{reject_url}" style="display: inline-block; padding: 15px 30px; background-color: #ef4444; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                        ✗ REFUSER
+                    </a>
+                </div>
+
+                <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                    Cet email est envoyé automatiquement par AZALSCORE.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+
+        try:
+            self._send_smtp_email(admin_email, subject, body)
+            logger.info(f"Demande d'approbation promo envoyée à {admin_email}")
+        except Exception as e:
+            logger.error(f"Erreur envoi demande approbation promo: {e}")
+            raise ValueError("Erreur lors de l'envoi de la demande")
+
+    def _send_promo_rejection_email(self, registration) -> None:
+        """Envoyer email de refus au demandeur."""
+        subject = "AZALSCORE - Demande d'accès refusée"
+
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #1E6EFF;">Demande d'accès refusée</h2>
+
+                <p>Bonjour {registration.first_name},</p>
+
+                <p>Nous sommes désolés de vous informer que votre demande d'accès gratuit à AZALSCORE n'a pas été approuvée.</p>
+
+                <p>Si vous souhaitez tout de même découvrir notre solution, vous pouvez vous inscrire pour un essai gratuit de 30 jours sur notre site.</p>
+
+                <p>Cordialement,<br>L'équipe AZALSCORE</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        try:
+            self._send_smtp_email(registration.email, subject, body)
+            logger.info(f"Email de refus promo envoyé à {registration.email}")
+        except Exception as e:
+            logger.error(f"Erreur envoi email refus promo: {e}")
 
     # ========================================================================
     # TARIFICATION
@@ -416,7 +733,12 @@ class TrialRegistrationService:
         if not registration:
             raise ValueError("Inscription non trouvée")
 
-        if registration.expires_at < datetime.now(timezone.utc) and registration.status != TrialRegistrationStatus.COMPLETED:
+        # Comparer les datetimes (gérer naive vs aware)
+        now = datetime.utcnow()
+        expires_at = registration.expires_at
+        if expires_at.tzinfo is not None:
+            expires_at = expires_at.replace(tzinfo=None)
+        if expires_at < now and registration.status != TrialRegistrationStatus.COMPLETED:
             registration.status = TrialRegistrationStatus.EXPIRED
             self.db.commit()
             raise ValueError("Inscription expirée")
@@ -440,11 +762,11 @@ class TrialRegistrationService:
                     TrialRegistrationStatus.EXPIRED,
                     TrialRegistrationStatus.COMPLETED
                 ]),
-                TrialRegistration.expires_at > datetime.now(timezone.utc)
+                TrialRegistration.expires_at > datetime.utcnow()
             )
         ).first()
         if existing_registration:
-            raise ValueError("Une inscription est déjà en cours pour cet email")
+            raise ValueError("Cette adresse email est déjà utilisée. Veuillez recommencer avec une autre adresse.")
 
     def _verify_hcaptcha(self, token: str) -> bool:
         """Vérifier le token hCaptcha."""
@@ -592,10 +914,12 @@ class TrialRegistrationService:
 
     def _send_smtp_email(self, to_email: str, subject: str, body_html: str) -> None:
         """Envoyer un email via SMTP."""
+        import logging
+        logger = logging.getLogger(__name__)
+
         settings = get_settings()
-        if not hasattr(settings, 'SMTP_HOST') or not settings.SMTP_HOST:
-            # En dev, juste logger
-            print(f"[EMAIL] Would send to {to_email}: {subject}")
+        if not settings.SMTP_HOST:
+            logger.warning(f"[EMAIL] SMTP non configuré - email non envoyé à {to_email}: {subject}")
             return
 
         try:
@@ -607,12 +931,31 @@ class TrialRegistrationService:
             html_part = MIMEText(body_html, 'html')
             msg.attach(html_part)
 
-            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-                if settings.SMTP_USE_TLS:
-                    server.starttls()
-                if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+            # Port 465 = SMTP_SSL (connexion SSL directe)
+            # Port 587 = SMTP + STARTTLS
+            use_ssl = getattr(settings, 'SMTP_USE_SSL', False) or settings.SMTP_PORT == 465
+
+            logger.info(f"[EMAIL] Envoi vers {to_email} via {settings.SMTP_HOST}:{settings.SMTP_PORT} (SSL={use_ssl})")
+
+            # Extraire l'email de l'expéditeur (sans le nom) pour sendmail()
+            import re
+            from_email_match = re.search(r'<(.+?)>', settings.SMTP_FROM)
+            from_email = from_email_match.group(1) if from_email_match else settings.SMTP_FROM
+
+            if use_ssl:
+                with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+                    if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                    server.sendmail(from_email, to_email, msg.as_string())
+            else:
+                with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+                    if getattr(settings, 'SMTP_USE_TLS', True):
+                        server.starttls()
+                    if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                    server.sendmail(from_email, to_email, msg.as_string())
+
+            logger.info(f"[EMAIL] SUCCÈS - Email envoyé à {to_email}: {subject}")
         except Exception as e:
-            print(f"[EMAIL ERROR] Failed to send email to {to_email}: {e}")
+            logger.error(f"[EMAIL ERROR] Échec envoi à {to_email}: {e}")
             # Ne pas bloquer l'inscription si l'email échoue

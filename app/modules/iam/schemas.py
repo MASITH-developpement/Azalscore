@@ -54,6 +54,8 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """Mise à jour utilisateur."""
+    username: str | None = Field(None, min_length=3, max_length=100)
+    email: EmailStr | None = None
     first_name: str | None = Field(None, max_length=100)
     last_name: str | None = Field(None, max_length=100)
     phone: str | None = Field(None, max_length=50)
@@ -170,7 +172,7 @@ class RoleResponse(BaseModel):
     name: str
     description: str | None
     level: int
-    parent_id: str | None
+    parent_id: UUID | None
     is_system: bool
     is_active: bool
     is_assignable: bool
@@ -180,6 +182,7 @@ class RoleResponse(BaseModel):
     permissions: list[str] = []  # Codes des permissions
     incompatible_roles: list[str] = []
     created_at: datetime
+    created_by_name: str | None = None  # Nom du créateur ou None si système
 
     model_config = {"from_attributes": True}
 

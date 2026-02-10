@@ -1243,6 +1243,7 @@ const DocumentFormPage: React.FC<DocumentFormPageProps> = ({ type }) => {
                 entityIcon={<UserPlus size={16} />}
                 createEndpoint="/v1/partners/clients"
                 createFields={CUSTOMER_CREATE_FIELDS}
+                createUrl="/partners/clients/new"
                 queryKeys={['customers', 'clients']}
                 disabled={isEdit}
                 error={errors.customer}

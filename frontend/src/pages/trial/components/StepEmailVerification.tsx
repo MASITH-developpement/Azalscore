@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Mail, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { useRegistrationStatus, useVerifyEmail } from '../api';
+import { useRegistrationStatus, useVerifyEmail, useResendVerificationEmail } from '../api';
 import { useSearchParams } from 'react-router-dom';
 
 interface StepEmailVerificationProps {
@@ -31,6 +31,10 @@ export const StepEmailVerification: React.FC<StepEmailVerificationProps> = ({
 
   // Email verification mutation
   const verifyEmail = useVerifyEmail();
+
+  // Resend email mutation
+  const resendEmail = useResendVerificationEmail();
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   // If token is in URL, verify it
   useEffect(() => {
@@ -141,17 +145,43 @@ export const StepEmailVerification: React.FC<StepEmailVerificationProps> = ({
 
         {/* Resend button */}
         {!isVerified && (
-          <button
-            type="button"
-            className="trial-btn trial-btn-outline"
-            onClick={() => {
-              // TODO: Implement resend email
-              alert('Fonctionnalite de renvoi bientot disponible');
-            }}
-          >
-            <RefreshCw size={16} />
-            Renvoyer l'email
-          </button>
+          <div className="trial-resend-container">
+            {resendSuccess && (
+              <p className="trial-resend-success">
+                <CheckCircle size={16} />
+                Email renvoyé avec succès !
+              </p>
+            )}
+            {resendEmail.error && (
+              <p className="trial-resend-error">
+                <AlertCircle size={16} />
+                {resendEmail.error.message}
+              </p>
+            )}
+            <button
+              type="button"
+              className="trial-btn trial-btn-outline"
+              disabled={resendEmail.isPending}
+              onClick={() => {
+                setResendSuccess(false);
+                resendEmail.mutate(
+                  { registration_id: registrationId },
+                  {
+                    onSuccess: () => {
+                      setResendSuccess(true);
+                    },
+                  }
+                );
+              }}
+            >
+              {resendEmail.isPending ? (
+                <Loader2 size={16} className="trial-spinner" />
+              ) : (
+                <RefreshCw size={16} />
+              )}
+              {resendEmail.isPending ? 'Envoi...' : 'Renvoyer l\'email'}
+            </button>
+          </div>
         )}
       </div>
     </div>

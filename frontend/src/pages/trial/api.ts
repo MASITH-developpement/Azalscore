@@ -10,6 +10,7 @@ import type {
   TrialEmailVerificationResponse,
   TrialPaymentSetupResponse,
   TrialCompleteResponse,
+  TrialPromoResponse,
   TrialPricingResponse,
   TrialRegistrationStatus,
 } from './types';
@@ -59,6 +60,17 @@ export function useVerifyEmail() {
   });
 }
 
+// Hook: Resend verification email
+export function useResendVerificationEmail() {
+  return useMutation<{ success: boolean; message: string }, Error, { registration_id: string }>({
+    mutationFn: (data) =>
+      apiCall<{ success: boolean; message: string }>('/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  });
+}
+
 // Hook: Setup payment (Stripe)
 export function usePaymentSetup() {
   return useMutation<TrialPaymentSetupResponse, Error, { registration_id: string }>({
@@ -101,5 +113,20 @@ export function useRegistrationStatus(registrationId: string | null) {
     queryFn: () => apiCall<TrialRegistrationStatus>(`/status/${registrationId}`),
     enabled: !!registrationId,
     refetchInterval: 5000, // Poll every 5 seconds
+  });
+}
+
+// Hook: Apply promo code
+export function useApplyPromoCode() {
+  return useMutation<
+    TrialPromoResponse,
+    Error,
+    { registration_id: string; promo_code: string }
+  >({
+    mutationFn: (data) =>
+      apiCall<TrialPromoResponse>('/apply-promo', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   });
 }

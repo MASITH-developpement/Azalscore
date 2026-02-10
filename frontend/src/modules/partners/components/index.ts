@@ -9,3 +9,4 @@ export { PartnerTransactionsTab } from './PartnerTransactionsTab';
 export { PartnerDocumentsTab } from './PartnerDocumentsTab';
 export { PartnerHistoryTab } from './PartnerHistoryTab';
 export { PartnerIATab } from './PartnerIATab';
+export { PartnerRiskTab } from './PartnerRiskTab';

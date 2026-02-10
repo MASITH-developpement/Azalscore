@@ -13,7 +13,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Users, FileText, Package, Wrench, Briefcase, Receipt, Calculator,
   TrendingUp, TrendingDown, ArrowRight, RefreshCw, Eye, AlertTriangle,
-  Clock, CheckCircle2, XCircle, Euro, Calendar, ChevronRight, Activity
+  Clock, CheckCircle2, XCircle, Euro, Calendar, ChevronRight, Activity,
+  ShieldAlert, Shield
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { api } from '@core/api-client';
@@ -44,6 +45,18 @@ interface RecentItem {
   status: string;
   date: string;
   montant?: number;
+}
+
+interface RiskAlert {
+  id: string;
+  identifier: string;
+  partner_name: string;
+  score: number;
+  level: 'elevated' | 'high';
+  level_label: string;
+  alerts: string[];
+  recommendation: string;
+  analyzed_at: string;
 }
 
 // ============================================================
@@ -259,6 +272,22 @@ const useRecentActivity = () => {
   });
 };
 
+const useRiskAlerts = () => {
+  return useQuery({
+    queryKey: ['cockpit-risk-alerts'],
+    queryFn: async (): Promise<RiskAlert[]> => {
+      try {
+        const response = await api.get('/v1/enrichment/risk/alerts');
+        return (response as unknown as RiskAlert[]) || [];
+      } catch {
+        // Silently fail if user doesn't have permission or module not available
+        return [];
+      }
+    },
+    refetchInterval: 300000, // Refresh toutes les 5 minutes
+  });
+};
+
 // ============================================================
 // COMPOSANTS
 // ============================================================
@@ -462,6 +491,7 @@ const GlobalKPICard: React.FC<{
 export const CockpitModule: React.FC = () => {
   const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useCockpitStats();
   const { data: recentItems, isLoading: recentLoading, error: recentError, refetch: refetchRecent } = useRecentActivity();
+  const { data: riskAlerts, refetch: refetchRisk } = useRiskAlerts();
 
   const defaultStats: FluxStats = {
     crm: { prospects: 0, clients: 0, opportunites: 0 },
@@ -512,7 +542,7 @@ export const CockpitModule: React.FC = () => {
         <Button
           variant="secondary"
           leftIcon={<RefreshCw size={16} />}
-          onClick={() => { refetchStats(); refetchRecent(); }}
+          onClick={() => { refetchStats(); refetchRecent(); refetchRisk(); }}
         >
           Actualiser
         </Button>
@@ -647,10 +677,40 @@ export const CockpitModule: React.FC = () => {
               </div>
             )}
 
+            {/* Partenaires a risque eleve */}
+            {riskAlerts && riskAlerts.length > 0 && (
+              <div
+                className={clsx(
+                  'azals-cockpit-action',
+                  riskAlerts.some(a => a.level === 'high')
+                    ? 'azals-cockpit-action--danger'
+                    : 'azals-cockpit-action--warning'
+                )}
+                onClick={() => navigateToModule('crm')}
+                onKeyDown={handleKeyActivate(() => navigateToModule('crm'))}
+                role="button"
+                tabIndex={0}
+                aria-label={`${riskAlerts.length} partenaire(s) a risque eleve`}
+              >
+                <ShieldAlert size={20} className="azals-cockpit-action__icon" />
+                <div className="azals-cockpit-action__body">
+                  <div className="azals-cockpit-action__title">
+                    {riskAlerts.length} partenaire(s) a risque {riskAlerts.some(a => a.level === 'high') ? 'eleve' : 'modere'}
+                  </div>
+                  <div className="azals-cockpit-action__subtitle">
+                    {riskAlerts.slice(0, 2).map(a => a.partner_name).join(', ')}
+                    {riskAlerts.length > 2 && ` et ${riskAlerts.length - 2} autre(s)`}
+                  </div>
+                </div>
+                <ChevronRight size={18} className="azals-cockpit-action__chevron" />
+              </div>
+            )}
+
             {/* Aucune alerte */}
             {currentStats.devis.en_attente === 0 &&
              currentStats.ods.a_planifier === 0 &&
-             currentStats.factures.en_attente === 0 && (
+             currentStats.factures.en_attente === 0 &&
+             (!riskAlerts || riskAlerts.length === 0) && (
               <div className="azals-cockpit-actions__empty">
                 <CheckCircle2 size={48} className="azals-cockpit-actions__empty-icon" />
                 <div className="azals-cockpit-actions__empty-title">Aucune action prioritaire</div>

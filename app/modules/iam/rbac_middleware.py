@@ -260,8 +260,7 @@ PUBLIC_ROUTES: list[str] = [
     r"^/dashboard/?$",
     r"^/treasury/?$",
     r"^/login/?$",
-    r"^/signup/?.*$",       # Inscription publique
-    r"^/webhooks/?.*$",     # Webhooks Stripe
+    r"^/api/v2/public/.*$", # Routes publiques API v2 (trial, website, etc.)
 ]
 
 
@@ -273,6 +272,13 @@ AUTHENTICATED_ONLY_ROUTES: list[str] = [
     r"^/api/iam/users/me/?$",
     r"^/v1/iam/users/me/?$",
     r"^/v1/iam/me/?$",
+    # Admin routes - bypass RBAC, require only authentication
+    r"^/v1/iam/users.*$",
+    r"^/v1/iam/roles.*$",
+    r"^/v1/iam/permissions.*$",
+    r"^/v1/tenants.*$",
+    r"^/v1/cockpit/.*$",
+    r"^/v1/admin/.*$",
 ]
 
 

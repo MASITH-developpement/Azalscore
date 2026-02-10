@@ -129,6 +129,18 @@ class TrialCompleteRequest(BaseModel):
     setup_intent_id: str = Field(..., description="ID du SetupIntent Stripe")
 
 
+class TrialPromoCodeRequest(BaseModel):
+    """Demande d'application d'un code promo."""
+    registration_id: str = Field(..., description="ID de l'inscription")
+    promo_code: str = Field(..., min_length=1, description="Code promo")
+
+
+class TrialPromoResponse(BaseModel):
+    """Réponse après demande de code promo."""
+    status: str
+    message: str
+
+
 # ============================================================================
 # RÉPONSES
 # ============================================================================

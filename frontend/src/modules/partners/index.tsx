@@ -7,7 +7,7 @@ import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Users, Building, Contact as ContactIcon,
-  User, FileText, Clock, ShoppingCart, Sparkles
+  User, FileText, Clock, ShoppingCart, Sparkles, Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
@@ -37,8 +37,15 @@ import {
   PartnerTransactionsTab,
   PartnerDocumentsTab,
   PartnerHistoryTab,
-  PartnerIATab
+  PartnerIATab,
+  PartnerRiskTab
 } from './components';
+import { ArrowLeft } from 'lucide-react';
+
+// Auto-enrichissement (SIRET + Adresse + Analyse de risque)
+import { CompanyAutocomplete, AddressAutocomplete, useRiskAnalysis, useInternalScore, ScoreGauge } from '@/modules/enrichment';
+import type { EnrichedContactFields, AddressSuggestion } from '@/modules/enrichment';
+import { ShieldCheck, ShieldAlert, ShieldX, AlertCircle, Loader2, TrendingUp, TrendingDown, History } from 'lucide-react';
 
 // Legacy Partner interface for list views (backward compatibility)
 interface PartnerLegacy {
@@ -211,35 +218,17 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
 };
 
 // Pages
-// Clients Page - Schéma spécifique pour les clients
+// Clients Page - Liste des clients avec navigation vers formulaire
 export const ClientsPage: React.FC = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [showCreate, setShowCreate] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'clients', page, pageSize],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PartnerLegacy>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
-      // api.get retourne déjà response.data, pas besoin de .data
       return response as unknown as PaginatedResponse<PartnerLegacy>;
-    },
-  });
-
-  const createClient = useMutation({
-    mutationFn: async (clientData: any) => {
-      const response = await api.post('/v1/partners/clients', clientData);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
-      setShowCreate(false);
-    },
-    onError: (error: any) => {
-      console.error('Erreur création client:', error);
-      alert('Erreur lors de la création du client: ' + (error.response?.data?.detail || error.message));
     },
   });
 
@@ -276,50 +265,13 @@ export const ClientsPage: React.FC = () => {
     },
   ];
 
-  // Le code client est auto-généré par le backend (CLI001, CLI002, etc.)
-  const clientSchema = z.object({
-    name: z.string().min(2, 'Nom requis').max(255),
-    type: z.enum(['PROSPECT', 'LEAD', 'CUSTOMER', 'VIP', 'PARTNER', 'CHURNED']).default('CUSTOMER'),
-    email: z.string().email('Email invalide').optional().or(z.literal('')),
-    phone: z.string().optional(),
-    address_line1: z.string().optional(),
-    city: z.string().optional(),
-    postal_code: z.string().optional(),
-    country_code: z.string().default('FR'),
-    tax_id: z.string().optional(),
-  });
-
-  const fields = [
-    { name: 'name', label: 'Nom / Raison sociale', type: 'text' as const, required: true },
-    {
-      name: 'type',
-      label: 'Type',
-      type: 'select' as const,
-      options: [
-        { value: 'PROSPECT', label: 'Prospect' },
-        { value: 'LEAD', label: 'Lead' },
-        { value: 'CUSTOMER', label: 'Client' },
-        { value: 'VIP', label: 'VIP' },
-        { value: 'PARTNER', label: 'Partenaire' },
-      ],
-      defaultValue: 'CUSTOMER'
-    },
-    { name: 'email', label: 'Email', type: 'email' as const },
-    { name: 'phone', label: 'Téléphone', type: 'text' as const },
-    { name: 'address_line1', label: 'Adresse', type: 'text' as const },
-    { name: 'city', label: 'Ville', type: 'text' as const },
-    { name: 'postal_code', label: 'Code postal', type: 'text' as const },
-    { name: 'country_code', label: 'Pays', type: 'text' as const, defaultValue: 'FR' },
-    { name: 'tax_id', label: 'N° TVA', type: 'text' as const },
-  ];
-
   return (
     <PageWrapper
       title="Clients"
       actions={
         <CapabilityGuard capability="partners.clients.create">
-          <Button leftIcon={<Plus size={16} />} onClick={() => setShowCreate(true)}>
-            Ajouter
+          <Button leftIcon={<Plus size={16} />} onClick={() => navigate('/partners/clients/new')}>
+            Nouveau client
           </Button>
         </CapabilityGuard>
       }
@@ -343,21 +295,6 @@ export const ClientsPage: React.FC = () => {
           onRetry={() => refetch()}
         />
       </Card>
-
-      {showCreate && (
-        <Modal isOpen onClose={() => setShowCreate(false)} title="Nouveau client" size="md">
-          <DynamicForm
-            fields={fields}
-            schema={clientSchema}
-            defaultValues={{ type: 'CUSTOMER', country_code: 'FR' }}
-            onSubmit={async (data) => {
-              await createClient.mutateAsync(data);
-            }}
-            onCancel={() => setShowCreate(false)}
-            isLoading={createClient.isPending}
-          />
-        </Modal>
-      )}
     </PageWrapper>
   );
 };
@@ -646,6 +583,12 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partnerType }) =>
       label: 'Assistant IA',
       icon: <Sparkles size={16} />,
       component: PartnerIATab
+    },
+    {
+      id: 'risk',
+      label: 'Risque',
+      icon: <Shield size={16} />,
+      component: PartnerRiskTab
     }
   ];
 
@@ -770,6 +713,449 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partnerType }) =>
   );
 };
 
+// ============================================================================
+// CLIENT FORM PAGE - Formulaire de création/édition client avec enrichissement
+// ============================================================================
+
+interface ClientFormData {
+  code: string;
+  name: string;
+  type: string;
+  email: string;
+  phone: string;
+  address_line1: string;
+  city: string;
+  postal_code: string;
+  country_code: string;
+  tax_id: string;
+  notes: string;
+}
+
+const useClient = (id: string) => {
+  return useQuery({
+    queryKey: ['partners', 'clients', id],
+    queryFn: async () => {
+      const response = await api.get<Client>(`/v1/partners/clients/${id}`);
+      return (response as any)?.data ?? response;
+    },
+    enabled: !!id && id !== 'new',
+  });
+};
+
+const useCreateClient = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Partial<ClientFormData>) => {
+      const response = await api.post<Client>('/v1/partners/clients', data);
+      return (response as any)?.data ?? response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
+    },
+  });
+};
+
+const useUpdateClient = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ClientFormData> }) => {
+      const response = await api.put<Client>(`/v1/partners/clients/${id}`, data);
+      return (response as any)?.data ?? response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
+    },
+  });
+};
+
+export const ClientFormPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isNew = !id || id === 'new';
+
+  const { data: client, isLoading } = useClient(id || '');
+  const createMutation = useCreateClient();
+  const updateMutation = useUpdateClient();
+
+  // Hook pour l'analyse de risque externe (SIRET)
+  const {
+    analysis: riskAnalysis,
+    isLoading: riskLoading,
+    error: riskError,
+    analyze: analyzeRisk,
+    reset: resetRisk
+  } = useRiskAnalysis();
+
+  // Hook pour le scoring interne (historique client)
+  const {
+    score: internalScore,
+    isLoading: internalLoading,
+    error: internalError,
+    analyze: analyzeInternal,
+    reset: resetInternal
+  } = useInternalScore();
+
+  const [form, setForm] = useState<ClientFormData>({
+    code: '',
+    name: '',
+    type: 'CUSTOMER',
+    email: '',
+    phone: '',
+    address_line1: '',
+    city: '',
+    postal_code: '',
+    country_code: 'FR',
+    tax_id: '',
+    notes: '',
+  });
+
+  React.useEffect(() => {
+    if (client) {
+      setForm({
+        code: client.code || '',
+        name: client.name || '',
+        type: (client as any).customer_type || (client as any).type || 'CUSTOMER',
+        email: client.email || '',
+        phone: client.phone || '',
+        address_line1: (client as any).address_line1 || (client as any).address || '',
+        city: client.city || '',
+        postal_code: client.postal_code || '',
+        country_code: (client as any).country_code || 'FR',
+        tax_id: (client as any).tax_id || '',
+        notes: (client as any).notes || '',
+      });
+    }
+  }, [client]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isNew) {
+        const result = await createMutation.mutateAsync(form);
+        navigate(`/partners/clients/${(result as any).id}`);
+      } else {
+        await updateMutation.mutateAsync({ id: id!, data: form });
+        navigate(`/partners/clients/${id}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+    }
+  };
+
+  // Handler pour l'enrichissement depuis recherche par nom
+  const handleCompanySelect = (fields: EnrichedContactFields) => {
+    setForm((prev) => ({
+      ...prev,
+      name: fields.name || fields.company_name || prev.name,
+      address_line1: fields.address_line1 || fields.address || prev.address_line1,
+      city: fields.city || prev.city,
+      postal_code: fields.postal_code || prev.postal_code,
+      tax_id: fields.siret || fields.siren || prev.tax_id,
+    }));
+  };
+
+  // Handler pour l'autocomplete adresse
+  const handleAddressSelect = (suggestion: AddressSuggestion) => {
+    setForm((prev) => ({
+      ...prev,
+      address_line1: suggestion.address_line1 || suggestion.label.split(',')[0] || prev.address_line1,
+      postal_code: suggestion.postal_code || prev.postal_code,
+      city: suggestion.city || prev.city,
+    }));
+  };
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+  if (!isNew && isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">
+          <div className="azals-spinner" />
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  return (
+    <PageWrapper
+      title={isNew ? 'Nouveau client' : `Modifier ${client?.name}`}
+      actions={
+        <Button variant="ghost" leftIcon={<ArrowLeft size={16} />} onClick={() => navigate(-1)}>
+          Retour
+        </Button>
+      }
+    >
+      <form onSubmit={handleSubmit}>
+        <Card title="Informations générales">
+          <Grid cols={2} gap="md">
+            <div className="azals-field">
+              <label className="azals-field__label">Code (auto-généré)</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+                maxLength={50}
+                placeholder="Généré automatiquement"
+                disabled={!form.code}
+              />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Type</label>
+              <select
+                className="azals-input"
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
+              >
+                <option value="PROSPECT">Prospect</option>
+                <option value="LEAD">Lead</option>
+                <option value="CUSTOMER">Client</option>
+                <option value="VIP">VIP</option>
+                <option value="PARTNER">Partenaire</option>
+              </select>
+            </div>
+            <div className="azals-field" style={{ gridColumn: 'span 2' }}>
+              <label className="azals-field__label">Nom / Raison sociale * (autocomplete entreprise)</label>
+              <CompanyAutocomplete
+                value={form.name}
+                onChange={(value: string) => setForm({ ...form, name: value })}
+                onSelect={handleCompanySelect}
+                placeholder="Tapez le nom d'une entreprise..."
+              />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Email</label>
+              <input
+                type="email"
+                className="azals-input"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Téléphone</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+          </Grid>
+        </Card>
+
+        <Card title="Adresse" className="mt-4">
+          <Grid cols={2} gap="md">
+            <div className="azals-field" style={{ gridColumn: 'span 2' }}>
+              <label className="azals-field__label">Adresse (autocomplete)</label>
+              <AddressAutocomplete
+                value={form.address_line1}
+                onChange={(value: string) => setForm({ ...form, address_line1: value })}
+                onSelect={handleAddressSelect}
+                placeholder="Tapez une adresse..."
+              />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Code postal</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.postal_code}
+                onChange={(e) => setForm({ ...form, postal_code: e.target.value })}
+              />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Ville</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+              />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">Pays</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.country_code}
+                onChange={(e) => setForm({ ...form, country_code: e.target.value })}
+              />
+            </div>
+            <div className="azals-field">
+              <label className="azals-field__label">N° SIRET / TVA</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.tax_id}
+                onChange={(e) => setForm({ ...form, tax_id: e.target.value })}
+              />
+            </div>
+          </Grid>
+        </Card>
+
+        <Card title="Notes" className="mt-4">
+          <textarea
+            className="azals-input w-full"
+            rows={4}
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            placeholder="Notes sur ce client..."
+          />
+        </Card>
+
+        {/* Analyse de Risque - Section combinée */}
+        <Card title="Analyse de Risque" className="mt-4" icon={<Shield size={18} />}>
+          <Grid cols={2} gap="md">
+            {/* Colonne 1: Risque Externe (SIRET) */}
+            <div className="border-r pr-4">
+              <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <Shield size={16} />
+                Risque Entreprise
+                <span className="text-xs text-gray-400">(données publiques)</span>
+              </h4>
+
+              {!form.tax_id || form.tax_id.length < 9 ? (
+                <div className="flex items-center gap-2 text-gray-400 text-sm py-2">
+                  <AlertCircle size={16} />
+                  <span>SIRET requis</span>
+                </div>
+              ) : riskLoading ? (
+                <div className="flex items-center gap-2 text-blue-600 py-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-sm">Analyse...</span>
+                </div>
+              ) : riskAnalysis ? (
+                <div>
+                  <div className="flex items-center gap-4 mb-3">
+                    <ScoreGauge score={riskAnalysis.score} size="sm" />
+                    <div>
+                      <div className="flex items-center gap-1">
+                        {riskAnalysis.level === 'low' && <ShieldCheck className="text-green-500" size={16} />}
+                        {riskAnalysis.level === 'medium' && <Shield className="text-yellow-500" size={16} />}
+                        {riskAnalysis.level === 'elevated' && <ShieldAlert className="text-orange-500" size={16} />}
+                        {riskAnalysis.level === 'high' && <ShieldX className="text-red-500" size={16} />}
+                        <span className="font-medium">{riskAnalysis.level_label}</span>
+                      </div>
+                      {riskAnalysis.cotation_bdf && (
+                        <div className="text-xs text-gray-500">BDF: {riskAnalysis.cotation_bdf}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {riskAnalysis.alerts && riskAnalysis.alerts.length > 0 && (
+                    <div className="text-xs text-red-600 mb-2">
+                      {riskAnalysis.alerts.slice(0, 2).map((a, i) => (
+                        <div key={i} className="flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          {a}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button variant="ghost" size="sm" onClick={() => { resetRisk(); analyzeRisk(form.tax_id); }}>
+                    Actualiser
+                  </Button>
+                </div>
+              ) : riskError ? (
+                <div className="text-sm text-red-500">
+                  {riskError}
+                  <Button variant="ghost" size="sm" onClick={() => analyzeRisk(form.tax_id)}>Réessayer</Button>
+                </div>
+              ) : (
+                <Button variant="secondary" size="sm" leftIcon={<Shield size={14} />} onClick={() => analyzeRisk(form.tax_id)}>
+                  Analyser
+                </Button>
+              )}
+            </div>
+
+            {/* Colonne 2: Scoring Interne (Historique) */}
+            <div className="pl-4">
+              <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <History size={16} />
+                Score Interne
+                <span className="text-xs text-gray-400">(historique client)</span>
+              </h4>
+
+              {isNew ? (
+                <div className="flex items-center gap-2 text-gray-400 text-sm py-2">
+                  <AlertCircle size={16} />
+                  <span>Nouveau client - pas d'historique</span>
+                </div>
+              ) : internalLoading ? (
+                <div className="flex items-center gap-2 text-blue-600 py-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-sm">Calcul...</span>
+                </div>
+              ) : internalScore ? (
+                <div>
+                  <div className="flex items-center gap-4 mb-3">
+                    <ScoreGauge score={internalScore.score} size="sm" />
+                    <div>
+                      <div className="flex items-center gap-1">
+                        {internalScore.level === 'low' && <TrendingUp className="text-green-500" size={16} />}
+                        {internalScore.level === 'medium' && <History className="text-yellow-500" size={16} />}
+                        {internalScore.level === 'elevated' && <TrendingDown className="text-orange-500" size={16} />}
+                        {internalScore.level === 'high' && <TrendingDown className="text-red-500" size={16} />}
+                        <span className="font-medium">{internalScore.level_label}</span>
+                      </div>
+                      {internalScore.metrics && (
+                        <div className="text-xs text-gray-500">
+                          {internalScore.metrics.total_invoices} factures | {internalScore.metrics.overdue_invoices} en retard
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {internalScore.alerts && internalScore.alerts.length > 0 && (
+                    <div className="text-xs text-red-600 mb-2">
+                      {internalScore.alerts.slice(0, 2).map((a, i) => (
+                        <div key={i} className="flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          {a}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {internalScore.recommendation && (
+                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-2">
+                      {internalScore.recommendation}
+                    </div>
+                  )}
+
+                  <Button variant="ghost" size="sm" onClick={() => { resetInternal(); analyzeInternal(id!); }}>
+                    Actualiser
+                  </Button>
+                </div>
+              ) : internalError ? (
+                <div className="text-sm text-red-500">
+                  {internalError}
+                  <Button variant="ghost" size="sm" onClick={() => analyzeInternal(id!)}>Réessayer</Button>
+                </div>
+              ) : (
+                <Button variant="secondary" size="sm" leftIcon={<History size={14} />} onClick={() => analyzeInternal(id!)}>
+                  Calculer le score
+                </Button>
+              )}
+            </div>
+          </Grid>
+        </Card>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="ghost" onClick={() => navigate(-1)} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting || !form.name}>
+            {isSubmitting ? 'Enregistrement...' : isNew ? 'Créer le client' : 'Enregistrer'}
+          </Button>
+        </div>
+      </form>
+    </PageWrapper>
+  );
+};
+
 // Composants detail par type
 const ClientDetailView: React.FC = () => <PartnerDetailView partnerType="client" />;
 const SupplierDetailView: React.FC = () => <PartnerDetailView partnerType="supplier" />;
@@ -780,7 +1166,9 @@ export const PartnersRoutes: React.FC = () => (
   <Routes>
     <Route index element={<PartnersDashboard />} />
     <Route path="clients" element={<ClientsPage />} />
+    <Route path="clients/new" element={<ClientFormPage />} />
     <Route path="clients/:id" element={<ClientDetailView />} />
+    <Route path="clients/:id/edit" element={<ClientFormPage />} />
     <Route path="suppliers" element={<SuppliersPage />} />
     <Route path="suppliers/:id" element={<SupplierDetailView />} />
     <Route path="contacts" element={<ContactsPage />} />

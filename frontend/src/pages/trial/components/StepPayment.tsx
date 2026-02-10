@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Loader2,
   Check,
+  Clock,
 } from 'lucide-react';
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import {
@@ -20,8 +21,9 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
-import { usePaymentSetup, useCompleteRegistration } from '../api';
+import { usePaymentSetup, useCompleteRegistration, useApplyPromoCode } from '../api';
 import type { TrialCompleteResponse } from '../types';
+import { Gift } from 'lucide-react';
 
 // Stripe appearance customization
 const stripeAppearance = {
@@ -190,8 +192,34 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [setupIntentId, setSetupIntentId] = useState<string | null>(null);
+  const [showPromoCode, setShowPromoCode] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoPendingApproval, setPromoPendingApproval] = useState(false);
+  const [promoMessage, setPromoMessage] = useState<string | null>(null);
 
   const paymentSetup = usePaymentSetup();
+  const applyPromoCode = useApplyPromoCode();
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Veuillez entrer un code promo');
+      return;
+    }
+    setPromoError(null);
+    try {
+      const result = await applyPromoCode.mutateAsync({
+        registration_id: registrationId,
+        promo_code: promoCode.trim(),
+      });
+      // Promo code always requires admin approval
+      setPromoPendingApproval(true);
+      setPromoMessage(result.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Code promo invalide';
+      setPromoError(errorMessage);
+    }
+  };
 
   // Initialize Stripe and get SetupIntent
   useEffect(() => {
@@ -206,6 +234,28 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
       }
     );
   }, [registrationId]);
+
+  // Pending promo approval state
+  if (promoPendingApproval) {
+    return (
+      <div className="trial-form">
+        <div className="trial-form-header">
+          <h2>Demande en cours de traitement</h2>
+        </div>
+        <div className="trial-promo-pending">
+          <div className="trial-promo-pending-icon">
+            <Clock size={64} />
+          </div>
+          <h3>En attente d'approbation</h3>
+          <p>{promoMessage || 'Votre demande a été envoyée et est en attente de validation.'}</p>
+          <p className="trial-promo-pending-info">
+            Vous recevrez un email à l'adresse indiquée lors de votre inscription
+            dès que votre demande aura été traitée.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (paymentSetup.isPending || !stripePromise || !clientSecret) {
     return (
@@ -268,6 +318,51 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
           onBack={onBack}
         />
       </Elements>
+
+      {/* Promo code section */}
+      <div className="trial-promo-section">
+        <button
+          type="button"
+          className="trial-promo-toggle"
+          onClick={() => setShowPromoCode(!showPromoCode)}
+        >
+          <Gift size={16} />
+          {showPromoCode ? 'Masquer' : 'J\'ai un code promo'}
+        </button>
+
+        {showPromoCode && (
+          <div className="trial-promo-form">
+            <div className="trial-promo-input-group">
+              <input
+                type="text"
+                className="trial-form-input"
+                placeholder="Entrez votre code promo"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                disabled={applyPromoCode.isPending}
+              />
+              <button
+                type="button"
+                className="trial-btn trial-btn-secondary"
+                onClick={handleApplyPromoCode}
+                disabled={applyPromoCode.isPending || !promoCode.trim()}
+              >
+                {applyPromoCode.isPending ? (
+                  <Loader2 size={16} className="spinning" />
+                ) : (
+                  'Appliquer'
+                )}
+              </button>
+            </div>
+            {promoError && (
+              <div className="trial-promo-error">
+                <AlertCircle size={14} />
+                <span>{promoError}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -28,7 +28,7 @@ class SupplierBase(BaseModel):
     """Base pour les fournisseurs."""
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    code: str = Field(..., min_length=1, max_length=50)
+    code: Optional[str] = Field(default=None, max_length=50)  # Auto-généré si non fourni
     name: str = Field(..., min_length=1, max_length=255)
     supplier_type: SupplierType = SupplierType.BOTH
 

@@ -25,6 +25,8 @@ import type {
   ContactAddressCreate,
   ContactAddressUpdate,
 } from '../types';
+import { AddressAutocomplete } from '@/modules/enrichment';
+import type { AddressSuggestion } from '@/modules/enrichment';
 
 interface AddressManagerProps {
   /** ID du contact parent */
@@ -394,6 +396,16 @@ const AddressForm: React.FC<AddressFormProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Handle address autocomplete selection
+  const handleAddressSelect = (suggestion: AddressSuggestion) => {
+    setFormData((prev) => ({
+      ...prev,
+      address_line1: suggestion.address_line1 || suggestion.label.split(',')[0] || '',
+      postal_code: suggestion.postal_code,
+      city: suggestion.city,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -438,15 +450,15 @@ const AddressForm: React.FC<AddressFormProps> = ({
           />
         </div>
 
-        {/* Adresse ligne 1 */}
+        {/* Adresse ligne 1 - avec Autocomplete */}
         <div className="col-span-2">
           <label className="block text-xs font-medium text-gray-700 mb-1">Adresse</label>
-          <input
-            type="text"
+          <AddressAutocomplete
             value={formData.address_line1}
-            onChange={(e) => handleChange('address_line1', e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-            placeholder="Numéro et nom de rue"
+            onChange={(value) => handleChange('address_line1', value)}
+            onSelect={handleAddressSelect}
+            placeholder="Rechercher une adresse..."
+            className="address-autocomplete-form"
           />
         </div>
 

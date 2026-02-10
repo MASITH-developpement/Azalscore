@@ -1,0 +1,145 @@
+"""
+AZALS - Admin Dashboard API
+===========================
+API pour le tableau de bord d'administration.
+"""
+
+import logging
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.core.auth import get_current_user
+from app.core.database import get_db
+from app.core.dependencies import get_tenant_id
+from app.core.models import User
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/admin", tags=["Administration"])
+
+
+# ============================================================================
+# SCHEMAS
+# ============================================================================
+
+class AdminDashboard(BaseModel):
+    total_users: int = 0
+    active_users: int = 0
+    total_tenants: int = 0
+    active_tenants: int = 0
+    total_roles: int = 0
+    storage_used_gb: float = 0
+    api_calls_today: int = 0
+    errors_today: int = 0
+
+
+# ============================================================================
+# ENDPOINTS
+# ============================================================================
+
+@router.get("/dashboard", response_model=AdminDashboard)
+def get_admin_dashboard(
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
+):
+    """Dashboard d'administration avec statistiques systeme."""
+    dashboard = AdminDashboard()
+
+    # Compter les utilisateurs
+    try:
+        result = db.execute(text("""
+            SELECT
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE is_active = true) as active
+            FROM iam_users
+            WHERE tenant_id = :tenant_id
+        """), {"tenant_id": tenant_id})
+        row = result.fetchone()
+        if row:
+            dashboard.total_users = row[0] or 0
+            dashboard.active_users = row[1] or 0
+    except Exception as e:
+        logger.warning(f"[ADMIN] Erreur comptage users: {e}")
+        # Fallback sur la table users si iam_users n'existe pas
+        try:
+            result = db.execute(text("""
+                SELECT
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE is_active = true) as active
+                FROM users
+                WHERE tenant_id = :tenant_id
+            """), {"tenant_id": tenant_id})
+            row = result.fetchone()
+            if row:
+                dashboard.total_users = row[0] or 0
+                dashboard.active_users = row[1] or 0
+        except Exception:
+            pass
+
+    # Compter les tenants
+    try:
+        result = db.execute(text("""
+            SELECT
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE status = 'ACTIVE') as active
+            FROM tenants
+        """))
+        row = result.fetchone()
+        if row:
+            dashboard.total_tenants = row[0] or 0
+            dashboard.active_tenants = row[1] or 0
+    except Exception as e:
+        logger.warning(f"[ADMIN] Erreur comptage tenants: {e}")
+        dashboard.total_tenants = 1
+        dashboard.active_tenants = 1
+
+    # Compter les roles
+    try:
+        result = db.execute(text("""
+            SELECT COUNT(*) FROM iam_roles
+            WHERE tenant_id = :tenant_id AND is_active = true
+        """), {"tenant_id": tenant_id})
+        dashboard.total_roles = result.scalar() or 0
+    except Exception as e:
+        logger.warning(f"[ADMIN] Erreur comptage roles: {e}")
+
+    # Stockage utilise
+    try:
+        result = db.execute(text("""
+            SELECT COALESCE(storage_used_gb, 0) FROM tenants
+            WHERE tenant_id = :tenant_id
+        """), {"tenant_id": tenant_id})
+        dashboard.storage_used_gb = float(result.scalar() or 0)
+    except Exception as e:
+        logger.warning(f"[ADMIN] Erreur lecture stockage: {e}")
+
+    # Appels API aujourd'hui (depuis audit_logs si disponible)
+    try:
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        result = db.execute(text("""
+            SELECT COUNT(*) FROM iam_audit_log
+            WHERE tenant_id = :tenant_id
+            AND created_at >= :today
+        """), {"tenant_id": tenant_id, "today": today})
+        dashboard.api_calls_today = result.scalar() or 0
+    except Exception as e:
+        logger.warning(f"[ADMIN] Erreur comptage API calls: {e}")
+
+    # Erreurs aujourd'hui (depuis guardian_errors si disponible)
+    try:
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        result = db.execute(text("""
+            SELECT COUNT(*) FROM guardian_errors
+            WHERE tenant_id = :tenant_id
+            AND occurred_at >= :today
+        """), {"tenant_id": tenant_id, "today": today})
+        dashboard.errors_today = result.scalar() or 0
+    except Exception as e:
+        logger.warning(f"[ADMIN] Erreur comptage erreurs: {e}")
+
+    return dashboard

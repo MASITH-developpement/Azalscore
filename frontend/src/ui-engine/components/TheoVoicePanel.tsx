@@ -33,7 +33,7 @@ interface StateIndicatorProps {
 }
 
 const StateIndicator: React.FC<StateIndicatorProps> = ({ state, companionId }) => {
-  const companion = COMPANION_AVATARS[companionId];
+  const companion = COMPANION_AVATARS[companionId] || COMPANION_AVATARS.theo;
 
   const stateLabels: Record<VoiceState, string> = {
     idle: 'Pret',

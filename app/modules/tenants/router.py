@@ -30,8 +30,9 @@ def verify_tenant_ownership(current_user: User, tenant_id: str) -> None:
     user_tenant_id = current_user.tenant_id
     user_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
 
-    # Super admin peut tout faire
-    if user_role == "SUPER_ADMIN":
+    # Admin roles peuvent tout faire
+    ADMIN_ROLES = {'SUPERADMIN', 'SUPER_ADMIN', 'DIRIGEANT', 'ADMIN'}
+    if user_role in ADMIN_ROLES:
         return
 
     # Vérifier que l'utilisateur appartient au tenant
@@ -46,8 +47,9 @@ def require_super_admin(current_user: User) -> None:
     """Vérifie que l'utilisateur est super_admin (opérations plateforme)."""
     from fastapi import HTTPException
 
+    ADMIN_ROLES = {'SUPERADMIN', 'SUPER_ADMIN', 'DIRIGEANT', 'ADMIN'}
     user_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
-    if user_role != "SUPER_ADMIN":
+    if user_role not in ADMIN_ROLES:
         raise HTTPException(
             status_code=403,
             detail="Accès refusé. Droits super_admin requis pour cette opération."
@@ -125,10 +127,18 @@ def list_tenants(
     current_user: User = Depends(get_current_user)
 ):
     """Lister les tenants."""
-    # SÉCURITÉ: Seul super_admin peut voir tous les tenants
-    require_super_admin(current_user)
     service = get_tenant_service(db)
-    return service.list_tenants(status, plan, country, skip, limit)
+
+    # SÉCURITÉ: super_admin voit tous les tenants, les autres voient seulement leur tenant
+    role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+    if role_value in ["SUPERADMIN", "SUPER_ADMIN"]:
+        return service.list_tenants(status, plan, country, skip, limit)
+
+    # Utilisateurs normaux: retourner seulement leur propre tenant
+    tenant = service.get_tenant(current_user.tenant_id)
+    if tenant:
+        return [tenant]
+    return []
 
 
 @router.get("/me", response_model=TenantResponse)
