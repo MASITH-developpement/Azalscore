@@ -19,6 +19,7 @@ import {
   FileText, Users, Package, Truck, Star, Clock, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@core/auth';
+import { useCapabilities } from '@core/capabilities';
 import { DynamicMenu } from '@ui/menu-dynamic';
 import { ErrorToaster } from '@ui/components/ErrorToaster';
 import { GuardianPanelContainer } from '@ui/components/GuardianPanelContainer';
@@ -40,7 +41,7 @@ export type ViewKey =
   | 'pos' | 'ecommerce' | 'marketplace' | 'subscriptions'
   | 'helpdesk' | 'bi' | 'compliance' | 'web'
   | 'compta' | 'tresorerie'
-  | 'cockpit'
+  | 'cockpit' | 'marceau'
   | 'admin'
   | 'profile' | 'settings';
 
@@ -48,6 +49,7 @@ interface MenuItem {
   key: ViewKey;
   label: string;
   group?: string;
+  capability?: string; // Capability requise pour voir cet item
 }
 
 interface UnifiedLayoutProps {
@@ -63,32 +65,33 @@ interface UnifiedLayoutProps {
 
 const MENU_ITEMS: MenuItem[] = [
   { key: 'saisie', label: 'Nouvelle saisie', group: 'Saisie' },
-  { key: 'gestion-devis', label: 'Devis', group: 'Gestion' },
-  { key: 'gestion-commandes', label: 'Commandes', group: 'Gestion' },
-  { key: 'gestion-interventions', label: 'Interventions', group: 'Gestion' },
-  { key: 'gestion-factures', label: 'Factures', group: 'Gestion' },
-  { key: 'gestion-paiements', label: 'Paiements', group: 'Gestion' },
-  { key: 'affaires', label: 'Suivi Affaires', group: 'Affaires' },
-  { key: 'crm', label: 'CRM / Clients', group: 'Modules' },
-  { key: 'stock', label: 'Stock', group: 'Modules' },
-  { key: 'achats', label: 'Achats', group: 'Modules' },
-  { key: 'projets', label: 'Projets', group: 'Modules' },
-  { key: 'rh', label: 'RH', group: 'Modules' },
-  { key: 'production', label: 'Production', group: 'Logistique' },
-  { key: 'maintenance', label: 'Maintenance', group: 'Logistique' },
-  { key: 'quality', label: 'Qualité', group: 'Logistique' },
-  { key: 'pos', label: 'Point de Vente', group: 'Commerce' },
-  { key: 'ecommerce', label: 'E-commerce', group: 'Commerce' },
-  { key: 'marketplace', label: 'Marketplace', group: 'Commerce' },
-  { key: 'subscriptions', label: 'Abonnements', group: 'Commerce' },
-  { key: 'helpdesk', label: 'Support Client', group: 'Services' },
-  { key: 'web', label: 'Site Web', group: 'Digital' },
-  { key: 'bi', label: 'Reporting & BI', group: 'Digital' },
-  { key: 'compliance', label: 'Conformité', group: 'Digital' },
-  { key: 'compta', label: 'Comptabilité', group: 'Finance' },
-  { key: 'tresorerie', label: 'Trésorerie', group: 'Finance' },
-  { key: 'cockpit', label: 'Cockpit Dirigeant', group: 'Direction' },
-  { key: 'admin', label: 'Administration', group: 'Système' },
+  { key: 'gestion-devis', label: 'Devis', group: 'Gestion', capability: 'invoicing.view' },
+  { key: 'gestion-commandes', label: 'Commandes', group: 'Gestion', capability: 'invoicing.view' },
+  { key: 'gestion-interventions', label: 'Interventions', group: 'Gestion', capability: 'interventions.view' },
+  { key: 'gestion-factures', label: 'Factures', group: 'Gestion', capability: 'invoicing.view' },
+  { key: 'gestion-paiements', label: 'Paiements', group: 'Gestion', capability: 'payments.view' },
+  { key: 'affaires', label: 'Suivi Affaires', group: 'Affaires', capability: 'projects.view' },
+  { key: 'crm', label: 'CRM / Clients', group: 'Modules', capability: 'partners.view' },
+  { key: 'stock', label: 'Stock', group: 'Modules', capability: 'inventory.view' },
+  { key: 'achats', label: 'Achats', group: 'Modules', capability: 'purchases.view' },
+  { key: 'projets', label: 'Projets', group: 'Modules', capability: 'projects.view' },
+  { key: 'rh', label: 'RH', group: 'Modules', capability: 'hr.view' },
+  { key: 'production', label: 'Production', group: 'Logistique', capability: 'production.view' },
+  { key: 'maintenance', label: 'Maintenance', group: 'Logistique', capability: 'maintenance.view' },
+  { key: 'quality', label: 'Qualité', group: 'Logistique', capability: 'quality.view' },
+  { key: 'pos', label: 'Point de Vente', group: 'Commerce', capability: 'pos.view' },
+  { key: 'ecommerce', label: 'E-commerce', group: 'Commerce', capability: 'ecommerce.view' },
+  { key: 'marketplace', label: 'Marketplace', group: 'Commerce', capability: 'marketplace.view' },
+  { key: 'subscriptions', label: 'Abonnements', group: 'Commerce', capability: 'subscriptions.view' },
+  { key: 'helpdesk', label: 'Support Client', group: 'Services', capability: 'helpdesk.view' },
+  { key: 'web', label: 'Site Web', group: 'Digital', capability: 'web.view' },
+  { key: 'bi', label: 'Reporting & BI', group: 'Digital', capability: 'bi.view' },
+  { key: 'compliance', label: 'Conformité', group: 'Digital', capability: 'compliance.view' },
+  { key: 'compta', label: 'Comptabilité', group: 'Finance', capability: 'accounting.view' },
+  { key: 'tresorerie', label: 'Trésorerie', group: 'Finance', capability: 'treasury.view' },
+  { key: 'cockpit', label: 'Cockpit Dirigeant', group: 'Direction', capability: 'cockpit.view' },
+  { key: 'marceau', label: 'Marceau IA', group: 'IA', capability: 'marceau.view' },
+  { key: 'admin', label: 'Administration', group: 'Système', capability: 'admin.view' },
 ];
 
 // ============================================================
@@ -113,6 +116,7 @@ const Header: React.FC<HeaderProps> = ({
   isMobileMenuOpen = false,
 }) => {
   const { user } = useAuth();
+  const { capabilities } = useCapabilities();
   const { toggle: toggleTheo, isOpen: isTheoOpen } = useTheo();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -120,8 +124,14 @@ const Header: React.FC<HeaderProps> = ({
 
   const currentItem = MENU_ITEMS.find(m => m.key === currentView);
 
-  // Grouper les items pour le dropdown
-  const groups = MENU_ITEMS.reduce((acc, item) => {
+  // Filtrer les items selon les capabilities
+  const visibleItems = MENU_ITEMS.filter(item => {
+    if (!item.capability) return true;
+    return capabilities.includes(item.capability);
+  });
+
+  // Grouper les items filtrés pour le dropdown
+  const groups = visibleItems.reduce((acc, item) => {
     const group = item.group || 'Autre';
     if (!acc[group]) acc[group] = [];
     acc[group].push(item);
@@ -296,8 +306,16 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewChange }) => {
-  // Grouper les items
-  const groups = MENU_ITEMS.reduce((acc, item) => {
+  const { capabilities } = useCapabilities();
+
+  // Filtrer les items selon les capabilities
+  const visibleItems = MENU_ITEMS.filter(item => {
+    if (!item.capability) return true;
+    return capabilities.includes(item.capability);
+  });
+
+  // Grouper les items filtrés
+  const groups = visibleItems.reduce((acc, item) => {
     const group = item.group || 'Autre';
     if (!acc[group]) acc[group] = [];
     acc[group].push(item);
