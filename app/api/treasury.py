@@ -25,11 +25,11 @@ class ForecastRequest(BaseModel):
 
 class ForecastResponse(BaseModel):
     """Réponse avec calcul de trésorerie."""
-    id: int
-    opening_balance: int
-    inflows: int
-    outflows: int
-    forecast_balance: int
+    id: str
+    opening_balance: float
+    inflows: float
+    outflows: float
+    forecast_balance: float
     red_triggered: bool
     created_at: str
 
@@ -59,11 +59,11 @@ def create_treasury_forecast(
     red_triggered = forecast.forecast_balance < 0
 
     return ForecastResponse(
-        id=forecast.id,
-        opening_balance=forecast.opening_balance,
-        inflows=forecast.inflows,
-        outflows=forecast.outflows,
-        forecast_balance=forecast.forecast_balance,
+        id=str(forecast.id),
+        opening_balance=float(forecast.opening_balance),
+        inflows=float(forecast.inflows),
+        outflows=float(forecast.outflows),
+        forecast_balance=float(forecast.forecast_balance),
         red_triggered=red_triggered,
         created_at=forecast.created_at.isoformat()
     )
@@ -86,11 +86,11 @@ def get_latest_treasury_forecast(
     red_triggered = forecast.forecast_balance < 0
 
     return ForecastResponse(
-        id=forecast.id,
-        opening_balance=forecast.opening_balance,
-        inflows=forecast.inflows,
-        outflows=forecast.outflows,
-        forecast_balance=forecast.forecast_balance,
+        id=str(forecast.id),
+        opening_balance=float(forecast.opening_balance),
+        inflows=float(forecast.inflows),
+        outflows=float(forecast.outflows),
+        forecast_balance=float(forecast.forecast_balance),
         red_triggered=red_triggered,
         created_at=forecast.created_at.isoformat()
     )

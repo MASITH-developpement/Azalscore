@@ -214,6 +214,24 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     - Schema Pydantic non respecte
     - Parametres manquants ou mal formes
     """
+    # Convertir les erreurs en format JSON-serialisable
+    errors = []
+    for error in exc.errors():
+        serialized_error = {
+            "loc": error.get("loc", []),
+            "msg": str(error.get("msg", "")),
+            "type": str(error.get("type", "validation_error")),
+        }
+        # Convertir input en string si présent et non-serializable
+        if "input" in error:
+            try:
+                import json
+                json.dumps(error["input"])
+                serialized_error["input"] = error["input"]
+            except (TypeError, ValueError):
+                serialized_error["input"] = str(error["input"])
+        errors.append(serialized_error)
+
     logger.warning(
         "Erreur 422: Validation echouee",
         extra={
@@ -221,7 +239,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
             "method": request.method,
             "client_ip": request.client.host if request.client else "unknown",
             "error_type": "validation_error",
-            "validation_errors": exc.errors()
+            "validation_errors": errors
         }
     )
 
@@ -231,7 +249,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
             "error": "validation_error",
             "message": "Request validation failed",
             "code": 422,
-            "details": exc.errors()
+            "details": errors
         }
     )
 

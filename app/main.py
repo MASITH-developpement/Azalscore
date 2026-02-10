@@ -24,6 +24,8 @@ from app.api.admin_migration import router as admin_migration_router
 from app.api.admin_sequences import router as admin_sequences_router
 from app.api.auth import router as auth_router
 from app.api.branding import router as branding_router
+from app.api.signup import router as signup_router
+from app.api.webhooks import router as webhooks_router
 
 # Module COCKPIT - Tableau de bord dirigeant
 from app.api.cockpit import router as cockpit_router
@@ -663,6 +665,10 @@ logger.info("[MIDDLEWARE] Request Logging configuré")
 
 # NOTE: health_router and metrics_router sont inclus après api_v1 pour éviter
 # les problèmes de "No response returned" lors du démarrage
+
+# Routes signup et webhooks (PUBLIQUES - nouvelles inscriptions)
+app.include_router(signup_router)
+app.include_router(webhooks_router)
 
 # ==================== AUTH LEGACY (sans prefix /v1) ====================
 # Route /auth/login directement accessible pour compatibilité V0

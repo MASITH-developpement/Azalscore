@@ -47,6 +47,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
         "/v1/auth/refresh", "/v1/auth/logout", "/v1/auth",
         # Audit routes (public for UI events without auth)
         "/v1/audit", "/v1/audit/ui-events",
+        # Signup et webhooks (public - nouvelles inscriptions et Stripe)
+        "/signup", "/webhooks",
         # AI Orchestration (public status + Theo interface)
         "/api/v1/ai/status", "/v1/ai/status",
         "/api/v1/ai/theo", "/v1/ai/theo",
