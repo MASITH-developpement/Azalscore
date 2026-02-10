@@ -1082,6 +1082,19 @@ CAPABILITIES_BY_MODULE = {
             {"code": "marceau.chat", "name": "Discuter avec Marceau", "description": "Utiliser le chat Marceau"},
         ]
     },
+    "enrichment": {
+        "name": "Enrichissement",
+        "icon": "Sparkles",
+        "capabilities": [
+            {"code": "enrichment.view", "name": "Utiliser l'enrichissement", "description": "Accès aux fonctions d'auto-enrichissement"},
+            {"code": "enrichment.siret", "name": "Recherche SIRET/SIREN", "description": "Rechercher des entreprises par SIRET/SIREN"},
+            {"code": "enrichment.address", "name": "Autocomplete adresse", "description": "Utiliser l'autocomplete d'adresses"},
+            {"code": "enrichment.barcode", "name": "Recherche code-barres", "description": "Rechercher des produits par code-barres"},
+            {"code": "enrichment.risk_analysis", "name": "Analyse de risque", "description": "Accès a l'analyse de risque entreprise (donnees confidentielles)"},
+            {"code": "enrichment.history", "name": "Historique enrichissement", "description": "Voir l'historique des enrichissements"},
+            {"code": "enrichment.stats", "name": "Statistiques enrichissement", "description": "Voir les statistiques d'utilisation"},
+        ]
+    },
 }
 
 

@@ -27,6 +27,9 @@ export interface Partner {
   country_code?: string;
   vat_number?: string;
   tax_id?: string;
+  siret?: string;
+  siren?: string;
+  registration_number?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;

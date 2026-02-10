@@ -54,17 +54,32 @@ export function useFocusTrap(
   // Keep a stable reference to the element that was focused before the trap activated.
   const previouslyFocusedRef = useRef<Element | null>(null);
 
+  // Use ref for onEscape to avoid re-running effect on every render
+  const onEscapeRef = useRef(onEscape);
+  onEscapeRef.current = onEscape;
+
+  // Track if we've already focused initially
+  const hasInitialFocusRef = useRef(false);
+
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      hasInitialFocusRef.current = false;
+      return;
+    }
 
     const container = containerRef.current;
     if (!container) return;
 
     // --- Save the currently focused element so we can restore it later ---
-    previouslyFocusedRef.current = document.activeElement;
+    if (!hasInitialFocusRef.current) {
+      previouslyFocusedRef.current = document.activeElement;
+    }
 
-    // --- Focus the first focusable element inside the container ---
+    // --- Focus the first focusable element inside the container (only once) ---
     const focusFirst = () => {
+      if (hasInitialFocusRef.current) return;
+      hasInitialFocusRef.current = true;
+
       const focusable = container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
       if (focusable.length > 0) {
         focusable[0].focus();
@@ -77,8 +92,8 @@ export function useFocusTrap(
     // --- Keyboard handler ---
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (onEscape) {
-          onEscape();
+        if (onEscapeRef.current) {
+          onEscapeRef.current();
         }
         return;
       }
@@ -122,5 +137,5 @@ export function useFocusTrap(
         toRestore.focus();
       }
     };
-  }, [enabled, containerRef, onEscape]);
+  }, [enabled, containerRef]);
 }

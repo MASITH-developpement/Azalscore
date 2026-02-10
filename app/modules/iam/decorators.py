@@ -20,6 +20,9 @@ def require_permission(permission_code: str):
         async def protected_route(...):
             ...
     """
+    # Roles admin qui bypassent les vérifications de permissions
+    ADMIN_ROLES = {'SUPERADMIN', 'SUPER_ADMIN', 'DIRIGEANT', 'ADMIN'}
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -34,7 +37,14 @@ def require_permission(permission_code: str):
                     detail="Erreur configuration: service et current_user requis pour vérification permissions"
                 )
 
-            # Vérifier la permission
+            # Bypass pour les rôles admin (vérifier role de la table users)
+            user_role = getattr(current_user, 'role', None)
+            if user_role:
+                role_value = user_role.value if hasattr(user_role, 'value') else str(user_role)
+                if role_value in ADMIN_ROLES:
+                    return await func(*args, **kwargs)
+
+            # Vérifier la permission via IAM
             granted, source = service.check_permission(current_user.id, permission_code)
 
             if not granted:

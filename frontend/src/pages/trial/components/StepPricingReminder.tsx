@@ -1,22 +1,52 @@
 /**
  * AZALSCORE - Step 3: Pricing Reminder
- * Rappel de l'essai gratuit et des tarifs apres essai
+ * Rappel de l'essai gratuit et selection du plan
  */
 
-import React from 'react';
-import { ArrowRight, ArrowLeft, Check, Clock, CreditCard, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, ArrowLeft, Check, Clock, CreditCard, Shield, AlertCircle } from 'lucide-react';
 import { usePricing } from '../api';
+import type { PricingInfo } from '../types';
 
 interface StepPricingReminderProps {
-  onNext: () => void;
+  data: PricingInfo;
+  onNext: (data: PricingInfo) => void;
   onBack: () => void;
 }
 
 export const StepPricingReminder: React.FC<StepPricingReminderProps> = ({
+  data,
   onNext,
   onBack,
 }) => {
   const { data: pricing, isLoading } = usePricing();
+  const [selectedPlan, setSelectedPlan] = useState(data.selectedPlan || 'business');
+  const [error, setError] = useState<string | null>(null);
+
+  // Update selectedPlan when pricing loads (to validate the plan exists)
+  useEffect(() => {
+    if (pricing?.plans && pricing.plans.length > 0) {
+      const planExists = pricing.plans.some(p => p.code === selectedPlan);
+      if (!planExists) {
+        // Select the popular plan or first plan
+        const popularPlan = pricing.plans.find(p => p.is_popular);
+        setSelectedPlan(popularPlan?.code || pricing.plans[0].code);
+      }
+    }
+  }, [pricing, selectedPlan]);
+
+  const handleNext = () => {
+    if (!selectedPlan) {
+      setError('Veuillez selectionner un plan');
+      return;
+    }
+    onNext({ selectedPlan });
+  };
+
+  const handlePlanSelect = (planCode: string) => {
+    setSelectedPlan(planCode);
+    setError(null);
+  };
 
   return (
     <div className="trial-form">
@@ -58,12 +88,20 @@ export const StepPricingReminder: React.FC<StepPricingReminderProps> = ({
         </div>
       </div>
 
+      {/* Error display */}
+      {error && (
+        <div className="trial-form-error-banner">
+          <AlertCircle size={20} />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* Pricing Plans */}
       <div className="trial-pricing-section">
-        <h3>Apres votre essai gratuit</h3>
+        <h3>Selectionnez votre plan</h3>
         <p className="trial-pricing-subtitle">
           Choisissez le plan qui correspond a vos besoins.
-          Votre compte sera suspendu si vous ne selectionnez pas un plan.
+          Vous pourrez le modifier a tout moment.
         </p>
 
         {isLoading ? (
@@ -75,10 +113,19 @@ export const StepPricingReminder: React.FC<StepPricingReminderProps> = ({
                 key={plan.code}
                 className={`trial-pricing-card ${
                   plan.is_popular ? 'trial-pricing-card--popular' : ''
-                }`}
+                } ${selectedPlan === plan.code ? 'trial-pricing-card--selected' : ''}`}
+                onClick={() => handlePlanSelect(plan.code)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handlePlanSelect(plan.code)}
               >
                 {plan.is_popular && (
                   <div className="trial-pricing-badge">Populaire</div>
+                )}
+                {selectedPlan === plan.code && (
+                  <div className="trial-pricing-selected-badge">
+                    <Check size={16} />
+                  </div>
                 )}
                 <h4>{plan.name}</h4>
                 <div className="trial-pricing-price">
@@ -108,7 +155,18 @@ export const StepPricingReminder: React.FC<StepPricingReminderProps> = ({
         ) : (
           <div className="trial-pricing-grid">
             {/* Fallback static pricing */}
-            <div className="trial-pricing-card">
+            <div
+              className={`trial-pricing-card ${selectedPlan === 'starter' ? 'trial-pricing-card--selected' : ''}`}
+              onClick={() => handlePlanSelect('starter')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handlePlanSelect('starter')}
+            >
+              {selectedPlan === 'starter' && (
+                <div className="trial-pricing-selected-badge">
+                  <Check size={16} />
+                </div>
+              )}
               <h4>Starter</h4>
               <div className="trial-pricing-price">
                 <span className="trial-pricing-amount">29</span>
@@ -121,8 +179,19 @@ export const StepPricingReminder: React.FC<StepPricingReminderProps> = ({
                 <li><Check size={14} /> Support email</li>
               </ul>
             </div>
-            <div className="trial-pricing-card trial-pricing-card--popular">
+            <div
+              className={`trial-pricing-card trial-pricing-card--popular ${selectedPlan === 'business' ? 'trial-pricing-card--selected' : ''}`}
+              onClick={() => handlePlanSelect('business')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handlePlanSelect('business')}
+            >
               <div className="trial-pricing-badge">Populaire</div>
+              {selectedPlan === 'business' && (
+                <div className="trial-pricing-selected-badge">
+                  <Check size={16} />
+                </div>
+              )}
               <h4>Business</h4>
               <div className="trial-pricing-price">
                 <span className="trial-pricing-amount">79</span>
@@ -135,7 +204,18 @@ export const StepPricingReminder: React.FC<StepPricingReminderProps> = ({
                 <li><Check size={14} /> Support prioritaire</li>
               </ul>
             </div>
-            <div className="trial-pricing-card">
+            <div
+              className={`trial-pricing-card ${selectedPlan === 'enterprise' ? 'trial-pricing-card--selected' : ''}`}
+              onClick={() => handlePlanSelect('enterprise')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handlePlanSelect('enterprise')}
+            >
+              {selectedPlan === 'enterprise' && (
+                <div className="trial-pricing-selected-badge">
+                  <Check size={16} />
+                </div>
+              )}
               <h4>Enterprise</h4>
               <div className="trial-pricing-price">
                 <span className="trial-pricing-amount">Sur devis</span>
@@ -162,9 +242,9 @@ export const StepPricingReminder: React.FC<StepPricingReminderProps> = ({
         <button
           type="button"
           className="trial-btn trial-btn-primary"
-          onClick={onNext}
+          onClick={handleNext}
         >
-          J'ai compris, continuer
+          Continuer avec ce plan
           <ArrowRight size={18} />
         </button>
       </div>

@@ -50,6 +50,7 @@ export interface Role {
   is_system: boolean;
   user_count: number;
   created_at: string;
+  created_by_name?: string | null;
 }
 
 /**

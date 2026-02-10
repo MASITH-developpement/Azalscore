@@ -18,10 +18,13 @@ from app.modules.tenants.schemas_trial import (
     TrialPaymentSetupRequest,
     TrialPaymentSetupResponse,
     TrialPricingResponse,
+    TrialPromoCodeRequest,
+    TrialPromoResponse,
     TrialRegistrationCreate,
     TrialRegistrationResponse,
     TrialRegistrationStatus,
 )
+from fastapi.responses import HTMLResponse
 from app.modules.tenants.service_trial import TrialRegistrationService
 
 router = APIRouter(prefix="/api/v2/public/trial", tags=["Trial Registration"])
@@ -125,6 +128,39 @@ def verify_trial_email(
 
 
 @router.post(
+    "/resend-verification",
+    response_model=dict,
+    summary="Renvoyer l'email de vérification",
+    description="""
+    Renvoie l'email de vérification pour une inscription en cours.
+    Limité à 3 envois par inscription.
+    """,
+)
+def resend_verification_email(
+    data: dict,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Renvoyer l'email de vérification."""
+    registration_id = data.get("registration_id")
+    if not registration_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="registration_id requis",
+        )
+
+    service = TrialRegistrationService(db)
+
+    try:
+        service.resend_verification_email(registration_id)
+        return {"success": True, "message": "Email de vérification renvoyé."}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post(
     "/payment-setup",
     response_model=TrialPaymentSetupResponse,
     summary="Configurer le paiement",
@@ -209,6 +245,155 @@ def complete_trial_registration(
         )
 
 
+@router.post(
+    "/apply-promo",
+    response_model=TrialPromoResponse,
+    summary="Demander un accès via code promo",
+    description="""
+    Soumet une demande d'accès gratuit via code promo.
+
+    Un email est envoyé à l'administrateur pour approbation.
+    Le demandeur sera notifié par email de la décision.
+    """,
+)
+def apply_promo_code(
+    data: TrialPromoCodeRequest,
+    db: Session = Depends(get_db),
+) -> TrialPromoResponse:
+    """Demander un accès via code promo."""
+    service = TrialRegistrationService(db)
+
+    try:
+        result = service.complete_with_promo(
+            registration_id=data.registration_id,
+            promo_code=data.promo_code,
+        )
+
+        return TrialPromoResponse(
+            status=result["status"],
+            message=result["message"],
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.get(
+    "/promo-approve/{token}",
+    response_class=HTMLResponse,
+    summary="Approuver une demande de code promo",
+    description="Endpoint appelé par l'admin pour approuver une demande.",
+)
+def approve_promo(
+    token: str,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Approuver une demande de code promo."""
+    service = TrialRegistrationService(db)
+
+    try:
+        result = service.approve_promo_request(token)
+        return HTMLResponse(content=f"""
+        <html>
+        <head>
+            <title>Demande approuvée - AZALSCORE</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0fdf4; }}
+                .container {{ max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                h1 {{ color: #22c55e; }}
+                p {{ color: #333; line-height: 1.6; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>✓ Demande approuvée</h1>
+                <p>Le compte pour <strong>{result['tenant_name']}</strong> a été créé.</p>
+                <p>Un email avec les identifiants a été envoyé à <strong>{result['admin_email']}</strong>.</p>
+            </div>
+        </body>
+        </html>
+        """, status_code=200)
+    except ValueError as e:
+        return HTMLResponse(content=f"""
+        <html>
+        <head>
+            <title>Erreur - AZALSCORE</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #fef2f2; }}
+                .container {{ max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                h1 {{ color: #ef4444; }}
+                p {{ color: #333; line-height: 1.6; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>✗ Erreur</h1>
+                <p>{str(e)}</p>
+            </div>
+        </body>
+        </html>
+        """, status_code=400)
+
+
+@router.get(
+    "/promo-reject/{token}",
+    response_class=HTMLResponse,
+    summary="Refuser une demande de code promo",
+    description="Endpoint appelé par l'admin pour refuser une demande.",
+)
+def reject_promo(
+    token: str,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Refuser une demande de code promo."""
+    service = TrialRegistrationService(db)
+
+    try:
+        result = service.reject_promo_request(token)
+        return HTMLResponse(content=f"""
+        <html>
+        <head>
+            <title>Demande refusée - AZALSCORE</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #fff7ed; }}
+                .container {{ max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                h1 {{ color: #f97316; }}
+                p {{ color: #333; line-height: 1.6; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Demande refusée</h1>
+                <p>{result['message']}</p>
+                <p>Le demandeur a été notifié par email.</p>
+            </div>
+        </body>
+        </html>
+        """, status_code=200)
+    except ValueError as e:
+        return HTMLResponse(content=f"""
+        <html>
+        <head>
+            <title>Erreur - AZALSCORE</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #fef2f2; }}
+                .container {{ max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                h1 {{ color: #ef4444; }}
+                p {{ color: #333; line-height: 1.6; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>✗ Erreur</h1>
+                <p>{str(e)}</p>
+            </div>
+        </body>
+        </html>
+        """, status_code=400)
+
+
 @router.get(
     "/pricing",
     response_model=TrialPricingResponse,
@@ -265,8 +450,15 @@ def get_registration_status(
             detail="Inscription non trouvée.",
         )
 
-    now = datetime.now(timezone.utc)
-    is_expired = registration.expires_at < now if registration.expires_at else False
+    now = datetime.utcnow()
+    # Handle both timezone-aware and naive datetimes from DB
+    if registration.expires_at:
+        expires_at = registration.expires_at
+        if expires_at.tzinfo is not None:
+            expires_at = expires_at.replace(tzinfo=None)
+        is_expired = expires_at < now
+    else:
+        is_expired = False
 
     return TrialRegistrationStatus(
         registration_id=str(registration.id),

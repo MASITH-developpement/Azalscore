@@ -9,6 +9,7 @@ Schémas Pydantic pour l'API des tenants.
 import json
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -103,7 +104,7 @@ class TenantUpdate(BaseModel):
 
 class TenantResponse(BaseModel):
     """Réponse tenant."""
-    id: int
+    id: UUID
     tenant_id: str
     name: str
     legal_name: str | None
@@ -150,7 +151,7 @@ class TenantResponse(BaseModel):
 
 class TenantListResponse(BaseModel):
     """Liste de tenants."""
-    id: int
+    id: UUID
     tenant_id: str
     name: str
     email: str
@@ -161,6 +162,14 @@ class TenantListResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator('status', 'plan', mode='before')
+    @classmethod
+    def convert_enum_to_str(cls, v):
+        """Convertir les enums en string."""
+        if hasattr(v, 'value'):
+            return v.value
+        return str(v) if v else v
 
 
 # ============================================================================
@@ -191,7 +200,7 @@ class SubscriptionUpdate(BaseModel):
 
 class SubscriptionResponse(BaseModel):
     """Réponse abonnement."""
-    id: int
+    id: UUID
     tenant_id: str
     plan: str
     billing_cycle: str
@@ -231,7 +240,7 @@ class ModuleDeactivation(BaseModel):
 
 class TenantModuleResponse(BaseModel):
     """Réponse module tenant."""
-    id: int
+    id: UUID
     tenant_id: str
     module_code: str
     module_name: str | None
@@ -268,7 +277,7 @@ class TenantInvitationCreate(BaseModel):
 
 class TenantInvitationResponse(BaseModel):
     """Réponse invitation."""
-    id: int
+    id: UUID
     token: str
     email: str
     tenant_id: str | None
@@ -291,7 +300,7 @@ class TenantUsageResponse(BaseModel):
     """Réponse utilisation."""
     model_config = ConfigDict(protected_namespaces=(), populate_by_name=True, from_attributes=True)
 
-    id: int
+    id: UUID
     tenant_id: str
     usage_date: datetime = Field(..., alias="date")
     period: str
@@ -334,7 +343,7 @@ class TenantSettingsUpdate(BaseModel):
 
 class TenantSettingsResponse(BaseModel):
     """Réponse paramètres."""
-    id: int
+    id: UUID
     tenant_id: str
     two_factor_required: bool
     session_timeout_minutes: int
@@ -372,7 +381,7 @@ class OnboardingStepUpdate(BaseModel):
 
 class TenantOnboardingResponse(BaseModel):
     """Réponse onboarding."""
-    id: int
+    id: UUID
     tenant_id: str
     company_info_completed: bool
     admin_created: bool
@@ -395,7 +404,7 @@ class TenantOnboardingResponse(BaseModel):
 
 class TenantEventResponse(BaseModel):
     """Réponse événement."""
-    id: int
+    id: UUID
     tenant_id: str
     event_type: str
     event_data: dict[str, Any] | None
@@ -448,7 +457,7 @@ class ProvisionTenantRequest(BaseModel):
 class ProvisionTenantResponse(BaseModel):
     """Réponse provisioning."""
     tenant: TenantResponse
-    admin_user_id: int
+    admin_user_id: UUID
     admin_email: str
     temporary_password: str | None
     activated_modules: list[str]

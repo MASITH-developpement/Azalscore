@@ -22,7 +22,7 @@ import { formatDate, formatDateTime } from '@/utils/formatters';
  * UserInfoTab - Informations utilisateur
  */
 export const UserInfoTab: React.FC<TabContentProps<AdminUser>> = ({ data: user }) => {
-  const statusConfig = USER_STATUS_CONFIG[user.status];
+  const statusConfig = USER_STATUS_CONFIG[user.status] || { label: user.status || 'Inconnu', color: 'gray' as const };
 
   return (
     <div className="azals-std-tab-content">

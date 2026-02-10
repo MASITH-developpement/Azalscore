@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Plus, Check, Loader2, X, Search } from 'lucide-react';
 import { api } from '@core/api-client';
@@ -53,6 +54,7 @@ export interface SmartSelectorProps<T extends SelectorItem> {
   entityIcon?: React.ReactNode;
   createEndpoint: string;
   createFields: FieldConfig[];
+  createUrl?: string;  // URL pour formulaire de création complet (remplace le formulaire inline)
   onCreated?: (item: T) => void;
 
   // Options
@@ -78,12 +80,14 @@ export function SmartSelector<T extends SelectorItem>({
   entityIcon,
   createEndpoint,
   createFields,
+  createUrl,
   onCreated,
   disabled = false,
   error,
   allowCreate = true,
   queryKeys = [],
 }: SmartSelectorProps<T>) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -231,7 +235,14 @@ export function SmartSelector<T extends SelectorItem>({
             <button
               type="button"
               className="azals-smart-selector__new"
-              onClick={() => setShowCreate(!showCreate)}
+              onClick={() => {
+                if (createUrl) {
+                  navigate(createUrl);
+                  setIsOpen(false);
+                } else {
+                  setShowCreate(!showCreate);
+                }
+              }}
             >
               {entityIcon || <Plus size={16} />}
               <span>Nouveau {entityName}</span>
@@ -239,8 +250,8 @@ export function SmartSelector<T extends SelectorItem>({
             </button>
           )}
 
-          {/* Create form */}
-          {showCreate && (
+          {/* Create form (only shown if no createUrl) */}
+          {showCreate && !createUrl && (
             <div className="azals-smart-selector__create">
               {createError && (
                 <div className="azals-smart-selector__create-error">{createError}</div>

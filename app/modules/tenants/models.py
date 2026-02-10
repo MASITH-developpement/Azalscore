@@ -72,6 +72,8 @@ class TrialRegistrationStatus(str, enum.Enum):
     EMAIL_SENT = "EMAIL_SENT"      # Email de vérification envoyé
     EMAIL_VERIFIED = "EMAIL_VERIFIED"  # Email vérifié, en attente paiement
     PAYMENT_PENDING = "PAYMENT_PENDING"  # En attente de configuration carte
+    PROMO_PENDING = "PROMO_PENDING"  # Code promo en attente d'approbation admin
+    PROMO_REJECTED = "PROMO_REJECTED"  # Code promo refusé par admin
     COMPLETED = "COMPLETED"        # Inscription terminée, tenant créé
     EXPIRED = "EXPIRED"            # Inscription expirée (24h)
 
@@ -415,3 +417,7 @@ class TrialRegistration(Base):
     # IP et User-Agent pour audit/sécurité
     ip_address: Mapped[str | None] = mapped_column(String(45))
     user_agent: Mapped[str | None] = mapped_column(Text)
+
+    # Code promo
+    promo_code: Mapped[str | None] = mapped_column(String(50))
+    promo_approval_token: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)

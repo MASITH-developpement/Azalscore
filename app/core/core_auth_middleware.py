@@ -105,11 +105,22 @@ class CoreAuthMiddleware(BaseHTTPMiddleware):
                 request.state.user_id = saas_context.user_id
                 request.state.role = saas_context.role
 
-                logger.debug(
-                    "[CoreAuthMiddleware] Authenticated %s "
-                    "for tenant %s (role: %s)",
-                    saas_context.user_id, tenant_id, saas_context.role.value
-                )
+                # IMPORTANT: Charger l'objet User complet pour RBACMiddleware
+                # RBACMiddleware vérifie request.state.user
+                from app.core.models import User
+                user = db.query(User).filter(User.id == saas_context.user_id).first()
+                if user:
+                    request.state.user = user
+                    logger.debug(
+                        "[CoreAuthMiddleware] Authenticated user %s "
+                        "for tenant %s (role: %s)",
+                        saas_context.user_id, tenant_id, saas_context.role.value
+                    )
+                else:
+                    logger.warning(
+                        "[CoreAuthMiddleware] User %s not found in DB",
+                        saas_context.user_id
+                    )
             else:
                 # Authentification échouée - continuer sans contexte
                 logger.warning(

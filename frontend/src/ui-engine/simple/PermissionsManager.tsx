@@ -34,8 +34,16 @@ export const PermissionsManager: React.FC = () => {
   const { data: users = [] } = useQuery({
     queryKey: ['iam-users'],
     queryFn: async () => {
-      const r = await api.get('/v1/iam/users?page_size=100');
-      return (r as any).items || [];
+      try {
+        const r = await api.get('/v1/iam/users?page_size=100', {
+          headers: { 'X-Silent-Error': 'true' }
+        });
+        // Gérer les deux formats possibles
+        const data = r && typeof r === 'object' && 'data' in r ? (r as any).data : r;
+        return data?.items || [];
+      } catch {
+        return [];
+      }
     },
   });
 
@@ -43,8 +51,17 @@ export const PermissionsManager: React.FC = () => {
   const { data: serverPerms } = useQuery({
     queryKey: ['perms', userId],
     queryFn: async () => {
-      const r = await api.get(`/v1/iam/users/${userId}/permissions`);
-      return (r as any).capabilities || [];
+      try {
+        const r = await api.get(`/v1/iam/users/${userId}/permissions`, {
+          headers: { 'X-Silent-Error': 'true' }
+        });
+        // L'API retourne directement un tableau de permissions
+        if (Array.isArray(r)) return r;
+        const data = r && typeof r === 'object' && 'data' in r ? (r as any).data : r;
+        return Array.isArray(data) ? data : (data?.capabilities || []);
+      } catch {
+        return [];
+      }
     },
     enabled: !!userId,
   });

@@ -75,16 +75,27 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
     try {
       const response = await api.get<CapabilitiesResponse>('/v1/auth/capabilities');
 
-      // Handle both wrapped and unwrapped response formats
+      // Handle all possible response formats
       let capabilities: string[] = [];
+      const r = response as any;
 
-      if (response && typeof response === 'object') {
-        if (response.data && Array.isArray(response.data.capabilities)) {
-          capabilities = response.data.capabilities;
-        } else if (Array.isArray((response as unknown as CapabilitiesResponse).capabilities)) {
-          capabilities = (response as unknown as CapabilitiesResponse).capabilities;
-        }
+      // Format 1: { capabilities: [...] }
+      if (r && Array.isArray(r.capabilities)) {
+        capabilities = r.capabilities;
       }
+      // Format 2: { data: { capabilities: [...] } }
+      else if (r && r.data && Array.isArray(r.data.capabilities)) {
+        capabilities = r.data.capabilities;
+      }
+      // Format 3: direct array
+      else if (Array.isArray(r)) {
+        capabilities = r;
+      }
+
+      console.log('[Capabilities] Loaded:', capabilities.length, 'capabilities');
+      console.log('[Capabilities] admin.view:', capabilities.includes('admin.view'));
+      console.log('[Capabilities] accounting.view:', capabilities.includes('accounting.view'));
+      console.log('[Capabilities] First 10:', capabilities.slice(0, 10));
 
       set({
         capabilities,

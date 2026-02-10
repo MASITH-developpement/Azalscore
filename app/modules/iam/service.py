@@ -684,8 +684,10 @@ class IAMService:
 
         return False, None
 
-    def get_user_permissions(self, user_id: int) -> list[str]:
-        """Récupère toutes les permissions d'un utilisateur."""
+    def get_user_permissions(self, user_id) -> list[str]:
+        """Récupère toutes les permissions d'un utilisateur (rôles + directes)."""
+        from sqlalchemy import text
+
         user = self.get_user(user_id)
         if not user:
             return []
@@ -706,7 +708,57 @@ class IAMService:
                         for perm in role.permissions:
                             permissions.add(perm.code)
 
+        # Permissions directes (table iam_user_permissions)
+        try:
+            result = self.db.execute(text("""
+                SELECT permission_code FROM iam_user_permissions
+                WHERE tenant_id = :tenant_id AND user_id = :user_id
+            """), {"tenant_id": self.tenant_id, "user_id": str(user_id)})
+            for row in result:
+                permissions.add(row[0])
+        except Exception as e:
+            logger.warning(f"[IAM] Erreur lecture permissions directes: {e}")
+
         return sorted(permissions)
+
+    def update_user_permissions(self, user_id, permissions: list[str]) -> list[str]:
+        """
+        Met à jour les permissions directes d'un utilisateur.
+        Remplace toutes les permissions directes par la nouvelle liste.
+        """
+        from sqlalchemy import text
+
+        logger.info(f"[IAM] Mise à jour des permissions pour user {user_id}: {len(permissions)} permissions")
+
+        try:
+            # Supprimer les anciennes permissions directes
+            self.db.execute(text("""
+                DELETE FROM iam_user_permissions
+                WHERE tenant_id = :tenant_id AND user_id = :user_id
+            """), {"tenant_id": self.tenant_id, "user_id": str(user_id)})
+
+            # Insérer les nouvelles permissions
+            for perm_code in permissions:
+                self.db.execute(text("""
+                    INSERT INTO iam_user_permissions (tenant_id, user_id, permission_code)
+                    VALUES (:tenant_id, :user_id, :permission_code)
+                    ON CONFLICT (tenant_id, user_id, permission_code) DO NOTHING
+                """), {
+                    "tenant_id": self.tenant_id,
+                    "user_id": str(user_id),
+                    "permission_code": perm_code
+                })
+
+            self.db.commit()
+            logger.info(f"[IAM] Permissions mises à jour avec succès pour user {user_id}")
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"[IAM] Erreur mise à jour permissions: {e}")
+            raise
+
+        # Retourner toutes les permissions (rôles + directes)
+        return self.get_user_permissions(user_id)
 
     # ========================================================================
     # GESTION GROUPES

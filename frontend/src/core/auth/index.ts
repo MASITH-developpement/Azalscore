@@ -165,6 +165,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           status: 'ready', // CRITICAL: Marquer auth comme READY après login démo
         });
 
+        // Émettre l'événement de login pour démarrer le polling des capabilities
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('azals:auth:login'));
+        }
+
         return {
           user: demoUser.user,
           tokens,
@@ -195,6 +200,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         status: 'ready', // Marquer auth comme READY après login réussi
       });
 
+      // Émettre l'événement de login pour démarrer le polling des capabilities
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('azals:auth:login'));
+      }
+
       return loginData;
     } catch (error) {
       // En mode démo, afficher un message plus clair
@@ -223,6 +233,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         isLoading: false,
         error: null,
       });
+      // Émettre l'événement de logout pour arrêter le polling
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('azals:auth:logout'));
+      }
     }
   },
 

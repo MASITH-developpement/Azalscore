@@ -72,6 +72,7 @@ export const StepValidation: React.FC<StepValidationProps> = ({
       revenue_range: formData.company.revenueRange || null,
       max_users: formData.company.maxUsers,
       siret: formData.company.siret || null,
+      selected_plan: formData.pricing.selectedPlan,
       cgv_accepted: values.cgvAccepted,
       cgu_accepted: values.cguAccepted,
       captcha_token: values.captchaToken,

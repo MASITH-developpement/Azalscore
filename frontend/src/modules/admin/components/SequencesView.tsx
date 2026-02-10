@@ -91,10 +91,19 @@ const MODULE_COLORS: Record<string, string> = {
 const useSequences = () => {
   return useQuery({
     queryKey: ['admin', 'sequences'],
-    queryFn: async () => {
-      const res = await api.get<{ items: SequenceConfig[]; total: number }>('/v1/admin/sequences');
-      return res.data.items || [];
-    }
+    queryFn: async (): Promise<SequenceConfig[]> => {
+      try {
+        const res = await api.get<{ items: SequenceConfig[]; total: number }>('/v1/admin/sequences', {
+          headers: { 'X-Silent-Error': 'true' }
+        });
+        // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
+        const data = res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+        return data?.items || [];
+      } catch {
+        return [];
+      }
+    },
+    retry: false
   });
 };
 
@@ -102,7 +111,8 @@ const useUpdateSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ entityType, data }: { entityType: string; data: SequenceUpdateData }) => {
-      return api.put<SequenceConfig>(`/v1/admin/sequences/${entityType}`, data).then(r => r.data);
+      const res = await api.put<SequenceConfig>(`/v1/admin/sequences/${entityType}`, data);
+      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sequences'] });
@@ -114,7 +124,8 @@ const useResetSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (entityType: string) => {
-      return api.post<SequenceConfig>(`/v1/admin/sequences/${entityType}/reset`).then(r => r.data);
+      const res = await api.post<SequenceConfig>(`/v1/admin/sequences/${entityType}/reset`);
+      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sequences'] });
@@ -129,14 +140,19 @@ const usePreviewSequence = (
 ) => {
   return useQuery({
     queryKey: ['admin', 'sequences', 'preview', entityType, config],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (config.prefix) params.append('prefix', config.prefix);
-      if (config.include_year !== undefined) params.append('include_year', String(config.include_year));
-      if (config.padding) params.append('padding', String(config.padding));
-      if (config.separator) params.append('separator', config.separator);
-      const queryString = params.toString();
-      return api.get<PreviewResponse>(`/v1/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`).then(r => r.data);
+    queryFn: async (): Promise<PreviewResponse | null> => {
+      try {
+        const params = new URLSearchParams();
+        if (config.prefix) params.append('prefix', config.prefix);
+        if (config.include_year !== undefined) params.append('include_year', String(config.include_year));
+        if (config.padding) params.append('padding', String(config.padding));
+        if (config.separator) params.append('separator', config.separator);
+        const queryString = params.toString();
+        const res = await api.get<PreviewResponse>(`/v1/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
+        return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      } catch {
+        return null;
+      }
     },
     enabled: enabled && !!entityType
   });

@@ -81,6 +81,20 @@ class Settings(BaseSettings):
     app_url: str = Field(default="https://localhost", description="URL publique de l'application")
     app_domain: str = Field(default="localhost", description="Domaine principal de l'application")
 
+    # SMTP Configuration (pour envoi d'emails)
+    SMTP_HOST: str | None = Field(default=None, description="Serveur SMTP (ex: smtp.gmail.com)")
+    SMTP_PORT: int = Field(default=587, ge=1, le=65535, description="Port SMTP")
+    SMTP_USER: str | None = Field(default=None, description="Utilisateur SMTP")
+    SMTP_PASSWORD: str | None = Field(default=None, description="Mot de passe SMTP")
+    SMTP_FROM: str = Field(default="AZALS <noreply@azalscore.com>", description="Adresse expéditeur")
+    SMTP_USE_TLS: bool = Field(default=True, description="Utiliser STARTTLS (port 587)")
+    SMTP_USE_SSL: bool = Field(default=False, description="Utiliser SSL direct (port 465)")
+
+    # Stripe Configuration (pour paiements)
+    STRIPE_SECRET_KEY: str | None = Field(default=None, description="Clé secrète Stripe")
+    STRIPE_PUBLISHABLE_KEY: str | None = Field(default=None, description="Clé publique Stripe")
+    STRIPE_WEBHOOK_SECRET: str | None = Field(default=None, description="Secret webhook Stripe")
+
     # ENCRYPTION_KEY - OBLIGATOIRE EN PRODUCTION pour chiffrement AES-256 au repos
     encryption_key: str | None = Field(
         default=None,

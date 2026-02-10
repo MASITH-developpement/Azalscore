@@ -1,6 +1,6 @@
 # AZALSCORE - Memoire de Session
 
-## Derniere mise a jour: 2026-02-09
+## Derniere mise a jour: 2026-02-10
 
 ---
 
@@ -254,6 +254,144 @@ async def get_capabilities_by_module(
 - `current_user: User = Depends(get_current_user)`
 - `service: IAMService = Depends(get_service)`
 
+### 19. Module Enrichissement - Autocomplete Entreprise [2026-02-10]
+
+**Fonctionnalite:** Autocomplete sur le nom d'entreprise dans le formulaire fournisseur qui remplit automatiquement les champs (nom, SIRET, adresse, ville, code postal).
+
+**Backend:**
+- `/app/modules/enrichment/schemas.py` - `suggestions: list[dict[str, Any]]` au lieu de `list[AddressSuggestion]` pour preserver les champs entreprise
+- `/app/modules/enrichment/service.py` - Appel API `recherche-entreprises.api.gouv.fr`
+
+**Frontend:**
+- `/frontend/src/modules/enrichment/components/CompanyAutocomplete.tsx` - Composant autocomplete entreprise
+- `/frontend/src/modules/enrichment/types.ts` - Ajout champ `address` dans `EnrichedContactFields`
+- `/frontend/src/modules/purchases/index.tsx` - Integration CompanyAutocomplete + handleCompanySelect
+
+### 20. Code Fournisseur Auto-genere [2026-02-10]
+
+**Probleme:** Le formulaire fournisseur exigeait un code (champ `required`) mais le backend le genere automatiquement.
+
+**Solutions:**
+1. Backend `/app/modules/purchases/schemas.py`:
+   ```python
+   code: Optional[str] = Field(default=None, max_length=50)  # Auto-genere si non fourni
+   ```
+
+2. Frontend `/frontend/src/modules/purchases/index.tsx`:
+   - Champ code: `required` supprime, placeholder "Genere automatiquement"
+   - `SUPPLIER_CREATE_FIELDS`: `required: false` pour code
+
+### 21. Fix Hooks Purchases - Format Reponse API [2026-02-10]
+
+**Probleme:** Les hooks `useSuppliers`, `useSupplier`, etc. faisaient `response.data` mais l'API retourne directement les donnees.
+
+**Solution:** Pattern robuste dans tous les hooks:
+```typescript
+const data = (response as any)?.data ?? response ?? { items: [], total: 0, page: 1, pages: 0 };
+```
+
+**Hooks corriges:**
+- `useSuppliers`, `useSupplier`, `useSuppliersLookup`
+- `useCreateSupplier`, `useUpdateSupplier`
+
+### 22. ClientFormPage avec Enrichissement [2026-02-10]
+
+**Fonctionnalite:** Formulaire de creation/edition client avec auto-enrichissement comme les fournisseurs.
+
+**Frontend:**
+- `/frontend/src/modules/partners/index.tsx`:
+  - Ajout `ClientFormPage` - page formulaire complete
+  - Routes `/clients/new` et `/clients/:id/edit`
+  - Integration `CompanyAutocomplete` pour recherche par nom d'entreprise
+  - Integration `AddressAutocomplete` pour autocomplete adresse
+  - Champs auto-remplis: nom, SIRET, adresse, code postal, ville
+  - Code client auto-genere par le backend
+
+**Backend:** Deja configure avec `CustomerCreateAuto` qui a `code: Optional[str]`
+
+---
+
+### 22. Analyse de Risque Entreprise - Pappers [2026-02-10]
+
+**Probleme:** Besoin d'analyser le risque financier des clients/fournisseurs.
+
+**Solution:** Implementation du provider Pappers pour l'analyse de risque.
+
+**Backend:**
+- `/app/modules/enrichment/providers/pappers.py` - Provider Pappers avec:
+  - Lookup par SIREN/SIRET
+  - Calcul score de risque (0-100)
+  - Interpretation cotation Banque de France
+  - Detection procedures collectives
+  - Analyse de facteurs (anciennete, capital, etc.)
+- `/app/modules/enrichment/models.py` - Ajout `LookupType.RISK`
+- `/app/modules/enrichment/service.py` - Integration PappersProvider
+- `/app/modules/enrichment/router.py` - Endpoint `GET /v1/enrichment/risk/{identifier}`
+- `/app/modules/iam/router.py` - Ajout capabilities module enrichment:
+  - `enrichment.risk_analysis` (donnees confidentielles)
+
+**Frontend:**
+- `/frontend/src/modules/enrichment/hooks/useRiskAnalysis.ts` - Hook React Query
+- `/frontend/src/modules/enrichment/components/RiskAnalysis.tsx` - Composant d'affichage:
+  - Score gauge (0-100)
+  - Niveau de risque (low/medium/elevated/high)
+  - Cotation Banque de France
+  - Alertes et recommandations
+  - Facteurs d'analyse detailles
+- `/frontend/src/modules/enrichment/types.ts` - Types RiskAnalysis, RiskFactor
+- `/frontend/src/modules/enrichment/api.ts` - Fonction `analyzeRisk()`
+
+**Securite:**
+- Endpoint protege par capability `enrichment.risk_analysis`
+- Donnees confidentielles - acces restreint
+
+**Usage:**
+```tsx
+import { RiskAnalysis } from '@/modules/enrichment';
+
+// Dans une page parametres (acces restreint)
+<RiskAnalysis
+  siren="443061841"
+  autoLoad={true}
+  showDetails={true}
+  onAnalysis={(analysis) => console.log(analysis)}
+/>
+```
+
+---
+
+## Taches en Attente
+
+### TODO: Autocomplete Articles dans Devis/Commandes/Factures
+- [ ] Creer composant `ProductAutocomplete` pour recherche d'articles
+- [ ] Integrer dans lignes de devis (`/invoicing/quotes`)
+- [ ] Integrer dans lignes de commande (`/invoicing/orders`)
+- [ ] Integrer dans lignes de facture (`/invoicing/invoices`)
+- [ ] Auto-remplir: description, prix unitaire, TVA, code article
+
+### TODO: Notations Credit Internationales
+- [x] **Pappers** (France) - IMPLEMENTE (2026-02-10)
+  - Cotation Banque de France
+  - Procedures collectives
+  - Score de risque AZALS (0-100)
+  - Fallback vers INSEE si pas de cle API
+- [ ] **Configuration Provider Risque** - Permettre de choisir le provider
+  - Interface admin pour configurer API keys
+  - Selection du provider principal (Pappers, Creditsafe, etc.)
+  - Fallback automatique vers provider secondaire
+- [ ] **OpenCorporates** - Registres mondiaux (API gratuite limitee)
+  - Donnees de base entreprise
+  - Statut juridique
+- [ ] **Creditsafe / Coface** (payant) - Notation credit internationale
+  - Score credit D&B
+  - Notation Moody's / S&P / Fitch
+- [ ] **VIES** (gratuit) - Validation TVA intracommunautaire
+  - Verification numero TVA europeen
+  - Nom et adresse de l'entreprise
+- [ ] **Kompany** (payant) - Registres europeens
+  - Documents officiels
+  - Comptes annuels
+
 ---
 
 ## Principe de Maintenance des Capabilities
@@ -388,6 +526,8 @@ docker network connect azalscore_azals_internal azals_api
 7. `/app/api/auth.py` - SUPERADMIN dans role_capabilities, format reponse capabilities
 8. `/app/api/admin.py` - **NOUVEAU** endpoint /v1/admin/dashboard
 9. `/app/main.py` - Import et inclusion du router admin_dashboard
+10. `/app/modules/enrichment/schemas.py` - suggestions: list[dict[str, Any]] pour entreprises
+11. `/app/modules/purchases/schemas.py` - code: Optional[str] auto-genere
 
 ### Frontend (frontend/src/)
 1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules"
@@ -395,6 +535,8 @@ docker network connect azalscore_azals_internal azals_api
 3. `/modules/admin/components/SequencesView.tsx` - Hooks corriges
 4. `/ui-engine/simple/PermissionsManager.tsx` - Hooks corriges
 5. `/core/capabilities/index.tsx` - Parsing robuste avec logging
+6. `/modules/enrichment/` - **NOUVEAU MODULE** CompanyAutocomplete, AddressAutocomplete, SiretLookup, BarcodeLookup
+7. `/modules/purchases/index.tsx` - Integration enrichissement, hooks corriges format reponse, code auto-genere
 
 ---
 
@@ -482,6 +624,29 @@ Toutes les classes utilitaires Tailwind standard:
 // UnifiedLayout.tsx - MENU_ITEMS
 { key: 'marceau', label: 'Marceau IA', group: 'IA', capability: 'marceau.view' },
 ```
+
+---
+
+## Principes de Developpement
+
+### Reutilisabilite - Sous-Programmes
+**REGLE:** Tout element repete doit faire l'objet d'un sous-programme (composant, hook, fonction, vue) appele au besoin.
+
+**Exemples implementes:**
+- `CompanyAutocomplete` - Recherche entreprise utilisable dans fournisseurs ET clients
+- `AddressAutocomplete` - Autocomplete adresse reutilisable partout
+- `SiretLookup` - Recherche SIRET/SIREN reutilisable
+- `ClientFormPage` - Formulaire client reutilisable (partners module)
+- `SupplierFormPage` - Formulaire fournisseur reutilisable (purchases module)
+
+**A creer:**
+- `ProductAutocomplete` - Recherche article pour lignes de documents
+- `ContactAutocomplete` - Recherche contact pour formulaires
+
+**Emplacement des composants reutilisables:**
+- Enrichissement: `/frontend/src/modules/enrichment/`
+- Formulaires partenaires: `/frontend/src/modules/partners/`
+- Composants UI generiques: `/frontend/src/ui-engine/`
 
 ---
 

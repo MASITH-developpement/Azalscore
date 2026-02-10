@@ -86,10 +86,16 @@ export interface ValidationInfo {
   captchaToken: string;
 }
 
+// Pricing/Plan info
+export interface PricingInfo {
+  selectedPlan: string; // Plan code (e.g., 'starter', 'business', 'enterprise')
+}
+
 // Combined form state
 export interface TrialFormData {
   personal: PersonalInfo;
   company: CompanyInfo;
+  pricing: PricingInfo;
   validation: ValidationInfo;
 }
 
@@ -111,6 +117,7 @@ export interface TrialRegistrationRequest {
   revenue_range: string | null;
   max_users: number;
   siret: string | null;
+  selected_plan: string;
   cgv_accepted: boolean;
   cgu_accepted: boolean;
   captcha_token: string;
@@ -145,6 +152,11 @@ export interface TrialCompleteResponse {
   temporary_password: string;
   login_url: string;
   trial_ends_at: string;
+  message: string;
+}
+
+export interface TrialPromoResponse {
+  status: string;
   message: string;
 }
 
@@ -200,6 +212,9 @@ export const initialFormData: TrialFormData = {
     revenueRange: '',
     maxUsers: 5,
     siret: '',
+  },
+  pricing: {
+    selectedPlan: 'business', // Default to popular plan
   },
   validation: {
     cgvAccepted: false,

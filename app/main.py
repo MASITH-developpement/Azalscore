@@ -210,6 +210,10 @@ from app.modules.website.router_v2 import router as website_router_v2
 
 # Module MARCEAU - Agent IA Polyvalent (9 modules metiers)
 from app.modules.marceau.router import router as marceau_router
+
+# Module ENRICHMENT - Auto-enrichissement via APIs externes (INSEE, Adresse gouv, Open Facts)
+from app.modules.enrichment import enrichment_router
+
 # Module Interventions v2 - Router enrichi aligné frontend
 from app.modules.interventions.router_v2 import router as interventions_router_v2
 
@@ -816,6 +820,9 @@ api_v1.include_router(backup_router)
 
 # Module MARCEAU - Agent IA Polyvalent (Telephonie, Marketing, SEO, Commercial, etc.)
 api_v1.include_router(marceau_router)
+
+# Module ENRICHMENT - Auto-enrichissement via APIs externes (INSEE, Adresse gouv, Open Facts)
+api_v1.include_router(enrichment_router)
 
 # Module MARKETPLACE - Site marchand & provisioning automatique
 api_v1.include_router(marketplace_router)

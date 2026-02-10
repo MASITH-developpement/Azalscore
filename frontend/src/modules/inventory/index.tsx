@@ -51,6 +51,10 @@ import {
   ProductIATab
 } from './components';
 
+// Auto-enrichissement produit par code-barres
+import { BarcodeLookup } from '@/modules/enrichment';
+import type { EnrichedProductFields } from '@/modules/enrichment';
+
 // ============================================================================
 // LOCAL COMPONENTS
 // ============================================================================
@@ -452,6 +456,16 @@ const ProductsView: React.FC<ProductsViewProps> = ({ onSelectProduct }) => {
     setFormData({});
   };
 
+  // Handler pour l'enrichissement par code-barres
+  const handleBarcodeEnrich = (fields: EnrichedProductFields) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: fields.name || prev.name,
+      description: fields.description || prev.description,
+      barcode: fields.barcode || prev.barcode,
+    }));
+  };
+
   const columns: TableColumn<Product>[] = [
     {
       id: 'code',
@@ -532,6 +546,13 @@ const ProductsView: React.FC<ProductsViewProps> = ({ onSelectProduct }) => {
             <Input
               value={formData.description || ''}
               onChange={(v) => setFormData({ ...formData, description: v })}
+            />
+          </div>
+          <div className="azals-field">
+            <label>Code-barres (EAN/UPC) - Remplissage auto depuis Open Food Facts</label>
+            <BarcodeLookup
+              value={formData.barcode || ''}
+              onEnrich={handleBarcodeEnrich}
             />
           </div>
           <Grid cols={2}>
