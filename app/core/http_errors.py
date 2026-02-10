@@ -180,7 +180,7 @@ async def internal_error_handler(request: Request, exc: Exception) -> JSONRespon
 
     # Log COMPLET pour diagnostic (niveau ERROR)
     logger.error(
-        f"Erreur 500: {error_message}",
+        "Erreur 500: %s", error_message,
         extra={
             "path": str(request.url.path),
             "method": request.method,
@@ -275,7 +275,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
 
     # Handler generique pour les autres codes HTTP
     logger.info(
-        f"Erreur HTTP {status_code}",
+        "Erreur HTTP %s", status_code,
         extra={
             "path": str(request.url.path),
             "method": request.method,

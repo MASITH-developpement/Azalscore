@@ -105,7 +105,7 @@ def get_accounting_status(
 
     except Exception as e:
         # En cas d'erreur, logger et retourner un état neutral
-        logger.error(f"Erreur lors de la récupération du statut comptable: {e}")
+        logger.error("Erreur lors de la récupération du statut comptable: %s", e)
         return AccountingStatusResponse(
             entries_up_to_date=True,
             last_closure_date=None,

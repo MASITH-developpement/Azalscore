@@ -1,0 +1,66 @@
+{
+  "id": "azalscore.calculations.hr.calculate_gross_salary",
+  "name": "Calcule le salaire brut",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le salaire brut",
+  "inputs": {
+    "base_salary": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "hours_worked": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "overtime_hours": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 0
+    },
+    "bonuses": {
+      "type": "array",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "gross_salary": {
+      "type": "number",
+      "description": ""
+    },
+    "base_amount": {
+      "type": "number",
+      "description": ""
+    },
+    "overtime_amount": {
+      "type": "number",
+      "description": ""
+    },
+    "bonus_amount": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "payroll"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,0 +1,72 @@
+/* ============================================================
+   STATE VIEWS - Loading, Error, Empty
+   ============================================================ */
+
+.azals-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  min-height: 200px;
+  text-align: center;
+  gap: 1rem;
+}
+
+.azals-state__spinner {
+  color: var(--azals-primary-500);
+}
+
+.azals-state__icon {
+  color: var(--azals-gray-400);
+}
+
+.azals-state__icon--error {
+  color: var(--azals-danger);
+}
+
+.azals-state__icon--empty {
+  color: var(--azals-gray-300);
+}
+
+.azals-state__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--azals-gray-800);
+  margin: 0;
+}
+
+.azals-state__message {
+  font-size: 0.875rem;
+  color: var(--azals-gray-500);
+  margin: 0;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.azals-state__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.azals-state__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Loading variant */
+.azals-state--loading {
+  min-height: 300px;
+}
+
+/* Error variant */
+.azals-state--error {
+  min-height: 250px;
+}
+
+/* Empty variant */
+.azals-state--empty {
+  min-height: 250px;
+}

@@ -17,9 +17,12 @@ Ce module DOIT etre appele:
 - Avant toute migration/reset
 """
 
+import logging
 import os
 import subprocess
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # EXCEPTIONS DE SECURITE
@@ -63,8 +66,11 @@ def get_current_git_branch() -> str | None:
         )
         if result.returncode == 0:
             return result.stdout.strip()
-    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+        logger.debug(
+            "[GUARDS] Détection branche git échouée",
+            extra={"error": str(e)[:200], "consequence": "branch_unknown"}
+        )
     return None
 
 
@@ -160,7 +166,14 @@ def enforce_env_version_consistency(settings, version: str) -> SecurityStatus:
             "Pre-production/release mode detecte."
         )
         warnings.append(warning_msg)
-        print(warning_msg)
+        logger.warning(
+            "[GUARDS] Version production détectée en environnement non-production",
+            extra={
+                "version": version,
+                "environment": env,
+                "consequence": "pre_production_mode"
+            }
+        )
 
     is_locked = is_prod or (branch == "main")
 
@@ -303,17 +316,14 @@ def enforce_branch_restrictions(settings) -> None:
 
     if branch == "main" and settings.environment in ("development", "test"):
         # Warning severe mais pas de crash (le script bash doit bloquer)
-        print(
-            "\n" + "=" * 70 + "\n"
-            "[SECURITY WARNING] MODE DEVELOPPEMENT SUR BRANCHE MAIN\n"
-            "=" * 70 + "\n"
-            f"BRANCHE      : {branch}\n"
-            f"ENVIRONNEMENT: {settings.environment}\n"
-            "=" * 70 + "\n"
-            "ATTENTION: Le mode developpement ne devrait pas\n"
-            "s'executer sur la branche main.\n"
-            "Utilisez la branche 'develop' pour le developpement.\n"
-            "=" * 70 + "\n"
+        logger.warning(
+            "[GUARDS] MODE DÉVELOPPEMENT SUR BRANCHE MAIN — situation anormale",
+            extra={
+                "branch": branch,
+                "environment": settings.environment,
+                "consequence": "dev_on_main_branch",
+                "action_required": "utiliser la branche develop pour le développement"
+            }
         )
 
 
@@ -359,7 +369,17 @@ def log_security_status(status: SecurityStatus) -> None:
     Format:
     [SECURITY] ENV=prod | VERSION=0.0.0-prod | BRANCH=main | STATUS=LOCKED
     """
-    print(str(status))
+    logger.info(
+        "[GUARDS] %s", status,
+        extra={
+            "environment": status.environment,
+            "version": status.version,
+            "branch": status.branch,
+            "is_locked": status.is_locked,
+            "warnings_count": len(status.warnings),
+            "errors_count": len(status.errors)
+        }
+    )
 
 
 # =============================================================================

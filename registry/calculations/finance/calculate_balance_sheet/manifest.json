@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.calculations.finance.calculate_balance_sheet",
+  "name": "Calcule le bilan comptable",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le bilan comptable",
+  "inputs": {
+    "fiscal_year": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "period": {
+      "type": "string",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "assets": {
+      "type": "number",
+      "description": ""
+    },
+    "liabilities": {
+      "type": "number",
+      "description": ""
+    },
+    "equity": {
+      "type": "number",
+      "description": ""
+    },
+    "is_balanced": {
+      "type": "boolean",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "reports"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

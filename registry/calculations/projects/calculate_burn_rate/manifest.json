@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.calculations.projects.calculate_burn_rate",
+  "name": "Calcule le taux de consommation du budget",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le taux de consommation du budget",
+  "inputs": {
+    "total_budget": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "spent_to_date": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "days_elapsed": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "daily_burn_rate": {
+      "type": "number",
+      "description": ""
+    },
+    "projected_completion_date": {
+      "type": "string",
+      "description": ""
+    },
+    "budget_risk": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "projects",
+    "progress"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

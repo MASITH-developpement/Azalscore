@@ -5,11 +5,14 @@ Métriques pour monitoring et alerting.
 Endpoint /metrics pour scraping Prometheus.
 """
 
+import logging
 import time
 from collections.abc import Callable
 from functools import wraps
 
 from fastapi import APIRouter, Request, Response
+
+logger = logging.getLogger(__name__)
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, Gauge, Histogram, Info, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -109,6 +112,46 @@ SYSTEM_HEALTH = Gauge(
     ['component']
 )
 
+# ============================================================================
+# MÉTRIQUES IA (Theo, Guardian, Orchestrator)
+# ============================================================================
+
+AI_INFERENCE_DURATION = Histogram(
+    'azals_ai_inference_duration_seconds',
+    'AI inference duration in seconds',
+    ['model', 'operation'],
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0]
+)
+
+AI_REQUESTS_TOTAL = Counter(
+    'azals_ai_requests_total',
+    'Total AI requests',
+    ['model', 'operation', 'status']
+)
+
+AI_TOKENS_TOTAL = Counter(
+    'azals_ai_tokens_total',
+    'Total AI tokens consumed',
+    ['model', 'direction']
+)
+
+AI_SESSIONS_ACTIVE = Gauge(
+    'azals_ai_sessions_active',
+    'Active AI sessions (Theo)'
+)
+
+AI_GUARDIAN_DECISIONS = Counter(
+    'azals_ai_guardian_decisions_total',
+    'Guardian security decisions',
+    ['decision', 'risk_level']
+)
+
+AI_CACHE_RATIO = Gauge(
+    'azals_ai_cache_hit_ratio',
+    'AI response cache hit ratio (0-1)',
+    ['model']
+)
+
 
 # ============================================================================
 # MIDDLEWARE DE MÉTRIQUES
@@ -140,7 +183,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             status_code = response.status_code
             return response
-        except Exception:
+        except Exception as e:
+            logger.error(
+                "[METRICS_MIDDLEWARE] Exception non capturée dans le traitement requête",
+                extra={"path": request.url.path, "method": method, "error": str(e)[:300], "consequence": "status_500"}
+            )
             status_code = 500
             raise
         finally:
@@ -312,3 +359,51 @@ def record_cache_access(cache_type: str, hit: bool):
         CACHE_HITS.labels(cache_type=cache_type).inc()
     else:
         CACHE_MISSES.labels(cache_type=cache_type).inc()
+
+
+# ============================================================================
+# HELPERS IA
+# ============================================================================
+
+def record_ai_inference(model: str, operation: str, duration: float, success: bool):
+    """Enregistre une inférence IA avec durée et statut."""
+    AI_INFERENCE_DURATION.labels(model=model, operation=operation).observe(duration)
+    AI_REQUESTS_TOTAL.labels(
+        model=model,
+        operation=operation,
+        status="success" if success else "error"
+    ).inc()
+
+
+def record_ai_tokens(model: str, input_tokens: int, output_tokens: int):
+    """Enregistre la consommation de tokens IA."""
+    AI_TOKENS_TOTAL.labels(model=model, direction="input").inc(input_tokens)
+    AI_TOKENS_TOTAL.labels(model=model, direction="output").inc(output_tokens)
+
+
+def record_guardian_decision(decision: str, risk_level: str):
+    """Enregistre une décision Guardian (allow/deny/escalate)."""
+    AI_GUARDIAN_DECISIONS.labels(decision=decision, risk_level=risk_level).inc()
+
+
+def track_ai_inference(model: str, operation: str):
+    """Décorateur pour tracker les inférences IA."""
+    def decorator(func: Callable):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            start = time.perf_counter()
+            success = True
+            try:
+                return await func(*args, **kwargs)
+            except Exception as e:
+                logger.warning(
+                    "[AI_INFERENCE_FAILED] Échec inférence IA",
+                    extra={"model": model, "operation": operation, "error": str(e)[:300], "consequence": "inference_failed"}
+                )
+                success = False
+                raise
+            finally:
+                duration = time.perf_counter() - start
+                record_ai_inference(model, operation, duration, success)
+        return wrapper
+    return decorator

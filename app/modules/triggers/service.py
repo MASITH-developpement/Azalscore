@@ -6,6 +6,9 @@ Logique métier pour le système de déclencheurs.
 """
 
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -37,9 +40,10 @@ from .models import (
 class TriggerService:
     """Service principal pour les déclencheurs."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # ========================================================================
     # GESTION DES TRIGGERS
@@ -752,8 +756,11 @@ Message automatique AZALS
             try:
                 hour, minute = map(int, report.schedule_time.split(':'))
                 next_gen = next_gen.replace(hour=hour, minute=minute)
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as e:
+                logger.warning(
+                    "[TRIGGERS] Format schedule_time invalide",
+                    extra={"schedule_time": report.schedule_time, "error": str(e)[:200], "consequence": "default_time_kept"}
+                )
 
         return next_gen
 
@@ -913,11 +920,13 @@ Message automatique AZALS
         try:
             decrypted = decrypt_value(webhook.auth_config)
             return json.loads(decrypted)
-        except Exception:
+        except (ValueError, TypeError) as e:
             # Peut-être données anciennes non chiffrées
+            logger.debug("Decryption failed for webhook %s, trying unencrypted: %s", webhook_id, e)
             try:
                 return json.loads(webhook.auth_config)
-            except Exception:
+            except json.JSONDecodeError as e:
+                logger.warning("Failed to parse auth_config for webhook %s: %s", webhook_id, e)
                 return None
 
     def list_webhooks(self) -> list[WebhookEndpoint]:

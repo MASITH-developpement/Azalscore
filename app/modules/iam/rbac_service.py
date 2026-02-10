@@ -206,7 +206,7 @@ class RBACService:
         """
         if resource_tenant_id != self.tenant_id:
             logger.critical(
-                f"SECURITY VIOLATION: Tentative d'accès cross-tenant! "
+                "SECURITY VIOLATION: Tentative d'accès cross-tenant! "
                 f"Current: {self.tenant_id}, Target: {resource_tenant_id}"
             )
             return False
@@ -297,8 +297,11 @@ class RBACService:
         if hasattr(user, 'standard_role') and user.standard_role:
             try:
                 return StandardRole(user.standard_role)
-            except ValueError:
-                pass
+            except ValueError as e:
+                logger.warning(
+                    "[RBAC_SVC] Rôle standard_role invalide, fallback legacy",
+                    extra={"standard_role": user.standard_role, "error": str(e)[:200], "consequence": "fallback_legacy_mapping"}
+                )
 
         # Mapper depuis le rôle legacy via les relations
         if user.roles:
@@ -321,11 +324,12 @@ class RBACService:
     ):
         """Log un refus d'accès dans les logs d'audit."""
         logger.warning(
-            f"ACCESS DENIED: user_id={user_id} "
-            f"tenant={self.tenant_id} "
-            f"module={module.value} "
-            f"action={action.value} "
-            f"reason={reason}"
+            "ACCESS DENIED: user_id=%s "
+            "tenant=%s "
+            "module=%s "
+            "action=%s "
+            "reason=%s",
+            user_id, self.tenant_id, module.value, action.value, reason
         )
 
         # Enregistrer dans la base de données
@@ -343,7 +347,7 @@ class RBACService:
             self.db.add(audit_log)
             self.db.commit()
         except Exception as e:
-            logger.error(f"Erreur lors du log d'audit: {e}")
+            logger.error("Erreur lors du log d'audit: %s", e)
 
     # =========================================================================
     # API PERMISSIONS

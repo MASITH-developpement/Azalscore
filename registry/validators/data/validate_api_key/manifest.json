@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.validators.data.validate_api_key",
+  "name": "Valide une clé API",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide une clé API",
+  "inputs": {
+    "api_key": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "format": {
+      "type": "string",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "data",
+    "security"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

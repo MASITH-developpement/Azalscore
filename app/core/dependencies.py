@@ -137,15 +137,21 @@ def get_tenant_db(
     tenant_id: str = Depends(get_tenant_id)
 ):
     """
-    Dépendance combinée : DB session + tenant_id.
-    Simplifie l'écriture des endpoints.
+    Dépendance combinée : DB session + tenant_id avec contexte RLS.
+
+    SÉCURITÉ P1: Active le contexte RLS pour le filtrage automatique.
 
     Usage :
         @app.get("/items")
         def list_items(tenant_db = Depends(get_tenant_db)):
             db, tenant_id = tenant_db
+            # RLS filtre automatiquement, mais garder le filtre explicite
             items = db.query(Item).filter(Item.tenant_id == tenant_id).all()
     """
+    # SÉCURITÉ P1: Activer RLS pour defense-in-depth
+    from app.core.database import set_rls_context
+    set_rls_context(db, tenant_id)
+
     return db, tenant_id
 
 

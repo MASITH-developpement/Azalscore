@@ -56,8 +56,9 @@ COPY --chown=azals:azals scripts/ ./scripts/
 COPY --chown=azals:azals alembic.ini ./
 COPY --chown=azals:azals alembic/ ./alembic/
 
-# Créer répertoire backups
-RUN mkdir -p /app/backups && chown azals:azals /app/backups
+# Créer répertoires de données
+RUN mkdir -p /app/backups && chown azals:azals /app/backups && \
+    mkdir -p /app/logs/ai_audit && chown -R azals:azals /app/logs
 
 # Script de démarrage
 COPY --chown=azals:azals scripts/deploy/docker-entrypoint.sh /docker-entrypoint.sh
@@ -68,10 +69,10 @@ USER azals
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health/live || exit 1
+    CMD curl -f http://localhost:80/health/live || exit 1
 
 # Port exposé
-EXPOSE 8000
+EXPOSE 80
 
 # Commande de démarrage avec initialisation automatique
 ENTRYPOINT ["/docker-entrypoint.sh"]

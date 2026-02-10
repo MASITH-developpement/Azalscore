@@ -17,6 +17,12 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
+  CreditCard,
+  Clock,
+  Sparkles,
+  ArrowLeft,
+  Edit,
+  Link2
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { CapabilityGuard } from '@core/capabilities';
@@ -25,59 +31,35 @@ import { DataTable } from '@ui/tables';
 import { DynamicForm } from '@ui/forms';
 import { Button, ButtonGroup, Modal, ConfirmDialog } from '@ui/actions';
 import { KPICard, MetricComparison, ProgressBar } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { TabDefinition, InfoBarItem, SidebarSection, ActionDefinition } from '@ui/standards';
 import type { PaginatedResponse, TableColumn, DashboardKPI } from '@/types';
+import type { BankAccount as BankAccountType, Transaction as TransactionType, TreasurySummary, ForecastData } from './types';
+import {
+  ACCOUNT_TYPE_CONFIG,
+  ACCOUNT_STATUS_CONFIG
+} from './types';
+import {
+  formatCurrency as formatCurrencyHelper,
+  formatDate as formatDateHelper,
+  formatDateTime,
+  formatIBAN,
+  maskIBAN
+} from '@/utils/formatters';
+import {
+  AccountInfoTab,
+  AccountTransactionsTab,
+  AccountReconciliationTab,
+  AccountHistoryTab,
+  AccountIATab
+} from './components';
 
 // ============================================================
-// TYPES
+// TYPES (imported from ./types, aliased for local use)
 // ============================================================
 
-interface BankAccount {
-  id: string;
-  name: string;
-  bank_name: string;
-  iban: string;
-  bic: string;
-  balance: number;
-  currency: string;
-  is_default: boolean;
-  is_active: boolean;
-  last_sync?: string;
-}
-
-interface Transaction {
-  id: string;
-  account_id: string;
-  account_name: string;
-  date: string;
-  value_date: string;
-  description: string;
-  amount: number;
-  currency: string;
-  type: 'credit' | 'debit';
-  category?: string;
-  reconciled: boolean;
-  linked_document?: {
-    type: string;
-    id: string;
-    number: string;
-  };
-}
-
-interface TreasurySummary {
-  total_balance: number;
-  total_pending_in: number;
-  total_pending_out: number;
-  forecast_7d: number;
-  forecast_30d: number;
-  accounts: BankAccount[];
-}
-
-interface ForecastData {
-  date: string;
-  projected_balance: number;
-  pending_in: number;
-  pending_out: number;
-}
+type BankAccount = BankAccountType;
+type Transaction = TransactionType;
 
 // ============================================================
 // API HOOKS
@@ -144,6 +126,186 @@ const useReconcileTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ['treasury'] });
     },
   });
+};
+
+const useBankAccount = (id: string) => {
+  return useQuery({
+    queryKey: ['treasury', 'account', id],
+    queryFn: async () => {
+      const response = await api.get<BankAccount>(`/v1/treasury/accounts/${id}`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+};
+
+// ============================================================
+// BANK ACCOUNT DETAIL VIEW
+// ============================================================
+
+const BankAccountDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: account, isLoading, error, refetch } = useBankAccount(id!);
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">Chargement du compte...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !account) {
+    return (
+      <PageWrapper title="Erreur">
+        <Card>
+          <p className="text-danger">Impossible de charger le compte bancaire.</p>
+          <Button variant="secondary" onClick={() => navigate('/treasury/accounts')} className="mt-4">
+            Retour
+          </Button>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  const formatCurrency = (amount: number, currency = 'EUR') =>
+    formatCurrencyHelper(amount, currency);
+
+  const tabs: TabDefinition<BankAccount>[] = [
+    {
+      id: 'info',
+      label: 'Informations',
+      icon: <Building2 size={16} />,
+      component: AccountInfoTab
+    },
+    {
+      id: 'transactions',
+      label: 'Transactions',
+      icon: <CreditCard size={16} />,
+      badge: account.transactions_count,
+      component: AccountTransactionsTab
+    },
+    {
+      id: 'reconciliation',
+      label: 'Rapprochement',
+      icon: <Link2 size={16} />,
+      badge: account.unreconciled_count,
+      component: AccountReconciliationTab
+    },
+    {
+      id: 'history',
+      label: 'Historique',
+      icon: <Clock size={16} />,
+      component: AccountHistoryTab
+    },
+    {
+      id: 'ia',
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
+      component: AccountIATab
+    }
+  ];
+
+  const infoBarItems: InfoBarItem[] = [
+    {
+      id: 'balance',
+      label: 'Solde',
+      value: formatCurrency(account.balance, account.currency),
+      valueColor: account.balance < 0 ? 'red' : 'green'
+    },
+    {
+      id: 'pending_in',
+      label: 'A recevoir',
+      value: `+${formatCurrency(account.pending_in || 0, account.currency)}`,
+      valueColor: 'green'
+    },
+    {
+      id: 'pending_out',
+      label: 'A payer',
+      value: `-${formatCurrency(account.pending_out || 0, account.currency)}`,
+      valueColor: 'red'
+    },
+    {
+      id: 'unreconciled',
+      label: 'A rapprocher',
+      value: String(account.unreconciled_count || 0),
+      valueColor: (account.unreconciled_count || 0) > 0 ? 'orange' : 'green'
+    }
+  ];
+
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'summary',
+      title: 'Resume',
+      items: [
+        { id: 'bank', label: 'Banque', value: account.bank_name },
+        { id: 'iban', label: 'IBAN', value: maskIBAN(account.iban) },
+        { id: 'status', label: 'Statut', value: account.is_active ? 'Actif' : 'Inactif' }
+      ]
+    },
+    {
+      id: 'balance',
+      title: 'Soldes',
+      items: [
+        { id: 'current', label: 'Solde actuel', value: formatCurrency(account.balance, account.currency), highlight: true },
+        { id: 'available', label: 'Disponible', value: formatCurrency(account.available_balance || account.balance, account.currency) },
+        { id: 'currency', label: 'Devise', value: account.currency }
+      ]
+    },
+    {
+      id: 'activity',
+      title: 'Activite',
+      items: [
+        { id: 'transactions', label: 'Transactions', value: String(account.transactions_count || 0) },
+        { id: 'unreconciled', label: 'A rapprocher', value: String(account.unreconciled_count || 0) },
+        { id: 'last_sync', label: 'Derniere sync', value: account.last_sync ? formatDateHelper(account.last_sync) : 'Jamais' }
+      ]
+    }
+  ];
+
+  const headerActions: ActionDefinition[] = [
+    {
+      id: 'back',
+      label: 'Retour',
+      icon: <ArrowLeft size={16} />,
+      variant: 'secondary',
+      onClick: () => navigate('/treasury/accounts')
+    },
+    {
+      id: 'sync',
+      label: 'Synchroniser',
+      icon: <RefreshCw size={16} />,
+      variant: 'secondary',
+      onClick: () => console.log('Sync account', account.id)
+    },
+    {
+      id: 'edit',
+      label: 'Modifier',
+      icon: <Edit size={16} />,
+      variant: 'primary',
+      onClick: () => navigate(`/treasury/accounts/${account.id}/edit`)
+    }
+  ];
+
+  return (
+    <BaseViewStandard<BankAccount>
+      title={account.name}
+      subtitle={`${account.bank_name} - ${maskIBAN(account.iban)}`}
+      status={{
+        label: account.is_active ? 'Actif' : 'Inactif',
+        color: account.is_active ? 'green' : 'gray'
+      }}
+      data={account}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
+    />
+  );
 };
 
 // ============================================================
@@ -284,7 +446,11 @@ export const TreasuryDashboard: React.FC = () => {
 
 export const BankAccountsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data, isLoading } = useBankAccounts();
+  const { data, isLoading, error, refetch } = useBankAccounts();
+
+  const handleViewAccount = (account: BankAccount) => {
+    navigate(`/treasury/accounts/${account.id}`);
+  };
 
   const columns: TableColumn<BankAccount>[] = [
     {
@@ -302,20 +468,18 @@ export const BankAccountsPage: React.FC = () => {
       id: 'iban',
       header: 'IBAN',
       accessor: 'iban',
-      render: (value) => {
-        const iban = value as string;
-        return `${iban.slice(0, 4)} **** ${iban.slice(-4)}`;
-      },
+      render: (value) => maskIBAN(value as string),
     },
     {
       id: 'balance',
       header: 'Solde',
       accessor: 'balance',
       align: 'right',
-      render: (value, row) =>
-        new Intl.NumberFormat('fr-FR', { style: 'currency', currency: row.currency }).format(
-          value as number
-        ),
+      render: (value, row) => (
+        <span className={(value as number) < 0 ? 'text-red-600' : 'text-green-600'}>
+          {formatCurrencyHelper(value as number, row.currency)}
+        </span>
+      ),
     },
     {
       id: 'is_active',
@@ -328,19 +492,15 @@ export const BankAccountsPage: React.FC = () => {
           <span className="azals-badge azals-badge--gray">Inactif</span>
         ),
     },
-  ];
-
-  const actions = [
     {
-      id: 'view',
-      label: 'Voir les transactions',
-      onClick: (row: BankAccount) => navigate(`/treasury/accounts/${row.id}`),
-    },
-    {
-      id: 'edit',
-      label: 'Modifier',
-      capability: 'treasury.accounts.edit',
-      onClick: (row: BankAccount) => navigate(`/treasury/accounts/${row.id}/edit`),
+      id: 'actions',
+      header: 'Actions',
+      accessor: 'id',
+      render: (_, row) => (
+        <Button size="sm" variant="secondary" onClick={() => handleViewAccount(row as BankAccount)}>
+          Voir
+        </Button>
+      ),
     },
   ];
 
@@ -360,8 +520,10 @@ export const BankAccountsPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
-          actions={actions}
           isLoading={isLoading}
+          error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+          onRetry={() => refetch()}
+          onRowClick={handleViewAccount}
         />
       </Card>
     </PageWrapper>
@@ -609,7 +771,8 @@ export const TreasuryRoutes: React.FC = () => (
   <Routes>
     <Route index element={<TreasuryDashboard />} />
     <Route path="accounts" element={<BankAccountsPage />} />
-    <Route path="accounts/:id" element={<TransactionsPage />} />
+    <Route path="accounts/:id" element={<BankAccountDetailView />} />
+    <Route path="accounts/:id/edit" element={<BankAccountsPage />} />
     <Route path="transactions" element={<TransactionsPage />} />
     <Route path="forecast" element={<ForecastPage />} />
   </Routes>

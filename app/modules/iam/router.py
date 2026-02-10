@@ -6,8 +6,10 @@ Endpoints REST pour la gestion des identités et accès.
 """
 
 from datetime import datetime
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -330,7 +332,7 @@ async def get_current_user_profile(
 @router.get("/users/{user_id}", response_model=UserResponse)
 @require_permission("iam.user.read")
 async def get_user(
-    user_id: int,
+    user_id: UUID,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
@@ -366,7 +368,7 @@ async def get_user(
 @router.patch("/users/{user_id}", response_model=UserResponse)
 @require_permission("iam.user.update")
 async def update_user(
-    user_id: int,
+    user_id: UUID,
     data: UserUpdate,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
@@ -403,7 +405,7 @@ async def update_user(
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.user.delete")
 async def delete_user(
-    user_id: int,
+    user_id: UUID,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
@@ -415,7 +417,7 @@ async def delete_user(
 @router.post("/users/{user_id}/lock", response_model=UserResponse)
 @require_permission("iam.user.admin")
 async def lock_user(
-    user_id: int,
+    user_id: UUID,
     reason: str = Query(..., min_length=1),
     duration_minutes: int | None = Query(None, ge=1),
     current_user: User = Depends(get_current_user),
@@ -453,7 +455,7 @@ async def lock_user(
 @router.post("/users/{user_id}/unlock", response_model=UserResponse)
 @require_permission("iam.user.admin")
 async def unlock_user(
-    user_id: int,
+    user_id: UUID,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
@@ -543,53 +545,74 @@ async def create_role(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/roles", response_model=RoleListResponse)
+@router.get("/roles", response_model=list[RoleResponse])
 @require_permission("iam.role.read")
 async def list_roles(
     include_inactive: bool = False,
     current_user: User = Depends(get_current_user),
-    service: IAMService = Depends(get_service)
+    service: IAMService = Depends(get_service),
+    db: Session = Depends(get_db)
 ):
     """Liste tous les rôles."""
+    from app.modules.iam.models import IAMUser
+
     roles = service.list_roles(include_inactive=include_inactive)
 
-    return RoleListResponse(
-        items=[
-            RoleResponse(
-                id=r.id,
-                tenant_id=r.tenant_id,
-                code=r.code,
-                name=r.name,
-                description=r.description,
-                level=r.level,
-                parent_id=r.parent_id,
-                is_system=r.is_system,
-                is_active=r.is_active,
-                is_assignable=r.is_assignable,
-                requires_approval=r.requires_approval,
-                max_users=r.max_users,
-                user_count=len(r.users),
-                permissions=[p.code for p in r.permissions],
-                incompatible_roles=[],
-                created_at=r.created_at
-            )
-            for r in roles
-        ],
-        total=len(roles)
-    )
+    # Récupérer les noms des créateurs
+    creator_ids = [r.created_by for r in roles if r.created_by]
+    creators = {}
+    if creator_ids:
+        creator_users = db.query(IAMUser).filter(IAMUser.id.in_(creator_ids)).all()
+        creators = {
+            u.id: f"{u.first_name or ''} {u.last_name or ''}".strip() or u.email
+            for u in creator_users
+        }
+
+    return [
+        RoleResponse(
+            id=r.id,
+            tenant_id=r.tenant_id,
+            code=r.code,
+            name=r.name,
+            description=r.description,
+            level=r.level,
+            parent_id=r.parent_id,
+            is_system=r.is_system,
+            is_active=r.is_active,
+            is_assignable=r.is_assignable,
+            requires_approval=r.requires_approval,
+            max_users=r.max_users,
+            user_count=len(r.users),
+            permissions=[p.code for p in r.permissions],
+            incompatible_roles=[],
+            created_at=r.created_at,
+            created_by_name=creators.get(r.created_by) if r.created_by else None
+        )
+        for r in roles
+    ]
 
 
 @router.get("/roles/{role_id}", response_model=RoleResponse)
 @require_permission("iam.role.read")
 async def get_role(
-    role_id: int,
+    role_id: UUID,
     current_user: User = Depends(get_current_user),
-    service: IAMService = Depends(get_service)
+    service: IAMService = Depends(get_service),
+    db: Session = Depends(get_db)
 ):
     """Récupère un rôle par ID."""
+    from app.modules.iam.models import IAMUser
+
     role = service.get_role(role_id)
     if not role:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rôle non trouvé")
+
+    # Récupérer le nom du créateur
+    created_by_name = None
+    if role.created_by:
+        creator = db.query(IAMUser).filter(IAMUser.id == role.created_by).first()
+        if creator:
+            created_by_name = f"{creator.first_name or ''} {creator.last_name or ''}".strip() or creator.email
 
     return RoleResponse(
         id=role.id,
@@ -607,14 +630,15 @@ async def get_role(
         user_count=len(role.users),
         permissions=[p.code for p in role.permissions],
         incompatible_roles=[],
-        created_at=role.created_at
+        created_at=role.created_at,
+        created_by_name=created_by_name
     )
 
 
 @router.patch("/roles/{role_id}", response_model=RoleResponse)
 @require_permission("iam.role.update")
 async def update_role(
-    role_id: int,
+    role_id: UUID,
     data: RoleUpdate,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
@@ -647,7 +671,7 @@ async def update_role(
 @router.delete("/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.role.delete")
 async def delete_role(
-    role_id: int,
+    role_id: UUID,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
@@ -696,6 +720,380 @@ async def revoke_role(
 # ============================================================================
 # PERMISSIONS
 # ============================================================================
+
+# Liste complete des capabilities par module
+CAPABILITIES_BY_MODULE = {
+    "cockpit": {
+        "name": "Tableau de bord",
+        "icon": "LayoutDashboard",
+        "capabilities": [
+            {"code": "cockpit.view", "name": "Voir le tableau de bord", "description": "Accès au cockpit principal"},
+            {"code": "cockpit.decisions.view", "name": "Voir les décisions", "description": "Accès aux décisions stratégiques"},
+        ]
+    },
+    "partners": {
+        "name": "Partenaires",
+        "icon": "Users",
+        "capabilities": [
+            {"code": "partners.view", "name": "Voir les partenaires", "description": "Accès en lecture aux partenaires"},
+            {"code": "partners.create", "name": "Créer des partenaires", "description": "Créer de nouveaux partenaires"},
+            {"code": "partners.edit", "name": "Modifier les partenaires", "description": "Modifier les partenaires existants"},
+            {"code": "partners.delete", "name": "Supprimer les partenaires", "description": "Supprimer des partenaires"},
+            {"code": "partners.clients.view", "name": "Voir les clients", "description": "Accès aux fiches clients"},
+            {"code": "partners.clients.create", "name": "Créer des clients", "description": "Créer de nouveaux clients"},
+            {"code": "partners.clients.edit", "name": "Modifier les clients", "description": "Modifier les clients"},
+            {"code": "partners.clients.delete", "name": "Supprimer les clients", "description": "Supprimer des clients"},
+            {"code": "partners.suppliers.view", "name": "Voir les fournisseurs", "description": "Accès aux fiches fournisseurs"},
+            {"code": "partners.suppliers.create", "name": "Créer des fournisseurs", "description": "Créer de nouveaux fournisseurs"},
+            {"code": "partners.suppliers.edit", "name": "Modifier les fournisseurs", "description": "Modifier les fournisseurs"},
+            {"code": "partners.suppliers.delete", "name": "Supprimer les fournisseurs", "description": "Supprimer des fournisseurs"},
+            {"code": "partners.contacts.view", "name": "Voir les contacts", "description": "Accès aux contacts"},
+            {"code": "partners.contacts.create", "name": "Créer des contacts", "description": "Créer de nouveaux contacts"},
+            {"code": "partners.contacts.edit", "name": "Modifier les contacts", "description": "Modifier les contacts"},
+            {"code": "partners.contacts.delete", "name": "Supprimer les contacts", "description": "Supprimer des contacts"},
+        ]
+    },
+    "contacts": {
+        "name": "Contacts Unifiés",
+        "icon": "Contact",
+        "capabilities": [
+            {"code": "contacts.view", "name": "Voir les contacts", "description": "Accès aux contacts unifiés"},
+            {"code": "contacts.create", "name": "Créer des contacts", "description": "Créer de nouveaux contacts"},
+            {"code": "contacts.edit", "name": "Modifier les contacts", "description": "Modifier les contacts"},
+            {"code": "contacts.delete", "name": "Supprimer les contacts", "description": "Supprimer des contacts"},
+        ]
+    },
+    "invoicing": {
+        "name": "Facturation",
+        "icon": "FileText",
+        "capabilities": [
+            {"code": "invoicing.view", "name": "Voir la facturation", "description": "Accès en lecture à la facturation"},
+            {"code": "invoicing.create", "name": "Créer des documents", "description": "Créer devis/factures/avoirs"},
+            {"code": "invoicing.edit", "name": "Modifier des documents", "description": "Modifier les documents"},
+            {"code": "invoicing.delete", "name": "Supprimer des documents", "description": "Supprimer des documents"},
+            {"code": "invoicing.send", "name": "Envoyer des documents", "description": "Envoyer par email"},
+            {"code": "invoicing.quotes.view", "name": "Voir les devis", "description": "Accès aux devis"},
+            {"code": "invoicing.quotes.create", "name": "Créer des devis", "description": "Créer de nouveaux devis"},
+            {"code": "invoicing.quotes.edit", "name": "Modifier les devis", "description": "Modifier les devis"},
+            {"code": "invoicing.quotes.delete", "name": "Supprimer les devis", "description": "Supprimer des devis"},
+            {"code": "invoicing.quotes.send", "name": "Envoyer les devis", "description": "Envoyer les devis par email"},
+            {"code": "invoicing.invoices.view", "name": "Voir les factures", "description": "Accès aux factures"},
+            {"code": "invoicing.invoices.create", "name": "Créer des factures", "description": "Créer de nouvelles factures"},
+            {"code": "invoicing.invoices.edit", "name": "Modifier les factures", "description": "Modifier les factures"},
+            {"code": "invoicing.invoices.delete", "name": "Supprimer les factures", "description": "Supprimer des factures"},
+            {"code": "invoicing.invoices.send", "name": "Envoyer les factures", "description": "Envoyer les factures par email"},
+            {"code": "invoicing.credits.view", "name": "Voir les avoirs", "description": "Accès aux avoirs"},
+            {"code": "invoicing.credits.create", "name": "Créer des avoirs", "description": "Créer de nouveaux avoirs"},
+            {"code": "invoicing.credits.edit", "name": "Modifier les avoirs", "description": "Modifier les avoirs"},
+            {"code": "invoicing.credits.delete", "name": "Supprimer les avoirs", "description": "Supprimer des avoirs"},
+            {"code": "invoicing.credits.send", "name": "Envoyer les avoirs", "description": "Envoyer les avoirs par email"},
+        ]
+    },
+    "treasury": {
+        "name": "Trésorerie",
+        "icon": "Wallet",
+        "capabilities": [
+            {"code": "treasury.view", "name": "Voir la trésorerie", "description": "Accès à la trésorerie"},
+            {"code": "treasury.create", "name": "Créer des opérations", "description": "Créer des opérations"},
+            {"code": "treasury.transfer.execute", "name": "Exécuter des virements", "description": "Exécuter des virements bancaires"},
+            {"code": "treasury.accounts.view", "name": "Voir les comptes", "description": "Accès aux comptes bancaires"},
+            {"code": "treasury.accounts.create", "name": "Créer des comptes", "description": "Créer de nouveaux comptes"},
+            {"code": "treasury.accounts.edit", "name": "Modifier les comptes", "description": "Modifier les comptes"},
+            {"code": "treasury.accounts.delete", "name": "Supprimer les comptes", "description": "Supprimer des comptes"},
+        ]
+    },
+    "accounting": {
+        "name": "Comptabilité",
+        "icon": "Calculator",
+        "capabilities": [
+            {"code": "accounting.view", "name": "Voir la comptabilité", "description": "Accès à la comptabilité"},
+            {"code": "accounting.journal.view", "name": "Voir les journaux", "description": "Accès aux journaux comptables"},
+            {"code": "accounting.journal.delete", "name": "Supprimer des écritures", "description": "Supprimer des écritures comptables"},
+        ]
+    },
+    "purchases": {
+        "name": "Achats",
+        "icon": "ShoppingCart",
+        "capabilities": [
+            {"code": "purchases.view", "name": "Voir les achats", "description": "Accès aux achats"},
+            {"code": "purchases.create", "name": "Créer des achats", "description": "Créer des commandes d'achat"},
+            {"code": "purchases.edit", "name": "Modifier les achats", "description": "Modifier les achats"},
+            {"code": "purchases.orders.view", "name": "Voir les commandes", "description": "Accès aux commandes fournisseurs"},
+            {"code": "purchases.orders.create", "name": "Créer des commandes", "description": "Créer des commandes"},
+            {"code": "purchases.orders.edit", "name": "Modifier les commandes", "description": "Modifier les commandes"},
+            {"code": "purchases.orders.delete", "name": "Supprimer les commandes", "description": "Supprimer des commandes"},
+        ]
+    },
+    "projects": {
+        "name": "Projets",
+        "icon": "FolderKanban",
+        "capabilities": [
+            {"code": "projects.view", "name": "Voir les projets", "description": "Accès aux projets"},
+            {"code": "projects.create", "name": "Créer des projets", "description": "Créer de nouveaux projets"},
+            {"code": "projects.edit", "name": "Modifier les projets", "description": "Modifier les projets"},
+            {"code": "projects.delete", "name": "Supprimer les projets", "description": "Supprimer des projets"},
+        ]
+    },
+    "hr": {
+        "name": "Ressources Humaines",
+        "icon": "UserCog",
+        "capabilities": [
+            {"code": "hr.view", "name": "Voir les RH", "description": "Accès au module RH"},
+            {"code": "hr.create", "name": "Créer des données RH", "description": "Créer des données RH"},
+            {"code": "hr.edit", "name": "Modifier les données RH", "description": "Modifier les données RH"},
+            {"code": "hr.delete", "name": "Supprimer les données RH", "description": "Supprimer des données RH"},
+            {"code": "hr.employees.view", "name": "Voir les employés", "description": "Accès aux fiches employés"},
+            {"code": "hr.employees.create", "name": "Créer des employés", "description": "Créer de nouveaux employés"},
+            {"code": "hr.employees.edit", "name": "Modifier les employés", "description": "Modifier les employés"},
+            {"code": "hr.employees.delete", "name": "Supprimer les employés", "description": "Supprimer des employés"},
+            {"code": "hr.payroll.view", "name": "Voir la paie", "description": "Accès à la paie"},
+            {"code": "hr.payroll.create", "name": "Créer des bulletins", "description": "Créer des bulletins de paie"},
+            {"code": "hr.payroll.edit", "name": "Modifier la paie", "description": "Modifier les bulletins"},
+            {"code": "hr.leave.view", "name": "Voir les congés", "description": "Accès aux congés"},
+            {"code": "hr.leave.create", "name": "Créer des congés", "description": "Créer des demandes de congés"},
+            {"code": "hr.leave.approve", "name": "Approuver les congés", "description": "Approuver/refuser les congés"},
+        ]
+    },
+    "interventions": {
+        "name": "Interventions",
+        "icon": "Wrench",
+        "capabilities": [
+            {"code": "interventions.view", "name": "Voir les interventions", "description": "Accès aux interventions"},
+            {"code": "interventions.create", "name": "Créer des interventions", "description": "Créer de nouvelles interventions"},
+            {"code": "interventions.edit", "name": "Modifier les interventions", "description": "Modifier les interventions"},
+            {"code": "interventions.tickets.view", "name": "Voir les tickets", "description": "Accès aux tickets"},
+            {"code": "interventions.tickets.create", "name": "Créer des tickets", "description": "Créer de nouveaux tickets"},
+            {"code": "interventions.tickets.edit", "name": "Modifier les tickets", "description": "Modifier les tickets"},
+            {"code": "interventions.tickets.delete", "name": "Supprimer les tickets", "description": "Supprimer des tickets"},
+        ]
+    },
+    "inventory": {
+        "name": "Stock / Inventaire",
+        "icon": "Package",
+        "capabilities": [
+            {"code": "inventory.view", "name": "Voir le stock", "description": "Accès au stock"},
+            {"code": "inventory.create", "name": "Créer des articles", "description": "Créer des articles de stock"},
+            {"code": "inventory.edit", "name": "Modifier le stock", "description": "Modifier le stock"},
+            {"code": "inventory.delete", "name": "Supprimer du stock", "description": "Supprimer des articles"},
+            {"code": "inventory.warehouses.view", "name": "Voir les entrepôts", "description": "Accès aux entrepôts"},
+            {"code": "inventory.warehouses.create", "name": "Créer des entrepôts", "description": "Créer de nouveaux entrepôts"},
+            {"code": "inventory.warehouses.edit", "name": "Modifier les entrepôts", "description": "Modifier les entrepôts"},
+            {"code": "inventory.products.view", "name": "Voir les produits", "description": "Accès aux produits"},
+            {"code": "inventory.products.create", "name": "Créer des produits", "description": "Créer de nouveaux produits"},
+            {"code": "inventory.products.edit", "name": "Modifier les produits", "description": "Modifier les produits"},
+            {"code": "inventory.movements.view", "name": "Voir les mouvements", "description": "Accès aux mouvements de stock"},
+            {"code": "inventory.movements.create", "name": "Créer des mouvements", "description": "Créer des mouvements de stock"},
+        ]
+    },
+    "ecommerce": {
+        "name": "E-commerce",
+        "icon": "Store",
+        "capabilities": [
+            {"code": "ecommerce.view", "name": "Voir l'e-commerce", "description": "Accès au module e-commerce"},
+            {"code": "ecommerce.create", "name": "Créer des données", "description": "Créer des données e-commerce"},
+            {"code": "ecommerce.edit", "name": "Modifier l'e-commerce", "description": "Modifier les données"},
+            {"code": "ecommerce.delete", "name": "Supprimer des données", "description": "Supprimer des données"},
+            {"code": "ecommerce.products.view", "name": "Voir les produits", "description": "Accès aux produits"},
+            {"code": "ecommerce.products.create", "name": "Créer des produits", "description": "Créer de nouveaux produits"},
+            {"code": "ecommerce.products.edit", "name": "Modifier les produits", "description": "Modifier les produits"},
+            {"code": "ecommerce.products.delete", "name": "Supprimer les produits", "description": "Supprimer des produits"},
+            {"code": "ecommerce.orders.view", "name": "Voir les commandes", "description": "Accès aux commandes"},
+            {"code": "ecommerce.orders.create", "name": "Créer des commandes", "description": "Créer de nouvelles commandes"},
+            {"code": "ecommerce.orders.edit", "name": "Modifier les commandes", "description": "Modifier les commandes"},
+            {"code": "ecommerce.orders.delete", "name": "Supprimer les commandes", "description": "Supprimer des commandes"},
+        ]
+    },
+    "crm": {
+        "name": "CRM",
+        "icon": "Heart",
+        "capabilities": [
+            {"code": "crm.view", "name": "Voir le CRM", "description": "Accès au CRM"},
+            {"code": "crm.create", "name": "Créer des données CRM", "description": "Créer des opportunités/leads"},
+            {"code": "crm.edit", "name": "Modifier le CRM", "description": "Modifier les données CRM"},
+            {"code": "crm.delete", "name": "Supprimer du CRM", "description": "Supprimer des données CRM"},
+        ]
+    },
+    "production": {
+        "name": "Production",
+        "icon": "Factory",
+        "capabilities": [
+            {"code": "production.view", "name": "Voir la production", "description": "Accès à la production"},
+            {"code": "production.create", "name": "Créer des ordres", "description": "Créer des ordres de fabrication"},
+            {"code": "production.edit", "name": "Modifier la production", "description": "Modifier les ordres"},
+            {"code": "production.delete", "name": "Supprimer des ordres", "description": "Supprimer des ordres"},
+        ]
+    },
+    "quality": {
+        "name": "Qualité",
+        "icon": "CheckCircle",
+        "capabilities": [
+            {"code": "quality.view", "name": "Voir la qualité", "description": "Accès au module qualité"},
+            {"code": "quality.create", "name": "Créer des contrôles", "description": "Créer des contrôles qualité"},
+            {"code": "quality.edit", "name": "Modifier la qualité", "description": "Modifier les contrôles"},
+        ]
+    },
+    "maintenance": {
+        "name": "Maintenance (GMAO)",
+        "icon": "Settings",
+        "capabilities": [
+            {"code": "maintenance.view", "name": "Voir la maintenance", "description": "Accès à la GMAO"},
+            {"code": "maintenance.create", "name": "Créer des interventions", "description": "Créer des interventions"},
+            {"code": "maintenance.edit", "name": "Modifier la maintenance", "description": "Modifier les interventions"},
+            {"code": "maintenance.delete", "name": "Supprimer des interventions", "description": "Supprimer des interventions"},
+        ]
+    },
+    "pos": {
+        "name": "Point de Vente",
+        "icon": "CreditCard",
+        "capabilities": [
+            {"code": "pos.view", "name": "Voir le POS", "description": "Accès au point de vente"},
+            {"code": "pos.create", "name": "Créer des ventes", "description": "Créer des ventes"},
+            {"code": "pos.edit", "name": "Modifier le POS", "description": "Modifier les ventes"},
+        ]
+    },
+    "subscriptions": {
+        "name": "Abonnements",
+        "icon": "Repeat",
+        "capabilities": [
+            {"code": "subscriptions.view", "name": "Voir les abonnements", "description": "Accès aux abonnements"},
+            {"code": "subscriptions.create", "name": "Créer des abonnements", "description": "Créer de nouveaux abonnements"},
+            {"code": "subscriptions.edit", "name": "Modifier les abonnements", "description": "Modifier les abonnements"},
+            {"code": "subscriptions.delete", "name": "Supprimer les abonnements", "description": "Supprimer des abonnements"},
+        ]
+    },
+    "helpdesk": {
+        "name": "Helpdesk",
+        "icon": "Headphones",
+        "capabilities": [
+            {"code": "helpdesk.view", "name": "Voir le helpdesk", "description": "Accès au helpdesk"},
+            {"code": "helpdesk.create", "name": "Créer des tickets", "description": "Créer des tickets support"},
+            {"code": "helpdesk.edit", "name": "Modifier les tickets", "description": "Modifier les tickets"},
+        ]
+    },
+    "bi": {
+        "name": "Business Intelligence",
+        "icon": "BarChart3",
+        "capabilities": [
+            {"code": "bi.view", "name": "Voir les rapports", "description": "Accès aux rapports BI"},
+            {"code": "bi.create", "name": "Créer des rapports", "description": "Créer de nouveaux rapports"},
+            {"code": "bi.edit", "name": "Modifier les rapports", "description": "Modifier les rapports"},
+        ]
+    },
+    "compliance": {
+        "name": "Conformité",
+        "icon": "Shield",
+        "capabilities": [
+            {"code": "compliance.view", "name": "Voir la conformité", "description": "Accès à la conformité"},
+            {"code": "compliance.edit", "name": "Modifier la conformité", "description": "Gérer la conformité"},
+        ]
+    },
+    "web": {
+        "name": "Site Web",
+        "icon": "Globe",
+        "capabilities": [
+            {"code": "web.view", "name": "Voir le site web", "description": "Accès au module web"},
+            {"code": "web.edit", "name": "Modifier le site web", "description": "Modifier le contenu web"},
+        ]
+    },
+    "marketplace": {
+        "name": "Marketplace",
+        "icon": "ShoppingBag",
+        "capabilities": [
+            {"code": "marketplace.view", "name": "Voir la marketplace", "description": "Accès à la marketplace"},
+            {"code": "marketplace.edit", "name": "Modifier la marketplace", "description": "Gérer la marketplace"},
+        ]
+    },
+    "payments": {
+        "name": "Paiements",
+        "icon": "Banknote",
+        "capabilities": [
+            {"code": "payments.view", "name": "Voir les paiements", "description": "Accès aux paiements"},
+            {"code": "payments.create", "name": "Créer des paiements", "description": "Créer des paiements"},
+        ]
+    },
+    "mobile": {
+        "name": "Application Mobile",
+        "icon": "Smartphone",
+        "capabilities": [
+            {"code": "mobile.view", "name": "Accès mobile", "description": "Accès à l'application mobile"},
+        ]
+    },
+    "admin": {
+        "name": "Administration",
+        "icon": "Lock",
+        "capabilities": [
+            {"code": "admin.view", "name": "Accès administration", "description": "Accès au module admin"},
+            {"code": "admin.users.view", "name": "Voir les utilisateurs", "description": "Voir la liste des utilisateurs"},
+            {"code": "admin.users.create", "name": "Créer des utilisateurs", "description": "Créer de nouveaux utilisateurs"},
+            {"code": "admin.users.edit", "name": "Modifier les utilisateurs", "description": "Modifier les utilisateurs"},
+            {"code": "admin.users.delete", "name": "Supprimer les utilisateurs", "description": "Supprimer des utilisateurs"},
+            {"code": "admin.roles.view", "name": "Voir les rôles", "description": "Voir la liste des rôles"},
+            {"code": "admin.roles.create", "name": "Créer des rôles", "description": "Créer de nouveaux rôles"},
+            {"code": "admin.roles.edit", "name": "Modifier les rôles", "description": "Modifier les rôles"},
+            {"code": "admin.roles.delete", "name": "Supprimer les rôles", "description": "Supprimer des rôles"},
+            {"code": "admin.tenants.view", "name": "Voir les tenants", "description": "Voir la liste des tenants"},
+            {"code": "admin.tenants.create", "name": "Créer des tenants", "description": "Créer de nouveaux tenants"},
+            {"code": "admin.tenants.delete", "name": "Supprimer les tenants", "description": "Supprimer des tenants"},
+            {"code": "admin.modules.view", "name": "Voir les modules", "description": "Voir les modules activés"},
+            {"code": "admin.modules.edit", "name": "Modifier les modules", "description": "Activer/désactiver des modules"},
+            {"code": "admin.logs.view", "name": "Voir les logs", "description": "Accès aux journaux système"},
+            {"code": "admin.root.break_glass", "name": "Break Glass", "description": "Accès d'urgence super admin"},
+        ]
+    },
+    "iam": {
+        "name": "Gestion des Accès (IAM)",
+        "icon": "Key",
+        "capabilities": [
+            {"code": "iam.user.create", "name": "Créer des utilisateurs IAM", "description": "Créer des utilisateurs"},
+            {"code": "iam.user.read", "name": "Voir les utilisateurs IAM", "description": "Voir les utilisateurs"},
+            {"code": "iam.user.update", "name": "Modifier les utilisateurs IAM", "description": "Modifier les utilisateurs"},
+            {"code": "iam.user.delete", "name": "Supprimer les utilisateurs IAM", "description": "Supprimer des utilisateurs"},
+            {"code": "iam.user.admin", "name": "Administrer les utilisateurs", "description": "Administration complète"},
+            {"code": "iam.role.create", "name": "Créer des rôles", "description": "Créer de nouveaux rôles"},
+            {"code": "iam.role.read", "name": "Voir les rôles", "description": "Voir les rôles"},
+            {"code": "iam.role.update", "name": "Modifier les rôles", "description": "Modifier les rôles"},
+            {"code": "iam.role.delete", "name": "Supprimer les rôles", "description": "Supprimer des rôles"},
+            {"code": "iam.role.assign", "name": "Assigner des rôles", "description": "Assigner des rôles aux utilisateurs"},
+            {"code": "iam.group.create", "name": "Créer des groupes", "description": "Créer de nouveaux groupes"},
+            {"code": "iam.group.read", "name": "Voir les groupes", "description": "Voir les groupes"},
+            {"code": "iam.group.update", "name": "Modifier les groupes", "description": "Modifier les groupes"},
+            {"code": "iam.group.delete", "name": "Supprimer les groupes", "description": "Supprimer des groupes"},
+            {"code": "iam.permission.read", "name": "Voir les permissions", "description": "Voir les permissions"},
+            {"code": "iam.permission.admin", "name": "Administrer les permissions", "description": "Gérer toutes les permissions"},
+            {"code": "iam.invitation.create", "name": "Créer des invitations", "description": "Inviter des utilisateurs"},
+            {"code": "iam.policy.read", "name": "Voir les politiques", "description": "Voir les politiques de sécurité"},
+            {"code": "iam.policy.update", "name": "Modifier les politiques", "description": "Modifier les politiques"},
+        ]
+    },
+    "marceau": {
+        "name": "Marceau AI Assistant",
+        "icon": "Bot",
+        "capabilities": [
+            {"code": "marceau.view", "name": "Voir Marceau", "description": "Accès au module Marceau AI"},
+            {"code": "marceau.config.view", "name": "Voir la configuration", "description": "Voir la configuration Marceau"},
+            {"code": "marceau.config.edit", "name": "Modifier la configuration", "description": "Modifier les paramètres Marceau"},
+            {"code": "marceau.actions.view", "name": "Voir les actions", "description": "Voir l'historique des actions IA"},
+            {"code": "marceau.actions.validate", "name": "Valider les actions", "description": "Valider/rejeter les actions IA"},
+            {"code": "marceau.conversations.view", "name": "Voir les conversations", "description": "Accès aux conversations téléphoniques"},
+            {"code": "marceau.memory.view", "name": "Voir la mémoire", "description": "Accès à la mémoire Marceau"},
+            {"code": "marceau.memory.edit", "name": "Modifier la mémoire", "description": "Ajouter/supprimer des souvenirs"},
+            {"code": "marceau.knowledge.view", "name": "Voir la base de connaissances", "description": "Accès aux documents"},
+            {"code": "marceau.knowledge.edit", "name": "Modifier la base de connaissances", "description": "Upload/supprimer des documents"},
+            {"code": "marceau.chat", "name": "Discuter avec Marceau", "description": "Utiliser le chat Marceau"},
+        ]
+    },
+}
+
+
+@router.get("/capabilities/modules")
+@require_permission("iam.permission.read")
+async def get_capabilities_by_module(
+    current_user: User = Depends(get_current_user),
+    service: IAMService = Depends(get_service)
+):
+    """Retourne toutes les capabilities groupées par module."""
+    return CAPABILITIES_BY_MODULE
+
 
 @router.get("/permissions", response_model=PermissionListResponse)
 @require_permission("iam.permission.read")
@@ -749,12 +1147,32 @@ async def check_permission(
 @router.get("/users/{user_id}/permissions", response_model=list[str])
 @require_permission("iam.permission.read")
 async def get_user_permissions(
-    user_id: int,
+    user_id: UUID,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
 ):
     """Récupère toutes les permissions d'un utilisateur."""
     return service.get_user_permissions(user_id)
+
+
+class PermissionsUpdateRequest(BaseModel):
+    """Request body pour mise à jour des permissions."""
+    capabilities: list[str] = []
+    permissions: list[str] = []  # Alias pour compatibilité
+
+
+@router.put("/users/{user_id}/permissions", response_model=list[str])
+@require_permission("iam.permission.admin")
+async def update_user_permissions(
+    user_id: UUID,
+    data: PermissionsUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    service: IAMService = Depends(get_service)
+):
+    """Met à jour les permissions d'un utilisateur."""
+    # Accepte capabilities ou permissions
+    perms = data.capabilities if data.capabilities else data.permissions
+    return service.update_user_permissions(user_id, perms)
 
 
 # ============================================================================
@@ -817,7 +1235,7 @@ async def list_groups(
 @router.post("/groups/{group_id}/members", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.group.update")
 async def add_group_members(
-    group_id: int,
+    group_id: UUID,
     data: GroupMembership,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)
@@ -834,7 +1252,7 @@ async def add_group_members(
 @router.delete("/groups/{group_id}/members", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.group.update")
 async def remove_group_members(
-    group_id: int,
+    group_id: UUID,
     data: GroupMembership,
     current_user: User = Depends(get_current_user),
     service: IAMService = Depends(get_service)

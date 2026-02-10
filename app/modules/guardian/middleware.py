@@ -61,7 +61,11 @@ def _check_tables_exist() -> bool:
             _tables_exist = False
         finally:
             db.close()
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "[GUARDIAN_STARTUP] Erreur inattendue vérification tables",
+            extra={"error": str(e)[:300], "consequence": "tables_assumed_missing"}
+        )
         _tables_exist = False
 
     _tables_verified = True
@@ -130,7 +134,7 @@ class GuardianMiddleware(BaseHTTPMiddleware):
 
             # Protection: si call_next ne retourne pas de réponse
             if response is None:
-                logger.warning(f"No response from call_next for {request.method} {path}")
+                logger.warning("No response from call_next for %s %s", request.method, path)
                 return Response(
                     content='{"error": "Internal server error"}',
                     status_code=500,
@@ -235,7 +239,7 @@ class GuardianMiddleware(BaseHTTPMiddleware):
             _tables_exist = False
         except Exception as e:
             # Ne jamais faire échouer la requête
-            logger.debug(f"Error recording middleware: {e}")
+            logger.debug("Error recording middleware: %s", e)
 
     async def _record_exception(
         self,
@@ -305,7 +309,7 @@ class GuardianMiddleware(BaseHTTPMiddleware):
             _tables_exist = False
         except Exception as e:
             # Ne jamais faire échouer la requête
-            logger.debug(f"Exception recording error: {e}")
+            logger.debug("Exception recording error: %s", e)
 
     def _determine_severity(self, status_code: int) -> ErrorSeverity:
         """Détermine la sévérité selon le code HTTP."""
@@ -399,4 +403,4 @@ class GuardianMiddleware(BaseHTTPMiddleware):
 def setup_guardian_middleware(app, environment: str = "production"):
     """Configure le middleware GUARDIAN sur l'application FastAPI."""
     app.add_middleware(GuardianMiddleware, environment=environment)
-    logger.info(f"GUARDIAN middleware initialized for environment: {environment}")
+    logger.info("GUARDIAN middleware initialized for environment: %s", environment)

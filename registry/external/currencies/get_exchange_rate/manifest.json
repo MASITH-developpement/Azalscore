@@ -1,0 +1,51 @@
+{
+  "id": "azalscore.external.currencies.get_exchange_rate",
+  "name": "Récupère un taux de change en temps réel",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Récupère un taux de change en temps réel",
+  "inputs": {
+    "from_currency": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "to_currency": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "rate": {
+      "type": "number",
+      "description": ""
+    },
+    "timestamp": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "currencies",
+    "exchange"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

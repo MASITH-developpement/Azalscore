@@ -3,111 +3,25 @@ AZALS - Endpoints Authentification SÉCURISÉS
 =============================================
 Login et Register pour utilisateurs DIRIGEANT.
 Rate limiting strict sur tous les endpoints auth.
+
+SÉCURITÉ P1-4: Rate limiting distribué via Redis en production.
 """
 
-import time
-from collections import defaultdict
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_tenant_id
 from app.core.models import User, UserRole
+from app.core.rate_limiter import auth_rate_limiter  # P1-4: Redis-backed rate limiter
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.core.two_factor import TwoFactorService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-# ============================================================================
-# RATE LIMITING STRICT POUR AUTH
-# ============================================================================
-
-class AuthRateLimiter:
-    """
-    Rate limiter STRICT pour endpoints d'authentification.
-    Protection contre brute force et credential stuffing.
-    """
-
-    def __init__(self):
-        self._login_attempts: dict[str, list[float]] = defaultdict(list)
-        self._register_attempts: dict[str, list[float]] = defaultdict(list)
-        self._failed_logins: dict[str, int] = defaultdict(int)
-
-    def _cleanup_old_attempts(self, attempts: list[float], window_seconds: int = 60) -> list[float]:
-        """Supprime les tentatives hors fenêtre."""
-        cutoff = time.time() - window_seconds
-        return [t for t in attempts if t > cutoff]
-
-    def check_login_rate(self, ip: str, email: str) -> None:
-        """Vérifie le rate limit pour login."""
-        settings = get_settings()
-        limit = settings.auth_rate_limit_per_minute
-
-        # Nettoyage
-        self._login_attempts[ip] = self._cleanup_old_attempts(self._login_attempts[ip])
-        self._login_attempts[email] = self._cleanup_old_attempts(self._login_attempts[email])
-
-        # Vérification par IP
-        if len(self._login_attempts[ip]) >= limit:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many login attempts from this IP. Wait 60 seconds.",
-                headers={"Retry-After": "60"}
-            )
-
-        # Vérification par email (3x plus permissif)
-        if len(self._login_attempts[email]) >= limit * 3:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many login attempts for this account. Wait 60 seconds.",
-                headers={"Retry-After": "60"}
-            )
-
-        # Blocage si trop d'échecs consécutifs
-        if self._failed_logins[email] >= 5:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Account temporarily locked due to failed attempts. Wait 15 minutes.",
-                headers={"Retry-After": "900"}
-            )
-
-    def record_login_attempt(self, ip: str, email: str, success: bool) -> None:
-        """Enregistre une tentative de login."""
-        now = time.time()
-        self._login_attempts[ip].append(now)
-        self._login_attempts[email].append(now)
-
-        if success:
-            self._failed_logins[email] = 0
-        else:
-            self._failed_logins[email] += 1
-
-    def check_register_rate(self, ip: str) -> None:
-        """Vérifie le rate limit pour registration (plus strict)."""
-        self._register_attempts[ip] = self._cleanup_old_attempts(
-            self._register_attempts[ip], window_seconds=300  # 5 minutes
-        )
-
-        # Max 3 registrations par 5 minutes par IP
-        if len(self._register_attempts[ip]) >= 3:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many registration attempts. Wait 5 minutes.",
-                headers={"Retry-After": "300"}
-            )
-
-    def record_register_attempt(self, ip: str) -> None:
-        """Enregistre une tentative d'inscription."""
-        self._register_attempts[ip].append(time.time())
-
-
-# Instance globale du rate limiter
-auth_rate_limiter = AuthRateLimiter()
 
 
 def get_client_ip(request: Request) -> str:
@@ -159,6 +73,11 @@ class UserLogin(BaseModel):
     """Schéma pour la connexion."""
     email: EmailStr
     password: str
+
+    @field_validator('password', mode='before')
+    @classmethod
+    def strip_password(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
 
 
 class TokenResponse(BaseModel):
@@ -249,8 +168,12 @@ def register(
     client_ip = get_client_ip(request)
     auth_rate_limiter.check_register_rate(client_ip)
 
-    # Vérifier si l'email existe déjà
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    # SÉCURITÉ P0-3: Vérifier si l'email existe déjà DANS CE TENANT UNIQUEMENT
+    # Correction: ajout du filtre tenant_id pour isolation multi-tenant
+    existing_user = db.query(User).filter(
+        User.email == user_data.email,
+        User.tenant_id == tenant_id
+    ).first()
     if existing_user:
         # Enregistrer la tentative même si échec
         auth_rate_limiter.record_register_attempt(client_ip)
@@ -285,6 +208,7 @@ def register(
 def login(
     request: Request,
     user_data: UserLogin,
+    tenant_id: str = Depends(get_tenant_id),
     db: Session = Depends(get_db)
 ):
     """
@@ -292,16 +216,31 @@ def login(
     RATE LIMITED: Max 5 tentatives par minute par IP.
     BLOCAGE: Apres 5 echecs consecutifs, compte bloque 15 min.
     Retourne LoginResponse ou LoginResponseWith2FA si 2FA requis.
+
+    SÉCURITÉ P0-3: Login isolé par tenant pour éviter les attaques cross-tenant.
     """
     # SÉCURITÉ: Rate limiting strict
     client_ip = get_client_ip(request)
     auth_rate_limiter.check_login_rate(client_ip, user_data.email)
 
-    # Recherche de l'utilisateur
-    user = db.query(User).filter(User.email == user_data.email).first()
+    # DEBUG TEMPORAIRE: diagnostiquer les échecs de login navigateur
+    import logging
+    _login_logger = logging.getLogger("app.auth.login_debug")
+    _login_logger.warning(
+        f"[LOGIN_DEBUG] email='{user_data.email}' email_len={len(user_data.email)} "
+        f"pwd_len={len(user_data.password)} tenant={tenant_id} ip={client_ip}"
+    )
+
+    # SÉCURITÉ P0-3: Recherche de l'utilisateur DANS LE TENANT UNIQUEMENT
+    # Correction: ajout du filtre tenant_id pour isolation multi-tenant
+    user = db.query(User).filter(
+        User.email == user_data.email,
+        User.tenant_id == tenant_id
+    ).first()
 
     if not user:
         # Enregistrer l'échec (timing constant pour éviter user enumeration)
+        _login_logger.warning(f"[LOGIN_DEBUG] USER NOT FOUND for email='{user_data.email}' tenant={tenant_id}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -310,6 +249,7 @@ def login(
 
     # Vérification du mot de passe
     if not verify_password(user_data.password, user.password_hash):
+        _login_logger.warning(f"[LOGIN_DEBUG] PASSWORD MISMATCH for email='{user_data.email}' pwd_len={len(user_data.password)}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -550,8 +490,22 @@ def verify_2fa_login(
     """
     Vérifie le code 2FA et retourne le token d'accès final.
     Utilisé après un login qui retourne requires_2fa=True.
+
+    SÉCURITÉ: Rate limiting strict pour empêcher brute force des codes TOTP.
     """
     from app.core.security import decode_access_token
+
+    # SÉCURITÉ: Rate limiting sur 2FA (5 tentatives par minute par IP)
+    client_ip = get_client_ip(request)
+    from app.core.rate_limiter import rate_limiter
+    allowed, count = rate_limiter.check_rate("2fa:verify", client_ip, 5, 60)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many 2FA verification attempts. Wait 60 seconds.",
+            headers={"Retry-After": "60"}
+        )
+    rate_limiter.record_attempt("2fa:verify", client_ip, 60)
 
     # Décoder le pending token
     payload = decode_access_token(data.pending_token)
@@ -691,13 +645,24 @@ def regenerate_backup_codes(
 
 @router.post("/logout")
 def logout(
+    request: Request,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Déconnexion de l'utilisateur.
-    Avec JWT, le logout est géré côté client (suppression du token).
-    Cet endpoint permet au frontend d'avoir un point de terminaison cohérent.
+    Déconnexion de l'utilisateur avec révocation côté serveur.
+
+    SÉCURITÉ P0-6: Le token est ajouté à la blacklist pour invalidation immédiate.
+    Cela empêche la réutilisation du token même s'il n'a pas expiré.
     """
+    from app.core.security import revoke_token
+
+    # Récupérer le token depuis le header Authorization
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        # Révoquer le token (ajout à la blacklist)
+        revoke_token(token)
+
     return {"success": True, "message": "Logged out successfully"}
 
 
@@ -732,7 +697,7 @@ def refresh_access_token(
             payload = decode_access_token(data.refresh_token)
         except Exception as decode_error:
             logger.warning(
-                f"[GUARDIAN] Refresh token decode failed: {decode_error}",
+                "[GUARDIAN] Refresh token decode failed: %s", decode_error,
                 extra={
                     "client_ip": client_ip,
                     "error_type": "token_decode_error",
@@ -782,10 +747,12 @@ def refresh_access_token(
 
         # Recherche utilisateur avec gestion d'erreur DB
         try:
-            user = db.query(User).filter(User.id == int(user_id)).first()
+            from uuid import UUID
+            user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+            user = db.query(User).filter(User.id == user_uuid).first()
         except Exception as db_error:
             logger.error(
-                f"[GUARDIAN] Database error during refresh: {db_error}",
+                "[GUARDIAN] Database error during refresh: %s", db_error,
                 extra={
                     "client_ip": client_ip,
                     "user_id": user_id,
@@ -801,7 +768,7 @@ def refresh_access_token(
 
         if not user:
             logger.warning(
-                f"[GUARDIAN] Refresh token for non-existent user: {user_id}",
+                "[GUARDIAN] Refresh token for non-existent user: %s", user_id,
                 extra={"client_ip": client_ip, "user_id": user_id, "path": "/auth/refresh"}
             )
             raise HTTPException(
@@ -811,7 +778,7 @@ def refresh_access_token(
 
         if not user.is_active:
             logger.warning(
-                f"[GUARDIAN] Refresh token for inactive user: {user_id}",
+                "[GUARDIAN] Refresh token for inactive user: %s", user_id,
                 extra={"client_ip": client_ip, "user_id": user_id, "path": "/auth/refresh"}
             )
             raise HTTPException(
@@ -840,7 +807,7 @@ def refresh_access_token(
             )
         except Exception as token_error:
             logger.error(
-                f"[GUARDIAN] Token creation failed: {token_error}",
+                "[GUARDIAN] Token creation failed: %s", token_error,
                 extra={
                     "client_ip": client_ip,
                     "user_id": str(user.id),
@@ -855,7 +822,7 @@ def refresh_access_token(
             )
 
         logger.info(
-            f"[GUARDIAN] Token refreshed successfully for user: {user.id}",
+            "[GUARDIAN] Token refreshed successfully for user: %s", user.id,
             extra={"client_ip": client_ip, "user_id": str(user.id)}
         )
 
@@ -871,7 +838,7 @@ def refresh_access_token(
     except Exception as unexpected_error:
         # GUARDIAN: Catch-all - JAMAIS de 500 sur /auth/refresh
         logger.error(
-            f"[GUARDIAN] UNEXPECTED error in refresh endpoint: {unexpected_error}",
+            "[GUARDIAN] UNEXPECTED error in refresh endpoint: %s", unexpected_error,
             extra={
                 "client_ip": client_ip,
                 "error_type": "unexpected_error",
@@ -931,7 +898,7 @@ def get_current_user_info(
     except Exception as e:
         # GUARDIAN: Log l'erreur mais retourne 401, pas 500
         logger.error(
-            f"[GUARDIAN] Unexpected error in /auth/me: {e}",
+            "[GUARDIAN] Unexpected error in /auth/me: %s", e,
             extra={
                 "client_ip": client_ip,
                 "error_type": "unexpected_error",
@@ -947,13 +914,49 @@ def get_current_user_info(
 
 @router.get("/capabilities")
 def get_user_capabilities(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Retourne les capacites/permissions de l'utilisateur connecte.
     Utilise pour le controle d'acces cote frontend.
+
+    PRIORITÉ:
+    1. Si l'utilisateur a des permissions IAM personnalisées -> les utiliser
+    2. Sinon -> utiliser les capabilities par défaut du rôle
     """
-    # Toutes les capacites disponibles
+    from sqlalchemy import text
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Vérifier si l'utilisateur a des permissions IAM personnalisées
+    try:
+        result = db.execute(text("""
+            SELECT permission_code FROM iam_user_permissions
+            WHERE user_id = :user_id
+        """), {"user_id": str(current_user.id)})
+        iam_permissions = [row[0] for row in result]
+
+        logger.info(f"[AUTH] User {current_user.id}: found {len(iam_permissions)} IAM permissions")
+
+        if iam_permissions:
+            # L'utilisateur a des permissions IAM personnalisées
+            role_name = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+            has_accounting = 'accounting.view' in iam_permissions
+            logger.info(f"[AUTH] Returning IAM permissions, accounting.view={has_accounting}")
+            return {
+                "capabilities": iam_permissions,
+                "role": role_name,
+                "source": "iam"
+            }
+        else:
+            logger.info(f"[AUTH] No IAM permissions, using role-based capabilities")
+    except Exception as e:
+        # En cas d'erreur, fallback sur les capabilities du rôle
+        logger.warning(f"[AUTH] Erreur lecture permissions IAM: {e}")
+
+    # Fallback: Toutes les capacites disponibles (par role)
     ALL_CAPABILITIES = [
         "cockpit.view", "cockpit.decisions.view",
         # Partners - permissions generiques ET specifiques (frontend utilise les deux)
@@ -961,6 +964,8 @@ def get_user_capabilities(
         "partners.clients.view", "partners.clients.create", "partners.clients.edit", "partners.clients.delete",
         "partners.suppliers.view", "partners.suppliers.create", "partners.suppliers.edit", "partners.suppliers.delete",
         "partners.contacts.view", "partners.contacts.create", "partners.contacts.edit", "partners.contacts.delete",
+        # Contacts Unifiés (module contacts)
+        "contacts.view", "contacts.create", "contacts.edit", "contacts.delete",
         # Invoicing - generiques ET specifiques par type (quotes, invoices, credits)
         "invoicing.view", "invoicing.create", "invoicing.edit", "invoicing.delete", "invoicing.send",
         "invoicing.quotes.view", "invoicing.quotes.create", "invoicing.quotes.edit", "invoicing.quotes.delete", "invoicing.quotes.send",
@@ -976,6 +981,11 @@ def get_user_capabilities(
         "purchases.orders.view", "purchases.orders.create", "purchases.orders.edit", "purchases.orders.delete",
         # Projects
         "projects.view", "projects.create", "projects.edit", "projects.delete",
+        # HR - Ressources Humaines
+        "hr.view", "hr.create", "hr.edit", "hr.delete",
+        "hr.employees.view", "hr.employees.create", "hr.employees.edit", "hr.employees.delete",
+        "hr.payroll.view", "hr.payroll.create", "hr.payroll.edit",
+        "hr.leave.view", "hr.leave.create", "hr.leave.approve",
         # Interventions - generiques ET specifiques (tickets)
         "interventions.view", "interventions.create", "interventions.edit",
         "interventions.tickets.view", "interventions.tickets.create", "interventions.tickets.edit", "interventions.tickets.delete",
@@ -991,6 +1001,29 @@ def get_user_capabilities(
         "payments.view", "payments.create",
         # Mobile
         "mobile.view",
+        # Inventory - Stock
+        "inventory.view", "inventory.create", "inventory.edit", "inventory.delete",
+        "inventory.warehouses.view", "inventory.warehouses.create", "inventory.warehouses.edit",
+        "inventory.products.view", "inventory.products.create", "inventory.products.edit",
+        "inventory.movements.view", "inventory.movements.create",
+        # Production
+        "production.view", "production.create", "production.edit", "production.delete",
+        # Quality
+        "quality.view", "quality.create", "quality.edit",
+        # Maintenance (GMAO)
+        "maintenance.view", "maintenance.create", "maintenance.edit", "maintenance.delete",
+        # Point de Vente (POS)
+        "pos.view", "pos.create", "pos.edit",
+        # Abonnements
+        "subscriptions.view", "subscriptions.create", "subscriptions.edit", "subscriptions.delete",
+        # Helpdesk
+        "helpdesk.view", "helpdesk.create", "helpdesk.edit",
+        # Business Intelligence
+        "bi.view", "bi.create", "bi.edit",
+        # Conformité
+        "compliance.view", "compliance.edit",
+        # CRM
+        "crm.view", "crm.create", "crm.edit", "crm.delete",
         # Admin - avec create pour roles
         "admin.view", "admin.users.view", "admin.users.create", "admin.users.edit", "admin.users.delete",
         "admin.roles.view", "admin.roles.create", "admin.roles.edit", "admin.roles.delete",
@@ -1005,10 +1038,19 @@ def get_user_capabilities(
         "iam.permission.read",
         "iam.invitation.create",
         "iam.policy.read", "iam.policy.update",
+        # Marceau IA Assistant
+        "marceau.view", "marceau.chat",
+        "marceau.conversations.view", "marceau.conversations.manage",
+        "marceau.actions.view", "marceau.actions.validate",
+        "marceau.memory.view", "marceau.memory.manage",
+        "marceau.settings.view", "marceau.settings.manage",
+        "marceau.admin",
     ]
 
     # Capacites basees sur le role
     role_capabilities = {
+        "SUPERADMIN": ALL_CAPABILITIES,  # Super admin - acces complet
+        "SUPER_ADMIN": ALL_CAPABILITIES,  # Alias super admin
         "DIRIGEANT": ALL_CAPABILITIES,  # Acces complet
         "DAF": [
             "cockpit.view", "treasury.view", "treasury.create", "treasury.transfer.execute",
@@ -1030,10 +1072,11 @@ def get_user_capabilities(
     role_name = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     capabilities = role_capabilities.get(role_name, ["cockpit.view"])
 
-    return {"data": {
+    # Retourner directement les capabilities sans enveloppe "data"
+    return {
         "capabilities": capabilities,
         "role": role_name,
-    }}
+    }
 
 
 # ===== CHANGEMENT DE MOT DE PASSE =====

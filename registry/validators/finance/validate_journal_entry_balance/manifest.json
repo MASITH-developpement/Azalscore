@@ -1,0 +1,54 @@
+{
+  "id": "azalscore.validators.finance.validate_journal_entry_balance",
+  "name": "Valide qu'une écriture comptable est équilibrée",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide qu'une écriture comptable est équilibrée",
+  "inputs": {
+    "lines": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_balanced": {
+      "type": "boolean",
+      "description": ""
+    },
+    "debit_total": {
+      "type": "number",
+      "description": ""
+    },
+    "credit_total": {
+      "type": "number",
+      "description": ""
+    },
+    "difference": {
+      "type": "number",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "finance",
+    "entries"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

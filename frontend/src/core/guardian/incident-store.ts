@@ -5,6 +5,7 @@
  */
 
 import { create } from 'zustand';
+import { logError } from '@core/error-handling';
 
 // ============================================================
 // TYPES
@@ -92,7 +93,8 @@ const getUserId = (): string | null => {
     try {
       const parsed = JSON.parse(authData);
       return parsed.id?.toString() || null;
-    } catch {
+    } catch (error) {
+      logError(error, 'Guardian.loadIncidents');
       return null;
     }
   }
@@ -158,7 +160,7 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
         details: incident.details,
         stack_trace: incident.stack_trace,
         screenshot_data: incident.screenshot_data,
-        timestamp: incident.timestamp.toISOString(),
+        frontend_timestamp: incident.timestamp.toISOString(),
       }),
     });
 

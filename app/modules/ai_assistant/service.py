@@ -11,12 +11,15 @@ Principes fondamentaux:
 """
 
 import hashlib
+import logging
 import uuid
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     AIAnalysis,
@@ -49,9 +52,10 @@ from .schemas import (
 class AIAssistantService:
     """Service IA Transverse Opérationnelle."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # ========================================================================
     # CONFIGURATION
@@ -1022,13 +1026,21 @@ doivent être validées par les responsables humains.*"""
         try:
             self.get_config()
             features_status["configuration"] = "healthy"
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                "[AI_HEALTH] Configuration check failed",
+                extra={"error": str(e)[:300], "consequence": "feature_unhealthy"}
+            )
             features_status["configuration"] = "unhealthy"
 
         try:
             self.db.execute("SELECT 1")
             features_status["database"] = "healthy"
-        except Exception:
+        except Exception as e:
+            logger.error(
+                "[AI_HEALTH_DB] Database health check failed",
+                extra={"error": str(e)[:300], "consequence": "database_unhealthy"}
+            )
             features_status["database"] = "unhealthy"
 
         features_status["nlp_engine"] = "healthy"  # Placeholder

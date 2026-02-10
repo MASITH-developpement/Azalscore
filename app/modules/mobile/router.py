@@ -40,9 +40,10 @@ router = APIRouter(prefix="/mobile", tags=["Mobile"])
 
 def get_mobile_service(
     db: Session = Depends(get_db),
-    tenant_id: str = Depends(get_tenant_id)
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
 ) -> MobileService:
-    """Injection du service Mobile."""
+    """Injection du service Mobile avec authentification obligatoire."""
     return MobileService(db, tenant_id)
 
 

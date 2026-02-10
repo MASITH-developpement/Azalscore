@@ -8,6 +8,7 @@ import React from 'react';
 import { create } from 'zustand';
 import { api } from '@core/api-client';
 import type { Capability, CapabilitiesState } from '@/types';
+import { LoadingState } from '../../ui-engine/components/StateViews';
 
 // ============================================================
 // TYPES LOCAUX
@@ -218,7 +219,7 @@ export const CapabilityGuard: React.FC<CapabilityGuardProps> = ({
   // CRITICAL: Ne pas décider tant que les capabilities ne sont pas READY
   // Cela évite les redirections prématurées avant le chargement
   if (status !== 'ready') {
-    return null; // Attendre que les capabilities soient chargées
+    return <LoadingState message="Verification des acces..." />;
   }
 
   let hasAccess = false;

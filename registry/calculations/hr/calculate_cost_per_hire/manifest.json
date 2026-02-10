@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.hr.calculate_cost_per_hire",
+  "name": "Calcule le coût par recrutement",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le coût par recrutement",
+  "inputs": {
+    "recruitment_costs": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "number_of_hires": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "cost_per_hire": {
+      "type": "number",
+      "description": ""
+    },
+    "total_cost": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "recruitment"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

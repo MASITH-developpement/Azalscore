@@ -1,0 +1,622 @@
+/**
+ * AZALSCORE - Module Cockpit CSS
+ * ================================
+ *
+ * Styles specifiques au module Cockpit (tableau de bord executif).
+ * Utilise exclusivement les CSS variables du design system AZALSCORE.
+ */
+
+/* ============================================================
+   COCKPIT PAGE WRAPPER
+   ============================================================ */
+
+.azals-cockpit {
+  padding: var(--azals-spacing-xl);
+  background: var(--azals-bg-secondary);
+  min-height: 100vh;
+}
+
+/* ============================================================
+   COCKPIT HEADER
+   ============================================================ */
+
+.azals-cockpit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+.azals-cockpit-header__title {
+  font-size: var(--azals-font-size-3xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--azals-text);
+}
+
+.azals-cockpit-header__subtitle {
+  color: var(--azals-text-secondary);
+  margin: var(--azals-spacing-xs) 0 0 0;
+}
+
+/* ============================================================
+   KPI GRID
+   ============================================================ */
+
+.azals-cockpit-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--azals-spacing-md);
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+@media (max-width: 1024px) {
+  .azals-cockpit-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .azals-cockpit-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   GLOBAL KPI CARD
+   ============================================================ */
+
+.azals-cockpit-kpi {
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius-xl);
+  padding: var(--azals-spacing-lg);
+  border: 1px solid var(--azals-border);
+}
+
+.azals-cockpit-kpi__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.azals-cockpit-kpi__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--azals-radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.azals-cockpit-kpi__icon--success {
+  background: color-mix(in srgb, var(--azals-success) 10%, transparent);
+  color: var(--azals-success);
+}
+
+.azals-cockpit-kpi__icon--warning {
+  background: color-mix(in srgb, var(--azals-warning) 10%, transparent);
+  color: var(--azals-warning);
+}
+
+.azals-cockpit-kpi__icon--primary {
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-600);
+}
+
+.azals-cockpit-kpi__icon--crm {
+  background: color-mix(in srgb, var(--azals-violet-500) 10%, transparent);
+  color: var(--azals-violet-500);
+}
+
+.azals-cockpit-kpi__icon--devis {
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-600);
+}
+
+.azals-cockpit-kpi__icon--commandes {
+  background: color-mix(in srgb, var(--azals-success) 10%, transparent);
+  color: var(--azals-success);
+}
+
+.azals-cockpit-kpi__icon--ods {
+  background: color-mix(in srgb, var(--azals-warning) 10%, transparent);
+  color: var(--azals-warning);
+}
+
+.azals-cockpit-kpi__icon--affaires {
+  background: color-mix(in srgb, var(--azals-indigo-500) 10%, transparent);
+  color: var(--azals-indigo-500);
+}
+
+.azals-cockpit-kpi__icon--factures {
+  background: color-mix(in srgb, var(--azals-pink-500) 10%, transparent);
+  color: var(--azals-pink-500);
+}
+
+.azals-cockpit-kpi__trend {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+}
+
+.azals-cockpit-kpi__trend--up {
+  color: var(--azals-success);
+}
+
+.azals-cockpit-kpi__trend--down {
+  color: var(--azals-danger);
+}
+
+.azals-cockpit-kpi__body {
+  margin-top: var(--azals-spacing-md);
+}
+
+.azals-cockpit-kpi__value {
+  font-size: var(--azals-font-size-3xl);
+  font-weight: 700;
+  color: var(--azals-text);
+}
+
+.azals-cockpit-kpi__label {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-text-secondary);
+  margin-top: var(--azals-spacing-xs);
+}
+
+/* ============================================================
+   PIPELINE SECTION
+   ============================================================ */
+
+.azals-cockpit-pipeline {
+  margin-bottom: var(--azals-spacing-xl);
+}
+
+.azals-cockpit-pipeline__flow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: var(--azals-spacing-sm);
+}
+
+/* ============================================================
+   FLUX STEP CARD
+   ============================================================ */
+
+.azals-cockpit-step {
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius-xl);
+  padding: var(--azals-spacing-lg);
+  border: 1px solid var(--azals-border);
+  cursor: pointer;
+  transition: all var(--azals-transition-normal);
+  min-width: 160px;
+  flex: 1;
+}
+
+.azals-cockpit-step:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--azals-shadow-lg);
+}
+
+.azals-cockpit-step:focus-visible {
+  outline: 2px solid var(--azals-primary-500);
+  outline-offset: 2px;
+}
+
+.azals-cockpit-step__header {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-md);
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-cockpit-step__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--azals-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.azals-cockpit-step__label {
+  font-weight: 600;
+  font-size: var(--azals-font-size-md);
+  color: var(--azals-text);
+}
+
+.azals-cockpit-step__desc {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+}
+
+.azals-cockpit-step__stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.azals-cockpit-step__main-value {
+  font-size: var(--azals-font-size-3xl);
+  font-weight: 700;
+}
+
+.azals-cockpit-step__main-label {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+}
+
+.azals-cockpit-step__sub {
+  text-align: right;
+}
+
+.azals-cockpit-step__sub-value {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-gray-700);
+}
+
+.azals-cockpit-step__sub-label {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-gray-400);
+}
+
+.azals-cockpit-step__montant {
+  margin-top: var(--azals-spacing-md);
+  padding-top: var(--azals-spacing-md);
+  border-top: 1px solid var(--azals-gray-100);
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-cockpit-step__montant-icon {
+  color: var(--azals-text-secondary);
+}
+
+.azals-cockpit-step__montant-value {
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+  color: var(--azals-gray-700);
+}
+
+.azals-cockpit-step__cta {
+  margin-top: var(--azals-spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-xs);
+  font-size: var(--azals-font-size-sm);
+  font-weight: 500;
+}
+
+/* Step color variants */
+.azals-cockpit-step--crm .azals-cockpit-step__icon {
+  background: color-mix(in srgb, var(--azals-violet-500) 10%, transparent);
+  color: var(--azals-violet-500);
+}
+.azals-cockpit-step--crm .azals-cockpit-step__main-value,
+.azals-cockpit-step--crm .azals-cockpit-step__cta {
+  color: var(--azals-violet-500);
+}
+
+.azals-cockpit-step--devis .azals-cockpit-step__icon {
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-600);
+}
+.azals-cockpit-step--devis .azals-cockpit-step__main-value,
+.azals-cockpit-step--devis .azals-cockpit-step__cta {
+  color: var(--azals-primary-600);
+}
+
+.azals-cockpit-step--commandes .azals-cockpit-step__icon {
+  background: color-mix(in srgb, var(--azals-success) 10%, transparent);
+  color: var(--azals-success);
+}
+.azals-cockpit-step--commandes .azals-cockpit-step__main-value,
+.azals-cockpit-step--commandes .azals-cockpit-step__cta {
+  color: var(--azals-success);
+}
+
+.azals-cockpit-step--ordres-service .azals-cockpit-step__icon {
+  background: color-mix(in srgb, var(--azals-warning) 10%, transparent);
+  color: var(--azals-warning);
+}
+.azals-cockpit-step--ordres-service .azals-cockpit-step__main-value,
+.azals-cockpit-step--ordres-service .azals-cockpit-step__cta {
+  color: var(--azals-warning);
+}
+
+.azals-cockpit-step--affaires .azals-cockpit-step__icon {
+  background: color-mix(in srgb, var(--azals-indigo-500) 10%, transparent);
+  color: var(--azals-indigo-500);
+}
+.azals-cockpit-step--affaires .azals-cockpit-step__main-value,
+.azals-cockpit-step--affaires .azals-cockpit-step__cta {
+  color: var(--azals-indigo-500);
+}
+
+.azals-cockpit-step--factures .azals-cockpit-step__icon {
+  background: color-mix(in srgb, var(--azals-pink-500) 10%, transparent);
+  color: var(--azals-pink-500);
+}
+.azals-cockpit-step--factures .azals-cockpit-step__main-value,
+.azals-cockpit-step--factures .azals-cockpit-step__cta {
+  color: var(--azals-pink-500);
+}
+
+/* ============================================================
+   FLUX ARROW
+   ============================================================ */
+
+.azals-cockpit-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--azals-spacing-sm);
+  color: var(--azals-gray-300);
+}
+
+/* ============================================================
+   CONTENT GRID (Actions + Recent Activity)
+   ============================================================ */
+
+.azals-cockpit-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--azals-spacing-xl);
+}
+
+@media (max-width: 1024px) {
+  .azals-cockpit-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   PRIORITY ACTIONS
+   ============================================================ */
+
+.azals-cockpit-actions__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-md);
+}
+
+.azals-cockpit-action {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-md);
+  padding: var(--azals-spacing-md);
+  border-radius: var(--azals-radius-lg);
+  cursor: pointer;
+  transition: opacity var(--azals-transition-fast);
+}
+
+.azals-cockpit-action:hover {
+  opacity: 0.85;
+}
+
+.azals-cockpit-action:focus-visible {
+  outline: 2px solid var(--azals-primary-500);
+  outline-offset: 2px;
+}
+
+.azals-cockpit-action--warning {
+  background: var(--azals-amber-100);
+}
+
+.azals-cockpit-action--warning .azals-cockpit-action__icon {
+  color: var(--azals-amber-600);
+}
+
+.azals-cockpit-action--warning .azals-cockpit-action__title {
+  color: var(--azals-amber-800);
+}
+
+.azals-cockpit-action--warning .azals-cockpit-action__subtitle {
+  color: var(--azals-amber-700);
+}
+
+.azals-cockpit-action--warning .azals-cockpit-action__chevron {
+  color: var(--azals-amber-600);
+}
+
+.azals-cockpit-action--info {
+  background: var(--azals-primary-100);
+}
+
+.azals-cockpit-action--info .azals-cockpit-action__icon {
+  color: var(--azals-primary-600);
+}
+
+.azals-cockpit-action--info .azals-cockpit-action__title {
+  color: var(--azals-primary-800);
+}
+
+.azals-cockpit-action--info .azals-cockpit-action__subtitle {
+  color: var(--azals-primary-600);
+}
+
+.azals-cockpit-action--info .azals-cockpit-action__chevron {
+  color: var(--azals-primary-600);
+}
+
+.azals-cockpit-action--danger {
+  background: var(--azals-pink-50);
+}
+
+.azals-cockpit-action--danger .azals-cockpit-action__icon {
+  color: var(--azals-pink-600);
+}
+
+.azals-cockpit-action--danger .azals-cockpit-action__title {
+  color: var(--azals-pink-800);
+}
+
+.azals-cockpit-action--danger .azals-cockpit-action__subtitle {
+  color: var(--azals-pink-500);
+}
+
+.azals-cockpit-action--danger .azals-cockpit-action__chevron {
+  color: var(--azals-pink-600);
+}
+
+.azals-cockpit-action__body {
+  flex: 1;
+}
+
+.azals-cockpit-action__title {
+  font-weight: 500;
+}
+
+.azals-cockpit-action__subtitle {
+  font-size: var(--azals-font-size-sm);
+}
+
+/* No-actions state */
+.azals-cockpit-actions__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--azals-spacing-2xl);
+  color: var(--azals-text-secondary);
+}
+
+.azals-cockpit-actions__empty-icon {
+  color: var(--azals-success);
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-cockpit-actions__empty-title {
+  font-weight: 500;
+}
+
+.azals-cockpit-actions__empty-subtitle {
+  font-size: var(--azals-font-size-sm);
+}
+
+/* ============================================================
+   RECENT ACTIVITY
+   ============================================================ */
+
+.azals-cockpit-recent__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-cockpit-recent-item {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-md);
+  padding: var(--azals-spacing-md);
+  border-radius: var(--azals-radius-md);
+  cursor: pointer;
+  transition: background-color var(--azals-transition-normal);
+}
+
+.azals-cockpit-recent-item:hover {
+  background-color: var(--azals-gray-50);
+}
+
+.azals-cockpit-recent-item:focus-visible {
+  outline: 2px solid var(--azals-primary-500);
+  outline-offset: 2px;
+}
+
+.azals-cockpit-recent-item__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--azals-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.azals-cockpit-recent-item__body {
+  flex: 1;
+}
+
+.azals-cockpit-recent-item__top {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+}
+
+.azals-cockpit-recent-item__ref {
+  font-weight: 500;
+}
+
+.azals-cockpit-recent-item__label {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-text-secondary);
+}
+
+.azals-cockpit-recent-item__meta {
+  font-size: var(--azals-font-size-xs);
+  color: var(--azals-gray-400);
+}
+
+.azals-cockpit-recent-item__chevron {
+  color: var(--azals-gray-300);
+}
+
+/* Recent item type color variants */
+.azals-cockpit-recent-item--devis .azals-cockpit-recent-item__icon {
+  background: var(--azals-primary-50);
+  color: var(--azals-primary-600);
+}
+.azals-cockpit-recent-item--devis .azals-cockpit-recent-item__ref {
+  color: var(--azals-primary-600);
+}
+
+.azals-cockpit-recent-item--commande .azals-cockpit-recent-item__icon {
+  background: color-mix(in srgb, var(--azals-success) 10%, transparent);
+  color: var(--azals-success);
+}
+.azals-cockpit-recent-item--commande .azals-cockpit-recent-item__ref {
+  color: var(--azals-success);
+}
+
+.azals-cockpit-recent-item--ods .azals-cockpit-recent-item__icon {
+  background: color-mix(in srgb, var(--azals-warning) 10%, transparent);
+  color: var(--azals-warning);
+}
+.azals-cockpit-recent-item--ods .azals-cockpit-recent-item__ref {
+  color: var(--azals-warning);
+}
+
+.azals-cockpit-recent-item--affaire .azals-cockpit-recent-item__icon {
+  background: color-mix(in srgb, var(--azals-indigo-500) 10%, transparent);
+  color: var(--azals-indigo-500);
+}
+.azals-cockpit-recent-item--affaire .azals-cockpit-recent-item__ref {
+  color: var(--azals-indigo-500);
+}
+
+.azals-cockpit-recent-item--facture .azals-cockpit-recent-item__icon {
+  background: color-mix(in srgb, var(--azals-pink-500) 10%, transparent);
+  color: var(--azals-pink-500);
+}
+.azals-cockpit-recent-item--facture .azals-cockpit-recent-item__ref {
+  color: var(--azals-pink-500);
+}
+
+/* ============================================================
+   LOADING STATE
+   ============================================================ */
+
+.azals-cockpit-loading {
+  text-align: center;
+  padding: var(--azals-spacing-2xl);
+  color: var(--azals-text-secondary);
+}
+
+.azals-cockpit-empty {
+  text-align: center;
+  padding: var(--azals-spacing-2xl);
+  color: var(--azals-gray-400);
+}

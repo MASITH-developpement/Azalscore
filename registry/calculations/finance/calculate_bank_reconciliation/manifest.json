@@ -1,0 +1,65 @@
+{
+  "id": "azalscore.calculations.finance.calculate_bank_reconciliation",
+  "name": "Calcule le rapprochement bancaire",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le rapprochement bancaire",
+  "inputs": {
+    "book_balance": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "bank_balance": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "outstanding_checks": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    },
+    "deposits_in_transit": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "adjusted_book_balance": {
+      "type": "number",
+      "description": ""
+    },
+    "adjusted_bank_balance": {
+      "type": "number",
+      "description": ""
+    },
+    "is_reconciled": {
+      "type": "boolean",
+      "description": ""
+    },
+    "difference": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "reconciliation"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

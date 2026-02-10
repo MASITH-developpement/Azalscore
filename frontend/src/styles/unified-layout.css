@@ -1,0 +1,568 @@
+/**
+ * AZALSCORE - Styles du Layout Unifié
+ * ====================================
+ *
+ * Un seul fichier CSS pour les deux modes (ERP et Azalscore)
+ * Les différences sont gérées par des classes modificatrices.
+ */
+
+/* ============================================================
+   VARIABLES
+   ============================================================ */
+
+:root {
+  --unified-header-height: 56px;
+  --unified-sidebar-width: 260px;
+  --unified-demo-banner-height: 32px;
+}
+
+/* ============================================================
+   LAYOUT PRINCIPAL
+   ============================================================ */
+
+.azals-unified-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--azals-bg, #f5f6f8);
+}
+
+.azals-unified-layout__body {
+  display: flex;
+  flex: 1;
+  padding-top: 0;
+}
+
+/* Ajustement pour la bannière démo */
+.azals-unified-layout--demo .azals-unified-layout__body {
+  padding-top: var(--unified-demo-banner-height);
+}
+
+/* ============================================================
+   HEADER UNIFIÉ
+   ============================================================ */
+
+.azals-unified-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--unified-header-height);
+  padding: 0 24px;
+  background: white;
+  border-bottom: 1px solid var(--azals-border, #e2e5e9);
+  position: sticky;
+  top: 0;
+  z-index: var(--azals-z-header);
+  gap: 16px;
+}
+
+.azals-unified-header__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.azals-unified-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.azals-unified-header__logo {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--azals-text, #1a1d21);
+  flex-shrink: 0;
+}
+
+/* Menu toggle (mobile - ERP mode) */
+.azals-unified-header__menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--azals-text, #1a1d21);
+  border-radius: 6px;
+}
+
+.azals-unified-layout--erp .azals-unified-header__menu-toggle {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .azals-unified-layout--erp .azals-unified-header__menu-toggle {
+    display: flex;
+  }
+}
+
+/* Module selector (Azalscore mode) */
+.azals-unified-header__selector-container {
+  position: relative;
+  flex: 1;
+  max-width: 300px;
+}
+
+.azals-unified-header__selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--azals-bg, #f5f6f8);
+  border: 1px solid var(--azals-border, #e2e5e9);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--azals-text, #1a1d21);
+  cursor: pointer;
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-unified-header__selector:hover {
+  border-color: var(--azals-primary-600, #1E6EFF);
+}
+
+.azals-unified-header__selector svg {
+  transition: transform var(--azals-transition-normal);
+}
+
+.azals-unified-header__selector svg.rotate {
+  transform: rotate(180deg);
+}
+
+/* Dropdown menu */
+.azals-unified-header__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--azals-border, #e2e5e9);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: var(--azals-z-popover);
+}
+
+.azals-unified-header__group {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--azals-border-light, #f0f1f3);
+}
+
+.azals-unified-header__group:last-child {
+  border-bottom: none;
+}
+
+.azals-unified-header__group-label {
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--azals-gray-400, #9ca3af);
+}
+
+.azals-unified-header__item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--azals-text, #1a1d21);
+  cursor: pointer;
+  transition: background var(--azals-transition-instant);
+}
+
+.azals-unified-header__item:hover {
+  background: var(--azals-primary-light, #eff6ff);
+}
+
+.azals-unified-header__item--active {
+  background: var(--azals-primary-light, #eff6ff);
+  color: var(--azals-primary-600, #1E6EFF);
+  font-weight: 500;
+}
+
+/* Icon buttons */
+.azals-unified-header__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  color: var(--azals-gray-500, #6b7280);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-unified-header__icon-btn:hover {
+  background: var(--azals-bg, #f5f6f8);
+  color: var(--azals-text, #1a1d21);
+}
+
+/* Theo AI Button */
+.azals-unified-header__theo-btn {
+  position: relative;
+  color: var(--azals-violet-500);
+}
+
+.azals-unified-header__theo-btn:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  color: var(--azals-violet-600);
+}
+
+.azals-unified-header__theo-btn--active.azals-unified-header__theo-btn--active {
+  background: linear-gradient(135deg, var(--azals-indigo-500) 0%, var(--azals-violet-500) 100%);
+  color: var(--azals-white);
+}
+
+.azals-unified-header__theo-btn--active:hover {
+  background: linear-gradient(135deg, var(--azals-violet-700) 0%, var(--azals-violet-600) 100%);
+}
+
+/* Pulse animation for Theo button */
+@keyframes theo-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0);
+  }
+}
+
+.azals-unified-header__theo-btn:not(.azals-unified-header__theo-btn--active):hover {
+  animation: theo-pulse 2s infinite;
+}
+
+/* User menu */
+.azals-unified-header__user-menu {
+  position: relative;
+}
+
+.azals-unified-header__user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--azals-gray-500, #6b7280);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-unified-header__user-btn:hover {
+  background: var(--azals-bg, #f5f6f8);
+  color: var(--azals-text, #1a1d21);
+}
+
+.azals-unified-header__user-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.azals-unified-header__user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  min-width: 200px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--azals-border, #e2e5e9);
+  overflow: hidden;
+  z-index: var(--azals-z-dropdown);
+}
+
+.azals-unified-header__user-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--azals-text, #1a1d21);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background var(--azals-transition-fast);
+  text-align: left;
+  text-decoration: none;
+}
+
+.azals-unified-header__user-item:hover {
+  background: var(--azals-bg, #f5f6f8);
+}
+
+.azals-unified-header__user-item--active {
+  background: var(--azals-primary-light, #eff6ff);
+  color: var(--azals-primary-600, #1E6EFF);
+}
+
+.azals-unified-header__user-item--danger {
+  color: var(--azals-red);
+}
+
+.azals-unified-header__user-item--danger:hover {
+  background: var(--azals-danger-light, #fef2f2);
+}
+
+.azals-unified-header__divider {
+  margin: 4px 0;
+  border: none;
+  border-top: 1px solid var(--azals-border, #e2e5e9);
+}
+
+/* ============================================================
+   SIDEBAR (Mode ERP)
+   ============================================================ */
+
+.azals-unified-sidebar {
+  width: var(--unified-sidebar-width);
+  background: white;
+  border-right: 1px solid var(--azals-border, #e2e5e9);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--unified-header-height));
+  position: sticky;
+  top: var(--unified-header-height);
+  overflow-y: auto;
+}
+
+.azals-unified-layout--demo .azals-unified-sidebar {
+  height: calc(100vh - var(--unified-header-height) - var(--unified-demo-banner-height));
+  top: calc(var(--unified-header-height) + var(--unified-demo-banner-height));
+}
+
+@media (max-width: 767px) {
+  .azals-unified-sidebar {
+    position: fixed;
+    top: var(--unified-header-height);
+    left: 0;
+    bottom: 0;
+    z-index: var(--azals-z-sidebar);
+    transform: translateX(-100%);
+    transition: transform var(--azals-transition-normal);
+  }
+
+  .azals-unified-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .azals-unified-sidebar__overlay {
+    position: fixed;
+    inset: 0;
+    top: var(--unified-header-height);
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--azals-z-sidebar-overlay);
+  }
+
+  .azals-unified-layout--demo .azals-unified-sidebar {
+    top: calc(var(--unified-header-height) + var(--unified-demo-banner-height));
+  }
+
+  .azals-unified-layout--demo .azals-unified-sidebar__overlay {
+    top: calc(var(--unified-header-height) + var(--unified-demo-banner-height));
+  }
+}
+
+.azals-unified-sidebar__nav {
+  flex: 1;
+  padding: 16px;
+}
+
+.azals-unified-sidebar__group {
+  margin-bottom: 16px;
+}
+
+.azals-unified-sidebar__group-label {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--azals-gray-400, #9ca3af);
+}
+
+.azals-unified-sidebar__item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--azals-text, #1a1d21);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all var(--azals-transition-fast);
+}
+
+.azals-unified-sidebar__item:hover {
+  background: var(--azals-bg, #f5f6f8);
+}
+
+.azals-unified-sidebar__item--active {
+  background: var(--azals-primary-light, #eff6ff);
+  color: var(--azals-primary-600, #1E6EFF);
+  font-weight: 500;
+}
+
+.azals-unified-sidebar__footer {
+  padding: 16px;
+  border-top: 1px solid var(--azals-border, #e2e5e9);
+  text-align: center;
+}
+
+.azals-unified-sidebar__version {
+  font-size: 12px;
+  color: var(--azals-gray-400, #9ca3af);
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+
+.azals-unified-main {
+  flex: 1;
+  background: var(--azals-bg, #f5f6f8);
+  min-height: calc(100vh - var(--unified-header-height));
+}
+
+.azals-unified-layout--demo .azals-unified-main {
+  min-height: calc(100vh - var(--unified-header-height) - var(--unified-demo-banner-height));
+}
+
+.azals-unified-main__content {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Mode Azalscore : pas de sidebar donc pleine largeur */
+.azals-unified-layout--azalscore .azals-unified-main__content {
+  max-width: none;
+}
+
+/* ============================================================
+   MODE DEMO - Header rouge sang
+   ============================================================ */
+
+.azals-unified-header--demo {
+  background: var(--azals-demo-red) !important; /* Demo mode dark red */
+  border-bottom-color: var(--azals-demo-red-dark) !important; /* Demo mode darker red */
+}
+
+.azals-unified-header--demo .azals-unified-header__logo {
+  color: white !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__menu-toggle {
+  color: white !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__selector {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__selector:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__icon-btn {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__theo-btn {
+  color: rgba(167, 139, 250, 1) !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__theo-btn--active {
+  background: linear-gradient(135deg, var(--azals-indigo-500) 0%, var(--azals-violet-500) 100%) !important;
+  color: white !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__user-btn {
+  color: white !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__user-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.azals-unified-header--demo .azals-unified-header__user-name {
+  color: white !important;
+}
+
+/* ============================================================
+   BANNIÈRE DEMO (partagée)
+   ============================================================ */
+
+.azals-demo-banner {
+  position: fixed;
+  top: var(--unified-header-height);
+  left: 0;
+  right: 0;
+  height: var(--unified-demo-banner-height);
+  background: var(--azals-demo-red);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: var(--azals-z-banner);
+  box-shadow: 0 2px 8px rgba(139, 0, 0, 0.4);
+}
+
+.azals-demo-banner__icon {
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 767px) {
+  .azals-unified-header {
+    padding: 0 16px;
+  }
+
+  .azals-unified-header__user-name {
+    display: none;
+  }
+
+  .azals-unified-header__selector-container {
+    max-width: none;
+    flex: 1;
+  }
+
+  .azals-unified-main__content {
+    padding: 16px;
+  }
+}
+
+/* ============================================================
+   UTILITAIRES
+   ============================================================ */
+
+.rotate {
+  transform: rotate(180deg);
+}

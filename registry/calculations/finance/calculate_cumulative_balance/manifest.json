@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.finance.calculate_cumulative_balance",
+  "name": "Calcule le solde cumulé période par période",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le solde cumulé période par période",
+  "inputs": {
+    "account_code": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "periods": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "cumulative_balances": {
+      "type": "array",
+      "description": ""
+    },
+    "final_balance": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "account_balances"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

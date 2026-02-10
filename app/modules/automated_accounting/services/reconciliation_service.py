@@ -48,9 +48,10 @@ class MatchingEngine:
         "min_confidence_auto": Decimal("90"),    # Confiance min pour auto-rapprochement
     }
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self._rules_cache: list[ReconciliationRule] | None = None
 
     def find_matches(
@@ -323,9 +324,10 @@ class MatchingEngine:
 class ReconciliationService:
     """Service de rapprochement automatique."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self.matching_engine = MatchingEngine(db, tenant_id)
 
     # =========================================================================
@@ -353,19 +355,14 @@ class ReconciliationService:
         }
 
         for transaction in pending_transactions:
-            try:
-                match_result = self.reconcile_transaction(transaction.id, auto_mode=True)
+            match_result = self.reconcile_transaction(transaction.id, auto_mode=True)
 
-                if match_result.get("auto_reconciled"):
-                    results["auto_matched"] += 1
-                elif match_result.get("suggestions"):
-                    results["suggestions_found"] += 1
-                else:
-                    results["no_match"] += 1
-
-            except Exception as e:
-                logger.error(f"Error reconciling transaction {transaction.id}: {e}")
-                results["errors"] += 1
+            if match_result.get("auto_reconciled"):
+                results["auto_matched"] += 1
+            elif match_result.get("suggestions"):
+                results["suggestions_found"] += 1
+            else:
+                results["no_match"] += 1
 
         self.db.commit()
         return results

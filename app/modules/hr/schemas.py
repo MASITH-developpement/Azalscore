@@ -288,8 +288,8 @@ class LeaveRequestBase(BaseModel):
     leave_type: LeaveType = Field(..., alias="type")
     start_date: datetime.date
     end_date: datetime.date
-    start_half_day: bool = False
-    end_half_day: bool = False
+    start_half_day: bool = Field(default=False, alias="half_day_start")
+    end_half_day: bool = Field(default=False, alias="half_day_end")
     reason: str | None = None
     replacement_id: UUID | None = None
 
@@ -299,18 +299,35 @@ class LeaveRequestCreate(LeaveRequestBase):
     pass
 
 
+class LeaveRequestUpdate(BaseModel):
+    """Mise à jour d'une demande de congé."""
+    model_config = ConfigDict(protected_namespaces=(), populate_by_name=True)
+
+    leave_type: LeaveType | None = Field(default=None, alias="type")
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
+    start_half_day: bool | None = Field(default=None, alias="half_day_start")
+    end_half_day: bool | None = Field(default=None, alias="half_day_end")
+    reason: str | None = None
+    replacement_id: UUID | None = None
+    resubmit: bool = Field(default=False, description="Si True, remet le statut en PENDING")
+
+
 class LeaveRequestResponse(LeaveRequestBase):
     """Réponse demande de congé."""
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=(), populate_by_name=True, serialize_by_alias=True)
+
     id: UUID
     employee_id: UUID
+    employee_name: str | None = None
     status: LeaveStatus = LeaveStatus.PENDING
-    days_count: Decimal
+    days_count: Decimal = Field(..., alias="days")
     attachment_url: str | None = None
     approved_by: UUID | None = None
     approved_at: datetime.datetime | None = None
     rejection_reason: str | None = None
     created_at: datetime.datetime
-    updated_at: datetime.datetime
+    updated_at: datetime.datetime | None = None
 
 
 

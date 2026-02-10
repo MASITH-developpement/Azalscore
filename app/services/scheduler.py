@@ -92,7 +92,7 @@ class SchedulerService:
                     """), {"decision_id": str(red_id)})
 
                 db.commit()
-                logger.info(f"[OK] {len(old_reds)} alerte(s) RED reinitialisee(s)")
+                logger.info("[OK] %s alerte(s) RED reinitialisee(s)", len(old_reds))
 
                 # Journaliser l'action avec UUID système valide
                 for red_id, _reason in old_reds:
@@ -114,7 +114,7 @@ class SchedulerService:
                 logger.info("[INFO] Aucune alerte RED a reinitialiser")
 
         except Exception as e:
-            logger.error(f"[ERROR] Erreur reinitialisation RED: {e}")
+            logger.error("[ERROR] Erreur reinitialisation RED: %s", e)
             db.rollback()
         finally:
             db.close()

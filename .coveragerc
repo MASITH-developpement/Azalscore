@@ -1,0 +1,37 @@
+# Configuration Coverage.py pour AZALSCORE
+# Mesure de couverture de code pour tests backend CORE SaaS v2
+
+[run]
+source = app/modules
+omit =
+    */tests/*
+    */__pycache__/*
+    */migrations/*
+    */__init__.py
+    */conftest.py
+    app/modules/*/models.py
+    app/modules/*/schemas.py
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+[html]
+directory = htmlcov
+title = AZALSCORE Coverage Report - Backend CORE SaaS v2
+
+[xml]
+output = coverage.xml

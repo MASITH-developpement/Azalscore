@@ -1,0 +1,55 @@
+{
+  "id": "azalscore.external.government.verify_vat_vies",
+  "name": "Vérifie une TVA intracommunautaire via VIES",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Vérifie une TVA intracommunautaire via VIES",
+  "inputs": {
+    "vat_number": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "country_code": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "company_name": {
+      "type": "string",
+      "description": ""
+    },
+    "company_address": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "government",
+    "vat"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

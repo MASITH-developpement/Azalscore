@@ -1,0 +1,43 @@
+{
+  "id": "azalscore.transformers.objects.omit_properties",
+  "name": "Exclut certaines propriétés d'un objet",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Exclut certaines propriétés d'un objet",
+  "inputs": {
+    "object": {
+      "type": "object",
+      "required": true,
+      "description": ""
+    },
+    "properties": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "omitted": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "objects",
+    "manipulation"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

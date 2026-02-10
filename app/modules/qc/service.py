@@ -34,9 +34,10 @@ from app.modules.qc.models import (
 class QCService:
     """Service de contrôle qualité central."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id
 
     # ========================================================================
     # GESTION DES RÈGLES QC
@@ -153,21 +154,15 @@ class QCService:
             # Vérifier si le module est concerné
             modules = rule.applies_to_modules
             if modules and modules != "*":
-                try:
-                    module_list = json.loads(modules)
-                    if module_code not in module_list and "*" not in module_list:
-                        continue
-                except Exception:
-                    pass
+                module_list = json.loads(modules)
+                if module_code not in module_list and "*" not in module_list:
+                    continue
 
             # Vérifier la phase
             if phase and rule.applies_to_phases:
-                try:
-                    phases = json.loads(rule.applies_to_phases)
-                    if phase.value not in phases:
-                        continue
-                except Exception:
-                    pass
+                phases = json.loads(rule.applies_to_phases)
+                if phase.value not in phases:
+                    continue
 
             applicable.append(rule)
 
@@ -401,22 +396,16 @@ class QCService:
             status=QCCheckStatus.RUNNING
         )
 
-        try:
-            # Exécuter le check selon le type
-            check_result = self._run_check(rule, module)
+        # Exécuter le check selon le type
+        check_result = self._run_check(rule, module)
 
-            result.status = check_result["status"]
-            result.score = check_result.get("score", 100 if check_result["status"] == QCCheckStatus.PASSED else 0)
-            result.actual_value = str(check_result.get("actual_value", ""))
-            result.expected_value = str(check_result.get("expected_value", ""))
-            result.message = check_result.get("message", "")
-            result.recommendation = check_result.get("recommendation", "")
-            result.evidence = json.dumps(check_result.get("evidence", {}))
-
-        except Exception as e:
-            result.status = QCCheckStatus.ERROR
-            result.error_details = str(e)
-            result.score = 0
+        result.status = check_result["status"]
+        result.score = check_result.get("score", 100 if check_result["status"] == QCCheckStatus.PASSED else 0)
+        result.actual_value = str(check_result.get("actual_value", ""))
+        result.expected_value = str(check_result.get("expected_value", ""))
+        result.message = check_result.get("message", "")
+        result.recommendation = check_result.get("recommendation", "")
+        result.evidence = json.dumps(check_result.get("evidence", {}))
 
         end_time = datetime.utcnow()
         result.duration_ms = int((end_time - start_time).total_seconds() * 1000)
@@ -1148,22 +1137,19 @@ class QCService:
         created_rules = []
 
         for rule_def in rules:
-            try:
-                rule = self.create_rule(
-                    code=rule_def.get("code"),
-                    name=rule_def.get("name"),
-                    category=QCRuleCategory(rule_def.get("category", "CODE_QUALITY")),
-                    check_type=rule_def.get("check_type", "generic"),
-                    description=rule_def.get("description"),
-                    severity=QCRuleSeverity(rule_def.get("severity", "WARNING")),
-                    check_config=rule_def.get("check_config"),
-                    threshold_value=rule_def.get("threshold_value"),
-                    threshold_operator=rule_def.get("threshold_operator"),
-                    created_by=created_by
-                )
-                created_rules.append(rule)
-            except Exception:
-                pass  # Skip règles avec erreur
+            rule = self.create_rule(
+                code=rule_def.get("code"),
+                name=rule_def.get("name"),
+                category=QCRuleCategory(rule_def.get("category", "CODE_QUALITY")),
+                check_type=rule_def.get("check_type", "generic"),
+                description=rule_def.get("description"),
+                severity=QCRuleSeverity(rule_def.get("severity", "WARNING")),
+                check_config=rule_def.get("check_config"),
+                threshold_value=rule_def.get("threshold_value"),
+                threshold_operator=rule_def.get("threshold_operator"),
+                created_by=created_by
+            )
+            created_rules.append(rule)
 
         return created_rules
 

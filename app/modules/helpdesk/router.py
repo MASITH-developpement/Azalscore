@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_tenant_id
+from app.core.dependencies import get_current_user, get_tenant_id
+from app.core.models import User
 
 from .models import AgentStatus, TicketPriority, TicketStatus
 from .schemas import (
@@ -60,9 +61,10 @@ router = APIRouter(prefix="/helpdesk", tags=["Helpdesk"])
 
 def get_service(
     db: Session = Depends(get_db),
-    tenant_id: str = Depends(get_tenant_id)
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
 ) -> HelpdeskService:
-    """Factory service avec tenant."""
+    """Factory service avec tenant et authentification obligatoire."""
     return HelpdeskService(db, tenant_id)
 
 

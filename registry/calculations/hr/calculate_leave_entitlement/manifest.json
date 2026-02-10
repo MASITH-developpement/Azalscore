@@ -1,0 +1,48 @@
+{
+  "id": "azalscore.calculations.hr.calculate_leave_entitlement",
+  "name": "Calcule le droit aux congés",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le droit aux congés",
+  "inputs": {
+    "months_worked": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "annual_leave_days": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 25
+    }
+  },
+  "outputs": {
+    "entitlement_days": {
+      "type": "number",
+      "description": ""
+    },
+    "accrued_days": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "payroll"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

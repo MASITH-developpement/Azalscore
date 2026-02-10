@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.generators.invoices.generate_invoice_pdf",
+  "name": "Génère un PDF de facture",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un PDF de facture",
+  "inputs": {
+    "invoice_data": {
+      "type": "object",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "pdf_path": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "invoices",
+    "documents"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

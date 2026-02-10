@@ -6,6 +6,9 @@ Logique métier pour la gestion des identités et accès.
 """
 
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 import secrets
 import uuid
 from datetime import datetime, timedelta
@@ -1134,11 +1137,7 @@ class IAMService:
             return False
 
         # Déchiffrer le secret avant vérification
-        try:
-            decrypted_secret = decrypt_value(user.mfa_secret)
-        except Exception:
-            return False
-
+        decrypted_secret = decrypt_value(user.mfa_secret)
         totp = pyotp.TOTP(decrypted_secret)
 
         if totp.verify(code):
@@ -1156,10 +1155,7 @@ class IAMService:
             return True  # MFA non activé
 
         # Déchiffrer le secret avant vérification
-        try:
-            decrypted_secret = decrypt_value(user.mfa_secret)
-        except Exception:
-            return False
+        decrypted_secret = decrypt_value(user.mfa_secret)
 
         # Vérifier code TOTP
         totp = pyotp.TOTP(decrypted_secret)
@@ -1168,16 +1164,13 @@ class IAMService:
 
         # Vérifier backup codes (chiffrés)
         if user.mfa_backup_codes:
-            try:
-                decrypted_codes = decrypt_value(user.mfa_backup_codes)
-                backup_codes = json.loads(decrypted_codes)
-                if code.upper() in backup_codes:
-                    backup_codes.remove(code.upper())
-                    user.mfa_backup_codes = encrypt_value(json.dumps(backup_codes))
-                    self.db.commit()
-                    return True
-            except Exception:
-                pass
+            decrypted_codes = decrypt_value(user.mfa_backup_codes)
+            backup_codes = json.loads(decrypted_codes)
+            if code.upper() in backup_codes:
+                backup_codes.remove(code.upper())
+                user.mfa_backup_codes = encrypt_value(json.dumps(backup_codes))
+                self.db.commit()
+                return True
 
         return False
 
@@ -1326,20 +1319,16 @@ class IAMService:
             group_codes=group_codes
         )
 
-        try:
-            user = self.create_user(user_data, created_by=invitation.invited_by)
-            user.is_verified = True  # Vérifié via invitation
+        user = self.create_user(user_data, created_by=invitation.invited_by)
+        user.is_verified = True  # Vérifié via invitation
 
-            invitation.status = InvitationStatus.ACCEPTED
-            invitation.accepted_at = datetime.utcnow()
-            invitation.accepted_user_id = user.id
+        invitation.status = InvitationStatus.ACCEPTED
+        invitation.accepted_at = datetime.utcnow()
+        invitation.accepted_user_id = user.id
 
-            self.db.commit()
+        self.db.commit()
 
-            return user, None
-
-        except ValueError as e:
-            return None, str(e)
+        return user, None
 
     # ========================================================================
     # MÉTHODES PRIVÉES

@@ -1,0 +1,51 @@
+{
+  "id": "azalscore.computation.calculate_vat",
+  "name": "Calcul de TVA",
+  "category": "computation",
+  "version": "1.0.0",
+  "description": "Calcule le montant TTC à partir du montant HT et du taux de TVA",
+  "inputs": {
+    "amount_ht": {
+      "type": "number",
+      "required": true,
+      "description": "Montant hors taxe"
+    },
+    "vat_rate": {
+      "type": "number",
+      "required": true,
+      "description": "Taux de TVA (ex: 0.20 pour 20%)"
+    }
+  },
+  "outputs": {
+    "amount_ht": {
+      "type": "number",
+      "description": "Montant HT (repris de l'input)"
+    },
+    "vat_amount": {
+      "type": "number",
+      "description": "Montant de la TVA"
+    },
+    "amount_ttc": {
+      "type": "number",
+      "description": "Montant TTC (HT + TVA)"
+    },
+    "vat_rate_percentage": {
+      "type": "number",
+      "description": "Taux de TVA en pourcentage"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["computation", "vat", "tax", "finance"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

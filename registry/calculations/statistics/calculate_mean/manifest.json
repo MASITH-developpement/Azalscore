@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.statistics.calculate_mean",
+  "name": "Calcule la moyenne",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la moyenne",
+  "inputs": {
+    "values": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "mean": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "statistics",
+    "basic"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

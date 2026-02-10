@@ -62,9 +62,10 @@ from .schemas import (
 class HelpdeskService:
     """Service Helpdesk."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # ========================================================================
     # CATEGORIES
@@ -99,9 +100,17 @@ class HelpdeskService:
 
     def create_category(self, data: CategoryCreate) -> TicketCategory:
         """Crée une catégorie."""
+        from app.core.sequences import SequenceGenerator
+        data_dict = data.model_dump()
+
+        # Auto-générer le code si non fourni
+        if not data_dict.get('code'):
+            seq = SequenceGenerator(self.db, self.tenant_id)
+            data_dict['code'] = seq.next_reference("CATEGORIE_TICKET")
+
         category = TicketCategory(
             tenant_id=self.tenant_id,
-            **data.model_dump()
+            **data_dict
         )
         self.db.add(category)
         self.db.commit()
@@ -339,9 +348,9 @@ class HelpdeskService:
 
     def _generate_ticket_number(self) -> str:
         """Génère un numéro de ticket unique."""
-        prefix = datetime.utcnow().strftime("%Y%m")
-        suffix = str(uuid.uuid4().hex[:6]).upper()
-        return f"TK-{prefix}-{suffix}"
+        from app.core.sequences import SequenceGenerator
+        seq = SequenceGenerator(self.db, self.tenant_id)
+        return seq.next_reference("TICKET")
 
     def _calculate_sla_due_dates(
         self,

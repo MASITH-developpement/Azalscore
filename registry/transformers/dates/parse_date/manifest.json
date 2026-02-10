@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.transformers.dates.parse_date",
+  "name": "Parse une date depuis plusieurs formats",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Parse une date depuis plusieurs formats",
+  "inputs": {
+    "date_string": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "format": {
+      "type": "string",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "date": {
+      "type": "string",
+      "description": ""
+    },
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "dates",
+    "periods"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

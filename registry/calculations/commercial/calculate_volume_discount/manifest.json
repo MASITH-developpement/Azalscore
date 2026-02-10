@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_volume_discount",
+  "name": "Calcule une remise selon la quantité",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule une remise selon la quantité",
+  "inputs": {
+    "quantity": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "unit_price": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "discount_tiers": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "final_price": {
+      "type": "number",
+      "description": ""
+    },
+    "discount_amount": {
+      "type": "number",
+      "description": ""
+    },
+    "discount_rate": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "commercial",
+    "discounts"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

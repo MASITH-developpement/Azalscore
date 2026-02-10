@@ -19,7 +19,10 @@ Un module est valide UNIQUEMENT si :
 =============================================================================
 """
 
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 import sys
 
 # Configuration environnement AVANT imports
@@ -466,8 +469,8 @@ class TestAuthenticationChaos:
                     assert "detail" in error_data or "message" in error_data, (
                         f"Message d'erreur non comprehensible pour email '{email}'"
                     )
-                except:
-                    pass  # Format de reponse peut varier
+                except (AssertionError, ValueError) as e:
+                    logger.debug(f"Response format varies for email '{email}': {e}")
 
     def test_registration_empty_fields(self, client, field_report):
         """
@@ -525,8 +528,8 @@ class TestAuthenticationChaos:
                     field_report.user_confusion_points.append(
                         f"Message d'erreur sans mention du tenant: {error}"
                     )
-            except:
-                pass
+            except ValueError as e:
+                logger.debug(f"Could not parse error response as JSON: {e}")
 
 
 class TestFinanceChaos:
@@ -593,8 +596,8 @@ class TestFinanceChaos:
                 assert "balanc" in error_str or "equili" in error_str or "debit" in error_str, (
                     f"Message d'erreur pas clair pour ecriture desequilibree: {error}"
                 )
-            except:
-                pass
+            except (AssertionError, ValueError) as e:
+                logger.debug(f"Error message validation skipped: {e}")
 
     def test_negative_amounts(self, client):
         """
@@ -801,12 +804,12 @@ class TestCommercialChaos:
                 if r.status_code in [200, 201]:
                     try:
                         ids.append(r.json().get("id"))
-                    except:
-                        pass
+                    except ValueError as e:
+                        logger.debug(f"Could not parse response JSON: {e}")
 
             if len(set(ids)) > 1:
                 # Deux clients differents crees - peut etre un probleme
-                pass  # A evaluer selon la politique metier
+                logger.info(f"Multiple clients created with different IDs: {ids} - evaluate per business policy")
 
 
 class TestHRChaos:
@@ -1261,8 +1264,8 @@ class TestSessionInterruptionChaos:
                 "session" in error_str
             )
             assert has_clear_message, f"Message pas clair pour token expire: {error}"
-        except:
-            pass
+        except (AssertionError, ValueError) as e:
+            logger.debug(f"Token expiration message validation skipped: {e}")
 
     def test_malformed_token(self, client):
         """

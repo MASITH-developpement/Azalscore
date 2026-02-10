@@ -181,15 +181,10 @@ class EncryptedString(TypeDecorator):
         """Chiffre avant stockage en DB."""
         if value is None:
             return None
-        try:
-            encryption = FieldEncryption.get_instance()
-            return encryption.encrypt(value)
-        except EncryptionError:
-            # En cas d'erreur, stocker en clair (fallback développement)
-            # En production, cette erreur devrait être fatale
-            import logging
-            logging.warning("Encryption failed, storing plaintext (DEV ONLY)")
-            return value
+        # SÉCURITÉ P0-4: JAMAIS de fallback en clair
+        # Si le chiffrement échoue, c'est une erreur fatale
+        encryption = FieldEncryption.get_instance()
+        return encryption.encrypt(value)
 
     def process_result_value(self, value: str | None, dialect) -> str | None:
         """Déchiffre après lecture de la DB."""
@@ -218,11 +213,9 @@ class EncryptedText(TypeDecorator):
         """Chiffre avant stockage."""
         if value is None:
             return None
-        try:
-            encryption = FieldEncryption.get_instance()
-            return encryption.encrypt(value)
-        except EncryptionError:
-            return value
+        # SÉCURITÉ P0-4: JAMAIS de fallback en clair
+        encryption = FieldEncryption.get_instance()
+        return encryption.encrypt(value)
 
     def process_result_value(self, value: str | None, dialect) -> str | None:
         """Déchiffre après lecture."""
@@ -232,6 +225,7 @@ class EncryptedText(TypeDecorator):
             encryption = FieldEncryption.get_instance()
             return encryption.decrypt(value)
         except EncryptionError:
+            # Valeur peut-être non chiffrée (données anciennes/migration)
             return value
 
 

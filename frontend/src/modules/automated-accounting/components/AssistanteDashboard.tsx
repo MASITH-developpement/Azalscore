@@ -38,6 +38,7 @@ import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
 import { Modal, Input, TextArea, Select } from '@ui/forms';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 import type { TableColumn, PaginatedResponse } from '@/types';
 
 // ============================================================
@@ -438,8 +439,8 @@ export const AssistanteDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: dashboard, isLoading: dashboardLoading } = useAssistanteDashboard();
-  const { data: documents, isLoading: documentsLoading } = useDocuments(
+  const { data: dashboard, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useAssistanteDashboard();
+  const { data: documents, isLoading: documentsLoading, error: documentsError, refetch: refetchDocuments } = useDocuments(
     page,
     20,
     statusFilter ? { status: statusFilter } : {}
@@ -510,6 +511,17 @@ export const AssistanteDashboard: React.FC = () => {
           <div className="azals-spinner" />
           <p>Chargement...</p>
         </div>
+      </PageWrapper>
+    );
+  }
+
+  if (dashboardError) {
+    return (
+      <PageWrapper title="Mes documents">
+        <ErrorState
+          message={dashboardError instanceof Error ? dashboardError.message : undefined}
+          onRetry={() => { refetchDashboard(); }}
+        />
       </PageWrapper>
     );
   }

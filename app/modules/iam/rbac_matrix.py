@@ -741,9 +741,10 @@ def _log_permission_denied(user, module: Module, action: Action):
     import logging
     logger = logging.getLogger("rbac.security")
     logger.warning(
-        f"RBAC DENIED: user={getattr(user, 'id', 'unknown')} "
-        f"role={getattr(user, 'role', 'unknown')} "
-        f"module={module.value} action={action.value}"
+        "RBAC DENIED: user=%s "
+        "role=%s "
+        "module=%s action=%s",
+        getattr(user, 'id', 'unknown'), getattr(user, 'role', 'unknown'), module.value, action.value
     )
 
 

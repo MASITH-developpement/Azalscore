@@ -3,8 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary Meta Tags -->
+    <title>Azalscore ERP - Logiciel de Gestion d'Entreprise Francais</title>
+    <meta name="title" content="Azalscore ERP - Logiciel de Gestion d'Entreprise Francais" />
+    <meta name="description" content="ERP SaaS francais pour PME : CRM, Comptabilite, Inventaire, RH, POS. Solution cloud securisee, hebergee en France, conforme RGPD." />
+    <meta name="keywords" content="ERP, logiciel gestion entreprise, CRM, comptabilite, inventaire, RH, POS, SaaS francais, PME, ERP cloud, RGPD" />
+    <meta name="author" content="MASITH Developpement" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://azalscore.com" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://azalscore.com" />
+    <meta property="og:title" content="Azalscore ERP - Logiciel de Gestion d'Entreprise Francais" />
+    <meta property="og:description" content="ERP SaaS francais pour PME : CRM, Comptabilite, Inventaire, RH, POS. Solution cloud securisee, hebergee en France." />
+    <meta property="og:image" content="https://azalscore.com/og-image.png" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="Azalscore ERP" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://azalscore.com" />
+    <meta property="twitter:title" content="Azalscore ERP - Logiciel de Gestion Francais" />
+    <meta property="twitter:description" content="ERP SaaS francais pour PME : CRM, Comptabilite, Inventaire, RH, POS. Solution cloud securisee, hebergee en France." />
+    <meta property="twitter:image" content="https://azalscore.com/twitter-image.png" />
+
+    <!-- Mobile -->
     <meta name="theme-color" content="#1e40af" />
-    <meta name="description" content="AZALSCORE ERP - Gestion complète d'entreprise SaaS" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Google Fonts - Inter (Charte AZALSCORE) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- Favicon - Compatible tous navigateurs (Chrome, Firefox, Edge, Safari desktop/iOS) -->
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
@@ -13,14 +48,19 @@
     <link rel="icon" href="/favicon.png" />
 
     <!-- PWA Assets -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-
-    <!-- Title - Valeur par défaut Azalscore (multi-tenant prêt mais désactivé) -->
-    <title>Azalscore</title>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // SW auto-update: reload when a new service worker takes control
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+          window.location.reload();
+        });
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

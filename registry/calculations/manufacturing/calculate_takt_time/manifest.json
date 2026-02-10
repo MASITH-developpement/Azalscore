@@ -1,0 +1,43 @@
+{
+  "id": "azalscore.calculations.manufacturing.calculate_takt_time",
+  "name": "Calcule le takt time",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le takt time",
+  "inputs": {
+    "available_time_minutes": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "customer_demand": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "takt_time_minutes": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "manufacturing",
+    "production"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

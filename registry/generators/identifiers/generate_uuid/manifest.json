@@ -1,0 +1,32 @@
+{
+  "id": "azalscore.generators.identifiers.generate_uuid",
+  "name": "Génère un UUID v4",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un UUID v4",
+  "inputs": {},
+  "outputs": {
+    "uuid": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "identifiers",
+    "unique"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

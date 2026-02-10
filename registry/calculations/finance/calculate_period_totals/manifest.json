@@ -1,0 +1,42 @@
+{
+  "id": "azalscore.calculations.finance.calculate_period_totals",
+  "name": "Calcule les totaux d'une période",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule les totaux d'une période",
+  "inputs": {
+    "lines": {
+      "type": "array",
+      "required": true,
+      "description": "Lignes d'écriture"
+    }
+  },
+  "outputs": {
+    "total_debit": {
+      "type": "number",
+      "description": "Total débit"
+    },
+    "total_credit": {
+      "type": "number",
+      "description": "Total crédit"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "account_balances"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

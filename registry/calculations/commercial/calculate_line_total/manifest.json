@@ -1,0 +1,67 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_line_total",
+  "name": "Calcul total ligne",
+  "category": "calculation",
+  "version": "1.0.0",
+  "description": "Calcule le total d'une ligne de commande/facture avec quantité, prix, remise et TVA",
+  "inputs": {
+    "quantity": {
+      "type": "number",
+      "required": true,
+      "description": "Quantité"
+    },
+    "unit_price": {
+      "type": "number",
+      "required": true,
+      "description": "Prix unitaire HT"
+    },
+    "discount_rate": {
+      "type": "number",
+      "required": false,
+      "description": "Taux de remise (0.1 = 10%)",
+      "default": 0
+    },
+    "vat_rate": {
+      "type": "number",
+      "required": false,
+      "description": "Taux de TVA (0.20 = 20%)",
+      "default": 0.20
+    }
+  },
+  "outputs": {
+    "subtotal_ht": {
+      "type": "number",
+      "description": "Sous-total HT (qté × prix)"
+    },
+    "discount_amount": {
+      "type": "number",
+      "description": "Montant de la remise"
+    },
+    "total_ht_after_discount": {
+      "type": "number",
+      "description": "Total HT après remise"
+    },
+    "vat_amount": {
+      "type": "number",
+      "description": "Montant de la TVA"
+    },
+    "total_ttc": {
+      "type": "number",
+      "description": "Total TTC"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 500,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["calculation", "commercial", "pricing", "vat"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

@@ -4,6 +4,7 @@ AZALS MODULE 18 - Mobile App Service
 Logique métier pour le backend mobile.
 """
 
+import logging
 import secrets
 import uuid
 from datetime import datetime, timedelta
@@ -11,6 +12,8 @@ from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     MobileActivityLog,
@@ -40,9 +43,10 @@ from .schemas import (
 class MobileService:
     """Service Mobile complet."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # ========================================================================
     # DEVICES
@@ -433,7 +437,16 @@ class MobileService:
                 )
                 self.db.add(queue_item)
                 success_count += 1
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[MOBILE_SYNC] Échec ajout item à la queue de sync",
+                    extra={
+                        "entity_type": item.entity_type,
+                        "entity_id": str(item.entity_id),
+                        "error": str(e)[:300],
+                        "consequence": "sync_item_skipped"
+                    }
+                )
                 error_count += 1
 
         self.db.commit()

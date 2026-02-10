@@ -1,0 +1,49 @@
+{
+  "id": "azalscore.generators.passwords.generate_password",
+  "name": "Génère un mot de passe sécurisé",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un mot de passe sécurisé",
+  "inputs": {
+    "length": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 12
+    },
+    "include_symbols": {
+      "type": "boolean",
+      "required": false,
+      "description": "",
+      "default": true
+    }
+  },
+  "outputs": {
+    "password": {
+      "type": "string",
+      "description": ""
+    },
+    "strength": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": false,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "passwords",
+    "secure"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

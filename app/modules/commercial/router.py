@@ -8,7 +8,7 @@ API REST pour le CRM et la gestion commerciale.
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
@@ -340,6 +340,28 @@ async def list_documents(
     return DocumentList(items=items, total=total, page=page, page_size=page_size)
 
 
+@router.get("/documents/export")
+async def export_documents(
+    type: DocumentType | None = None,
+    status: DocumentStatus | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Exporter les documents au format CSV."""
+    service = get_commercial_service(db, current_user.tenant_id)
+    csv_content = service.export_documents_csv(type, status, date_from, date_to)
+
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=documents_{date.today().strftime('%Y%m%d')}.csv"
+        }
+    )
+
+
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: UUID,
@@ -367,6 +389,19 @@ async def update_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document non trouvé ou non modifiable")
     return document
+
+
+@router.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(
+    document_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Supprimer un document (uniquement si DRAFT)."""
+    service = get_commercial_service(db, current_user.tenant_id)
+    success = service.delete_document(document_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Document non trouvé ou non supprimable (seuls les brouillons peuvent être supprimés)")
 
 
 @router.post("/documents/{document_id}/validate", response_model=DocumentResponse)
@@ -423,6 +458,36 @@ async def create_invoice_from_order(
     if not invoice:
         raise HTTPException(status_code=400, detail="Commande non trouvée ou non facturable")
     return invoice
+
+
+@router.post("/orders/{order_id}/affaire")
+async def create_affaire_from_order(
+    order_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Créer une affaire (projet) à partir d'une commande."""
+    service = get_commercial_service(db, current_user.tenant_id)
+    document = service.get_document(order_id)
+    if not document or document.document_type != DocumentType.ORDER:
+        raise HTTPException(status_code=404, detail="Commande non trouvée")
+
+    # Créer le projet via le module projects
+    from app.modules.projects.service import ProjectsService
+    from app.modules.projects.schemas import ProjectCreate
+
+    projects_service = ProjectsService(db, current_user.tenant_id)
+    project_data = ProjectCreate(
+        code=f"AFF-{document.number}",
+        name=f"Affaire - {document.customer_name or 'Client'}",
+        description=f"Affaire créée depuis la commande {document.number}",
+        client_id=document.customer_id,
+        budget=float(document.total_ttc) if document.total_ttc else None,
+        status="ACTIVE"
+    )
+    project = projects_service.create_project(project_data, current_user.id)
+
+    return {"id": str(project.id), "reference": project.code}
 
 
 @router.post("/documents/{document_id}/lines", response_model=DocumentLineResponse, status_code=status.HTTP_201_CREATED)

@@ -100,10 +100,19 @@ const createApiClient = (): AxiosInstance => {
     },
   });
 
-  // Intercepteur requêtes - Ajout du token
+  // Intercepteur requêtes - Auth gate + Ajout du token
+  // RÈGLE : Aucune requête métier ne part sans token valide.
+  // Les endpoints /auth/* sont exemptés (login, refresh, register).
   client.interceptors.request.use(
     (config) => {
       const token = tokenManager.getAccessToken();
+
+      // Auth gate : bloquer les requêtes métier si pas de token
+      const isAuthEndpoint = config.url?.includes('/auth/') || config.url?.includes('/health');
+      if (!token && !isAuthEndpoint && !config.headers['Skip-Auth']) {
+        return Promise.reject(new Error('AUTH_NOT_READY: No token available. Business requests blocked until authenticated.'));
+      }
+
       if (token && !config.headers['Skip-Auth']) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
@@ -134,8 +143,12 @@ const createApiClient = (): AxiosInstance => {
       // Skip incidents pour les endpoints d'incidents eux-mêmes (éviter boucle infinie)
       const isIncidentEndpoint = originalRequest.url?.includes('/incidents');
 
+      // Skip incidents pour les requêtes silencieuses (permission checks, etc.)
+      const isSilentRequest = originalRequest.headers?.['X-Silent-Error'] === 'true';
+
       // GUARDIAN: Créer un incident pour les erreurs significatives
-      if (!isIncidentEndpoint && !originalRequest._incidentCreated) {
+      // Skip les endpoints d'auth (401 attendu quand pas de session)
+      if (!isIncidentEndpoint && !isAuthEndpoint && !isSilentRequest && !originalRequest._incidentCreated) {
         originalRequest._incidentCreated = true;
 
         const status = error.response?.status;

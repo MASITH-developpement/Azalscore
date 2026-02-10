@@ -2,13 +2,13 @@
  * AZALSCORE GUARDIAN - Panneau d'Incidents Type ERP/Odoo
  * =======================================================
  *
- * Caractéristiques:
- * - Visible immédiatement
+ * Caracteristiques:
+ * - Visible immediatement
  * - Non intrusif
  * - Empilable (plusieurs erreurs)
- * - Repliable / dépliable
- * - Contenu entièrement copiable
- * - Visible même en cas d'erreur bloquante
+ * - Repliable / depliable
+ * - Contenu entierement copiable
+ * - Visible meme en cas d'erreur bloquante
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -34,8 +34,10 @@ import {
   User,
   MapPin,
   Activity,
+  type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import '@/styles/guardian-panel.css';
 
 // ============================================================
 // TYPES
@@ -90,47 +92,26 @@ interface GuardianPanelProps {
 // HELPERS
 // ============================================================
 
-const SEVERITY_CONFIG = {
-  info: {
-    icon: Info,
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
-    badge: 'bg-blue-100 text-blue-800',
-    label: 'Info',
-  },
-  warning: {
-    icon: AlertTriangle,
-    color: 'text-yellow-600',
-    bg: 'bg-yellow-50',
-    border: 'border-yellow-200',
-    badge: 'bg-yellow-100 text-yellow-800',
-    label: 'Attention',
-  },
-  error: {
-    icon: AlertCircle,
-    color: 'text-red-600',
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    badge: 'bg-red-100 text-red-800',
-    label: 'Erreur',
-  },
-  critical: {
-    icon: ShieldAlert,
-    color: 'text-red-700',
-    bg: 'bg-red-100',
-    border: 'border-red-300',
-    badge: 'bg-red-200 text-red-900',
-    label: 'Critique',
-  },
+const SEVERITY_ICONS: Record<IncidentSeverity, LucideIcon> = {
+  info: Info,
+  warning: AlertTriangle,
+  error: AlertCircle,
+  critical: ShieldAlert,
+};
+
+const SEVERITY_LABELS: Record<IncidentSeverity, string> = {
+  info: 'Info',
+  warning: 'Attention',
+  error: 'Erreur',
+  critical: 'Critique',
 };
 
 const TYPE_LABELS: Record<IncidentType, string> = {
   auth: 'Authentification',
   api: 'API',
-  business: 'Métier',
+  business: 'Metier',
   js: 'JavaScript',
-  network: 'Réseau',
+  network: 'Reseau',
   validation: 'Validation',
 };
 
@@ -140,6 +121,14 @@ const formatTimestamp = (date: Date): string => {
     minute: '2-digit',
     second: '2-digit',
   });
+};
+
+/** Keyboard handler for clickable non-button elements */
+const handleKeyActivate = (callback: () => void) => (e: React.KeyboardEvent) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    callback();
+  }
 };
 
 // ============================================================
@@ -162,15 +151,15 @@ const IncidentCard: React.FC<IncidentCardProps> = ({
   onGuardianAction,
 }) => {
   const [copied, setCopied] = useState(false);
-  const config = SEVERITY_CONFIG[incident.severity];
-  const Icon = config.icon;
+  const severity = incident.severity;
+  const Icon = SEVERITY_ICONS[severity];
 
   const handleCopy = useCallback(async () => {
     const textContent = `
 INCIDENT AZALSCORE
 ==================
 Type: ${TYPE_LABELS[incident.type]}
-Sévérité: ${config.label}
+Severite: ${SEVERITY_LABELS[severity]}
 Timestamp: ${incident.timestamp.toISOString()}
 
 Tenant ID: ${incident.tenant_id || 'N/A'}
@@ -182,7 +171,7 @@ ${incident.endpoint ? `Endpoint: ${incident.method || 'GET'} ${incident.endpoint
 ${incident.http_status ? `Status HTTP: ${incident.http_status}` : ''}
 
 Message: ${incident.message}
-${incident.details ? `Détails: ${incident.details}` : ''}
+${incident.details ? `Details: ${incident.details}` : ''}
 ${incident.stack_trace ? `\nStack Trace:\n${incident.stack_trace}` : ''}
 
 Actions Guardian:
@@ -196,84 +185,85 @@ ${incident.guardian_actions.map(a => `- [${a.success ? 'OK' : 'FAIL'}] ${a.actio
     } catch {
       console.error('Failed to copy');
     }
-  }, [incident, config.label]);
+  }, [incident, severity]);
 
   return (
     <div
       className={clsx(
-        'guardian-incident-card border rounded-lg mb-2 overflow-hidden transition-all',
-        config.bg,
-        config.border,
-        incident.is_acknowledged && 'opacity-60'
+        'azals-guardian-card',
+        `azals-guardian-card--${severity}`,
+        incident.is_acknowledged && 'azals-guardian-card--acknowledged'
       )}
     >
       {/* Header */}
-      <div
-        className={clsx(
-          'flex items-center gap-2 px-3 py-2 cursor-pointer',
-          config.bg
-        )}
+      <button
+        className="azals-guardian-card__header"
         onClick={onToggleExpanded}
+        aria-expanded={incident.is_expanded}
+        aria-label={`${SEVERITY_LABELS[severity]}: ${incident.message}`}
       >
-        <Icon className={clsx('w-5 h-5 flex-shrink-0', config.color)} />
+        <Icon
+          className={clsx('azals-guardian-card__icon', `azals-guardian-card__icon--${severity}`)}
+          size={20}
+        />
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={clsx('text-xs px-2 py-0.5 rounded font-medium', config.badge)}>
+        <div className="azals-guardian-card__summary">
+          <div className="azals-guardian-card__meta">
+            <span className={clsx('azals-guardian-card__type-badge', `azals-guardian-card__type-badge--${severity}`)}>
               {TYPE_LABELS[incident.type]}
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="azals-guardian-card__timestamp">
               {formatTimestamp(incident.timestamp)}
             </span>
             {!incident.is_sent_to_backend && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">
-                Non envoyé
+              <span className="azals-guardian-card__unsent">
+                Non envoye
               </span>
             )}
           </div>
-          <p className="text-sm font-medium text-gray-900 truncate mt-1">
+          <p className="azals-guardian-card__message">
             {incident.message}
           </p>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="azals-guardian-card__chevron">
           {incident.is_expanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-400" />
+            <ChevronUp size={16} />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown size={16} />
           )}
         </div>
-      </div>
+      </button>
 
       {/* Expanded Content */}
       {incident.is_expanded && (
-        <div className="px-3 py-2 border-t border-gray-200 bg-white">
-          {/* Métadonnées */}
-          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-            <div className="flex items-center gap-1 text-gray-600">
-              <User className="w-3 h-3" />
+        <div className="azals-guardian-card__body">
+          {/* Metadonnees */}
+          <div className="azals-guardian-card__metadata">
+            <div className="azals-guardian-card__meta-item">
+              <User size={12} />
               <span>Tenant: {incident.tenant_id || 'N/A'}</span>
             </div>
-            <div className="flex items-center gap-1 text-gray-600">
-              <MapPin className="w-3 h-3" />
+            <div className="azals-guardian-card__meta-item">
+              <MapPin size={12} />
               <span>Route: {incident.route}</span>
             </div>
             {incident.endpoint && (
-              <div className="flex items-center gap-1 text-gray-600 col-span-2">
-                <Server className="w-3 h-3" />
+              <div className="azals-guardian-card__meta-item azals-guardian-card__meta-item--full">
+                <Server size={12} />
                 <span>
                   {incident.method || 'GET'} {incident.endpoint}
-                  {incident.http_status && ` → ${incident.http_status}`}
+                  {incident.http_status && ` \u2192 ${incident.http_status}`}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Détails */}
+          {/* Details */}
           {incident.details && (
-            <div className="mb-3">
-              <p className="text-xs font-medium text-gray-700 mb-1">Détails:</p>
-              <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+            <div className="azals-guardian-card__details">
+              <p className="azals-guardian-card__details-label">Details:</p>
+              <p className="azals-guardian-card__details-text">
                 {incident.details}
               </p>
             </div>
@@ -281,9 +271,9 @@ ${incident.guardian_actions.map(a => `- [${a.success ? 'OK' : 'FAIL'}] ${a.actio
 
           {/* Stack Trace */}
           {incident.stack_trace && (
-            <div className="mb-3">
-              <p className="text-xs font-medium text-gray-700 mb-1">Stack Trace:</p>
-              <pre className="text-xs text-gray-600 bg-gray-900 text-gray-100 p-2 rounded overflow-x-auto max-h-32">
+            <div className="azals-guardian-card__stack">
+              <p className="azals-guardian-card__stack-label">Stack Trace:</p>
+              <pre className="azals-guardian-card__stack-pre">
                 {incident.stack_trace}
               </pre>
             </div>
@@ -291,42 +281,44 @@ ${incident.guardian_actions.map(a => `- [${a.success ? 'OK' : 'FAIL'}] ${a.actio
 
           {/* Screenshot */}
           {incident.screenshot_data && (
-            <div className="mb-3">
-              <p className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                <Camera className="w-3 h-3" />
-                Capture d'écran:
+            <div className="azals-guardian-card__screenshot">
+              <p className="azals-guardian-card__screenshot-label">
+                <Camera size={12} />
+                Capture d'ecran:
               </p>
               <img
                 src={incident.screenshot_data}
-                alt="Capture écran incident"
-                className="max-w-full h-auto rounded border border-gray-200 max-h-40 object-contain"
+                alt="Capture ecran incident"
+                className="azals-guardian-card__screenshot-img"
               />
             </div>
           )}
 
           {/* Guardian Actions */}
           {incident.guardian_actions.length > 0 && (
-            <div className="mb-3">
-              <p className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                <Activity className="w-3 h-3" />
+            <div className="azals-guardian-card__actions-log">
+              <p className="azals-guardian-card__actions-log-label">
+                <Activity size={12} />
                 Actions Guardian:
               </p>
-              <div className="space-y-1">
+              <div className="azals-guardian-card__actions-log-list">
                 {incident.guardian_actions.map((action) => (
                   <div
                     key={action.id}
                     className={clsx(
-                      'text-xs p-2 rounded flex items-start gap-2',
-                      action.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                      'azals-guardian-card__action-entry',
+                      action.success
+                        ? 'azals-guardian-card__action-entry--success'
+                        : 'azals-guardian-card__action-entry--failure'
                     )}
                   >
-                    <span className="font-mono">[{action.success ? 'OK' : 'FAIL'}]</span>
+                    <span className="azals-guardian-card__action-status">[{action.success ? 'OK' : 'FAIL'}]</span>
                     <div>
-                      <span className="font-medium">{action.action_type}</span>
-                      <span className="mx-1">-</span>
+                      <span className="azals-guardian-card__action-type">{action.action_type}</span>
+                      <span className="azals-guardian-card__action-separator">-</span>
                       <span>{action.description}</span>
                       {action.result && (
-                        <p className="text-xs opacity-75 mt-0.5">{action.result}</p>
+                        <p className="azals-guardian-card__action-detail-text">{action.result}</p>
                       )}
                     </div>
                   </div>
@@ -336,13 +328,14 @@ ${incident.guardian_actions.map(a => `- [${a.success ? 'OK' : 'FAIL'}] ${a.actio
           )}
 
           {/* Actions utilisateur */}
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+          <div className="azals-guardian-card__user-actions">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              className="azals-guardian-action-btn azals-guardian-action-btn--gray"
+              aria-label="Copier l'incident"
             >
-              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              {copied ? 'Copié!' : 'Copier'}
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? 'Copie!' : 'Copier'}
             </button>
 
             {/* Actions Guardian disponibles selon le type */}
@@ -350,17 +343,19 @@ ${incident.guardian_actions.map(a => `- [${a.success ? 'OK' : 'FAIL'}] ${a.actio
               <>
                 <button
                   onClick={() => onGuardianAction('refresh_token')}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded transition-colors"
+                  className="azals-guardian-action-btn azals-guardian-action-btn--blue"
+                  aria-label="Rafraichir le token"
                 >
-                  <RefreshCw className="w-3 h-3" />
-                  Rafraîchir token
+                  <RefreshCw size={12} />
+                  Rafraichir token
                 </button>
                 <button
                   onClick={() => onGuardianAction('force_logout')}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-100 hover:bg-orange-200 text-orange-800 rounded transition-colors"
+                  className="azals-guardian-action-btn azals-guardian-action-btn--orange"
+                  aria-label="Forcer la deconnexion"
                 >
-                  <LogOut className="w-3 h-3" />
-                  Déconnexion
+                  <LogOut size={12} />
+                  Deconnexion
                 </button>
               </>
             )}
@@ -368,44 +363,49 @@ ${incident.guardian_actions.map(a => `- [${a.success ? 'OK' : 'FAIL'}] ${a.actio
             {incident.severity === 'critical' && (
               <button
                 onClick={() => onGuardianAction('reload')}
-                className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 rounded transition-colors"
+                className="azals-guardian-action-btn azals-guardian-action-btn--purple"
+                aria-label="Recharger la page"
               >
-                <RefreshCw className="w-3 h-3" />
+                <RefreshCw size={12} />
                 Recharger page
               </button>
             )}
 
             <button
               onClick={() => onGuardianAction('go_back')}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              className="azals-guardian-action-btn azals-guardian-action-btn--gray"
+              aria-label="Retour"
             >
-              <ArrowLeft className="w-3 h-3" />
+              <ArrowLeft size={12} />
               Retour
             </button>
 
             <button
               onClick={() => onGuardianAction('go_cockpit')}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              className="azals-guardian-action-btn azals-guardian-action-btn--gray"
+              aria-label="Aller au cockpit"
             >
-              <Home className="w-3 h-3" />
+              <Home size={12} />
               Cockpit
             </button>
 
             {!incident.is_acknowledged && (
               <button
                 onClick={onAcknowledge}
-                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-800 rounded transition-colors ml-auto"
+                className="azals-guardian-action-btn azals-guardian-action-btn--green azals-guardian-action-btn--ml-auto"
+                aria-label="Acquitter l'incident"
               >
-                <Check className="w-3 h-3" />
+                <Check size={12} />
                 Acquitter
               </button>
             )}
 
             <button
               onClick={onRemove}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-800 rounded transition-colors"
+              className="azals-guardian-action-btn azals-guardian-action-btn--red"
+              aria-label="Fermer l'incident"
             >
-              <X className="w-3 h-3" />
+              <X size={12} />
               Fermer
             </button>
           </div>
@@ -444,78 +444,70 @@ export const GuardianPanel: React.FC<GuardianPanelProps> = ({
 
   if (incidents.length === 0) return null;
 
-  // Mode minimisé (badge seulement)
+  // Mode minimise (badge seulement)
   if (isMinimized) {
     return (
-      <div
-        className="guardian-panel-minimized fixed bottom-4 right-4 z-[9999]"
-        onClick={() => setIsMinimized(false)}
-      >
-        <div
+      <div className="azals-guardian-minimized">
+        <button
           className={clsx(
-            'flex items-center gap-2 px-3 py-2 rounded-full shadow-lg cursor-pointer',
-            'transition-all hover:scale-105',
+            'azals-guardian-minimized__pill',
             stats.critical > 0
-              ? 'bg-red-600 text-white'
+              ? 'azals-guardian-minimized__pill--critical'
               : stats.error > 0
-              ? 'bg-red-500 text-white'
-              : 'bg-yellow-500 text-white'
+              ? 'azals-guardian-minimized__pill--error'
+              : 'azals-guardian-minimized__pill--default'
           )}
+          onClick={() => setIsMinimized(false)}
+          aria-label={`${stats.total} incident${stats.total > 1 ? 's' : ''} - Cliquer pour agrandir`}
         >
-          <ShieldAlert className="w-5 h-5" />
-          <span className="font-bold">{stats.total}</span>
-          <span className="text-sm opacity-90">incident{stats.total > 1 ? 's' : ''}</span>
-          <Maximize2 className="w-4 h-4 ml-1 opacity-75" />
-        </div>
+          <ShieldAlert size={20} />
+          <span className="azals-guardian-minimized__count">{stats.total}</span>
+          <span className="azals-guardian-minimized__label">incident{stats.total > 1 ? 's' : ''}</span>
+          <Maximize2 className="azals-guardian-minimized__expand-icon" size={16} />
+        </button>
       </div>
     );
   }
 
   return (
-    <div
-      className={clsx(
-        'guardian-panel fixed bottom-0 right-0 z-[9999]',
-        'w-full md:w-[480px] max-h-[70vh]',
-        'bg-white shadow-2xl border-l border-t border-gray-200 rounded-tl-lg',
-        'flex flex-col',
-        'transition-all duration-300'
-      )}
-    >
+    <div className="azals-guardian-panel">
       {/* Header */}
       <div
-        className={clsx(
-          'flex items-center justify-between px-4 py-2',
-          'bg-gray-800 text-white rounded-tl-lg cursor-pointer'
-        )}
+        className="azals-guardian-header"
+        role="button"
+        tabIndex={0}
         onClick={onToggleCollapse}
+        onKeyDown={handleKeyActivate(onToggleCollapse)}
+        aria-expanded={!isCollapsed}
+        aria-label="Basculer le panneau Guardian"
       >
-        <div className="flex items-center gap-3">
-          <ShieldAlert className="w-5 h-5" />
-          <span className="font-semibold">GUARDIAN</span>
+        <div className="azals-guardian-header__left">
+          <ShieldAlert size={20} />
+          <span className="azals-guardian-header__title">GUARDIAN</span>
 
           {/* Badges de comptage */}
-          <div className="flex items-center gap-1.5">
+          <div className="azals-guardian-header__badges">
             {stats.critical > 0 && (
-              <span className="px-2 py-0.5 text-xs font-bold bg-red-600 rounded-full">
+              <span className="azals-guardian-header__badge azals-guardian-header__badge--critical">
                 {stats.critical} crit
               </span>
             )}
             {stats.error > 0 && (
-              <span className="px-2 py-0.5 text-xs font-bold bg-red-500 rounded-full">
+              <span className="azals-guardian-header__badge azals-guardian-header__badge--error">
                 {stats.error} err
               </span>
             )}
             {stats.warning > 0 && (
-              <span className="px-2 py-0.5 text-xs font-bold bg-yellow-500 text-yellow-900 rounded-full">
+              <span className="azals-guardian-header__badge azals-guardian-header__badge--warning">
                 {stats.warning} warn
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-300">
-            {stats.unacknowledged} non acquitté{stats.unacknowledged > 1 ? 's' : ''}
+        <div className="azals-guardian-header__right">
+          <span className="azals-guardian-header__unack">
+            {stats.unacknowledged} non acquitte{stats.unacknowledged > 1 ? 's' : ''}
           </span>
 
           <button
@@ -523,16 +515,17 @@ export const GuardianPanel: React.FC<GuardianPanelProps> = ({
               e.stopPropagation();
               setIsMinimized(true);
             }}
-            className="p-1 hover:bg-gray-700 rounded"
+            className="azals-guardian-header__minimize-btn"
             title="Minimiser"
+            aria-label="Minimiser le panneau Guardian"
           >
-            <Minimize2 className="w-4 h-4" />
+            <Minimize2 size={16} />
           </button>
 
           {isCollapsed ? (
-            <ChevronUp className="w-5 h-5" />
+            <ChevronUp size={20} />
           ) : (
-            <ChevronDown className="w-5 h-5" />
+            <ChevronDown size={20} />
           )}
         </div>
       </div>
@@ -541,21 +534,22 @@ export const GuardianPanel: React.FC<GuardianPanelProps> = ({
       {!isCollapsed && (
         <>
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-3 py-1.5 bg-gray-100 border-b">
-            <span className="text-xs text-gray-600">
-              <Clock className="w-3 h-3 inline mr-1" />
+          <div className="azals-guardian-toolbar">
+            <span className="azals-guardian-toolbar__info">
+              <Clock className="azals-guardian-toolbar__info-icon" size={12} />
               {incidents.length} incident{incidents.length > 1 ? 's' : ''} actif{incidents.length > 1 ? 's' : ''}
             </span>
             <button
               onClick={onClearAll}
-              className="text-xs text-red-600 hover:text-red-800 hover:underline"
+              className="azals-guardian-toolbar__clear-btn"
+              aria-label="Effacer tous les incidents"
             >
               Tout effacer
             </button>
           </div>
 
           {/* Liste des incidents */}
-          <div className="flex-1 overflow-y-auto p-2">
+          <div className="azals-guardian-list">
             {incidents.map((incident) => (
               <IncidentCard
                 key={incident.id}
@@ -569,8 +563,8 @@ export const GuardianPanel: React.FC<GuardianPanelProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-3 py-2 bg-gray-50 border-t text-xs text-gray-500 text-center">
-            AZALSCORE V1 - Système GUARDIAN actif
+          <div className="azals-guardian-footer">
+            AZALSCORE V1 - Systeme GUARDIAN actif
           </div>
         </>
       )}

@@ -95,17 +95,10 @@ class BIService:
             created_by=self.user_id
         )
 
-        try:
-            self.db.add(dashboard)
-            self.db.commit()
-            self.db.refresh(dashboard)
-            return dashboard
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Dashboard avec code '{data.code}' existe déjà"
-            )
+        self.db.add(dashboard)
+        self.db.commit()
+        self.db.refresh(dashboard)
+        return dashboard
 
     def get_dashboard(self, dashboard_id: int) -> Dashboard | None:
         """Récupérer un tableau de bord."""
@@ -214,46 +207,39 @@ class BIService:
             created_by=self.user_id
         )
 
-        try:
-            self.db.add(new_dashboard)
-            self.db.flush()
+        self.db.add(new_dashboard)
+        self.db.flush()
 
-            # Dupliquer les widgets
-            for widget in source.widgets:
-                new_widget = DashboardWidget(
-                    tenant_id=self.tenant_id,
-                    dashboard_id=new_dashboard.id,
-                    title=widget.title,
-                    widget_type=widget.widget_type,
-                    chart_type=widget.chart_type,
-                    position_x=widget.position_x,
-                    position_y=widget.position_y,
-                    width=widget.width,
-                    height=widget.height,
-                    data_source_id=widget.data_source_id,
-                    query_id=widget.query_id,
-                    kpi_id=widget.kpi_id,
-                    config=widget.config,
-                    chart_options=widget.chart_options,
-                    colors=widget.colors,
-                    static_data=widget.static_data,
-                    data_mapping=widget.data_mapping,
-                    show_title=widget.show_title,
-                    show_legend=widget.show_legend,
-                    show_toolbar=widget.show_toolbar,
-                    display_order=widget.display_order
-                )
-                self.db.add(new_widget)
-
-            self.db.commit()
-            self.db.refresh(new_dashboard)
-            return new_dashboard
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Dashboard avec code '{new_code}' existe déjà"
+        # Dupliquer les widgets
+        for widget in source.widgets:
+            new_widget = DashboardWidget(
+                tenant_id=self.tenant_id,
+                dashboard_id=new_dashboard.id,
+                title=widget.title,
+                widget_type=widget.widget_type,
+                chart_type=widget.chart_type,
+                position_x=widget.position_x,
+                position_y=widget.position_y,
+                width=widget.width,
+                height=widget.height,
+                data_source_id=widget.data_source_id,
+                query_id=widget.query_id,
+                kpi_id=widget.kpi_id,
+                config=widget.config,
+                chart_options=widget.chart_options,
+                colors=widget.colors,
+                static_data=widget.static_data,
+                data_mapping=widget.data_mapping,
+                show_title=widget.show_title,
+                show_legend=widget.show_legend,
+                show_toolbar=widget.show_toolbar,
+                display_order=widget.display_order
             )
+            self.db.add(new_widget)
+
+        self.db.commit()
+        self.db.refresh(new_dashboard)
+        return new_dashboard
 
     # ========================================================================
     # WIDGETS
@@ -392,17 +378,10 @@ class BIService:
             created_by=self.user_id
         )
 
-        try:
-            self.db.add(report)
-            self.db.commit()
-            self.db.refresh(report)
-            return report
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Rapport avec code '{data.code}' existe déjà"
-            )
+        self.db.add(report)
+        self.db.commit()
+        self.db.refresh(report)
+        return report
 
     def get_report(self, report_id: int) -> Report | None:
         """Récupérer un rapport."""
@@ -493,29 +472,22 @@ class BIService:
 
     def _run_report_execution(self, execution: ReportExecution) -> None:
         """Exécuter un rapport (logique interne)."""
-        try:
-            execution.status = ReportStatus.RUNNING
-            execution.started_at = datetime.utcnow()
-            self.db.commit()
+        execution.status = ReportStatus.RUNNING
+        execution.started_at = datetime.utcnow()
+        self.db.commit()
 
-            # TODO: Implémenter la génération réelle du rapport
-            # Pour l'instant, simuler une exécution réussie
+        # TODO: Implémenter la génération réelle du rapport
+        # Pour l'instant, simuler une exécution réussie
 
-            execution.status = ReportStatus.COMPLETED
-            execution.completed_at = datetime.utcnow()
-            execution.duration_seconds = int(
-                (execution.completed_at - execution.started_at).total_seconds()
-            )
-            execution.file_path = f"/reports/{execution.id}.{execution.output_format.value}"
-            execution.row_count = 0
+        execution.status = ReportStatus.COMPLETED
+        execution.completed_at = datetime.utcnow()
+        execution.duration_seconds = int(
+            (execution.completed_at - execution.started_at).total_seconds()
+        )
+        execution.file_path = f"/reports/{execution.id}.{execution.output_format.value}"
+        execution.row_count = 0
 
-            self.db.commit()
-
-        except Exception as e:
-            execution.status = ReportStatus.FAILED
-            execution.error_message = str(e)
-            execution.completed_at = datetime.utcnow()
-            self.db.commit()
+        self.db.commit()
 
     def get_report_executions(
         self,
@@ -605,17 +577,10 @@ class BIService:
             created_by=self.user_id
         )
 
-        try:
-            self.db.add(kpi)
-            self.db.commit()
-            self.db.refresh(kpi)
-            return kpi
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"KPI avec code '{data.code}' existe déjà"
-            )
+        self.db.add(kpi)
+        self.db.commit()
+        self.db.refresh(kpi)
+        return kpi
 
     def get_kpi(self, kpi_id: int) -> KPIDefinition | None:
         """Récupérer un KPI."""
@@ -824,17 +789,10 @@ class BIService:
             created_by=self.user_id
         )
 
-        try:
-            self.db.add(rule)
-            self.db.commit()
-            self.db.refresh(rule)
-            return rule
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Règle avec code '{data.code}' existe déjà"
-            )
+        self.db.add(rule)
+        self.db.commit()
+        self.db.refresh(rule)
+        return rule
 
     def get_alert_rule(self, rule_id: int) -> AlertRule | None:
         """Récupérer une règle d'alerte."""
@@ -995,17 +953,10 @@ class BIService:
             created_by=self.user_id
         )
 
-        try:
-            self.db.add(source)
-            self.db.commit()
-            self.db.refresh(source)
-            return source
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Source avec code '{data.code}' existe déjà"
-            )
+        self.db.add(source)
+        self.db.commit()
+        self.db.refresh(source)
+        return source
 
     def get_data_source(self, source_id: int) -> DataSource | None:
         """Récupérer une source de données."""
@@ -1071,17 +1022,10 @@ class BIService:
             created_by=self.user_id
         )
 
-        try:
-            self.db.add(query_obj)
-            self.db.commit()
-            self.db.refresh(query_obj)
-            return query_obj
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Requête avec code '{data.code}' existe déjà"
-            )
+        self.db.add(query_obj)
+        self.db.commit()
+        self.db.refresh(query_obj)
+        return query_obj
 
     def get_query(self, query_id: int) -> DataQuery | None:
         """Récupérer une requête."""

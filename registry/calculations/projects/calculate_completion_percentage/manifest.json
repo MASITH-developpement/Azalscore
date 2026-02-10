@@ -1,0 +1,46 @@
+{
+  "id": "azalscore.calculations.projects.calculate_completion_percentage",
+  "name": "Calcule le pourcentage d'avancement",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le pourcentage d'avancement",
+  "inputs": {
+    "tasks": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "completion_percentage": {
+      "type": "number",
+      "description": ""
+    },
+    "completed_tasks": {
+      "type": "number",
+      "description": ""
+    },
+    "total_tasks": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "projects",
+    "progress"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

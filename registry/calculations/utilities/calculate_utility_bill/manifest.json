@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.utilities.calculate_utility_bill",
+  "name": "Calcule une facture de services",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule une facture de services",
+  "inputs": {
+    "consumption": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "total": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "utilities",
+    "billing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

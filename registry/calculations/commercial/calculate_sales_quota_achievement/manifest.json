@@ -1,0 +1,51 @@
+{
+  "id": "azalscore.calculations.commercial.calculate_sales_quota_achievement",
+  "name": "Calcule l'atteinte des objectifs",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule l'atteinte des objectifs",
+  "inputs": {
+    "actual_sales": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "quota": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "achievement_percentage": {
+      "type": "number",
+      "description": ""
+    },
+    "gap": {
+      "type": "number",
+      "description": ""
+    },
+    "is_achieved": {
+      "type": "boolean",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "commercial",
+    "quotas"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

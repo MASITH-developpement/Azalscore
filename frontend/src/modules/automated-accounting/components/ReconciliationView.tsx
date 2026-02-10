@@ -41,6 +41,7 @@ import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { StatusBadge } from '@ui/dashboards';
 import { Modal, Input, Select, TextArea } from '@ui/forms';
+import { ErrorState } from '../../../ui-engine/components/StateViews';
 import type { TableColumn } from '@/types';
 
 // ============================================================
@@ -799,7 +800,7 @@ export const ReconciliationView: React.FC = () => {
   } | null>(null);
   const [filter, setFilter] = useState<'all' | 'with_suggestions' | 'no_suggestions'>('all');
 
-  const { data, isLoading } = useReconciliationData();
+  const { data, isLoading, error: reconciliationError, refetch: refetchReconciliation } = useReconciliationData();
   const autoReconcile = useAutoReconcile();
   const manualReconcile = useManualReconcile();
   const createRule = useCreateRule();
@@ -860,6 +861,17 @@ export const ReconciliationView: React.FC = () => {
           <div className="azals-spinner" />
           <p>Chargement...</p>
         </div>
+      </PageWrapper>
+    );
+  }
+
+  if (reconciliationError) {
+    return (
+      <PageWrapper title="Rapprochement bancaire">
+        <ErrorState
+          message={reconciliationError instanceof Error ? reconciliationError.message : undefined}
+          onRetry={() => { refetchReconciliation(); }}
+        />
       </PageWrapper>
     );
   }

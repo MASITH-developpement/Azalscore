@@ -44,9 +44,11 @@ python scripts/deploy/init_production.py || {
 
 # Démarrer l'application
 echo "[INIT] Démarrage de Gunicorn..."
+PORT=${PORT:-80}
+echo "[INIT] Port d'écoute: $PORT"
 exec gunicorn app.main:app \
     --worker-class uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:8000 \
+    --bind 0.0.0.0:$PORT \
     --workers ${GUNICORN_WORKERS:-4} \
     --threads ${GUNICORN_THREADS:-2} \
     --timeout 120 \

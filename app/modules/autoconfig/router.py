@@ -233,32 +233,29 @@ async def manual_assign_profile(
     service: AutoConfigService = Depends(get_service)
 ):
     """Attribue manuellement un profil à un utilisateur."""
-    try:
-        assignment = service.manual_assign_profile(
-            user_id=data.user_id,
-            profile_code=data.profile_code,
-            assigned_by=current_user.id,
-            job_title=data.job_title,
-            department=data.department
-        )
+    assignment = service.manual_assign_profile(
+        user_id=data.user_id,
+        profile_code=data.profile_code,
+        assigned_by=current_user.id,
+        job_title=data.job_title,
+        department=data.department
+    )
 
-        return ProfileAssignmentResponse(
-            id=assignment.id,
-            tenant_id=assignment.tenant_id,
-            user_id=assignment.user_id,
-            profile_id=assignment.profile_id,
-            profile_code=assignment.profile.code,
-            profile_name=assignment.profile.name,
-            job_title=assignment.job_title,
-            department=assignment.department,
-            manager_id=assignment.manager_id,
-            is_active=assignment.is_active,
-            is_auto=assignment.is_auto,
-            assigned_at=assignment.assigned_at,
-            assigned_by=assignment.assigned_by
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return ProfileAssignmentResponse(
+        id=assignment.id,
+        tenant_id=assignment.tenant_id,
+        user_id=assignment.user_id,
+        profile_id=assignment.profile_id,
+        profile_code=assignment.profile.code,
+        profile_name=assignment.profile.name,
+        job_title=assignment.job_title,
+        department=assignment.department,
+        manager_id=assignment.manager_id,
+        is_active=assignment.is_active,
+        is_auto=assignment.is_auto,
+        assigned_at=assignment.assigned_at,
+        assigned_by=assignment.assigned_by
+    )
 
 
 @router.get("/users/{user_id}/profile", response_model=ProfileAssignmentResponse)
@@ -311,48 +308,45 @@ async def request_override(
     service: AutoConfigService = Depends(get_service)
 ):
     """Demande un override de permissions."""
-    try:
-        override = service.request_override(
-            user_id=data.user_id,
-            override_type=OverrideType(data.override_type),
-            reason=data.reason,
-            requested_by=current_user.id,
-            added_roles=data.added_roles,
-            removed_roles=data.removed_roles,
-            added_permissions=data.added_permissions,
-            removed_permissions=data.removed_permissions,
-            added_modules=data.added_modules,
-            removed_modules=data.removed_modules,
-            expires_at=data.expires_at,
-            business_justification=data.business_justification
-        )
+    override = service.request_override(
+        user_id=data.user_id,
+        override_type=OverrideType(data.override_type),
+        reason=data.reason,
+        requested_by=current_user.id,
+        added_roles=data.added_roles,
+        removed_roles=data.removed_roles,
+        added_permissions=data.added_permissions,
+        removed_permissions=data.removed_permissions,
+        added_modules=data.added_modules,
+        removed_modules=data.removed_modules,
+        expires_at=data.expires_at,
+        business_justification=data.business_justification
+    )
 
-        return OverrideResponse(
-            id=override.id,
-            tenant_id=override.tenant_id,
-            user_id=override.user_id,
-            override_type=override.override_type.value,
-            status=override.status.value,
-            added_roles=json.loads(override.added_roles) if override.added_roles else None,
-            removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
-            added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
-            removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
-            added_modules=json.loads(override.added_modules) if override.added_modules else None,
-            removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
-            reason=override.reason,
-            business_justification=override.business_justification,
-            starts_at=override.starts_at,
-            expires_at=override.expires_at,
-            requested_by=override.requested_by,
-            requested_at=override.requested_at,
-            approved_by=override.approved_by,
-            approved_at=override.approved_at,
-            rejected_by=override.rejected_by,
-            rejected_at=override.rejected_at,
-            rejection_reason=override.rejection_reason
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return OverrideResponse(
+        id=override.id,
+        tenant_id=override.tenant_id,
+        user_id=override.user_id,
+        override_type=override.override_type.value,
+        status=override.status.value,
+        added_roles=json.loads(override.added_roles) if override.added_roles else None,
+        removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
+        added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
+        removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
+        added_modules=json.loads(override.added_modules) if override.added_modules else None,
+        removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
+        reason=override.reason,
+        business_justification=override.business_justification,
+        starts_at=override.starts_at,
+        expires_at=override.expires_at,
+        requested_by=override.requested_by,
+        requested_at=override.requested_at,
+        approved_by=override.approved_by,
+        approved_at=override.approved_at,
+        rejected_by=override.rejected_by,
+        rejected_at=override.rejected_at,
+        rejection_reason=override.rejection_reason
+    )
 
 
 @router.get("/overrides", response_model=OverrideListResponse)
@@ -415,34 +409,31 @@ async def approve_override(
     service: AutoConfigService = Depends(get_service)
 ):
     """Approuve un override en attente."""
-    try:
-        override = service.approve_override(override_id, approved_by=current_user.id)
-        return OverrideResponse(
-            id=override.id,
-            tenant_id=override.tenant_id,
-            user_id=override.user_id,
-            override_type=override.override_type.value,
-            status=override.status.value,
-            added_roles=json.loads(override.added_roles) if override.added_roles else None,
-            removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
-            added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
-            removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
-            added_modules=json.loads(override.added_modules) if override.added_modules else None,
-            removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
-            reason=override.reason,
-            business_justification=override.business_justification,
-            starts_at=override.starts_at,
-            expires_at=override.expires_at,
-            requested_by=override.requested_by,
-            requested_at=override.requested_at,
-            approved_by=override.approved_by,
-            approved_at=override.approved_at,
-            rejected_by=override.rejected_by,
-            rejected_at=override.rejected_at,
-            rejection_reason=override.rejection_reason
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    override = service.approve_override(override_id, approved_by=current_user.id)
+    return OverrideResponse(
+        id=override.id,
+        tenant_id=override.tenant_id,
+        user_id=override.user_id,
+        override_type=override.override_type.value,
+        status=override.status.value,
+        added_roles=json.loads(override.added_roles) if override.added_roles else None,
+        removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
+        added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
+        removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
+        added_modules=json.loads(override.added_modules) if override.added_modules else None,
+        removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
+        reason=override.reason,
+        business_justification=override.business_justification,
+        starts_at=override.starts_at,
+        expires_at=override.expires_at,
+        requested_by=override.requested_by,
+        requested_at=override.requested_at,
+        approved_by=override.approved_by,
+        approved_at=override.approved_at,
+        rejected_by=override.rejected_by,
+        rejected_at=override.rejected_at,
+        rejection_reason=override.rejection_reason
+    )
 
 
 @router.post("/overrides/{override_id}/reject", response_model=OverrideResponse)
@@ -453,38 +444,35 @@ async def reject_override(
     service: AutoConfigService = Depends(get_service)
 ):
     """Rejette un override en attente."""
-    try:
-        override = service.reject_override(
-            override_id,
-            rejected_by=current_user.id,
-            rejection_reason=data.rejection_reason
-        )
-        return OverrideResponse(
-            id=override.id,
-            tenant_id=override.tenant_id,
-            user_id=override.user_id,
-            override_type=override.override_type.value,
-            status=override.status.value,
-            added_roles=json.loads(override.added_roles) if override.added_roles else None,
-            removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
-            added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
-            removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
-            added_modules=json.loads(override.added_modules) if override.added_modules else None,
-            removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
-            reason=override.reason,
-            business_justification=override.business_justification,
-            starts_at=override.starts_at,
-            expires_at=override.expires_at,
-            requested_by=override.requested_by,
-            requested_at=override.requested_at,
-            approved_by=override.approved_by,
-            approved_at=override.approved_at,
-            rejected_by=override.rejected_by,
-            rejected_at=override.rejected_at,
-            rejection_reason=override.rejection_reason
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    override = service.reject_override(
+        override_id,
+        rejected_by=current_user.id,
+        rejection_reason=data.rejection_reason
+    )
+    return OverrideResponse(
+        id=override.id,
+        tenant_id=override.tenant_id,
+        user_id=override.user_id,
+        override_type=override.override_type.value,
+        status=override.status.value,
+        added_roles=json.loads(override.added_roles) if override.added_roles else None,
+        removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
+        added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
+        removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
+        added_modules=json.loads(override.added_modules) if override.added_modules else None,
+        removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
+        reason=override.reason,
+        business_justification=override.business_justification,
+        starts_at=override.starts_at,
+        expires_at=override.expires_at,
+        requested_by=override.requested_by,
+        requested_at=override.requested_at,
+        approved_by=override.approved_by,
+        approved_at=override.approved_at,
+        rejected_by=override.rejected_by,
+        rejected_at=override.rejected_at,
+        rejection_reason=override.rejection_reason
+    )
 
 
 @router.post("/overrides/{override_id}/revoke", response_model=OverrideResponse)
@@ -494,34 +482,31 @@ async def revoke_override(
     service: AutoConfigService = Depends(get_service)
 ):
     """Révoque un override actif."""
-    try:
-        override = service.revoke_override(override_id, revoked_by=current_user.id)
-        return OverrideResponse(
-            id=override.id,
-            tenant_id=override.tenant_id,
-            user_id=override.user_id,
-            override_type=override.override_type.value,
-            status=override.status.value,
-            added_roles=json.loads(override.added_roles) if override.added_roles else None,
-            removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
-            added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
-            removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
-            added_modules=json.loads(override.added_modules) if override.added_modules else None,
-            removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
-            reason=override.reason,
-            business_justification=override.business_justification,
-            starts_at=override.starts_at,
-            expires_at=override.expires_at,
-            requested_by=override.requested_by,
-            requested_at=override.requested_at,
-            approved_by=override.approved_by,
-            approved_at=override.approved_at,
-            rejected_by=override.rejected_by,
-            rejected_at=override.rejected_at,
-            rejection_reason=override.rejection_reason
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    override = service.revoke_override(override_id, revoked_by=current_user.id)
+    return OverrideResponse(
+        id=override.id,
+        tenant_id=override.tenant_id,
+        user_id=override.user_id,
+        override_type=override.override_type.value,
+        status=override.status.value,
+        added_roles=json.loads(override.added_roles) if override.added_roles else None,
+        removed_roles=json.loads(override.removed_roles) if override.removed_roles else None,
+        added_permissions=json.loads(override.added_permissions) if override.added_permissions else None,
+        removed_permissions=json.loads(override.removed_permissions) if override.removed_permissions else None,
+        added_modules=json.loads(override.added_modules) if override.added_modules else None,
+        removed_modules=json.loads(override.removed_modules) if override.removed_modules else None,
+        reason=override.reason,
+        business_justification=override.business_justification,
+        starts_at=override.starts_at,
+        expires_at=override.expires_at,
+        requested_by=override.requested_by,
+        requested_at=override.requested_at,
+        approved_by=override.approved_by,
+        approved_at=override.approved_at,
+        rejected_by=override.rejected_by,
+        rejected_at=override.rejected_at,
+        rejection_reason=override.rejection_reason
+    )
 
 
 # ============================================================================
@@ -615,11 +600,8 @@ async def execute_onboarding(
     service: AutoConfigService = Depends(get_service)
 ):
     """Exécute le processus d'onboarding."""
-    try:
-        result = service.execute_onboarding(onboarding_id, executed_by=current_user.id)
-        return OnboardingExecutionResult(**result)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    result = service.execute_onboarding(onboarding_id, executed_by=current_user.id)
+    return OnboardingExecutionResult(**result)
 
 
 # ============================================================================
@@ -707,8 +689,5 @@ async def execute_offboarding(
     service: AutoConfigService = Depends(get_service)
 ):
     """Exécute le processus d'offboarding."""
-    try:
-        result = service.execute_offboarding(offboarding_id, executed_by=current_user.id)
-        return OffboardingExecutionResult(**result)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    result = service.execute_offboarding(offboarding_id, executed_by=current_user.id)
+    return OffboardingExecutionResult(**result)

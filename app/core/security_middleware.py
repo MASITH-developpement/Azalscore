@@ -7,6 +7,7 @@ SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
           qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
 """
 
+import logging
 import time
 from collections import defaultdict
 from collections.abc import Callable
@@ -17,6 +18,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 # Import de la fonction SAFE de gestion des erreurs
 # Note: Utilise error_response.py au lieu de middleware.py pour éviter les imports circulaires
@@ -37,45 +40,38 @@ def setup_cors(app: FastAPI) -> None:
     """
     settings = get_settings()
 
-    if settings.is_production:
-        # PRODUCTION: CORS restrictif OBLIGATOIRE
-        if not settings.cors_origins:
-            raise ValueError(
-                "CORS_ORIGINS est OBLIGATOIRE en production. "
-                "Ex: CORS_ORIGINS=https://app.votre-domaine.com"
-            )
-
-        # Parser les origines depuis la config
-        origins = [origin.strip() for origin in settings.cors_origins.split(",")]
-
-        # Validation: pas de wildcard en production
-        if "*" in origins:
-            raise ValueError("CORS_ORIGINS=* est INTERDIT en production")
-
-        # Validation: pas de localhost en production
-        for origin in origins:
-            if "localhost" in origin.lower() or "127.0.0.1" in origin:
-                raise ValueError(f"localhost interdit dans CORS_ORIGINS en production: {origin}")
-
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=origins,
-            allow_credentials=True,  # Autorisé avec origines spécifiques
-            allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-            allow_headers=["Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID"],
-            expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
-            max_age=3600,
+    # PRODUCTION: CORS restrictif OBLIGATOIRE
+    if not settings.cors_origins:
+        raise ValueError(
+            "CORS_ORIGINS est OBLIGATOIRE en production. "
+            "Ex: CORS_ORIGINS=https://app.votre-domaine.com"
         )
-    else:
-        # DÉVELOPPEMENT: CORS permissif
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=False,  # Doit etre False avec allow_origins=["*"]
-            allow_methods=["*"],
-            allow_headers=["*"],
-            max_age=3600,
-        )
+
+    # Parser les origines depuis la config
+    origins = [origin.strip() for origin in settings.cors_origins.split(",")]
+
+    # Validation: pas de wildcard en production
+    if "*" in origins:
+        raise ValueError("CORS_ORIGINS=* est INTERDIT en production")
+
+    # Validation: pas de localhost en production
+    for origin in origins:
+        if "localhost" in origin.lower() or "127.0.0.1" in origin:
+            raise ValueError(f"localhost interdit dans CORS_ORIGINS en production: {origin}")
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,  # Autorisé avec origines spécifiques
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID"],
+        expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+        max_age=3600,
+    )
+    logger.info(
+        "[CORS] Configuration restrictive activée",
+        extra={"origins": origins, "credentials": True}
+    )
 
 
 # ============================================================================
@@ -129,6 +125,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Vérification limite par IP
         ip_count = len(self._ip_requests[client_ip])
         if ip_count >= self.burst_limit:
+            logger.warning(
+                "[RATE_LIMIT] IP rate limit dépassé — requête bloquée",
+                extra={
+                    "client_ip": client_ip,
+                    "tenant_id": tenant_id,
+                    "path": request.url.path,
+                    "ip_count": ip_count,
+                    "burst_limit": self.burst_limit,
+                    "consequence": "429_response"
+                }
+            )
             return self._rate_limit_response(
                 request, "IP rate limit exceeded", self.requests_per_minute
             )
@@ -136,6 +143,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Vérification limite par tenant
         tenant_count = len(self._tenant_requests[tenant_id])
         if tenant_count >= self.requests_per_minute_per_tenant:
+            logger.warning(
+                "[RATE_LIMIT] Tenant rate limit dépassé — requête bloquée",
+                extra={
+                    "client_ip": client_ip,
+                    "tenant_id": tenant_id,
+                    "path": request.url.path,
+                    "tenant_count": tenant_count,
+                    "tenant_limit": self.requests_per_minute_per_tenant,
+                    "consequence": "429_response"
+                }
+            )
             return self._rate_limit_response(
                 request, "Tenant rate limit exceeded", self.requests_per_minute_per_tenant
             )
@@ -220,35 +238,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         settings = get_settings()
         response = await call_next(request)
 
-        # Content Security Policy RENFORCÉ
-        # Note: unsafe-inline nécessaire pour Swagger UI en dev, retiré en prod
-        if settings.is_production:
-            # CSP strict en production (pas d'inline)
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; "
-                "script-src 'self'; "
-                "style-src 'self'; "
-                "img-src 'self' data: https:; "
-                "font-src 'self'; "
-                "connect-src 'self'; "
-                "frame-ancestors 'none'; "
-                "base-uri 'self'; "
-                "form-action 'self'; "
-                "upgrade-insecure-requests"
-            )
-        else:
-            # CSP permissif en dev (pour Swagger UI)
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data: https:; "
-                "font-src 'self' data:; "
-                "connect-src 'self'; "
-                "frame-ancestors 'none'; "
-                "base-uri 'self'; "
-                "form-action 'self'"
-            )
+        # Content Security Policy RENFORCÉ — PRODUCTION STRICTE
+        # Aucun unsafe-inline, aucun unsafe-eval
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self'; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "upgrade-insecure-requests"
+        )
 
         # Prevent XSS
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -267,11 +270,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "payment=(), usb=(), interest-cohort=()"
         )
 
-        # HSTS (Strict Transport Security) - ACTIVÉ en production
-        if settings.is_production:
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains; preload"
-            )
+        # HSTS (Strict Transport Security) - PRODUCTION
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains; preload"
+        )
 
         # Cache control pour TOUTES les API
         if not request.url.path.startswith("/static"):
@@ -314,8 +316,11 @@ class RequestValidationMiddleware(BaseHTTPMiddleware):
                         message=f"Request body too large. Max: {self.MAX_CONTENT_LENGTH} bytes",
                         html_path="frontend/errors/413.html"
                     )
-            except ValueError:
-                pass
+            except ValueError as e:
+                logger.warning(
+                    "[SECURITY_MW] Content-Length invalide, vérification taille ignorée",
+                    extra={"content_length": content_length, "error": str(e)[:200], "consequence": "size_check_skipped"}
+                )
 
         # Vérification Content-Type pour les requêtes avec body
         if request.method in ("POST", "PUT", "PATCH"):
@@ -390,6 +395,15 @@ class IPBlocklistMiddleware(BaseHTTPMiddleware):
         self._violation_counts[ip] += 1
         if self._violation_counts[ip] >= self._auto_block_threshold:
             self.block_ip(ip)
+            logger.warning(
+                "[IP_BLOCKLIST] IP auto-bloquée — seuil de violations atteint",
+                extra={
+                    "blocked_ip": ip,
+                    "violation_count": self._violation_counts[ip],
+                    "threshold": self._auto_block_threshold,
+                    "consequence": "ip_permanently_blocked"
+                }
+            )
             return True
         return False
 

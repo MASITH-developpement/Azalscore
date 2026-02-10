@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.calculations.finance.calculate_account_balance",
+  "name": "Calcule le solde d'un compte sur une période",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le solde d'un compte sur une période",
+  "inputs": {
+    "entries": {
+      "type": "array",
+      "required": true,
+      "description": "Liste des écritures"
+    },
+    "start_date": {
+      "type": "string",
+      "required": true,
+      "description": "Date de début"
+    },
+    "end_date": {
+      "type": "string",
+      "required": true,
+      "description": "Date de fin"
+    }
+  },
+  "outputs": {
+    "balance": {
+      "type": "number",
+      "description": "Solde du compte"
+    },
+    "debit_total": {
+      "type": "number",
+      "description": "Total débit"
+    },
+    "credit_total": {
+      "type": "number",
+      "description": "Total crédit"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "account_balances"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

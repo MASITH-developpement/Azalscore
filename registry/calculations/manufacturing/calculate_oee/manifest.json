@@ -1,0 +1,52 @@
+{
+  "id": "azalscore.calculations.manufacturing.calculate_oee",
+  "name": "Calcule l'OEE (Overall Equipment Effectiveness)",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule l'OEE (Overall Equipment Effectiveness)",
+  "inputs": {
+    "availability": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "performance": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "quality": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "oee": {
+      "type": "number",
+      "description": ""
+    },
+    "oee_percentage": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "manufacturing",
+    "production"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

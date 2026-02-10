@@ -4,7 +4,10 @@ AZALS - Health Checks Avancés
 Endpoints de santé pour orchestration et monitoring.
 """
 
+import logging
 import time
+
+logger = logging.getLogger(__name__)
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -84,8 +87,8 @@ def check_database(db: Session = None) -> ComponentHealth:
                 "checkedout": pool.checkedout(),
                 "overflow": pool.overflow(),
             }
-        except Exception:
-            pass
+        except AttributeError as e:
+            logger.debug("Could not retrieve pool info (pool may not support these methods): %s", e)
 
         return ComponentHealth(
             name="database",

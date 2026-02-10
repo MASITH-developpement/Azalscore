@@ -4,6 +4,7 @@ AZALS - Métriques Prometheus
 Collecte et export des métriques pour monitoring production.
 """
 
+import logging
 import time
 from collections.abc import Callable
 
@@ -19,89 +20,102 @@ from prometheus_client import (
 )
 from starlette.middleware.base import BaseHTTPMiddleware
 
+logger = logging.getLogger(__name__)
+
 # ============================================================================
 # MÉTRIQUES DÉFINITIONS
 # ============================================================================
 
+
+def _safe_metric(metric_cls, name, description, labels=None, **kwargs):
+    """Enregistrement idempotent de métrique Prometheus (gère le re-import en test)."""
+    try:
+        if labels:
+            return metric_cls(name, description, labels, **kwargs)
+        return metric_cls(name, description, **kwargs)
+    except ValueError:
+        logger.debug(
+            "[METRICS] Métrique déjà enregistrée, réutilisation: %s", name,
+            extra={"metric_name": name, "consequence": "reuse_existing"}
+        )
+        # Récupérer la métrique existante depuis le registry
+        for suffix in ('_info', '_total', '_seconds', '_connections', '', '_in_progress'):
+            collector = REGISTRY._names_to_collectors.get(name + suffix)
+            if collector is not None:
+                return collector
+        return REGISTRY._names_to_collectors.get(name)
+
+
 # Info application
-APP_INFO = Info(
-    "azals_app",
-    "AZALS Application Information"
-)
-APP_INFO.info({
-    "version": "0.3.0",
-    "name": "AZALS",
-    "description": "ERP Décisionnel Critique Multi-Tenant"
-})
+APP_INFO = _safe_metric(Info, "azals_app", "AZALS Application Information")
+if APP_INFO and hasattr(APP_INFO, 'info'):
+    APP_INFO.info({
+        "version": "0.3.0",
+        "name": "AZALS",
+        "description": "ERP Décisionnel Critique Multi-Tenant"
+    })
 
 # Compteur de requêtes
-REQUEST_COUNT = Counter(
-    "azals_http_requests_total",
-    "Total HTTP requests",
+REQUEST_COUNT = _safe_metric(
+    Counter, "azals_http_requests_total", "Total HTTP requests",
     ["method", "endpoint", "status_code", "tenant_id"]
 )
 
 # Latence des requêtes (histogramme)
-REQUEST_LATENCY = Histogram(
-    "azals_http_request_duration_seconds",
-    "HTTP request latency in seconds",
+REQUEST_LATENCY = _safe_metric(
+    Histogram, "azals_http_request_duration_seconds", "HTTP request latency in seconds",
     ["method", "endpoint"],
     buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
 )
 
 # Requêtes actives
-ACTIVE_REQUESTS = Gauge(
-    "azals_http_requests_in_progress",
+ACTIVE_REQUESTS = _safe_metric(
+    Gauge, "azals_http_requests_in_progress",
     "Number of HTTP requests currently being processed",
     ["method"]
 )
 
 # Utilisation pool DB
-DB_POOL_USAGE = Gauge(
-    "azals_db_pool_connections",
-    "Database connection pool usage",
+DB_POOL_USAGE = _safe_metric(
+    Gauge, "azals_db_pool_connections", "Database connection pool usage",
     ["state"]  # active, idle, overflow
 )
 
 # Requêtes par tenant
-TENANT_REQUESTS = Counter(
-    "azals_tenant_requests_total",
-    "Total requests per tenant",
+TENANT_REQUESTS = _safe_metric(
+    Counter, "azals_tenant_requests_total", "Total requests per tenant",
     ["tenant_id", "module"]
 )
 
 # Erreurs applicatives
-APP_ERRORS = Counter(
-    "azals_errors_total",
-    "Application errors",
+APP_ERRORS = _safe_metric(
+    Counter, "azals_errors_total", "Application errors",
     ["error_type", "module"]
 )
 
 # Opérations métier
-BUSINESS_OPERATIONS = Counter(
-    "azals_business_operations_total",
-    "Business operations counter",
+BUSINESS_OPERATIONS = _safe_metric(
+    Counter, "azals_business_operations_total", "Business operations counter",
     ["operation", "module", "status"]
 )
 
 # Temps de traitement métier
-BUSINESS_LATENCY = Histogram(
-    "azals_business_operation_duration_seconds",
+BUSINESS_LATENCY = _safe_metric(
+    Histogram, "azals_business_operation_duration_seconds",
     "Business operation duration",
     ["operation", "module"],
     buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0]
 )
 
 # Décisions IA
-AI_DECISIONS = Counter(
-    "azals_ai_decisions_total",
-    "AI decisions and recommendations",
+AI_DECISIONS = _safe_metric(
+    Counter, "azals_ai_decisions_total", "AI decisions and recommendations",
     ["decision_type", "risk_level", "status"]
 )
 
 # Points rouges (décisions critiques)
-RED_POINTS = Counter(
-    "azals_red_points_total",
+RED_POINTS = _safe_metric(
+    Counter, "azals_red_points_total",
     "Critical red points requiring double confirmation",
     ["status"]  # pending, confirmed, rejected
 )

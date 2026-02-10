@@ -1,0 +1,60 @@
+{
+  "id": "azalscore.validators.inventory.validate_stock_quantity",
+  "name": "Valide une quantité en stock",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide une quantité en stock",
+  "inputs": {
+    "quantity": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "min_stock": {
+      "type": "number",
+      "required": false,
+      "description": ""
+    },
+    "max_stock": {
+      "type": "number",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "is_below_min": {
+      "type": "boolean",
+      "description": ""
+    },
+    "is_above_max": {
+      "type": "boolean",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "inventory",
+    "stock"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

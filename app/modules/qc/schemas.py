@@ -7,11 +7,14 @@ Schémas de validation pour les API du module QC.
 
 
 import json
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # ENUMS
@@ -128,7 +131,11 @@ class QCRuleResponse(QCRuleBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON champ QCRule",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "raw_value_kept"}
+                )
                 return v
         return v
 
@@ -179,7 +186,11 @@ class ModuleRegistryResponse(ModuleRegistryBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON dependencies",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_list"}
+                )
                 return []
         return v
 
@@ -227,7 +238,11 @@ class ValidationResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON category_scores",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_dict"}
+                )
                 return {}
         return v
 
@@ -259,7 +274,11 @@ class CheckResultResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON evidence",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_dict"}
+                )
                 return {}
         return v
 
@@ -388,7 +407,11 @@ class QCAlertResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON alert details",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_dict"}
+                )
                 return {}
         return v
 
@@ -446,7 +469,11 @@ class QCDashboardResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON dashboard layout/filters",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_dict"}
+                )
                 return {}
         return v
 
@@ -456,7 +483,11 @@ class QCDashboardResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON widgets",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_list"}
+                )
                 return []
         return v
 
@@ -502,7 +533,11 @@ class QCTemplateResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[QC_SCHEMA] Échec parsing JSON template rules",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_list"}
+                )
                 return []
         return v
 

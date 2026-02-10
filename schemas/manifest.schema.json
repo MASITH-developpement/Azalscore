@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azalscore.io/schemas/manifest.schema.json",
+  "title": "AZALSCORE Program Manifest",
+  "description": "Schema for AZALSCORE registry program manifests. Defines the contract for declarative business logic components.",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "category",
+    "version",
+    "description",
+    "inputs",
+    "outputs"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^azalscore\\.[a-z_]+\\.[a-z_]+$",
+      "description": "Unique identifier in format: azalscore.<category>.<name>",
+      "examples": ["azalscore.finance.calculate_margin", "azalscore.validators.validate_email"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable name of the program"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "finance",
+        "commercial",
+        "validation",
+        "computation",
+        "notification",
+        "data_transform",
+        "validators",
+        "generators",
+        "calculations",
+        "inventory",
+        "hr",
+        "projects",
+        "treasury",
+        "accounting",
+        "procurement",
+        "production",
+        "quality",
+        "maintenance",
+        "bi"
+      ],
+      "description": "Category of the program"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version (SemVer 2.0.0)",
+      "examples": ["1.0.0", "2.1.0-beta.1"]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500,
+      "description": "Detailed description of what the program does"
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Input parameters for the program",
+      "additionalProperties": {
+        "$ref": "#/$defs/parameter"
+      },
+      "minProperties": 0
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Output values from the program",
+      "additionalProperties": {
+        "$ref": "#/$defs/outputParameter"
+      },
+      "minProperties": 1
+    },
+    "side_effects": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the program has side effects (DB writes, API calls, etc.)"
+    },
+    "idempotent": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the program is idempotent (same input = same output)"
+    },
+    "no_code_compatible": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the program can be used in no-code workflows"
+    },
+    "retry_strategy": {
+      "$ref": "#/$defs/retryStrategy"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^azalscore\\.[a-z_]+\\.[a-z_]+(@[0-9]+\\.[0-9]+\\.[0-9]+)?$"
+      },
+      "uniqueItems": true,
+      "description": "List of program IDs this program depends on"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]*$",
+        "minLength": 2,
+        "maxLength": 30
+      },
+      "uniqueItems": true,
+      "description": "Tags for categorization and search"
+    },
+    "author": {
+      "type": "string",
+      "default": "AZALSCORE",
+      "description": "Author or team responsible for the program"
+    },
+    "license": {
+      "type": "string",
+      "enum": ["Proprietary", "MIT", "Apache-2.0", "GPL-3.0"],
+      "default": "Proprietary",
+      "description": "License for the program"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Creation date (ISO 8601)"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date",
+      "description": "Last update date (ISO 8601)"
+    },
+    "deprecated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this program is deprecated"
+    },
+    "deprecated_message": {
+      "type": "string",
+      "description": "Message explaining deprecation and migration path"
+    },
+    "replacement": {
+      "type": "string",
+      "pattern": "^azalscore\\.[a-z_]+\\.[a-z_]+$",
+      "description": "ID of the replacement program if deprecated"
+    }
+  },
+  "$defs": {
+    "parameter": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "integer", "boolean", "array", "object", "date", "datetime", "decimal"],
+          "description": "Data type of the parameter"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this parameter is required"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description"
+        },
+        "default": {
+          "description": "Default value if not provided"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Validation rule expression"
+        },
+        "enum": {
+          "type": "array",
+          "description": "Allowed values for this parameter"
+        },
+        "minimum": {
+          "type": "number",
+          "description": "Minimum value for number types"
+        },
+        "maximum": {
+          "type": "number",
+          "description": "Maximum value for number types"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum length for string types"
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum length for string types"
+        },
+        "pattern": {
+          "type": "string",
+          "format": "regex",
+          "description": "Regex pattern for string types"
+        },
+        "items": {
+          "$ref": "#/$defs/parameter",
+          "description": "Schema for array items"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/parameter"
+          },
+          "description": "Properties for object types"
+        }
+      }
+    },
+    "outputParameter": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "integer", "boolean", "array", "object", "date", "datetime", "decimal", "null"],
+          "description": "Data type of the output"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description"
+        },
+        "nullable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this output can be null"
+        }
+      }
+    },
+    "retryStrategy": {
+      "type": "object",
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 1,
+          "description": "Maximum retry attempts"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 300000,
+          "default": 5000,
+          "description": "Timeout in milliseconds"
+        },
+        "backoff": {
+          "type": "string",
+          "enum": ["none", "linear", "exponential"],
+          "default": "none",
+          "description": "Backoff strategy between retries"
+        },
+        "backoff_base_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "default": 1000,
+          "description": "Base delay for backoff in milliseconds"
+        },
+        "fallback": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^azalscore\\.[a-z_]+\\.[a-z_]+$"}
+          ],
+          "description": "Fallback program ID if all retries fail"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

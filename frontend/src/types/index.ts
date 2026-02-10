@@ -146,6 +146,8 @@ export interface DashboardKPI {
   trend_value?: number;
   severity?: AlertSeverity;
   period?: string;
+  icon?: React.ReactNode;
+  variant?: 'default' | 'success' | 'warning' | 'danger';
 }
 
 export interface DashboardWidget {
@@ -339,3 +341,32 @@ export interface AsyncState<T> {
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
+
+// ============================================================
+// RESULT PATTERN
+// ============================================================
+
+/**
+ * Discriminated union pour les resultats d'operations async.
+ * Remplace T | null avec information d'erreur preservee.
+ */
+export type Result<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: ApiError };
+
+// ============================================================
+// AUTH DISCRIMINATED UNION
+// ============================================================
+
+/**
+ * Etat d'authentification type-safe.
+ * Garantit qu'un utilisateur authentifie a TOUJOURS un user et un tenantId.
+ * Usage: const auth = useTypedAuth();
+ * if (auth.status === 'authenticated') { auth.user.email } // garanti non-null
+ */
+export type TypedAuthState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'authenticated'; user: User; tenantId: string }
+  | { status: 'unauthenticated' }
+  | { status: 'error'; error: string };

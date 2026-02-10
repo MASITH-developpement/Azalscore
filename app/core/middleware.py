@@ -49,6 +49,18 @@ class TenantMiddleware(BaseHTTPMiddleware):
         "/v1/audit", "/v1/audit/ui-events",
         # Signup et webhooks (public - nouvelles inscriptions et Stripe)
         "/signup", "/webhooks",
+        # AI Orchestration (public status + Theo interface)
+        "/api/v1/ai/status", "/v1/ai/status",
+        "/api/v1/ai/theo", "/v1/ai/theo",
+        "/api/v1/ai/auth", "/v1/ai/auth",
+        # Website Tracking (public for analytics without auth)
+        "/api/v2/website/track-visit",
+        "/api/v2/website/leads",
+        "/api/v2/website/demo-requests",
+        "/api/v2/website/contact",
+        "/api/v2/website/analytics/summary",
+        # Trial Registration (public for self-service signup)
+        "/api/v2/public/trial",
     }
 
     async def dispatch(self, request: Request, call_next):

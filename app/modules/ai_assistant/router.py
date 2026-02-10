@@ -14,6 +14,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user, get_tenant_id
+from app.core.models import User
 
 from .schemas import (
     AIConfigResponse,
@@ -52,7 +54,11 @@ from .schemas import (
 )
 from .service import AIAssistantService
 
-router = APIRouter(prefix="/ai", tags=["AI Assistant"])
+router = APIRouter(
+    prefix="/ai",
+    tags=["AI Assistant"],
+    dependencies=[Depends(get_current_user)]  # Auth obligatoire sur tous les endpoints
+)
 
 
 # ============================================================================

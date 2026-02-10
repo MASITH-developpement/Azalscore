@@ -5,6 +5,8 @@ AZALS MODULE M1 - Service Commercial
 Service pour le CRM et la gestion commerciale.
 """
 
+import csv
+import io
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
@@ -59,11 +61,20 @@ class CommercialService:
     # ========================================================================
 
     def create_customer(self, data: CustomerCreate, user_id: UUID) -> Customer:
-        """Créer un client."""
+        """Créer un client avec code auto-généré si non fourni."""
+        from app.core.sequences import SequenceGenerator
+
+        data_dict = data.model_dump(by_alias=True, exclude_unset=False)
+
+        # Auto-génère le code si non fourni ou vide
+        if not data_dict.get('code'):
+            seq = SequenceGenerator(self.db, self.tenant_id)
+            data_dict['code'] = seq.next_reference("CLIENT")
+
         customer = Customer(
             tenant_id=self.tenant_id,
             created_by=user_id,
-            **data.model_dump(by_alias=True, exclude_unset=False)
+            **data_dict
         )
         self.db.add(customer)
         self.db.commit()
@@ -403,25 +414,22 @@ class CommercialService:
     # ========================================================================
 
     def _generate_document_number(self, doc_type: DocumentType) -> str:
-        """Générer un numéro de document."""
-        year = datetime.now().year
-        prefix = {
-            DocumentType.QUOTE: "DEV",
-            DocumentType.ORDER: "CMD",
-            DocumentType.INVOICE: "FAC",
-            DocumentType.CREDIT_NOTE: "AVO",
-            DocumentType.PROFORMA: "PRO",
-            DocumentType.DELIVERY: "BL",
-        }.get(doc_type, "DOC")
+        """Générer un numéro de document via le système centralisé."""
+        from app.core.sequences import SequenceGenerator
 
-        # Compter les documents existants
-        count = self.db.query(CommercialDocument).filter(
-            CommercialDocument.tenant_id == self.tenant_id,
-            CommercialDocument.type == doc_type,
-            func.extract('year', CommercialDocument.date) == year
-        ).count()
+        # Mapping type document -> type séquence
+        entity_type_map = {
+            DocumentType.QUOTE: "DEVIS",
+            DocumentType.ORDER: "COMMANDE_CLIENT",
+            DocumentType.INVOICE: "FACTURE_VENTE",
+            DocumentType.CREDIT_NOTE: "AVOIR_CLIENT",
+            DocumentType.PROFORMA: "PROFORMA",
+            DocumentType.DELIVERY: "BON_LIVRAISON",
+        }
 
-        return f"{prefix}-{year}-{str(count + 1).zfill(5)}"
+        entity_type = entity_type_map.get(doc_type, "DOCUMENT")
+        seq = SequenceGenerator(self.db, self.tenant_id)
+        return seq.next_reference(entity_type)
 
     def _calculate_line_totals(self, line: DocumentLine) -> None:
         """Calculer les totaux d'une ligne."""
@@ -579,6 +587,22 @@ class CommercialService:
         self.db.commit()
         self.db.refresh(document)
         return document
+
+    def delete_document(self, document_id: UUID) -> bool:
+        """Supprimer un document (soft delete uniquement si DRAFT)."""
+        document = self.get_document(document_id)
+        if not document:
+            return False
+
+        # Seulement les brouillons peuvent être supprimés
+        if document.status != DocumentStatus.DRAFT:
+            return False
+
+        # Soft delete
+        document.is_active = False
+
+        self.db.commit()
+        return True
 
     def convert_quote_to_order(self, quote_id: UUID, user_id: UUID) -> CommercialDocument | None:
         """Convertir un devis en commande."""
@@ -1239,6 +1263,67 @@ class CommercialService:
                 o.win_reason or '',
                 o.loss_reason or '',
                 o.created_at.strftime('%Y-%m-%d') if o.created_at else ''
+            ])
+
+        return output.getvalue()
+
+    def export_documents_csv(
+        self,
+        doc_type: DocumentType | None = None,
+        status_filter: DocumentStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None
+    ) -> str:
+        """Exporter les documents au format CSV."""
+        query = self.db.query(CommercialDocument).options(
+            selectinload(CommercialDocument.customer),
+            selectinload(CommercialDocument.lines)
+        ).filter(
+            CommercialDocument.tenant_id == self.tenant_id,
+            CommercialDocument.is_active == True
+        )
+
+        if doc_type:
+            query = query.filter(CommercialDocument.type == doc_type)
+        if status_filter:
+            query = query.filter(CommercialDocument.status == status_filter)
+        if date_from:
+            query = query.filter(CommercialDocument.date >= date_from)
+        if date_to:
+            query = query.filter(CommercialDocument.date <= date_to)
+
+        documents = query.order_by(CommercialDocument.date.desc()).all()
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # En-têtes
+        writer.writerow([
+            'Numéro',
+            'Type',
+            'Date',
+            'Client',
+            'Statut',
+            'Total HT',
+            'Total TTC',
+            'Créé le',
+            'Validé le',
+            'Envoyé le'
+        ])
+
+        # Données
+        for doc in documents:
+            writer.writerow([
+                doc.number,
+                doc.type.value,
+                doc.date.strftime('%Y-%m-%d') if doc.date else '',
+                doc.customer.name if doc.customer else '',
+                doc.status.value,
+                f"{doc.total_amount_excl_tax:.2f}",
+                f"{doc.total_amount_incl_tax:.2f}",
+                doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else '',
+                doc.validated_at.strftime('%Y-%m-%d %H:%M') if doc.validated_at else '',
+                doc.sent_at.strftime('%Y-%m-%d %H:%M') if doc.sent_at else ''
             ])
 
         return output.getvalue()

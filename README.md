@@ -1,127 +1,96 @@
-# AZALS - ERP Décisionnel Critique
+# AZALSCORE - ERP SaaS Multi-tenant
 
-## Architecture Technique
+> Plateforme ERP nouvelle generation - Comptabilite automatique & Cockpit decisionnel
 
-### Stack
-- **Python**: 3.11
-- **Framework**: FastAPI
-- **Base de données**: PostgreSQL 15
-- **Orchestration**: Docker + docker-compose
-- **Tests**: pytest
-
-## Structure du Projet
-
-```
-azals/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # Point d'entrée FastAPI
-│   └── core/
-│       ├── __init__.py
-│       ├── config.py        # Configuration sécurisée
-│       └── database.py      # Connexion PostgreSQL
-├── tests/
-│   ├── __init__.py
-│   └── test_health.py       # Tests de l'endpoint /health
-├── docker-compose.yml       # Orchestration des services
-├── Dockerfile              # Image Docker de l'API
-├── requirements.txt        # Dépendances Python
-├── pytest.ini             # Configuration des tests
-├── .env.example           # Template des variables d'environnement
-└── README.md
-```
-
-## Démarrage Rapide
-
-### 1. Lancer le projet
+## Demarrage rapide
 
 ```bash
+# Lancer l'application
 docker-compose up --build
+
+# Acces
+# API:  http://localhost:8000
+# UI:   http://localhost:5173
+# Docs: http://localhost:8000/docs
 ```
 
-### 2. Vérifier que tout fonctionne
+## Stack technique
 
-Accéder à : http://localhost:8000/health
+| Composant | Technologie |
+|-----------|-------------|
+| Backend   | Python 3.11, FastAPI, SQLAlchemy 2.0 |
+| Frontend  | React 18, TypeScript, Vite, TanStack Query |
+| Database  | PostgreSQL 15, Redis |
+| Tests     | pytest (backend), Playwright (frontend) |
+| Infra     | Docker, Nginx, Prometheus, Grafana |
 
-Réponse attendue :
-```json
-{
-  "status": "ok",
-  "api": true,
-  "database": true
-}
+## Modules metier
+
+### Finance
+- **Comptabilite** - Plan comptable, ecritures, exercices fiscaux
+- **Tresorerie** - Comptes bancaires, rapprochements, previsions
+- **Achats** - Fournisseurs, commandes, factures fournisseurs
+- **Facturation** - Devis, factures clients, avoirs
+
+### CRM & Commercial
+- **CRM** - Clients, prospects, opportunites
+- **Helpdesk** - Tickets support, SLA, base connaissances
+
+### Operations
+- **Stock** - Produits, inventaire, mouvements
+- **Production** - Ordres fabrication, nomenclatures
+- **Field Service** - Interventions terrain, planning techniciens
+
+### RH & Administration
+- **RH** - Employes, contrats, conges
+- **IAM** - Utilisateurs, roles, permissions RBAC
+- **Audit** - Traces, conformite, logs
+
+### Intelligence Artificielle
+- **Theo** - Assistant IA conversationnel
+- **Guardian** - Auto-healing et detection anomalies
+
+## Architecture
+
+```
+azalscore/
+├── app/                    # Backend FastAPI (39 modules)
+│   ├── api/               # Routes API v1/v2
+│   ├── core/              # CORE SaaS (auth, multi-tenant, middleware)
+│   ├── modules/           # Modules metier
+│   └── theo/              # Assistant IA
+├── frontend/              # React TypeScript (41 modules)
+│   ├── src/modules/       # Modules UI
+│   └── src/ui-engine/     # Composants partages
+├── infra/                 # Configuration infrastructure
+└── docs/                  # Documentation
 ```
 
-### 3. Exécuter les tests
+### Patterns cles
+- **Multi-tenant strict** : Isolation complete par `tenant_id`
+- **CORE SaaS v2** : `SaaSContext` injecte automatiquement
+- **API versioning** : v1 (legacy) et v2 (migre) cohabitent
+- **RBAC** : Permissions granulaires par module/action
+
+## Documentation
+
+| Section | Description |
+|---------|-------------|
+| [docs/guides/](docs/guides/) | Demarrage, conventions, routines |
+| [docs/architecture/](docs/architecture/) | Decisions techniques, patterns |
+| [docs/migration/](docs/migration/) | Etat migration v2, roadmap |
+| [docs/audits/](docs/audits/) | Rapports, analyses, sessions |
+
+## Tests
 
 ```bash
-# Dans un terminal séparé
-docker-compose exec api pytest
+# Backend
+cd app && pytest -v
+
+# Frontend E2E
+cd frontend && npm run test:e2e
 ```
 
-ou depuis l'hôte (si pytest installé localement) :
-```bash
-pytest
-```
+## License
 
-## Arrêt du Projet
-
-```bash
-docker-compose down
-```
-
-Pour supprimer également les volumes (données PostgreSQL) :
-```bash
-docker-compose down -v
-```
-
-## Configuration
-
-Les variables d'environnement sont définies dans `docker-compose.yml`.
-
-Pour une configuration locale, copier `.env.example` vers `.env` :
-```bash
-cp .env.example .env
-```
-
-## Endpoints Disponibles
-
-### GET /health
-Point de santé de l'API et de la base de données.
-
-**Réponse :**
-```json
-{
-  "status": "ok|degraded",
-  "api": true,
-  "database": true|false
-}
-```
-
-## Sécurité
-
-- Pas de documentation Swagger exposée en production (`docs_url=None`)
-- Validation stricte des variables d'environnement via Pydantic
-- Connexion PostgreSQL avec pool de connexions configuré
-- Architecture prête pour multi-tenant
-
-## Développement
-
-### Ajouter une dépendance
-
-1. Ajouter dans `requirements.txt`
-2. Rebuild l'image : `docker-compose up --build`
-
-### Exécuter des commandes dans le container
-
-```bash
-docker-compose exec api bash
-```
-
-## Prochaines Étapes
-
-- [ ] Authentification JWT
-- [ ] Modèle multi-tenant
-- [ ] Migrations Alembic
-- [ ] Modules métier (finance, RH, juridique)
-- [ ] CI/CD
+Proprietary - MASITH Developpement

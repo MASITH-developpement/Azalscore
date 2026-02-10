@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.subscriptions.calculate_arr",
+  "name": "Calcule l'ARR (Annual Recurring Revenue)",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule l'ARR (Annual Recurring Revenue)",
+  "inputs": {
+    "mrr": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "arr": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "subscriptions",
+    "billing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,0 +1,43 @@
+{
+  "id": "azalscore.generators.codes.generate_otp",
+  "name": "Génère un code OTP",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un code OTP",
+  "inputs": {
+    "secret": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "timestamp": {
+      "type": "number",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "otp": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "codes",
+    "verification"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -5,6 +5,7 @@
  */
 
 import { api } from '@core/api-client';
+import { logError } from '@core/error-handling';
 import type { UIAuditEvent } from '@/types';
 
 // ============================================================
@@ -78,10 +79,10 @@ const flushEvents = async (): Promise<void> => {
 
   try {
     await api.post('/v1/audit/ui-events', { events: eventsToSend });
-  } catch {
+  } catch (error) {
     // En cas d'échec, on ne réinjecte PAS dans la queue
     // Les événements sont perdus - conformité charte (pas de stockage local)
-    console.warn('Failed to send UI audit events');
+    logError(error, 'AuditUI.initialize');
   }
 };
 

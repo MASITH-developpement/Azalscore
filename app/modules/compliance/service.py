@@ -64,9 +64,10 @@ from .schemas import (
 class ComplianceService:
     """Service de gestion de la conformité."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # =========================================================================
     # RÉGLEMENTATIONS
@@ -1179,6 +1180,6 @@ class ComplianceService:
         )
 
 
-def get_compliance_service(db: Session, tenant_id: str) -> ComplianceService:
+def get_compliance_service(db: Session, tenant_id: str, user_id: str = None) -> ComplianceService:
     """Factory pour obtenir une instance du service."""
-    return ComplianceService(db, tenant_id)
+    return ComplianceService(db, tenant_id, user_id)

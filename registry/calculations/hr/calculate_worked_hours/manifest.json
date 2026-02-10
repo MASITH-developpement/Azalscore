@@ -1,0 +1,46 @@
+{
+  "id": "azalscore.calculations.hr.calculate_worked_hours",
+  "name": "Calcule les heures travaillées",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule les heures travaillées",
+  "inputs": {
+    "time_entries": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "total_hours": {
+      "type": "number",
+      "description": ""
+    },
+    "regular_hours": {
+      "type": "number",
+      "description": ""
+    },
+    "overtime_hours": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "hr",
+    "time_tracking"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

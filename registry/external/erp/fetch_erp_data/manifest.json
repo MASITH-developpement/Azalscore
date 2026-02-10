@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.external.erp.fetch_erp_data",
+  "name": "Récupère des données depuis l'ERP",
+  "category": "external",
+  "version": "1.0.0",
+  "description": "Récupère des données depuis l'ERP",
+  "inputs": {
+    "entity_type": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "data": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "side_effects": true,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 3,
+    "timeout_ms": 5000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "external",
+    "erp",
+    "integration"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -71,7 +71,7 @@ def load_all_models() -> int:
     _models_loaded = True
 
     logger.info(
-        f"[MODEL_LOADER] Chargement termine: "
+        "[MODEL_LOADER] Chargement termine: "
         f"{len(_loaded_modules)} modules, {table_count} tables ORM"
     )
 
@@ -80,8 +80,8 @@ def load_all_models() -> int:
 
 def _load_core_models() -> None:
     """
-    Charge les modeles du core (app.core.models).
-    Ces modeles sont prioritaires (User, Decision, etc.)
+    Charge les modeles du core (app.core.models) et app.models.
+    Ces modeles sont prioritaires (User, Decision, WebsiteVisitor, etc.)
     """
     global _loaded_modules
 
@@ -91,7 +91,15 @@ def _load_core_models() -> None:
         _loaded_modules.add("app.core.models")
         logger.debug("[MODEL_LOADER] Core models charges")
     except ImportError as e:
-        logger.warning(f"[MODEL_LOADER] Impossible de charger core.models: {e}")
+        logger.warning("[MODEL_LOADER] Impossible de charger core.models: %s", e)
+
+    try:
+        # Import explicite des modeles app.models (Website tracking, etc.)
+        import app.models
+        _loaded_modules.add("app.models")
+        logger.debug("[MODEL_LOADER] App models charges (website tracking)")
+    except ImportError as e:
+        logger.warning("[MODEL_LOADER] Impossible de charger app.models: %s", e)
 
 
 def _load_module_models() -> None:
@@ -104,7 +112,7 @@ def _load_module_models() -> None:
     try:
         import app.modules
     except ImportError as e:
-        logger.error(f"[MODEL_LOADER] Package app.modules introuvable: {e}")
+        logger.error("[MODEL_LOADER] Package app.modules introuvable: %s", e)
         return
 
     # Parcourir recursivement tous les sous-modules
@@ -122,13 +130,13 @@ def _load_module_models() -> None:
             _loaded_modules.add(module_name)
 
             if module_name.endswith('.models'):
-                logger.debug(f"[MODEL_LOADER] Modeles charges: {module_name}")
+                logger.debug("[MODEL_LOADER] Modeles charges: %s", module_name)
 
         except ImportError as e:
             # Log mais ne pas bloquer - certains modules peuvent avoir des deps optionnelles
-            logger.warning(f"[MODEL_LOADER] Skip {module_name}: {e}")
+            logger.warning("[MODEL_LOADER] Skip %s: %s", module_name, e)
         except Exception as e:
-            logger.error(f"[MODEL_LOADER] Erreur {module_name}: {e}")
+            logger.error("[MODEL_LOADER] Erreur %s: %s", module_name, e)
 
 
 def get_loaded_table_count() -> int:
@@ -175,8 +183,9 @@ def verify_models_loaded() -> None:
 
     if missing_core:
         logger.warning(
-            f"[MODEL_LOADER] Tables core manquantes: {missing_core}. "
-            f"Verifiez app/core/models.py"
+            "[MODEL_LOADER] Tables core manquantes: %s. "
+            "Verifiez app/core/models.py",
+            missing_core
         )
 
 

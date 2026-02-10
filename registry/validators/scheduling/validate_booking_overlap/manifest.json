@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.validators.scheduling.validate_booking_overlap",
+  "name": "Valide l'absence de chevauchement",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide l'absence de chevauchement",
+  "inputs": {
+    "bookings": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "scheduling",
+    "availability"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

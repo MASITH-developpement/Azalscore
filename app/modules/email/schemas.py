@@ -7,6 +7,7 @@ Schémas Pydantic pour les emails transactionnels.
 from datetime import datetime
 from typing import Any
 
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field
 
 from .models import EmailStatus, EmailType
@@ -58,7 +59,7 @@ class EmailConfigUpdate(BaseModel):
 
 class EmailConfigResponse(BaseModel):
     """Réponse configuration email."""
-    id: str
+    id: UUID
     tenant_id: str
     smtp_host: str | None
     smtp_port: int
@@ -111,7 +112,7 @@ class EmailTemplateUpdate(BaseModel):
 
 class EmailTemplateResponse(BaseModel):
     """Réponse template email."""
-    id: str
+    id: UUID
     tenant_id: str | None
     code: str
     name: str
@@ -154,7 +155,7 @@ class SendEmailRequest(BaseModel):
 
 class SendEmailResponse(BaseModel):
     """Réponse envoi email."""
-    id: str
+    id: UUID
     status: EmailStatus
     to_email: str
     subject: str
@@ -185,7 +186,7 @@ class BulkSendResponse(BaseModel):
 
 class EmailLogResponse(BaseModel):
     """Réponse log email."""
-    id: str
+    id: UUID
     tenant_id: str
     email_type: EmailType
     status: EmailStatus

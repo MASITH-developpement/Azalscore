@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { MainLayout, AuthLayout } from '@ui/layout';
 import { CapabilityGuard } from '@core/capabilities';
 import { useIsAuthenticated } from '@core/auth';
+import { LoadingState } from '@ui/components/StateViews';
 
 // ============================================================
 // LAZY LOADING DES MODULES
@@ -30,10 +31,28 @@ const MobileRoutes = lazy(() => import('@modules/mobile'));
 const AdminRoutes = lazy(() => import('@modules/admin'));
 const BreakGlassPage = lazy(() => import('@modules/break-glass'));
 
+// Modules métier additionnels
+const ContactsRoutes = lazy(() => import('@modules/contacts'));
+const HRRoutes = lazy(() => import('@modules/hr'));
+const CRMRoutes = lazy(() => import('@modules/crm'));
+const InventoryRoutes = lazy(() => import('@modules/inventory'));
+const ProductionRoutes = lazy(() => import('@modules/production'));
+const MaintenanceRoutes = lazy(() => import('@modules/maintenance'));
+const QualityRoutes = lazy(() => import('@modules/qualite'));
+const POSRoutes = lazy(() => import('@modules/pos'));
+const SubscriptionsRoutes = lazy(() => import('@modules/subscriptions'));
+const HelpdeskRoutes = lazy(() => import('@modules/helpdesk'));
+const BIRoutes = lazy(() => import('@modules/bi'));
+const ComplianceRoutes = lazy(() => import('@modules/compliance'));
+const MarceauRoutes = lazy(() => import('@modules/marceau'));
+
 // Pages Auth
 const LoginPage = lazy(() => import('@/pages/auth/Login'));
 const TwoFactorPage = lazy(() => import('@/pages/auth/TwoFactor'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPassword'));
+
+// Pages publiques - import direct pour page d'accueil (performance critique)
+import LandingPage from '@/pages/LandingPage';
 
 // Pages communes
 const NotFoundPage = lazy(() => import('@/pages/NotFound'));
@@ -46,8 +65,10 @@ const SettingsPage = lazy(() => import('@/pages/Settings'));
 
 const LoadingFallback: React.FC = () => (
   <div className="azals-loading azals-loading--page">
-    <div className="azals-spinner azals-spinner--lg" />
-    <p>Chargement...</p>
+    <LoadingState
+      onRetry={() => window.location.reload()}
+      message="Chargement du module..."
+    />
   </div>
 );
 
@@ -80,6 +101,20 @@ const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => 
 };
 
 // ============================================================
+// HOME ROUTE WRAPPER (landing page or cockpit)
+// ============================================================
+
+const HomeRoute: React.FC = () => {
+  const isAuthenticated = useIsAuthenticated();
+
+  if (isAuthenticated) {
+    return <Navigate to="/cockpit" replace />;
+  }
+
+  return <LandingPage />;
+};
+
+// ============================================================
 // CAPABILITY ROUTE WRAPPER
 // ============================================================
 
@@ -105,6 +140,9 @@ export const AppRouter: React.FC = () => {
     <BrowserRouter>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
+          {/* Page d'accueil publique */}
+          <Route path="/" element={<HomeRoute />} />
+
           {/* Routes publiques (Auth) */}
           <Route element={<PublicRoute><AuthLayout /></PublicRoute>}>
             <Route path="/login" element={<LoginPage />} />
@@ -114,8 +152,6 @@ export const AppRouter: React.FC = () => {
 
           {/* Routes protégées (App) */}
           <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            {/* Redirect racine vers cockpit */}
-            <Route path="/" element={<Navigate to="/cockpit" replace />} />
 
             {/* Cockpit Dirigeant */}
             <Route path="/cockpit" element={
@@ -203,6 +239,97 @@ export const AppRouter: React.FC = () => {
 
             {/* Mobile */}
             <Route path="/mobile/*" element={<MobileRoutes />} />
+
+            {/* Ressources Humaines */}
+            <Route path="/hr/*" element={
+              <CapabilityRoute capability="hr.view">
+                <HRRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Contacts Unifiés */}
+            <Route path="/contacts/*" element={
+              <CapabilityRoute capability="contacts.view">
+                <ContactsRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* CRM */}
+            <Route path="/crm/*" element={
+              <CapabilityRoute capability="crm.view">
+                <CRMRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Inventaire / Stock */}
+            <Route path="/inventory/*" element={
+              <CapabilityRoute capability="inventory.view">
+                <InventoryRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Production */}
+            <Route path="/production/*" element={
+              <CapabilityRoute capability="production.view">
+                <ProductionRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Maintenance */}
+            <Route path="/maintenance/*" element={
+              <CapabilityRoute capability="maintenance.view">
+                <MaintenanceRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Qualité */}
+            <Route path="/quality/*" element={
+              <CapabilityRoute capability="quality.view">
+                <QualityRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Point de Vente */}
+            <Route path="/pos/*" element={
+              <CapabilityRoute capability="pos.view">
+                <POSRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Abonnements */}
+            <Route path="/subscriptions/*" element={
+              <CapabilityRoute capability="subscriptions.view">
+                <SubscriptionsRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Helpdesk */}
+            <Route path="/helpdesk/*" element={
+              <CapabilityRoute capability="helpdesk.view">
+                <HelpdeskRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Business Intelligence */}
+            <Route path="/bi/*" element={
+              <CapabilityRoute capability="bi.view">
+                <BIRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Conformité */}
+            <Route path="/compliance/*" element={
+              <CapabilityRoute capability="compliance.view">
+                <ComplianceRoutes />
+              </CapabilityRoute>
+            } />
+
+            {/* Marceau AI Assistant */}
+            <Route path="/marceau/*" element={
+              <CapabilityRoute capability="marceau.view">
+                <MarceauRoutes />
+              </CapabilityRoute>
+            } />
 
             {/* Administration */}
             <Route path="/admin/*" element={

@@ -4,7 +4,7 @@
 
 [project]
 name = "azals"
-version = "0.4.0"
+version = "0.5.0-dev"
 description = "AZALS - ERP Décisionnel Multi-Tenant ÉLITE"
 readme = "README.md"
 requires-python = ">=3.11"

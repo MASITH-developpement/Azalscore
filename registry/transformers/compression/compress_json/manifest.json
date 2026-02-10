@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.transformers.compression.compress_json",
+  "name": "Compresse un objet JSON",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Compresse un objet JSON",
+  "inputs": {
+    "data": {
+      "type": "object",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "compressed": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "compression",
+    "data"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

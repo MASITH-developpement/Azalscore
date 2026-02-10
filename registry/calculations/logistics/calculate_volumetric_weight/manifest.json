@@ -1,0 +1,54 @@
+{
+  "id": "azalscore.calculations.logistics.calculate_volumetric_weight",
+  "name": "Calcule le poids volumétrique",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le poids volumétrique",
+  "inputs": {
+    "length_cm": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "width_cm": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "height_cm": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "divisor": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 5000
+    }
+  },
+  "outputs": {
+    "volumetric_weight_kg": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "logistics",
+    "shipping"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

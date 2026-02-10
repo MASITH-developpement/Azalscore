@@ -1,0 +1,44 @@
+{
+  "id": "azalscore.generators.qrcodes.generate_qrcode_data",
+  "name": "Génère les données pour un QR code",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère les données pour un QR code",
+  "inputs": {
+    "content": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "size": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 200
+    }
+  },
+  "outputs": {
+    "qrcode_data": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "qrcodes",
+    "generation"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

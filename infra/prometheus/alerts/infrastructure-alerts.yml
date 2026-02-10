@@ -139,17 +139,30 @@ groups:
   - name: azalscore.infra.containers
     interval: 30s
     rules:
-      # Container Down
-      - alert: ContainerDown
+      # API Down (primary health check)
+      - alert: APIDown
         expr: |
-          absent(container_last_seen{name=~"azalscore.*"})
-        for: 5m
+          up{job="azals-api"} == 0
+        for: 2m
         labels:
           severity: critical
           team: infra
         annotations:
-          summary: "Container is down"
-          description: "AZALSCORE container has been down for more than 5 minutes"
+          summary: "AZALSCORE API is down"
+          description: "API target {{ $labels.instance }} is unreachable for more than 2 minutes"
+
+      # Container Down (DÉSACTIVÉ - cAdvisor incompatible Docker 29.x storage)
+      # TODO: Réactiver quand cAdvisor supporte Docker 29 overlayfs rootfs/
+      # - alert: ContainerDown
+      #   expr: |
+      #     absent(container_last_seen{name=~"azals_.*"})
+      #   for: 5m
+      #   labels:
+      #     severity: warning
+      #     team: infra
+      #   annotations:
+      #     summary: "Container monitoring unavailable"
+      #     description: "cAdvisor cannot detect AZALSCORE containers"
 
       # Container High CPU
       - alert: ContainerHighCPU

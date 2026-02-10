@@ -52,3 +52,5 @@ cryptography==42.0.2
 
 # SMTP
 aiosmtplib==3.0.1
+openai>=1.0.0
+anthropic>=0.18.0

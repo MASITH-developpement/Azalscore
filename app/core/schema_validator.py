@@ -233,7 +233,7 @@ class SchemaValidator:
                         )
 
         except Exception as e:
-            logger.warning(f"[SCHEMA] Validation DB ignorée (erreur connexion): {e}")
+            logger.warning("[SCHEMA] Validation DB ignorée (erreur connexion): %s", e)
             return True  # Ne pas bloquer si la DB n'est pas accessible
 
         return len(self.critical_errors) == 0
@@ -294,7 +294,7 @@ class SchemaValidator:
                             f"DOIT utiliser UniversalUUID()."
                         )
 
-        logger.info(f"[SCHEMA] ORM: {tables_checked} tables, {pk_checked} PK, {fk_checked} FK vérifiées")
+        logger.info("[SCHEMA] ORM: %s tables, %s PK, %s FK vérifiées", tables_checked, pk_checked, fk_checked)
         return len(self.critical_errors) == 0
 
     def get_cleanup_sql(self) -> str:
@@ -409,25 +409,26 @@ class SchemaValidator:
         report = self.generate_report()
 
         if self.critical_errors:
-            # TOUJOURS afficher le rapport en cas d'erreur
-            print("\n" + report)
-            logger.error("\n" + report)
+            # TOUJOURS logger le rapport en cas d'erreur
+            logger.error(
+                "[SCHEMA] Erreurs critiques détectées dans le schéma",
+                extra={
+                    "critical_errors_count": len(self.critical_errors),
+                    "report": report[:2000],
+                    "consequence": "schema_invalid"
+                }
+            )
 
             if strict:
                 # BLOCAGE ABSOLU - Impossible de démarrer
-                error_msg = (
-                    f"\n{'='*70}\n"
-                    f"ARRÊT FORCÉ - {len(self.critical_errors)} erreur(s) de schéma détectée(s)\n"
-                    f"{'='*70}\n"
-                    f"Des tables avec PK/FK BIGINT existent dans la base.\n"
-                    f"L'application NE PEUT PAS démarrer dans cet état.\n\n"
-                    f"SOLUTION:\n"
-                    f"1. Exécuter: psql -d <database> -f scripts/force_cleanup_bigint_tables.sql\n"
-                    f"2. Redémarrer l'application\n"
-                    f"{'='*70}\n"
+                logger.critical(
+                    "[SCHEMA] ARRÊT FORCÉ — tables BIGINT détectées, démarrage impossible",
+                    extra={
+                        "critical_errors_count": len(self.critical_errors),
+                        "solution": "psql -d <database> -f scripts/force_cleanup_bigint_tables.sql",
+                        "consequence": "startup_aborted"
+                    }
                 )
-                print(error_msg)
-                logger.critical(error_msg)
 
                 # ARRÊT IMMÉDIAT via exception
                 raise SchemaValidationError(
@@ -483,6 +484,6 @@ def get_bigint_tables(engine: Engine) -> set[str]:
                 AND c.udt_name IN ('int4', 'int8', 'serial', 'bigserial')
             """))
             tables = {row[0] for row in result}
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to retrieve tables with integer PKs: %s", e)
     return tables

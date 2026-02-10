@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.generators.exports.generate_excel_export",
+  "name": "Génère un export Excel",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un export Excel",
+  "inputs": {
+    "data": {
+      "type": "array",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "excel_data": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "exports",
+    "data"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

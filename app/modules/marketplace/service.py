@@ -38,8 +38,9 @@ logger = logging.getLogger(__name__)
 class MarketplaceService:
     """Service marketplace."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user_id: str = None):
         self.db = db
+        self.user_id = user_id  # Pour CORE SaaS v2 (audit)
 
     # =========================================================================
     # PLANS
@@ -264,14 +265,14 @@ class MarketplaceService:
             )
             order.payment_intent_id = intent.id
             self.db.commit()
-            logger.info(f"PaymentIntent {intent.id} créé pour commande {order.order_number}")
+            logger.info("PaymentIntent %s créé pour commande %s", intent.id, order.order_number)
             return intent.client_secret
 
         except ImportError:
             logger.error("Module stripe non installé")
             return None
         except Exception as e:
-            logger.error(f"Erreur création PaymentIntent Stripe: {e}")
+            logger.error("Erreur création PaymentIntent Stripe: %s", e)
             return None
 
     def _create_stripe_sepa_payment(self, order: Order) -> str | None:
@@ -298,14 +299,14 @@ class MarketplaceService:
             )
             order.payment_intent_id = intent.id
             self.db.commit()
-            logger.info(f"SEPA PaymentIntent {intent.id} créé pour commande {order.order_number}")
+            logger.info("SEPA PaymentIntent %s créé pour commande %s", intent.id, order.order_number)
             return intent.client_secret
 
         except ImportError:
             logger.error("Module stripe non installé")
             return None
         except Exception as e:
-            logger.error(f"Erreur création PaymentIntent SEPA: {e}")
+            logger.error("Erreur création PaymentIntent SEPA: %s", e)
             return None
 
     def _get_bank_transfer_instructions(self, order: Order) -> str:
@@ -513,12 +514,12 @@ Votre compte sera activé sous 48h après réception du virement.
         })
 
         self.db.commit()
-        logger.info(f"Tenant {tenant_id} créé avec admin {admin_email}")
+        logger.info("Tenant %s créé avec admin %s", tenant_id, admin_email)
 
     def _send_welcome_email(self, order: Order, temp_password: str) -> bool:
         """Envoie l'email de bienvenue."""
         # TODO: Intégrer avec le module email
-        logger.info(f"Email de bienvenue envoyé à {order.customer_email}")
+        logger.info("Email de bienvenue envoyé à %s", order.customer_email)
         return True
 
     # =========================================================================
@@ -588,7 +589,7 @@ Votre compte sera activé sous 48h après réception du virement.
             try:
                 self.provision_tenant_for_order(str(order.id))
             except Exception as e:
-                logger.error(f"Erreur provisioning auto: {e}")
+                logger.error("Erreur provisioning auto: %s", e)
 
     def _handle_payment_failed(self, payload: dict, webhook: WebhookEvent):
         """Traite un paiement échoué."""

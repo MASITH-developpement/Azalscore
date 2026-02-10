@@ -1,0 +1,49 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_reorder_point",
+  "name": "Calcule le point de commande",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le point de commande",
+  "inputs": {
+    "daily_usage": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "lead_time_days": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "safety_stock": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 0
+    }
+  },
+  "outputs": {
+    "reorder_point": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "movements"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

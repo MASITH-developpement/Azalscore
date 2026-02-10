@@ -1,0 +1,52 @@
+{
+  "id": "azalscore.validators.finance.validate_account_code",
+  "name": "Valide un code de compte comptable",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide un code de compte comptable",
+  "inputs": {
+    "account_code": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "chart_of_accounts": {
+      "type": "string",
+      "required": false,
+      "description": "",
+      "default": "PCG"
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "account_type": {
+      "type": "string",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "finance",
+    "entries"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

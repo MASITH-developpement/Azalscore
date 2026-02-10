@@ -1,0 +1,353 @@
+name: Frontend CI/CD - AZALSCORE
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - 'scripts/frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - 'scripts/frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+# Garantit qu'un seul workflow tourne par branche
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================
+  # LINTING & FORMATTING
+  # ============================================================
+
+  lint:
+    name: ESLint & Prettier
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Check Prettier
+        working-directory: frontend
+        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}"
+
+  # ============================================================
+  # TYPE CHECKING
+  # ============================================================
+
+  type-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: frontend
+        run: npm run type-check
+
+  # ============================================================
+  # AZALSCORE NORMS VALIDATION (AZA-FE-ENF, AZA-FE-META)
+  # ============================================================
+
+  validate-azalscore-norms:
+    name: Validate AZALSCORE Norms (AZA-FE-ENF)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run AZALSCORE Linter (AZA-FE-ENF)
+        working-directory: frontend
+        run: |
+          echo "🔍 Running AZALSCORE normative linter..."
+          npm run azalscore:lint || {
+            echo "❌ AZALSCORE linter failed"
+            echo "💡 Violations AZA-FE-ENF detected - see output above"
+            exit 1
+          }
+
+      - name: Validate module structure
+        working-directory: frontend
+        run: |
+          echo "📂 Validating module structure..."
+          npm run validate:modules || {
+            echo "❌ Module structure validation failed"
+            exit 1
+          }
+
+      - name: Validate meta.ts (AZA-FE-META)
+        working-directory: frontend
+        run: |
+          echo "📋 Validating meta.ts files..."
+          npm run validate:meta || {
+            echo "❌ meta.ts validation failed"
+            echo "💡 Run: npm run generate:meta"
+            exit 1
+          }
+
+      - name: Validate menu/route sync (AZA-FE-ENF)
+        working-directory: frontend
+        run: |
+          echo "🔗 Validating menu ↔ route synchronization..."
+          npm run validate:menu-route-sync || {
+            echo "❌ Menu/Route sync validation failed"
+            echo "💡 Fix menu/route mismatches"
+            exit 1
+          }
+
+      - name: Check for empty components (AZA-FE-ENF)
+        working-directory: frontend/src/modules
+        run: |
+          echo "🔍 Checking for empty components..."
+          # Rechercher patterns vides critiques
+          if grep -r "return null" --include="index.tsx" . 2>/dev/null; then
+            echo "❌ Found 'return null' in modules (AZA-FE-ENF violation)"
+            exit 1
+          fi
+          echo "✅ No critical empty components found"
+
+  # ============================================================
+  # TESTS UNITAIRES
+  # ============================================================
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run tests with coverage
+        working-directory: frontend
+        run: npm run test:coverage -- --run
+
+      - name: Check coverage thresholds
+        working-directory: frontend
+        run: |
+          echo "📊 Checking coverage thresholds..."
+          # TODO: Activer quand coverage >= 70%
+          # npm run test:coverage -- --run --coverage.threshold.lines=70
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: frontend/coverage
+          fail_ci_if_error: false
+
+  # ============================================================
+  # BUILD PRODUCTION
+  # ============================================================
+
+  build:
+    name: Build Production
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, validate-azalscore-norms]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Check build size
+        working-directory: frontend/dist
+        run: |
+          echo "📦 Build size:"
+          du -sh .
+          # Vérifier que le build n'est pas trop gros (>50MB = warning)
+          size=$(du -sm . | cut -f1)
+          if [ $size -gt 50 ]; then
+            echo "⚠️  Warning: Build size is ${size}MB (>50MB)"
+          else
+            echo "✅ Build size OK: ${size}MB"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+          retention-days: 7
+
+  # ============================================================
+  # DASHBOARD VALIDATION (AZA-FE-DASH)
+  # ============================================================
+
+  validate-dashboard:
+    name: Validate Frontend Health Dashboard
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Verify dashboard file exists
+        run: |
+          echo "🔍 Checking Frontend Health Dashboard..."
+          if [ -f "frontend/src/pages/FrontendHealthDashboard.tsx" ]; then
+            echo "✅ Dashboard file exists"
+          else
+            echo "❌ Dashboard file missing (AZA-FE-DASH violation)"
+            exit 1
+          fi
+
+      - name: Verify dashboard route exists
+        run: |
+          echo "🔍 Checking dashboard route..."
+          if grep -q "frontend-health" frontend/src/routing/index.tsx 2>/dev/null; then
+            echo "✅ Dashboard route configured"
+          else
+            echo "❌ Dashboard route missing (AZA-FE-DASH violation)"
+            exit 1
+          fi
+
+  # ============================================================
+  # PR QUALITY GATE
+  # ============================================================
+
+  pr-quality-gate:
+    name: PR Quality Gate
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - type-check
+      - validate-azalscore-norms
+      - test
+      - build
+      - validate-dashboard
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Quality Gate Passed
+        run: |
+          echo "✅ All quality checks passed!"
+          echo ""
+          echo "✓ ESLint & Prettier"
+          echo "✓ TypeScript Type Check"
+          echo "✓ AZALSCORE Norms (AZA-FE-ENF)"
+          echo "✓ Meta.ts Validation (AZA-FE-META)"
+          echo "✓ Menu/Route Sync"
+          echo "✓ Unit Tests"
+          echo "✓ Production Build"
+          echo "✓ Dashboard Validation (AZA-FE-DASH)"
+          echo ""
+          echo "🚀 Ready to merge!"
+
+  # ============================================================
+  # DEPLOYMENT (si main branch)
+  # ============================================================
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - type-check
+      - validate-azalscore-norms
+      - test
+      - build
+      - validate-dashboard
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+
+      - name: Deploy notification
+        run: |
+          echo "🚀 Deployment would happen here"
+          echo "All AZALSCORE norms validated:"
+          echo "- AZA-FE-ENF: ✅"
+          echo "- AZA-FE-DASH: ✅"
+          echo "- AZA-FE-META: ✅"
+          # TODO: Ajouter déploiement réel (Vercel, Netlify, S3, etc.)

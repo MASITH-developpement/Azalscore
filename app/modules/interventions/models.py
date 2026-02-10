@@ -40,11 +40,14 @@ from app.db import Base
 # ============================================================================
 
 class InterventionStatut(str, enum.Enum):
-    """Statut de l'intervention - workflow strict."""
+    """Statut de l'intervention - workflow strict 7 états."""
+    DRAFT = "DRAFT"
     A_PLANIFIER = "A_PLANIFIER"
     PLANIFIEE = "PLANIFIEE"
     EN_COURS = "EN_COURS"
+    BLOQUEE = "BLOQUEE"
     TERMINEE = "TERMINEE"
+    ANNULEE = "ANNULEE"
 
 
 class InterventionPriorite(str, enum.Enum):
@@ -52,6 +55,7 @@ class InterventionPriorite(str, enum.Enum):
     LOW = "LOW"
     NORMAL = "NORMAL"
     HIGH = "HIGH"
+    URGENT = "URGENT"
 
 
 class TypeIntervention(str, enum.Enum):
@@ -63,6 +67,13 @@ class TypeIntervention(str, enum.Enum):
     FORMATION = "FORMATION"
     CONSULTATION = "CONSULTATION"
     AUTRE = "AUTRE"
+
+
+class CorpsEtat(str, enum.Enum):
+    """Corps d'état de l'intervention."""
+    ELECTRICITE = "ELECTRICITE"
+    PLOMBERIE = "PLOMBERIE"
+    ELECTRICITE_PLOMBERIE = "ELECTRICITE_PLOMBERIE"
 
 
 class CanalDemande(str, enum.Enum):
@@ -179,6 +190,9 @@ class Intervention(Base):
     donneur_ordre_id = Column(UniversalUUID(), ForeignKey("int_donneurs_ordre.id"), index=True)  # OPTIONNEL
     projet_id = Column(UniversalUUID(), index=True)  # OPTIONNEL
 
+    # Affaire liée
+    affaire_id = Column(UniversalUUID(), index=True)  # OPTIONNEL
+
     # Relations lecture seule (générées par d'autres modules)
     devis_id = Column(UniversalUUID())  # Lecture seule
     facture_client_id = Column(UniversalUUID())  # Lecture seule
@@ -191,6 +205,7 @@ class Intervention(Base):
     priorite = Column(Enum(InterventionPriorite), default=InterventionPriorite.NORMAL)
     reference_externe = Column(String(100))  # OPTIONNEL
     canal_demande = Column(Enum(CanalDemande))  # OPTIONNEL
+    corps_etat = Column(Enum(CorpsEtat))  # OPTIONNEL — Electricité, Plomberie, ou les deux
 
     # Description
     titre = Column(String(500))
@@ -202,6 +217,7 @@ class Intervention(Base):
     # =========================================
     date_prevue_debut = Column(DateTime)
     date_prevue_fin = Column(DateTime)
+    duree_prevue_minutes = Column(Integer)  # Durée prévue en minutes
 
     # Technicien assigné
     intervenant_id = Column(UniversalUUID(), index=True)
@@ -228,7 +244,7 @@ class Intervention(Base):
     # =========================================
     statut = Column(
         Enum(InterventionStatut),
-        default=InterventionStatut.A_PLANIFIER,
+        default=InterventionStatut.DRAFT,
         nullable=False
     )
 
@@ -240,6 +256,32 @@ class Intervention(Base):
     ville = Column(String(100))
     code_postal = Column(String(20))
     pays = Column(String(100), default="France")
+
+    # =========================================
+    # BLOCAGE (workflow BLOQUEE)
+    # =========================================
+    motif_blocage = Column(Text)
+    date_blocage = Column(DateTime)
+    date_deblocage = Column(DateTime)
+
+    # Contact sur place
+    contact_sur_place = Column(String(255))
+    telephone_contact = Column(String(50))
+    email_contact = Column(String(255))
+
+    # =========================================
+    # NOTES & MATÉRIEL
+    # =========================================
+    notes_client = Column(Text)
+    materiel_necessaire = Column(Text)
+    materiel_utilise = Column(Text)
+
+    # =========================================
+    # FACTURATION
+    # =========================================
+    facturable = Column(Boolean, default=True)
+    montant_ht = Column(Numeric(12, 2))
+    montant_ttc = Column(Numeric(12, 2))
 
     # =========================================
     # MÉTADONNÉES
@@ -302,9 +344,12 @@ class RapportIntervention(Base):
     donneur_ordre_id = Column(UniversalUUID())
 
     # Contenu du rapport
-    resume_actions = Column(Text)
-    anomalies = Column(Text)
+    resume_actions = Column(Text)       # alias: travaux_realises
+    anomalies = Column(Text)            # alias: observations
     recommandations = Column(Text)
+    pieces_remplacees = Column(Text)
+    temps_passe_minutes = Column(Integer)
+    materiel_utilise = Column(Text)
 
     # Photos (métadonnées JSON)
     photos = Column(JSON, default=list)

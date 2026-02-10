@@ -74,13 +74,9 @@ class TesseractEngine(OCREngine):
 
     def _check_tesseract(self) -> bool:
         """Vérifie si Tesseract est disponible."""
-        try:
-            import pytesseract
-            pytesseract.get_tesseract_version()
-            return True
-        except Exception:
-            logger.warning("Tesseract OCR not available")
-            return False
+        import pytesseract
+        pytesseract.get_tesseract_version()
+        return True
 
     @property
     def engine_name(self) -> str:
@@ -90,41 +86,32 @@ class TesseractEngine(OCREngine):
         if not self._tesseract_available:
             return "", 0.0
 
-        try:
-            import pytesseract
-            from PIL import Image
+        import pytesseract
+        from PIL import Image
 
-            # Support multi-page (PDF)
-            if file_path.lower().endswith('.pdf'):
-                text = self._extract_from_pdf(file_path)
-            else:
-                image = Image.open(file_path)
-                text = pytesseract.image_to_string(image, lang=self.language)
+        # Support multi-page (PDF)
+        if file_path.lower().endswith('.pdf'):
+            text = self._extract_from_pdf(file_path)
+        else:
+            image = Image.open(file_path)
+            text = pytesseract.image_to_string(image, lang=self.language)
 
-            # Calcul d'un score de confiance basique
-            confidence = self._calculate_confidence(text)
+        # Calcul d'un score de confiance basique
+        confidence = self._calculate_confidence(text)
 
-            return text, confidence
-
-        except Exception as e:
-            logger.error(f"Tesseract extraction failed: {e}")
-            return "", 0.0
+        return text, confidence
 
     def _extract_from_pdf(self, pdf_path: str) -> str:
         """Extrait le texte d'un PDF."""
-        try:
-            import pytesseract
-            from pdf2image import convert_from_path
+        import pytesseract
+        from pdf2image import convert_from_path
 
-            pages = convert_from_path(pdf_path)
-            texts = []
-            for page in pages:
-                text = pytesseract.image_to_string(page, lang=self.language)
-                texts.append(text)
-            return "\n\n".join(texts)
-        except ImportError:
-            logger.warning("pdf2image not available")
-            return ""
+        pages = convert_from_path(pdf_path)
+        texts = []
+        for page in pages:
+            text = pytesseract.image_to_string(page, lang=self.language)
+            texts.append(text)
+        return "\n\n".join(texts)
 
     def _calculate_confidence(self, text: str) -> float:
         """Calcule un score de confiance basé sur la qualité du texte."""
@@ -153,20 +140,16 @@ class TesseractEngine(OCREngine):
         if not self._tesseract_available:
             return {}
 
-        try:
-            import pytesseract
-            from PIL import Image
+        import pytesseract
+        from PIL import Image
 
-            image = Image.open(file_path)
-            data = pytesseract.image_to_data(image, lang=self.language, output_type=pytesseract.Output.DICT)
+        image = Image.open(file_path)
+        data = pytesseract.image_to_data(image, lang=self.language, output_type=pytesseract.Output.DICT)
 
-            return {
-                "boxes": data,
-                "page_count": 1
-            }
-        except Exception as e:
-            logger.error(f"Tesseract structured extraction failed: {e}")
-            return {}
+        return {
+            "boxes": data,
+            "page_count": 1
+        }
 
 
 # ============================================================================
@@ -298,10 +281,7 @@ class FieldExtractor:
         if field_name in ["total_ht", "total_tva", "total_ttc"]:
             # Conversion en Decimal
             cleaned = value.replace(" ", "").replace(",", ".")
-            try:
-                return Decimal(cleaned)
-            except InvalidOperation:
-                return None
+            return Decimal(cleaned)
 
         if field_name == "date" or field_name == "due_date":
             return cls._parse_date(value)
@@ -316,10 +296,9 @@ class FieldExtractor:
         """Parse une date depuis différents formats."""
         # Formats numériques
         for fmt in ["%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y", "%d-%m-%y"]:
-            try:
-                return datetime.strptime(value, fmt).date()
-            except ValueError:
-                continue
+            parsed = datetime.strptime(value, fmt).date()
+            if parsed:
+                return parsed
 
         # Format textuel français
         months_fr = {
@@ -331,10 +310,7 @@ class FieldExtractor:
         if match:
             day, month_name, year = match.groups()
             if month_name in months_fr:
-                try:
-                    return date(int(year), months_fr[month_name], int(day))
-                except ValueError:
-                    pass
+                return date(int(year), months_fr[month_name], int(day))
 
         return None
 
@@ -369,9 +345,10 @@ class FieldExtractor:
 class OCRService:
     """Service principal d'OCR pour les documents comptables."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self._engines: dict[str, OCREngine] = {}
         self._init_engines()
 
@@ -437,70 +414,64 @@ class OCRService:
         document.status = DocumentStatus.PROCESSING
         self.db.commit()
 
-        try:
-            # Sélectionne le moteur
-            engine = self.get_engine(engine_name)
+        # Sélectionne le moteur
+        engine = self.get_engine(engine_name)
 
-            # Extraction du texte
-            raw_text, text_confidence = engine.extract_text(file_path)
+        # Extraction du texte
+        raw_text, text_confidence = engine.extract_text(file_path)
 
-            # Extraction des données structurées
-            structured_data = engine.extract_structured_data(file_path)
+        # Extraction des données structurées
+        structured_data = engine.extract_structured_data(file_path)
 
-            # Extraction des champs
-            extracted_fields = FieldExtractor.extract_all(raw_text)
+        # Extraction des champs
+        extracted_fields = FieldExtractor.extract_all(raw_text)
 
-            # Calcul du temps de traitement
-            processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        # Calcul du temps de traitement
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
-            # Calcul de la confiance globale
-            if extracted_fields:
-                avg_confidence = sum(
-                    float(f.confidence) for f in extracted_fields.values()
-                ) / len(extracted_fields)
-                overall_confidence = Decimal(str(min(text_confidence, avg_confidence)))
-            else:
-                overall_confidence = Decimal(str(text_confidence * 0.5))
+        # Calcul de la confiance globale
+        if extracted_fields:
+            avg_confidence = sum(
+                float(f.confidence) for f in extracted_fields.values()
+            ) / len(extracted_fields)
+            overall_confidence = Decimal(str(min(text_confidence, avg_confidence)))
+        else:
+            overall_confidence = Decimal(str(text_confidence * 0.5))
 
-            # Création du résultat OCR
-            ocr_result = OCRResult(
-                id=uuid.uuid4(),
-                tenant_id=self.tenant_id,
-                document_id=document_id,
-                ocr_engine=engine.engine_name,
-                ocr_version=engine.engine_version,
-                processing_time_ms=processing_time,
-                overall_confidence=overall_confidence,
-                raw_text=raw_text,
-                structured_data=structured_data,
-                extracted_fields={
-                    k: {"value": v.value, "confidence": float(v.confidence)}
-                    for k, v in extracted_fields.items()
-                },
-                page_count=structured_data.get("page_count", 1),
-                created_at=datetime.utcnow()
-            )
+        # Création du résultat OCR
+        ocr_result = OCRResult(
+            id=uuid.uuid4(),
+            tenant_id=self.tenant_id,
+            document_id=document_id,
+            ocr_engine=engine.engine_name,
+            ocr_version=engine.engine_version,
+            processing_time_ms=processing_time,
+            overall_confidence=overall_confidence,
+            raw_text=raw_text,
+            structured_data=structured_data,
+            extracted_fields={
+                k: {"value": v.value, "confidence": float(v.confidence)}
+                for k, v in extracted_fields.items()
+            },
+            page_count=structured_data.get("page_count", 1),
+            created_at=datetime.utcnow()
+        )
 
-            self.db.add(ocr_result)
+        self.db.add(ocr_result)
 
-            # Met à jour le document avec les données extraites
-            self._update_document_from_ocr(document, extracted_fields, raw_text, overall_confidence)
+        # Met à jour le document avec les données extraites
+        self._update_document_from_ocr(document, extracted_fields, raw_text, overall_confidence)
 
-            self.db.commit()
-            self.db.refresh(ocr_result)
+        self.db.commit()
+        self.db.refresh(ocr_result)
 
-            logger.info(
-                f"OCR completed for document {document_id} "
-                f"with confidence {overall_confidence}%"
-            )
+        logger.info(
+            "OCR completed for document %s "
+            "with confidence %s%%",
+            document_id, overall_confidence
+        )
 
-            return ocr_result
-
-        except Exception as e:
-            logger.error(f"OCR processing failed for document {document_id}: {e}")
-            document.status = DocumentStatus.ERROR
-            self.db.commit()
-            raise
+        return ocr_result
 
     def _update_document_from_ocr(
         self,

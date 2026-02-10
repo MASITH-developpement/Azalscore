@@ -28,14 +28,52 @@ import {
   AlertCircle,
   Clock,
   RefreshCw,
+  Building2,
+  List,
+  Euro,
+  Paperclip,
+  Sparkles,
+  CreditCard,
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup, Modal, ConfirmDialog, DropdownMenu } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { BaseViewStandard } from '@ui/standards';
+import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
 import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
+
+// Import tab components
+import {
+  SupplierInfoTab, SupplierOrdersTab, SupplierInvoicesTab,
+  SupplierDocumentsTab, SupplierHistoryTab, SupplierIATab,
+  OrderInfoTab, OrderLinesTab, OrderFinancialTab,
+  OrderDocumentsTab, OrderHistoryTab, OrderIATab,
+  InvoiceInfoTab, InvoiceLinesTab, InvoiceFinancialTab,
+  InvoiceDocumentsTab, InvoiceHistoryTab, InvoiceIATab,
+} from './components';
+
+// Import types from module types file
+import type {
+  Supplier as SupplierType,
+  PurchaseOrder as PurchaseOrderType,
+  PurchaseInvoice as PurchaseInvoiceType,
+} from './types';
+import {
+  SUPPLIER_STATUS_CONFIG as SUPPLIER_STATUS,
+  ORDER_STATUS_CONFIG as ORDER_STATUS,
+  INVOICE_STATUS_CONFIG as INVOICE_STATUS,
+  canEditOrder, canValidateOrder, canCreateInvoiceFromOrder,
+  canEditInvoice, canValidateInvoice, canPayInvoice,
+  isOverdue,
+} from './types';
+import {
+  formatCurrency as formatCurrencyFn,
+  formatDate as formatDateFn,
+} from '@/utils/formatters';
 
 // ============================================================================
 // TYPES
@@ -56,11 +94,18 @@ interface Supplier {
   payment_terms?: string;
   notes?: string;
   status: 'PROSPECT' | 'PENDING' | 'APPROVED' | 'BLOCKED' | 'INACTIVE';
+  // Computed fields
+  total_orders?: number;
+  total_invoices?: number;
+  total_spent?: number;
+  // Metadata
   created_at: string;
   updated_at: string;
+  created_by_name?: string;
 }
 
 interface SupplierCreate {
+  code: string;
   name: string;
   contact_name?: string;
   email?: string;
@@ -123,10 +168,17 @@ interface PurchaseInvoice {
   total_tax: number;
   total_ttc: number;
   currency: string;
+  // Payment
+  amount_paid?: number;
+  amount_remaining?: number;
+  // Workflow
   validated_at?: string;
   validated_by?: string;
+  validated_by_name?: string;
+  // Metadata
   created_at: string;
   updated_at: string;
+  created_by_name?: string;
 }
 
 interface PurchaseSummary {
@@ -191,6 +243,15 @@ const TVA_RATES = [
   { value: 5.5, label: '5.5%' },
   { value: 10, label: '10%' },
   { value: 20, label: '20%' },
+];
+
+// Configuration pour création inline de fournisseur
+const SUPPLIER_CREATE_FIELDS: FieldConfig[] = [
+  { key: 'code', label: 'Code', type: 'text', required: true },
+  { key: 'name', label: 'Nom', type: 'text', required: true },
+  { key: 'contact_name', label: 'Contact', type: 'text' },
+  { key: 'email', label: 'Email', type: 'email' },
+  { key: 'phone', label: 'Téléphone', type: 'tel' },
 ];
 
 const formatCurrency = (value: number, currency = 'EUR'): string => {
@@ -1040,7 +1101,7 @@ export const SuppliersListPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<FilterState>({});
 
-  const { data, isLoading, refetch } = useSuppliers(page, pageSize, filters);
+  const { data, isLoading, error: suppliersError, refetch } = useSuppliers(page, pageSize, filters);
   const deleteMutation = useDeleteSupplier();
 
   const handleDelete = async (supplier: Supplier) => {
@@ -1121,6 +1182,8 @@ export const SuppliersListPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={suppliersError instanceof Error ? suppliersError : null}
+          onRetry={() => refetch()}
         />
       </Card>
     </PageWrapper>
@@ -1134,13 +1197,14 @@ export const SuppliersListPage: React.FC = () => {
 export const SupplierFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const isNew = id === 'new';
+  const isNew = !id;
 
   const { data: supplier, isLoading } = useSupplier(id || '');
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
 
   const [form, setForm] = useState<SupplierCreate>({
+    code: '',
     name: '',
     contact_name: '',
     email: '',
@@ -1157,6 +1221,7 @@ export const SupplierFormPage: React.FC = () => {
   useEffect(() => {
     if (supplier) {
       setForm({
+        code: supplier.code || '',
         name: supplier.name,
         contact_name: supplier.contact_name || '',
         email: supplier.email || '',
@@ -1207,6 +1272,18 @@ export const SupplierFormPage: React.FC = () => {
       <form onSubmit={handleSubmit}>
         <Card title="Informations générales">
           <Grid cols={2} gap="md">
+            <div className="azals-field">
+              <label className="azals-field__label">Code *</label>
+              <input
+                type="text"
+                className="azals-input"
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+                required
+                maxLength={50}
+                placeholder="ex: FOURN001"
+              />
+            </div>
             <div className="azals-field">
               <label className="azals-field__label">Nom *</label>
               <input
@@ -1457,7 +1534,7 @@ export const OrdersListPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<FilterState>({});
 
-  const { data, isLoading, refetch } = usePurchaseOrders(page, pageSize, filters);
+  const { data, isLoading, error: ordersError, refetch } = usePurchaseOrders(page, pageSize, filters);
   const { data: suppliers } = useSuppliersLookup();
   const deleteMutation = useDeletePurchaseOrder();
   const validateMutation = useValidatePurchaseOrder();
@@ -1578,6 +1655,8 @@ export const OrdersListPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={ordersError instanceof Error ? ordersError : null}
+          onRetry={() => refetch()}
         />
       </Card>
     </PageWrapper>
@@ -1591,7 +1670,7 @@ export const OrdersListPage: React.FC = () => {
 export const OrderFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const isNew = id === 'new';
+  const isNew = !id;
 
   const { data: order, isLoading } = usePurchaseOrder(id || '');
   const { data: suppliers } = useSuppliersLookup();
@@ -1696,19 +1775,22 @@ export const OrderFormPage: React.FC = () => {
         <Card title="Informations générales">
           <Grid cols={3} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Fournisseur *</label>
-              <select
-                className="azals-select"
+              <SmartSelector
+                items={(suppliers || []).map(s => ({ ...s, id: s.id, name: s.name }))}
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-                required
+                onChange={(value) => setSupplierId(value)}
+                label="Fournisseur *"
+                placeholder="Sélectionner un fournisseur..."
+                displayField="name"
+                secondaryField="code"
+                entityName="fournisseur"
+                entityIcon={<Building2 size={16} />}
+                createEndpoint="/v1/purchases/suppliers"
+                createFields={SUPPLIER_CREATE_FIELDS}
+                queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
-              >
-                <option value="">Sélectionner un fournisseur</option>
-                {(suppliers || []).map((s) => (
-                  <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-                ))}
-              </select>
+                allowCreate={canEdit}
+              />
             </div>
             <div className="azals-field">
               <label className="azals-field__label">Date *</label>
@@ -1956,7 +2038,7 @@ export const InvoicesListPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(25);
   const [filters, setFilters] = useState<FilterState>({});
 
-  const { data, isLoading, refetch } = usePurchaseInvoices(page, pageSize, filters);
+  const { data, isLoading, error: invoicesError, refetch } = usePurchaseInvoices(page, pageSize, filters);
   const { data: suppliers } = useSuppliersLookup();
   const deleteMutation = useDeletePurchaseInvoice();
   const validateMutation = useValidatePurchaseInvoice();
@@ -2083,6 +2165,8 @@ export const InvoicesListPage: React.FC = () => {
             onPageSizeChange: setPageSize,
           }}
           onRefresh={refetch}
+          error={invoicesError instanceof Error ? invoicesError : null}
+          onRetry={() => refetch()}
         />
       </Card>
     </PageWrapper>
@@ -2096,7 +2180,7 @@ export const InvoicesListPage: React.FC = () => {
 export const InvoiceFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const isNew = id === 'new';
+  const isNew = !id;
 
   const { data: invoice, isLoading } = usePurchaseInvoice(id || '');
   const { data: suppliers } = useSuppliersLookup();
@@ -2201,19 +2285,22 @@ export const InvoiceFormPage: React.FC = () => {
         <Card title="Informations générales">
           <Grid cols={3} gap="md">
             <div className="azals-field">
-              <label className="azals-field__label">Fournisseur *</label>
-              <select
-                className="azals-select"
+              <SmartSelector
+                items={(suppliers || []).map(s => ({ ...s, id: s.id, name: s.name }))}
                 value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-                required
+                onChange={(value) => setSupplierId(value)}
+                label="Fournisseur *"
+                placeholder="Sélectionner un fournisseur..."
+                displayField="name"
+                secondaryField="code"
+                entityName="fournisseur"
+                entityIcon={<Building2 size={16} />}
+                createEndpoint="/v1/purchases/suppliers"
+                createFields={SUPPLIER_CREATE_FIELDS}
+                queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
-              >
-                <option value="">Sélectionner un fournisseur</option>
-                {(suppliers || []).map((s) => (
-                  <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-                ))}
-              </select>
+                allowCreate={canEdit}
+              />
             </div>
             <div className="azals-field">
               <label className="azals-field__label">Date *</label>
@@ -2442,6 +2529,285 @@ export const InvoiceDetailPage: React.FC = () => {
 };
 
 // ============================================================================
+// DETAIL VIEWS (BaseViewStandard)
+// ============================================================================
+
+/**
+ * SupplierDetailView - Vue detail fournisseur avec BaseViewStandard
+ */
+const SupplierDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: supplier, isLoading, error, refetch } = useSupplier(id || '');
+  const deleteMutation = useDeleteSupplier();
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">Chargement du fournisseur...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !supplier) {
+    return (
+      <PageWrapper title="Erreur">
+        <Card>
+          <p className="text-danger">Fournisseur non trouve</p>
+          <Button className="mt-4" onClick={() => navigate('/purchases/suppliers')}>
+            Retour
+          </Button>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  const statusConfig = SUPPLIER_STATUS[supplier.status] || { label: supplier.status, color: 'gray' };
+
+  const tabs: TabDefinition<SupplierType>[] = [
+    { id: 'info', label: 'Informations', icon: <Building2 size={16} />, component: SupplierInfoTab },
+    { id: 'orders', label: 'Commandes', icon: <ShoppingCart size={16} />, badge: supplier.total_orders, component: SupplierOrdersTab },
+    { id: 'invoices', label: 'Factures', icon: <FileText size={16} />, badge: supplier.total_invoices, component: SupplierInvoicesTab },
+    { id: 'documents', label: 'Documents', icon: <Paperclip size={16} />, component: SupplierDocumentsTab },
+    { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: SupplierHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: SupplierIATab },
+  ];
+
+  const infoBarItems: InfoBarItem[] = [
+    { id: 'status', label: 'Statut', value: statusConfig.label, valueColor: statusConfig.color as 'gray' | 'green' | 'yellow' | 'red' },
+    { id: 'contact', label: 'Contact', value: supplier.contact_name || '-' },
+    { id: 'email', label: 'Email', value: supplier.email || '-' },
+    { id: 'phone', label: 'Telephone', value: supplier.phone || '-' },
+  ];
+
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'stats',
+      title: 'Statistiques',
+      items: [
+        { id: 'orders', label: 'Commandes', value: `${supplier.total_orders || 0}` },
+        { id: 'invoices', label: 'Factures', value: `${supplier.total_invoices || 0}` },
+        { id: 'spent', label: 'Total depense', value: formatCurrencyFn(supplier.total_spent || 0), highlight: true },
+      ],
+    },
+  ];
+
+  const headerActions = [
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost' as const, onClick: () => navigate('/purchases/suppliers') },
+    { id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' as const, onClick: () => navigate(`/purchases/suppliers/${id}/edit`) },
+    { id: 'delete', label: 'Supprimer', icon: <Trash2 size={16} />, variant: 'danger' as const, onClick: async () => { if (window.confirm('Supprimer ce fournisseur ?')) { await deleteMutation.mutateAsync(id!); navigate('/purchases/suppliers'); } } },
+  ];
+
+  return (
+    <BaseViewStandard<SupplierType>
+      title={`${supplier.code} - ${supplier.name}`}
+      subtitle="Fiche fournisseur"
+      status={{ label: statusConfig.label, color: statusConfig.color }}
+      data={supplier}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
+    />
+  );
+};
+
+/**
+ * OrderDetailView - Vue detail commande avec BaseViewStandard
+ */
+const OrderDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: order, isLoading, error, refetch } = usePurchaseOrder(id || '');
+  const deleteMutation = useDeletePurchaseOrder();
+  const validateMutation = useValidatePurchaseOrder();
+  const createInvoiceMutation = useCreateInvoiceFromOrder();
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">Chargement de la commande...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <PageWrapper title="Erreur">
+        <Card>
+          <p className="text-danger">Commande non trouvee</p>
+          <Button className="mt-4" onClick={() => navigate('/purchases/orders')}>
+            Retour
+          </Button>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  const statusConfig = ORDER_STATUS[order.status] || { label: order.status, color: 'gray' };
+
+  const tabs: TabDefinition<PurchaseOrderType>[] = [
+    { id: 'info', label: 'Informations', icon: <FileText size={16} />, component: OrderInfoTab },
+    { id: 'lines', label: 'Lignes', icon: <List size={16} />, badge: order.lines.length, component: OrderLinesTab },
+    { id: 'financial', label: 'Financier', icon: <Euro size={16} />, component: OrderFinancialTab },
+    { id: 'documents', label: 'Documents', icon: <Paperclip size={16} />, component: OrderDocumentsTab },
+    { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: OrderHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: OrderIATab },
+  ];
+
+  const infoBarItems: InfoBarItem[] = [
+    { id: 'status', label: 'Statut', value: statusConfig.label, valueColor: statusConfig.color as 'gray' | 'blue' | 'orange' | 'yellow' | 'green' | 'purple' | 'red' },
+    { id: 'supplier', label: 'Fournisseur', value: order.supplier_name },
+    { id: 'date', label: 'Date', value: formatDateFn(order.date) },
+    { id: 'total', label: 'Total TTC', value: formatCurrencyFn(order.total_ttc, order.currency) },
+  ];
+
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'totals',
+      title: 'Totaux',
+      items: [
+        { id: 'ht', label: 'Total HT', value: formatCurrencyFn(order.total_ht, order.currency) },
+        { id: 'tax', label: 'TVA', value: formatCurrencyFn(order.total_tax, order.currency) },
+        { id: 'ttc', label: 'Total TTC', value: formatCurrencyFn(order.total_ttc, order.currency), highlight: true },
+      ],
+    },
+    {
+      id: 'details',
+      title: 'Details',
+      items: [
+        { id: 'lines', label: 'Lignes', value: `${order.lines.length}` },
+        { id: 'reference', label: 'Reference', value: order.reference || '-' },
+      ],
+    },
+  ];
+
+  const headerActions = [
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost' as const, onClick: () => navigate('/purchases/orders') },
+    ...(canEditOrder(order) ? [{ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' as const, onClick: () => navigate(`/purchases/orders/${id}/edit`) }] : []),
+    ...(canValidateOrder(order) ? [{ id: 'validate', label: 'Valider', icon: <CheckCircle2 size={16} />, variant: 'primary' as const, onClick: () => validateMutation.mutate(id!) }] : []),
+    ...(canCreateInvoiceFromOrder(order) ? [{ id: 'invoice', label: 'Creer facture', icon: <FileText size={16} />, variant: 'secondary' as const, onClick: async () => { const inv = await createInvoiceMutation.mutateAsync(id!); navigate(`/purchases/invoices/${inv.id}`); } }] : []),
+    ...(canEditOrder(order) ? [{ id: 'delete', label: 'Supprimer', icon: <Trash2 size={16} />, variant: 'danger' as const, onClick: async () => { if (window.confirm('Supprimer cette commande ?')) { await deleteMutation.mutateAsync(id!); navigate('/purchases/orders'); } } }] : []),
+  ];
+
+  return (
+    <BaseViewStandard<PurchaseOrderType>
+      title={`Commande ${order.number}`}
+      subtitle={`${order.supplier_code} - ${order.supplier_name}`}
+      status={{ label: statusConfig.label, color: statusConfig.color }}
+      data={order}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
+    />
+  );
+};
+
+/**
+ * InvoiceDetailView - Vue detail facture avec BaseViewStandard
+ */
+const InvoiceDetailView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: invoice, isLoading, error, refetch } = usePurchaseInvoice(id || '');
+  const deleteMutation = useDeletePurchaseInvoice();
+  const validateMutation = useValidatePurchaseInvoice();
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Chargement...">
+        <div className="azals-loading">Chargement de la facture...</div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !invoice) {
+    return (
+      <PageWrapper title="Erreur">
+        <Card>
+          <p className="text-danger">Facture non trouvee</p>
+          <Button className="mt-4" onClick={() => navigate('/purchases/invoices')}>
+            Retour
+          </Button>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
+  const statusConfig = INVOICE_STATUS[invoice.status] || { label: invoice.status, color: 'gray' };
+  const overdue = isOverdue(invoice.due_date);
+
+  const tabs: TabDefinition<PurchaseInvoiceType>[] = [
+    { id: 'info', label: 'Informations', icon: <FileText size={16} />, component: InvoiceInfoTab },
+    { id: 'lines', label: 'Lignes', icon: <List size={16} />, badge: invoice.lines.length, component: InvoiceLinesTab },
+    { id: 'financial', label: 'Financier', icon: <Euro size={16} />, component: InvoiceFinancialTab },
+    { id: 'documents', label: 'Documents', icon: <Paperclip size={16} />, component: InvoiceDocumentsTab },
+    { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: InvoiceHistoryTab },
+    { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: InvoiceIATab },
+  ];
+
+  const infoBarItems: InfoBarItem[] = [
+    { id: 'status', label: 'Statut', value: statusConfig.label, valueColor: statusConfig.color as 'gray' | 'blue' | 'green' | 'yellow' | 'red' },
+    { id: 'supplier', label: 'Fournisseur', value: invoice.supplier_name },
+    { id: 'date', label: 'Date', value: formatDateFn(invoice.date) },
+    { id: 'due', label: 'Echeance', value: invoice.due_date ? formatDateFn(invoice.due_date) : '-', valueColor: overdue ? 'red' : undefined },
+  ];
+
+  const amountRemaining = invoice.amount_remaining || invoice.total_ttc - (invoice.amount_paid || 0);
+
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'totals',
+      title: 'Totaux',
+      items: [
+        { id: 'ht', label: 'Total HT', value: formatCurrencyFn(invoice.total_ht, invoice.currency) },
+        { id: 'tax', label: 'TVA', value: formatCurrencyFn(invoice.total_tax, invoice.currency) },
+        { id: 'ttc', label: 'Total TTC', value: formatCurrencyFn(invoice.total_ttc, invoice.currency), highlight: true },
+      ],
+    },
+    {
+      id: 'payment',
+      title: 'Paiement',
+      items: [
+        { id: 'paid', label: 'Paye', value: formatCurrencyFn(invoice.amount_paid || 0, invoice.currency) },
+        { id: 'remaining', label: 'Reste', value: formatCurrencyFn(amountRemaining, invoice.currency), highlight: amountRemaining > 0 },
+      ],
+    },
+  ];
+
+  const headerActions = [
+    { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost' as const, onClick: () => navigate('/purchases/invoices') },
+    ...(canEditInvoice(invoice) ? [{ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' as const, onClick: () => navigate(`/purchases/invoices/${id}/edit`) }] : []),
+    ...(canValidateInvoice(invoice) ? [{ id: 'validate', label: 'Valider', icon: <CheckCircle2 size={16} />, variant: 'primary' as const, onClick: () => validateMutation.mutate(id!) }] : []),
+    ...(canPayInvoice(invoice) ? [{ id: 'pay', label: 'Payer', icon: <CreditCard size={16} />, variant: 'primary' as const, onClick: () => console.log('Pay invoice:', id) }] : []),
+    ...(canEditInvoice(invoice) ? [{ id: 'delete', label: 'Supprimer', icon: <Trash2 size={16} />, variant: 'danger' as const, onClick: async () => { if (window.confirm('Supprimer cette facture ?')) { await deleteMutation.mutateAsync(id!); navigate('/purchases/invoices'); } } }] : []),
+  ];
+
+  return (
+    <BaseViewStandard<PurchaseInvoiceType>
+      title={`Facture ${invoice.number}`}
+      subtitle={`${invoice.supplier_code} - ${invoice.supplier_name}`}
+      status={{ label: statusConfig.label, color: statusConfig.color }}
+      data={invoice}
+      view="detail"
+      tabs={tabs}
+      infoBarItems={infoBarItems}
+      sidebarSections={sidebarSections}
+      headerActions={headerActions}
+      error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
+      onRetry={() => refetch()}
+    />
+  );
+};
+
+// ============================================================================
 // ROUTES
 // ============================================================================
 
@@ -2451,17 +2817,17 @@ export const PurchasesRoutes: React.FC = () => (
     {/* Suppliers */}
     <Route path="suppliers" element={<SuppliersListPage />} />
     <Route path="suppliers/new" element={<SupplierFormPage />} />
-    <Route path="suppliers/:id" element={<SupplierDetailPage />} />
+    <Route path="suppliers/:id" element={<SupplierDetailView />} />
     <Route path="suppliers/:id/edit" element={<SupplierFormPage />} />
     {/* Orders */}
     <Route path="orders" element={<OrdersListPage />} />
     <Route path="orders/new" element={<OrderFormPage />} />
-    <Route path="orders/:id" element={<OrderDetailPage />} />
+    <Route path="orders/:id" element={<OrderDetailView />} />
     <Route path="orders/:id/edit" element={<OrderFormPage />} />
     {/* Invoices */}
     <Route path="invoices" element={<InvoicesListPage />} />
     <Route path="invoices/new" element={<InvoiceFormPage />} />
-    <Route path="invoices/:id" element={<InvoiceDetailPage />} />
+    <Route path="invoices/:id" element={<InvoiceDetailView />} />
     <Route path="invoices/:id/edit" element={<InvoiceFormPage />} />
   </Routes>
 );

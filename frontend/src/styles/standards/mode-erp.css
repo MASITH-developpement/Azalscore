@@ -1,0 +1,259 @@
+/**
+ * AZALSCORE UI Standards - Mode ERP Overrides
+ * Surcharges CSS pour le mode ERP (interface dense)
+ *
+ * En mode ERP:
+ * - Tous les champs sont visibles
+ * - Interface plus compacte
+ * - IA plus discrète
+ * - Plus d'informations affichées
+ */
+
+/* ============================================================
+   MODE ERP - GLOBAL OVERRIDES
+   ============================================================ */
+
+[data-ui-mode="erp"] {
+  /* Ajustements de densité */
+  --azals-spacing-md: 0.75rem;
+  --azals-spacing-lg: 1rem;
+}
+
+/* ============================================================
+   HEADER EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-header {
+  padding: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="erp"] .azals-std-header__title {
+  font-size: var(--azals-font-size-lg);
+}
+
+/* Badge mode ERP dans le header global */
+[data-ui-mode="erp"] .azals-header__mode-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--azals-std-gap-sm);
+  padding: 0.125rem 0.5rem;
+  font-size: var(--azals-font-size-xs);
+  font-weight: 600;
+  color: var(--azals-gray-600);
+  background: var(--azals-gray-200);
+  border-radius: var(--azals-radius-full);
+}
+
+/* ============================================================
+   INFO BAR EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-infobar {
+  padding: var(--azals-std-gap-sm);
+  gap: var(--azals-std-gap-sm);
+}
+
+[data-ui-mode="erp"] .azals-std-infobar__item {
+  padding: var(--azals-std-gap-sm);
+}
+
+[data-ui-mode="erp"] .azals-std-infobar__label {
+  font-size: var(--azals-font-size-xs);
+}
+
+[data-ui-mode="erp"] .azals-std-infobar__value {
+  font-size: var(--azals-font-size-lg);
+}
+
+/* ============================================================
+   CHAMPS SECONDAIRES VISIBLES EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-field--secondary {
+  display: block;
+  opacity: 1;
+}
+
+[data-ui-mode="erp"] .azals-std-field--secondary.azals-std-field--inline {
+  display: inline-flex;
+}
+
+[data-ui-mode="erp"] .azals-std-field--secondary.azals-std-field--flex {
+  display: flex;
+}
+
+/* ============================================================
+   SIDEBAR EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-sidebar {
+  width: 280px;
+}
+
+[data-ui-mode="erp"] .azals-std-sidebar__card {
+  padding: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="erp"] .azals-std-sidebar__title {
+  font-size: var(--azals-font-size-xs);
+  margin-bottom: var(--azals-std-gap-sm);
+}
+
+[data-ui-mode="erp"] .azals-std-sidebar__item {
+  padding: var(--azals-std-gap-xs) 0;
+}
+
+[data-ui-mode="erp"] .azals-std-sidebar__item-label {
+  font-size: var(--azals-font-size-xs);
+}
+
+[data-ui-mode="erp"] .azals-std-sidebar__item-value {
+  font-size: var(--azals-font-size-sm);
+}
+
+/* ============================================================
+   TABS EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-tabs__list {
+  padding: 0 var(--azals-std-gap-md);
+}
+
+[data-ui-mode="erp"] .azals-std-tabs__tab {
+  height: 38px;
+  padding: 0 0.75rem;
+  font-size: var(--azals-font-size-sm);
+}
+
+[data-ui-mode="erp"] .azals-std-tabs__icon {
+  width: 16px;
+  height: 16px;
+}
+
+[data-ui-mode="erp"] .azals-std-tabs__badge {
+  min-width: 18px;
+  height: 18px;
+  font-size: 10px;
+}
+
+/* Tab IA discret en mode ERP */
+[data-ui-mode="erp"] .azals-std-tabs__tab--ia {
+  background: var(--azals-gray-100);
+  border: none;
+  margin: 0;
+  transform: scale(1);
+}
+
+[data-ui-mode="erp"] .azals-std-tabs__tab--ia:hover {
+  background: var(--azals-gray-200);
+}
+
+/* ============================================================
+   CONTENT EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-content__body {
+  padding: var(--azals-std-gap-md);
+}
+
+/* ============================================================
+   FOOTER EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-footer {
+  padding: var(--azals-std-gap-sm) var(--azals-std-gap-md);
+}
+
+/* ============================================================
+   FORMULAIRES EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-form-group {
+  margin-bottom: var(--azals-std-gap-sm);
+}
+
+[data-ui-mode="erp"] .azals-std-form-label {
+  font-size: var(--azals-font-size-xs);
+  margin-bottom: 0.125rem;
+}
+
+[data-ui-mode="erp"] .azals-std-form-input {
+  padding: var(--azals-std-gap-xs) var(--azals-std-gap-sm);
+  font-size: var(--azals-font-size-sm);
+}
+
+/* ============================================================
+   TABLES EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-table th {
+  padding: var(--azals-std-gap-xs) var(--azals-std-gap-sm);
+  font-size: 10px;
+}
+
+[data-ui-mode="erp"] .azals-std-table td {
+  padding: var(--azals-std-gap-xs) var(--azals-std-gap-sm);
+  font-size: var(--azals-font-size-xs);
+}
+
+/* ============================================================
+   CARDS EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-std-card {
+  padding: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="erp"] .azals-std-card__header {
+  padding-bottom: var(--azals-std-gap-sm);
+  margin-bottom: var(--azals-std-gap-sm);
+}
+
+[data-ui-mode="erp"] .azals-std-card__title {
+  font-size: var(--azals-font-size-sm);
+}
+
+/* ============================================================
+   BOUTONS EN MODE ERP
+   ============================================================ */
+
+[data-ui-mode="erp"] .azals-btn {
+  padding: var(--azals-std-gap-xs) var(--azals-std-gap-sm);
+  font-size: var(--azals-font-size-sm);
+}
+
+[data-ui-mode="erp"] .azals-btn--lg {
+  padding: var(--azals-std-gap-sm) var(--azals-std-gap-md);
+}
+
+/* ============================================================
+   AFFICHAGE CONDITIONNEL MODE ERP
+   ============================================================ */
+
+/* Éléments visibles uniquement en mode ERP */
+[data-ui-mode="erp"] .azals-std-erp-only {
+  display: block;
+}
+
+[data-ui-mode="erp"] .azals-std-erp-only.azals-std-erp-only--inline {
+  display: inline;
+}
+
+[data-ui-mode="erp"] .azals-std-erp-only.azals-std-erp-only--flex {
+  display: flex;
+}
+
+/* Éléments cachés en mode ERP (visibles en mode AZALSCORE) */
+[data-ui-mode="erp"] .azals-std-azalscore-only {
+  display: none;
+}
+
+/* ============================================================
+   RESPONSIVE MODE ERP
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  [data-ui-mode="erp"] .azals-std-sidebar {
+    width: 100%;
+  }
+}

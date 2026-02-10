@@ -3,6 +3,9 @@ AZALS MODULE M7 - Router Qualité
 ================================
 
 Endpoints FastAPI pour le module de gestion de la qualité.
+
+REFACTORISATION: Utilise require_entity de app.core.routines
+pour eliminer les verifications 404 repetitives.
 """
 
 from datetime import date
@@ -12,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.routines import require_entity
 from app.modules.quality.models import (
     AuditStatus,
     AuditType,
@@ -151,10 +155,7 @@ def get_non_conformance(
 ):
     """Récupère une non-conformité par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    nc = service.get_non_conformance(nc_id)
-    if not nc:
-        raise HTTPException(status_code=404, detail="Non-conformité non trouvée")
-    return nc
+    return require_entity(service.get_non_conformance(nc_id), "Non-conformité", nc_id)
 
 
 @router.put("/non-conformances/{nc_id}", response_model=NonConformanceResponse)
@@ -166,10 +167,7 @@ def update_non_conformance(
 ):
     """Met à jour une non-conformité"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    nc = service.update_non_conformance(nc_id, data)
-    if not nc:
-        raise HTTPException(status_code=404, detail="Non-conformité non trouvée")
-    return nc
+    return require_entity(service.update_non_conformance(nc_id, data), "Non-conformité", nc_id)
 
 
 @router.post("/non-conformances/{nc_id}/open", response_model=NonConformanceResponse)
@@ -180,10 +178,9 @@ def open_non_conformance(
 ):
     """Ouvre une non-conformité"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    nc = service.open_non_conformance(nc_id)
-    if not nc:
-        raise HTTPException(status_code=400, detail="Impossible d'ouvrir la non-conformité")
-    return nc
+    return require_entity(
+        service.open_non_conformance(nc_id), "Non-conformité", nc_id, status_code=400
+    )
 
 
 @router.post("/non-conformances/{nc_id}/close", response_model=NonConformanceResponse)
@@ -195,10 +192,7 @@ def close_non_conformance(
 ):
     """Clôture une non-conformité"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    nc = service.close_non_conformance(nc_id, data)
-    if not nc:
-        raise HTTPException(status_code=404, detail="Non-conformité non trouvée")
-    return nc
+    return require_entity(service.close_non_conformance(nc_id, data), "Non-conformité", nc_id)
 
 
 @router.post("/non-conformances/{nc_id}/actions", response_model=NonConformanceActionResponse)
@@ -210,10 +204,7 @@ def add_nc_action(
 ):
     """Ajoute une action à une non-conformité"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    action = service.add_nc_action(nc_id, data)
-    if not action:
-        raise HTTPException(status_code=404, detail="Non-conformité non trouvée")
-    return action
+    return require_entity(service.add_nc_action(nc_id, data), "Non-conformité", nc_id)
 
 
 @router.put("/nc-actions/{action_id}", response_model=NonConformanceActionResponse)
@@ -225,10 +216,7 @@ def update_nc_action(
 ):
     """Met à jour une action de non-conformité"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    action = service.update_nc_action(action_id, data)
-    if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
-    return action
+    return require_entity(service.update_nc_action(action_id, data), "Action NC", action_id)
 
 
 # ============================================================================
@@ -276,10 +264,7 @@ def get_control_template(
 ):
     """Récupère un template par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    template = service.get_control_template(template_id)
-    if not template:
-        raise HTTPException(status_code=404, detail="Template non trouvé")
-    return template
+    return require_entity(service.get_control_template(template_id), "Template", template_id)
 
 
 @router.put("/control-templates/{template_id}", response_model=ControlTemplateResponse)
@@ -291,10 +276,7 @@ def update_control_template(
 ):
     """Met à jour un template"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    template = service.update_control_template(template_id, data)
-    if not template:
-        raise HTTPException(status_code=404, detail="Template non trouvé")
-    return template
+    return require_entity(service.update_control_template(template_id, data), "Template", template_id)
 
 
 @router.post("/control-templates/{template_id}/items", response_model=ControlTemplateItemResponse)
@@ -306,10 +288,7 @@ def add_template_item(
 ):
     """Ajoute un item à un template"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    item = service.add_template_item(template_id, data)
-    if not item:
-        raise HTTPException(status_code=404, detail="Template non trouvé")
-    return item
+    return require_entity(service.add_template_item(template_id, data), "Template", template_id)
 
 
 # ============================================================================
@@ -363,10 +342,7 @@ def get_control(
 ):
     """Récupère un contrôle par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    control = service.get_control(control_id)
-    if not control:
-        raise HTTPException(status_code=404, detail="Contrôle non trouvé")
-    return control
+    return require_entity(service.get_control(control_id), "Contrôle", control_id)
 
 
 @router.put("/controls/{control_id}", response_model=ControlResponse)
@@ -378,10 +354,7 @@ def update_control(
 ):
     """Met à jour un contrôle"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    control = service.update_control(control_id, data)
-    if not control:
-        raise HTTPException(status_code=404, detail="Contrôle non trouvé")
-    return control
+    return require_entity(service.update_control(control_id, data), "Contrôle", control_id)
 
 
 @router.post("/controls/{control_id}/start", response_model=ControlResponse)
@@ -392,10 +365,7 @@ def start_control(
 ):
     """Démarre un contrôle"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    control = service.start_control(control_id)
-    if not control:
-        raise HTTPException(status_code=404, detail="Contrôle non trouvé")
-    return control
+    return require_entity(service.start_control(control_id), "Contrôle", control_id)
 
 
 @router.put("/control-lines/{line_id}", response_model=ControlResponse)
@@ -407,12 +377,9 @@ def update_control_line(
 ):
     """Met à jour une ligne de contrôle"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    line = service.update_control_line(line_id, data)
-    if not line:
-        raise HTTPException(status_code=404, detail="Ligne non trouvée")
+    line = require_entity(service.update_control_line(line_id, data), "Ligne contrôle", line_id)
     # Retourner le contrôle complet
-    control = service.get_control(line.control_id)
-    return control
+    return service.get_control(line.control_id)
 
 
 @router.post("/controls/{control_id}/complete", response_model=ControlResponse)
@@ -425,10 +392,7 @@ def complete_control(
 ):
     """Termine un contrôle qualité"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    control = service.complete_control(control_id, decision, comments)
-    if not control:
-        raise HTTPException(status_code=404, detail="Contrôle non trouvé")
-    return control
+    return require_entity(service.complete_control(control_id, decision, comments), "Contrôle", control_id)
 
 
 # ============================================================================
@@ -480,10 +444,7 @@ def get_audit(
 ):
     """Récupère un audit par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    audit = service.get_audit(audit_id)
-    if not audit:
-        raise HTTPException(status_code=404, detail="Audit non trouvé")
-    return audit
+    return require_entity(service.get_audit(audit_id), "Audit", audit_id)
 
 
 @router.put("/audits/{audit_id}", response_model=AuditResponse)
@@ -495,10 +456,7 @@ def update_audit(
 ):
     """Met à jour un audit"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    audit = service.update_audit(audit_id, data)
-    if not audit:
-        raise HTTPException(status_code=404, detail="Audit non trouvé")
-    return audit
+    return require_entity(service.update_audit(audit_id, data), "Audit", audit_id)
 
 
 @router.post("/audits/{audit_id}/start", response_model=AuditResponse)
@@ -509,10 +467,7 @@ def start_audit(
 ):
     """Démarre un audit"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    audit = service.start_audit(audit_id)
-    if not audit:
-        raise HTTPException(status_code=404, detail="Audit non trouvé")
-    return audit
+    return require_entity(service.start_audit(audit_id), "Audit", audit_id)
 
 
 @router.post("/audits/{audit_id}/findings", response_model=AuditFindingResponse)
@@ -524,10 +479,7 @@ def add_finding(
 ):
     """Ajoute un constat à un audit"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    finding = service.add_finding(audit_id, data)
-    if not finding:
-        raise HTTPException(status_code=404, detail="Audit non trouvé")
-    return finding
+    return require_entity(service.add_finding(audit_id, data), "Audit", audit_id)
 
 
 @router.put("/audit-findings/{finding_id}", response_model=AuditFindingResponse)
@@ -539,10 +491,7 @@ def update_finding(
 ):
     """Met à jour un constat"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    finding = service.update_finding(finding_id, data)
-    if not finding:
-        raise HTTPException(status_code=404, detail="Constat non trouvé")
-    return finding
+    return require_entity(service.update_finding(finding_id, data), "Constat", finding_id)
 
 
 @router.post("/audits/{audit_id}/close", response_model=AuditResponse)
@@ -554,10 +503,7 @@ def close_audit(
 ):
     """Clôture un audit"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    audit = service.close_audit(audit_id, data)
-    if not audit:
-        raise HTTPException(status_code=404, detail="Audit non trouvé")
-    return audit
+    return require_entity(service.close_audit(audit_id, data), "Audit", audit_id)
 
 
 # ============================================================================
@@ -609,10 +555,7 @@ def get_capa(
 ):
     """Récupère un CAPA par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    capa = service.get_capa(capa_id)
-    if not capa:
-        raise HTTPException(status_code=404, detail="CAPA non trouvé")
-    return capa
+    return require_entity(service.get_capa(capa_id), "CAPA", capa_id)
 
 
 @router.put("/capas/{capa_id}", response_model=CAPAResponse)
@@ -624,10 +567,7 @@ def update_capa(
 ):
     """Met à jour un CAPA"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    capa = service.update_capa(capa_id, data)
-    if not capa:
-        raise HTTPException(status_code=404, detail="CAPA non trouvé")
-    return capa
+    return require_entity(service.update_capa(capa_id, data), "CAPA", capa_id)
 
 
 @router.post("/capas/{capa_id}/actions", response_model=CAPAActionResponse)
@@ -639,10 +579,7 @@ def add_capa_action(
 ):
     """Ajoute une action à un CAPA"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    action = service.add_capa_action(capa_id, data)
-    if not action:
-        raise HTTPException(status_code=404, detail="CAPA non trouvé")
-    return action
+    return require_entity(service.add_capa_action(capa_id, data), "CAPA", capa_id)
 
 
 @router.put("/capa-actions/{action_id}", response_model=CAPAActionResponse)
@@ -654,10 +591,7 @@ def update_capa_action(
 ):
     """Met à jour une action CAPA"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    action = service.update_capa_action(action_id, data)
-    if not action:
-        raise HTTPException(status_code=404, detail="Action non trouvée")
-    return action
+    return require_entity(service.update_capa_action(action_id, data), "Action CAPA", action_id)
 
 
 @router.post("/capas/{capa_id}/close", response_model=CAPAResponse)
@@ -669,10 +603,7 @@ def close_capa(
 ):
     """Clôture un CAPA"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    capa = service.close_capa(capa_id, data)
-    if not capa:
-        raise HTTPException(status_code=404, detail="CAPA non trouvé")
-    return capa
+    return require_entity(service.close_capa(capa_id, data), "CAPA", capa_id)
 
 
 # ============================================================================
@@ -724,10 +655,7 @@ def get_claim(
 ):
     """Récupère une réclamation par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    claim = service.get_claim(claim_id)
-    if not claim:
-        raise HTTPException(status_code=404, detail="Réclamation non trouvée")
-    return claim
+    return require_entity(service.get_claim(claim_id), "Réclamation", claim_id)
 
 
 @router.put("/claims/{claim_id}", response_model=ClaimResponse)
@@ -739,10 +667,7 @@ def update_claim(
 ):
     """Met à jour une réclamation"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    claim = service.update_claim(claim_id, data)
-    if not claim:
-        raise HTTPException(status_code=404, detail="Réclamation non trouvée")
-    return claim
+    return require_entity(service.update_claim(claim_id, data), "Réclamation", claim_id)
 
 
 @router.post("/claims/{claim_id}/acknowledge", response_model=ClaimResponse)
@@ -753,10 +678,7 @@ def acknowledge_claim(
 ):
     """Accuse réception d'une réclamation"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    claim = service.acknowledge_claim(claim_id)
-    if not claim:
-        raise HTTPException(status_code=404, detail="Réclamation non trouvée")
-    return claim
+    return require_entity(service.acknowledge_claim(claim_id), "Réclamation", claim_id)
 
 
 @router.post("/claims/{claim_id}/respond", response_model=ClaimResponse)
@@ -768,10 +690,7 @@ def respond_claim(
 ):
     """Répond à une réclamation"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    claim = service.respond_claim(claim_id, data)
-    if not claim:
-        raise HTTPException(status_code=404, detail="Réclamation non trouvée")
-    return claim
+    return require_entity(service.respond_claim(claim_id, data), "Réclamation", claim_id)
 
 
 @router.post("/claims/{claim_id}/resolve", response_model=ClaimResponse)
@@ -783,10 +702,7 @@ def resolve_claim(
 ):
     """Résout une réclamation"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    claim = service.resolve_claim(claim_id, data)
-    if not claim:
-        raise HTTPException(status_code=404, detail="Réclamation non trouvée")
-    return claim
+    return require_entity(service.resolve_claim(claim_id, data), "Réclamation", claim_id)
 
 
 @router.post("/claims/{claim_id}/close", response_model=ClaimResponse)
@@ -798,10 +714,7 @@ def close_claim(
 ):
     """Clôture une réclamation"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    claim = service.close_claim(claim_id, data)
-    if not claim:
-        raise HTTPException(status_code=404, detail="Réclamation non trouvée")
-    return claim
+    return require_entity(service.close_claim(claim_id, data), "Réclamation", claim_id)
 
 
 @router.post("/claims/{claim_id}/actions", response_model=ClaimActionResponse)
@@ -813,10 +726,7 @@ def add_claim_action(
 ):
     """Ajoute une action à une réclamation"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    action = service.add_claim_action(claim_id, data)
-    if not action:
-        raise HTTPException(status_code=404, detail="Réclamation non trouvée")
-    return action
+    return require_entity(service.add_claim_action(claim_id, data), "Réclamation", claim_id)
 
 
 # ============================================================================
@@ -864,10 +774,7 @@ def get_indicator(
 ):
     """Récupère un indicateur par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    indicator = service.get_indicator(indicator_id)
-    if not indicator:
-        raise HTTPException(status_code=404, detail="Indicateur non trouvé")
-    return indicator
+    return require_entity(service.get_indicator(indicator_id), "Indicateur", indicator_id)
 
 
 @router.put("/indicators/{indicator_id}", response_model=IndicatorResponse)
@@ -879,10 +786,7 @@ def update_indicator(
 ):
     """Met à jour un indicateur"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    indicator = service.update_indicator(indicator_id, data)
-    if not indicator:
-        raise HTTPException(status_code=404, detail="Indicateur non trouvé")
-    return indicator
+    return require_entity(service.update_indicator(indicator_id, data), "Indicateur", indicator_id)
 
 
 @router.post("/indicators/{indicator_id}/measurements", response_model=IndicatorMeasurementResponse)
@@ -894,10 +798,7 @@ def add_measurement(
 ):
     """Ajoute une mesure à un indicateur"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    measurement = service.add_measurement(indicator_id, data)
-    if not measurement:
-        raise HTTPException(status_code=404, detail="Indicateur non trouvé")
-    return measurement
+    return require_entity(service.add_measurement(indicator_id, data), "Indicateur", indicator_id)
 
 
 # ============================================================================
@@ -943,10 +844,7 @@ def get_certification(
 ):
     """Récupère une certification par ID"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    certification = service.get_certification(cert_id)
-    if not certification:
-        raise HTTPException(status_code=404, detail="Certification non trouvée")
-    return certification
+    return require_entity(service.get_certification(cert_id), "Certification", cert_id)
 
 
 @router.put("/certifications/{cert_id}", response_model=CertificationResponse)
@@ -958,10 +856,7 @@ def update_certification(
 ):
     """Met à jour une certification"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    certification = service.update_certification(cert_id, data)
-    if not certification:
-        raise HTTPException(status_code=404, detail="Certification non trouvée")
-    return certification
+    return require_entity(service.update_certification(cert_id, data), "Certification", cert_id)
 
 
 @router.post("/certifications/{cert_id}/audits", response_model=CertificationAuditResponse)
@@ -973,10 +868,7 @@ def add_certification_audit(
 ):
     """Ajoute un audit à une certification"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    audit = service.add_certification_audit(cert_id, data)
-    if not audit:
-        raise HTTPException(status_code=404, detail="Certification non trouvée")
-    return audit
+    return require_entity(service.add_certification_audit(cert_id, data), "Certification", cert_id)
 
 
 @router.put("/certification-audits/{audit_id}", response_model=CertificationAuditResponse)
@@ -988,10 +880,7 @@ def update_certification_audit(
 ):
     """Met à jour un audit de certification"""
     service = get_quality_service(db, current_user.tenant_id, current_user.id)
-    audit = service.update_certification_audit(audit_id, data)
-    if not audit:
-        raise HTTPException(status_code=404, detail="Audit non trouvé")
-    return audit
+    return require_entity(service.update_certification_audit(audit_id, data), "Audit certification", audit_id)
 
 
 # ============================================================================

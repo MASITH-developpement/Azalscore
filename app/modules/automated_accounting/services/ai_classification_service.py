@@ -449,9 +449,10 @@ class AIClassificationEngine:
 class AIClassificationService:
     """Service de classification IA pour les documents comptables."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
         self.engine = AIClassificationEngine(db, tenant_id)
 
     def classify_document(self, document_id: UUID) -> AIClassification:
@@ -504,9 +505,10 @@ class AIClassificationService:
         self.db.refresh(classification)
 
         logger.info(
-            f"Document {document_id} classified with "
-            f"confidence {classification.overall_confidence.value} "
-            f"({classification.overall_confidence_score}%)"
+            "Document %s classified with "
+            "confidence %s "
+            "(%s%%)",
+            document_id, classification.overall_confidence.value, classification.overall_confidence_score
         )
 
         return classification
@@ -579,7 +581,7 @@ class AIClassificationService:
         self.db.commit()
 
         logger.info(
-            f"Classification {classification_id} corrected by user {corrected_by}"
+            "Classification %s corrected by user %s", classification_id, corrected_by
         )
 
     def get_ai_performance_stats(

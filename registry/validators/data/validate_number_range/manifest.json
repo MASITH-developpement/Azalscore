@@ -1,0 +1,52 @@
+{
+  "id": "azalscore.validators.data.validate_number_range",
+  "name": "Valide qu'un nombre est dans un intervalle",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide qu'un nombre est dans un intervalle",
+  "inputs": {
+    "value": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "min": {
+      "type": "number",
+      "required": false,
+      "description": ""
+    },
+    "max": {
+      "type": "number",
+      "required": false,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "error": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "data",
+    "ranges"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

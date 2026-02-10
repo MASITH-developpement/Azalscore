@@ -5,7 +5,7 @@
  */
 
 import { create } from 'zustand';
-import type { ApiError } from '@/types';
+import type { ApiError, Result } from '@/types';
 
 // ============================================================
 // TYPES
@@ -446,3 +446,60 @@ export const wrapApiCall = async <T>(
     return null;
   }
 };
+
+// ============================================================
+// LOG ERROR — REMPLACEMENT DES CATCH VIDES
+// ============================================================
+
+/**
+ * Log une erreur capturee de maniere non-bloquante.
+ * Remplace les catch vides/silencieux.
+ * Usage: catch (error) { logError(error, 'MonComposant.action'); }
+ */
+export function logError(error: unknown, context: string): void {
+  const message = error instanceof Error ? error.message : String(error);
+  console.warn(`[AZALS] ${context}:`, message);
+}
+
+// ============================================================
+// SAFE API CALL — RESULT PATTERN
+// ============================================================
+
+/**
+ * Wrapper API avec Result pattern.
+ * Alternative type-safe a wrapApiCall (qui retourne T | null).
+ * Preserve l'information d'erreur dans le discriminant.
+ */
+export async function safeApiCall<T>(
+  apiCall: () => Promise<T>,
+  context?: string
+): Promise<Result<T>> {
+  try {
+    const data = await apiCall();
+    return { ok: true, data };
+  } catch (error: unknown) {
+    let statusCode = 500;
+    let errorData: unknown = null;
+
+    if (typeof error === 'object' && error !== null) {
+      const e = error as { response?: { status?: number; data?: unknown } };
+      if (e.response) {
+        statusCode = e.response.status || 500;
+        errorData = e.response.data;
+      }
+    }
+
+    handleHttpError(statusCode, errorData, {
+      showNotification: true,
+      context,
+    });
+
+    return {
+      ok: false,
+      error: {
+        code: `HTTP_${statusCode}`,
+        message: error instanceof Error ? error.message : 'Erreur inconnue',
+      },
+    };
+  }
+}

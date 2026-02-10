@@ -1,0 +1,42 @@
+{
+  "id": "azalscore.generators.colors.generate_color_from_string",
+  "name": "Génère une couleur depuis une chaîne (pour avatars)",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère une couleur depuis une chaîne (pour avatars)",
+  "inputs": {
+    "input_string": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "hex_color": {
+      "type": "string",
+      "description": ""
+    },
+    "rgb": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "colors",
+    "schemes"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

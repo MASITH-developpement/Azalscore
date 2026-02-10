@@ -1,0 +1,48 @@
+{
+  "id": "azalscore.data_transform.normalize_phone",
+  "name": "Normalisation numéro de téléphone",
+  "category": "data_transform",
+  "version": "1.0.0",
+  "description": "Normalise un numéro de téléphone au format international E.164",
+  "inputs": {
+    "phone": {
+      "type": "string",
+      "required": true,
+      "description": "Numéro de téléphone à normaliser"
+    },
+    "country_code": {
+      "type": "string",
+      "required": false,
+      "description": "Code pays par défaut (ex: FR, US)",
+      "default": "FR"
+    }
+  },
+  "outputs": {
+    "normalized_phone": {
+      "type": "string",
+      "description": "Numéro normalisé au format E.164 (ex: +33612345678)"
+    },
+    "is_valid": {
+      "type": "boolean",
+      "description": "true si le numéro est valide"
+    },
+    "country": {
+      "type": "string",
+      "description": "Code pays détecté"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["data_transform", "phone", "validation", "normalization"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

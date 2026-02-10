@@ -1,0 +1,49 @@
+{
+  "id": "azalscore.finance.calculate_margin",
+  "name": "Calcul de marge",
+  "category": "finance",
+  "version": "1.0.0",
+  "description": "Calcule la marge brute et le taux de marge à partir du prix de vente et du coût",
+  "inputs": {
+    "price": {
+      "type": "number",
+      "required": true,
+      "description": "Prix de vente HT",
+      "validation": "price >= 0"
+    },
+    "cost": {
+      "type": "number",
+      "required": true,
+      "description": "Coût d'achat ou de revient HT",
+      "validation": "cost >= 0"
+    }
+  },
+  "outputs": {
+    "margin": {
+      "type": "number",
+      "description": "Marge brute en valeur (price - cost)"
+    },
+    "margin_rate": {
+      "type": "number",
+      "description": "Taux de marge (margin / price)"
+    },
+    "margin_percentage": {
+      "type": "number",
+      "description": "Taux de marge en pourcentage"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["finance", "margin", "calculation", "kpi"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

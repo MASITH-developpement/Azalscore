@@ -67,9 +67,19 @@ class RedisCache(CacheBackend):
                 # Test connection
                 self._client.ping()
                 self._connected = True
-                logger.info("Redis connecté avec succès")
+                logger.info(
+                    "[CACHE] Redis connecté avec succès",
+                    extra={"backend": "redis", "url": self._redis_url.split("@")[-1]}
+                )
             except RedisError as e:
-                logger.warning(f"Redis non disponible: {e}")
+                logger.warning(
+                    "[CACHE] Redis non disponible — connexion échouée",
+                    extra={
+                        "backend": "redis",
+                        "error": str(e)[:200],
+                        "consequence": "redis_unavailable"
+                    }
+                )
                 self._connected = False
                 return None
         return self._client if self._connected else None
@@ -84,7 +94,7 @@ class RedisCache(CacheBackend):
             try:
                 return client.get(self._key(key))
             except RedisError as e:
-                logger.error(f"Redis GET error: {e}")
+                logger.error("Redis GET error: %s", e)
         return None
 
     def set(self, key: str, value: str, ttl: int = 300) -> bool:
@@ -93,7 +103,7 @@ class RedisCache(CacheBackend):
             try:
                 return client.setex(self._key(key), ttl, value)
             except RedisError as e:
-                logger.error(f"Redis SET error: {e}")
+                logger.error("Redis SET error: %s", e)
         return False
 
     def delete(self, key: str) -> bool:
@@ -102,7 +112,7 @@ class RedisCache(CacheBackend):
             try:
                 return client.delete(self._key(key)) > 0
             except RedisError as e:
-                logger.error(f"Redis DELETE error: {e}")
+                logger.error("Redis DELETE error: %s", e)
         return False
 
     def exists(self, key: str) -> bool:
@@ -111,7 +121,7 @@ class RedisCache(CacheBackend):
             try:
                 return client.exists(self._key(key)) > 0
             except RedisError as e:
-                logger.error(f"Redis EXISTS error: {e}")
+                logger.error("Redis EXISTS error: %s", e)
         return False
 
     def clear_pattern(self, pattern: str) -> int:
@@ -124,7 +134,7 @@ class RedisCache(CacheBackend):
                 if keys:
                     return client.delete(*keys)
             except RedisError as e:
-                logger.error(f"Redis CLEAR_PATTERN error: {e}")
+                logger.error("Redis CLEAR_PATTERN error: %s", e)
         return 0
 
     def incr(self, key: str, ttl: int | None = None) -> int:
@@ -138,7 +148,7 @@ class RedisCache(CacheBackend):
                     client.expire(full_key, ttl)
                 return value
             except RedisError as e:
-                logger.error(f"Redis INCR error: {e}")
+                logger.error("Redis INCR error: %s", e)
         return 0
 
     @property
@@ -214,10 +224,20 @@ def get_cache() -> CacheBackend:
         if settings.redis_url:
             _cache = RedisCache(settings.redis_url)
             if not _cache.is_connected:
-                logger.warning("Redis indisponible, fallback sur cache mémoire")
+                logger.warning(
+                    "[CACHE] Redis indisponible — fallback sur cache mémoire",
+                    extra={
+                        "backend_attempted": "redis",
+                        "backend_active": "memory",
+                        "consequence": "cache_non_distribue"
+                    }
+                )
                 _cache = MemoryCache()
         else:
-            logger.info("Redis URL non configurée, utilisation cache mémoire")
+            logger.info(
+                "[CACHE] Redis URL non configurée — cache mémoire activé",
+                extra={"backend_active": "memory", "consequence": "cache_non_distribue"}
+            )
             _cache = MemoryCache()
     return _cache
 

@@ -173,6 +173,24 @@ async def update_donneur_ordre(
     return donneur
 
 
+@router.delete(
+    "/donneurs-ordre/{donneur_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Supprimer un donneur d'ordre"
+)
+async def delete_donneur_ordre(
+    donneur_id: UUID,
+    service: InterventionsService = Depends(get_service),
+    current_user: User = Depends(require_role(RBACRoles.ADMIN))
+):
+    """Supprime un donneur d'ordre (soft delete). Réservé aux admins."""
+    if not service.delete_donneur_ordre(donneur_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Donneur d'ordre non trouvé"
+        )
+
+
 # ============================================================================
 # INTERVENTIONS - CRUD
 # ============================================================================

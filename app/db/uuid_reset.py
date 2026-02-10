@@ -89,8 +89,10 @@ def mark_reset_done() -> None:
         f"This file prevents duplicate resets.\n"
         f"Delete this file to allow a new reset.\n"
     )
-    logger.info(f"[UUID_RESET] Sentinel file created: {SENTINEL_FILE}")
-    print(f"[OK] Fichier sentinel cree: {SENTINEL_FILE}")
+    logger.info(
+        "[UUID_RESET] Fichier sentinel créé — reset verrouillé",
+        extra={"sentinel_file": str(SENTINEL_FILE), "consequence": "reset_locked"}
+    )
 
 
 def clear_reset_sentinel() -> None:
@@ -99,7 +101,7 @@ def clear_reset_sentinel() -> None:
     """
     if SENTINEL_FILE.exists():
         SENTINEL_FILE.unlink()
-        logger.info(f"[UUID_RESET] Sentinel file removed: {SENTINEL_FILE}")
+        logger.info("[UUID_RESET] Sentinel file removed: %s", SENTINEL_FILE)
 
 
 class UUIDComplianceManager:
@@ -177,6 +179,7 @@ class UUIDComplianceManager:
               AND t.table_type = 'BASE TABLE'
               AND c.data_type IN ('integer', 'bigint')
               AND (c.column_name = 'id' OR c.column_name LIKE '%_id')
+              AND c.table_name NOT LIKE 'ai_%'
             ORDER BY c.table_name, c.column_name
         """)
 
@@ -185,7 +188,7 @@ class UUIDComplianceManager:
                 result = conn.execute(query)
                 self.violations = [(row[0], row[1], row[2]) for row in result]
         except SQLAlchemyError as e:
-            logger.warning(f"[UUID_DETECT] Detection echouee: {e}")
+            logger.warning("[UUID_DETECT] Detection echouee: %s", e)
 
         return self.violations
 
@@ -207,7 +210,7 @@ class UUIDComplianceManager:
                 result = conn.execute(query)
                 return [row[0] for row in result]
         except SQLAlchemyError as e:
-            logger.error(f"[UUID_RESET] Impossible de lister les tables: {e}")
+            logger.error("[UUID_RESET] Impossible de lister les tables: %s", e)
             return []
 
     def drop_all_tables(self) -> int:
@@ -246,8 +249,10 @@ class UUIDComplianceManager:
             logger.info("[UUID_RESET] Aucune table a supprimer")
             return 0
 
-        logger.info(f"[UUID_RESET] Suppression de {len(tables)} tables...")
-        print(f"[UUID_RESET] Suppression de {len(tables)} tables du schema public...")
+        logger.info(
+            "[UUID_RESET] Suppression de toutes les tables du schema public",
+            extra={"table_count": len(tables)}
+        )
 
         with self.engine.connect() as conn:
             for table_name in tables:
@@ -256,15 +261,16 @@ class UUIDComplianceManager:
                     safe_name = table_name.replace('"', '""')
                     conn.execute(text(f'DROP TABLE IF EXISTS "{safe_name}" CASCADE'))
                     self.tables_dropped.append(table_name)
-                    # Log explicite de chaque suppression
-                    print(f"  [DROP] {table_name}")
-                    logger.info(f"[DROP] Table supprimee: {table_name}")
+                    logger.info(
+                        "[UUID_RESET] Table supprimée",
+                        extra={"table": table_name}
+                    )
                 except SQLAlchemyError as e:
-                    logger.warning(f"  [WARN] {table_name}: {e}")
+                    logger.warning("  [WARN] %s: %s", table_name, e)
 
             conn.commit()
 
-        logger.info(f"[UUID_RESET] {len(self.tables_dropped)} tables supprimees")
+        logger.info("[UUID_RESET] %s tables supprimees", len(self.tables_dropped))
         return len(self.tables_dropped)
 
     def recreate_from_orm(self) -> int:
@@ -282,14 +288,14 @@ class UUIDComplianceManager:
         verify_models_loaded()
 
         table_count = len(Base.metadata.tables)
-        logger.info(f"[UUID_RESET] {modules_loaded} modules, {table_count} tables ORM")
+        logger.info("[UUID_RESET] %s modules, %s tables ORM", modules_loaded, table_count)
 
         # Creer les tables
         Base.metadata.create_all(bind=self.engine)
 
         # Verifier
         created_tables = self.get_all_tables()
-        logger.info(f"[UUID_RESET] {len(created_tables)} tables creees")
+        logger.info("[UUID_RESET] %s tables creees", len(created_tables))
 
         return len(created_tables)
 
@@ -330,8 +336,9 @@ class UUIDComplianceManager:
         tables_affected = len({v[0] for v in violations})
 
         logger.warning(
-            f"[UUID_VIOLATION] {violation_count} colonnes BIGINT/INT "
-            f"dans {tables_affected} tables"
+            "[UUID_VIOLATION] %s colonnes BIGINT/INT "
+            "dans %s tables",
+            violation_count, tables_affected
         )
 
         # Afficher les violations
@@ -349,32 +356,28 @@ class UUIDComplianceManager:
             # VERROU ANTI-DOUBLE RESET : verifier le fichier sentinel
             if is_reset_already_done():
                 logger.warning(
-                    "[UUID_RESET] Reset deja effectue (sentinel: .uuid_reset_done). "
-                    "Supprimez le fichier pour autoriser un nouveau reset."
+                    "[UUID_RESET] Reset déjà effectué — fichier sentinel présent",
+                    extra={
+                        "sentinel_file": str(SENTINEL_FILE),
+                        "consequence": "reset_blocked_by_sentinel",
+                        "action_required": f"rm {SENTINEL_FILE} pour autoriser un nouveau reset"
+                    }
                 )
-                print(f"\n{'='*60}")
-                print("[UUID_RESET] RESET DEJA EFFECTUE")
-                print(f"{'='*60}")
-                print(f"Le fichier sentinel '{SENTINEL_FILE}' existe.")
-                print("Le reset ne sera pas relance.")
-                print("")
-                print("Pour forcer un nouveau reset :")
-                print(f"  rm {SENTINEL_FILE}")
-                print(f"{'='*60}\n")
                 # Lever une erreur car la base est toujours legacy
                 raise UUIDComplianceError(
                     f"Base LEGACY avec {violation_count} violations. "
                     f"Reset bloque par sentinel. Supprimez {SENTINEL_FILE} pour re-reset."
                 )
 
-            logger.warning("[UUID_RESET] Auto-reset active - execution...")
-            print(f"\n{'='*60}")
-            print("[UUID_RESET] MODE AUTO-RESET ACTIVE")
-            print(f"{'='*60}")
-            print(f"Environnement: {self.settings.environment}")
-            print(f"Tables a supprimer: {tables_affected}")
-            print(f"Violations a corriger: {violation_count}")
-            print(f"{'='*60}\n")
+            logger.warning(
+                "[UUID_RESET] MODE AUTO-RESET ACTIVÉ — exécution du reset complet",
+                extra={
+                    "environment": self.settings.environment,
+                    "tables_affected": tables_affected,
+                    "violation_count": violation_count,
+                    "consequence": "full_schema_reset"
+                }
+            )
 
             self._execute_reset()
             self.reset_performed = True
@@ -401,11 +404,17 @@ class UUIDComplianceManager:
         """Execute le reset complet: drop + recreate."""
         # 1. Supprimer toutes les tables
         dropped = self.drop_all_tables()
-        print(f"[OK] {dropped} tables supprimees")
+        logger.info(
+            "[UUID_RESET] Tables supprimées",
+            extra={"dropped_count": dropped}
+        )
 
         # 2. Recreer depuis ORM
         created = self.recreate_from_orm()
-        print(f"[OK] {created} tables creees avec UUID")
+        logger.info(
+            "[UUID_RESET] Tables recréées avec UUID",
+            extra={"created_count": created}
+        )
 
         # 3. Verifier conformite post-reset
         if not self.verify_uuid_compliance():
@@ -415,30 +424,33 @@ class UUIDComplianceManager:
                 "Verifiez les modeles ORM."
             )
 
-        # 4. Affichage du resultat conforme aux exigences
-        print(f"\n{'='*60}")
-        print("[UUID_RESET] RESULTAT POST-RESET")
-        print(f"{'='*60}")
-        print("Colonnes INT/BIGINT detectees : 0")
-        print("Tables affectees : 0")
-        print("Verrou UUID : ACTIF (silencieux)")
-        print(f"{'='*60}\n")
-
-        logger.info("[UUID_RESET] Reset termine avec succes - base conforme UUID")
+        # 4. Résultat post-reset
+        logger.info(
+            "[UUID_RESET] Reset terminé avec succès — base conforme UUID",
+            extra={
+                "violations": 0,
+                "tables_affected": 0,
+                "uuid_lock": "active",
+                "consequence": "uuid_native"
+            }
+        )
 
     def _print_violations(self) -> None:
-        """Affiche les violations detectees."""
-        print(f"\n{'='*60}")
-        print("[UUID] VIOLATIONS DETECTEES")
-        print(f"{'='*60}")
-        print(f"Colonnes BIGINT/INT: {len(self.violations)}")
-        print(f"Tables affectees: {len({v[0] for v in self.violations})}")
-        print("\nExemples:")
-        for table, col, dtype in self.violations[:15]:
-            print(f"  - {table}.{col}: {dtype}")
-        if len(self.violations) > 15:
-            print(f"  ... et {len(self.violations) - 15} autres")
-        print(f"{'='*60}\n")
+        """Log les violations detectees."""
+        examples = [
+            f"{table}.{col}: {dtype}"
+            for table, col, dtype in self.violations[:15]
+        ]
+        logger.warning(
+            "[UUID] Violations détectées — colonnes BIGINT/INT présentes",
+            extra={
+                "violation_count": len(self.violations),
+                "tables_affected": len({v[0] for v in self.violations}),
+                "examples": examples,
+                "truncated": len(self.violations) > 15,
+                "consequence": "uuid_non_compliant"
+            }
+        )
 
     def _get_error_message(self, violation_count: int) -> str:
         """Genere le message d'erreur avec instructions."""

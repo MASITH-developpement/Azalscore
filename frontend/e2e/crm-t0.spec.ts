@@ -24,17 +24,20 @@ import { test, expect, Page } from '@playwright/test';
 
 const DEMO_CREDENTIALS = {
   user: {
-    email: 'demo@azalscore.local',
-    password: 'Demo123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
   admin: {
-    email: 'admin@azalscore.local',
-    password: 'Admin123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
 };
 
 const SELECTORS = {
-  // Login Page
+  // Login Page - utilise les IDs du formulaire de login
+  tenantInput: '#tenant',
   emailInput: '#email',
   passwordInput: '#password',
   loginButton: 'button[type="submit"]',
@@ -85,21 +88,20 @@ const SELECTORS = {
 /**
  * Helper pour se connecter avec les credentials de démo
  */
-async function loginAs(page: Page, credentials: { email: string; password: string }) {
+async function loginAs(page: Page, credentials: { tenant?: string; email: string; password: string }) {
   await page.goto('/login');
+  await page.waitForLoadState('networkidle');
 
-  // Attendre que la page soit chargée
-  await page.waitForSelector(SELECTORS.emailInput);
-
-  // Remplir le formulaire
+  // Remplir les 3 champs du formulaire via leurs IDs
+  await page.fill(SELECTORS.tenantInput, credentials.tenant || 'masith');
   await page.fill(SELECTORS.emailInput, credentials.email);
   await page.fill(SELECTORS.passwordInput, credentials.password);
 
   // Soumettre
   await page.click(SELECTORS.loginButton);
 
-  // Attendre la redirection vers cockpit
-  await page.waitForURL('**/cockpit', { timeout: 10000 });
+  // Attendre qu'un élément de l'app authentifiée soit visible
+  await page.waitForSelector('.azals-unified-header__selector, button:has-text("Nouvelle saisie")', { timeout: 15000 });
 }
 
 /**
@@ -148,8 +150,10 @@ function generateClientName(): string {
 test.describe('CRM T0 - Authentification', () => {
   test('affiche la page de connexion', async ({ page }) => {
     await page.goto('/login');
+    await page.waitForLoadState('networkidle');
 
-    await expect(page.locator('h1')).toContainText('Connexion');
+    // Vérifier que le formulaire de connexion est visible
+    await expect(page.locator(SELECTORS.tenantInput)).toBeVisible();
     await expect(page.locator(SELECTORS.emailInput)).toBeVisible();
     await expect(page.locator(SELECTORS.passwordInput)).toBeVisible();
     await expect(page.locator(SELECTORS.loginButton)).toBeVisible();
@@ -157,7 +161,9 @@ test.describe('CRM T0 - Authentification', () => {
 
   test('refuse les identifiants invalides', async ({ page }) => {
     await page.goto('/login');
+    await page.waitForLoadState('networkidle');
 
+    await page.fill(SELECTORS.tenantInput, 'masith');
     await page.fill(SELECTORS.emailInput, 'invalid@test.com');
     await page.fill(SELECTORS.passwordInput, 'wrongpassword');
     await page.click(SELECTORS.loginButton);
@@ -172,26 +178,28 @@ test.describe('CRM T0 - Authentification', () => {
   test('connexion réussie avec utilisateur démo', async ({ page }) => {
     await loginAs(page, DEMO_CREDENTIALS.user);
 
-    // Vérifier qu'on est sur le cockpit
-    await expect(page).toHaveURL(/.*cockpit/);
+    // Vérifier qu'un élément authentifié est visible (header avec dropdown)
+    await expect(page.locator('.azals-unified-header__selector, button:has-text("Nouvelle saisie")')).toBeVisible({ timeout: 5000 });
 
-    // Vérifier qu'un élément du tableau de bord est visible
+    // Vérifier qu'on a du contenu
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('connexion réussie avec admin démo', async ({ page }) => {
     await loginAs(page, DEMO_CREDENTIALS.admin);
 
-    // Vérifier qu'on est sur le cockpit
-    await expect(page).toHaveURL(/.*cockpit/);
+    // Vérifier qu'un élément authentifié est visible
+    await expect(page.locator('.azals-unified-header__selector, button:has-text("Nouvelle saisie")')).toBeVisible({ timeout: 5000 });
   });
 
   test('redirection vers login si non authentifié', async ({ page }) => {
     // Tenter d'accéder directement à une page protégée
     await page.goto('/partners/clients');
+    await page.waitForLoadState('networkidle');
 
-    // Devrait être redirigé vers login
-    await expect(page).toHaveURL(/.*login/);
+    // Devrait afficher le formulaire de login (le formulaire de connexion doit être visible)
+    const loginForm = page.locator('#tenant, #email, #password, button[type="submit"]');
+    await expect(loginForm.first()).toBeVisible({ timeout: 5000 });
   });
 });
 

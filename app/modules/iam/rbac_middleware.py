@@ -56,7 +56,7 @@ class RoutePermission:
 # Format: (method, path_pattern) -> RoutePermission
 ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     # =========================================================================
-    # USERS & ROLES
+    # USERS & ROLES (legacy /api/iam/ routes)
     # =========================================================================
     ("GET", r"/api/iam/users/?$"): RoutePermission(Module.USERS, Action.READ),
     ("GET", r"/api/iam/users/\d+$"): RoutePermission(Module.USERS, Action.READ),
@@ -72,6 +72,30 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     ("DELETE", r"/api/iam/roles/\d+$"): RoutePermission(Module.USERS, Action.ASSIGN),
     ("POST", r"/api/iam/users/\d+/roles/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
     ("DELETE", r"/api/iam/users/\d+/roles/\d+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+
+    # =========================================================================
+    # USERS & ROLES (v1 routes - current API)
+    # =========================================================================
+    ("GET", r"/v1/iam/users/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v1/iam/users/?$"): RoutePermission(Module.USERS, Action.CREATE),
+    ("PUT", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.UPDATE),
+    ("PATCH", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.UPDATE),
+    ("DELETE", r"/v1/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.DELETE),
+
+    # Rôles v1
+    ("GET", r"/v1/iam/roles/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v1/iam/roles/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("PUT", r"/v1/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("DELETE", r"/v1/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("POST", r"/v1/iam/users/[0-9a-fA-F-]+/roles/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("DELETE", r"/v1/iam/users/[0-9a-fA-F-]+/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+
+    # Permissions v1
+    ("GET", r"/v1/iam/permissions/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v1/iam/permissions/check/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/iam/users/[0-9a-fA-F-]+/permissions/?$"): RoutePermission(Module.USERS, Action.READ),
 
     # =========================================================================
     # ORGANISATION
@@ -247,6 +271,8 @@ AUTHENTICATED_ONLY_ROUTES: list[str] = [
     r"^/api/users/me/?$",
     r"^/api/iam/me/?$",
     r"^/api/iam/users/me/?$",
+    r"^/v1/iam/users/me/?$",
+    r"^/v1/iam/me/?$",
 ]
 
 
@@ -293,7 +319,7 @@ class RBACMiddleware(BaseHTTPMiddleware):
             # Route non configurée dans RBAC → passer en mode bêta
             # Les endpoints gèrent leur propre authentification via get_current_user
             # En production, activer deny-by-default ci-dessous:
-            # logger.warning(f"Route non configurée dans RBAC: {method} {path}")
+            # logger.warning("Route non configurée dans RBAC: %s %s", method, path)
             # return JSONResponse(
             #     status_code=403,
             #     content={"detail": "Route non autorisée"}
@@ -378,8 +404,11 @@ class RBACMiddleware(BaseHTTPMiddleware):
         if hasattr(user, 'standard_role') and user.standard_role:
             try:
                 return StandardRole(user.standard_role)
-            except ValueError:
-                pass
+            except ValueError as e:
+                logger.warning(
+                    "[RBAC_MW] Rôle standard_role invalide, fallback legacy",
+                    extra={"standard_role": user.standard_role, "error": str(e)[:200], "consequence": "fallback_legacy_role"}
+                )
 
         # Mapper depuis le rôle legacy
         if hasattr(user, 'role'):
@@ -408,10 +437,11 @@ class RBACMiddleware(BaseHTTPMiddleware):
         tenant_id = getattr(request.state, 'tenant_id', 'unknown') if hasattr(request, 'state') else 'unknown'
 
         logger.warning(
-            f"RBAC DENIED: method={request.method} path={request.url.path} "
-            f"user_id={user_id} tenant_id={tenant_id} "
-            f"module={route_perm.module.value} action={route_perm.action.value} "
-            f"reason={reason}"
+            "RBAC DENIED: method=%s path=%s "
+            "user_id=%s tenant_id=%s "
+            "module=%s action=%s "
+            "reason=%s",
+            request.method, request.url.path, user_id, tenant_id, route_perm.module.value, route_perm.action.value, reason
         )
 
 

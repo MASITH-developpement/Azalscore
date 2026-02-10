@@ -8,11 +8,14 @@ Schémas de validation pour les API du module Web.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # ENUMS
@@ -181,7 +184,11 @@ class WidgetResponse(WidgetBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[WEB_SCHEMA] Échec parsing JSON champ widget",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "raw_value_kept"}
+                )
                 return v
         return v
 
@@ -246,7 +253,11 @@ class DashboardResponse(DashboardBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[WEB_SCHEMA] Échec parsing JSON dashboard config",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "raw_value_kept"}
+                )
                 return v
         return v
 
@@ -372,7 +383,11 @@ class UserPreferenceResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[WEB_SCHEMA] Échec parsing JSON préférences utilisateur",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "raw_value_kept"}
+                )
                 return v
         return v
 
@@ -504,7 +519,11 @@ class ComponentResponse(BaseModel):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[WEB_SCHEMA] Échec parsing JSON props composant",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "raw_value_kept"}
+                )
                 return v
         return v
 

@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.real_estate.calculate_mortgage_payment",
+  "name": "Calcule la mensualité de prêt immobilier",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la mensualité de prêt immobilier",
+  "inputs": {
+    "loan_amount": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "monthly_payment": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "real_estate",
+    "valuation"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

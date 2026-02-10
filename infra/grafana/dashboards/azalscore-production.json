@@ -1,0 +1,602 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "🔴 SIGNAUX CRITIQUES",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Taux erreurs 5xx",
+      "type": "stat",
+      "targets": [{
+        "expr": "sum(rate(azals_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(azals_http_requests_total[5m])) * 100",
+        "legendFormat": "5xx %"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 2000 }
+            ]
+          },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Latence P95",
+      "type": "stat",
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(azals_http_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+        "legendFormat": "P95"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "CPU Host",
+      "type": "stat",
+      "targets": [{
+        "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+        "legendFormat": "CPU %"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "RAM Host",
+      "type": "stat",
+      "targets": [{
+        "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+        "legendFormat": "RAM %"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Disque",
+      "type": "stat",
+      "targets": [{
+        "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100",
+        "legendFormat": "Disk %"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "#EAB839", "value": 0.5 },
+              { "color": "red", "value": 0 }
+            ]
+          },
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }
+          ]
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": { "graphMode": "none", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Services UP",
+      "type": "stat",
+      "targets": [{
+        "expr": "min(up{job=~\"azals-api|postgres|redis\"})",
+        "legendFormat": "All services"
+      }]
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 200,
+      "title": "📊 API — Requêtes & Latence",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2, "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 10,
+      "options": { "tooltip": { "mode": "multi" } },
+      "title": "Requêtes par seconde (RPS)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(azals_http_requests_total[5m]))", "legendFormat": "Total RPS" },
+        { "expr": "sum(rate(azals_http_requests_total{status_code=~\"2..\"}[5m]))", "legendFormat": "2xx" },
+        { "expr": "sum(rate(azals_http_requests_total{status_code=~\"4..\"}[5m]))", "legendFormat": "4xx" },
+        { "expr": "sum(rate(azals_http_requests_total{status_code=~\"5..\"}[5m]))", "legendFormat": "5xx" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 11,
+      "options": { "tooltip": { "mode": "multi" } },
+      "title": "Latence API (P50 / P95 / P99)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(azals_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(azals_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P95" },
+        { "expr": "histogram_quantile(0.99, sum(rate(azals_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P99" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 1, "fillOpacity": 5 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 12,
+      "title": "Top endpoints — Latence P95",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "topk(10, histogram_quantile(0.95, sum(rate(azals_http_request_duration_seconds_bucket[5m])) by (le, endpoint)))",
+        "legendFormat": "{{endpoint}}"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 13,
+      "title": "Requêtes en cours",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(azals_http_requests_in_progress) by (endpoint)",
+        "legendFormat": "{{endpoint}}"
+      }]
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "id": 300,
+      "title": "🐍 Python Runtime — Mémoire, CPU, GC",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2, "fillOpacity": 20 } } },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+      "id": 20,
+      "title": "Mémoire Process (RSS vs Virtual)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=\"azals-api\"}", "legendFormat": "RSS (réel)" },
+        { "expr": "process_virtual_memory_bytes{job=\"azals-api\"}", "legendFormat": "Virtual" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+      "id": 21,
+      "title": "CPU Process (rate)",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "rate(process_cpu_seconds_total{job=\"azals-api\"}[5m])",
+        "legendFormat": "CPU cores utilisés"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+      "id": 22,
+      "title": "Garbage Collector Python",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(python_gc_objects_collected_total{job=\"azals-api\"}[5m])", "legendFormat": "Gen {{generation}} collected/s" },
+        { "expr": "rate(python_gc_collections_total{job=\"azals-api\"}[5m])", "legendFormat": "Gen {{generation}} cycles/s" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2, "fillOpacity": 15, "gradientMode": "scheme" },
+        "thresholds": { "mode": "absolute", "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 1073741824 },
+          { "color": "red", "value": 1610612736 }
+        ]}
+      } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 23,
+      "title": "⚠️ Dérive mémoire (RSS trend 1h)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=\"azals-api\"}", "legendFormat": "RSS actuel" },
+        { "expr": "predict_linear(process_resident_memory_bytes{job=\"azals-api\"}[1h], 3600)", "legendFormat": "Prédiction +1h" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "id": 24,
+      "title": "File Descriptors",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "process_open_fds{job=\"azals-api\"}", "legendFormat": "Ouverts" },
+        { "expr": "process_max_fds{job=\"azals-api\"}", "legendFormat": "Max" }
+      ]
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
+      "id": 400,
+      "title": "🤖 Intelligence Artificielle",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 40 },
+      "id": 30,
+      "title": "Temps inférence IA (P50/P95)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(azals_ai_inference_duration_seconds_bucket[5m])) by (le, model))", "legendFormat": "{{model}} P50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(azals_ai_inference_duration_seconds_bucket[5m])) by (le, model))", "legendFormat": "{{model}} P95" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 40 },
+      "id": 31,
+      "title": "Requêtes IA / sec",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(azals_ai_requests_total[5m])) by (model)", "legendFormat": "{{model}} total" },
+        { "expr": "sum(rate(azals_ai_requests_total{status=\"error\"}[5m])) by (model)", "legendFormat": "{{model}} errors" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 40 },
+      "id": 32,
+      "title": "Guardian — Décisions sécurité",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(azals_ai_guardian_decisions_total[5m])) by (decision)", "legendFormat": "{{decision}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 48 },
+      "id": 33,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Sessions IA actives",
+      "type": "stat",
+      "targets": [{ "expr": "azals_ai_sessions_active", "legendFormat": "Sessions" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 48 },
+      "id": 34,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Tokens consommés (5m)",
+      "type": "stat",
+      "targets": [{ "expr": "sum(increase(azals_ai_tokens_total[5m]))", "legendFormat": "Tokens" }]
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "id": 500,
+      "title": "🗄️ Base de données & Cache",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 53 },
+      "id": 40,
+      "title": "PostgreSQL — Connexions",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "pg_stat_activity_count{job=\"postgres\"}", "legendFormat": "Actives" },
+        { "expr": "pg_settings_max_connections{job=\"postgres\"}", "legendFormat": "Max" },
+        { "expr": "azals_db_connections_active", "legendFormat": "Pool applicatif" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 53 },
+      "id": 41,
+      "title": "Latence requêtes DB (P95)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(azals_db_query_duration_seconds_bucket[5m])) by (le, operation))", "legendFormat": "{{operation}}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2, "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 53 },
+      "id": 42,
+      "title": "Redis — Mémoire",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "redis_memory_used_bytes{job=\"redis\"}", "legendFormat": "Utilisée" },
+        { "expr": "redis_memory_max_bytes{job=\"redis\"}", "legendFormat": "Max" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 61 },
+      "id": 43,
+      "title": "Cache hit ratio",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(azals_cache_hits_total[5m])) / (sum(rate(azals_cache_hits_total[5m])) + sum(rate(azals_cache_misses_total[5m])))", "legendFormat": "Hit ratio" },
+        { "expr": "redis_keyspace_hits_total{job=\"redis\"} / (redis_keyspace_hits_total{job=\"redis\"} + redis_keyspace_misses_total{job=\"redis\"})", "legendFormat": "Redis hit ratio" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 61 },
+      "id": 44,
+      "title": "Redis — Opérations/sec",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(redis_commands_processed_total{job=\"redis\"}[5m])", "legendFormat": "Commandes/s" },
+        { "expr": "redis_connected_clients{job=\"redis\"}", "legendFormat": "Clients connectés" }
+      ]
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 69 },
+      "id": 600,
+      "title": "🐳 Containers (cAdvisor)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 70 },
+      "id": 50,
+      "title": "CPU par container",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\"azals_.*\"}[5m])) by (name) * 100",
+        "legendFormat": "{{name}}"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 70 },
+      "id": 51,
+      "title": "RAM par container",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "container_memory_usage_bytes{name=~\"azals_.*\"}",
+        "legendFormat": "{{name}}"
+      }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "lineWidth": 1 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 78 },
+      "id": 52,
+      "title": "Réseau par container (TX/RX)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(container_network_transmit_bytes_total{name=~\"azals_.*\"}[5m])) by (name)", "legendFormat": "{{name}} TX" },
+        { "expr": "sum(rate(container_network_receive_bytes_total{name=~\"azals_.*\"}[5m])) by (name)", "legendFormat": "{{name}} RX" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 78 },
+      "id": 53,
+      "title": "Restarts containers",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(increase(container_start_time_seconds{name=~\"azals_.*\"}[1h])) by (name)",
+        "legendFormat": "{{name}}"
+      }]
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 86 },
+      "id": 700,
+      "title": "🔐 Sécurité & Auth",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 87 },
+      "id": 60,
+      "title": "Tentatives auth (succès vs échecs)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(azals_auth_attempts_total{status=\"success\"}[5m]))", "legendFormat": "Succès/s" },
+        { "expr": "sum(rate(azals_auth_attempts_total{status=\"failure\"}[5m]))", "legendFormat": "Échecs/s" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 87 },
+      "id": 61,
+      "title": "Rate limit hits",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(rate(azals_auth_rate_limit_hits_total[5m])) by (tenant_id)",
+        "legendFormat": "{{tenant_id}}"
+      }]
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 95 },
+      "id": 800,
+      "title": "🏢 Business — Tenants & Décisions",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 96 },
+      "id": 70,
+      "options": { "graphMode": "none", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Tenants actifs",
+      "type": "stat",
+      "targets": [{ "expr": "azals_tenants_active", "legendFormat": "Tenants" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 96 },
+      "id": 71,
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Décisions (5m)",
+      "type": "stat",
+      "targets": [{ "expr": "sum(increase(azals_decisions_total[5m]))", "legendFormat": "Décisions" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 96 },
+      "id": 72,
+      "title": "Santé composants",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "azals_system_health",
+        "legendFormat": "{{component}}"
+      }]
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["azalscore", "production"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+        "definition": "label_values(azals_http_requests_total, tenant_id)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "tenant_id",
+        "query": { "query": "label_values(azals_http_requests_total, tenant_id)", "refId": "StandardVariableQuery" },
+        "refresh": 2,
+        "type": "query",
+        "label": "Tenant"
+      },
+      {
+        "current": { "selected": false, "text": "production", "value": "production" },
+        "hide": 0,
+        "name": "env",
+        "options": [
+          { "selected": true, "text": "production", "value": "production" },
+          { "selected": false, "text": "staging", "value": "staging" }
+        ],
+        "type": "custom",
+        "label": "Environnement"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Europe/Paris",
+  "title": "AZALSCORE — Production",
+  "uid": "azalscore-production",
+  "version": 1
+}

@@ -1,0 +1,491 @@
+/**
+ * AZALSCORE - Theo Voice Panel Styles
+ * ====================================
+ * Interface vocale pour Theo.
+ * BEM naming: azals-theo-voice-*
+ */
+
+/* ============================================================
+   THEO VOICE - CUSTOM PROPERTIES
+   ============================================================ */
+
+:root {
+  --azals-theo-voice-companion-theo: var(--azals-primary-500);
+  --azals-theo-voice-companion-lea: var(--azals-pink-500);
+  --azals-theo-voice-companion-alex: var(--azals-success);
+
+  /* State ring colors */
+  --azals-theo-voice-ring-idle: var(--azals-gray-300);
+  --azals-theo-voice-ring-listening: var(--azals-success);
+  --azals-theo-voice-ring-processing: var(--azals-primary-500);
+  --azals-theo-voice-ring-speaking: var(--azals-violet-500);
+  --azals-theo-voice-ring-awaiting: var(--azals-warning);
+  --azals-theo-voice-ring-paused: var(--azals-gray-400);
+  --azals-theo-voice-ring-error: var(--azals-danger);
+}
+
+/* ============================================================
+   OVERLAY (modal backdrop)
+   ============================================================ */
+
+.azals-theo-voice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--azals-z-sidebar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* ============================================================
+   PANEL (modal card)
+   ============================================================ */
+
+.azals-theo-voice-panel {
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius-xl);
+  box-shadow: var(--azals-shadow-lg), 0 20px 60px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 28rem; /* ~448px, equivalent to max-w-md */
+  margin-left: var(--azals-spacing-md);
+  margin-right: var(--azals-spacing-md);
+  overflow: hidden;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.azals-theo-voice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--azals-spacing-md) var(--azals-spacing-lg);
+  border-bottom: 1px solid var(--azals-gray-100);
+}
+
+.azals-theo-voice-header__title {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-gray-800);
+  margin: 0;
+}
+
+.azals-theo-voice-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+}
+
+/* ============================================================
+   CONNECTION STATUS DOT
+   ============================================================ */
+
+.azals-theo-voice-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--azals-radius-full);
+}
+
+.azals-theo-voice-status-dot--connected {
+  background-color: var(--azals-success);
+}
+
+.azals-theo-voice-status-dot--connecting {
+  background-color: var(--azals-warning);
+}
+
+.azals-theo-voice-status-dot--disconnected {
+  background-color: var(--azals-danger);
+}
+
+/* ============================================================
+   ICON BUTTON (close, reconnect, pause)
+   ============================================================ */
+
+.azals-theo-voice-icon-btn {
+  padding: var(--azals-spacing-sm);
+  color: var(--azals-gray-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--azals-radius-md);
+  transition: color var(--azals-transition-fast);
+}
+
+.azals-theo-voice-icon-btn:hover {
+  color: var(--azals-gray-600);
+}
+
+/* ============================================================
+   CONTENT AREA
+   ============================================================ */
+
+.azals-theo-voice-content {
+  padding: var(--azals-spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-lg);
+}
+
+/* ============================================================
+   STATE INDICATOR
+   ============================================================ */
+
+.azals-theo-voice-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--azals-spacing-md);
+}
+
+/* Avatar circle */
+.azals-theo-voice-avatar {
+  position: relative;
+  width: 96px; /* w-24 */
+  height: 96px; /* h-24 */
+  border-radius: var(--azals-radius-full);
+  background-color: var(--companion-color);
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-idle);
+  transition: all var(--azals-transition-slow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.azals-theo-voice-avatar--idle {
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-idle);
+}
+
+.azals-theo-voice-avatar--listening {
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-listening);
+  animation: azals-theo-voice-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.azals-theo-voice-avatar--processing {
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-processing);
+  animation: azals-theo-voice-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.azals-theo-voice-avatar--speaking {
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-speaking);
+  animation: azals-theo-voice-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.azals-theo-voice-avatar--awaiting {
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-awaiting);
+}
+
+.azals-theo-voice-avatar--paused {
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-paused);
+}
+
+.azals-theo-voice-avatar--error {
+  box-shadow: 0 0 0 4px var(--azals-theo-voice-ring-error);
+}
+
+.azals-theo-voice-avatar__initial {
+  font-size: var(--azals-font-size-3xl);
+  font-weight: 700;
+  color: var(--azals-white);
+  line-height: 1;
+}
+
+/* Ping ring for listening state */
+.azals-theo-voice-avatar__ping {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--azals-radius-full);
+  background-color: var(--companion-color);
+  opacity: 0.3;
+  animation: azals-theo-voice-ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Sound wave icon for speaking */
+.azals-theo-voice-avatar__wave {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  color: var(--azals-white);
+  animation: azals-theo-voice-bounce 1s infinite;
+}
+
+/* Companion name + state label */
+.azals-theo-voice-info {
+  text-align: center;
+}
+
+.azals-theo-voice-info__name {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-gray-800);
+}
+
+.azals-theo-voice-info__state {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-gray-500);
+}
+
+/* ============================================================
+   TRANSCRIPT DISPLAY
+   ============================================================ */
+
+.azals-theo-voice-transcript {
+  background: var(--azals-gray-100);
+  border-radius: var(--azals-radius-lg);
+  padding: var(--azals-spacing-md);
+  min-height: 60px;
+}
+
+.azals-theo-voice-transcript__label {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-gray-500);
+  margin-bottom: var(--azals-spacing-xs);
+}
+
+.azals-theo-voice-transcript__text {
+  color: var(--azals-gray-800);
+}
+
+.azals-theo-voice-transcript__placeholder {
+  color: var(--azals-gray-400);
+  font-style: italic;
+}
+
+/* ============================================================
+   RESPONSE DISPLAY
+   ============================================================ */
+
+.azals-theo-voice-response {
+  background: var(--azals-primary-50);
+  border-radius: var(--azals-radius-lg);
+  padding: var(--azals-spacing-md);
+}
+
+.azals-theo-voice-response__label {
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-primary-600);
+  margin-bottom: var(--azals-spacing-xs);
+}
+
+.azals-theo-voice-response__text {
+  color: var(--azals-gray-800);
+}
+
+/* Confirmation buttons */
+.azals-theo-voice-confirm {
+  display: flex;
+  gap: var(--azals-spacing-md);
+  margin-top: var(--azals-spacing-md);
+}
+
+.azals-theo-voice-confirm__btn {
+  flex: 1;
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  border: none;
+  border-radius: var(--azals-radius-lg);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--azals-transition-fast);
+}
+
+.azals-theo-voice-confirm__btn--yes {
+  background-color: var(--azals-success);
+  color: var(--azals-white);
+}
+
+.azals-theo-voice-confirm__btn--yes:hover {
+  background-color: var(--azals-green);
+}
+
+.azals-theo-voice-confirm__btn--no {
+  background-color: var(--azals-gray-300);
+  color: var(--azals-gray-700);
+}
+
+.azals-theo-voice-confirm__btn--no:hover {
+  background-color: var(--azals-gray-400);
+}
+
+/* ============================================================
+   VOICE BUTTON (main mic button)
+   ============================================================ */
+
+.azals-theo-voice-btn-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.azals-theo-voice-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--azals-radius-full);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--azals-transition-normal);
+  box-shadow: var(--azals-shadow-lg);
+  cursor: pointer;
+}
+
+.azals-theo-voice-btn--idle {
+  background-color: var(--azals-primary-600);
+}
+
+.azals-theo-voice-btn--idle:hover {
+  background-color: var(--azals-primary-700);
+}
+
+.azals-theo-voice-btn--listening {
+  background-color: var(--azals-danger);
+  transform: scale(1.1);
+}
+
+.azals-theo-voice-btn--listening:hover {
+  background-color: var(--azals-red);
+}
+
+.azals-theo-voice-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.azals-theo-voice-btn:active:not(.azals-theo-voice-btn--disabled) {
+  transform: scale(0.95);
+}
+
+.azals-theo-voice-btn__icon {
+  width: 40px;
+  height: 40px;
+  color: var(--azals-white);
+}
+
+/* ============================================================
+   HINT
+   ============================================================ */
+
+.azals-theo-voice-hint {
+  text-align: center;
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-gray-400);
+}
+
+.azals-theo-voice-hint__kbd {
+  display: inline-block;
+  padding: var(--azals-spacing-xs) var(--azals-spacing-sm);
+  background: var(--azals-gray-100);
+  border-radius: var(--azals-radius-md);
+  font-family: inherit;
+  font-size: var(--azals-font-size-sm);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.azals-theo-voice-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--azals-spacing-md) var(--azals-spacing-lg);
+  border-top: 1px solid var(--azals-gray-100);
+  background: var(--azals-gray-50);
+}
+
+/* ============================================================
+   COMPANION SELECTOR
+   ============================================================ */
+
+.azals-theo-voice-companions {
+  display: flex;
+  gap: var(--azals-spacing-sm);
+}
+
+.azals-theo-voice-companion-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--azals-radius-full);
+  background-color: var(--companion-color);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--azals-transition-normal);
+  cursor: pointer;
+}
+
+.azals-theo-voice-companion-btn__initial {
+  color: var(--azals-white);
+  font-weight: 600;
+}
+
+.azals-theo-voice-companion-btn--selected {
+  box-shadow: 0 0 0 2px var(--azals-bg), 0 0 0 4px var(--azals-primary-500);
+  transform: scale(1.1);
+}
+
+.azals-theo-voice-companion-btn--unselected {
+  opacity: 0.6;
+}
+
+.azals-theo-voice-companion-btn--unselected:hover {
+  opacity: 1;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes azals-theo-voice-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes azals-theo-voice-ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes azals-theo-voice-bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE - Mobile breakpoint
+   ============================================================ */
+
+@media (max-width: 767px) {
+  .azals-theo-voice-overlay {
+    padding: 8px;
+  }
+  .azals-theo-voice-panel {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .azals-theo-voice-avatar {
+    width: 72px;
+    height: 72px;
+  }
+}

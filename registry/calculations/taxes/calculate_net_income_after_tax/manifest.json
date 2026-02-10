@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.taxes.calculate_net_income_after_tax",
+  "name": "Calcule le revenu net après impôts",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le revenu net après impôts",
+  "inputs": {
+    "gross_income": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "net_income": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "taxes",
+    "income"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

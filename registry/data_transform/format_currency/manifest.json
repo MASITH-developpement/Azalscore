@@ -1,0 +1,60 @@
+{
+  "id": "azalscore.data_transform.format_currency",
+  "name": "Formatage monétaire",
+  "category": "data_transform",
+  "version": "1.0.0",
+  "description": "Formate un montant en chaîne de caractères avec devise et locale",
+  "inputs": {
+    "amount": {
+      "type": "number",
+      "required": true,
+      "description": "Montant à formater"
+    },
+    "currency": {
+      "type": "string",
+      "required": false,
+      "description": "Code devise ISO 4217 (défaut: EUR)",
+      "default": "EUR"
+    },
+    "locale": {
+      "type": "string",
+      "required": false,
+      "description": "Locale (défaut: fr_FR)",
+      "default": "fr_FR"
+    },
+    "show_symbol": {
+      "type": "boolean",
+      "required": false,
+      "description": "Afficher le symbole de devise (défaut: true)",
+      "default": true
+    }
+  },
+  "outputs": {
+    "formatted": {
+      "type": "string",
+      "description": "Montant formaté (ex: '1 234,56 €')"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Montant original"
+    },
+    "currency": {
+      "type": "string",
+      "description": "Devise utilisée"
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 500,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": ["data_transform", "currency", "formatting", "i18n"],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-22",
+  "updated_at": "2026-01-22"
+}

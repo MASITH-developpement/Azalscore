@@ -1,0 +1,49 @@
+{
+  "id": "azalscore.generators.signatures.generate_signature",
+  "name": "Génère une signature cryptographique",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère une signature cryptographique",
+  "inputs": {
+    "data": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "secret_key": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "algorithm": {
+      "type": "string",
+      "required": false,
+      "description": "",
+      "default": "SHA256"
+    }
+  },
+  "outputs": {
+    "signature": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "signatures",
+    "crypto"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

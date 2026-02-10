@@ -1,0 +1,44 @@
+{
+  "id": "azalscore.transformers.numbers.format_percentage",
+  "name": "Formate un nombre en pourcentage",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Formate un nombre en pourcentage",
+  "inputs": {
+    "value": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "decimals": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 2
+    }
+  },
+  "outputs": {
+    "formatted_percentage": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "numbers",
+    "formatting"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

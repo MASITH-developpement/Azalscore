@@ -1,0 +1,49 @@
+{
+  "id": "azalscore.generators.reports.generate_report_filename",
+  "name": "Génère un nom de fichier pour un rapport",
+  "category": "generators",
+  "version": "1.0.0",
+  "description": "Génère un nom de fichier pour un rapport",
+  "inputs": {
+    "report_type": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "date": {
+      "type": "string",
+      "required": false,
+      "description": ""
+    },
+    "extension": {
+      "type": "string",
+      "required": false,
+      "description": "",
+      "default": "pdf"
+    }
+  },
+  "outputs": {
+    "filename": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "generators",
+    "reports",
+    "filenames"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

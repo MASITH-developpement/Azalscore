@@ -1,0 +1,432 @@
+/**
+ * AZALSCORE - Module Véhicules CSS
+ * =================================
+ *
+ * Styles spécifiques au module de gestion de flotte.
+ */
+
+/* ============================================================
+   COUT/KM BREAKDOWN
+   ============================================================ */
+
+.azals-cout-km-breakdown {
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius);
+  padding: 16px;
+}
+
+.azals-cout-km-breakdown__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--azals-border);
+  margin-bottom: 12px;
+  color: var(--azals-text-muted);
+  font-size: 13px;
+}
+
+.azals-cout-km-breakdown__header strong {
+  margin-left: auto;
+  font-size: 18px;
+  color: var(--azals-primary);
+}
+
+.azals-cout-km-breakdown__items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.azals-cout-km-breakdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--azals-text-muted);
+}
+
+.azals-cout-km-breakdown__item span:nth-child(2) {
+  flex: 1;
+}
+
+.azals-cout-km-breakdown__item span:nth-child(3) {
+  font-weight: 500;
+  color: var(--azals-text);
+  min-width: 70px;
+  text-align: right;
+}
+
+.azals-cout-km-breakdown__item .percent {
+  font-size: 11px;
+  color: var(--azals-text-light);
+  min-width: 35px;
+  text-align: right;
+}
+
+.azals-cout-km-breakdown__co2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--azals-border);
+  font-size: 13px;
+  color: var(--azals-success);
+}
+
+.azals-cout-km-breakdown__co2 span {
+  flex: 1;
+}
+
+.azals-cout-km-breakdown__co2 strong {
+  color: var(--azals-success);
+}
+
+/* ============================================================
+   FRAIS KM FORM (Quick entry)
+   ============================================================ */
+
+.azals-frais-km-form {
+  background: var(--azals-surface);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius);
+  padding: 20px;
+}
+
+.azals-frais-km-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.azals-frais-km-form__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.azals-frais-km-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.azals-frais-km-form__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--azals-primary-light);
+  border-radius: var(--azals-radius);
+  margin-bottom: 16px;
+}
+
+.azals-frais-km-form__summary-item {
+  text-align: center;
+}
+
+.azals-frais-km-form__summary-label {
+  font-size: 12px;
+  color: var(--azals-text-muted);
+  margin-bottom: 4px;
+}
+
+.azals-frais-km-form__summary-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--azals-primary);
+}
+
+.azals-frais-km-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ============================================================
+   VEHICLE CARD (Liste simplifiée)
+   ============================================================ */
+
+.azals-vehicle-card {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--azals-surface);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.azals-vehicle-card:hover {
+  border-color: var(--azals-primary);
+  box-shadow: var(--azals-shadow);
+}
+
+.azals-vehicle-card--selected {
+  border-color: var(--azals-primary);
+  background: var(--azals-primary-light);
+}
+
+.azals-vehicle-card__icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius);
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.azals-vehicle-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.azals-vehicle-card__name {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.azals-vehicle-card__plate {
+  font-size: 12px;
+  color: var(--azals-text-muted);
+}
+
+.azals-vehicle-card__cost {
+  text-align: right;
+  margin-left: 16px;
+}
+
+.azals-vehicle-card__cost-value {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--azals-primary);
+}
+
+.azals-vehicle-card__cost-label {
+  font-size: 11px;
+  color: var(--azals-text-muted);
+}
+
+/* ============================================================
+   VEHICLE SELECTOR (Pour affaires)
+   ============================================================ */
+
+.azals-vehicle-selector {
+  position: relative;
+}
+
+.azals-vehicle-selector__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--azals-surface);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius);
+  cursor: pointer;
+  text-align: left;
+}
+
+.azals-vehicle-selector__trigger:hover {
+  border-color: var(--azals-primary);
+}
+
+.azals-vehicle-selector__placeholder {
+  color: var(--azals-text-muted);
+  flex: 1;
+}
+
+.azals-vehicle-selector__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--azals-surface);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius);
+  box-shadow: var(--azals-shadow-lg);
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.azals-vehicle-selector__search {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--azals-border);
+}
+
+.azals-vehicle-selector__search input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius);
+  font-size: 13px;
+}
+
+.azals-vehicle-selector__list {
+  padding: 8px;
+}
+
+.azals-vehicle-selector__item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: var(--azals-radius);
+  cursor: pointer;
+}
+
+.azals-vehicle-selector__item:hover {
+  background: var(--azals-bg);
+}
+
+.azals-vehicle-selector__item--selected {
+  background: var(--azals-primary-light);
+}
+
+/* ============================================================
+   KM HISTORY (Historique kilométrique)
+   ============================================================ */
+
+.azals-km-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.azals-km-history__item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius);
+}
+
+.azals-km-history__date {
+  font-size: 12px;
+  color: var(--azals-text-muted);
+  min-width: 80px;
+}
+
+.azals-km-history__label {
+  flex: 1;
+  font-size: 13px;
+}
+
+.azals-km-history__km {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--azals-text);
+  min-width: 80px;
+  text-align: right;
+}
+
+.azals-km-history__cost {
+  font-size: 13px;
+  color: var(--azals-primary);
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ============================================================
+   SIMPLE LIST (Shared)
+   ============================================================ */
+
+.azals-simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.azals-simple-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--azals-border-light);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.azals-simple-list li:last-child {
+  border-bottom: none;
+}
+
+.azals-simple-list li:hover {
+  background: var(--azals-bg);
+}
+
+.azals-simple-list li span:first-child {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* ============================================================
+   STICKY CARD (Pour formulaire)
+   ============================================================ */
+
+.azals-sticky-card {
+  position: sticky;
+  top: calc(var(--azals-header-height) + 24px);
+}
+
+/* ============================================================
+   STAT DISPLAY
+   ============================================================ */
+
+.azals-stat {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.azals-stat__label {
+  display: block;
+  font-size: 12px;
+  color: var(--azals-text-muted);
+  margin-bottom: 4px;
+}
+
+.azals-stat__value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .azals-cout-km-breakdown__header strong {
+    font-size: 16px;
+  }
+
+  .azals-frais-km-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .azals-frais-km-form__summary {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .azals-vehicle-card__cost {
+    display: none;
+  }
+
+  .azals-sticky-card {
+    position: static;
+  }
+}

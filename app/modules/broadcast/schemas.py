@@ -7,11 +7,14 @@ Schémas de validation pour les API du module Broadcast.
 
 
 import json
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # ENUMS
@@ -127,7 +130,11 @@ class BroadcastTemplateResponse(BroadcastTemplateBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[BROADCAST_SCHEMA] Échec parsing JSON champ template",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "raw_value_kept"}
+                )
                 return v
         return v
 
@@ -172,7 +179,11 @@ class RecipientListResponse(RecipientListBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[BROADCAST_SCHEMA] Échec parsing JSON query_config",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_dict"}
+                )
                 return {}
         return v
 
@@ -292,7 +303,11 @@ class ScheduledBroadcastResponse(ScheduledBroadcastBase):
         if isinstance(v, str):
             try:
                 return json.loads(v)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "[BROADCAST_SCHEMA] Échec parsing JSON data_query",
+                    extra={"value_preview": repr(v)[:100], "error": str(e)[:200], "consequence": "fallback_empty_dict"}
+                )
                 return {}
         return v
 

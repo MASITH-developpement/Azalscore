@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { CapabilityGuard } from '@core/capabilities';
+import { ErrorState, LoadingState } from '../components/StateViews';
 import type { TableColumn, TableAction, TableState, PaginatedResponse } from '@/types';
 
 // ============================================================
@@ -48,6 +49,8 @@ interface DataTableProps<T> {
     placeholder?: string;
   };
   isLoading?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
   emptyMessage?: string;
   onRefresh?: () => void;
   onExport?: () => void;
@@ -180,7 +183,9 @@ function TableRow<T>({
         'azals-table__row--clickable': !!onClick,
       })}
       onClick={onClick}
-      style={onClick ? { cursor: 'pointer' } : undefined}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
     >
       {selectable && (
         <td className="azals-table__td azals-table__td--checkbox">
@@ -328,6 +333,8 @@ export function DataTable<T>({
   sorting,
   search,
   isLoading,
+  error,
+  onRetry,
   emptyMessage = 'Aucune donnée disponible',
   onRefresh,
   onExport,
@@ -428,14 +435,25 @@ export function DataTable<T>({
             onSelectAll={handleSelectAll}
           />
           <tbody className="azals-table__body">
-            {isLoading ? (
+            {error ? (
+              <tr>
+                <td
+                  colSpan={columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)}
+                  className="azals-table__error"
+                >
+                  <ErrorState
+                    message={error.message}
+                    onRetry={onRetry}
+                  />
+                </td>
+              </tr>
+            ) : isLoading ? (
               <tr>
                 <td
                   colSpan={columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)}
                   className="azals-table__loading"
                 >
-                  <div className="azals-spinner" />
-                  <span>Chargement...</span>
+                  <LoadingState onRetry={onRetry} />
                 </td>
               </tr>
             ) : data.length === 0 ? (

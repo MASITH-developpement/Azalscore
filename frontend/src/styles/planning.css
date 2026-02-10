@@ -1,0 +1,363 @@
+/* ============================================================
+   AZALSCORE - Planning View Styles
+   ============================================================ */
+
+/* Container */
+.azals-planning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-md);
+}
+
+/* Toolbar */
+.azals-planning__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  background: var(--azals-bg);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-lg);
+  flex-wrap: wrap;
+  gap: var(--azals-spacing-sm);
+}
+
+.azals-planning__nav {
+  display: flex;
+  gap: var(--azals-spacing-xs);
+  align-items: center;
+}
+
+.azals-planning__week-label {
+  font-size: var(--azals-font-size-md);
+  font-weight: 600;
+  color: var(--azals-text);
+  white-space: nowrap;
+}
+
+/* Main layout: sidebar + grid */
+.azals-planning__layout {
+  display: flex;
+  gap: var(--azals-spacing-md);
+  min-height: 500px;
+}
+
+/* Sidebar - interventions a planifier */
+.azals-planning__sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--azals-bg);
+  border: 2px solid var(--azals-border);
+  border-radius: var(--azals-radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color var(--azals-transition-fast), background var(--azals-transition-fast);
+}
+
+.azals-planning__sidebar--drag-over {
+  border-color: var(--azals-gray-400);
+  border-style: dashed;
+  background: var(--azals-gray-50);
+}
+
+.azals-planning__sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  border-bottom: 1px solid var(--azals-border);
+  font-size: var(--azals-font-size-sm);
+  font-weight: 600;
+  color: var(--azals-text);
+}
+
+.azals-planning__sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--azals-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+}
+
+.azals-planning__sidebar-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--azals-text-secondary);
+  font-size: var(--azals-font-size-sm);
+  padding: var(--azals-spacing-lg);
+  text-align: center;
+}
+
+/* Week grid */
+.azals-planning__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+/* Day column */
+.azals-planning__day {
+  background: var(--azals-bg);
+  border: 2px solid var(--azals-border);
+  border-radius: var(--azals-radius-lg);
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  transition: border-color var(--azals-transition-fast), background var(--azals-transition-fast);
+}
+
+.azals-planning__day--today {
+  border-color: var(--azals-primary-400);
+}
+
+.azals-planning__day--drag-over {
+  border-color: var(--azals-primary-500);
+  border-style: dashed;
+  background: var(--azals-primary-50);
+}
+
+.azals-planning__day--weekend {
+  background: var(--azals-gray-50);
+}
+
+.azals-planning__day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--azals-spacing-xs) var(--azals-spacing-xs);
+  border-bottom: 1px solid var(--azals-border);
+  background: var(--azals-bg-secondary);
+  border-radius: var(--azals-radius-lg) var(--azals-radius-lg) 0 0;
+}
+
+.azals-planning__day-name {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--azals-text-secondary);
+  font-weight: 500;
+}
+
+.azals-planning__day-number {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-text);
+  line-height: 1.2;
+}
+
+.azals-planning__day--today .azals-planning__day-number {
+  color: var(--azals-primary-600);
+}
+
+.azals-planning__day-count {
+  margin-top: 2px;
+}
+
+.azals-planning__day-body {
+  flex: 1;
+  padding: var(--azals-spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--azals-spacing-xs);
+  overflow-y: auto;
+}
+
+.azals-planning__day-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--azals-text-secondary);
+  font-size: var(--azals-font-size-xs);
+  opacity: 0.5;
+}
+
+/* Intervenant group within a day */
+.azals-planning__intervenant-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.azals-planning__intervenant-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--azals-text-secondary);
+  padding: 2px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Planning card (draggable) */
+.azals-planning-card {
+  background: var(--azals-bg);
+  border: 1px solid var(--azals-border);
+  border-radius: var(--azals-radius-md);
+  padding: var(--azals-spacing-sm);
+  cursor: grab;
+  transition: box-shadow var(--azals-transition-fast), opacity var(--azals-transition-fast), border-color var(--azals-transition-fast);
+  user-select: none;
+}
+
+.azals-planning-card:hover {
+  box-shadow: var(--azals-shadow-md);
+  border-color: var(--azals-primary-300);
+}
+
+.azals-planning-card:active {
+  cursor: grabbing;
+}
+
+.azals-planning-card--dragging {
+  opacity: 0.35;
+  box-shadow: none;
+}
+
+.azals-planning-card--compact {
+  padding: 4px 6px;
+}
+
+.azals-planning-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.azals-planning-card__ref {
+  font-family: monospace;
+  font-size: 0.65rem;
+  color: var(--azals-text-secondary);
+}
+
+.azals-planning-card__title {
+  font-size: var(--azals-font-size-xs);
+  font-weight: 500;
+  color: var(--azals-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.azals-planning-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 0.65rem;
+  color: var(--azals-text-secondary);
+  flex-wrap: wrap;
+}
+
+.azals-planning-card__intervenant {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  color: var(--azals-text-secondary);
+  margin-top: 2px;
+}
+
+/* Loading overlay during mutations */
+.azals-planning__loading-overlay {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Toast notification */
+.azals-planning__toast {
+  position: fixed;
+  bottom: var(--azals-spacing-lg);
+  right: var(--azals-spacing-lg);
+  z-index: var(--azals-z-toast);
+  background: var(--azals-bg);
+  border: 1px solid var(--azals-danger);
+  border-radius: var(--azals-radius-md);
+  padding: var(--azals-spacing-sm) var(--azals-spacing-md);
+  box-shadow: var(--azals-shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--azals-spacing-sm);
+  max-width: 400px;
+  font-size: var(--azals-font-size-sm);
+  color: var(--azals-danger);
+  animation: azals-planning-toast-in 0.2s ease;
+}
+
+@keyframes azals-planning-toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal overlay */
+.azals-planning__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--azals-z-modal);
+}
+
+.azals-planning__modal {
+  background: var(--azals-bg);
+  border-radius: var(--azals-radius-xl);
+  box-shadow: var(--azals-shadow-lg);
+  max-width: 400px;
+  width: 100%;
+  padding: var(--azals-spacing-lg);
+}
+
+.azals-planning__modal-title {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  margin-bottom: var(--azals-spacing-md);
+}
+
+.azals-planning__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--azals-spacing-sm);
+  margin-top: var(--azals-spacing-lg);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .azals-planning__layout {
+    flex-direction: column;
+  }
+  .azals-planning__sidebar {
+    width: 100%;
+    min-width: unset;
+    max-height: 200px;
+  }
+  .azals-planning__sidebar-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .azals-planning-card {
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 900px) {
+  .azals-planning__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .azals-planning__grid {
+    grid-template-columns: 1fr;
+  }
+}

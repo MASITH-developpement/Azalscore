@@ -31,9 +31,10 @@ from .profiles import PREDEFINED_PROFILES, get_best_profile_match
 class AutoConfigService:
     """Service principal de configuration automatique."""
 
-    def __init__(self, db: Session, tenant_id: str):
+    def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
         self.tenant_id = tenant_id
+        self.user_id = user_id  # Pour CORE SaaS v2
 
     # ========================================================================
     # GESTION DES PROFILS
@@ -567,63 +568,43 @@ class AutoConfigService:
         result = {"steps": [], "errors": []}
 
         # Étape 1: Créer le compte utilisateur
-        try:
-            # TODO: Intégration avec module IAM pour créer le compte
-            # user = iam_service.create_user(...)
-            # onboarding.user_id = user.id
-            steps["account_created"] = True
-            result["steps"].append("account_created")
-        except Exception as e:
-            steps["account_created"] = False
-            result["errors"].append(f"account_created: {str(e)}")
+        # TODO: Intégration avec module IAM pour créer le compte
+        # user = iam_service.create_user(...)
+        # onboarding.user_id = user.id
+        steps["account_created"] = True
+        result["steps"].append("account_created")
 
         # Étape 2: Attribuer le profil
         if onboarding.user_id and (onboarding.detected_profile_id or onboarding.profile_override):
-            try:
-                profile_id = onboarding.profile_override or onboarding.detected_profile_id
-                profile = self.get_profile(profile_id)
-                if profile:
-                    self.manual_assign_profile(
-                        onboarding.user_id,
-                        profile.code,
-                        executed_by or 0,
-                        onboarding.job_title,
-                        onboarding.department
-                    )
-                    steps["profile_assigned"] = True
-                    result["steps"].append("profile_assigned")
-            except Exception as e:
-                steps["profile_assigned"] = False
-                result["errors"].append(f"profile_assigned: {str(e)}")
+            profile_id = onboarding.profile_override or onboarding.detected_profile_id
+            profile = self.get_profile(profile_id)
+            if profile:
+                self.manual_assign_profile(
+                    onboarding.user_id,
+                    profile.code,
+                    executed_by or 0,
+                    onboarding.job_title,
+                    onboarding.department
+                )
+                steps["profile_assigned"] = True
+                result["steps"].append("profile_assigned")
 
         # Étape 3: Envoyer email de bienvenue
-        try:
-            # TODO: Intégration avec système d'email
-            onboarding.welcome_email_sent = True
-            steps["welcome_email"] = True
-            result["steps"].append("welcome_email")
-        except Exception as e:
-            steps["welcome_email"] = False
-            result["errors"].append(f"welcome_email: {str(e)}")
+        # TODO: Intégration avec système d'email
+        onboarding.welcome_email_sent = True
+        steps["welcome_email"] = True
+        result["steps"].append("welcome_email")
 
         # Étape 4: Notifier le manager
-        try:
-            # TODO: Notification manager
-            onboarding.manager_notified = True
-            steps["manager_notified"] = True
-            result["steps"].append("manager_notified")
-        except Exception as e:
-            steps["manager_notified"] = False
-            result["errors"].append(f"manager_notified: {str(e)}")
+        # TODO: Notification manager
+        onboarding.manager_notified = True
+        steps["manager_notified"] = True
+        result["steps"].append("manager_notified")
 
         # Étape 5: Notifier IT
-        try:
-            onboarding.it_notified = True
-            steps["it_notified"] = True
-            result["steps"].append("it_notified")
-        except Exception as e:
-            steps["it_notified"] = False
-            result["errors"].append(f"it_notified: {str(e)}")
+        onboarding.it_notified = True
+        steps["it_notified"] = True
+        result["steps"].append("it_notified")
 
         # Finaliser
         onboarding.steps_completed = json.dumps(steps)
@@ -708,67 +689,43 @@ class AutoConfigService:
         result = {"steps": [], "errors": []}
 
         # Étape 1: Révoquer les overrides actifs
-        try:
-            overrides = self.list_user_overrides(offboarding.user_id)
-            for override in overrides:
-                if override.status == OverrideStatus.APPROVED:
-                    self.revoke_override(override.id, executed_by or 0)
-            steps["overrides_revoked"] = True
-            result["steps"].append("overrides_revoked")
-        except Exception as e:
-            steps["overrides_revoked"] = False
-            result["errors"].append(f"overrides_revoked: {str(e)}")
+        overrides = self.list_user_overrides(offboarding.user_id)
+        for override in overrides:
+            if override.status == OverrideStatus.APPROVED:
+                self.revoke_override(override.id, executed_by or 0)
+        steps["overrides_revoked"] = True
+        result["steps"].append("overrides_revoked")
 
         # Étape 2: Révoquer le profil
-        try:
-            assignment = self.get_user_profile(offboarding.user_id)
-            if assignment:
-                assignment.is_active = False
-                assignment.revoked_at = datetime.utcnow()
-                assignment.revoked_by = executed_by
-                assignment.revocation_reason = f"Offboarding: {offboarding.departure_type}"
-            steps["profile_revoked"] = True
-            result["steps"].append("profile_revoked")
-        except Exception as e:
-            steps["profile_revoked"] = False
-            result["errors"].append(f"profile_revoked: {str(e)}")
+        assignment = self.get_user_profile(offboarding.user_id)
+        if assignment:
+            assignment.is_active = False
+            assignment.revoked_at = datetime.utcnow()
+            assignment.revoked_by = executed_by
+            assignment.revocation_reason = f"Offboarding: {offboarding.departure_type}"
+        steps["profile_revoked"] = True
+        result["steps"].append("profile_revoked")
 
         # Étape 3: Désactiver le compte
-        try:
-            # TODO: Intégration avec module IAM
-            offboarding.account_deactivated = True
-            steps["account_deactivated"] = True
-            result["steps"].append("account_deactivated")
-        except Exception as e:
-            steps["account_deactivated"] = False
-            result["errors"].append(f"account_deactivated: {str(e)}")
+        # TODO: Intégration avec module IAM
+        offboarding.account_deactivated = True
+        steps["account_deactivated"] = True
+        result["steps"].append("account_deactivated")
 
         # Étape 4: Révoquer tous les accès
-        try:
-            offboarding.access_revoked = True
-            steps["access_revoked"] = True
-            result["steps"].append("access_revoked")
-        except Exception as e:
-            steps["access_revoked"] = False
-            result["errors"].append(f"access_revoked: {str(e)}")
+        offboarding.access_revoked = True
+        steps["access_revoked"] = True
+        result["steps"].append("access_revoked")
 
         # Étape 5: Notifier manager
-        try:
-            offboarding.manager_notified = True
-            steps["manager_notified"] = True
-            result["steps"].append("manager_notified")
-        except Exception as e:
-            steps["manager_notified"] = False
-            result["errors"].append(f"manager_notified: {str(e)}")
+        offboarding.manager_notified = True
+        steps["manager_notified"] = True
+        result["steps"].append("manager_notified")
 
         # Étape 6: Notifier IT
-        try:
-            offboarding.it_notified = True
-            steps["it_notified"] = True
-            result["steps"].append("it_notified")
-        except Exception as e:
-            steps["it_notified"] = False
-            result["errors"].append(f"it_notified: {str(e)}")
+        offboarding.it_notified = True
+        steps["it_notified"] = True
+        result["steps"].append("it_notified")
 
         # Finaliser
         offboarding.steps_completed = json.dumps(steps)
@@ -805,13 +762,8 @@ class AutoConfigService:
 
         count = 0
         for offboarding in due:
-            try:
-                self.execute_offboarding(offboarding.id)
-                count += 1
-            except Exception as e:
-                self._log("OFFBOARDING_EXECUTION_FAILED", "OFFBOARDING", offboarding.id,
-                         offboarding.user_id, success=False, error_message=str(e),
-                         source="SCHEDULED", triggered_by=None)
+            self.execute_offboarding(offboarding.id)
+            count += 1
 
         return count
 

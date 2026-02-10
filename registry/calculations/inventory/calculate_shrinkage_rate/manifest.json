@@ -1,0 +1,57 @@
+{
+  "id": "azalscore.calculations.inventory.calculate_shrinkage_rate",
+  "name": "Calcule le taux de démarque",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le taux de démarque",
+  "inputs": {
+    "beginning_inventory": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "purchases": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "sales": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "ending_inventory": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "shrinkage": {
+      "type": "number",
+      "description": ""
+    },
+    "shrinkage_rate": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "inventory",
+    "metrics"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

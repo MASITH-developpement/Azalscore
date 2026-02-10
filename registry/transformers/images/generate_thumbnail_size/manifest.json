@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.transformers.images.generate_thumbnail_size",
+  "name": "Calcule les dimensions de vignette",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Calcule les dimensions de vignette",
+  "inputs": {
+    "original_width": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "thumb_dimensions": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "images",
+    "processing"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

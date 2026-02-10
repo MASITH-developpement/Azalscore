@@ -1,0 +1,13 @@
+version: "3"
+services:
+  ai-self-healing:
+    build: .
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-proj-JfOQk--iDmV2VtikXBdhfWuBkXn4QTIXzGmH-i0fUs_c_5o1XQlHNg5r8RzlwfhYQHzU9hhaBkT3BlbkFJt8EzBueVXchfuyHM46jXhIZlRY34xc5rM7ytGbrlYNYtih5_u_IVc1fbnoi1FtzN8r8gb3uKcA}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-ant-api03-6tFrOCiRG243JnZJlJFmuXuMWMScOb2S6GWb9Dskj2Af0GXBcTZDitl_mWEIALSDzfdfAkQWNrcxFHfdm76_xA-R5IggwAA}
+    restart: always

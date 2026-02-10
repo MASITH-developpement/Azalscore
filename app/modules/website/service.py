@@ -47,10 +47,10 @@ from .schemas import (
 class WebsiteService:
     """Service de gestion du site web."""
 
-    def __init__(self, db: Session, tenant_id: str, user_id: int | None = None):
+    def __init__(self, db: Session, tenant_id: str, user_id: str | None = None):
         self.db = db
         self.tenant_id = tenant_id
-        self.user_id = user_id
+        self.user_id = int(user_id) if user_id else None  # Convertir str → int pour compatibilité interne
 
     # ========================================================================
     # PAGES

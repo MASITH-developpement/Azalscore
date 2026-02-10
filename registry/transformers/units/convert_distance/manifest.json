@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.transformers.units.convert_distance",
+  "name": "Convertit des distances",
+  "category": "transformers",
+  "version": "1.0.0",
+  "description": "Convertit des distances",
+  "inputs": {
+    "value": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "converted": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "transformers",
+    "units",
+    "conversion"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

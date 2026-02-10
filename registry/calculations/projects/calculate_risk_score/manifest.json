@@ -1,0 +1,47 @@
+{
+  "id": "azalscore.calculations.projects.calculate_risk_score",
+  "name": "Calcule le score de risque",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le score de risque",
+  "inputs": {
+    "probability": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "impact": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "risk_score": {
+      "type": "number",
+      "description": ""
+    },
+    "risk_level": {
+      "type": "string",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "projects",
+    "risks"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

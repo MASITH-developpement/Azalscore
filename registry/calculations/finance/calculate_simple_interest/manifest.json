@@ -1,0 +1,52 @@
+{
+  "id": "azalscore.calculations.finance.calculate_simple_interest",
+  "name": "Calcule les intérêts simples",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule les intérêts simples",
+  "inputs": {
+    "principal": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "rate": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "time_years": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "interest": {
+      "type": "number",
+      "description": ""
+    },
+    "total_amount": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "finance",
+    "interest"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

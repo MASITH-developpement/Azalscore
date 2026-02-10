@@ -1,0 +1,38 @@
+{
+  "id": "azalscore.calculations.real_estate.calculate_property_value",
+  "name": "Calcule la valeur d'un bien immobilier",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule la valeur d'un bien immobilier",
+  "inputs": {
+    "surface": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "value": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "real_estate",
+    "valuation"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

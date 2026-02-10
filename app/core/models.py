@@ -69,7 +69,8 @@ class User(Base, TenantMixin):
 
     id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
     tenant_id = Column(String(255), nullable=False, index=True)
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    # SÉCURITÉ P1-5: unique=False car l'unicité est par (tenant_id, email)
+    email = Column(String(255), nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.DIRIGEANT)
     is_active = Column(Integer, default=1, nullable=False)
@@ -86,11 +87,12 @@ class User(Base, TenantMixin):
     must_change_password = Column(Integer, default=0, nullable=False)  # 1=doit changer au prochain login
     password_changed_at = Column(DateTime, nullable=True)  # Date du dernier changement
 
-    # Index pour optimisation
+    # SÉCURITÉ P1-5: Contrainte unique composite (tenant_id, email)
+    # Permet le même email dans des tenants différents
     __table_args__ = (
         Index('idx_users_tenant_id', 'tenant_id'),
         Index('idx_users_email', 'email'),
-        Index('idx_users_tenant_email', 'tenant_id', 'email'),
+        Index('idx_users_tenant_email', 'tenant_id', 'email', unique=True),
     )
 
 

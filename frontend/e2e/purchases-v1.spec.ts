@@ -23,17 +23,20 @@ import { test, expect, Page } from '@playwright/test';
 
 const DEMO_CREDENTIALS = {
   user: {
-    email: 'demo@azalscore.local',
-    password: 'Demo123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
   admin: {
-    email: 'admin@azalscore.local',
-    password: 'Admin123!',
+    tenant: process.env.TEST_TENANT || 'masith',
+    email: process.env.TEST_USER || 'contact@masith.fr',
+    password: process.env.TEST_PASSWORD || 'Azals2026!',
   },
 };
 
 const SELECTORS = {
-  // Login
+  // Login - utilise les IDs du formulaire
+  tenantInput: '#tenant',
   emailInput: '#email',
   passwordInput: '#password',
   loginButton: 'button[type="submit"]',
@@ -89,13 +92,20 @@ const SELECTORS = {
 // HELPERS
 // ============================================================================
 
-async function loginAs(page: Page, credentials: { email: string; password: string }) {
+async function loginAs(page: Page, credentials: { tenant?: string; email: string; password: string }) {
   await page.goto('/login');
-  await page.waitForSelector(SELECTORS.emailInput);
+  await page.waitForLoadState('networkidle');
+
+  // Remplir les 3 champs du formulaire via leurs IDs
+  await page.fill(SELECTORS.tenantInput, credentials.tenant || 'masith');
   await page.fill(SELECTORS.emailInput, credentials.email);
   await page.fill(SELECTORS.passwordInput, credentials.password);
+
+  // Soumettre
   await page.click(SELECTORS.loginButton);
-  await page.waitForURL('**/cockpit', { timeout: 10000 });
+
+  // Attendre qu'un élément de l'app authentifiée soit visible
+  await page.waitForSelector('.azals-unified-header__selector, button:has-text("Nouvelle saisie")', { timeout: 15000 });
 }
 
 async function navigateToPurchases(page: Page) {

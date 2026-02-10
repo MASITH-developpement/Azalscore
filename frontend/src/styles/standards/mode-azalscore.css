@@ -1,0 +1,343 @@
+/**
+ * AZALSCORE UI Standards - Mode AZALSCORE Overrides
+ * Surcharges CSS pour le mode AZALSCORE (interface simplifiée)
+ *
+ * En mode AZALSCORE:
+ * - Champs secondaires masqués
+ * - Interface plus aérée
+ * - IA proéminente
+ * - Focus sur l'essentiel
+ */
+
+/* ============================================================
+   MODE AZALSCORE - GLOBAL OVERRIDES
+   ============================================================ */
+
+[data-ui-mode="azalscore"],
+:root:not([data-ui-mode]) {
+  /* Ajustements de densité - Plus aéré */
+  --azals-spacing-md: 1rem;
+  --azals-spacing-lg: 1.5rem;
+}
+
+/* ============================================================
+   HEADER EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-header,
+:root:not([data-ui-mode]) .azals-std-header {
+  padding: var(--azals-std-gap-lg);
+}
+
+[data-ui-mode="azalscore"] .azals-std-header__title,
+:root:not([data-ui-mode]) .azals-std-header__title {
+  font-size: var(--azals-font-size-xl);
+}
+
+/* Cache le badge mode (pas de badge en mode AZALSCORE) */
+[data-ui-mode="azalscore"] .azals-header__mode-badge,
+:root:not([data-ui-mode]) .azals-header__mode-badge {
+  display: none;
+}
+
+/* ============================================================
+   INFO BAR EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-infobar,
+:root:not([data-ui-mode]) .azals-std-infobar {
+  padding: var(--azals-std-gap-md);
+  gap: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="azalscore"] .azals-std-infobar__item,
+:root:not([data-ui-mode]) .azals-std-infobar__item {
+  padding: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="azalscore"] .azals-std-infobar__label,
+:root:not([data-ui-mode]) .azals-std-infobar__label {
+  font-size: var(--azals-font-size-sm);
+}
+
+[data-ui-mode="azalscore"] .azals-std-infobar__value,
+:root:not([data-ui-mode]) .azals-std-infobar__value {
+  font-size: var(--azals-font-size-2xl);
+}
+
+/* ============================================================
+   CHAMPS SECONDAIRES MASQUÉS EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-field--secondary,
+:root:not([data-ui-mode]) .azals-std-field--secondary {
+  display: none;
+  opacity: 0;
+}
+
+/* ============================================================
+   SIDEBAR EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-sidebar,
+:root:not([data-ui-mode]) .azals-std-sidebar {
+  width: 320px;
+}
+
+[data-ui-mode="azalscore"] .azals-std-sidebar__card,
+:root:not([data-ui-mode]) .azals-std-sidebar__card {
+  padding: var(--azals-std-gap-lg);
+  background: var(--azals-bg);
+}
+
+[data-ui-mode="azalscore"] .azals-std-sidebar__title,
+:root:not([data-ui-mode]) .azals-std-sidebar__title {
+  font-size: var(--azals-font-size-sm);
+  margin-bottom: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="azalscore"] .azals-std-sidebar__item,
+:root:not([data-ui-mode]) .azals-std-sidebar__item {
+  padding: var(--azals-std-gap-sm) 0;
+}
+
+[data-ui-mode="azalscore"] .azals-std-sidebar__item-value--highlight,
+:root:not([data-ui-mode]) .azals-std-sidebar__item-value--highlight {
+  font-size: var(--azals-font-size-xl);
+}
+
+/* ============================================================
+   TABS EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-tabs__list,
+:root:not([data-ui-mode]) .azals-std-tabs__list {
+  padding: 0 var(--azals-std-gap-lg);
+}
+
+[data-ui-mode="azalscore"] .azals-std-tabs__tab,
+:root:not([data-ui-mode]) .azals-std-tabs__tab {
+  height: 48px;
+  padding: 0 1.25rem;
+  font-size: var(--azals-font-size-md);
+}
+
+[data-ui-mode="azalscore"] .azals-std-tabs__icon,
+:root:not([data-ui-mode]) .azals-std-tabs__icon {
+  width: 20px;
+  height: 20px;
+}
+
+[data-ui-mode="azalscore"] .azals-std-tabs__badge,
+:root:not([data-ui-mode]) .azals-std-tabs__badge {
+  min-width: 22px;
+  height: 22px;
+  font-size: var(--azals-font-size-xs);
+}
+
+/* Tab IA proéminent en mode AZALSCORE */
+[data-ui-mode="azalscore"] .azals-std-tabs__tab--ia,
+:root:not([data-ui-mode]) .azals-std-tabs__tab--ia {
+  background: linear-gradient(135deg, var(--azals-primary-50), var(--azals-primary-100));
+  border: 1px solid var(--azals-primary-200);
+  border-bottom: none;
+  border-radius: var(--azals-std-radius-md) var(--azals-std-radius-md) 0 0;
+  margin: 0 var(--azals-std-gap-sm);
+  position: relative;
+}
+
+[data-ui-mode="azalscore"] .azals-std-tabs__tab--ia::before,
+:root:not([data-ui-mode]) .azals-std-tabs__tab--ia::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--azals-primary-500);
+  border-radius: 50%;
+  animation: azals-std-pulse 2s infinite;
+}
+
+@keyframes azals-std-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1.2);
+  }
+}
+
+[data-ui-mode="azalscore"] .azals-std-tabs__tab--ia .azals-std-tabs__icon,
+:root:not([data-ui-mode]) .azals-std-tabs__tab--ia .azals-std-tabs__icon {
+  color: var(--azals-primary-600);
+}
+
+[data-ui-mode="azalscore"] .azals-std-tabs__tab--ia:hover,
+:root:not([data-ui-mode]) .azals-std-tabs__tab--ia:hover {
+  background: linear-gradient(135deg, var(--azals-primary-100), var(--azals-primary-200));
+}
+
+/* ============================================================
+   CONTENT EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-content__body,
+:root:not([data-ui-mode]) .azals-std-content__body {
+  padding: var(--azals-std-gap-lg);
+}
+
+/* ============================================================
+   FOOTER EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-footer,
+:root:not([data-ui-mode]) .azals-std-footer {
+  padding: var(--azals-std-gap-md) var(--azals-std-gap-lg);
+}
+
+/* ============================================================
+   FORMULAIRES EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-form-group,
+:root:not([data-ui-mode]) .azals-std-form-group {
+  margin-bottom: var(--azals-std-gap-lg);
+}
+
+[data-ui-mode="azalscore"] .azals-std-form-label,
+:root:not([data-ui-mode]) .azals-std-form-label {
+  font-size: var(--azals-font-size-sm);
+  margin-bottom: var(--azals-std-gap-xs);
+}
+
+[data-ui-mode="azalscore"] .azals-std-form-input,
+:root:not([data-ui-mode]) .azals-std-form-input {
+  padding: var(--azals-std-gap-sm) var(--azals-std-gap-md);
+  font-size: var(--azals-font-size-md);
+}
+
+/* ============================================================
+   TABLES EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-table th,
+:root:not([data-ui-mode]) .azals-std-table th {
+  padding: var(--azals-std-gap-sm) var(--azals-std-gap-md);
+  font-size: var(--azals-font-size-xs);
+}
+
+[data-ui-mode="azalscore"] .azals-std-table td,
+:root:not([data-ui-mode]) .azals-std-table td {
+  padding: var(--azals-std-gap-sm) var(--azals-std-gap-md);
+  font-size: var(--azals-font-size-sm);
+}
+
+/* ============================================================
+   CARDS EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-card,
+:root:not([data-ui-mode]) .azals-std-card {
+  padding: var(--azals-std-gap-lg);
+}
+
+[data-ui-mode="azalscore"] .azals-std-card__header,
+:root:not([data-ui-mode]) .azals-std-card__header {
+  padding-bottom: var(--azals-std-gap-md);
+  margin-bottom: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="azalscore"] .azals-std-card__title,
+:root:not([data-ui-mode]) .azals-std-card__title {
+  font-size: var(--azals-font-size-lg);
+}
+
+/* ============================================================
+   AFFICHAGE CONDITIONNEL MODE AZALSCORE
+   ============================================================ */
+
+/* Éléments visibles uniquement en mode AZALSCORE */
+[data-ui-mode="azalscore"] .azals-std-azalscore-only,
+:root:not([data-ui-mode]) .azals-std-azalscore-only {
+  display: block;
+}
+
+[data-ui-mode="azalscore"] .azals-std-azalscore-only.azals-std-azalscore-only--inline,
+:root:not([data-ui-mode]) .azals-std-azalscore-only.azals-std-azalscore-only--inline {
+  display: inline;
+}
+
+[data-ui-mode="azalscore"] .azals-std-azalscore-only.azals-std-azalscore-only--flex,
+:root:not([data-ui-mode]) .azals-std-azalscore-only.azals-std-azalscore-only--flex {
+  display: flex;
+}
+
+/* Éléments cachés en mode AZALSCORE (visibles en mode ERP) */
+[data-ui-mode="azalscore"] .azals-std-erp-only,
+:root:not([data-ui-mode]) .azals-std-erp-only {
+  display: none;
+}
+
+/* ============================================================
+   IA ASSISTANT - PANNEAU DÉDIÉ EN MODE AZALSCORE
+   ============================================================ */
+
+[data-ui-mode="azalscore"] .azals-std-ia-panel,
+:root:not([data-ui-mode]) .azals-std-ia-panel {
+  background: linear-gradient(135deg, var(--azals-primary-50), white);
+  border: 1px solid var(--azals-primary-200);
+  border-radius: var(--azals-std-radius-lg);
+  padding: var(--azals-std-gap-lg);
+  margin-bottom: var(--azals-std-gap-lg);
+}
+
+[data-ui-mode="azalscore"] .azals-std-ia-panel__header,
+:root:not([data-ui-mode]) .azals-std-ia-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--azals-std-gap-sm);
+  margin-bottom: var(--azals-std-gap-md);
+}
+
+[data-ui-mode="azalscore"] .azals-std-ia-panel__icon,
+:root:not([data-ui-mode]) .azals-std-ia-panel__icon {
+  color: var(--azals-primary-500);
+}
+
+[data-ui-mode="azalscore"] .azals-std-ia-panel__title,
+:root:not([data-ui-mode]) .azals-std-ia-panel__title {
+  font-size: var(--azals-font-size-lg);
+  font-weight: 600;
+  color: var(--azals-primary-700);
+}
+
+[data-ui-mode="azalscore"] .azals-std-ia-panel__content,
+:root:not([data-ui-mode]) .azals-std-ia-panel__content {
+  font-size: var(--azals-font-size-md);
+  line-height: 1.6;
+  color: var(--azals-text);
+}
+
+[data-ui-mode="azalscore"] .azals-std-ia-panel__actions,
+:root:not([data-ui-mode]) .azals-std-ia-panel__actions {
+  display: flex;
+  gap: var(--azals-std-gap-sm);
+  margin-top: var(--azals-std-gap-md);
+  padding-top: var(--azals-std-gap-md);
+  border-top: 1px solid var(--azals-primary-100);
+}
+
+/* ============================================================
+   RESPONSIVE MODE AZALSCORE
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  [data-ui-mode="azalscore"] .azals-std-sidebar,
+  :root:not([data-ui-mode]) .azals-std-sidebar {
+    width: 100%;
+  }
+}

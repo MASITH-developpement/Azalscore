@@ -1,0 +1,56 @@
+{
+  "id": "azalscore.validators.data.validate_password_strength",
+  "name": "Valide la force d'un mot de passe",
+  "category": "validators",
+  "version": "1.0.0",
+  "description": "Valide la force d'un mot de passe",
+  "inputs": {
+    "password": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "min_length": {
+      "type": "number",
+      "required": false,
+      "description": "",
+      "default": 8
+    }
+  },
+  "outputs": {
+    "is_valid": {
+      "type": "boolean",
+      "description": ""
+    },
+    "strength": {
+      "type": "string",
+      "description": ""
+    },
+    "score": {
+      "type": "number",
+      "description": ""
+    },
+    "errors": {
+      "type": "array",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "validators",
+    "data",
+    "security"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

@@ -1,0 +1,52 @@
+{
+  "id": "azalscore.calculations.manufacturing.calculate_cycle_time",
+  "name": "Calcule le temps de cycle",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule le temps de cycle",
+  "inputs": {
+    "start_time": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "end_time": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    },
+    "quantity": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "cycle_time_minutes": {
+      "type": "number",
+      "description": ""
+    },
+    "units_per_hour": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "manufacturing",
+    "production"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}

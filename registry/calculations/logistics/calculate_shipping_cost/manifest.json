@@ -1,0 +1,52 @@
+{
+  "id": "azalscore.calculations.logistics.calculate_shipping_cost",
+  "name": "Calcule les frais de livraison",
+  "category": "calculations",
+  "version": "1.0.0",
+  "description": "Calcule les frais de livraison",
+  "inputs": {
+    "weight_kg": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "distance_km": {
+      "type": "number",
+      "required": true,
+      "description": ""
+    },
+    "shipping_method": {
+      "type": "string",
+      "required": true,
+      "description": ""
+    }
+  },
+  "outputs": {
+    "shipping_cost": {
+      "type": "number",
+      "description": ""
+    },
+    "estimated_days": {
+      "type": "number",
+      "description": ""
+    }
+  },
+  "side_effects": false,
+  "idempotent": true,
+  "no_code_compatible": true,
+  "retry_strategy": {
+    "max_attempts": 1,
+    "timeout_ms": 1000,
+    "fallback": null
+  },
+  "dependencies": [],
+  "tags": [
+    "calculations",
+    "logistics",
+    "shipping"
+  ],
+  "author": "AZALSCORE",
+  "license": "Proprietary",
+  "created_at": "2026-01-23",
+  "updated_at": "2026-01-23"
+}
