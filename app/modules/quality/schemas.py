@@ -148,6 +148,47 @@ class CertificationStatusEnum(str, Enum):
 
 
 # ============================================================================
+# SCHÉMAS COMMUNS
+# ============================================================================
+
+class AttachmentSchema(BaseModel):
+    """
+    Schéma pour les pièces jointes.
+    Utilisé par: NonConformance, CAPA, CustomerClaim, QualityControl.
+    """
+    file_name: str = Field(..., min_length=1, max_length=255, description="Nom du fichier")
+    file_url: str = Field(..., min_length=1, max_length=2048, description="URL du fichier stocké")
+    file_size: int | None = Field(None, ge=0, description="Taille en octets")
+    mime_type: str | None = Field(None, max_length=100, description="Type MIME du fichier")
+    uploaded_by: int | None = Field(None, description="ID de l'utilisateur qui a uploadé")
+    uploaded_at: datetime.datetime | None = Field(None, description="Date d'upload")
+    description: str | None = Field(None, max_length=500, description="Description du fichier")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "file_name": "rapport_nc_001.pdf",
+                "file_url": "/storage/quality/attachments/abc123.pdf",
+                "file_size": 1024000,
+                "mime_type": "application/pdf",
+                "uploaded_by": 1,
+                "uploaded_at": "2024-01-15T10:30:00Z",
+                "description": "Rapport d'analyse de la non-conformité"
+            }
+        }
+    )
+
+
+class AttachmentCreate(BaseModel):
+    """Schéma pour créer une pièce jointe."""
+    file_name: str = Field(..., min_length=1, max_length=255)
+    file_url: str = Field(..., min_length=1, max_length=2048)
+    file_size: int | None = Field(None, ge=0)
+    mime_type: str | None = Field(None, max_length=100)
+    description: str | None = Field(None, max_length=500)
+
+
+# ============================================================================
 # NON-CONFORMITÉS
 # ============================================================================
 
@@ -290,6 +331,7 @@ class NonConformanceResponse(NonConformanceBase):
     recurrence_count: int
 
     actions: list[NonConformanceActionResponse] = []
+    attachments: list[AttachmentSchema] = Field(default_factory=list, description="Pièces jointes")
 
     created_at: datetime.datetime
     updated_at: datetime.datetime
@@ -498,6 +540,7 @@ class ControlResponse(ControlBase):
     nc_id: int | None = None
     observations: str | None = None
     lines: list[ControlLineResponse] = []
+    attachments: list[AttachmentSchema] = Field(default_factory=list, description="Pièces jointes")
     created_at: datetime.datetime
     updated_at: datetime.datetime
     created_by: int | None = None
@@ -771,6 +814,7 @@ class CAPAResponse(CAPABase):
     extension_completed: bool
     closure_comments: str | None = None
     actions: list[CAPAActionResponse] = []
+    attachments: list[AttachmentSchema] = Field(default_factory=list, description="Pièces jointes")
     created_at: datetime.datetime
     updated_at: datetime.datetime
     created_by: int | None = None
@@ -900,6 +944,7 @@ class ClaimResponse(ClaimBase):
     satisfaction_feedback: str | None = None
     closed_date: datetime.date | None = None
     actions: list[ClaimActionResponse] = []
+    attachments: list[AttachmentSchema] = Field(default_factory=list, description="Pièces jointes")
     created_at: datetime.datetime
     updated_at: datetime.datetime
     created_by: int | None = None
