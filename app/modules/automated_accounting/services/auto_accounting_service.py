@@ -447,7 +447,9 @@ class AutoAccountingService:
         if auto_entry.is_posted:
             raise ValueError("Entry already posted")
 
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         document = self.db.query(AccountingDocument).filter(
+            AccountingDocument.tenant_id == self.tenant_id,
             AccountingDocument.id == auto_entry.document_id
         ).first()
 

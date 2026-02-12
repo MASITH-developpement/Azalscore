@@ -441,7 +441,9 @@ class CommercialService:
 
     def _calculate_document_totals(self, document: CommercialDocument) -> None:
         """Recalculer les totaux d'un document."""
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         lines = self.db.query(DocumentLine).filter(
+            DocumentLine.tenant_id == self.tenant_id,
             DocumentLine.document_id == document.id
         ).all()
 

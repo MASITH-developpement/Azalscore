@@ -451,14 +451,19 @@ class EcommerceService:
         # Déterminer le prix
         price = product.price
         if data.variant_id:
+            # SÉCURITÉ: Toujours filtrer par tenant_id pour l'isolation multi-tenant
             variant = self.db.query(ProductVariant).filter(
-                ProductVariant.id == data.variant_id
+                ProductVariant.tenant_id == self.tenant_id,
+                ProductVariant.id == data.variant_id,
+                ProductVariant.product_id == product.id  # Vérifier aussi l'appartenance au produit
             ).first()
             if variant and variant.price:
                 price = variant.price
 
         # Vérifier si l'article existe déjà
+        # SÉCURITÉ: Toujours filtrer par tenant_id (defense-in-depth)
         existing_item = self.db.query(CartItem).filter(
+            CartItem.tenant_id == self.tenant_id,
             CartItem.cart_id == cart_id,
             CartItem.product_id == data.product_id,
             CartItem.variant_id == data.variant_id
@@ -551,19 +556,28 @@ class EcommerceService:
         return True, "Article retiré"
 
     def clear_cart(self, cart_id: int) -> bool:
-        """Vider le panier."""
+        """Vider le panier.
+
+        SÉCURITÉ: Validation tenant AVANT suppression pour éviter cross-tenant access.
+        """
+        # SÉCURITÉ: Valider que le panier appartient au tenant AVANT toute mutation
+        cart = self.get_cart(cart_id)
+        if not cart:
+            return False  # Panier non trouvé ou n'appartient pas à ce tenant
+
+        # Suppression avec filtre tenant_id explicite (defense-in-depth)
         self.db.query(CartItem).filter(
+            CartItem.tenant_id == self.tenant_id,  # CRITIQUE: filtre tenant
             CartItem.cart_id == cart_id
         ).delete()
 
-        cart = self.get_cart(cart_id)
-        if cart:
-            cart.subtotal = Decimal('0')
-            cart.discount_total = Decimal('0')
-            cart.tax_total = Decimal('0')
-            cart.shipping_total = Decimal('0')
-            cart.total = Decimal('0')
-            cart.coupon_codes = None
+        # Réinitialiser les totaux
+        cart.subtotal = Decimal('0')
+        cart.discount_total = Decimal('0')
+        cart.tax_total = Decimal('0')
+        cart.shipping_total = Decimal('0')
+        cart.total = Decimal('0')
+        cart.coupon_codes = None
 
         self.db.commit()
         return True
@@ -1363,7 +1377,9 @@ class EcommerceService:
         wishlist = self.get_or_create_wishlist(customer_id)
 
         # Vérifier si déjà présent
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         existing = self.db.query(WishlistItem).filter(
+            WishlistItem.tenant_id == self.tenant_id,
             WishlistItem.wishlist_id == wishlist.id,
             WishlistItem.product_id == data.product_id
         ).first()
@@ -1389,7 +1405,9 @@ class EcommerceService:
         """Retirer un article de la wishlist."""
         wishlist = self.get_or_create_wishlist(customer_id)
 
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         item = self.db.query(WishlistItem).filter(
+            WishlistItem.tenant_id == self.tenant_id,
             WishlistItem.wishlist_id == wishlist.id,
             WishlistItem.product_id == product_id
         ).first()

@@ -375,7 +375,9 @@ class FinanceService:
             return None
 
         # Vérifier que toutes les périodes sont clôturées
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         open_periods = self.db.query(FiscalPeriod).filter(
+            FiscalPeriod.tenant_id == self.tenant_id,
             FiscalPeriod.fiscal_year_id == fiscal_year_id,
             not FiscalPeriod.is_closed
         ).count()
@@ -730,7 +732,9 @@ class FinanceService:
         line.matched_at = datetime.utcnow()
 
         # Mettre à jour la ligne d'écriture
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         entry_line = self.db.query(JournalEntryLine).filter(
+            JournalEntryLine.tenant_id == self.tenant_id,
             JournalEntryLine.id == entry_line_id
         ).first()
 

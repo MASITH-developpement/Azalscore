@@ -272,7 +272,9 @@ class ComplianceService:
             return None
 
         # Calculer les résultats
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         gaps = self.db.query(ComplianceGap).filter(
+            ComplianceGap.tenant_id == self.tenant_id,
             ComplianceGap.assessment_id == assessment_id
         ).all()
 
@@ -760,7 +762,9 @@ class ComplianceService:
             return None
 
         # Comptabiliser les constatations
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         findings = self.db.query(AuditFinding).filter(
+            AuditFinding.tenant_id == self.tenant_id,
             AuditFinding.audit_id == audit_id
         ).all()
 
@@ -802,7 +806,9 @@ class ComplianceService:
         """Créer une constatation d'audit."""
         # Générer le numéro
         audit = self.get_audit(data.audit_id)
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         count = self.db.query(AuditFinding).filter(
+            AuditFinding.tenant_id == self.tenant_id,
             AuditFinding.audit_id == data.audit_id
         ).count()
 

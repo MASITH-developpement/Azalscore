@@ -381,7 +381,9 @@ class AccountingService:
         # Si les lignes sont mises à jour, recalculer les totaux
         if data.lines is not None:
             # Supprimer les anciennes lignes
+            # SÉCURITÉ: Toujours filtrer par tenant_id
             self.db.query(AccountingJournalEntryLine).filter(
+                AccountingJournalEntryLine.tenant_id == self.tenant_id,
                 AccountingJournalEntryLine.entry_id == entry_id
             ).delete()
 
