@@ -11,9 +11,14 @@ Système d'authentification **JWT (JSON Web Token)** avec validation stricte de 
 1. **Security Layer** (`app/core/security.py`)
    - Hashing bcrypt des mots de passe
    - Création et validation des JWT
-   - Secret key: `AZALS_SECRET_KEY_CHANGE_IN_PRODUCTION_USE_ENV_VAR`
+   - Secret key: Chargée depuis `SECRET_KEY` (variable d'environnement obligatoire)
    - Algorithme: HS256
    - Expiration: 30 minutes
+
+   **IMPORTANT**: Aucun secret par défaut. La clé doit être générée et configurée:
+   ```bash
+   python -c "import secrets; print(secrets.token_urlsafe(64))"
+   ```
 
 2. **User Model** (`app/core/models.py`)
    - Table `users` avec colonnes:

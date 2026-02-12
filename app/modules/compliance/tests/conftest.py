@@ -61,7 +61,7 @@ def regulation_data():
     return {
         "code": "GDPR-2016-679",
         "name": "Règlement Général sur la Protection des Données",
-        "type": RegulationType.PRIVACY,
+        "type": RegulationType.GDPR,  # PRIVACY n'existe pas, utiliser GDPR
         "description": "Réglementation européenne sur la protection des données personnelles",
         "authority": "Commission Européenne",
         "effective_date": date(2018, 5, 25),

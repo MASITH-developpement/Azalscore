@@ -91,7 +91,25 @@ from app.modules.quality.schemas import (
     PaginatedNCResponse,
     QualityDashboard,
 )
-from app.modules.quality.service import get_quality_service
+from app.modules.quality.service import QualityService, get_quality_service
+
+
+# ============================================================================
+# DEPENDENCY INJECTION
+# ============================================================================
+
+def _get_service(
+    db: Session = Depends(get_db),
+    context: SaaSContext = Depends(get_saas_context),
+) -> QualityService:
+    """
+    Dépendance FastAPI pour obtenir le service Quality.
+
+    Cette fonction wrapper permet de facilement remplacer le service
+    dans les tests via app.dependency_overrides[_get_service].
+    """
+    return get_quality_service(db, int(context.tenant_id), int(context.user_id))
+
 
 router = APIRouter(prefix="/v2/quality", tags=["Quality v2 - CORE SaaS"])
 

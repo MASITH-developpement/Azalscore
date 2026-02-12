@@ -79,6 +79,26 @@ repos:
         exclude: ^(\.secrets\.baseline|tests/|migrations/)
 
   # ============================================
+  # Sécurité: Audit des dépendances (CVE)
+  # ============================================
+  - repo: https://github.com/pyupio/safety
+    rev: 3.2.11
+    hooks:
+      - id: safety
+        args: ['check', '--full-report']
+        files: requirements.*\.txt$
+
+  # ============================================
+  # Sécurité: Semgrep (analyse statique avancée)
+  # ============================================
+  - repo: https://github.com/semgrep/semgrep
+    rev: v1.56.0
+    hooks:
+      - id: semgrep
+        args: ['--config', 'auto', '--error']
+        exclude: ^(tests/|migrations/|node_modules/)
+
+  # ============================================
   # SQL: Lint des migrations
   # ============================================
   - repo: https://github.com/sqlfluff/sqlfluff
