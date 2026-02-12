@@ -5,6 +5,15 @@ Gestion securisee de la connexion base de donnees avec SQLAlchemy
 IMPORTANT: Ce module exporte la Base depuis app.db pour garantir
 l'unicite du registre de metadonnees ORM. NE JAMAIS utiliser
 declarative_base() ici.
+
+EXPORTS:
+- Base: Classe de base ORM (re-exportée depuis app.db)
+- get_db: Générateur de session FastAPI
+- get_db_with_rls: Session avec contexte RLS
+- set_rls_context: Définir le contexte RLS
+- check_database_connection: Vérification connexion
+- engine: Engine SQLAlchemy
+- SessionLocal: Session factory
 """
 
 import logging
@@ -14,6 +23,10 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import get_settings
+
+# IMPORTANT: Re-export Base depuis app.db pour compatibilité
+# avec les imports existants (from app.core.database import Base)
+from app.db import Base
 
 # Configuration du logger
 logger = logging.getLogger(__name__)
