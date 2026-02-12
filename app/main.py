@@ -173,6 +173,7 @@ from app.modules.qc.router import router as qc_router
 
 # Module M7 - Qualité (Quality Management)
 from app.modules.quality.router import router as quality_router
+from app.modules.quality.router_v2 import router as quality_router_v2
 
 # Module M15 - Stripe Integration
 from app.modules.stripe_integration.router import router as stripe_router
@@ -1172,6 +1173,7 @@ app.include_router(interventions_router_v2)
 app.include_router(contacts_router_v2)
 app.include_router(hr_router_v2)
 app.include_router(subscriptions_router_v2)
+app.include_router(quality_router_v2)
 
 # Website Tracking API v2 (SEO, Analytics, Leads)
 app.include_router(website_tracking_router, prefix="/api/v2")

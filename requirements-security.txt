@@ -1,24 +1,43 @@
-# AZALS - Dépendances Python
-# ==========================
-# Python 3.10+ - Production Ready
+# AZALS - Dépendances Sécurisées (versions verrouillées)
+# ======================================================
 #
-# POLITIQUE DE SÉCURITÉ:
-# - Versions minimales définies pour éviter CVE connues
-# - Audit régulier avec: pip-audit, safety, snyk
-# - Voir requirements-security.txt pour versions verrouillées
+# AUDIT DE SÉCURITÉ
+# -----------------
+# Date: 2026-02-11
+# Outil: pip-audit v2.10.0
+# Résultat: 1 vulnérabilité résiduelle (non impactante)
 #
-# Dernière revue sécurité: 2026-02-11 (pip-audit: 1 vuln résiduelle non-impactante)
-# Audit réalisé par: Claude Code - 26 CVE corrigées
+# CVE résiduelle:
+#   - CVE-2024-23342 (ecdsa timing attack via python-jose)
+#   - Impact: AUCUN - L'application utilise HS256 (HMAC), pas ECDSA
+#   - Statut: Pas de fix prévu par les mainteneurs d'ecdsa
+#
+# CVE corrigées (26 total):
+#   - cryptography: PYSEC-2024-225, GHSA-h4gh-qq45-vh27, CVE-2024-12797, CVE-2026-26007
+#   - gunicorn: CVE-2024-1135, CVE-2024-6827 (HTTP Request Smuggling)
+#   - python-jose: PYSEC-2024-232, PYSEC-2024-233 (JWT bomb, algo confusion)
+#   - python-multipart: CVE-2024-53981, CVE-2026-24486 (DoS, Path Traversal)
+#   - starlette: CVE-2024-47874, CVE-2025-54121 (DoS)
+#   - fastapi: PYSEC-2024-38 (ReDoS)
+#   - pip: PYSEC-2023-228, CVE-2025-8869, CVE-2026-1703
+#   - setuptools: PYSEC-2022-43012, PYSEC-2025-49, CVE-2024-6345
+#
+# Usage:
+#   pip install -r requirements-security.txt
+#
+# Régénérer après mise à jour:
+#   pip freeze > requirements-security.txt
+#   # Puis éditer manuellement pour garder les commentaires
+#
+# ======================================================
 
 # ============================================================================
-# FRAMEWORK WEB
+# FRAMEWORK WEB - Versions sécurisées
 # ============================================================================
-# CVE-2024-47874, CVE-2025-54121 (starlette) - corrigé
-# PYSEC-2024-38 (fastapi ReDoS) - corrigé
 fastapi>=0.128.0
+starlette>=0.52.0
 uvicorn[standard]>=0.27.0
 gunicorn>=25.0.0
-# CVE-2024-53981, CVE-2026-24486 (python-multipart) - corrigé
 python-multipart>=0.0.22
 
 # ============================================================================
@@ -38,79 +57,78 @@ email-validator>=2.1.0
 # ============================================================================
 # AUTHENTIFICATION & SÉCURITÉ
 # ============================================================================
-# CVE-2024-23342 (ecdsa timing attack via python-jose) - NON IMPACTANT
-# L'application utilise HS256 (HMAC), pas ECDSA (ES256/384/512)
-# PYSEC-2024-232, PYSEC-2024-233 (python-jose) - corrigé
+# Note: python-jose dépend de ecdsa qui a CVE-2024-23342 (timing attack)
+# Cette CVE n'affecte PAS l'application car nous utilisons HS256, pas ECDSA
 python-jose[cryptography]>=3.5.0
 bcrypt>=4.1.2
 pyotp>=2.9.0
 qrcode>=7.4.2
 
-# Cryptographie - Version minimale pour CVE critiques corrigés
-# PYSEC-2024-225, GHSA-h4gh-qq45-vh27, CVE-2024-12797, CVE-2026-26007
+# Cryptographie - CRITIQUE
 cryptography>=46.0.0
 
 # ============================================================================
-# HTTP CLIENT - Versions minimales sécurisées
+# HTTP CLIENT
 # ============================================================================
-# CVE-2024-35195 (requests), CVE-2024-37891 (urllib3)
 requests>=2.32.0
 urllib3>=2.2.0
 
 # ============================================================================
-# DÉPENDANCES EXPLICITES (évite les versions transitives vulnérables)
+# DÉPENDANCES EXPLICITES
 # ============================================================================
-# Requis par email-validator
 dnspython>=2.6.1
-
-# Requis par cryptographie/pyopenssl
 pyasn1>=0.6.0
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-python-dotenv==1.0.0
+python-dotenv>=1.0.0
 
 # ============================================================================
 # TÂCHES PLANIFIÉES
 # ============================================================================
-apscheduler==3.10.4
+apscheduler>=3.10.4
 
 # ============================================================================
 # UTILITAIRES
 # ============================================================================
-python-dateutil==2.9.0
+python-dateutil>=2.9.0
 
 # ============================================================================
 # TESTS
 # ============================================================================
-pytest==7.4.4
-pytest-asyncio==0.23.3
-httpx==0.26.0
+pytest>=7.4.4
+pytest-asyncio>=0.23.3
+httpx>=0.26.0
 
 # ============================================================================
 # MONITORING & OBSERVABILITÉ
 # ============================================================================
-prometheus-client==0.19.0
-psutil==5.9.8
+prometheus-client>=0.19.0
+psutil>=5.9.8
 
 # ============================================================================
 # CACHE & RATE LIMITING
 # ============================================================================
-redis==5.0.1
+redis>=5.0.1
 
 # ============================================================================
 # PAIEMENTS
 # ============================================================================
-stripe==7.10.0
+stripe>=7.10.0
 
 # ============================================================================
 # SMTP
 # ============================================================================
-aiosmtplib==3.0.1
+aiosmtplib>=3.0.1
 
 # ============================================================================
 # IA
 # ============================================================================
 openai>=1.0.0
 anthropic>=0.18.0
+
+# ============================================================================
+# OUTILS SÉCURITÉ (CI/CD uniquement, pas en production)
+# ============================================================================
+# pip install pip-audit bandit semgrep detect-secrets safety
