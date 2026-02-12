@@ -255,7 +255,8 @@ class AIGuardianService:
         # Nettoyer le message (enlever IDs, timestamps, etc.)
         clean_message = error_message[:100] if error_message else ""
         raw = f"{error_type}:{module}:{clean_message}"
-        return hashlib.md5(raw.encode()).hexdigest()[:16]
+        # NOTE: MD5 utilisé uniquement pour fingerprinting/déduplication, pas pour sécurité
+        return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()[:16]
 
     def _find_recent_similar_incident(
         self,
