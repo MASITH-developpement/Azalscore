@@ -277,7 +277,9 @@ class StripeService:
         self, data: PaymentMethodCreate
     ) -> StripePaymentMethod:
         """Ajouter méthode de paiement."""
+        # SÉCURITÉ: Filtrer par tenant_id
         customer = self.db.query(StripeCustomer).filter(
+            StripeCustomer.tenant_id == self.tenant_id,
             StripeCustomer.stripe_customer_id == data.stripe_customer_id
         ).first()
 
@@ -302,8 +304,9 @@ class StripeService:
         self.db.add(payment_method)
 
         if data.set_as_default:
-            # Retirer default des autres
+            # SÉCURITÉ: Retirer default des autres (filtrer par tenant_id)
             self.db.query(StripePaymentMethod).filter(
+                StripePaymentMethod.tenant_id == self.tenant_id,
                 StripePaymentMethod.stripe_customer_id == customer.id,
                 StripePaymentMethod.id != payment_method.id
             ).update({"is_default": False})
@@ -322,7 +325,9 @@ class StripeService:
         if not customer:
             return []
 
+        # SÉCURITÉ: Filtrer par tenant_id
         return self.db.query(StripePaymentMethod).filter(
+            StripePaymentMethod.tenant_id == self.tenant_id,
             StripePaymentMethod.stripe_customer_id == customer.id,
             StripePaymentMethod.is_active
         ).all()
@@ -884,7 +889,9 @@ class StripeService:
     def _handle_payment_succeeded(self, data: dict):
         """Gérer paiement réussi."""
         pi_id = data.get("id")
+        # SÉCURITÉ: TOUJOURS filtrer par tenant_id en plus de l'ID Stripe
         pi = self.db.query(StripePaymentIntent).filter(
+            StripePaymentIntent.tenant_id == self.tenant_id,
             StripePaymentIntent.stripe_payment_intent_id == pi_id
         ).first()
 
@@ -896,7 +903,9 @@ class StripeService:
     def _handle_payment_failed(self, data: dict):
         """Gérer paiement échoué."""
         pi_id = data.get("id")
+        # SÉCURITÉ: TOUJOURS filtrer par tenant_id en plus de l'ID Stripe
         pi = self.db.query(StripePaymentIntent).filter(
+            StripePaymentIntent.tenant_id == self.tenant_id,
             StripePaymentIntent.stripe_payment_intent_id == pi_id
         ).first()
 

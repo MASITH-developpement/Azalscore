@@ -352,7 +352,11 @@ class EmailService:
             item.locked_at = now
             self.db.commit()
 
-            email_log = self.db.query(EmailLog).filter(EmailLog.id == item.email_log_id).first()
+            # SÉCURITÉ: Filtrer par tenant_id
+            email_log = self.db.query(EmailLog).filter(
+                EmailLog.tenant_id == self.tenant_id,
+                EmailLog.id == item.email_log_id
+            ).first()
             if email_log:
                 success = self._send_email_now(email_log)
                 if success:

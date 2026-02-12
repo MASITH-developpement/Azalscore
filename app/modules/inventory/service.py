@@ -645,8 +645,9 @@ class InventoryService:
         if not movement or movement.status != MovementStatus.DRAFT:
             return None
 
-        # Récupérer les lignes
+        # SÉCURITÉ: Récupérer les lignes (défense en profondeur - filtrer par tenant_id)
         lines = self.db.query(StockMovementLine).filter(
+            StockMovementLine.tenant_id == self.tenant_id,
             StockMovementLine.movement_id == movement_id
         ).all()
 
@@ -827,20 +828,23 @@ class InventoryService:
         if data.notes:
             line.notes = data.notes
 
-        # Mettre à jour les totaux du count
+        # SÉCURITÉ: Mettre à jour les totaux du count (défense en profondeur)
         count = self.get_inventory_count(count_id)
         if count:
             counted = self.db.query(InventoryCountLine).filter(
+                InventoryCountLine.tenant_id == self.tenant_id,
                 InventoryCountLine.count_id == count_id,
                 InventoryCountLine.counted_quantity.isnot(None)
             ).count()
             discrepancies = self.db.query(InventoryCountLine).filter(
+                InventoryCountLine.tenant_id == self.tenant_id,
                 InventoryCountLine.count_id == count_id,
                 InventoryCountLine.discrepancy != 0
             ).count()
             total_disc = self.db.query(
                 func.sum(InventoryCountLine.discrepancy_value)
             ).filter(
+                InventoryCountLine.tenant_id == self.tenant_id,
                 InventoryCountLine.count_id == count_id
             ).scalar() or Decimal("0")
 
@@ -858,8 +862,9 @@ class InventoryService:
         if not count or count.status != InventoryStatus.IN_PROGRESS:
             return None
 
-        # Récupérer les lignes avec écart
+        # SÉCURITÉ: Récupérer les lignes avec écart (défense en profondeur)
         lines = self.db.query(InventoryCountLine).filter(
+            InventoryCountLine.tenant_id == self.tenant_id,
             InventoryCountLine.count_id == count_id,
             InventoryCountLine.discrepancy != 0
         ).all()
@@ -876,12 +881,13 @@ class InventoryService:
                     from_location_id=line.location_id if line.discrepancy < 0 else None,
                 ))
 
-            # Récupérer le warehouse depuis la première ligne de stock
+            # SÉCURITÉ: Récupérer le warehouse depuis la première ligne de stock
             warehouse_id = None
             if count.warehouse_id:
                 warehouse_id = count.warehouse_id
             else:
                 first_stock = self.db.query(StockLevel).filter(
+                    StockLevel.tenant_id == self.tenant_id,
                     StockLevel.product_id == lines[0].product_id
                 ).first()
                 if first_stock:
@@ -1042,10 +1048,11 @@ class InventoryService:
         if data.notes:
             line.notes = data.notes
 
-        # Mettre à jour le compteur du picking
+        # SÉCURITÉ: Mettre à jour le compteur du picking (défense en profondeur)
         picking = self.get_picking(picking_id)
         if picking:
             picked = self.db.query(PickingLine).filter(
+                PickingLine.tenant_id == self.tenant_id,
                 PickingLine.picking_id == picking_id,
                 PickingLine.is_picked
             ).count()
@@ -1061,8 +1068,9 @@ class InventoryService:
         if not picking or picking.status not in [PickingStatus.IN_PROGRESS, PickingStatus.ASSIGNED]:
             return None
 
-        # Récupérer les lignes préparées
+        # SÉCURITÉ: Récupérer les lignes préparées (défense en profondeur)
         lines = self.db.query(PickingLine).filter(
+            PickingLine.tenant_id == self.tenant_id,
             PickingLine.picking_id == picking_id,
             PickingLine.is_picked
         ).all()

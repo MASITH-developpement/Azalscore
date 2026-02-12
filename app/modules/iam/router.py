@@ -558,11 +558,14 @@ async def list_roles(
 
     roles = service.list_roles(include_inactive=include_inactive)
 
-    # Récupérer les noms des créateurs
+    # SÉCURITÉ: Récupérer les noms des créateurs (filtrer par tenant_id)
     creator_ids = [r.created_by for r in roles if r.created_by]
     creators = {}
     if creator_ids:
-        creator_users = db.query(IAMUser).filter(IAMUser.id.in_(creator_ids)).all()
+        creator_users = db.query(IAMUser).filter(
+            IAMUser.tenant_id == service.tenant_id,
+            IAMUser.id.in_(creator_ids)
+        ).all()
         creators = {
             u.id: f"{u.first_name or ''} {u.last_name or ''}".strip() or u.email
             for u in creator_users
@@ -607,10 +610,13 @@ async def get_role(
     if not role:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rôle non trouvé")
 
-    # Récupérer le nom du créateur
+    # SÉCURITÉ: Récupérer le nom du créateur (filtrer par tenant_id)
     created_by_name = None
     if role.created_by:
-        creator = db.query(IAMUser).filter(IAMUser.id == role.created_by).first()
+        creator = db.query(IAMUser).filter(
+            IAMUser.tenant_id == service.tenant_id,
+            IAMUser.id == role.created_by
+        ).first()
         if creator:
             created_by_name = f"{creator.first_name or ''} {creator.last_name or ''}".strip() or creator.email
 

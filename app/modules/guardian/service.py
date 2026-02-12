@@ -894,9 +894,10 @@ class GuardianService:
             registry.status = CorrectionStatus.APPROVED
             self._update_decision_trail(registry, "APPROVED", f"user:{user_id}", comment)
 
-            # Si une règle est associée, appliquer la correction
+            # SÉCURITÉ: Si une règle est associée, appliquer la correction (filtrer par tenant_id)
             if registry.correction_details and registry.correction_details.get("rule_uid"):
                 rule = self.db.query(CorrectionRule).filter(
+                    CorrectionRule.tenant_id == self.tenant_id,
                     CorrectionRule.rule_uid == registry.correction_details["rule_uid"]
                 ).first()
                 if rule:

@@ -719,8 +719,9 @@ class ProductionService:
         if not mo or mo.status not in [MOStatus.IN_PROGRESS, MOStatus.CONFIRMED]:
             return None
 
-        # Chercher une consommation planifiée existante
+        # SÉCURITÉ: Chercher une consommation planifiée existante (filtrer par tenant_id)
         consumption = self.db.query(MaterialConsumption).filter(
+            MaterialConsumption.tenant_id == self.tenant_id,
             MaterialConsumption.mo_id == mo_id,
             MaterialConsumption.product_id == data.product_id,
             MaterialConsumption.quantity_consumed == 0

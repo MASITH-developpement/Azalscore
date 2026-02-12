@@ -157,11 +157,20 @@ class DashboardGenerator:
         )
 
     def _base_query(self, model):
-        """Query de base avec filtre tenant."""
-        query = self.db.query(model)
-        if self.tenant_id:
-            query = query.filter(model.tenant_id == self.tenant_id)
-        return query
+        """
+        Query de base avec filtre tenant OBLIGATOIRE.
+
+        SÉCURITÉ: Retourne une requête filtrée par tenant_id.
+        Sans tenant_id, lève une exception pour éviter fuite de données.
+        """
+        if not self.tenant_id:
+            import logging
+            logging.getLogger(__name__).error(
+                "[AI_DASHBOARD] _base_query called without tenant_id - SECURITY VIOLATION"
+            )
+            raise ValueError("tenant_id required for dashboard queries")
+
+        return self.db.query(model).filter(model.tenant_id == self.tenant_id)
 
     def _generate_kpis(self) -> List[DashboardKPI]:
         """Génère les KPIs principaux."""

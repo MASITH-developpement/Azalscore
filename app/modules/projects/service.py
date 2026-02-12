@@ -1191,7 +1191,9 @@ class ProjectsService:
         start_date: date | None = None
     ) -> Project:
         """Créer un projet depuis un template."""
+        # SÉCURITÉ: Filtrer par tenant_id
         template = self.db.query(ProjectTemplate).filter(
+            ProjectTemplate.tenant_id == self.tenant_id,
             ProjectTemplate.id == template_id
         ).first()
         if not template:

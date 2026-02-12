@@ -1142,8 +1142,16 @@ class IAMService:
         return count
 
     def is_token_blacklisted(self, jti: str) -> bool:
-        """Vérifie si un token est blacklisté."""
+        """
+        Vérifie si un token est blacklisté.
+
+        SÉCURITÉ: Filtre TOUJOURS par tenant_id en plus du JTI pour
+        défense-en-profondeur et isolation multi-tenant.
+        """
+        # SÉCURITÉ: Même si le JTI est unique, on filtre par tenant_id
+        # pour garantir l'isolation multi-tenant
         return self.db.query(IAMTokenBlacklist).filter(
+            IAMTokenBlacklist.tenant_id == self.tenant_id,
             IAMTokenBlacklist.token_jti == jti
         ).first() is not None
 

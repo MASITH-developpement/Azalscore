@@ -876,10 +876,11 @@ class POSService:
         if not user.can_refund and not user.is_manager:
             raise ValueError("Pas autorisé à rembourser")
 
-        # Créer lignes de remboursement
+        # SÉCURITÉ: Créer lignes de remboursement (filtrer par tenant_id)
         refund_lines = []
         for item in line_items:
             original_line = self.db.query(POSTransactionLine).filter(
+                POSTransactionLine.tenant_id == self.tenant_id,
                 POSTransactionLine.id == item["line_id"]
             ).first()
             if not original_line:
@@ -1376,8 +1377,9 @@ class POSService:
             result["sales_this_session"] = float(session.total_sales)
             result["transactions_this_session"] = session.transaction_count
 
-            # Dernière transaction
+            # SÉCURITÉ: Dernière transaction (filtrer par tenant_id)
             last_tx = self.db.query(POSTransaction).filter(
+                POSTransaction.tenant_id == self.tenant_id,
                 POSTransaction.session_id == session.id
             ).order_by(POSTransaction.created_at.desc()).first()
 

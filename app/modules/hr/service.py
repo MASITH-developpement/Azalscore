@@ -376,8 +376,9 @@ class HRService:
             return None
         employee.status = EmployeeStatus.TERMINATED
         employee.end_date = end_date
-        # Mettre à jour le contrat actuel
+        # SÉCURITÉ: Mettre à jour le contrat actuel (filtrer par tenant_id)
         current_contract = self.db.query(Contract).filter(
+            Contract.tenant_id == self.tenant_id,
             Contract.employee_id == employee_id,
             Contract.is_current
         ).first()
@@ -395,8 +396,9 @@ class HRService:
 
     def create_contract(self, data: ContractCreate, user_id: UUID) -> Contract:
         """Créer un contrat."""
-        # Désactiver les anciens contrats
+        # SÉCURITÉ: Désactiver les anciens contrats (filtrer par tenant_id)
         self.db.query(Contract).filter(
+            Contract.tenant_id == self.tenant_id,
             Contract.employee_id == data.employee_id,
             Contract.is_current
         ).update({"is_current": False})
@@ -813,7 +815,9 @@ class HRService:
         if not period:
             raise ValueError("Period not found")
 
+        # SÉCURITÉ: Filtrer par tenant_id pour le comptage des bulletins
         count = self.db.query(Payslip).filter(
+            Payslip.tenant_id == self.tenant_id,
             Payslip.period_id == data.period_id
         ).count()
 

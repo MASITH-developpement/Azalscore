@@ -409,9 +409,10 @@ class HelpdeskService:
             agents.sort(key=lambda a: a.tickets_assigned)
             return agents[0].id
         elif team.auto_assign_method == "least_busy":
-            # Prendre l'agent avec le moins de tickets ouverts
+            # SÉCURITÉ: Prendre l'agent avec le moins de tickets ouverts (filtrer par tenant_id)
             for agent in agents:
                 agent._open_tickets = self.db.query(Ticket).filter(
+                    Ticket.tenant_id == self.tenant_id,
                     Ticket.assigned_to_id == agent.id,
                     Ticket.status.in_([TicketStatus.NEW, TicketStatus.OPEN, TicketStatus.PENDING])
                 ).count()
@@ -750,13 +751,15 @@ class HelpdeskService:
         if not source or not target:
             return None
 
-        # Déplacer les réponses
+        # Déplacer les réponses (defense-in-depth: filtre tenant explicite)
         self.db.query(TicketReply).filter(
+            TicketReply.tenant_id == self.tenant_id,
             TicketReply.ticket_id == source.id
         ).update({"ticket_id": target.id})
 
-        # Déplacer les pièces jointes
+        # Déplacer les pièces jointes (defense-in-depth: filtre tenant explicite)
         self.db.query(TicketAttachment).filter(
+            TicketAttachment.tenant_id == self.tenant_id,
             TicketAttachment.ticket_id == source.id
         ).update({"ticket_id": target.id})
 
@@ -1240,12 +1243,14 @@ class HelpdeskService:
         if ticket.assigned_to_id:
             agent = self.get_agent(ticket.assigned_to_id)
             if agent:
-                # Recalculer la moyenne
+                # SÉCURITÉ: Recalculer la moyenne (filtrer par tenant_id)
                 total_surveys = self.db.query(SatisfactionSurvey).filter(
+                    SatisfactionSurvey.tenant_id == self.tenant_id,
                     SatisfactionSurvey.agent_id == agent.id
                 ).count()
                 if total_surveys > 0:
                     avg = self.db.query(func.avg(SatisfactionSurvey.rating)).filter(
+                        SatisfactionSurvey.tenant_id == self.tenant_id,
                         SatisfactionSurvey.agent_id == agent.id
                     ).scalar()
                     agent.satisfaction_score = Decimal(str(round(avg, 2)))

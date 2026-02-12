@@ -302,7 +302,13 @@ async def get_audit_report(
     """Récupère un rapport d'audit."""
     from app.modules.guardian.ai_models import AIAuditReport
 
+    # SÉCURITÉ: tenant_id OBLIGATOIRE pour cette route
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant ID requis")
+
     report = db.query(AIAuditReport).filter(
+        AIAuditReport.tenant_id == tenant_id,
         AIAuditReport.report_uid == report_uid
     ).first()
 
@@ -322,13 +328,14 @@ async def list_audits(
     """Liste les rapports d'audit."""
     from app.modules.guardian.ai_models import AIAuditReport
 
+    # SÉCURITÉ: tenant_id OBLIGATOIRE pour cette route
     tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant ID requis")
 
-    query = db.query(AIAuditReport)
-    if tenant_id:
-        query = query.filter(AIAuditReport.tenant_id == tenant_id)
-
-    reports = query.order_by(AIAuditReport.created_at.desc()).limit(limit).all()
+    reports = db.query(AIAuditReport).filter(
+        AIAuditReport.tenant_id == tenant_id
+    ).order_by(AIAuditReport.created_at.desc()).limit(limit).all()
 
     return reports
 
@@ -376,15 +383,15 @@ async def get_latest_sla(
     """Récupère les dernières métriques SLA."""
     from app.modules.guardian.ai_models import AISLAMetric
 
+    # SÉCURITÉ: tenant_id OBLIGATOIRE pour cette route
     tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant ID requis")
 
-    query = db.query(AISLAMetric).filter(
+    metric = db.query(AISLAMetric).filter(
+        AISLAMetric.tenant_id == tenant_id,
         AISLAMetric.period_type == period_type
-    )
-    if tenant_id:
-        query = query.filter(AISLAMetric.tenant_id == tenant_id)
-
-    metric = query.order_by(AISLAMetric.calculated_at.desc()).first()
+    ).order_by(AISLAMetric.calculated_at.desc()).first()
 
     if not metric:
         raise HTTPException(status_code=404, detail="Aucune métrique SLA disponible")
@@ -403,15 +410,15 @@ async def get_sla_history(
     """Historique des métriques SLA."""
     from app.modules.guardian.ai_models import AISLAMetric
 
+    # SÉCURITÉ: tenant_id OBLIGATOIRE pour cette route
     tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant ID requis")
 
-    query = db.query(AISLAMetric).filter(
+    metrics = db.query(AISLAMetric).filter(
+        AISLAMetric.tenant_id == tenant_id,
         AISLAMetric.period_type == period_type
-    )
-    if tenant_id:
-        query = query.filter(AISLAMetric.tenant_id == tenant_id)
-
-    metrics = query.order_by(AISLAMetric.period_start.desc()).limit(limit).all()
+    ).order_by(AISLAMetric.period_start.desc()).limit(limit).all()
 
     return metrics
 
@@ -449,18 +456,19 @@ async def get_module_scores(
     from app.modules.guardian.ai_models import AIModuleScore
     from datetime import timedelta
 
+    # SÉCURITÉ: tenant_id OBLIGATOIRE pour cette route
     tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant ID requis")
+
     now = datetime.utcnow()
     month_ago = now - timedelta(days=30)
 
-    query = db.query(AIModuleScore).filter(
+    # TOUJOURS filtrer par tenant_id
+    scores = db.query(AIModuleScore).filter(
+        AIModuleScore.tenant_id == tenant_id,
         AIModuleScore.calculated_at >= month_ago
-    )
-    if tenant_id:
-        query = query.filter(AIModuleScore.tenant_id == tenant_id)
-
-    # Grouper par module, prendre le plus récent
-    scores = query.order_by(AIModuleScore.calculated_at.desc()).all()
+    ).order_by(AIModuleScore.calculated_at.desc()).all()
 
     # Dédupliquer par module
     seen = set()

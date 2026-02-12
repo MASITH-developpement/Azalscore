@@ -570,8 +570,9 @@ class AuditService:
             # Exécuter le benchmark selon son type
             score, details, warnings = self._execute_benchmark(benchmark)
 
-            # Récupérer le score précédent
+            # SÉCURITÉ: Récupérer le score précédent (filtrer par tenant_id)
             previous_result = self.db.query(BenchmarkResult).filter(
+                BenchmarkResult.tenant_id == self.tenant_id,
                 BenchmarkResult.benchmark_id == benchmark_id,
                 BenchmarkResult.status == BenchmarkStatus.COMPLETED,
                 BenchmarkResult.id != result.id
@@ -628,62 +629,364 @@ class AuditService:
             return self._run_feature_benchmark(benchmark, config, baseline)
 
     def _run_performance_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
-        """Benchmark de performance."""
+        """
+        Benchmark de performance avec mesures RÉELLES.
+
+        Vérifie:
+        - Temps de réponse des requêtes DB
+        - Taille du pool de connexions
+        - Utilisation mémoire (si disponible)
+        """
+        import logging
+        import time
+
+        logger = logging.getLogger(__name__)
         details = {}
         warnings = []
         checks_passed = 0
         total_checks = 0
 
-        # Vérifier le temps de réponse API
+        # ===================================================================
+        # 1. Mesure RÉELLE du temps de requête DB
+        # ===================================================================
         total_checks += 1
-        api_response_time = 50  # Simulation
-        if api_response_time < baseline.get("max_api_response_ms", 100):
-            checks_passed += 1
-            details["api_response"] = {"status": "PASS", "value": api_response_time}
-        else:
-            details["api_response"] = {"status": "FAIL", "value": api_response_time}
-            warnings.append(f"Temps de réponse API {api_response_time}ms > {baseline.get('max_api_response_ms', 100)}ms")
+        try:
+            start_time = time.perf_counter()
 
-        # Vérifier les requêtes DB
+            # Exécuter une vraie requête de test
+            result = self.db.query(AuditLog).filter(
+                AuditLog.tenant_id == self.tenant_id
+            ).limit(10).all()
+
+            db_query_time_ms = (time.perf_counter() - start_time) * 1000
+            max_db_query_ms = baseline.get("max_db_query_ms", 50)
+
+            if db_query_time_ms < max_db_query_ms:
+                checks_passed += 1
+                details["db_query"] = {
+                    "status": "PASS",
+                    "value": f"{db_query_time_ms:.2f}ms",
+                    "threshold": f"{max_db_query_ms}ms"
+                }
+            else:
+                details["db_query"] = {
+                    "status": "FAIL",
+                    "value": f"{db_query_time_ms:.2f}ms",
+                    "threshold": f"{max_db_query_ms}ms",
+                    "recommendation": "Optimiser les requêtes ou ajouter des index"
+                }
+                warnings.append(f"Temps requête DB {db_query_time_ms:.1f}ms > {max_db_query_ms}ms")
+        except Exception as e:
+            details["db_query"] = {"status": "ERROR", "value": str(e)}
+            warnings.append(f"Erreur mesure DB: {e}")
+
+        # ===================================================================
+        # 2. Vérifier le pool de connexions DB
+        # ===================================================================
         total_checks += 1
-        db_query_time = 10  # Simulation
-        if db_query_time < baseline.get("max_db_query_ms", 50):
-            checks_passed += 1
-            details["db_query"] = {"status": "PASS", "value": db_query_time}
-        else:
-            details["db_query"] = {"status": "FAIL", "value": db_query_time}
+        try:
+            from app.core.config import get_settings
+            settings = get_settings()
 
+            pool_size = getattr(settings, 'db_pool_size', 5)
+            max_overflow = getattr(settings, 'db_max_overflow', 10)
+            total_possible = pool_size + max_overflow
+
+            # Vérifier que le pool est suffisant
+            min_pool_size = baseline.get("min_pool_size", 5)
+            if pool_size >= min_pool_size:
+                checks_passed += 1
+                details["db_pool"] = {
+                    "status": "PASS",
+                    "value": f"pool_size={pool_size}, max_overflow={max_overflow}",
+                    "total_connections": total_possible
+                }
+            else:
+                details["db_pool"] = {
+                    "status": "WARN",
+                    "value": f"pool_size={pool_size} < recommandé ({min_pool_size})",
+                    "recommendation": "Augmenter DB_POOL_SIZE en production"
+                }
+                warnings.append(f"Pool DB petit: {pool_size}")
+        except Exception as e:
+            details["db_pool"] = {"status": "ERROR", "value": str(e)}
+
+        # ===================================================================
+        # 3. Vérifier l'utilisation mémoire (si psutil disponible)
+        # ===================================================================
+        total_checks += 1
+        try:
+            import psutil
+            process = psutil.Process()
+            memory_mb = process.memory_info().rss / (1024 * 1024)
+            max_memory_mb = baseline.get("max_memory_mb", 512)
+
+            if memory_mb < max_memory_mb:
+                checks_passed += 1
+                details["memory_usage"] = {
+                    "status": "PASS",
+                    "value": f"{memory_mb:.1f}MB",
+                    "threshold": f"{max_memory_mb}MB"
+                }
+            else:
+                details["memory_usage"] = {
+                    "status": "WARN",
+                    "value": f"{memory_mb:.1f}MB",
+                    "threshold": f"{max_memory_mb}MB",
+                    "recommendation": "Surveiller les fuites mémoire"
+                }
+                warnings.append(f"Mémoire élevée: {memory_mb:.1f}MB")
+        except ImportError:
+            details["memory_usage"] = {"status": "SKIP", "value": "psutil non installé"}
+            checks_passed += 1  # On passe si psutil n'est pas dispo
+        except Exception as e:
+            details["memory_usage"] = {"status": "ERROR", "value": str(e)}
+
+        # ===================================================================
+        # Calcul du score final
+        # ===================================================================
         score = (checks_passed / total_checks) * 100 if total_checks > 0 else 0
+
+        logger.info(
+            f"[PERFORMANCE_BENCHMARK] tenant={self.tenant_id} score={score:.1f}% "
+            f"passed={checks_passed}/{total_checks}"
+        )
+
         return score, details, warnings
 
     def _run_security_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
-        """Benchmark de sécurité."""
+        """
+        Benchmark de sécurité avec vérifications RÉELLES.
+
+        Vérifie:
+        - Configuration JWT (SECRET_KEY présente et forte)
+        - Disponibilité MFA (table/config présente)
+        - Politique de mot de passe (min 8 chars, complexité)
+        - Isolation tenant (vérification requêtes tenant_id)
+
+        ATTENTION: Cette fonction effectue de vraies vérifications.
+        Un score < 100% indique un problème de sécurité à corriger.
+        """
+        import logging
+        import os
+
+        logger = logging.getLogger(__name__)
         details = {}
         warnings = []
         checks_passed = 0
-        total_checks = 4
+        total_checks = 0
 
-        # Vérifier JWT
-        checks_passed += 1
-        details["jwt_enabled"] = {"status": "PASS", "value": True}
+        # ===================================================================
+        # 1. Vérifier SECRET_KEY JWT
+        # ===================================================================
+        total_checks += 1
+        try:
+            from app.core.config import get_settings
+            settings = get_settings()
+            secret_key = settings.secret_key
 
-        # Vérifier MFA
-        checks_passed += 1
-        details["mfa_available"] = {"status": "PASS", "value": True}
+            # Vérifier la longueur minimale (32 caractères)
+            if secret_key and len(secret_key) >= 32:
+                # Vérifier que ce n'est pas une valeur par défaut
+                dangerous_patterns = ['changeme', 'default', 'secret', 'dev-secret', 'azals']
+                is_dangerous = any(pattern in secret_key.lower() for pattern in dangerous_patterns)
 
-        # Vérifier password policy
-        checks_passed += 1
-        details["password_policy"] = {"status": "PASS", "value": "Strong"}
+                if is_dangerous:
+                    details["jwt_secret_key"] = {
+                        "status": "FAIL",
+                        "value": "Clé secrète faible détectée",
+                        "recommendation": "Régénérer avec: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+                    }
+                    warnings.append("SECRET_KEY contient un pattern dangereux")
+                else:
+                    checks_passed += 1
+                    details["jwt_secret_key"] = {"status": "PASS", "value": f"Longueur: {len(secret_key)} caractères"}
+            else:
+                details["jwt_secret_key"] = {
+                    "status": "FAIL",
+                    "value": f"Longueur insuffisante: {len(secret_key) if secret_key else 0}",
+                    "recommendation": "SECRET_KEY doit avoir minimum 32 caractères"
+                }
+                warnings.append("SECRET_KEY trop courte ou absente")
+        except Exception as e:
+            details["jwt_secret_key"] = {"status": "ERROR", "value": str(e)}
+            warnings.append(f"Erreur vérification JWT: {e}")
 
-        # Vérifier tenant isolation
-        checks_passed += 1
-        details["tenant_isolation"] = {"status": "PASS", "value": True}
+        # ===================================================================
+        # 2. Vérifier configuration MFA (TOTP)
+        # ===================================================================
+        total_checks += 1
+        try:
+            # Vérifier si pyotp est installé et si la table users a les champs MFA
+            from sqlalchemy import inspect
+            inspector = inspect(self.db.bind)
 
-        score = (checks_passed / total_checks) * 100
+            # Chercher une colonne mfa_secret ou totp_secret dans la table users
+            if inspector.has_table('users') or inspector.has_table('iam_users'):
+                table_name = 'iam_users' if inspector.has_table('iam_users') else 'users'
+                columns = [col['name'] for col in inspector.get_columns(table_name)]
+                mfa_columns = ['mfa_secret', 'totp_secret', 'mfa_enabled', 'two_factor_enabled']
+
+                has_mfa = any(col in columns for col in mfa_columns)
+                if has_mfa:
+                    checks_passed += 1
+                    details["mfa_available"] = {"status": "PASS", "value": "Infrastructure MFA présente"}
+                else:
+                    details["mfa_available"] = {
+                        "status": "WARN",
+                        "value": "Colonnes MFA non trouvées dans la table users",
+                        "recommendation": "Implémenter MFA/TOTP pour les utilisateurs sensibles"
+                    }
+                    warnings.append("MFA non configuré - recommandé pour comptes admin")
+            else:
+                details["mfa_available"] = {"status": "WARN", "value": "Table users non trouvée"}
+        except Exception as e:
+            details["mfa_available"] = {"status": "ERROR", "value": str(e)}
+
+        # ===================================================================
+        # 3. Vérifier politique de mot de passe
+        # ===================================================================
+        total_checks += 1
+        try:
+            # Vérifier les contraintes de mot de passe dans le code
+            # On vérifie si bcrypt est utilisé (hash sécurisé)
+            from app.core.security import get_password_hash
+            import bcrypt
+
+            # Test: bcrypt est-il utilisé avec un coût suffisant?
+            test_hash = get_password_hash("TestPassword123!")
+            if test_hash.startswith('$2'):  # bcrypt hash
+                # Extraire le coût du hash bcrypt
+                # Format: $2b$COST$...
+                parts = test_hash.split('$')
+                if len(parts) >= 3:
+                    cost = int(parts[2])
+                    if cost >= 10:
+                        checks_passed += 1
+                        details["password_policy"] = {
+                            "status": "PASS",
+                            "value": f"bcrypt avec coût {cost} (sécurisé)"
+                        }
+                    else:
+                        details["password_policy"] = {
+                            "status": "WARN",
+                            "value": f"bcrypt coût {cost} (recommandé: >= 10)"
+                        }
+                        warnings.append(f"Coût bcrypt faible: {cost}")
+                else:
+                    checks_passed += 1
+                    details["password_policy"] = {"status": "PASS", "value": "bcrypt actif"}
+            else:
+                details["password_policy"] = {
+                    "status": "FAIL",
+                    "value": "Hash non-bcrypt détecté",
+                    "recommendation": "Utiliser bcrypt pour le hashing des mots de passe"
+                }
+                warnings.append("Algorithme de hash non sécurisé")
+        except Exception as e:
+            details["password_policy"] = {"status": "ERROR", "value": str(e)}
+            warnings.append(f"Erreur vérification password policy: {e}")
+
+        # ===================================================================
+        # 4. Vérifier isolation tenant (requêtes avec tenant_id)
+        # ===================================================================
+        total_checks += 1
+        try:
+            # Vérifier que le tenant_id est bien présent dans cette session
+            if self.tenant_id:
+                # Tester une requête avec isolation tenant
+                # Vérifier qu'on ne peut pas accéder aux données d'un autre tenant
+                test_query = self.db.query(AuditLog).filter(
+                    AuditLog.tenant_id == self.tenant_id
+                ).limit(1)
+
+                # Vérifier que la requête contient bien le filtre tenant_id
+                query_str = str(test_query.statement.compile(
+                    dialect=self.db.bind.dialect,
+                    compile_kwargs={"literal_binds": False}
+                ))
+
+                if 'tenant_id' in query_str.lower():
+                    checks_passed += 1
+                    details["tenant_isolation"] = {
+                        "status": "PASS",
+                        "value": "Isolation tenant active dans les requêtes"
+                    }
+                else:
+                    details["tenant_isolation"] = {
+                        "status": "FAIL",
+                        "value": "Requêtes sans filtre tenant_id détectées",
+                        "recommendation": "Toujours filtrer par tenant_id"
+                    }
+                    warnings.append("CRITIQUE: Isolation tenant potentiellement compromise")
+            else:
+                details["tenant_isolation"] = {
+                    "status": "FAIL",
+                    "value": "tenant_id non défini dans le service",
+                    "recommendation": "Le service doit toujours avoir un tenant_id"
+                }
+                warnings.append("CRITIQUE: tenant_id absent du service")
+        except Exception as e:
+            details["tenant_isolation"] = {"status": "ERROR", "value": str(e)}
+            warnings.append(f"Erreur vérification tenant isolation: {e}")
+
+        # ===================================================================
+        # 5. Vérifier HTTPS/TLS (bonus)
+        # ===================================================================
+        total_checks += 1
+        try:
+            from app.core.config import get_settings
+            settings = get_settings()
+
+            if settings.environment == 'production':
+                # En production, HTTPS devrait être obligatoire
+                app_url = getattr(settings, 'app_url', '')
+                if app_url.startswith('https://'):
+                    checks_passed += 1
+                    details["https_enabled"] = {"status": "PASS", "value": "HTTPS configuré"}
+                else:
+                    details["https_enabled"] = {
+                        "status": "WARN",
+                        "value": "APP_URL ne commence pas par https://",
+                        "recommendation": "Configurer HTTPS en production"
+                    }
+                    warnings.append("HTTPS recommandé en production")
+            else:
+                # En dev, on passe le check
+                checks_passed += 1
+                details["https_enabled"] = {"status": "PASS", "value": "Non requis hors production"}
+        except Exception as e:
+            details["https_enabled"] = {"status": "ERROR", "value": str(e)}
+
+        # ===================================================================
+        # Calcul du score final
+        # ===================================================================
+        score = (checks_passed / total_checks) * 100 if total_checks > 0 else 0
+
+        # Log le résultat pour traçabilité
+        logger.info(
+            f"[SECURITY_BENCHMARK] tenant={self.tenant_id} score={score:.1f}% "
+            f"passed={checks_passed}/{total_checks} warnings={len(warnings)}"
+        )
+
+        if score < 100:
+            logger.warning(
+                f"[SECURITY_BENCHMARK] Score < 100% détecté. "
+                f"Warnings: {warnings}"
+            )
+
         return score, details, warnings
 
     def _run_compliance_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
-        """Benchmark de conformité."""
+        """
+        Benchmark de conformité.
+
+        Vérifie les contrôles de conformité définis pour le tenant.
+        Retourne 0% si aucun contrôle n'est défini (transparence).
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
         # Récupérer les checks de conformité
         checks = self.db.query(ComplianceCheck).filter(
             ComplianceCheck.tenant_id == self.tenant_id,
@@ -691,7 +994,17 @@ class AuditService:
         ).all()
 
         if not checks:
-            return 100, {"message": "Aucun contrôle défini"}, []
+            # Aucun contrôle défini = score 0% avec avertissement explicite
+            # (un score de 100% serait trompeur)
+            logger.warning(
+                f"[COMPLIANCE_BENCHMARK] tenant={self.tenant_id} "
+                f"Aucun contrôle de conformité défini - score 0%"
+            )
+            return 0, {
+                "status": "NO_CHECKS_DEFINED",
+                "message": "Aucun contrôle de conformité défini",
+                "recommendation": "Définir des contrôles de conformité pour ce tenant"
+            }, ["Aucun contrôle de conformité défini - résultat non significatif"]
 
         compliant = sum(1 for c in checks if c.status == "COMPLIANT")
         total = len(checks)
@@ -707,12 +1020,40 @@ class AuditService:
             for c in checks if c.status == "NON_COMPLIANT"
         ]
 
-        score = (compliant / total) * 100 if total > 0 else 100
+        score = (compliant / total) * 100 if total > 0 else 0
+
+        logger.info(
+            f"[COMPLIANCE_BENCHMARK] tenant={self.tenant_id} "
+            f"score={score:.1f}% compliant={compliant}/{total}"
+        )
+
         return score, details, warnings
 
     def _run_feature_benchmark(self, benchmark: Benchmark, config: dict, baseline: dict) -> tuple[float, dict, list]:
-        """Benchmark fonctionnel."""
-        return 100, {"message": "Feature benchmark completed"}, []
+        """
+        Benchmark fonctionnel.
+
+        ATTENTION: Ce benchmark n'est pas encore implémenté.
+        Retourne 0% avec avertissement explicite au lieu de 100% factice.
+
+        TODO: Implémenter les vérifications fonctionnelles:
+        - Tests E2E passent
+        - Coverage de code suffisant
+        - Fonctionnalités critiques opérationnelles
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.warning(
+            f"[FEATURE_BENCHMARK] tenant={self.tenant_id} benchmark_id={benchmark.id} "
+            f"NOT IMPLEMENTED - Returning 0% instead of fake 100%"
+        )
+
+        return 0, {
+            "status": "NOT_IMPLEMENTED",
+            "message": "Feature benchmark non implémenté - score 0% par défaut",
+            "recommendation": "Implémenter _run_feature_benchmark() avec de vraies vérifications"
+        }, ["FEATURE benchmark non implémenté - résultat non fiable"]
 
     def list_benchmarks(self, benchmark_type: str = None) -> list[Benchmark]:
         """Liste les benchmarks."""

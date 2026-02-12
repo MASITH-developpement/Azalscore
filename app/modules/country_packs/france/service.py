@@ -407,7 +407,9 @@ class FrancePackService:
         if not fec.is_valid:
             raise ValueError("Le FEC doit être validé avant export")
 
+        # SÉCURITÉ: Filtrer par tenant_id
         entries = self.db.query(FECEntry).filter(
+            FECEntry.tenant_id == self.tenant_id,
             FECEntry.fec_export_id == fec_id
         ).order_by(FECEntry.line_number).all()
 
@@ -493,8 +495,9 @@ class FrancePackService:
         )
         self.db.add(employee)
 
-        # Mettre à jour totaux DSN
+        # SÉCURITÉ: Mettre à jour totaux DSN (filtrer par tenant_id)
         dsn.total_employees = self.db.query(DSNEmployee).filter(
+            DSNEmployee.tenant_id == self.tenant_id,
             DSNEmployee.dsn_declaration_id == dsn_id
         ).count() + 1
         dsn.total_brut = (dsn.total_brut or Decimal("0")) + data.brut_periode

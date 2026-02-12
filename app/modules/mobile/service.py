@@ -54,8 +54,9 @@ class MobileService:
 
     def register_device(self, user_id: int, data: DeviceRegister) -> MobileDevice:
         """Enregistrer un nouvel appareil."""
-        # Vérifier si l'appareil existe déjà
+        # SÉCURITÉ: Vérifier si l'appareil existe déjà pour CE tenant
         existing = self.db.query(MobileDevice).filter(
+            MobileDevice.tenant_id == self.tenant_id,
             MobileDevice.device_id == data.device_id
         ).first()
 
@@ -105,7 +106,9 @@ class MobileService:
 
     def get_device_by_uuid(self, device_uuid: str) -> MobileDevice | None:
         """Récupérer un appareil par UUID."""
+        # SÉCURITÉ: Filtrer par tenant_id
         return self.db.query(MobileDevice).filter(
+            MobileDevice.tenant_id == self.tenant_id,
             MobileDevice.device_id == device_uuid
         ).first()
 
@@ -141,8 +144,9 @@ class MobileService:
         device.is_active = False
         device.updated_at = datetime.utcnow()
 
-        # Révoquer toutes les sessions
+        # Révoquer toutes les sessions (defense-in-depth: filtre tenant explicite)
         self.db.query(MobileSession).filter(
+            MobileSession.tenant_id == self.tenant_id,
             MobileSession.device_id == device_id,
             MobileSession.is_active
         ).update({
@@ -206,7 +210,9 @@ class MobileService:
 
     def get_session_by_token(self, token: str) -> MobileSession | None:
         """Récupérer session par token."""
+        # SÉCURITÉ: Filtrer par tenant_id (défense en profondeur)
         return self.db.query(MobileSession).filter(
+            MobileSession.tenant_id == self.tenant_id,
             MobileSession.session_token == token,
             MobileSession.is_active,
             not MobileSession.revoked
@@ -214,7 +220,9 @@ class MobileService:
 
     def refresh_session(self, refresh_token: str) -> MobileSession | None:
         """Renouveler une session."""
+        # SÉCURITÉ: Filtrer par tenant_id (défense en profondeur)
         session = self.db.query(MobileSession).filter(
+            MobileSession.tenant_id == self.tenant_id,
             MobileSession.refresh_token == refresh_token,
             not MobileSession.revoked
         ).first()

@@ -139,8 +139,9 @@ class SubscriptionService:
         if not plan:
             return False
 
-        # Vérifier pas d'abonnements actifs
+        # SÉCURITÉ: Vérifier pas d'abonnements actifs (filtrer par tenant_id)
         active_subs = self.db.query(Subscription).filter(
+            Subscription.tenant_id == self.tenant_id,
             Subscription.plan_id == plan_id,
             Subscription.status.in_([
                 SubscriptionStatus.ACTIVE,
@@ -380,9 +381,10 @@ class SubscriptionService:
         subscription.mrr = self._calculate_mrr(subscription)
         subscription.arr = subscription.mrr * 12
 
-        # Incrémenter compteur coupon
+        # SÉCURITÉ: Incrémenter compteur coupon (filtrer par tenant_id)
         if coupon_id:
             self.db.query(SubscriptionCoupon).filter(
+                SubscriptionCoupon.tenant_id == self.tenant_id,
                 SubscriptionCoupon.id == coupon_id
             ).update({"times_redeemed": SubscriptionCoupon.times_redeemed + 1})
 
@@ -909,16 +911,18 @@ class SubscriptionService:
 
     def create_usage_record(self, data: UsageRecordCreate) -> UsageRecord:
         """Créer un enregistrement d'usage."""
-        # Vérifier idempotence
+        # SÉCURITÉ: Vérifier idempotence (filtrer par tenant_id)
         if data.idempotency_key:
             existing = self.db.query(UsageRecord).filter(
+                UsageRecord.tenant_id == self.tenant_id,
                 UsageRecord.idempotency_key == data.idempotency_key
             ).first()
             if existing:
                 return existing
 
-        # Récupérer item
+        # SÉCURITÉ: Récupérer item (filtrer par tenant_id)
         item = self.db.query(SubscriptionItem).filter(
+            SubscriptionItem.tenant_id == self.tenant_id,
             SubscriptionItem.id == data.subscription_item_id
         ).first()
 

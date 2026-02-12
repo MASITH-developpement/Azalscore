@@ -593,9 +593,10 @@ Message automatique AZALS
         event.escalation_level = level_order[current_idx + 1]
         event.escalated_at = datetime.utcnow()
 
-        # Notifier le niveau supérieur
+        # SÉCURITÉ: Notifier le niveau supérieur (filtrer par tenant_id)
         trigger = event.trigger
         subscriptions = self.db.query(TriggerSubscription).filter(
+            TriggerSubscription.tenant_id == self.tenant_id,
             TriggerSubscription.trigger_id == trigger.id,
             TriggerSubscription.escalation_level == event.escalation_level,
             TriggerSubscription.is_active
