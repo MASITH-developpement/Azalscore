@@ -70,3 +70,9 @@ backups/
 
 # UUID Reset sentinel (ne pas committer - specifique a chaque environnement)
 .uuid_reset_done
+
+# Security scanning
+.secrets.baseline
+
+# Backup files
+*.backup.*
