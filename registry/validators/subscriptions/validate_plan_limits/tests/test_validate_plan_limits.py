@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.subscriptions.validate_plan_limits.impl import execute
 
 
 class TestValidatePlanLimits:
@@ -28,7 +28,7 @@ class TestValidatePlanLimits:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "usage": 100.0,
         }
 
@@ -40,7 +40,7 @@ class TestValidatePlanLimits:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "usage": "test",
         }
         inputs_copy = inputs.copy()

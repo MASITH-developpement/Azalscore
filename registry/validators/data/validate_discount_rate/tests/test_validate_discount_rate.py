@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_discount_rate.impl import execute
 
 
 class TestValidateDiscountRate:
@@ -29,7 +29,7 @@ class TestValidateDiscountRate:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "discount_rate": 100.0,
         }
 
@@ -41,7 +41,7 @@ class TestValidateDiscountRate:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "discount_rate": "test",
         }
         inputs_copy = inputs.copy()

@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.images.resize_image_dimensions.impl import execute
 
 
 class TestResizeImageDimensions:
@@ -28,7 +28,7 @@ class TestResizeImageDimensions:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "width": 100.0,
         }
 
@@ -40,7 +40,7 @@ class TestResizeImageDimensions:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "width": "test",
         }
         inputs_copy = inputs.copy()

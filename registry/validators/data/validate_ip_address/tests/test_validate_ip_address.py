@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_ip_address.impl import execute
 
 
 class TestValidateIpAddress:
@@ -31,7 +31,7 @@ class TestValidateIpAddress:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "ip_address": "test_value",
             "version": "test_value",
         }
@@ -44,7 +44,7 @@ class TestValidateIpAddress:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "ip_address": "test",
             "version": "test",
         }

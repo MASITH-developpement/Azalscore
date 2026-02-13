@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_payment_terms.impl import execute
 
 
 class TestValidatePaymentTerms:
@@ -30,7 +30,7 @@ class TestValidatePaymentTerms:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "payment_terms": "test_value",
         }
 
@@ -42,7 +42,7 @@ class TestValidatePaymentTerms:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "payment_terms": "test",
         }
         inputs_copy = inputs.copy()

@@ -271,11 +271,42 @@ class TreasuryForecast(Base, TenantMixin):
     )
 
 
+class UIEvent(Base, TenantMixin):
+    """
+    Événements UI pour audit trail et analytics décisionnel.
+
+    Capture les interactions utilisateur pour :
+    - Analyse comportement utilisateurs (module BI)
+    - Optimisation UX décisionnel
+    - Tracking adoption modules
+    - Audit trail complet
+
+    Données alimentent le module BI pour dashboards dirigeants.
+    """
+    __tablename__ = "ui_events"
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id = Column(String(255), nullable=False, index=True)
+    user_id = Column(UniversalUUID(), nullable=False, index=True)
+    event_type = Column(String(100), nullable=False)
+    component = Column(String(200), nullable=True)
+    action = Column(String(200), nullable=True)
+    target = Column(String(500), nullable=True)
+    event_data = Column(Text, nullable=True)  # JSON serialized (renamed from metadata)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_ui_events_tenant_type', 'tenant_id', 'event_type'),
+        Index('idx_ui_events_tenant_user', 'tenant_id', 'user_id'),
+        Index('idx_ui_events_timestamp', 'timestamp'),
+    )
+
+
 # Re-export JournalEntry pour compatibilité avec les tests existants
 from app.modules.finance.models import JournalEntry, JournalEntryLine  # noqa: E402
 
 __all__ = [
     'Base', 'TenantMixin', 'User', 'UserRole', 'DecisionLevel', 'RedWorkflowStep',
     'CoreAuditJournal', 'Item', 'Decision', 'RedDecisionWorkflow', 'RedDecisionReport',
-    'TreasuryForecast', 'JournalEntry', 'JournalEntryLine'
+    'TreasuryForecast', 'UIEvent', 'JournalEntry', 'JournalEntryLine'
 ]

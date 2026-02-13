@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.text.normalize_string.impl import execute
 
 
 class TestNormalizeString:
@@ -29,7 +29,7 @@ class TestNormalizeString:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "value": "test_value",
             "options": "test_value",
         }
@@ -42,7 +42,7 @@ class TestNormalizeString:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "value": "test",
             "options": "test",
         }

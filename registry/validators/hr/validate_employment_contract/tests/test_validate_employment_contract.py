@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.hr.validate_employment_contract.impl import execute
 
 
 class TestValidateEmploymentContract:
@@ -32,7 +32,7 @@ class TestValidateEmploymentContract:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "contract_type": "test_value",
             "start_date": "test_value",
             "end_date": "test_value",
@@ -46,7 +46,7 @@ class TestValidateEmploymentContract:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "contract_type": "test",
             "start_date": "test",
             "end_date": "test",

@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.addresses.format_address.impl import execute
 
 
 class TestFormatAddress:
@@ -32,7 +32,7 @@ class TestFormatAddress:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "street": "test_value",
             "postal_code": "test_value",
             "city": "test_value",
@@ -47,7 +47,7 @@ class TestFormatAddress:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "street": "test",
             "postal_code": "test",
             "city": "test",

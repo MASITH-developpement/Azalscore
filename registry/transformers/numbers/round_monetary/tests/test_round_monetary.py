@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.numbers.round_monetary.impl import execute
 
 
 class TestRoundMonetary:
@@ -29,7 +29,7 @@ class TestRoundMonetary:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "amount": 100.0,
             "precision": 100.0,
         }
@@ -42,7 +42,7 @@ class TestRoundMonetary:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "amount": "test",
             "precision": "test",
         }

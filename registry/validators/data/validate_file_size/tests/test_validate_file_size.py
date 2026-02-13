@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_file_size.impl import execute
 
 
 class TestValidateFileSize:
@@ -31,7 +31,7 @@ class TestValidateFileSize:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "file_size_bytes": 100.0,
             "max_size_mb": 100.0,
         }
@@ -44,7 +44,7 @@ class TestValidateFileSize:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "file_size_bytes": "test",
             "max_size_mb": "test",
         }

@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_date_range.impl import execute
 
 
 class TestValidateDateRange:
@@ -31,7 +31,7 @@ class TestValidateDateRange:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "date": "test_value",
             "min_date": "test_value",
             "max_date": "test_value",
@@ -45,7 +45,7 @@ class TestValidateDateRange:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "date": "test",
             "min_date": "test",
             "max_date": "test",

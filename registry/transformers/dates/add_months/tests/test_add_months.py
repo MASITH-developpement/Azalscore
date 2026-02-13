@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.dates.add_months.impl import execute
 
 
 class TestAddMonths:
@@ -29,7 +29,7 @@ class TestAddMonths:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "date": "test_value",
             "months": 100.0,
         }
@@ -42,7 +42,7 @@ class TestAddMonths:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "date": "test",
             "months": "test",
         }

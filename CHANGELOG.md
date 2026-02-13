@@ -5,6 +5,67 @@ All notable changes to AZALSCORE are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-02-13
+
+### Mission 200K - Ameliorations Decisionnelles
+
+Cette version enrichit significativement les capacites decisionnelles d'AZALSCORE
+avec de nouveaux KPIs strategiques, un systeme d'audit UI, et des services SEO.
+
+### Added
+
+#### Cockpit - 5 Nouveaux KPIs Strategiques
+- **Cash Runway**: Mois de tresorerie disponible avec seuils d'alerte
+  - `GET /v1/cockpit/helpers/cash-runway`
+- **Profit Margin**: Marge nette % avec benchmark sectoriel
+  - `GET /v1/cockpit/helpers/profit-margin`
+- **Customer Concentration**: Dependance aux top 3 clients (risque > 50%)
+  - `GET /v1/cockpit/helpers/customer-concentration`
+- **Working Capital (BFR)**: Besoin en fonds de roulement
+  - `GET /v1/cockpit/helpers/working-capital`
+- **Employee Productivity**: CA par employe ETP
+  - `GET /v1/cockpit/helpers/employee-productivity`
+- **All Strategic**: Endpoint unifie
+  - `GET /v1/cockpit/helpers/all-strategic`
+
+#### Frontend Cockpit
+- Composant `StrategicKPICard` pour affichage des KPIs
+- Hook `useStrategicKPIs` avec TanStack Query
+- Section KPIs strategiques dans le dashboard
+- Styles CSS avec indicateurs de statut colores
+- Design responsive mobile-first
+
+#### Audit - UIEvents Tracking
+- Modele `UIEvent` pour tracking interactions utilisateur
+- Table `ui_events` avec migration Alembic
+- `POST /v1/audit/ui-events` - Batch storage
+- `GET /v1/audit/ui-events/stats` - Statistiques
+
+#### SEO Service (Module Marceau)
+- `generate_article()`: Generation articles SEO optimises
+- `publish_wordpress()`: Publication WordPress REST API
+- `optimize_meta()`: Optimisation meta tags
+- `analyze_rankings()`: Analyse classements mots-cles
+
+#### Transformers Registry
+- **text/slugify**: Generation slugs URL-friendly
+  - Normalisation unicode (accents francais)
+  - Troncature intelligente, separateur configurable
+  - 17 tests unitaires (100% pass)
+
+### Documentation
+- `docs/business/VALEUR_DECISIONNELLE.md`: Valorisation 200k EUR
+- `CHANGELOG.md`: Mise a jour complete
+
+### Fixed
+- Renommage `metadata` -> `event_data` dans UIEvent (conflit SQLAlchemy)
+- Import corrige dans tests slugify
+- Correction syntaxe `{{` -> `{` dans 48 fichiers tests validators
+- Correction imports relatifs -> absolus dans tous les tests validators
+- **299 tests registry passent** (144 validators + 155 transformers)
+
+---
+
 ## [0.5.0-dev] - 2026-02-05
 
 ### Added

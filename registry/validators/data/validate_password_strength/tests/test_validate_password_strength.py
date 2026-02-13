@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_password_strength.impl import execute
 
 
 class TestValidatePasswordStrength:
@@ -32,7 +32,7 @@ class TestValidatePasswordStrength:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "password": "test_value",
             "min_length": 100.0,
         }
@@ -45,7 +45,7 @@ class TestValidatePasswordStrength:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "password": "test",
             "min_length": "test",
         }

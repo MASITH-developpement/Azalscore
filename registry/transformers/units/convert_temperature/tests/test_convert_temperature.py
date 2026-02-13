@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.units.convert_temperature.impl import execute
 
 
 class TestConvertTemperature:
@@ -28,7 +28,7 @@ class TestConvertTemperature:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "value": 100.0,
         }
 
@@ -40,7 +40,7 @@ class TestConvertTemperature:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "value": "test",
         }
         inputs_copy = inputs.copy()

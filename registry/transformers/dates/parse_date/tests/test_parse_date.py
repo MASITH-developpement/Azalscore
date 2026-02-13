@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.dates.parse_date.impl import execute
 
 
 class TestParseDate:
@@ -30,7 +30,7 @@ class TestParseDate:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "date_string": "test_value",
             "format": "test_value",
         }
@@ -43,7 +43,7 @@ class TestParseDate:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "date_string": "test",
             "format": "test",
         }

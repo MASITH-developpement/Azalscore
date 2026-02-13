@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.objects.pick_properties.impl import execute
 
 
 class TestPickProperties:
@@ -29,7 +29,7 @@ class TestPickProperties:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "object": "test_value",
             "properties": "test_value",
         }
@@ -42,7 +42,7 @@ class TestPickProperties:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "object": "test",
             "properties": "test",
         }

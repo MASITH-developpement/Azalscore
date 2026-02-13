@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.finance.validate_rib.impl import execute
 
 
 class TestValidateRib:
@@ -32,7 +32,7 @@ class TestValidateRib:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "bank_code": "test_value",
             "branch_code": "test_value",
             "account_number": "test_value",
@@ -47,7 +47,7 @@ class TestValidateRib:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "bank_code": "test",
             "branch_code": "test",
             "account_number": "test",

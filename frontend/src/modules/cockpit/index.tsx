@@ -288,6 +288,41 @@ const useRiskAlerts = () => {
   });
 };
 
+// KPIs Strategiques (+15,000€ valeur)
+interface StrategicKPIData {
+  kpi: string;
+  value: number;
+  unit: string;
+  status: string;
+  color: string;
+  details: Record<string, unknown>;
+  recommendations: string[];
+}
+
+interface AllStrategicKPIs {
+  cash_runway: StrategicKPIData;
+  profit_margin: StrategicKPIData;
+  customer_concentration: StrategicKPIData;
+  working_capital: StrategicKPIData;
+  employee_productivity: StrategicKPIData;
+  generated_at: string;
+}
+
+const useStrategicKPIs = () => {
+  return useQuery({
+    queryKey: ['cockpit-strategic-kpis'],
+    queryFn: async (): Promise<AllStrategicKPIs | null> => {
+      try {
+        const response = await api.get('/v1/cockpit/helpers/all-strategic');
+        return response as unknown as AllStrategicKPIs;
+      } catch {
+        return null;
+      }
+    },
+    refetchInterval: 300000, // Refresh toutes les 5 minutes
+  });
+};
+
 // ============================================================
 // COMPOSANTS
 // ============================================================
@@ -454,6 +489,53 @@ const RecentActivityItem: React.FC<{ item: RecentItem }> = ({ item }) => {
   );
 };
 
+// Strategic KPI Card (+15,000€ valeur)
+const StrategicKPICard: React.FC<{
+  title: string;
+  kpi: StrategicKPIData;
+  icon: React.ReactNode;
+}> = ({ title, kpi, icon }) => {
+  const getStatusBadge = () => {
+    const colorMap: Record<string, string> = {
+      red: 'danger',
+      orange: 'warning',
+      yellow: 'attention',
+      green: 'success',
+      blue: 'info',
+      gray: 'neutral',
+    };
+    return colorMap[kpi.color] || 'neutral';
+  };
+
+  return (
+    <div className={clsx('azals-cockpit-strategic-kpi', `azals-cockpit-strategic-kpi--${getStatusBadge()}`)}>
+      <div className="azals-cockpit-strategic-kpi__header">
+        <div className="azals-cockpit-strategic-kpi__icon">{icon}</div>
+        <div className="azals-cockpit-strategic-kpi__title">{title}</div>
+        <div className={clsx('azals-cockpit-strategic-kpi__badge', `azals-cockpit-strategic-kpi__badge--${getStatusBadge()}`)}>
+          {kpi.status}
+        </div>
+      </div>
+      <div className="azals-cockpit-strategic-kpi__value">
+        {typeof kpi.value === 'number' ? (
+          kpi.unit === 'EUR' || kpi.unit === 'EUR/employe/an' ? (
+            formatCurrency(kpi.value)
+          ) : kpi.unit === '%' ? (
+            `${kpi.value}%`
+          ) : (
+            `${kpi.value} ${kpi.unit}`
+          )
+        ) : kpi.value}
+      </div>
+      {kpi.recommendations && kpi.recommendations.length > 0 && kpi.recommendations[0] && (
+        <div className="azals-cockpit-strategic-kpi__recommendation">
+          {kpi.recommendations[0]}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // KPI Global
 const GlobalKPICard: React.FC<{
   label: string;
@@ -492,6 +574,7 @@ export const CockpitModule: React.FC = () => {
   const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useCockpitStats();
   const { data: recentItems, isLoading: recentLoading, error: recentError, refetch: refetchRecent } = useRecentActivity();
   const { data: riskAlerts, refetch: refetchRisk } = useRiskAlerts();
+  const { data: strategicKPIs, isLoading: strategicLoading, refetch: refetchStrategic } = useStrategicKPIs();
 
   const defaultStats: FluxStats = {
     crm: { prospects: 0, clients: 0, opportunites: 0 },
@@ -542,7 +625,7 @@ export const CockpitModule: React.FC = () => {
         <Button
           variant="secondary"
           leftIcon={<RefreshCw size={16} />}
-          onClick={() => { refetchStats(); refetchRecent(); refetchRisk(); }}
+          onClick={() => { refetchStats(); refetchRecent(); refetchRisk(); refetchStrategic(); }}
         >
           Actualiser
         </Button>
@@ -577,6 +660,39 @@ export const CockpitModule: React.FC = () => {
           colorVariant="crm"
         />
       </div>
+
+      {/* KPIs Strategiques Dirigeant */}
+      {strategicKPIs && !strategicLoading && (
+        <Card title="KPIs Strategiques Dirigeant" className="azals-cockpit-strategic">
+          <div className="azals-cockpit-strategic__grid">
+            <StrategicKPICard
+              title="Cash Runway"
+              kpi={strategicKPIs.cash_runway}
+              icon={<Euro size={20} />}
+            />
+            <StrategicKPICard
+              title="Marge Beneficiaire"
+              kpi={strategicKPIs.profit_margin}
+              icon={<TrendingUp size={20} />}
+            />
+            <StrategicKPICard
+              title="Concentration Clients"
+              kpi={strategicKPIs.customer_concentration}
+              icon={<Users size={20} />}
+            />
+            <StrategicKPICard
+              title="BFR"
+              kpi={strategicKPIs.working_capital}
+              icon={<Calculator size={20} />}
+            />
+            <StrategicKPICard
+              title="Productivite RH"
+              kpi={strategicKPIs.employee_productivity}
+              icon={<Activity size={20} />}
+            />
+          </div>
+        </Card>
+      )}
 
       {/* Pipeline du flux */}
       <Card

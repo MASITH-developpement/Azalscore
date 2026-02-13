@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.arrays.sum_array.impl import execute
 
 
 class TestSumArray:
@@ -28,7 +28,7 @@ class TestSumArray:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "values": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestSumArray:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "values": "test",
         }
         inputs_copy = inputs.copy()

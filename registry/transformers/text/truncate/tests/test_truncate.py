@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.text.truncate.impl import execute
 
 
 class TestTruncate:
@@ -30,7 +30,7 @@ class TestTruncate:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "value": "test_value",
             "max_length": 100.0,
             "suffix": "test_value",
@@ -44,7 +44,7 @@ class TestTruncate:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "value": "test",
             "max_length": "test",
             "suffix": "test",

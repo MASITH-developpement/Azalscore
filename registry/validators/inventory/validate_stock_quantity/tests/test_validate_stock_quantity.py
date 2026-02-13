@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.inventory.validate_stock_quantity.impl import execute
 
 
 class TestValidateStockQuantity:
@@ -33,7 +33,7 @@ class TestValidateStockQuantity:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "quantity": 100.0,
             "min_stock": 100.0,
             "max_stock": 100.0,
@@ -47,7 +47,7 @@ class TestValidateStockQuantity:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "quantity": "test",
             "min_stock": "test",
             "max_stock": "test",

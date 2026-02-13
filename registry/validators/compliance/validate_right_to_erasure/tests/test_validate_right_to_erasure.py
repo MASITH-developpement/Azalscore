@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.compliance.validate_right_to_erasure.impl import execute
 
 
 class TestValidateRightToErasure:
@@ -28,7 +28,7 @@ class TestValidateRightToErasure:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "request": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateRightToErasure:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "request": "test",
         }
         inputs_copy = inputs.copy()

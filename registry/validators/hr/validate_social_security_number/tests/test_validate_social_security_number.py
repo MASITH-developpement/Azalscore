@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.hr.validate_social_security_number.impl import execute
 
 
 class TestValidateSocialSecurityNumber:
@@ -32,7 +32,7 @@ class TestValidateSocialSecurityNumber:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "ssn": "test_value",
         }
 
@@ -44,7 +44,7 @@ class TestValidateSocialSecurityNumber:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "ssn": "test",
         }
         inputs_copy = inputs.copy()

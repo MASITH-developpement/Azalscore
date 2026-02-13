@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.arrays.group_by.impl import execute
 
 
 class TestGroupBy:
@@ -29,7 +29,7 @@ class TestGroupBy:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "items": "test_value",
             "key": "test_value",
         }
@@ -42,7 +42,7 @@ class TestGroupBy:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "items": "test",
             "key": "test",
         }

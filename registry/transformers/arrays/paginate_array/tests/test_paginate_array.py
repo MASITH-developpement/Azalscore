@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.arrays.paginate_array.impl import execute
 
 
 class TestPaginateArray:
@@ -33,7 +33,7 @@ class TestPaginateArray:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "items": "test_value",
             "page": 100.0,
             "page_size": 100.0,
@@ -47,7 +47,7 @@ class TestPaginateArray:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "items": "test",
             "page": "test",
             "page_size": "test",

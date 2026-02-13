@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.text.extract_initials.impl import execute
 
 
 class TestExtractInitials:
@@ -28,7 +28,7 @@ class TestExtractInitials:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "name": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestExtractInitials:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "name": "test",
         }
         inputs_copy = inputs.copy()
