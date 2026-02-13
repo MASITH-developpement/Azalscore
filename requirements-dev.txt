@@ -45,3 +45,4 @@ mkdocs-material>=9.5.3    # Thème Material
 # ============================================
 ipython>=8.19.0           # Shell interactif
 rich>=13.7.0              # Output coloré
+cryptography>=46.0.5 # not directly required, pinned by Snyk to avoid a vulnerability
