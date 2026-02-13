@@ -4,6 +4,7 @@ AZALS MODULE 13 - POS Service
 Logique métier pour le Point de Vente.
 """
 
+import logging
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -46,6 +47,8 @@ from .schemas import (
     TransactionCreate,
     TransactionLineCreate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class POSService:
@@ -344,6 +347,10 @@ class POSService:
 
     def open_session(self, data: SessionOpenRequest) -> POSSession:
         """Ouvrir une session de caisse."""
+        logger.info(
+            "Opening POS session | tenant=%s user=%s terminal_id=%s opening_cash=%s",
+            self.tenant_id, data.cashier_id, data.terminal_id, data.opening_cash
+        )
         # Vérifier terminal
         terminal = self.get_terminal(data.terminal_id)
         if not terminal:
@@ -389,6 +396,10 @@ class POSService:
 
         self.db.commit()
         self.db.refresh(session)
+        logger.info(
+            "POS session opened | session_id=%s session_number=%s",
+            session.id, session.session_number
+        )
         return session
 
     def get_session(self, session_id: int) -> POSSession | None:
@@ -433,6 +444,10 @@ class POSService:
         self, session_id: int, data: SessionCloseRequest, closed_by_id: int
     ) -> POSSession:
         """Fermer une session de caisse."""
+        logger.info(
+            "Closing POS session | tenant=%s user=%s session_id=%s actual_cash=%s",
+            self.tenant_id, closed_by_id, session_id, data.actual_cash
+        )
         session = self.get_session(session_id)
         if not session:
             raise ValueError("Session introuvable")
@@ -484,6 +499,10 @@ class POSService:
 
         self.db.commit()
         self.db.refresh(session)
+        logger.info(
+            "POS session closed | session_id=%s session_number=%s cash_difference=%s",
+            session.id, session.session_number, session.cash_difference
+        )
         return session
 
     def add_cash_movement(
@@ -552,6 +571,10 @@ class POSService:
         self, session_id: int, data: TransactionCreate, cashier_id: int
     ) -> POSTransaction:
         """Créer une transaction."""
+        logger.info(
+            "Creating POS transaction | tenant=%s session_id=%s cashier_id=%s lines_count=%s",
+            self.tenant_id, session_id, cashier_id, len(data.lines) if data.lines else 0
+        )
         session = self.get_session(session_id)
         if not session:
             raise ValueError("Session introuvable")
@@ -636,6 +659,10 @@ class POSService:
 
         self.db.commit()
         self.db.refresh(transaction)
+        logger.info(
+            "POS transaction created | transaction_id=%s receipt_number=%s total=%s status=%s",
+            transaction.id, transaction.receipt_number, transaction.total, transaction.status.value
+        )
         return transaction
 
     def _create_transaction_line(
@@ -766,6 +793,10 @@ class POSService:
         self, transaction_id: int, data: PaymentCreate
     ) -> POSTransaction:
         """Ajouter un paiement à une transaction."""
+        logger.info(
+            "Processing payment | tenant=%s transaction_id=%s method=%s amount=%s",
+            self.tenant_id, transaction_id, data.payment_method.value, data.amount
+        )
         transaction = self.get_transaction(transaction_id)
         if not transaction:
             raise ValueError("Transaction introuvable")
@@ -796,6 +827,10 @@ class POSService:
 
         self.db.commit()
         self.db.refresh(transaction)
+        logger.info(
+            "Payment processed | transaction_id=%s amount_paid=%s amount_due=%s status=%s",
+            transaction.id, transaction.amount_paid, transaction.amount_due, transaction.status.value
+        )
         return transaction
 
     def _update_session_totals(self, transaction: POSTransaction):
@@ -834,6 +869,10 @@ class POSService:
         self, transaction_id: int, reason: str, voided_by_id: int
     ) -> POSTransaction:
         """Annuler une transaction."""
+        logger.info(
+            "Voiding POS transaction | tenant=%s transaction_id=%s voided_by=%s reason=%s",
+            self.tenant_id, transaction_id, voided_by_id, reason
+        )
         transaction = self.get_transaction(transaction_id)
         if not transaction:
             raise ValueError("Transaction introuvable")
@@ -857,6 +896,10 @@ class POSService:
 
         self.db.commit()
         self.db.refresh(transaction)
+        logger.info(
+            "POS transaction voided | transaction_id=%s receipt_number=%s",
+            transaction.id, transaction.receipt_number
+        )
         return transaction
 
     def refund_transaction(
@@ -864,6 +907,10 @@ class POSService:
         session_id: int, cashier_id: int, reason: str
     ) -> POSTransaction:
         """Créer un remboursement."""
+        logger.info(
+            "Processing refund | tenant=%s original_transaction_id=%s cashier_id=%s lines_count=%s reason=%s",
+            self.tenant_id, original_transaction_id, cashier_id, len(line_items), reason
+        )
         original = self.get_transaction(original_transaction_id)
         if not original:
             raise ValueError("Transaction originale introuvable")
@@ -915,6 +962,10 @@ class POSService:
 
         self.db.commit()
         self.db.refresh(refund)
+        logger.info(
+            "Refund processed | refund_transaction_id=%s receipt_number=%s original_transaction_id=%s total=%s",
+            refund.id, refund.receipt_number, original_transaction_id, refund.total
+        )
         return refund
 
     # ========================================================================

@@ -5,6 +5,7 @@ AZALS MODULE M9 - Service Projets
 Logique métier pour la gestion de projets.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -68,6 +69,8 @@ from .schemas import (
     TimeEntryCreate,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ProjectsService:
     """Service de gestion des projets."""
@@ -83,6 +86,10 @@ class ProjectsService:
 
     def create_project(self, data: ProjectCreate) -> Project:
         """Créer un projet."""
+        logger.info(
+            "Creating project | tenant=%s user=%s name=%s customer_id=%s budget=%s",
+            self.tenant_id, self.user_id, data.name, data.customer_id, data.planned_budget
+        )
         # Auto-générer le code si non fourni
         from app.core.sequences import SequenceGenerator
         code = data.code
@@ -117,6 +124,7 @@ class ProjectsService:
         self.db.add(project)
         self.db.commit()
         self.db.refresh(project)
+        logger.info("Project created | project_id=%s project_code=%s", project.id, project.code)
         return project
 
     def get_project(self, project_id: UUID) -> Project | None:
@@ -173,11 +181,20 @@ class ProjectsService:
         """Mettre à jour un projet."""
         project = self.get_project(project_id)
         if not project:
+            logger.warning("Project not found for update | project_id=%s tenant=%s", project_id, self.tenant_id)
             return None
 
+        old_status = project.status
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(project, key, value)
+
+        # Log du changement de statut si applicable
+        if data.status and data.status != old_status:
+            logger.info(
+                "Updating project status | project_id=%s project_code=%s old_status=%s new_status=%s user=%s",
+                project_id, project.code, old_status, data.status, self.user_id
+            )
 
         # Mise à jour automatique des dates selon le statut
         if data.status == ProjectStatus.IN_PROGRESS and not project.actual_start_date:
@@ -347,6 +364,10 @@ class ProjectsService:
 
     def create_task(self, project_id: UUID, data: TaskCreate) -> ProjectTask:
         """Créer une tâche."""
+        logger.info(
+            "Creating task | tenant=%s user=%s project_id=%s name=%s assignee_id=%s estimated_hours=%s",
+            self.tenant_id, self.user_id, project_id, data.name, data.assignee_id, data.estimated_hours
+        )
         task = ProjectTask(
             tenant_id=self.tenant_id,
             project_id=project_id,
@@ -375,6 +396,7 @@ class ProjectsService:
         self.db.add(task)
         self.db.commit()
         self.db.refresh(task)
+        logger.info("Task created | task_id=%s project_id=%s task_name=%s", task.id, project_id, task.name)
 
         # Créer les dépendances
         for dep in data.dependencies:
@@ -454,8 +476,10 @@ class ProjectsService:
         """Mettre à jour une tâche."""
         task = self.get_task(task_id)
         if not task:
+            logger.warning("Task not found for update | task_id=%s tenant=%s", task_id, self.tenant_id)
             return None
 
+        old_status = task.status
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(task, key, value)
@@ -468,6 +492,10 @@ class ProjectsService:
             task.completed_at = datetime.utcnow()
             task.progress_percent = 100
             task.remaining_hours = 0
+            logger.info(
+                "Task completed | task_id=%s project_id=%s task_name=%s actual_hours=%s user=%s",
+                task_id, task.project_id, task.name, task.actual_hours, self.user_id
+            )
 
         self.db.commit()
         self.db.refresh(task)
@@ -512,6 +540,10 @@ class ProjectsService:
 
     def create_milestone(self, project_id: UUID, data: MilestoneCreate) -> ProjectMilestone:
         """Créer un jalon."""
+        logger.info(
+            "Creating milestone | tenant=%s project_id=%s name=%s target_date=%s is_key=%s",
+            self.tenant_id, project_id, data.name, data.target_date, data.is_key_milestone
+        )
         milestone = ProjectMilestone(
             tenant_id=self.tenant_id,
             project_id=project_id,
@@ -528,6 +560,7 @@ class ProjectsService:
         self.db.add(milestone)
         self.db.commit()
         self.db.refresh(milestone)
+        logger.info("Milestone created | milestone_id=%s project_id=%s name=%s", milestone.id, project_id, milestone.name)
         return milestone
 
     def get_milestones(self, project_id: UUID) -> list[ProjectMilestone]:
@@ -570,6 +603,10 @@ class ProjectsService:
 
     def add_team_member(self, project_id: UUID, data: TeamMemberCreate) -> ProjectTeamMember:
         """Ajouter un membre à l'équipe."""
+        logger.info(
+            "Assigning resource | tenant=%s project_id=%s user_id=%s employee_id=%s role=%s allocation=%s%%",
+            self.tenant_id, project_id, data.user_id, data.employee_id, data.role, data.allocation_percent
+        )
         member = ProjectTeamMember(
             tenant_id=self.tenant_id,
             project_id=project_id,
@@ -591,6 +628,10 @@ class ProjectsService:
         self.db.add(member)
         self.db.commit()
         self.db.refresh(member)
+        logger.info(
+            "Resource assigned | member_id=%s project_id=%s user_id=%s role=%s",
+            member.id, project_id, data.user_id, data.role
+        )
         return member
 
     def get_team_members(self, project_id: UUID) -> list[ProjectTeamMember]:

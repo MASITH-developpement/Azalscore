@@ -5,6 +5,7 @@ AZALS MODULE T9 - Service Tenants
 Logique métier pour la gestion des tenants.
 """
 
+import logging
 import secrets
 from datetime import datetime, timedelta
 from typing import Any
@@ -39,6 +40,8 @@ from .schemas import (
     TenantUpdate,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class TenantService:
     """Service de gestion des tenants."""
@@ -54,6 +57,10 @@ class TenantService:
 
     def create_tenant(self, data: TenantCreate) -> Tenant:
         """Créer un nouveau tenant."""
+        logger.info(
+            "Creating tenant | admin_user=%s tenant_name=%s plan=%s",
+            self.actor_id, data.name, data.plan
+        )
         tenant = Tenant(
             tenant_id=data.tenant_id,
             name=data.name,
@@ -97,6 +104,7 @@ class TenantService:
             "plan": data.plan,
         })
 
+        logger.info("Tenant created | tenant_id=%s tenant_code=%s", tenant.id, tenant.tenant_id)
         return tenant
 
     def get_tenant(self, tenant_id: str) -> Tenant | None:
@@ -131,8 +139,13 @@ class TenantService:
 
     def update_tenant(self, tenant_id: str, data: TenantUpdate) -> Tenant | None:
         """Mettre à jour un tenant."""
+        logger.info(
+            "Updating tenant | actor=%s tenant_id=%s",
+            self.actor_id, tenant_id
+        )
         tenant = self.get_tenant(tenant_id)
         if not tenant:
+            logger.warning("Tenant update failed - not found | tenant_id=%s", tenant_id)
             return None
 
         update_data = data.model_dump(exclude_unset=True)
@@ -143,12 +156,18 @@ class TenantService:
         self.db.refresh(tenant)
 
         self._log_event(tenant_id, "tenant.updated", update_data)
+        logger.info("Tenant updated | tenant_id=%s", tenant_id)
         return tenant
 
     def activate_tenant(self, tenant_id: str) -> Tenant | None:
         """Activer un tenant."""
+        logger.info(
+            "Activating tenant | actor=%s tenant_id=%s",
+            self.actor_id, tenant_id
+        )
         tenant = self.get_tenant(tenant_id)
         if not tenant:
+            logger.warning("Tenant activation failed - not found | tenant_id=%s", tenant_id)
             return None
 
         tenant.status = TenantStatus.ACTIVE
@@ -159,12 +178,18 @@ class TenantService:
         self.db.refresh(tenant)
 
         self._log_event(tenant_id, "tenant.activated", {})
+        logger.info("Tenant activated | tenant_id=%s", tenant_id)
         return tenant
 
     def suspend_tenant(self, tenant_id: str, reason: str = None) -> Tenant | None:
         """Suspendre un tenant."""
+        logger.warning(
+            "Suspending tenant | actor=%s tenant_id=%s reason=%s",
+            self.actor_id, tenant_id, reason
+        )
         tenant = self.get_tenant(tenant_id)
         if not tenant:
+            logger.warning("Tenant suspension failed - not found | tenant_id=%s", tenant_id)
             return None
 
         tenant.status = TenantStatus.SUSPENDED
@@ -174,12 +199,18 @@ class TenantService:
         self.db.refresh(tenant)
 
         self._log_event(tenant_id, "tenant.suspended", {"reason": reason})
+        logger.warning("Tenant suspended | tenant_id=%s reason=%s", tenant_id, reason)
         return tenant
 
     def cancel_tenant(self, tenant_id: str, reason: str = None) -> Tenant | None:
         """Annuler un tenant."""
+        logger.warning(
+            "Cancelling tenant | actor=%s tenant_id=%s reason=%s",
+            self.actor_id, tenant_id, reason
+        )
         tenant = self.get_tenant(tenant_id)
         if not tenant:
+            logger.warning("Tenant cancellation failed - not found | tenant_id=%s", tenant_id)
             return None
 
         tenant.status = TenantStatus.CANCELLED
@@ -189,6 +220,7 @@ class TenantService:
         self.db.refresh(tenant)
 
         self._log_event(tenant_id, "tenant.cancelled", {"reason": reason})
+        logger.warning("Tenant cancelled | tenant_id=%s reason=%s", tenant_id, reason)
         return tenant
 
     def start_trial(self, tenant_id: str, days: int = 14) -> Tenant | None:
@@ -293,6 +325,10 @@ class TenantService:
 
     def activate_module(self, tenant_id: str, data: ModuleActivation) -> TenantModule:
         """Activer un module pour un tenant."""
+        logger.info(
+            "Adding module to tenant | actor=%s tenant_id=%s module_code=%s",
+            self.actor_id, tenant_id, data.module_code
+        )
         # Vérifier si déjà actif
         existing = self.db.query(TenantModule).filter(
             TenantModule.tenant_id == tenant_id,
@@ -322,16 +358,28 @@ class TenantService:
             "module_code": data.module_code,
         })
 
+        logger.info(
+            "Module added to tenant | tenant_id=%s module_code=%s",
+            tenant_id, data.module_code
+        )
         return module
 
     def deactivate_module(self, tenant_id: str, module_code: str) -> TenantModule | None:
         """Désactiver un module."""
+        logger.warning(
+            "Removing module from tenant | actor=%s tenant_id=%s module_code=%s",
+            self.actor_id, tenant_id, module_code
+        )
         module = self.db.query(TenantModule).filter(
             TenantModule.tenant_id == tenant_id,
             TenantModule.module_code == module_code
         ).first()
 
         if not module:
+            logger.warning(
+                "Module removal failed - not found | tenant_id=%s module_code=%s",
+                tenant_id, module_code
+            )
             return None
 
         module.status = ModuleStatus.DISABLED
@@ -344,6 +392,10 @@ class TenantService:
             "module_code": module_code,
         })
 
+        logger.warning(
+            "Module removed from tenant | tenant_id=%s module_code=%s",
+            tenant_id, module_code
+        )
         return module
 
     def list_tenant_modules(self, tenant_id: str, active_only: bool = True) -> list[TenantModule]:
@@ -504,6 +556,10 @@ class TenantService:
 
     def update_settings(self, tenant_id: str, data: TenantSettingsUpdate) -> TenantSettings:
         """Mettre à jour les paramètres."""
+        logger.info(
+            "Updating tenant settings | actor=%s tenant_id=%s",
+            self.actor_id, tenant_id
+        )
         settings = self.get_settings(tenant_id)
 
         if not settings:
@@ -518,6 +574,7 @@ class TenantService:
         self.db.refresh(settings)
 
         self._log_event(tenant_id, "settings.updated", update_data)
+        logger.info("Tenant settings updated | tenant_id=%s", tenant_id)
         return settings
 
     def _create_default_settings(self, tenant_id: str) -> TenantSettings:

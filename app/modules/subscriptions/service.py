@@ -4,6 +4,7 @@ AZALS MODULE 14 - Subscriptions Service
 Logique métier pour la gestion des abonnements.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -48,6 +49,8 @@ from .schemas import (
     SubscriptionUpdate,
     UsageRecordCreate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SubscriptionService:
@@ -277,8 +280,16 @@ class SubscriptionService:
 
     def create_subscription(self, data: SubscriptionCreate) -> Subscription:
         """Créer un abonnement."""
+        logger.info(
+            "Creating subscription | tenant=%s user=%s plan_id=%s customer_id=%s",
+            self.tenant_id, self.user_id, data.plan_id, data.customer_id
+        )
         plan = self.get_plan(data.plan_id)
         if not plan:
+            logger.warning(
+                "Subscription creation failed: plan not found | tenant=%s plan_id=%s",
+                self.tenant_id, data.plan_id
+            )
             raise ValueError("Plan introuvable")
 
         if not plan.is_active:
@@ -390,6 +401,10 @@ class SubscriptionService:
 
         self.db.commit()
         self.db.refresh(subscription)
+        logger.info(
+            "Subscription created | subscription_id=%s status=%s plan=%s mrr=%s",
+            subscription.id, subscription.status.value, plan.code, subscription.mrr
+        )
         return subscription
 
     def get_subscription(self, subscription_id: int) -> Subscription | None:
@@ -477,15 +492,31 @@ class SubscriptionService:
         self, subscription_id: int, data: SubscriptionChangePlanRequest
     ) -> Subscription:
         """Changer de plan."""
+        logger.info(
+            "Changing subscription plan | tenant=%s user=%s subscription_id=%s new_plan_id=%s",
+            self.tenant_id, self.user_id, subscription_id, data.new_plan_id
+        )
         subscription = self.get_subscription(subscription_id)
         if not subscription:
+            logger.warning(
+                "Plan change failed: subscription not found | tenant=%s subscription_id=%s",
+                self.tenant_id, subscription_id
+            )
             raise ValueError("Abonnement introuvable")
 
         if subscription.status not in [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING]:
+            logger.warning(
+                "Plan change failed: subscription not active | tenant=%s subscription_id=%s status=%s",
+                self.tenant_id, subscription_id, subscription.status.value
+            )
             raise ValueError("Abonnement non actif")
 
         new_plan = self.get_plan(data.new_plan_id)
         if not new_plan:
+            logger.warning(
+                "Plan change failed: new plan not found | tenant=%s new_plan_id=%s",
+                self.tenant_id, data.new_plan_id
+            )
             raise ValueError("Nouveau plan introuvable")
 
         old_plan = subscription.plan
@@ -536,17 +567,33 @@ class SubscriptionService:
         self.db.add(change)
         self.db.commit()
         self.db.refresh(subscription)
+        logger.info(
+            "Subscription plan changed | subscription_id=%s change_type=%s old_plan=%s new_plan=%s old_mrr=%s new_mrr=%s",
+            subscription.id, change_type, old_plan.code, new_plan.code, old_mrr, subscription.mrr
+        )
         return subscription
 
     def cancel_subscription(
         self, subscription_id: int, data: SubscriptionCancelRequest
     ) -> Subscription:
         """Annuler un abonnement."""
+        logger.info(
+            "Canceling subscription | tenant=%s user=%s subscription_id=%s at_period_end=%s",
+            self.tenant_id, self.user_id, subscription_id, data.cancel_at_period_end
+        )
         subscription = self.get_subscription(subscription_id)
         if not subscription:
+            logger.warning(
+                "Subscription cancellation failed: not found | tenant=%s subscription_id=%s",
+                self.tenant_id, subscription_id
+            )
             raise ValueError("Abonnement introuvable")
 
         if subscription.status == SubscriptionStatus.CANCELED:
+            logger.warning(
+                "Subscription cancellation failed: already canceled | tenant=%s subscription_id=%s",
+                self.tenant_id, subscription_id
+            )
             raise ValueError("Abonnement déjà annulé")
 
         # Enregistrer changement
@@ -573,17 +620,33 @@ class SubscriptionService:
 
         self.db.commit()
         self.db.refresh(subscription)
+        logger.info(
+            "Subscription canceled | subscription_id=%s status=%s at_period_end=%s",
+            subscription.id, subscription.status.value, data.cancel_at_period_end
+        )
         return subscription
 
     def pause_subscription(
         self, subscription_id: int, data: SubscriptionPauseRequest
     ) -> Subscription:
         """Mettre en pause un abonnement."""
+        logger.info(
+            "Suspending subscription | tenant=%s user=%s subscription_id=%s resume_at=%s",
+            self.tenant_id, self.user_id, subscription_id, data.resume_at
+        )
         subscription = self.get_subscription(subscription_id)
         if not subscription:
+            logger.warning(
+                "Subscription suspension failed: not found | tenant=%s subscription_id=%s",
+                self.tenant_id, subscription_id
+            )
             raise ValueError("Abonnement introuvable")
 
         if subscription.status != SubscriptionStatus.ACTIVE:
+            logger.warning(
+                "Subscription suspension failed: not active | tenant=%s subscription_id=%s status=%s",
+                self.tenant_id, subscription_id, subscription.status.value
+            )
             raise ValueError("Seuls les abonnements actifs peuvent être mis en pause")
 
         # Enregistrer changement
@@ -604,15 +667,31 @@ class SubscriptionService:
 
         self.db.commit()
         self.db.refresh(subscription)
+        logger.info(
+            "Subscription suspended | subscription_id=%s status=%s resume_at=%s",
+            subscription.id, subscription.status.value, subscription.resume_at
+        )
         return subscription
 
     def resume_subscription(self, subscription_id: int) -> Subscription:
         """Reprendre un abonnement en pause."""
+        logger.info(
+            "Resuming subscription | tenant=%s user=%s subscription_id=%s",
+            self.tenant_id, self.user_id, subscription_id
+        )
         subscription = self.get_subscription(subscription_id)
         if not subscription:
+            logger.warning(
+                "Subscription resume failed: not found | tenant=%s subscription_id=%s",
+                self.tenant_id, subscription_id
+            )
             raise ValueError("Abonnement introuvable")
 
         if subscription.status != SubscriptionStatus.PAUSED:
+            logger.warning(
+                "Subscription resume failed: not paused | tenant=%s subscription_id=%s status=%s",
+                self.tenant_id, subscription_id, subscription.status.value
+            )
             raise ValueError("Abonnement non en pause")
 
         # Enregistrer changement
@@ -634,6 +713,10 @@ class SubscriptionService:
         self.db.add(change)
         self.db.commit()
         self.db.refresh(subscription)
+        logger.info(
+            "Subscription resumed | subscription_id=%s status=%s mrr=%s",
+            subscription.id, subscription.status.value, subscription.mrr
+        )
         return subscription
 
     # ========================================================================

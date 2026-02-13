@@ -5,6 +5,7 @@ AZALS MODULE M2 - Service Finance
 Service métier pour la comptabilité et la trésorerie.
 """
 
+import logging
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
@@ -56,6 +57,8 @@ from .schemas import (
     JournalUpdate,
     TrialBalance,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class FinanceService:
@@ -339,12 +342,20 @@ class FinanceService:
 
     def close_fiscal_period(self, period_id: UUID, user_id: UUID) -> FiscalPeriod | None:
         """Clôturer une période."""
+        logger.info(
+            "Closing fiscal period | tenant=%s user=%s period_id=%s",
+            self.tenant_id, user_id, period_id
+        )
         period = self.db.query(FiscalPeriod).filter(
             FiscalPeriod.id == period_id,
             FiscalPeriod.tenant_id == self.tenant_id
         ).first()
 
         if not period or period.is_closed:
+            logger.warning(
+                "Fiscal period not found or already closed | tenant=%s period_id=%s",
+                self.tenant_id, period_id
+            )
             return None
 
         # Calculer les totaux
@@ -366,12 +377,24 @@ class FinanceService:
 
         self.db.commit()
         self.db.refresh(period)
+        logger.info(
+            "Fiscal period closed | period_id=%s name=%s total_debit=%s total_credit=%s",
+            period.id, period.name, period.total_debit, period.total_credit
+        )
         return period
 
     def close_fiscal_year(self, fiscal_year_id: UUID, user_id: UUID) -> FiscalYear | None:
         """Clôturer un exercice."""
+        logger.info(
+            "Closing fiscal year | tenant=%s user=%s fiscal_year_id=%s",
+            self.tenant_id, user_id, fiscal_year_id
+        )
         fiscal_year = self.get_fiscal_year(fiscal_year_id)
         if not fiscal_year or fiscal_year.status == FiscalYearStatus.CLOSED:
+            logger.warning(
+                "Fiscal year not found or already closed | tenant=%s fiscal_year_id=%s",
+                self.tenant_id, fiscal_year_id
+            )
             return None
 
         # Vérifier que toutes les périodes sont clôturées
@@ -403,6 +426,10 @@ class FinanceService:
 
         self.db.commit()
         self.db.refresh(fiscal_year)
+        logger.info(
+            "Fiscal year closed | fiscal_year_id=%s code=%s result=%s",
+            fiscal_year.id, fiscal_year.code, fiscal_year.result
+        )
         return fiscal_year
 
     # =========================================================================
@@ -812,6 +839,10 @@ class FinanceService:
 
     def create_cash_forecast(self, data: CashForecastCreate, user_id: UUID) -> CashForecast:
         """Créer une prévision de trésorerie."""
+        logger.info(
+            "Creating cash forecast | tenant=%s user=%s period=%s date=%s opening_balance=%s",
+            self.tenant_id, user_id, data.period, data.date, data.opening_balance
+        )
         # Calculer le solde de clôture prévu
         expected_closing = data.opening_balance + data.expected_receipts - data.expected_payments
 
@@ -829,6 +860,10 @@ class FinanceService:
         self.db.add(forecast)
         self.db.commit()
         self.db.refresh(forecast)
+        logger.info(
+            "Cash forecast created | forecast_id=%s period=%s expected_closing=%s",
+            forecast.id, forecast.period, forecast.expected_closing
+        )
         return forecast
 
     def get_cash_forecast(self, forecast_id: UUID) -> CashForecast | None:
@@ -887,6 +922,10 @@ class FinanceService:
 
     def create_cash_flow_category(self, data: CashFlowCategoryCreate) -> CashFlowCategory:
         """Créer une catégorie de flux de trésorerie."""
+        logger.info(
+            "Creating cash flow category | tenant=%s code=%s name=%s is_receipt=%s",
+            self.tenant_id, data.code, data.name, data.is_receipt
+        )
         category = CashFlowCategory(
             tenant_id=self.tenant_id,
             code=data.code,
@@ -900,6 +939,10 @@ class FinanceService:
         self.db.add(category)
         self.db.commit()
         self.db.refresh(category)
+        logger.info(
+            "Cash flow category created | category_id=%s code=%s",
+            category.id, category.code
+        )
         return category
 
     def list_cash_flow_categories(self, is_receipt: bool | None = None) -> list[CashFlowCategory]:
