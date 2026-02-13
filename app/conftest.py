@@ -58,46 +58,200 @@ def mock_saas_context_global(tenant_id, user_id):
 
 @pytest.fixture(scope="function", autouse=True)
 def mock_db_global():
-    """Mock global de la session database."""
-    class MockDB:
-        def query(self, *args, **kwargs):
-            return self
+    """
+    Mock global de la session database SQLAlchemy.
+
+    Simule toutes les méthodes courantes de Session pour permettre
+    aux tests de s'exécuter sans connexion réelle à la base de données.
+    """
+    class MockQuery:
+        """Mock pour les résultats de query()."""
+
+        def __init__(self):
+            self._result = None
 
         def filter(self, *args, **kwargs):
             return self
 
+        def filter_by(self, **kwargs):
+            return self
+
+        def options(self, *args):
+            return self
+
+        def join(self, *args, **kwargs):
+            return self
+
+        def outerjoin(self, *args, **kwargs):
+            return self
+
+        def order_by(self, *args):
+            return self
+
+        def group_by(self, *args):
+            return self
+
+        def having(self, *args):
+            return self
+
+        def distinct(self, *args):
+            return self
+
+        def subquery(self):
+            return self
+
+        def with_entities(self, *args):
+            return self
+
         def first(self):
-            return None
+            return self._result
+
+        def one(self):
+            if self._result is None:
+                raise Exception("No row found")
+            return self._result
+
+        def one_or_none(self):
+            return self._result
 
         def all(self):
-            return []
+            return [] if self._result is None else [self._result]
 
         def count(self):
-            return 0
+            return 0 if self._result is None else 1
 
-        def offset(self, *args):
+        def scalar(self):
+            return None
+
+        def exists(self):
             return self
 
-        def limit(self, *args):
+        def offset(self, n):
             return self
+
+        def limit(self, n):
+            return self
+
+        def slice(self, start, stop):
+            return self
+
+        def __iter__(self):
+            return iter([])
+
+    class MockDB:
+        """
+        Mock complet de SQLAlchemy Session.
+
+        Implémente toutes les méthodes nécessaires pour les tests unitaires.
+        """
+
+        def __init__(self):
+            self._query = MockQuery()
+            self._added = []
+            self._deleted = []
+
+        def query(self, *args, **kwargs):
+            return self._query
+
+        def execute(self, *args, **kwargs):
+            class MockResult:
+                def fetchall(self):
+                    return []
+                def fetchone(self):
+                    return None
+                def scalar(self):
+                    return None
+                def scalars(self):
+                    return self
+                def all(self):
+                    return []
+                def first(self):
+                    return None
+            return MockResult()
+
+        def add(self, obj):
+            self._added.append(obj)
+
+        def add_all(self, objs):
+            self._added.extend(objs)
+
+        def delete(self, obj):
+            self._deleted.append(obj)
+
+        def merge(self, obj):
+            return obj
+
+        def flush(self):
+            """Flush pending changes (no-op in mock)."""
+            pass
 
         def commit(self):
+            """Commit transaction (no-op in mock)."""
             pass
 
         def rollback(self):
+            """Rollback transaction (no-op in mock)."""
             pass
 
-        def refresh(self, obj):
+        def refresh(self, obj, *args, **kwargs):
+            """Refresh object from database (no-op in mock)."""
             pass
 
-        def add(self, obj):
+        def expire(self, obj, *args):
+            """Expire object attributes (no-op in mock)."""
             pass
 
-        def delete(self, obj):
+        def expire_all(self):
+            """Expire all objects (no-op in mock)."""
+            pass
+
+        def expunge(self, obj):
+            """Remove object from session (no-op in mock)."""
+            pass
+
+        def expunge_all(self):
+            """Remove all objects from session (no-op in mock)."""
             pass
 
         def close(self):
+            """Close session (no-op in mock)."""
             pass
+
+        def begin(self):
+            """Begin transaction (no-op in mock)."""
+            return self
+
+        def begin_nested(self):
+            """Begin nested transaction (no-op in mock)."""
+            return self
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def get_bind(self, *args, **kwargs):
+            return None
+
+        def is_active(self):
+            return True
+
+        @property
+        def info(self):
+            return {}
+
+        @property
+        def dirty(self):
+            return set()
+
+        @property
+        def new(self):
+            return set(self._added)
+
+        @property
+        def deleted(self):
+            return set(self._deleted)
 
     mock_session = MockDB()
 
