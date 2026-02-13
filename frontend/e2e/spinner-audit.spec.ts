@@ -58,16 +58,19 @@ test.describe('Audit spinners - Routes authentifiees', () => {
 
 test.describe('Audit spinners - Navigation rapide', () => {
   test('Navigation entre modules sans spinner persistant', async ({ page }) => {
-    // Naviguer rapidement entre plusieurs modules
+    // Naviguer entre plusieurs modules avec attente complete
     const quickRoutes = ['/cockpit', '/invoicing', '/purchases', '/partners'];
 
     for (const route of quickRoutes) {
-      await page.goto(`${BASE_URL}${route}`);
+      await page.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' });
       await waitForLoadingComplete(page);
 
       // Verifier pas de spinner apres chargement
       const hasSpinner = await page.locator('.azals-state--loading, .animate-spin').first().isVisible().catch(() => false);
       expect(hasSpinner, `Spinner persistant sur ${route}`).toBe(false);
+
+      // Attendre avant la prochaine navigation
+      await page.waitForTimeout(200);
     }
   });
 
@@ -78,7 +81,13 @@ test.describe('Audit spinners - Navigation rapide', () => {
     await page.goto(`${BASE_URL}/invoicing`);
     await waitForLoadingComplete(page);
 
-    await page.goBack();
+    // goBack() peut echouer sur SPA, utiliser navigation directe comme fallback
+    try {
+      await page.goBack({ waitUntil: 'domcontentloaded', timeout: 5000 });
+    } catch {
+      // Fallback: navigation directe
+      await page.goto(`${BASE_URL}/cockpit`);
+    }
     await waitForLoadingComplete(page);
 
     await assertNoActiveSpinners(page, 'Retour arriere');

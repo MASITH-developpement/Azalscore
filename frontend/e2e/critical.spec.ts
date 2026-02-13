@@ -183,10 +183,12 @@ test.describe('Console Errors', () => {
       }
     });
 
-    // Naviguer sur plusieurs pages
+    // Naviguer sur plusieurs pages (attendre que chaque navigation soit complete)
     for (const mod of CRITICAL_MODULES.slice(0, 5)) {
-      await page.goto(`${BASE_URL}${mod.route}`);
+      await page.goto(`${BASE_URL}${mod.route}`, { waitUntil: 'domcontentloaded' });
       await waitForLoadingComplete(page);
+      // Petit delai pour eviter les navigations interrompues
+      await page.waitForTimeout(200);
     }
 
     expect(errors.length, `Erreurs JS: ${errors.join(', ')}`).toBe(0);

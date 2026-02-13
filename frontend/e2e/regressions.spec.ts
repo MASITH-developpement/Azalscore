@@ -58,8 +58,9 @@ test.describe('AZALSCORE Regression Tests', () => {
     const routes = ['/cockpit', '/purchases', '/treasury', '/accounting', '/invoicing'];
 
     for (const route of routes) {
-      await page.goto(`${BASE_URL}${route}`);
+      await page.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' });
       await waitForLoadingComplete(page);
+      await page.waitForTimeout(200); // Eviter les navigations interrompues
     }
 
     const criticalErrors = getCriticalErrors(errors);
