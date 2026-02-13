@@ -615,12 +615,13 @@ logger.info(
 
 # 3. CSRF Protection - Anti Cross-Site Request Forgery
 # SÉCURITÉ: Vérifie les tokens CSRF pour POST/PUT/DELETE/PATCH
+# Token obtenu via GET /auth/csrf-token, valide 1 heure
+# Exempté: auth endpoints, webhooks (signature), health checks, Bearer API
 from app.core.csrf_middleware import setup_csrf_middleware
-# En mode audit pour le moment (enforce=False), activer en production après tests
-setup_csrf_middleware(app, enforce=False)
-logger.warning(
-    "[MIDDLEWARE] CSRF en mode AUDIT (enforce=False) — protection non active",
-    extra={"enforce": False, "consequence": "csrf_not_enforced", "action_required": "activer enforce=True après tests"}
+setup_csrf_middleware(app, enforce=True)
+logger.info(
+    "[MIDDLEWARE] CSRF Protection activée — PRODUCTION",
+    extra={"enforce": True, "token_endpoint": "/auth/csrf-token", "expiry": "1h"}
 )
 
 # 4. Compression

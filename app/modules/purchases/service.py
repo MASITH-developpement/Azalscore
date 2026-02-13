@@ -309,6 +309,28 @@ class PurchasesService:
         self.db.refresh(order)
         return order
 
+    def delete_order(self, order_id: UUID) -> bool:
+        """
+        Supprimer une commande (uniquement si DRAFT).
+
+        Returns:
+            True si supprimée, False si non trouvée ou non supprimable.
+        """
+        order = self.get_order(order_id)
+        if not order:
+            return False
+
+        if order.status != OrderStatus.DRAFT:
+            raise ValueError("Seules les commandes en brouillon peuvent être supprimées")
+
+        # Supprimer les lignes d'abord (cascade)
+        for line in order.lines:
+            self.db.delete(line)
+
+        self.db.delete(order)
+        self.db.commit()
+        return True
+
     # ========================================================================
     # GESTION DES FACTURES
     # ========================================================================
@@ -445,6 +467,28 @@ class PurchasesService:
         self.db.commit()
         self.db.refresh(invoice)
         return invoice
+
+    def delete_invoice(self, invoice_id: UUID) -> bool:
+        """
+        Supprimer une facture (uniquement si DRAFT).
+
+        Returns:
+            True si supprimée, False si non trouvée ou non supprimable.
+        """
+        invoice = self.get_invoice(invoice_id)
+        if not invoice:
+            return False
+
+        if invoice.status != InvoiceStatus.DRAFT:
+            raise ValueError("Seules les factures en brouillon peuvent être supprimées")
+
+        # Supprimer les lignes d'abord (cascade)
+        for line in invoice.lines:
+            self.db.delete(line)
+
+        self.db.delete(invoice)
+        self.db.commit()
+        return True
 
     def pay_invoice(
         self,

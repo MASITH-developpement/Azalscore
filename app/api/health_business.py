@@ -2,6 +2,10 @@
 AZALSCORE - Health Check Business
 =================================
 Endpoints de diagnostic systeme pour les modules metier.
+
+SECURITE: Ces endpoints exposent des informations systeme et requierent
+une authentification. Les probes Kubernetes (/health, /health/live,
+/health/ready) restent publiques.
 """
 
 from datetime import datetime
@@ -13,6 +17,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user
+from app.core.models import User
 from app.core.version import AZALS_VERSION
 
 router = APIRouter(prefix="/health/business", tags=["Health Business"])
@@ -122,9 +128,14 @@ def check_registry() -> dict[str, Any]:
 
 
 @router.get("/modules")
-async def get_modules_health(db: Session = Depends(get_db)) -> dict[str, Any]:
+async def get_modules_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Verifier la sante de tous les modules critiques.
+
+    Requiert authentification (expose informations systeme).
 
     Returns:
         Dict avec status global et status par module
@@ -147,9 +158,14 @@ async def get_modules_health(db: Session = Depends(get_db)) -> dict[str, Any]:
 
 
 @router.get("/database")
-async def get_database_health(db: Session = Depends(get_db)) -> dict[str, Any]:
+async def get_database_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Verifier la sante de la base de donnees.
+
+    Requiert authentification (expose informations systeme).
 
     Returns:
         Dict avec status de la connexion DB
@@ -162,9 +178,13 @@ async def get_database_health(db: Session = Depends(get_db)) -> dict[str, Any]:
 
 
 @router.get("/registry")
-async def get_registry_health() -> dict[str, Any]:
+async def get_registry_health(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Verifier l'etat du registry de modules.
+
+    Requiert authentification (expose informations systeme).
 
     Returns:
         Dict avec status et nombre de manifests
@@ -177,11 +197,15 @@ async def get_registry_health() -> dict[str, Any]:
 
 
 @router.get("/complete")
-async def get_complete_health(db: Session = Depends(get_db)) -> dict[str, Any]:
+async def get_complete_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """
     Health check complet du systeme.
 
     Agregation de tous les checks: modules, database, registry.
+    Requiert authentification (expose informations systeme sensibles).
 
     Returns:
         Dict avec status global et details de chaque composant

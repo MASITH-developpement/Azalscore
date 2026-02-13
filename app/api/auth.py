@@ -1222,3 +1222,34 @@ def force_change_password(
         success=True,
         message="Password changed successfully. You can now login with your new password."
     )
+
+
+# =============================================================================
+# CSRF TOKEN
+# =============================================================================
+
+
+class CSRFTokenResponse(BaseModel):
+    """Response containing CSRF token."""
+    csrf_token: str = Field(..., description="Token CSRF pour les requêtes modifiantes")
+
+
+@router.get(
+    "/csrf-token",
+    response_model=CSRFTokenResponse,
+    summary="Obtenir un token CSRF",
+    description="""
+    Génère et retourne un token CSRF valide pour les requêtes modifiantes.
+
+    Le token doit être inclus dans le header X-CSRF-Token pour toutes les
+    requêtes POST, PUT, DELETE, PATCH.
+
+    Le token expire après 1 heure.
+    """,
+)
+def get_csrf_token(request: Request) -> CSRFTokenResponse:
+    """Génère un token CSRF pour le client."""
+    from app.core.csrf_middleware import generate_csrf_token
+
+    token = generate_csrf_token(request)
+    return CSRFTokenResponse(csrf_token=token)
