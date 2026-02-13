@@ -1,14 +1,14 @@
 """
 Fixtures pour les tests du module Helpdesk - CORE SaaS v2
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
 
-from app.main import app
 from app.core.saas_context import SaaSContext
 from app.modules.helpdesk.models import (
     AgentStatus,
@@ -19,25 +19,43 @@ from app.modules.helpdesk.models import (
 
 
 # ============================================================================
-# MOCK SAAS CONTEXT
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
-
-@pytest.fixture
-def mock_context():
-    """Mock SaaSContext pour les tests."""
-    context = MagicMock(spec=SaaSContext)
-    context.tenant_id = "test-tenant-123"
-    context.user_id = "user-456"
-    context.user = MagicMock()
-    context.user.id = "user-456"
-    context.user.email = "test@example.com"
-    return context
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
 
 @pytest.fixture
-def client():
-    """Client de test FastAPI."""
-    return TestClient(app)
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
+
+
+@pytest.fixture
+def mock_context(saas_context):
+    """
+    Mock SaaSContext pour les tests (alias pour compatibilité).
+
+    Utilise le saas_context du conftest global.
+    """
+    return saas_context
 
 
 # ============================================================================

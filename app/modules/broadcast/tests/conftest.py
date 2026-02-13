@@ -1,15 +1,14 @@
 """
 Configuration des tests pour le module broadcast v2.
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 
-from app.core.saas_context import SaaSContext
-from app.main import app
 from app.modules.broadcast.models import (
     BroadcastFrequency,
     BroadcastStatus,
@@ -18,6 +17,27 @@ from app.modules.broadcast.models import (
     DeliveryStatus,
     RecipientType,
 )
+
+
+# ============================================================================
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
+# ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
+
+
+@pytest.fixture
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
 
 
 # ============================================================================
@@ -307,53 +327,9 @@ def mock_broadcast_service():
 
 
 @pytest.fixture
-def mock_get_saas_context(mock_broadcast_service):
-    """Mock de get_saas_context."""
-    def _mock_context():
-        mock_db = MagicMock()
-        context = SaaSContext(
-            db=mock_db,
-            tenant_id="test-tenant",
-            user_id="123",
-            roles=["user"],
-            permissions=["read", "write"]
-        )
-        return context
-    return _mock_context
-
-
-@pytest.fixture
-def mock_get_broadcast_service(mock_broadcast_service):
-    """Mock de get_broadcast_service."""
-    def _mock_factory(db, tenant_id, user_id):
-        return mock_broadcast_service
-    return _mock_factory
-
-
-@pytest.fixture
-def client(mock_get_saas_context, mock_get_broadcast_service):
-    """Client de test FastAPI avec mocks."""
-    from app.modules.broadcast import router_v2
-
-    # Remplacer les dépendances par les mocks
-    app.dependency_overrides[router_v2.get_saas_context] = mock_get_saas_context
-    app.dependency_overrides[router_v2.get_broadcast_service] = lambda: mock_get_broadcast_service
-
-    client = TestClient(app)
-    yield client
-
-    # Nettoyer les overrides
-    app.dependency_overrides.clear()
-
-
-# ============================================================================
-# FIXTURES D'AIDE
-# ============================================================================
-
-@pytest.fixture
-def auth_headers():
-    """Headers d'authentification pour les tests."""
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
     return {
         "Authorization": "Bearer test-token",
-        "X-Tenant-ID": "test-tenant"
+        "X-Tenant-ID": tenant_id
     }

@@ -34,6 +34,7 @@ from .providers import (
     OpenBeautyFactsProvider,
     OpenPetFoodFactsProvider,
     PappersProvider,
+    VIESProvider,
 )
 from .providers.base import EnrichmentResult
 
@@ -55,12 +56,13 @@ PROVIDER_REGISTRY: dict[LookupType, list[EnrichmentProvider]] = {
         EnrichmentProvider.OPENBEAUTYFACTS,
         EnrichmentProvider.OPENPETFOODFACTS,
     ],
+    LookupType.VAT_NUMBER: [EnrichmentProvider.VIES],  # Validation TVA UE
     LookupType.RISK: [EnrichmentProvider.PAPPERS],  # Analyse de risque
 }
 
 # Mapping entity_type -> lookup_types valides
 ENTITY_LOOKUP_MAPPING: dict[EntityType, list[LookupType]] = {
-    EntityType.CONTACT: [LookupType.SIRET, LookupType.SIREN, LookupType.NAME, LookupType.ADDRESS, LookupType.RISK],
+    EntityType.CONTACT: [LookupType.SIRET, LookupType.SIREN, LookupType.NAME, LookupType.ADDRESS, LookupType.VAT_NUMBER, LookupType.RISK],
     EntityType.PRODUCT: [LookupType.BARCODE],
 }
 
@@ -117,6 +119,8 @@ class EnrichmentService:
                 # API key optionnelle depuis config
                 api_key = None  # TODO: Charger depuis settings si disponible
                 self._providers[provider] = PappersProvider(self.tenant_id, api_key=api_key)
+            elif provider == EnrichmentProvider.VIES:
+                self._providers[provider] = VIESProvider(self.tenant_id)
             # Providers payants non implementes
             else:
                 logger.warning(f"[ENRICHMENT] Provider {provider.value} non implemente")

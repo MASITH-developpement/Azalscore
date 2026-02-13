@@ -39,6 +39,7 @@ class EnrichmentProvider(str, enum.Enum):
     OPENFOODFACTS = "openfoodfacts"
     OPENBEAUTYFACTS = "openbeautyfacts"
     OPENPETFOODFACTS = "openpetfoodfacts"
+    VIES = "vies"  # Validation TVA UE
     # APIs payantes (documentation future)
     PAPPERS = "pappers"
     GOOGLE_PLACES = "google_places"
@@ -71,6 +72,7 @@ class LookupType(str, enum.Enum):
     NAME = "name"          # Recherche entreprise par nom
     ADDRESS = "address"
     BARCODE = "barcode"
+    VAT_NUMBER = "vat_number"  # Numero TVA UE (validation VIES)
     RISK = "risk"          # Analyse de risque externe (Pappers/INSEE)
     INTERNAL_SCORE = "internal_score"  # Scoring interne basé sur historique
 
@@ -220,5 +222,10 @@ PROVIDER_RATE_LIMITS = {
     EnrichmentProvider.PAPPERS: {
         "requests_per_minute": 10,
         "requests_per_day": 5,  # Limite conservative pour version gratuite
+    },
+    # VIES: API gratuite UE, pas de limite stricte mais prudence
+    EnrichmentProvider.VIES: {
+        "requests_per_minute": 20,
+        "requests_per_day": 500,
     },
 }

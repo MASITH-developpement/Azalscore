@@ -1,5 +1,7 @@
 """
 Fixtures pour les tests du module BI - CORE SaaS v2
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 from datetime import date, datetime
@@ -8,7 +10,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.core.saas_context import SaaSContext
 from app.modules.bi.models import (
     AlertSeverity,
     AlertStatus,
@@ -21,18 +22,39 @@ from app.modules.bi.models import (
 
 
 # ============================================================================
-# MOCK SAAS CONTEXT
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
+
 
 @pytest.fixture
-def mock_saas_context() -> SaaSContext:
-    """Mock SaaSContext pour les tests."""
-    return SaaSContext(
-        user_id=1,
-        tenant_id="tenant-test-123",
-        roles=["admin"],
-        permissions=["*"]
-    )
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
+
+
+@pytest.fixture
+def mock_saas_context(saas_context):
+    """Alias pour saas_context du conftest global."""
+    return saas_context
 
 
 # ============================================================================

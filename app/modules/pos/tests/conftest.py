@@ -1,6 +1,7 @@
 """
 Fixtures pour les tests POS v2 - CORE SaaS
-===========================================
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 from datetime import date, datetime
@@ -10,28 +11,44 @@ from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi.testclient import TestClient
 
 from app.core.saas_context import SaaSContext, TenantScope, UserRole
 
 
 # ============================================================================
-# MOCK SAAS CONTEXT
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
+
 
 @pytest.fixture
-def mock_saas_context() -> SaaSContext:
-    """Mock SaaSContext pour les tests."""
-    return SaaSContext(
-        tenant_id="test-tenant-001",
-        user_id=UUID("12345678-1234-5678-1234-567812345678"),
-        role=UserRole.ADMIN,
-        permissions={"pos.*"},
-        scope=TenantScope.TENANT,
-        ip_address="127.0.0.1",
-        user_agent="pytest",
-        correlation_id="test-correlation-id"
-    )
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
+
+
+@pytest.fixture
+def mock_saas_context(saas_context) -> SaaSContext:
+    """Alias pour saas_context du conftest global."""
+    return saas_context
 
 
 # ============================================================================

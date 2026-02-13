@@ -22,6 +22,7 @@ ENDPOINTS MIGRÉS (32):
 """
 
 from datetime import datetime
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
@@ -393,7 +394,7 @@ async def get_current_user_profile(
 @router.get("/users/{user_id}", response_model=UserResponse)
 @require_permission("iam.user.read")
 async def get_user(
-    user_id: int,
+    user_id: UUID,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
 ):
@@ -434,7 +435,7 @@ async def get_user(
 @router.patch("/users/{user_id}", response_model=UserResponse)
 @require_permission("iam.user.update")
 async def update_user(
-    user_id: int,
+    user_id: UUID,
     data: UserUpdate,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
@@ -476,7 +477,7 @@ async def update_user(
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.user.delete")
 async def delete_user(
-    user_id: int,
+    user_id: UUID,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
 ):
@@ -493,7 +494,7 @@ async def delete_user(
 @router.post("/users/{user_id}/lock", response_model=UserResponse)
 @require_permission("iam.user.admin")
 async def lock_user(
-    user_id: int,
+    user_id: UUID,
     reason: str = Query(..., min_length=1),
     duration_minutes: int | None = Query(None, ge=1),
     context: SaaSContext = Depends(get_saas_context),
@@ -536,7 +537,7 @@ async def lock_user(
 @router.post("/users/{user_id}/unlock", response_model=UserResponse)
 @require_permission("iam.user.admin")
 async def unlock_user(
-    user_id: int,
+    user_id: UUID,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
 ):
@@ -685,7 +686,7 @@ async def list_roles(
 @router.get("/roles/{role_id}", response_model=RoleResponse)
 @require_permission("iam.role.read")
 async def get_role(
-    role_id: int,
+    role_id: UUID,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
 ):
@@ -722,7 +723,7 @@ async def get_role(
 @router.patch("/roles/{role_id}", response_model=RoleResponse)
 @require_permission("iam.role.update")
 async def update_role(
-    role_id: int,
+    role_id: UUID,
     data: RoleUpdate,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
@@ -760,7 +761,7 @@ async def update_role(
 @router.delete("/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.role.delete")
 async def delete_role(
-    role_id: int,
+    role_id: UUID,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
 ):
@@ -887,7 +888,7 @@ async def check_permission(
 @router.get("/users/{user_id}/permissions", response_model=list[str])
 @require_permission("iam.permission.read")
 async def get_user_permissions(
-    user_id: int,
+    user_id: UUID,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
 ):
@@ -970,7 +971,7 @@ async def list_groups(
 @router.post("/groups/{group_id}/members", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.group.update")
 async def add_group_members(
-    group_id: int,
+    group_id: UUID,
     data: GroupMembership,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
@@ -992,7 +993,7 @@ async def add_group_members(
 @router.delete("/groups/{group_id}/members", status_code=status.HTTP_204_NO_CONTENT)
 @require_permission("iam.group.update")
 async def remove_group_members(
-    group_id: int,
+    group_id: UUID,
     data: GroupMembership,
     context: SaaSContext = Depends(get_saas_context),
     service: IAMService = Depends(get_service_v2)
@@ -1103,6 +1104,7 @@ async def create_invitation(
             id=invitation.id,
             tenant_id=invitation.tenant_id,
             email=invitation.email,
+            token=invitation.token,
             status=invitation.status.value,
             roles_to_assign=[],
             groups_to_assign=[],

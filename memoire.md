@@ -358,16 +358,93 @@ import { RiskAnalysis } from '@/modules/enrichment';
 />
 ```
 
+### 23. Provider VIES - Validation TVA Europeenne [2026-02-13]
+
+**Fonctionnalite:** Validation des numeros de TVA intracommunautaires via l'API VIES de la Commission Europeenne.
+
+**Backend:**
+- `/app/modules/enrichment/providers/vies.py` - **NOUVEAU** Provider VIES avec:
+  - Validation format TVA par pays (27 pays UE + Irlande du Nord XI)
+  - Appel API REST `ec.europa.eu/taxation_customs/vies/rest-api`
+  - Parsing adresse intelligente par pays (codes postaux differents)
+  - Mapping vers entite Contact (vat_number, vat_valid, address, etc.)
+  - Cache 24h (donnees stables)
+- `/app/modules/enrichment/models.py`:
+  - Ajout `EnrichmentProvider.VIES`
+  - Ajout `LookupType.VAT_NUMBER`
+  - Rate limits: 20 req/min, 500 req/jour
+- `/app/modules/enrichment/service.py`:
+  - Import et enregistrement VIESProvider
+  - Ajout `VAT_NUMBER` dans PROVIDER_REGISTRY et ENTITY_LOOKUP_MAPPING
+- `/app/modules/enrichment/providers/__init__.py` - Export VIESProvider
+- `/app/modules/enrichment/schemas.py` - Exemple vat_number dans documentation
+- `/app/modules/enrichment/router.py` - Documentation mise a jour
+
+**Frontend:**
+- `/frontend/src/modules/enrichment/types.ts`:
+  - Ajout `'vies'` dans EnrichmentProvider
+  - Ajout `'vat_number'` dans LookupType
+  - Ajout interface `EnrichedVatFields`
+  - Ajout interface `VatLookupProps`
+  - Ajout `vat_number`, `vat_valid`, `country_code` dans EnrichedContactFields
+
+**Formats TVA supportes (exemples):**
+| Pays | Format | Exemple |
+|------|--------|---------|
+| FR | 2 caracteres + 9 chiffres | FR40303265045 |
+| DE | 9 chiffres | DE123456789 |
+| BE | 0/1 + 9 chiffres | BE0123456789 |
+| ES | lettre/chiffre + 7 chiffres + lettre/chiffre | ESX1234567X |
+| IT | 11 chiffres | IT12345678901 |
+| NL | 9 chiffres + B + 2 chiffres | NL123456789B01 |
+
+**Usage API:**
+```http
+POST /v1/enrichment/lookup
+{
+  "lookup_type": "vat_number",
+  "lookup_value": "FR40303265045",
+  "entity_type": "contact"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "enriched_fields": {
+    "name": "GOOGLE FRANCE SARL",
+    "company_name": "GOOGLE FRANCE SARL",
+    "vat_number": "FR40303265045",
+    "vat_valid": true,
+    "address_line1": "8 RUE DE LONDRES",
+    "postal_code": "75009",
+    "city": "PARIS",
+    "country_code": "FR",
+    "country": "France"
+  },
+  "confidence": 1.0,
+  "source": "vies"
+}
+```
+
 ---
 
 ## Taches en Attente
 
 ### TODO: Autocomplete Articles dans Devis/Commandes/Factures
-- [ ] Creer composant `ProductAutocomplete` pour recherche d'articles
-- [ ] Integrer dans lignes de devis (`/invoicing/quotes`)
-- [ ] Integrer dans lignes de commande (`/invoicing/orders`)
-- [ ] Integrer dans lignes de facture (`/invoicing/invoices`)
-- [ ] Auto-remplir: description, prix unitaire, TVA, code article
+- [x] Creer composant `ProductAutocomplete` pour recherche d'articles - FAIT (2026-02-13)
+  - Backend: `/app/modules/inventory/router.py` endpoint `/products/autocomplete`
+  - Backend: `/app/modules/inventory/service.py` methode `search_products_autocomplete`
+  - Frontend: `/frontend/src/modules/inventory/components/ProductAutocomplete.tsx`
+- [x] Integrer dans module invoicing - FAIT (2026-02-13)
+  - `/frontend/src/modules/invoicing/components/LineEditor.tsx` - Editeur de ligne modal
+  - Auto-remplir: description, prix unitaire, TVA, code article, unite
+- [x] Utiliser LineEditor dans les vues de creation/edition de documents - FAIT (2026-02-13)
+  - `/frontend/src/modules/invoicing/index.tsx` - LinesEditor refactorise
+  - Modal LineEditorModal avec ProductAutocomplete
+  - Boutons Edit/Delete par ligne
+  - Fonctionne pour devis, commandes et factures
 
 ### TODO: Notations Credit Internationales
 - [x] **Pappers** (France) - IMPLEMENTE (2026-02-10)
@@ -385,9 +462,11 @@ import { RiskAnalysis } from '@/modules/enrichment';
 - [ ] **Creditsafe / Coface** (payant) - Notation credit internationale
   - Score credit D&B
   - Notation Moody's / S&P / Fitch
-- [ ] **VIES** (gratuit) - Validation TVA intracommunautaire
-  - Verification numero TVA europeen
+- [x] **VIES** (gratuit) - Validation TVA intracommunautaire - IMPLEMENTE (2026-02-13)
+  - Verification numero TVA europeen via API REST Commission Europeenne
   - Nom et adresse de l'entreprise
+  - Formats TVA par pays (27 pays UE + XI)
+  - Integration dans module enrichment
 - [ ] **Kompany** (payant) - Registres europeens
   - Documents officiels
   - Comptes annuels
@@ -673,3 +752,48 @@ Toutes les classes utilitaires Tailwind standard:
 - Les roles definis dans `/app/api/auth.py` fonction `get_user_capabilities()`
 - `SUPERADMIN`, `SUPER_ADMIN`, `DIRIGEANT`, `ADMIN` ont ALL_CAPABILITIES
 - Le frontend verifie `admin.view` pour afficher le module Admin
+
+---
+
+## Documentation Technique
+
+### Variables et Configuration
+
+**IMPORTANT:** Avant de modifier la configuration ou les variables d'environnement, consulter:
+- `/docs/architecture/VARIABLES.md` - **Guide complet des variables**
+  - Variables d'environnement (obligatoires et optionnelles)
+  - Constantes de configuration (app/core/config.py, app/ai/config.py)
+  - Constantes de test
+  - Inconsistances detectees et plan d'harmonisation
+  - Conventions de nommage
+
+### Fixtures de Test
+
+**IMPORTANT:** Avant de modifier ou creer des tests, consulter:
+- `/docs/guides/FIXTURES_STANDARD.md` - Guide de reference complet
+
+**Principes cles:**
+1. Toutes les fixtures de base sont dans `app/conftest.py` (global)
+2. Les modules NE DOIVENT PAS redefinir `tenant_id`, `user_id`, `mock_saas_context` (autouse)
+3. Chaque module DOIT definir `client(test_client)` et `auth_headers(tenant_id)` comme alias
+
+**Fixtures globales disponibles:**
+| Fixture | Type | Valeur |
+|---------|------|--------|
+| `tenant_id` | str | `"tenant-test-001"` |
+| `user_id` | str (UUID) | `"12345678-1234-1234-1234-123456789001"` |
+| `user_uuid` | UUID | UUID object |
+| `db_session` | Session | SQLite in-memory |
+| `test_client` | TestClient | Headers auto-injectes |
+| `saas_context` | SaaSContext | Contexte ADMIN |
+
+**Template conftest module:**
+```python
+@pytest.fixture
+def client(test_client):
+    return test_client
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    return {"Authorization": "Bearer test-token", "X-Tenant-ID": tenant_id}
+```

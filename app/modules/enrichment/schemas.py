@@ -30,7 +30,7 @@ class EnrichmentLookupRequest(BaseModel):
 
     lookup_type: LookupType = Field(
         ...,
-        description="Type de recherche: siret, siren, address, barcode"
+        description="Type de recherche: siret, siren, address, barcode, vat_number"
     )
     lookup_value: str = Field(
         ...,
@@ -63,6 +63,11 @@ class EnrichmentLookupRequest(BaseModel):
                 {
                     "lookup_type": "address",
                     "lookup_value": "10 rue de la paix paris",
+                    "entity_type": "contact"
+                },
+                {
+                    "lookup_type": "vat_number",
+                    "lookup_value": "FR40303265045",
                     "entity_type": "contact"
                 }
             ]

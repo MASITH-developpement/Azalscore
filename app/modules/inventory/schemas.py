@@ -303,6 +303,30 @@ class ProductList(BaseModel):
     total: int
 
 
+class ProductSuggestion(BaseModel):
+    """Suggestion de produit pour autocomplete (léger)."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    code: str
+    name: str
+    description: str | None = None
+    barcode: str | None = None
+    sku: str | None = None
+    unit: str = "UNIT"
+    sale_price: Decimal | None = None
+    currency: str = "EUR"
+    category_name: str | None = None
+    is_service: bool = False
+    image_url: str | None = None
+
+
+class ProductAutocompleteResponse(BaseModel):
+    """Réponse autocomplete produits."""
+    suggestions: list[ProductSuggestion]
+    total: int
+
+
 # ============================================================================
 # NIVEAUX DE STOCK
 # ============================================================================

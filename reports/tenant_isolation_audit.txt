@@ -1,6 +1,6 @@
 AZALSCORE - Rapport d'audit d'isolation multi-tenant
 ================================================================================
-Date: 2026-02-12T06:13:32.625415
+Date: 2026-02-12T06:20:23.289540
 Fichiers scannés: 419
 Problèmes détectés: 43
   CRITICAL: 25

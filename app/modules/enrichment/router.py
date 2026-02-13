@@ -64,6 +64,7 @@ async def lookup_enrichment(
     - **SIRET/SIREN**: Lookup entreprises francaises (INSEE)
     - **address**: Autocomplete adresses francaises (API Adresse gouv.fr)
     - **barcode**: Lookup produits par code-barres (Open Food/Beauty/Pet Facts)
+    - **vat_number**: Validation numero TVA UE (VIES)
 
     L'enrichissement est mis en cache pour eviter les appels redondants.
     """

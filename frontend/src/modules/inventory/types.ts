@@ -83,6 +83,37 @@ export interface Product {
   documents?: ProductDocument[];
 }
 
+/**
+ * Suggestion produit légère pour autocomplete.
+ * Contient uniquement les champs nécessaires pour remplir une ligne de document.
+ */
+export interface ProductSuggestion {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  barcode?: string;
+  sku?: string;
+  unit: string;
+  sale_price?: number;
+  currency: string;
+  category_name?: string;
+  is_service: boolean;
+  image_url?: string;
+}
+
+/**
+ * Champs enrichis pour une ligne de document (devis, commande, facture).
+ */
+export interface EnrichedDocumentLineFields {
+  product_id: string;
+  product_code: string;
+  description: string;
+  unit?: string;
+  unit_price: number;
+  tax_rate?: number;
+}
+
 export interface StockByLocation {
   id: string;
   location_id: string;

@@ -104,46 +104,36 @@ class MockEntity:
 
 
 # ============================================================================
-# FIXTURES GLOBALES
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
-
-@pytest.fixture
-def tenant_id():
-    """Tenant ID de test"""
-    return "1"
-
-
-@pytest.fixture
-def user_id():
-    """User ID de test"""
-    return "00000000-0000-0000-0000-000000000101"
-
-
-# ============================================================================
-# MOCK SAAS CONTEXT
-# ============================================================================
-
-@pytest.fixture
-def mock_saas_context(tenant_id, user_id):
-    """Mock SaaSContext pour les tests"""
-    user_uuid = UUID(user_id) if isinstance(user_id, str) and "-" in user_id else UUID("00000000-0000-0000-0000-000000000101")
-    return SaaSContext(
-        tenant_id=tenant_id,
-        user_id=user_uuid,
-        role=UserRole.ADMIN,
-        permissions={"quality.*"},
-        scope=TenantScope.TENANT,
-        ip_address="127.0.0.1",
-        user_agent="pytest",
-        correlation_id="test-quality-001"
-    )
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
 
 @pytest.fixture
-def mock_get_saas_context(mock_saas_context):
-    """Mock de get_saas_context avec contexte valide pour tests"""
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
+
+
+@pytest.fixture
+def mock_saas_context(saas_context):
+    """Alias pour saas_context du conftest global."""
+    return saas_context
+
+
+@pytest.fixture
+def mock_get_saas_context(saas_context):
+    """Mock de get_saas_context avec contexte valide pour tests."""
     def _mock_context():
-        return mock_saas_context
+        return saas_context
     return _mock_context
 
 
