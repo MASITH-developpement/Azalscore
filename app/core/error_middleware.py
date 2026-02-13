@@ -1,14 +1,17 @@
 """
-Middleware de gestion d'erreurs centralisé AZALSCORE
+Middleware de gestion d'erreurs centralise AZALSCORE
 
-Conformité : AZA-NF-003, Charte Développeur
-Principe : "Aucune logique de gestion d'erreur dans le code métier"
+Conformite : AZA-NF-003, Charte Developpeur
+Principe : "Aucune logique de gestion d'erreur dans le code metier"
 
-Ce middleware capture TOUTES les exceptions et les convertit en réponses HTTP appropriées.
-Cela permet d'éliminer les 116 try/except P0 (validation) du code métier.
+Ce middleware capture TOUTES les exceptions et les convertit en reponses HTTP appropriees.
+Cela permet d'eliminer les 116 try/except P0 (validation) du code metier.
+
+Utilise StandardError pour des reponses uniformes (compatible frontend StandardHttpError).
 """
 
 import logging
+import uuid
 from typing import Callable
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
@@ -16,6 +19,9 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError, OperationalError, DataError
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.core.errors import StandardError, ErrorCode, create_standard_error
+from app.core.logging_config import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -93,44 +99,61 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except ValueError as e:
             # Erreurs de valeur (business logic validation)
-            # C'est le type d'erreur principal levé par le code métier pur
+            # C'est le type d'erreur principal leve par le code metier pur
+            correlation_id = get_correlation_id() or str(uuid.uuid4())
+
+            error = create_standard_error(
+                error_code=ErrorCode.VALIDATION_ERROR,
+                message=str(e),
+                http_status=400,
+                request_id=correlation_id,
+                path=request.url.path
+            )
+
             logger.warning(
-                "[ERROR_MW] Erreur métier (ValueError) — validation business échouée",
+                "validation_error",
                 extra={
+                    "error_code": error.error_code,
+                    "message": error.message,
                     "path": request.url.path,
                     "method": request.method,
-                    "error_type": "ValueError",
-                    "error": str(e)[:500],
-                    "consequence": "400_response"
-                }
-            )
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "error": "Bad Request",
-                    "message": str(e)
+                    "correlation_id": correlation_id
                 }
             )
 
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=error.model_dump(mode="json")
+            )
+
         except IntegrityError as e:
-            # Erreurs d'intégrité base de données (contraintes)
+            # Erreurs d'integrite base de donnees (contraintes)
+            correlation_id = get_correlation_id() or str(uuid.uuid4())
+            error_detail = str(e.orig)[:500] if hasattr(e, 'orig') else str(e)[:500]
+
+            error = create_standard_error(
+                error_code=ErrorCode.INTEGRITY_ERROR,
+                message="Cette operation viole une contrainte d'integrite",
+                http_status=409,
+                request_id=correlation_id,
+                path=request.url.path,
+                details={"db_error": error_detail}
+            )
+
             logger.error(
-                "[ERROR_MW] Erreur d'intégrité DB — contrainte violée",
+                "integrity_error",
                 extra={
+                    "error_code": error.error_code,
                     "path": request.url.path,
                     "method": request.method,
-                    "error_type": "IntegrityError",
-                    "error": str(e.orig)[:500] if hasattr(e, 'orig') else str(e)[:500],
-                    "consequence": "409_response"
+                    "db_error": error_detail,
+                    "correlation_id": correlation_id
                 }
             )
+
             return JSONResponse(
                 status_code=status.HTTP_409_CONFLICT,
-                content={
-                    "error": "Conflict",
-                    "message": "Cette opération viole une contrainte d'intégrité",
-                    "details": str(e.orig) if hasattr(e, 'orig') else str(e)
-                }
+                content=error.model_dump(mode="json")
             )
 
         except OperationalError as e:
@@ -175,42 +198,56 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 
         except PermissionError as e:
             # Erreurs de permission
+            correlation_id = get_correlation_id() or str(uuid.uuid4())
+
+            error = create_standard_error(
+                error_code=ErrorCode.PERMISSION_DENIED,
+                message=str(e) or "Vous n'avez pas les permissions necessaires",
+                http_status=403,
+                request_id=correlation_id,
+                path=request.url.path
+            )
+
             logger.warning(
-                "[ERROR_MW] Erreur de permission — accès refusé",
+                "permission_denied",
                 extra={
+                    "error_code": error.error_code,
                     "path": request.url.path,
                     "method": request.method,
-                    "error_type": "PermissionError",
-                    "error": str(e)[:500],
-                    "consequence": "403_response"
-                }
-            )
-            return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
-                content={
-                    "error": "Forbidden",
-                    "message": str(e) or "Vous n'avez pas les permissions nécessaires"
+                    "correlation_id": correlation_id
                 }
             )
 
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content=error.model_dump(mode="json")
+            )
+
         except FileNotFoundError as e:
-            # Erreurs de fichier non trouvé
+            # Erreurs de fichier non trouve
+            correlation_id = get_correlation_id() or str(uuid.uuid4())
+
+            error = create_standard_error(
+                error_code=ErrorCode.FILE_NOT_FOUND,
+                message=str(e) or "Le fichier ou la ressource demandee n'existe pas",
+                http_status=404,
+                request_id=correlation_id,
+                path=request.url.path
+            )
+
             logger.warning(
-                "[ERROR_MW] Ressource non trouvée (FileNotFoundError)",
+                "resource_not_found",
                 extra={
+                    "error_code": error.error_code,
                     "path": request.url.path,
                     "method": request.method,
-                    "error_type": "FileNotFoundError",
-                    "error": str(e)[:500],
-                    "consequence": "404_response"
+                    "correlation_id": correlation_id
                 }
             )
+
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={
-                    "error": "Not Found",
-                    "message": "Le fichier ou la ressource demandée n'existe pas"
-                }
+                content=error.model_dump(mode="json")
             )
 
         except NotImplementedError as e:
@@ -254,24 +291,33 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             )
 
         except Exception as e:
-            # Erreur générique inattendue
+            # Erreur generique inattendue
+            correlation_id = get_correlation_id() or str(uuid.uuid4())
+
+            error = create_standard_error(
+                error_code=ErrorCode.INTERNAL_SERVER_ERROR,
+                message="Une erreur inattendue s'est produite",
+                http_status=500,
+                request_id=correlation_id,
+                path=request.url.path,
+                details={"exception_type": type(e).__name__}
+            )
+
             logger.exception(
-                "[ERROR_MW] EXCEPTION NON GÉRÉE — erreur inattendue",
+                "internal_server_error",
                 extra={
+                    "error_code": error.error_code,
                     "path": request.url.path,
                     "method": request.method,
-                    "error_type": type(e).__name__,
-                    "error": str(e)[:500],
-                    "consequence": "500_response"
+                    "exception_type": type(e).__name__,
+                    "exception_message": str(e)[:500],
+                    "correlation_id": correlation_id
                 }
             )
+
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={
-                    "error": "Internal Server Error",
-                    "message": "Une erreur inattendue s'est produite",
-                    "type": type(e).__name__
-                }
+                content=error.model_dump(mode="json")
             )
 
 

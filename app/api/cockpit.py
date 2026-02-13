@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.cache import cached
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
@@ -93,8 +94,9 @@ class PaginatedDecisions(BaseModel):
 # HELPERS
 # ============================================================================
 
+@cached(ttl=300, key_builder=lambda db, tenant_id: f"cockpit:kpis:{tenant_id}")
 def get_kpis(db: Session, tenant_id: str) -> list[DashboardKPI]:
-    """Calcule les KPIs du tableau de bord."""
+    """Calcule les KPIs du tableau de bord (cache 5min)."""
     kpis = []
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -185,8 +187,9 @@ def get_kpis(db: Session, tenant_id: str) -> list[DashboardKPI]:
     return kpis
 
 
+@cached(ttl=60, key_builder=lambda db, tenant_id: f"cockpit:alerts:{tenant_id}")
 def get_alerts(db: Session, tenant_id: str) -> list[Alert]:
-    """Récupère les alertes actives."""
+    """Récupère les alertes actives (cache 1min)."""
     alerts = []
     now = datetime.utcnow()
 
@@ -260,8 +263,9 @@ def get_alerts(db: Session, tenant_id: str) -> list[Alert]:
     return alerts
 
 
+@cached(ttl=300, key_builder=lambda db, tenant_id: f"cockpit:treasury:{tenant_id}")
 def get_treasury_summary(db: Session, tenant_id: str) -> TreasurySummary:
-    """Résumé trésorerie."""
+    """Résumé trésorerie (cache 5min)."""
     try:
         result = db.execute(text("""
             SELECT COALESCE(SUM(current_balance), 0) FROM bank_accounts
@@ -286,8 +290,9 @@ def get_treasury_summary(db: Session, tenant_id: str) -> TreasurySummary:
         return TreasurySummary(balance=0, forecast_30d=0, pending_payments=0)
 
 
+@cached(ttl=300, key_builder=lambda db, tenant_id: f"cockpit:sales:{tenant_id}")
 def get_sales_summary(db: Session, tenant_id: str) -> SalesSummary:
-    """Résumé ventes."""
+    """Résumé ventes (cache 5min)."""
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     prev_month_start = (month_start - timedelta(days=1)).replace(day=1)
@@ -329,8 +334,9 @@ def get_sales_summary(db: Session, tenant_id: str) -> SalesSummary:
         return SalesSummary(month_revenue=0, prev_month_revenue=0, pending_invoices=0, overdue_invoices=0)
 
 
+@cached(ttl=300, key_builder=lambda db, tenant_id: f"cockpit:activity:{tenant_id}")
 def get_activity_summary(db: Session, tenant_id: str) -> ActivitySummary:
-    """Résumé activité."""
+    """Résumé activité (cache 5min)."""
     try:
         result = db.execute(text("""
             SELECT COUNT(*) FROM commercial_documents

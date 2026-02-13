@@ -11,7 +11,9 @@ from typing import Any
 
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
+
+from app.core.query_optimizer import QueryOptimizer
 
 from .models import (
     InvoiceLine,
@@ -60,6 +62,7 @@ class SubscriptionService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id  # Pour CORE SaaS v2
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # PLANS
@@ -408,8 +411,12 @@ class SubscriptionService:
         return subscription
 
     def get_subscription(self, subscription_id: int) -> Subscription | None:
-        """Récupérer un abonnement."""
-        return self.db.query(Subscription).filter(
+        """Récupérer un abonnement (optimise avec eager loading)."""
+        return self._optimizer.query_with_relations(
+            Subscription,
+            ['plan', 'items'],
+            use_selectin=True
+        ).filter(
             Subscription.tenant_id == self.tenant_id,
             Subscription.id == subscription_id
         ).first()
@@ -431,10 +438,14 @@ class SubscriptionService:
         skip: int = 0,
         limit: int = 50
     ) -> tuple[list[Subscription], int]:
-        """Lister les abonnements."""
-        query = self.db.query(Subscription).filter(
-            Subscription.tenant_id == self.tenant_id
-        )
+        """Lister les abonnements (optimise avec eager loading)."""
+        # Utiliser QueryOptimizer pour eviter N+1 sur plan et items
+        query = self._optimizer.query_with_relations(
+            Subscription,
+            ['plan', 'items'],
+            use_selectin=True
+        ).filter(Subscription.tenant_id == self.tenant_id)
+
         if customer_id:
             query = query.filter(Subscription.customer_id == customer_id)
         if plan_id:
@@ -442,9 +453,10 @@ class SubscriptionService:
         if status:
             query = query.filter(Subscription.status == status)
 
-        total = query.count()
-        items = query.order_by(Subscription.created_at.desc()).offset(skip).limit(limit).all()
-        return items, total
+        query = query.order_by(Subscription.created_at.desc())
+
+        # Pagination optimisee
+        return self._optimizer.paginate(query, page=(skip // limit) + 1, page_size=limit)
 
     def update_subscription(
         self, subscription_id: int, data: SubscriptionUpdate
@@ -823,10 +835,14 @@ class SubscriptionService:
         skip: int = 0,
         limit: int = 50
     ) -> tuple[list[SubscriptionInvoice], int]:
-        """Lister les factures."""
-        query = self.db.query(SubscriptionInvoice).filter(
-            SubscriptionInvoice.tenant_id == self.tenant_id
-        )
+        """Lister les factures (optimise avec eager loading)."""
+        # Utiliser QueryOptimizer pour eviter N+1 sur lines
+        query = self._optimizer.query_with_relations(
+            SubscriptionInvoice,
+            ['lines'],
+            use_selectin=True
+        ).filter(SubscriptionInvoice.tenant_id == self.tenant_id)
+
         if subscription_id:
             query = query.filter(SubscriptionInvoice.subscription_id == subscription_id)
         if customer_id:
@@ -834,9 +850,10 @@ class SubscriptionService:
         if status:
             query = query.filter(SubscriptionInvoice.status == status)
 
-        total = query.count()
-        items = query.order_by(SubscriptionInvoice.created_at.desc()).offset(skip).limit(limit).all()
-        return items, total
+        query = query.order_by(SubscriptionInvoice.created_at.desc())
+
+        # Pagination optimisee
+        return self._optimizer.paginate(query, page=(skip // limit) + 1, page_size=limit)
 
     def finalize_invoice(self, invoice_id: int) -> SubscriptionInvoice:
         """Finaliser une facture."""

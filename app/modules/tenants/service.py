@@ -13,6 +13,8 @@ from typing import Any
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     BillingCycle,
     InvitationStatus,
@@ -50,6 +52,7 @@ class TenantService:
         self.db = db
         self.actor_id = actor_id
         self.actor_email = actor_email
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # TENANT CRUD

@@ -14,6 +14,8 @@ from uuid import UUID
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     InventoryCount,
     InventoryCountLine,
@@ -29,6 +31,7 @@ from .models import (
     Product,
     ProductCategory,
     ProductStatus,
+    ProductType,
     SerialNumber,
     StockLevel,
     StockMovement,
@@ -63,6 +66,7 @@ class InventoryService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # CATÉGORIES
@@ -315,6 +319,88 @@ class InventoryService:
         total = query.count()
         items = query.order_by(Product.name).offset(skip).limit(limit).all()
         return items, total
+
+    def search_products_autocomplete(
+        self,
+        query: str,
+        limit: int = 10,
+        category_id: UUID | None = None
+    ) -> list[dict]:
+        """
+        Recherche de produits pour autocomplete.
+        Retourne une liste légère avec seulement les champs nécessaires.
+        """
+        if not query or len(query) < 2:
+            return []
+
+        search_term = f"%{query}%"
+
+        # Requête optimisée avec jointure sur catégorie
+        db_query = (
+            self.db.query(
+                Product.id,
+                Product.code,
+                Product.name,
+                Product.description,
+                Product.barcode,
+                Product.sku,
+                Product.unit,
+                Product.sale_price,
+                Product.currency,
+                Product.image_url,
+                Product.type,
+                ProductCategory.name.label("category_name")
+            )
+            .outerjoin(ProductCategory, Product.category_id == ProductCategory.id)
+            .filter(
+                Product.tenant_id == self.tenant_id,
+                Product.is_active == True,
+                or_(
+                    Product.code.ilike(search_term),
+                    Product.name.ilike(search_term),
+                    Product.barcode.ilike(search_term),
+                    Product.sku.ilike(search_term)
+                )
+            )
+        )
+
+        if category_id:
+            db_query = db_query.filter(Product.category_id == category_id)
+
+        # Tri: correspondance exacte code d'abord, puis par nom
+        results = (
+            db_query
+            .order_by(
+                # Correspondance exacte code en premier
+                (Product.code == query).desc(),
+                # Puis préfixe code
+                Product.code.ilike(f"{query}%").desc(),
+                # Puis par nom
+                Product.name
+            )
+            .limit(limit)
+            .all()
+        )
+
+        # Convertir en dictionnaires
+        suggestions = []
+        for row in results:
+            suggestions.append({
+                "id": row.id,
+                "code": row.code,
+                "name": row.name,
+                "description": row.description,
+                "barcode": row.barcode,
+                "sku": row.sku,
+                "unit": row.unit or "UNIT",
+                "sale_price": row.sale_price,
+                "currency": row.currency or "EUR",
+                "category_name": row.category_name,
+                "is_service": row.type == ProductType.SERVICE if row.type else False,
+                "image_url": row.image_url,
+            })
+
+        return suggestions
 
     def update_product(self, product_id: UUID, data: ProductUpdate) -> Product | None:
         """Mettre à jour un produit."""

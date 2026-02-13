@@ -35,15 +35,15 @@ def auth_headers():
 
 
 def test_accounting_status_endpoint_exists(client):
-    """Vérifier que l'endpoint /accounting/status existe"""
-    response = client.get("/accounting/status")
+    """Vérifier que l'endpoint /v1/accounting/status existe"""
+    response = client.get("/v1/accounting/status")
     # Peut retourner 401 (non authentifié) ou 200 (avec erreur API)
     assert response.status_code in [200, 401, 422]
 
 
 def test_accounting_status_requires_auth(client):
     """Vérifier que l'endpoint nécessite une authentification"""
-    response = client.get("/accounting/status")
+    response = client.get("/v1/accounting/status")
     # Sans auth headers, devrait retourner 401 ou 422
     assert response.status_code in [401, 422]
 
@@ -51,7 +51,7 @@ def test_accounting_status_requires_auth(client):
 def test_accounting_status_with_headers(client, auth_headers):
     """Tester l'endpoint avec les headers d'authentification"""
     response = client.get(
-        "/accounting/status",
+        "/v1/accounting/status",
         headers=auth_headers
     )
     
@@ -77,7 +77,7 @@ def test_accounting_status_no_entries(client, auth_headers, db_session):
     # (En production, ceci ne serait pas possible sans des privilèges particuliers)
     
     response = client.get(
-        "/accounting/status",
+        "/v1/accounting/status",
         headers=auth_headers
     )
     
@@ -91,7 +91,7 @@ def test_accounting_status_no_entries(client, auth_headers, db_session):
 def test_accounting_status_with_recent_entries(client, auth_headers):
     """Tester le statut avec des écritures récentes"""
     response = client.get(
-        "/accounting/status",
+        "/v1/accounting/status",
         headers=auth_headers
     )
     
@@ -105,7 +105,7 @@ def test_accounting_status_with_recent_entries(client, auth_headers):
 def test_accounting_status_old_entries(client, auth_headers):
     """Tester le statut avec des écritures anciennes"""
     response = client.get(
-        "/accounting/status",
+        "/v1/accounting/status",
         headers=auth_headers
     )
     
@@ -129,7 +129,7 @@ def test_accounting_status_no_red_alert():
 def test_accounting_response_schema(client, auth_headers):
     """Vérifier que la réponse suit le bon schéma"""
     response = client.get(
-        "/accounting/status",
+        "/v1/accounting/status",
         headers=auth_headers
     )
     
@@ -161,8 +161,8 @@ def test_accounting_multi_tenant_isolation(client):
         "X-Tenant-ID": "tenant-other"
     }
     
-    response_demo = client.get("/accounting/status", headers=headers_demo)
-    response_other = client.get("/accounting/status", headers=headers_other)
+    response_demo = client.get("/v1/accounting/status", headers=headers_demo)
+    response_other = client.get("/v1/accounting/status", headers=headers_other)
     
     # Les deux devraient fonctionner (ou retourner une erreur similaire)
     assert response_demo.status_code in [200, 400, 401]

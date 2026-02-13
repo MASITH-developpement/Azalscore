@@ -14,6 +14,8 @@ from uuid import UUID
 from sqlalchemy import and_, desc, extract, func, or_
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.query_optimizer import QueryOptimizer
+
 logger = logging.getLogger(__name__)
 
 from .models import (
@@ -27,6 +29,7 @@ from .models import (
     AccountingJournalEntryLine,
 )
 from .schemas import (
+    AccountingStatus,
     AccountingSummary,
     BalanceEntry,
     ChartOfAccountsCreate,
@@ -46,6 +49,7 @@ class AccountingService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id  # Pour CORE SaaS v2
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # FISCAL YEARS
@@ -565,6 +569,48 @@ class AccountingService:
             expenses=totals[AccountType.EXPENSE],
             net_income=net_income,
             currency="EUR"
+        )
+
+    def get_status(self) -> AccountingStatus:
+        """Obtenir le statut de la comptabilité pour monitoring."""
+        from datetime import date, timedelta
+
+        # Compter les écritures en attente (DRAFT ou PENDING)
+        pending_count = self.db.query(AccountingJournalEntry).filter(
+            AccountingJournalEntry.tenant_id == self.tenant_id,
+            AccountingJournalEntry.status.in_([EntryStatus.DRAFT, EntryStatus.PENDING])
+        ).count()
+
+        # Trouver la dernière clôture
+        last_closed_year = self.db.query(AccountingFiscalYear).filter(
+            AccountingFiscalYear.tenant_id == self.tenant_id,
+            AccountingFiscalYear.status == FiscalYearStatus.CLOSED
+        ).order_by(desc(AccountingFiscalYear.closed_at)).first()
+
+        last_closure_date = None
+        days_since_closure = None
+
+        if last_closed_year and last_closed_year.closed_at:
+            last_closure_date = last_closed_year.closed_at.date()
+            days_since_closure = (date.today() - last_closure_date).days
+
+        # Vérifier si les écritures sont à jour (moins de 5 en attente)
+        entries_up_to_date = pending_count <= 5
+
+        # Déterminer le statut visuel
+        # 🟢 = tout va bien (écritures à jour et clôture récente < 45 jours)
+        # 🟠 = attention (écritures en retard ou clôture > 45 jours)
+        if entries_up_to_date and (days_since_closure is None or days_since_closure < 45):
+            status = "🟢"
+        else:
+            status = "🟠"
+
+        return AccountingStatus(
+            status=status,
+            entries_up_to_date=entries_up_to_date,
+            last_closure_date=last_closure_date,
+            pending_entries_count=pending_count,
+            days_since_closure=days_since_closure
         )
 
     def get_ledger(

@@ -11,6 +11,8 @@ from sqlalchemy import desc, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     Alert,
     AlertRule,
@@ -68,6 +70,7 @@ class BIService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # DASHBOARDS

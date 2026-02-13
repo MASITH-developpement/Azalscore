@@ -12,6 +12,8 @@ Service métier pour la gestion de trésorerie.
 
 from sqlalchemy.orm import Session
 
+from app.core.query_optimizer import QueryOptimizer
+
 
 class TreasuryService:
     """
@@ -34,3 +36,4 @@ class TreasuryService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id  # Pour CORE SaaS v2
+        self._optimizer = QueryOptimizer(db)

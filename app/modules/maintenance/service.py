@@ -11,6 +11,8 @@ from decimal import Decimal
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     Asset,
     AssetCategory,
@@ -63,6 +65,7 @@ class MaintenanceService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # ACTIFS
