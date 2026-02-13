@@ -24,6 +24,7 @@ import { UnifiedLayout, type ViewKey } from './components/UnifiedLayout';
 import './styles/main.css';
 import './styles/unified-layout.css';
 import './styles/azalscore.css';
+import './modules/saisie/saisie.css';
 
 // ============================================================
 // LAZY LOADING DES MODULES
@@ -57,6 +58,7 @@ const WebModule = lazy(() => import('./modules/web'));
 const ProfileModule = lazy(() => import('./modules/profile'));
 const SettingsModule = lazy(() => import('./modules/settings'));
 const MarceauModule = lazy(() => import('./modules/marceau'));
+const SaisieModule = lazy(() => import('./modules/saisie'));
 
 // ============================================================
 // VIEW KEY → CAPABILITY MAPPING
@@ -383,9 +385,9 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
 
   const renderView = () => {
     switch (viewKey) {
-      // Saisie
+      // Saisie rapide
       case 'saisie':
-        return <WorksheetView />;
+        return <SaisieModule />;
 
       // Gestion documents
       case 'gestion-devis':
