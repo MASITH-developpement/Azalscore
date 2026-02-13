@@ -784,6 +784,210 @@ class TenantService:
             "revenue_this_month": 0,  # Serait calculé via facturation
         }
 
+    # ========================================================================
+    # AXONAUT MIGRATION
+    # ========================================================================
+
+    def configure_for_axonaut_migration(self, tenant_id: str) -> dict[str, Any]:
+        """
+        Configure un tenant avec des paramètres équivalents à Axonaut.
+        
+        Cette configuration facilite la migration depuis Axonaut en pré-configurant :
+        - Tous les modules nécessaires (CRM, Facturation, Compta, etc.)
+        - Numérotation de documents (factures, devis) style Axonaut
+        - TVA française par défaut
+        - Templates emails similaires
+        - Workflows standards français
+        
+        Args:
+            tenant_id: ID du tenant à configurer
+            
+        Returns:
+            Dict avec résumé de la configuration appliquée
+        """
+        logger.info(
+            "Configuring tenant for Axonaut migration | actor=%s tenant_id=%s",
+            self.actor_id, tenant_id
+        )
+        
+        tenant = self.get_tenant(tenant_id)
+        if not tenant:
+            raise ValueError(f"Tenant {tenant_id} not found")
+        
+        # 1. Activer modules essentiels Axonaut
+        essential_modules = [
+            ("CRM", "CRM et Gestion Commerciale"),
+            ("COMMERCIAL", "Facturation et Devis"),
+            ("FINANCE", "Finance et Comptabilité"),
+            ("TREASURY", "Trésorerie"),
+            ("PURCHASES", "Achats et Fournisseurs"),
+            ("INVENTORY", "Gestion de Stock"),
+            ("HR", "Ressources Humaines"),
+            ("BI", "Business Intelligence"),
+        ]
+        
+        activated_modules = []
+        for module_code, module_name in essential_modules:
+            try:
+                self.activate_module(tenant_id, ModuleActivation(
+                    module_code=module_code,
+                    module_name=module_name
+                ))
+                activated_modules.append(module_code)
+            except Exception as e:
+                logger.warning(f"Could not activate module {module_code}: {str(e)}")
+        
+        # 2. Activer nouveaux modules exclusifs AzalScore
+        new_modules = [
+            ("ESIGNATURE", "Signature Électronique"),
+            ("BANKING_SYNC", "Synchronisation Bancaire"),
+            ("NOTIFICATIONS", "Notifications et Rappels"),
+        ]
+        
+        for module_code, module_name in new_modules:
+            try:
+                self.activate_module(tenant_id, ModuleActivation(
+                    module_code=module_code,
+                    module_name=module_name
+                ))
+                activated_modules.append(module_code)
+            except Exception as e:
+                logger.warning(f"Could not activate new module {module_code}: {str(e)}")
+        
+        # 3. Configurer les settings avec paramètres Axonaut-like
+        settings = self.get_settings(tenant_id)
+        if not settings:
+            settings = self._create_default_settings(tenant_id)
+        
+        # Configuration facturation style Axonaut
+        axonaut_settings = {
+            # Numérotation documents
+            "invoice_prefix": "F",
+            "quote_prefix": "D",
+            "credit_note_prefix": "A",
+            "invoice_format": "F-{year}-{sequence:04d}",  # Ex: F-2026-0001
+            "quote_format": "D-{year}-{sequence:04d}",
+            "credit_note_format": "A-{year}-{sequence:04d}",
+            
+            # TVA française par défaut
+            "default_tax_rate": 20.0,
+            "tax_rates": [
+                {"rate": 20.0, "name": "TVA Standard", "code": "FR20"},
+                {"rate": 10.0, "name": "TVA Réduite", "code": "FR10"},
+                {"rate": 5.5, "name": "TVA Super Réduite", "code": "FR5.5"},
+                {"rate": 2.1, "name": "TVA Spéciale", "code": "FR2.1"},
+                {"rate": 0.0, "name": "TVA 0%", "code": "FR0"}
+            ],
+            
+            # Conditions paiement
+            "default_payment_terms": "NET_30",
+            "payment_methods": [
+                "BANK_TRANSFER",
+                "CHECK",
+                "CREDIT_CARD",
+                "CASH",
+                "DIRECT_DEBIT"
+            ],
+            
+            # Rappels automatiques (nouveau vs Axonaut)
+            "reminders": {
+                "enabled": True,
+                "auto_send": True,
+                "reminder_days": [7, 15, 30],
+                "max_reminders": 3,
+                "stop_after_days": 60
+            },
+            
+            # Signature électronique (nouveau vs Axonaut)
+            "esignature": {
+                "enabled": True,
+                "provider": "yousign",
+                "auto_send_quotes": False,  # Manuel par défaut
+                "auto_send_contracts": False
+            },
+            
+            # Synchronisation bancaire (nouveau vs Axonaut)
+            "banking": {
+                "auto_sync": True,
+                "sync_frequency_hours": 24,
+                "auto_reconcile": True,
+                "reconcile_confidence_threshold": 0.9
+            },
+            
+            # Email templates style Axonaut
+            "email_templates": {
+                "quote_subject": "Votre devis {document_number}",
+                "invoice_subject": "Votre facture {document_number}",
+                "reminder_subject": "Rappel - Facture {document_number}",
+                "payment_confirmation_subject": "Confirmation de paiement - {document_number}"
+            },
+            
+            # Formats documents
+            "document_language": "fr",
+            "date_format": "DD/MM/YYYY",
+            "currency": "EUR",
+            "currency_symbol": "€",
+            "currency_position": "after",  # 100,00 €
+            
+            # Migration metadata
+            "migration_source": "axonaut",
+            "migration_date": datetime.utcnow().isoformat(),
+            "configured_by": self.actor_email
+        }
+        
+        # Mettre à jour settings avec merge
+        if hasattr(settings, 'settings') and settings.settings:
+            settings.settings.update(axonaut_settings)
+        else:
+            settings.settings = axonaut_settings
+        
+        self.db.commit()
+        
+        # 4. Créer templates emails par défaut
+        # TODO: Créer templates dans module email
+        
+        # 5. Logger l'événement
+        self._log_event(tenant_id, "tenant.configured_for_axonaut_migration", {
+            "activated_modules": activated_modules,
+            "settings_applied": list(axonaut_settings.keys()),
+            "configured_by": self.actor_email
+        })
+        
+        logger.info(
+            "Tenant configured for Axonaut migration | tenant_id=%s modules=%d",
+            tenant_id, len(activated_modules)
+        )
+        
+        return {
+            "success": True,
+            "tenant_id": tenant_id,
+            "tenant_name": tenant.name,
+            "activated_modules": activated_modules,
+            "modules_count": len(activated_modules),
+            "configuration": {
+                "invoice_format": axonaut_settings["invoice_format"],
+                "default_tax_rate": axonaut_settings["default_tax_rate"],
+                "reminders_enabled": axonaut_settings["reminders"]["enabled"],
+                "esignature_enabled": axonaut_settings["esignature"]["enabled"],
+                "banking_sync_enabled": axonaut_settings["banking"]["auto_sync"]
+            },
+            "next_steps": [
+                "Importer données Axonaut (clients, factures, produits)",
+                "Configurer utilisateurs et permissions",
+                "Tester création devis/facture",
+                "Configurer connexion bancaire (nouveau)",
+                "Former équipe aux nouvelles fonctionnalités"
+            ],
+            "new_features_vs_axonaut": [
+                "Signature électronique Yousign/DocuSign",
+                "Synchronisation bancaire automatique",
+                "Rappels factures automatiques",
+                "Assistant IA Theo",
+                "Auto-healing Guardian",
+                "API GraphQL"
+            ]
+        }
+
 
 def get_tenant_service(
     db: Session,
