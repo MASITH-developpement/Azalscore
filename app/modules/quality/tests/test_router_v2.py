@@ -3,16 +3,19 @@ Tests pour le router Quality v2 - CORE SaaS
 ============================================
 
 Couvre tous les endpoints du module quality avec SaaSContext.
-Environ 90 tests pour valider la migration CORE SaaS v2.
+90 tests pour valider la migration CORE SaaS v2.
+
+Les mocks sont injectés via le fixture test_client qui configure:
+- dependency_overrides pour get_saas_context
+- patch de get_quality_service
+- Headers d'authentification automatiques
 """
 
 from datetime import date
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-
-
 
 
 # ============================================================================
@@ -22,12 +25,9 @@ import pytest
 class TestNonConformances:
     """Tests pour les endpoints de non-conformités"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_non_conformance(test_client, self, mock_service, mock_context, mock_saas_context, nc_data, nc_entity):
+    def test_create_non_conformance(self, test_client, nc_data, nc_entity):
         """Test création d'une non-conformité"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_non_conformance.return_value = nc_entity
+        test_client.mock_service.create_non_conformance.return_value = nc_entity
 
         response = test_client.post("/v2/quality/non-conformances", json=nc_data)
 
@@ -37,12 +37,9 @@ class TestNonConformances:
         assert data["title"] == "Pièce défectueuse"
         assert data["severity"] == "MAJOR"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_non_conformances(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_list_non_conformances(self, test_client, nc_entity):
         """Test listing des non-conformités"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_non_conformances.return_value = ([nc_entity], 1)
+        test_client.mock_service.list_non_conformances.return_value = ([nc_entity], 1)
 
         response = test_client.get("/v2/quality/non-conformances")
 
@@ -52,12 +49,9 @@ class TestNonConformances:
         assert len(data["items"]) == 1
         assert data["items"][0]["nc_number"] == "NC-2024-00001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_non_conformances_with_filters(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_list_non_conformances_with_filters(self, test_client, nc_entity):
         """Test listing avec filtres (type, status, severity)"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_non_conformances.return_value = ([nc_entity], 1)
+        test_client.mock_service.list_non_conformances.return_value = ([nc_entity], 1)
 
         response = test_client.get(
             "/v2/quality/non-conformances",
@@ -68,12 +62,9 @@ class TestNonConformances:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_non_conformance(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_get_non_conformance(self, test_client, nc_entity):
         """Test récupération d'une non-conformité par ID"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_non_conformance.return_value = nc_entity
+        test_client.mock_service.get_non_conformance.return_value = nc_entity
 
         response = test_client.get("/v2/quality/non-conformances/1")
 
@@ -82,24 +73,18 @@ class TestNonConformances:
         assert data["id"] == 1
         assert data["nc_number"] == "NC-2024-00001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_non_conformance_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_get_non_conformance_not_found(self, test_client):
         """Test récupération NC inexistante"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_non_conformance.return_value = None
+        test_client.mock_service.get_non_conformance.return_value = None
 
         response = test_client.get("/v2/quality/non-conformances/999")
 
         assert response.status_code == 404
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_non_conformance(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_update_non_conformance(self, test_client, nc_entity):
         """Test mise à jour d'une non-conformité"""
-        mock_context.return_value = mock_saas_context
-        nc_entity.title = "Titre modifié"
-        mock_service.return_value.update_non_conformance.return_value = nc_entity
+        updated_entity = nc_entity.with_updates(title="Titre modifié")
+        test_client.mock_service.update_non_conformance.return_value = updated_entity
 
         response = test_client.put("/v2/quality/non-conformances/1", json={"title": "Titre modifié"})
 
@@ -107,12 +92,9 @@ class TestNonConformances:
         data = response.json()
         assert data["title"] == "Titre modifié"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_open_non_conformance(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_open_non_conformance(self, test_client, nc_entity):
         """Test ouverture d'une non-conformité"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.open_non_conformance.return_value = nc_entity
+        test_client.mock_service.open_non_conformance.return_value = nc_entity
 
         response = test_client.post("/v2/quality/non-conformances/1/open")
 
@@ -120,13 +102,10 @@ class TestNonConformances:
         data = response.json()
         assert data["status"] == "OPEN"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_close_non_conformance(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_close_non_conformance(self, test_client, nc_entity):
         """Test clôture d'une non-conformité"""
-        mock_context.return_value = mock_saas_context
-        nc_entity.status = "CLOSED"
-        mock_service.return_value.close_non_conformance.return_value = nc_entity
+        closed_entity = nc_entity.with_updates(status="CLOSED")
+        test_client.mock_service.close_non_conformance.return_value = closed_entity
 
         close_data = {
             "closure_justification": "Actions terminées",
@@ -138,12 +117,9 @@ class TestNonConformances:
         data = response.json()
         assert data["status"] == "CLOSED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_add_nc_action(test_client, self, mock_service, mock_context, mock_saas_context, nc_action_data, nc_action_entity):
+    def test_add_nc_action(self, test_client, nc_action_data, nc_action_entity):
         """Test ajout d'une action à une NC"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.add_nc_action.return_value = nc_action_entity
+        test_client.mock_service.add_nc_action.return_value = nc_action_entity
 
         response = test_client.post("/v2/quality/non-conformances/1/actions", json=nc_action_data)
 
@@ -151,13 +127,10 @@ class TestNonConformances:
         data = response.json()
         assert data["action_type"] == "CORRECTIVE"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_nc_action(test_client, self, mock_service, mock_context, mock_saas_context, nc_action_entity):
+    def test_update_nc_action(self, test_client, nc_action_entity):
         """Test mise à jour d'une action NC"""
-        mock_context.return_value = mock_saas_context
-        nc_action_entity.status = "COMPLETED"
-        mock_service.return_value.update_nc_action.return_value = nc_action_entity
+        updated_action = nc_action_entity.with_updates(status="COMPLETED")
+        test_client.mock_service.update_nc_action.return_value = updated_action
 
         response = test_client.put("/v2/quality/nc-actions/1", json={"status": "COMPLETED"})
 
@@ -165,12 +138,9 @@ class TestNonConformances:
         data = response.json()
         assert data["status"] == "COMPLETED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_search_non_conformances(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_search_non_conformances(self, test_client, nc_entity):
         """Test recherche dans les NC"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_non_conformances.return_value = ([nc_entity], 1)
+        test_client.mock_service.list_non_conformances.return_value = ([nc_entity], 1)
 
         response = test_client.get("/v2/quality/non-conformances", params={"search": "défectueuse"})
 
@@ -178,12 +148,9 @@ class TestNonConformances:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_filter_nc_by_date_range(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_filter_nc_by_date_range(self, test_client, nc_entity):
         """Test filtrage NC par période"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_non_conformances.return_value = ([nc_entity], 1)
+        test_client.mock_service.list_non_conformances.return_value = ([nc_entity], 1)
 
         response = test_client.get(
             "/v2/quality/non-conformances",
@@ -202,13 +169,9 @@ class TestNonConformances:
 class TestControlTemplates:
     """Tests pour les endpoints de templates de contrôle"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_control_template(test_client, self, mock_service, mock_context, mock_saas_context,
-                                     control_template_data, control_template_entity):
+    def test_create_control_template(self, test_client, control_template_data, control_template_entity):
         """Test création d'un template de contrôle"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_control_template.return_value = control_template_entity
+        test_client.mock_service.create_control_template.return_value = control_template_entity
 
         response = test_client.post("/v2/quality/control-templates", json=control_template_data)
 
@@ -217,12 +180,9 @@ class TestControlTemplates:
         assert data["code"] == "TPL-001"
         assert data["name"] == "Contrôle dimensionnel"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_control_templates(test_client, self, mock_service, mock_context, mock_saas_context, control_template_entity):
+    def test_list_control_templates(self, test_client, control_template_entity):
         """Test listing des templates"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_control_templates.return_value = ([control_template_entity], 1)
+        test_client.mock_service.list_control_templates.return_value = ([control_template_entity], 1)
 
         response = test_client.get("/v2/quality/control-templates")
 
@@ -230,12 +190,9 @@ class TestControlTemplates:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_control_template(test_client, self, mock_service, mock_context, mock_saas_context, control_template_entity):
+    def test_get_control_template(self, test_client, control_template_entity):
         """Test récupération d'un template"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_control_template.return_value = control_template_entity
+        test_client.mock_service.get_control_template.return_value = control_template_entity
 
         response = test_client.get("/v2/quality/control-templates/1")
 
@@ -243,13 +200,10 @@ class TestControlTemplates:
         data = response.json()
         assert data["code"] == "TPL-001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_control_template(test_client, self, mock_service, mock_context, mock_saas_context, control_template_entity):
+    def test_update_control_template(self, test_client, control_template_entity):
         """Test mise à jour d'un template"""
-        mock_context.return_value = mock_saas_context
-        control_template_entity.version = "2.0"
-        mock_service.return_value.update_control_template.return_value = control_template_entity
+        updated_template = control_template_entity.with_updates(version="2.0")
+        test_client.mock_service.update_control_template.return_value = updated_template
 
         response = test_client.put("/v2/quality/control-templates/1", json={"version": "2.0"})
 
@@ -257,15 +211,9 @@ class TestControlTemplates:
         data = response.json()
         assert data["version"] == "2.0"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_add_template_item(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_add_template_item(self, test_client, control_template_item_entity):
         """Test ajout d'un item à un template"""
-        mock_context.return_value = mock_saas_context
-        item = MagicMock()
-        item.id = 1
-        item.characteristic = "Longueur"
-        mock_service.return_value.add_template_item.return_value = item
+        test_client.mock_service.add_template_item.return_value = control_template_item_entity
 
         item_data = {
             "sequence": 1,
@@ -277,14 +225,11 @@ class TestControlTemplates:
 
         assert response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_filter_templates_by_type(test_client, self, mock_service, mock_context, mock_saas_context, control_template_entity):
+    def test_filter_templates_by_type(self, test_client, control_template_entity):
         """Test filtrage des templates par type"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_control_templates.return_value = ([control_template_entity], 1)
+        test_client.mock_service.list_control_templates.return_value = ([control_template_entity], 1)
 
-        response = test_client.get("/v2/quality/control-templates", params={"control_type": "RECEIVING"})
+        response = test_client.get("/v2/quality/control-templates", params={"control_type": "INCOMING"})
 
         assert response.status_code == 200
         data = response.json()
@@ -298,12 +243,9 @@ class TestControlTemplates:
 class TestControls:
     """Tests pour les endpoints de contrôles qualité"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_control(test_client, self, mock_service, mock_context, mock_saas_context, control_data, control_entity):
+    def test_create_control(self, test_client, control_data, control_entity):
         """Test création d'un contrôle"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_control.return_value = control_entity
+        test_client.mock_service.create_control.return_value = control_entity
 
         response = test_client.post("/v2/quality/controls", json=control_data)
 
@@ -311,12 +253,9 @@ class TestControls:
         data = response.json()
         assert data["control_number"] == "QC-2024-00001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_controls(test_client, self, mock_service, mock_context, mock_saas_context, control_entity):
+    def test_list_controls(self, test_client, control_entity):
         """Test listing des contrôles"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_controls.return_value = ([control_entity], 1)
+        test_client.mock_service.list_controls.return_value = ([control_entity], 1)
 
         response = test_client.get("/v2/quality/controls")
 
@@ -324,12 +263,9 @@ class TestControls:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_control(test_client, self, mock_service, mock_context, mock_saas_context, control_entity):
+    def test_get_control(self, test_client, control_entity):
         """Test récupération d'un contrôle"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_control.return_value = control_entity
+        test_client.mock_service.get_control.return_value = control_entity
 
         response = test_client.get("/v2/quality/controls/1")
 
@@ -337,24 +273,19 @@ class TestControls:
         data = response.json()
         assert data["id"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_control(test_client, self, mock_service, mock_context, mock_saas_context, control_entity):
+    def test_update_control(self, test_client, control_entity):
         """Test mise à jour d'un contrôle"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_control.return_value = control_entity
+        updated_control = control_entity.with_updates(observations="Notes ajoutées")
+        test_client.mock_service.update_control.return_value = updated_control
 
         response = test_client.put("/v2/quality/controls/1", json={"observations": "Notes ajoutées"})
 
         assert response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_start_control(test_client, self, mock_service, mock_context, mock_saas_context, control_entity):
+    def test_start_control(self, test_client, control_entity):
         """Test démarrage d'un contrôle"""
-        mock_context.return_value = mock_saas_context
-        control_entity.status = "IN_PROGRESS"
-        mock_service.return_value.start_control.return_value = control_entity
+        started_control = control_entity.with_updates(status="IN_PROGRESS")
+        test_client.mock_service.start_control.return_value = started_control
 
         response = test_client.post("/v2/quality/controls/1/start")
 
@@ -362,28 +293,23 @@ class TestControls:
         data = response.json()
         assert data["status"] == "IN_PROGRESS"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_control_line(test_client, self, mock_service, mock_context, mock_saas_context, control_entity):
+    def test_update_control_line(self, test_client, control_entity):
         """Test mise à jour d'une ligne de contrôle"""
-        mock_context.return_value = mock_saas_context
         line = MagicMock()
+        line.id = 1
         line.control_id = 1
-        mock_service.return_value.update_control_line.return_value = line
-        mock_service.return_value.get_control.return_value = control_entity
+        line.measured_value = Decimal("10.5")
+        test_client.mock_service.update_control_line.return_value = line
+        test_client.mock_service.get_control.return_value = control_entity
 
         response = test_client.put("/v2/quality/control-lines/1", json={"measured_value": "10.5"})
 
         assert response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_complete_control(test_client, self, mock_service, mock_context, mock_saas_context, control_entity):
+    def test_complete_control(self, test_client, control_entity):
         """Test finalisation d'un contrôle"""
-        mock_context.return_value = mock_saas_context
-        control_entity.status = "COMPLETED"
-        control_entity.result = "PASSED"
-        mock_service.return_value.complete_control.return_value = control_entity
+        completed_control = control_entity.with_updates(status="COMPLETED", result="PASSED")
+        test_client.mock_service.complete_control.return_value = completed_control
 
         response = test_client.post("/v2/quality/controls/1/complete", params={"decision": "ACCEPT"})
 
@@ -391,12 +317,9 @@ class TestControls:
         data = response.json()
         assert data["status"] == "COMPLETED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_filter_controls_by_status_and_result(test_client, self, mock_service, mock_context, mock_saas_context, control_entity):
+    def test_filter_controls_by_status_and_result(self, test_client, control_entity):
         """Test filtrage des contrôles par statut et résultat"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_controls.return_value = ([control_entity], 1)
+        test_client.mock_service.list_controls.return_value = ([control_entity], 1)
 
         response = test_client.get(
             "/v2/quality/controls",
@@ -415,12 +338,9 @@ class TestControls:
 class TestAudits:
     """Tests pour les endpoints d'audits"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_audit(test_client, self, mock_service, mock_context, mock_saas_context, audit_data, audit_entity):
+    def test_create_audit(self, test_client, audit_data, audit_entity):
         """Test création d'un audit"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_audit.return_value = audit_entity
+        test_client.mock_service.create_audit.return_value = audit_entity
 
         response = test_client.post("/v2/quality/audits", json=audit_data)
 
@@ -429,12 +349,9 @@ class TestAudits:
         assert data["audit_number"] == "AUD-2024-0001"
         assert data["title"] == "Audit ISO 9001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_audits(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_list_audits(self, test_client, audit_entity):
         """Test listing des audits"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_audits.return_value = ([audit_entity], 1)
+        test_client.mock_service.list_audits.return_value = ([audit_entity], 1)
 
         response = test_client.get("/v2/quality/audits")
 
@@ -442,12 +359,9 @@ class TestAudits:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_audits_with_filters(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_list_audits_with_filters(self, test_client, audit_entity):
         """Test listing avec filtres (type, status)"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_audits.return_value = ([audit_entity], 1)
+        test_client.mock_service.list_audits.return_value = ([audit_entity], 1)
 
         response = test_client.get(
             "/v2/quality/audits",
@@ -458,12 +372,9 @@ class TestAudits:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_audit(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_get_audit(self, test_client, audit_entity):
         """Test récupération d'un audit"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_audit.return_value = audit_entity
+        test_client.mock_service.get_audit.return_value = audit_entity
 
         response = test_client.get("/v2/quality/audits/1")
 
@@ -471,13 +382,10 @@ class TestAudits:
         data = response.json()
         assert data["id"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_audit(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_update_audit(self, test_client, audit_entity):
         """Test mise à jour d'un audit"""
-        mock_context.return_value = mock_saas_context
-        audit_entity.title = "Audit modifié"
-        mock_service.return_value.update_audit.return_value = audit_entity
+        updated_audit = audit_entity.with_updates(title="Audit modifié")
+        test_client.mock_service.update_audit.return_value = updated_audit
 
         response = test_client.put("/v2/quality/audits/1", json={"title": "Audit modifié"})
 
@@ -485,13 +393,10 @@ class TestAudits:
         data = response.json()
         assert data["title"] == "Audit modifié"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_start_audit(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_start_audit(self, test_client, audit_entity):
         """Test démarrage d'un audit"""
-        mock_context.return_value = mock_saas_context
-        audit_entity.status = "IN_PROGRESS"
-        mock_service.return_value.start_audit.return_value = audit_entity
+        started_audit = audit_entity.with_updates(status="IN_PROGRESS")
+        test_client.mock_service.start_audit.return_value = started_audit
 
         response = test_client.post("/v2/quality/audits/1/start")
 
@@ -499,13 +404,9 @@ class TestAudits:
         data = response.json()
         assert data["status"] == "IN_PROGRESS"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_add_finding(test_client, self, mock_service, mock_context, mock_saas_context,
-                        audit_finding_data, audit_finding_entity):
+    def test_add_finding(self, test_client, audit_finding_data, audit_finding_entity):
         """Test ajout d'un constat à un audit"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.add_finding.return_value = audit_finding_entity
+        test_client.mock_service.add_finding.return_value = audit_finding_entity
 
         response = test_client.post("/v2/quality/audits/1/findings", json=audit_finding_data)
 
@@ -514,13 +415,10 @@ class TestAudits:
         assert data["title"] == "Procédure non suivie"
         assert data["severity"] == "MAJOR"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_finding(test_client, self, mock_service, mock_context, mock_saas_context, audit_finding_entity):
+    def test_update_finding(self, test_client, audit_finding_entity):
         """Test mise à jour d'un constat"""
-        mock_context.return_value = mock_saas_context
-        audit_finding_entity.status = "CLOSED"
-        mock_service.return_value.update_finding.return_value = audit_finding_entity
+        updated_finding = audit_finding_entity.with_updates(status="CLOSED")
+        test_client.mock_service.update_finding.return_value = updated_finding
 
         response = test_client.put("/v2/quality/audit-findings/1", json={"status": "CLOSED"})
 
@@ -528,16 +426,13 @@ class TestAudits:
         data = response.json()
         assert data["status"] == "CLOSED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_close_audit(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_close_audit(self, test_client, audit_entity):
         """Test clôture d'un audit"""
-        mock_context.return_value = mock_saas_context
-        audit_entity.status = "CLOSED"
-        mock_service.return_value.close_audit.return_value = audit_entity
+        closed_audit = audit_entity.with_updates(status="CLOSED")
+        test_client.mock_service.close_audit.return_value = closed_audit
 
         close_data = {
-            "audit_conclusion": "Conforme",
+            "audit_conclusion": "Audit conforme aux exigences de la norme",
             "recommendation": "Maintenir les bonnes pratiques"
         }
         response = test_client.post("/v2/quality/audits/1/close", json=close_data)
@@ -546,23 +441,17 @@ class TestAudits:
         data = response.json()
         assert data["status"] == "CLOSED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_audit_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_audit_not_found(self, test_client):
         """Test audit inexistant"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_audit.return_value = None
+        test_client.mock_service.get_audit.return_value = None
 
         response = test_client.get("/v2/quality/audits/999")
 
         assert response.status_code == 404
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_filter_audits_by_date_range(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_filter_audits_by_date_range(self, test_client, audit_entity):
         """Test filtrage des audits par période"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_audits.return_value = ([audit_entity], 1)
+        test_client.mock_service.list_audits.return_value = ([audit_entity], 1)
 
         response = test_client.get(
             "/v2/quality/audits",
@@ -573,12 +462,9 @@ class TestAudits:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_search_audits(test_client, self, mock_service, mock_context, mock_saas_context, audit_entity):
+    def test_search_audits(self, test_client, audit_entity):
         """Test recherche dans les audits"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_audits.return_value = ([audit_entity], 1)
+        test_client.mock_service.list_audits.return_value = ([audit_entity], 1)
 
         response = test_client.get("/v2/quality/audits", params={"search": "ISO"})
 
@@ -594,12 +480,9 @@ class TestAudits:
 class TestCAPA:
     """Tests pour les endpoints CAPA"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_capa(test_client, self, mock_service, mock_context, mock_saas_context, capa_data, capa_entity):
+    def test_create_capa(self, test_client, capa_data, capa_entity):
         """Test création d'un CAPA"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_capa.return_value = capa_entity
+        test_client.mock_service.create_capa.return_value = capa_entity
 
         response = test_client.post("/v2/quality/capas", json=capa_data)
 
@@ -607,12 +490,9 @@ class TestCAPA:
         data = response.json()
         assert data["capa_number"] == "CAPA-2024-0001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_capas(test_client, self, mock_service, mock_context, mock_saas_context, capa_entity):
+    def test_list_capas(self, test_client, capa_entity):
         """Test listing des CAPA"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_capas.return_value = ([capa_entity], 1)
+        test_client.mock_service.list_capas.return_value = ([capa_entity], 1)
 
         response = test_client.get("/v2/quality/capas")
 
@@ -620,12 +500,9 @@ class TestCAPA:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_capa(test_client, self, mock_service, mock_context, mock_saas_context, capa_entity):
+    def test_get_capa(self, test_client, capa_entity):
         """Test récupération d'un CAPA"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_capa.return_value = capa_entity
+        test_client.mock_service.get_capa.return_value = capa_entity
 
         response = test_client.get("/v2/quality/capas/1")
 
@@ -633,24 +510,18 @@ class TestCAPA:
         data = response.json()
         assert data["id"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_capa(test_client, self, mock_service, mock_context, mock_saas_context, capa_entity):
+    def test_update_capa(self, test_client, capa_entity):
         """Test mise à jour d'un CAPA"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_capa.return_value = capa_entity
+        updated_capa = capa_entity.with_updates(priority="CRITICAL")
+        test_client.mock_service.update_capa.return_value = updated_capa
 
         response = test_client.put("/v2/quality/capas/1", json={"priority": "CRITICAL"})
 
         assert response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_add_capa_action(test_client, self, mock_service, mock_context, mock_saas_context,
-                            capa_action_data, capa_action_entity):
+    def test_add_capa_action(self, test_client, capa_action_data, capa_action_entity):
         """Test ajout d'une action à un CAPA"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.add_capa_action.return_value = capa_action_entity
+        test_client.mock_service.add_capa_action.return_value = capa_action_entity
 
         response = test_client.post("/v2/quality/capas/1/actions", json=capa_action_data)
 
@@ -658,13 +529,10 @@ class TestCAPA:
         data = response.json()
         assert data["action_type"] == "PREVENTIVE"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_capa_action(test_client, self, mock_service, mock_context, mock_saas_context, capa_action_entity):
+    def test_update_capa_action(self, test_client, capa_action_entity):
         """Test mise à jour d'une action CAPA"""
-        mock_context.return_value = mock_saas_context
-        capa_action_entity.status = "COMPLETED"
-        mock_service.return_value.update_capa_action.return_value = capa_action_entity
+        updated_action = capa_action_entity.with_updates(status="COMPLETED")
+        test_client.mock_service.update_capa_action.return_value = updated_action
 
         response = test_client.put("/v2/quality/capa-actions/1", json={"status": "COMPLETED"})
 
@@ -672,17 +540,14 @@ class TestCAPA:
         data = response.json()
         assert data["status"] == "COMPLETED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_close_capa(test_client, self, mock_service, mock_context, mock_saas_context, capa_entity):
+    def test_close_capa(self, test_client, capa_entity):
         """Test clôture d'un CAPA"""
-        mock_context.return_value = mock_saas_context
-        capa_entity.status = "CLOSED_EFFECTIVE"
-        mock_service.return_value.close_capa.return_value = capa_entity
+        closed_capa = capa_entity.with_updates(status="CLOSED_EFFECTIVE")
+        test_client.mock_service.close_capa.return_value = closed_capa
 
         close_data = {
             "effectiveness_verified": True,
-            "effectiveness_result": "Efficace",
+            "effectiveness_result": "Actions correctives efficaces et résultats validés",
             "closure_comments": "Toutes les actions sont terminées"
         }
         response = test_client.post("/v2/quality/capas/1/close", json=close_data)
@@ -691,12 +556,9 @@ class TestCAPA:
         data = response.json()
         assert data["status"] == "CLOSED_EFFECTIVE"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_filter_capas_by_type_and_priority(test_client, self, mock_service, mock_context, mock_saas_context, capa_entity):
+    def test_filter_capas_by_type_and_priority(self, test_client, capa_entity):
         """Test filtrage des CAPA par type et priorité"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_capas.return_value = ([capa_entity], 1)
+        test_client.mock_service.list_capas.return_value = ([capa_entity], 1)
 
         response = test_client.get(
             "/v2/quality/capas",
@@ -715,12 +577,9 @@ class TestCAPA:
 class TestClaims:
     """Tests pour les endpoints de réclamations"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_claim(test_client, self, mock_service, mock_context, mock_saas_context, claim_data, claim_entity):
+    def test_create_claim(self, test_client, claim_data, claim_entity):
         """Test création d'une réclamation"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_claim.return_value = claim_entity
+        test_client.mock_service.create_claim.return_value = claim_entity
 
         response = test_client.post("/v2/quality/claims", json=claim_data)
 
@@ -728,12 +587,9 @@ class TestClaims:
         data = response.json()
         assert data["claim_number"] == "REC-2024-00001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_claims(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_list_claims(self, test_client, claim_entity):
         """Test listing des réclamations"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_claims.return_value = ([claim_entity], 1)
+        test_client.mock_service.list_claims.return_value = ([claim_entity], 1)
 
         response = test_client.get("/v2/quality/claims")
 
@@ -741,12 +597,9 @@ class TestClaims:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_claim(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_get_claim(self, test_client, claim_entity):
         """Test récupération d'une réclamation"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_claim.return_value = claim_entity
+        test_client.mock_service.get_claim.return_value = claim_entity
 
         response = test_client.get("/v2/quality/claims/1")
 
@@ -754,24 +607,19 @@ class TestClaims:
         data = response.json()
         assert data["id"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_claim(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_update_claim(self, test_client, claim_entity):
         """Test mise à jour d'une réclamation"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_claim.return_value = claim_entity
+        updated_claim = claim_entity.with_updates(priority="CRITICAL")
+        test_client.mock_service.update_claim.return_value = updated_claim
 
         response = test_client.put("/v2/quality/claims/1", json={"priority": "CRITICAL"})
 
         assert response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_acknowledge_claim(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_acknowledge_claim(self, test_client, claim_entity):
         """Test accusé de réception d'une réclamation"""
-        mock_context.return_value = mock_saas_context
-        claim_entity.status = "ACKNOWLEDGED"
-        mock_service.return_value.acknowledge_claim.return_value = claim_entity
+        acked_claim = claim_entity.with_updates(status="ACKNOWLEDGED")
+        test_client.mock_service.acknowledge_claim.return_value = acked_claim
 
         response = test_client.post("/v2/quality/claims/1/acknowledge")
 
@@ -779,13 +627,10 @@ class TestClaims:
         data = response.json()
         assert data["status"] == "ACKNOWLEDGED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_respond_claim(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_respond_claim(self, test_client, claim_entity):
         """Test réponse à une réclamation"""
-        mock_context.return_value = mock_saas_context
-        claim_entity.status = "RESPONSE_SENT"
-        mock_service.return_value.respond_claim.return_value = claim_entity
+        responded_claim = claim_entity.with_updates(status="RESPONSE_SENT")
+        test_client.mock_service.respond_claim.return_value = responded_claim
 
         response_data = {"response_content": "Nous allons remplacer les pièces"}
         response = test_client.post("/v2/quality/claims/1/respond", json=response_data)
@@ -794,13 +639,10 @@ class TestClaims:
         data = response.json()
         assert data["status"] == "RESPONSE_SENT"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_resolve_claim(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_resolve_claim(self, test_client, claim_entity):
         """Test résolution d'une réclamation"""
-        mock_context.return_value = mock_saas_context
-        claim_entity.status = "RESOLVED"
-        mock_service.return_value.resolve_claim.return_value = claim_entity
+        resolved_claim = claim_entity.with_updates(status="RESOLVED")
+        test_client.mock_service.resolve_claim.return_value = resolved_claim
 
         resolve_data = {
             "resolution_type": "REPLACEMENT",
@@ -812,13 +654,10 @@ class TestClaims:
         data = response.json()
         assert data["status"] == "RESOLVED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_close_claim(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_close_claim(self, test_client, claim_entity):
         """Test clôture d'une réclamation"""
-        mock_context.return_value = mock_saas_context
-        claim_entity.status = "CLOSED"
-        mock_service.return_value.close_claim.return_value = claim_entity
+        closed_claim = claim_entity.with_updates(status="CLOSED")
+        test_client.mock_service.close_claim.return_value = closed_claim
 
         close_data = {
             "customer_satisfied": True,
@@ -830,13 +669,9 @@ class TestClaims:
         data = response.json()
         assert data["status"] == "CLOSED"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_add_claim_action(test_client, self, mock_service, mock_context, mock_saas_context,
-                              claim_action_data, claim_action_entity):
+    def test_add_claim_action(self, test_client, claim_action_data, claim_action_entity):
         """Test ajout d'une action à une réclamation"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.add_claim_action.return_value = claim_action_entity
+        test_client.mock_service.add_claim_action.return_value = claim_action_entity
 
         response = test_client.post("/v2/quality/claims/1/actions", json=claim_action_data)
 
@@ -844,12 +679,9 @@ class TestClaims:
         data = response.json()
         assert data["action_type"] == "IMMEDIATE"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_filter_claims_by_customer(test_client, self, mock_service, mock_context, mock_saas_context, claim_entity):
+    def test_filter_claims_by_customer(self, test_client, claim_entity):
         """Test filtrage des réclamations par client"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_claims.return_value = ([claim_entity], 1)
+        test_client.mock_service.list_claims.return_value = ([claim_entity], 1)
 
         response = test_client.get("/v2/quality/claims", params={"customer_id": 1})
 
@@ -865,13 +697,9 @@ class TestClaims:
 class TestIndicators:
     """Tests pour les endpoints d'indicateurs"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_indicator(test_client, self, mock_service, mock_context, mock_saas_context,
-                              indicator_data, indicator_entity):
+    def test_create_indicator(self, test_client, indicator_data, indicator_entity):
         """Test création d'un indicateur"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_indicator.return_value = indicator_entity
+        test_client.mock_service.create_indicator.return_value = indicator_entity
 
         response = test_client.post("/v2/quality/indicators", json=indicator_data)
 
@@ -879,12 +707,9 @@ class TestIndicators:
         data = response.json()
         assert data["code"] == "IND-001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_indicators(test_client, self, mock_service, mock_context, mock_saas_context, indicator_entity):
+    def test_list_indicators(self, test_client, indicator_entity):
         """Test listing des indicateurs"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_indicators.return_value = ([indicator_entity], 1)
+        test_client.mock_service.list_indicators.return_value = ([indicator_entity], 1)
 
         response = test_client.get("/v2/quality/indicators")
 
@@ -892,12 +717,9 @@ class TestIndicators:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_indicator(test_client, self, mock_service, mock_context, mock_saas_context, indicator_entity):
+    def test_get_indicator(self, test_client, indicator_entity):
         """Test récupération d'un indicateur"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_indicator.return_value = indicator_entity
+        test_client.mock_service.get_indicator.return_value = indicator_entity
 
         response = test_client.get("/v2/quality/indicators/1")
 
@@ -905,24 +727,18 @@ class TestIndicators:
         data = response.json()
         assert data["id"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_indicator(test_client, self, mock_service, mock_context, mock_saas_context, indicator_entity):
+    def test_update_indicator(self, test_client, indicator_entity):
         """Test mise à jour d'un indicateur"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_indicator.return_value = indicator_entity
+        updated_indicator = indicator_entity.with_updates(target_value=Decimal("99"))
+        test_client.mock_service.update_indicator.return_value = updated_indicator
 
         response = test_client.put("/v2/quality/indicators/1", json={"target_value": "99"})
 
         assert response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_add_measurement(test_client, self, mock_service, mock_context, mock_saas_context,
-                            indicator_measurement_data, indicator_measurement_entity):
+    def test_add_measurement(self, test_client, indicator_measurement_data, indicator_measurement_entity):
         """Test ajout d'une mesure à un indicateur"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.add_measurement.return_value = indicator_measurement_entity
+        test_client.mock_service.add_measurement.return_value = indicator_measurement_entity
 
         response = test_client.post("/v2/quality/indicators/1/measurements", json=indicator_measurement_data)
 
@@ -930,12 +746,9 @@ class TestIndicators:
         data = response.json()
         assert data["value"] == "97.5"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_filter_indicators_by_category(test_client, self, mock_service, mock_context, mock_saas_context, indicator_entity):
+    def test_filter_indicators_by_category(self, test_client, indicator_entity):
         """Test filtrage des indicateurs par catégorie"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_indicators.return_value = ([indicator_entity], 1)
+        test_client.mock_service.list_indicators.return_value = ([indicator_entity], 1)
 
         response = test_client.get("/v2/quality/indicators", params={"category": "QUALITY"})
 
@@ -951,13 +764,9 @@ class TestIndicators:
 class TestCertifications:
     """Tests pour les endpoints de certifications"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_create_certification(test_client, self, mock_service, mock_context, mock_saas_context,
-                                  certification_data, certification_entity):
+    def test_create_certification(self, test_client, certification_data, certification_entity):
         """Test création d'une certification"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_certification.return_value = certification_entity
+        test_client.mock_service.create_certification.return_value = certification_entity
 
         response = test_client.post("/v2/quality/certifications", json=certification_data)
 
@@ -965,12 +774,9 @@ class TestCertifications:
         data = response.json()
         assert data["code"] == "ISO-9001"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_list_certifications(test_client, self, mock_service, mock_context, mock_saas_context, certification_entity):
+    def test_list_certifications(self, test_client, certification_entity):
         """Test listing des certifications"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_certifications.return_value = ([certification_entity], 1)
+        test_client.mock_service.list_certifications.return_value = ([certification_entity], 1)
 
         response = test_client.get("/v2/quality/certifications")
 
@@ -978,12 +784,9 @@ class TestCertifications:
         data = response.json()
         assert data["total"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_certification(test_client, self, mock_service, mock_context, mock_saas_context, certification_entity):
+    def test_get_certification(self, test_client, certification_entity):
         """Test récupération d'une certification"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_certification.return_value = certification_entity
+        test_client.mock_service.get_certification.return_value = certification_entity
 
         response = test_client.get("/v2/quality/certifications/1")
 
@@ -991,24 +794,18 @@ class TestCertifications:
         data = response.json()
         assert data["id"] == 1
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_certification(test_client, self, mock_service, mock_context, mock_saas_context, certification_entity):
+    def test_update_certification(self, test_client, certification_entity):
         """Test mise à jour d'une certification"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_certification.return_value = certification_entity
+        updated_cert = certification_entity.with_updates(status="EXPIRED")
+        test_client.mock_service.update_certification.return_value = updated_cert
 
         response = test_client.put("/v2/quality/certifications/1", json={"status": "EXPIRED"})
 
         assert response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_add_certification_audit(test_client, self, mock_service, mock_context, mock_saas_context,
-                                    certification_audit_data, certification_audit_entity):
+    def test_add_certification_audit(self, test_client, certification_audit_data, certification_audit_entity):
         """Test ajout d'un audit à une certification"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.add_certification_audit.return_value = certification_audit_entity
+        test_client.mock_service.add_certification_audit.return_value = certification_audit_entity
 
         response = test_client.post("/v2/quality/certifications/1/audits", json=certification_audit_data)
 
@@ -1016,13 +813,10 @@ class TestCertifications:
         data = response.json()
         assert data["audit_type"] == "SURVEILLANCE"
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_update_certification_audit(test_client, self, mock_service, mock_context, mock_saas_context,
-                                       certification_audit_entity):
+    def test_update_certification_audit(self, test_client, certification_audit_entity):
         """Test mise à jour d'un audit de certification"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_certification_audit.return_value = certification_audit_entity
+        updated_audit = certification_audit_entity.with_updates(notes="Audit réussi")
+        test_client.mock_service.update_certification_audit.return_value = updated_audit
 
         response = test_client.put("/v2/quality/certification-audits/1", json={"notes": "Audit réussi"})
 
@@ -1036,23 +830,9 @@ class TestCertifications:
 class TestDashboard:
     """Tests pour l'endpoint du dashboard"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_get_dashboard(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_get_dashboard(self, test_client, dashboard_entity):
         """Test récupération du dashboard qualité"""
-        mock_context.return_value = mock_saas_context
-
-        dashboard_data = MagicMock()
-        dashboard_data.nc_total = 100
-        dashboard_data.nc_open = 25
-        dashboard_data.nc_critical = 5
-        dashboard_data.controls_total = 150
-        dashboard_data.controls_completed = 140
-        dashboard_data.controls_pass_rate = Decimal("95.5")
-        dashboard_data.capa_total = 30
-        dashboard_data.capa_open = 10
-
-        mock_service.return_value.get_dashboard.return_value = dashboard_data
+        test_client.mock_service.get_dashboard.return_value = dashboard_entity
 
         response = test_client.get("/v2/quality/dashboard")
 
@@ -1062,42 +842,16 @@ class TestDashboard:
         assert "controls_total" in data
         assert "capa_total" in data
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_dashboard_statistics(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_dashboard_statistics(self, test_client, dashboard_entity):
         """Test statistiques complètes du dashboard"""
-        mock_context.return_value = mock_saas_context
-
-        dashboard_data = MagicMock()
-        dashboard_data.nc_total = 100
-        dashboard_data.nc_open = 25
-        dashboard_data.nc_critical = 5
-        dashboard_data.controls_total = 150
-        dashboard_data.controls_completed = 140
-        dashboard_data.controls_pass_rate = Decimal("95.5")
-        dashboard_data.audits_planned = 5
-        dashboard_data.audits_completed = 3
-        dashboard_data.audit_findings_open = 8
-        dashboard_data.capa_total = 30
-        dashboard_data.capa_open = 10
-        dashboard_data.capa_overdue = 2
-        dashboard_data.capa_effectiveness_rate = Decimal("92.0")
-        dashboard_data.claims_total = 15
-        dashboard_data.claims_open = 3
-        dashboard_data.certifications_active = 4
-        dashboard_data.certifications_expiring_soon = 1
-        dashboard_data.indicators_on_target = 12
-        dashboard_data.indicators_warning = 2
-        dashboard_data.indicators_critical = 1
-
-        mock_service.return_value.get_dashboard.return_value = dashboard_data
+        test_client.mock_service.get_dashboard.return_value = dashboard_entity
 
         response = test_client.get("/v2/quality/dashboard")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["nc_total"] == 100
-        assert data["capa_effectiveness_rate"] == "92.0"
+        assert data["nc_total"] == 10
+        assert data["capa_effectiveness_rate"] == "85.0"
 
 
 # ============================================================================
@@ -1107,15 +861,10 @@ class TestDashboard:
 class TestWorkflows:
     """Tests pour les workflows qualité"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_nc_to_capa_workflow(test_client, self, mock_service, mock_context, mock_saas_context,
-                                 nc_entity, capa_entity):
-        """Test workflow: NC → CAPA → Clôture"""
-        mock_context.return_value = mock_saas_context
-
+    def test_nc_to_capa_workflow(self, test_client, nc_entity, capa_entity):
+        """Test workflow: NC -> CAPA -> Clôture"""
         # 1. Créer NC
-        mock_service.return_value.create_non_conformance.return_value = nc_entity
+        test_client.mock_service.create_non_conformance.return_value = nc_entity
         nc_response = test_client.post("/v2/quality/non-conformances", json={
             "title": "Pièce défectueuse",
             "description": "Surface rayée",
@@ -1126,7 +875,7 @@ class TestWorkflows:
         assert nc_response.status_code == 200
 
         # 2. Créer CAPA lié
-        mock_service.return_value.create_capa.return_value = capa_entity
+        test_client.mock_service.create_capa.return_value = capa_entity
         capa_response = test_client.post("/v2/quality/capas", json={
             "title": "Améliorer le contrôle",
             "description": "Mettre en place un contrôle renforcé",
@@ -1141,24 +890,19 @@ class TestWorkflows:
         assert capa_response.status_code == 200
 
         # 3. Clôturer CAPA
-        capa_entity.status = "CLOSED_EFFECTIVE"
-        mock_service.return_value.close_capa.return_value = capa_entity
+        closed_capa = capa_entity.with_updates(status="CLOSED_EFFECTIVE")
+        test_client.mock_service.close_capa.return_value = closed_capa
         close_response = test_client.post("/v2/quality/capas/1/close", json={
             "effectiveness_verified": True,
-            "effectiveness_result": "Efficace",
-            "closure_comments": "Actions terminées"
+            "effectiveness_result": "Actions correctives efficaces et vérifiées",
+            "closure_comments": "Toutes les actions sont terminées et validées"
         })
         assert close_response.status_code == 200
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_audit_finding_to_action_workflow(test_client, self, mock_service, mock_context, mock_saas_context,
-                                              audit_entity, audit_finding_entity):
-        """Test workflow: Audit → Constat → Action corrective"""
-        mock_context.return_value = mock_saas_context
-
+    def test_audit_finding_to_action_workflow(self, test_client, audit_entity, audit_finding_entity):
+        """Test workflow: Audit -> Constat -> Action corrective"""
         # 1. Créer audit
-        mock_service.return_value.create_audit.return_value = audit_entity
+        test_client.mock_service.create_audit.return_value = audit_entity
         audit_response = test_client.post("/v2/quality/audits", json={
             "title": "Audit ISO 9001",
             "description": "Audit annuel",
@@ -1172,7 +916,7 @@ class TestWorkflows:
         assert audit_response.status_code == 200
 
         # 2. Ajouter constat
-        mock_service.return_value.add_finding.return_value = audit_finding_entity
+        test_client.mock_service.add_finding.return_value = audit_finding_entity
         finding_response = test_client.post("/v2/quality/audits/1/findings", json={
             "title": "Procédure non suivie",
             "description": "Non-respect de la procédure",
@@ -1192,12 +936,9 @@ class TestWorkflows:
 class TestPagination:
     """Tests pour la pagination"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_pagination_skip_limit(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_pagination_skip_limit(self, test_client, nc_entity):
         """Test pagination avec skip et limit"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_non_conformances.return_value = ([nc_entity], 100)
+        test_client.mock_service.list_non_conformances.return_value = ([nc_entity], 100)
 
         response = test_client.get("/v2/quality/non-conformances", params={"skip": 10, "limit": 20})
 
@@ -1207,18 +948,14 @@ class TestPagination:
         assert data["limit"] == 20
         assert data["total"] == 100
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_pagination_limits(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_pagination_limits(self, test_client):
         """Test limites de pagination"""
-        mock_context.return_value = mock_saas_context
-
         # Test limite max (200)
         response = test_client.get("/v2/quality/non-conformances", params={"limit": 300})
         assert response.status_code == 422  # Validation error
 
         # Test limite valide
-        mock_service.return_value.list_non_conformances.return_value = ([], 0)
+        test_client.mock_service.list_non_conformances.return_value = ([], 0)
         response = test_client.get("/v2/quality/non-conformances", params={"limit": 50})
         assert response.status_code == 200
 
@@ -1230,12 +967,9 @@ class TestPagination:
 class TestTenantIsolation:
     """Tests pour l'isolation des tenants"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_tenant_context_used(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_tenant_context_used(self, test_client, nc_entity):
         """Test que le contexte tenant est bien utilisé"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.create_non_conformance.return_value = nc_entity
+        test_client.mock_service.create_non_conformance.return_value = nc_entity
 
         nc_data = {
             "title": "Test NC",
@@ -1247,21 +981,18 @@ class TestTenantIsolation:
         response = test_client.post("/v2/quality/non-conformances", json=nc_data)
 
         assert response.status_code == 200
-        # Vérifier que get_quality_service a été appelé avec les bons paramètres
-        mock_service.assert_called()
+        # Le service mock a été appelé (ce qui signifie que l'auth a passé)
+        test_client.mock_service.create_non_conformance.assert_called()
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_user_context_used(test_client, self, mock_service, mock_context, mock_saas_context, nc_entity):
+    def test_user_context_used(self, test_client, nc_entity):
         """Test que le contexte utilisateur est bien utilisé"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.list_non_conformances.return_value = ([nc_entity], 1)
+        test_client.mock_service.list_non_conformances.return_value = ([nc_entity], 1)
 
         response = test_client.get("/v2/quality/non-conformances")
 
         assert response.status_code == 200
-        # Vérifier que get_quality_service a été appelé
-        mock_service.assert_called()
+        # Le service mock a été appelé
+        test_client.mock_service.list_non_conformances.assert_called()
 
 
 # ============================================================================
@@ -1271,67 +1002,49 @@ class TestTenantIsolation:
 class TestErrorHandling:
     """Tests pour la gestion des erreurs"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_nc_action_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_nc_action_not_found(self, test_client):
         """Test action NC inexistante"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_nc_action.return_value = None
+        test_client.mock_service.update_nc_action.return_value = None
 
         response = test_client.put("/v2/quality/nc-actions/999", json={"status": "COMPLETED"})
 
         assert response.status_code == 404
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_control_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_control_not_found(self, test_client):
         """Test contrôle inexistant"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_control.return_value = None
+        test_client.mock_service.get_control.return_value = None
 
         response = test_client.get("/v2/quality/controls/999")
 
         assert response.status_code == 404
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_capa_action_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_capa_action_not_found(self, test_client):
         """Test action CAPA inexistante"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.update_capa_action.return_value = None
+        test_client.mock_service.update_capa_action.return_value = None
 
         response = test_client.put("/v2/quality/capa-actions/999", json={"status": "COMPLETED"})
 
         assert response.status_code == 404
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_claim_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_claim_not_found(self, test_client):
         """Test réclamation inexistante"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_claim.return_value = None
+        test_client.mock_service.get_claim.return_value = None
 
         response = test_client.get("/v2/quality/claims/999")
 
         assert response.status_code == 404
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_indicator_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_indicator_not_found(self, test_client):
         """Test indicateur inexistant"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_indicator.return_value = None
+        test_client.mock_service.get_indicator.return_value = None
 
         response = test_client.get("/v2/quality/indicators/999")
 
         assert response.status_code == 404
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    @patch("app.modules.quality.router_v2.get_quality_service")
-    def test_certification_not_found(test_client, self, mock_service, mock_context, mock_saas_context):
+    def test_certification_not_found(self, test_client):
         """Test certification inexistante"""
-        mock_context.return_value = mock_saas_context
-        mock_service.return_value.get_certification.return_value = None
+        test_client.mock_service.get_certification.return_value = None
 
         response = test_client.get("/v2/quality/certifications/999")
 
@@ -1345,74 +1058,50 @@ class TestErrorHandling:
 class TestValidation:
     """Tests pour la validation des données"""
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_nc_missing_required_fields(test_client, self, mock_context, mock_saas_context):
+    def test_nc_missing_required_fields(self, test_client):
         """Test validation NC avec champs manquants"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.post("/v2/quality/non-conformances", json={})
 
         assert response.status_code == 422
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_audit_missing_required_fields(test_client, self, mock_context, mock_saas_context):
+    def test_audit_missing_required_fields(self, test_client):
         """Test validation audit avec champs manquants"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.post("/v2/quality/audits", json={})
 
         assert response.status_code == 422
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_capa_missing_required_fields(test_client, self, mock_context, mock_saas_context):
+    def test_capa_missing_required_fields(self, test_client):
         """Test validation CAPA avec champs manquants"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.post("/v2/quality/capas", json={})
 
         assert response.status_code == 422
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_claim_missing_required_fields(test_client, self, mock_context, mock_saas_context):
+    def test_claim_missing_required_fields(self, test_client):
         """Test validation réclamation avec champs manquants"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.post("/v2/quality/claims", json={})
 
         assert response.status_code == 422
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_invalid_pagination_skip(test_client, self, mock_context, mock_saas_context):
+    def test_invalid_pagination_skip(self, test_client):
         """Test validation skip négatif"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.get("/v2/quality/non-conformances", params={"skip": -1})
 
         assert response.status_code == 422
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_invalid_pagination_limit_too_high(test_client, self, mock_context, mock_saas_context):
+    def test_invalid_pagination_limit_too_high(self, test_client):
         """Test validation limit trop élevé"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.get("/v2/quality/non-conformances", params={"limit": 1000})
 
         assert response.status_code == 422
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_invalid_pagination_limit_zero(test_client, self, mock_context, mock_saas_context):
+    def test_invalid_pagination_limit_zero(self, test_client):
         """Test validation limit à zéro"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.get("/v2/quality/non-conformances", params={"limit": 0})
 
         assert response.status_code == 422
 
-    @patch("app.modules.quality.router_v2.get_saas_context")
-    def test_invalid_date_format(test_client, self, mock_context, mock_saas_context):
+    def test_invalid_date_format(self, test_client):
         """Test validation format de date invalide"""
-        mock_context.return_value = mock_saas_context
-
         response = test_client.get("/v2/quality/non-conformances", params={"date_from": "invalid-date"})
 
         assert response.status_code == 422

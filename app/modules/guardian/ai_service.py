@@ -170,7 +170,11 @@ class AIGuardianService:
 
     def start_analysis(self, incident_id: int) -> AIIncident:
         """Marque le début de l'analyse d'un incident."""
-        incident = self.db.query(AIIncident).filter(AIIncident.id == incident_id).first()
+        # SÉCURITÉ: Toujours filtrer par tenant_id
+        incident = self.db.query(AIIncident).filter(
+            AIIncident.tenant_id == self.tenant_id,
+            AIIncident.id == incident_id
+        ).first()
         if incident:
             incident.status = IncidentStatus.ANALYZING.value
             incident.analysis_started_at = datetime.utcnow()
@@ -207,7 +211,11 @@ class AIGuardianService:
         Returns:
             Incident mis à jour
         """
-        incident = self.db.query(AIIncident).filter(AIIncident.id == incident_id).first()
+        # SÉCURITÉ: Toujours filtrer par tenant_id
+        incident = self.db.query(AIIncident).filter(
+            AIIncident.tenant_id == self.tenant_id,
+            AIIncident.id == incident_id
+        ).first()
         if not incident:
             return None
 
@@ -247,7 +255,8 @@ class AIGuardianService:
         # Nettoyer le message (enlever IDs, timestamps, etc.)
         clean_message = error_message[:100] if error_message else ""
         raw = f"{error_type}:{module}:{clean_message}"
-        return hashlib.md5(raw.encode()).hexdigest()[:16]
+        # NOTE: MD5 utilisé uniquement pour fingerprinting/déduplication, pas pour sécurité
+        return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()[:16]
 
     def _find_recent_similar_incident(
         self,
@@ -256,7 +265,9 @@ class AIGuardianService:
     ) -> Optional[AIIncident]:
         """Trouve un incident similaire récent."""
         threshold = datetime.utcnow() - timedelta(minutes=minutes)
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         return self.db.query(AIIncident).filter(
+            AIIncident.tenant_id == self.tenant_id,
             AIIncident.error_signature == signature,
             AIIncident.created_at >= threshold,
         ).first()
@@ -392,7 +403,9 @@ class AIGuardianService:
         period_end = (period_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
 
         # Récupérer incidents du mois
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         incidents = self.db.query(AIIncident).filter(
+            AIIncident.tenant_id == self.tenant_id,
             AIIncident.module == module,
             AIIncident.created_at >= period_start,
             AIIncident.created_at <= period_end,
@@ -534,23 +547,37 @@ class AIGuardianService:
         period_end: datetime,
         tenant_id: Optional[str]
     ) -> Dict[str, Dict]:
-        """Audite tous les modules (lecture seule)."""
-        # Récupérer tous les modules avec incidents
-        query = self.db.query(AIIncident.module).distinct()
-        if tenant_id:
-            query = query.filter(AIIncident.tenant_id == tenant_id)
+        """
+        Audite tous les modules (lecture seule).
+
+        SÉCURITÉ: Filtrage par tenant_id OBLIGATOIRE.
+        Sans tenant_id, retourne un dictionnaire vide avec avertissement.
+        """
+        # SÉCURITÉ: Utiliser self.tenant_id par défaut si non spécifié
+        effective_tenant_id = tenant_id if tenant_id is not None else self.tenant_id
+
+        # SÉCURITÉ: Sans tenant_id, retourner vide avec avertissement
+        if not effective_tenant_id:
+            logger.warning(
+                "[AI_SERVICE] _audit_all_modules called without tenant_id - returning empty"
+            )
+            return {}
+
+        # SÉCURITÉ: Récupérer UNIQUEMENT les modules de ce tenant
+        query = self.db.query(AIIncident.module).distinct().filter(
+            AIIncident.tenant_id == effective_tenant_id
+        )
 
         modules = [m[0] for m in query.all()]
 
         results = {}
         for module in modules:
+            # SÉCURITÉ: TOUJOURS filtrer par tenant_id
             score = self.db.query(AIModuleScore).filter(
+                AIModuleScore.tenant_id == effective_tenant_id,
                 AIModuleScore.module == module,
                 AIModuleScore.period_start >= period_start,
-            )
-            if tenant_id:
-                score = score.filter(AIModuleScore.tenant_id == tenant_id)
-            score = score.first()
+            ).first()
 
             results[module] = {
                 "score": score.score_total if score else 100,
@@ -764,14 +791,24 @@ class AIGuardianService:
         period_start: datetime,
         period_end: datetime
     ) -> List[AIIncident]:
-        """Récupère les incidents pour une période."""
+        """
+        Récupère les incidents pour une période.
+
+        SÉCURITÉ: Filtre TOUJOURS par tenant_id si défini.
+        Sans tenant_id, retourne liste vide (mode sécurisé par défaut).
+        """
+        if not self.tenant_id:
+            import logging
+            logging.getLogger(__name__).warning(
+                "[AI_SERVICE] _get_incidents_for_period called without tenant_id - returning empty"
+            )
+            return []
+
         query = self.db.query(AIIncident).filter(
+            AIIncident.tenant_id == self.tenant_id,
             AIIncident.created_at >= period_start,
             AIIncident.created_at <= period_end,
         )
-        if self.tenant_id:
-            query = query.filter(AIIncident.tenant_id == self.tenant_id)
-
         return query.all()
 
     # =========================================================================
@@ -779,8 +816,20 @@ class AIGuardianService:
     # =========================================================================
 
     def get_incident(self, incident_uid: str) -> Optional[AIIncident]:
-        """Récupère un incident par UID."""
+        """
+        Récupère un incident par UID.
+
+        SÉCURITÉ: Filtre TOUJOURS par tenant_id. Sans tenant_id, retourne None.
+        """
+        if not self.tenant_id:
+            import logging
+            logging.getLogger(__name__).warning(
+                "[AI_SERVICE] get_incident called without tenant_id - returning None"
+            )
+            return None
+
         return self.db.query(AIIncident).filter(
+            AIIncident.tenant_id == self.tenant_id,
             AIIncident.incident_uid == incident_uid
         ).first()
 
@@ -790,11 +839,21 @@ class AIGuardianService:
         severity: Optional[IncidentSeverity] = None,
         status: Optional[IncidentStatus] = None,
     ) -> List[AIIncident]:
-        """Récupère les incidents récents."""
-        query = self.db.query(AIIncident)
+        """
+        Récupère les incidents récents.
 
-        if self.tenant_id:
-            query = query.filter(AIIncident.tenant_id == self.tenant_id)
+        SÉCURITÉ: Filtre TOUJOURS par tenant_id. Sans tenant_id, retourne liste vide.
+        """
+        if not self.tenant_id:
+            import logging
+            logging.getLogger(__name__).warning(
+                "[AI_SERVICE] get_recent_incidents called without tenant_id - returning empty"
+            )
+            return []
+
+        query = self.db.query(AIIncident).filter(
+            AIIncident.tenant_id == self.tenant_id
+        )
         if severity:
             query = query.filter(AIIncident.severity == severity.value)
         if status:
@@ -806,42 +865,53 @@ class AIGuardianService:
         """
         Récupère les données pour le dashboard.
 
+        SÉCURITÉ: Requiert tenant_id. Sans tenant, retourne données vides/défaut.
+
         Returns:
             Dict avec statistiques globales
         """
         now = datetime.utcnow()
+
+        # SÉCURITÉ: Sans tenant_id, retourner données par défaut sécurisées
+        if not self.tenant_id:
+            import logging
+            logging.getLogger(__name__).warning(
+                "[AI_SERVICE] get_dashboard_data called without tenant_id - returning defaults"
+            )
+            return {
+                "incidents_24h": 0,
+                "critical_open": 0,
+                "avg_module_score": 100.0,
+                "uptime_percent": 99.9,
+                "last_updated": now.isoformat(),
+            }
+
         day_ago = now - timedelta(days=1)
         week_ago = now - timedelta(weeks=1)
 
-        # Incidents 24h
+        # Incidents 24h - TOUJOURS filtré par tenant
         incidents_24h = self.db.query(func.count(AIIncident.id)).filter(
+            AIIncident.tenant_id == self.tenant_id,
             AIIncident.created_at >= day_ago,
-        )
-        if self.tenant_id:
-            incidents_24h = incidents_24h.filter(AIIncident.tenant_id == self.tenant_id)
-        incidents_24h = incidents_24h.scalar()
+        ).scalar()
 
-        # Incidents critiques ouverts
+        # Incidents critiques ouverts - TOUJOURS filtré par tenant
         critical_open = self.db.query(func.count(AIIncident.id)).filter(
+            AIIncident.tenant_id == self.tenant_id,
             AIIncident.severity == IncidentSeverity.CRITICAL.value,
             AIIncident.status.in_([IncidentStatus.DETECTED.value, IncidentStatus.ANALYZING.value]),
-        )
-        if self.tenant_id:
-            critical_open = critical_open.filter(AIIncident.tenant_id == self.tenant_id)
-        critical_open = critical_open.scalar()
+        ).scalar()
 
-        # Score moyen
-        scores = self.db.query(func.avg(AIModuleScore.score_total)).filter(
+        # Score moyen - TOUJOURS filtré par tenant
+        avg_score = self.db.query(func.avg(AIModuleScore.score_total)).filter(
+            AIModuleScore.tenant_id == self.tenant_id,
             AIModuleScore.calculated_at >= week_ago,
-        )
-        if self.tenant_id:
-            scores = scores.filter(AIModuleScore.tenant_id == self.tenant_id)
-        avg_score = scores.scalar() or 100
+        ).scalar() or 100
 
-        # Dernier SLA
-        last_sla = self.db.query(AISLAMetric).order_by(
-            AISLAMetric.calculated_at.desc()
-        ).first()
+        # Dernier SLA - TOUJOURS filtré par tenant
+        last_sla = self.db.query(AISLAMetric).filter(
+            AISLAMetric.tenant_id == self.tenant_id
+        ).order_by(AISLAMetric.calculated_at.desc()).first()
 
         return {
             "incidents_24h": incidents_24h,

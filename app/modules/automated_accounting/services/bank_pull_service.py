@@ -467,7 +467,9 @@ class BankPullService:
         provider = self.get_provider(connection.provider)
 
         # Synchronise chaque compte
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         accounts = self.db.query(SyncedBankAccount).filter(
+            SyncedBankAccount.tenant_id == self.tenant_id,
             SyncedBankAccount.connection_id == connection_id,
             SyncedBankAccount.is_sync_enabled
         ).all()

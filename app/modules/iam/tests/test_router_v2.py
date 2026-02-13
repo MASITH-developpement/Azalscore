@@ -33,7 +33,7 @@ from sqlalchemy.orm import Session
 def test_create_user(test_client, client, auth_headers, tenant_id):
     """Test création d'un utilisateur"""
     response = test_client.post(
-        "/api/v2/iam/users",
+        "/v2/iam/users",
         json={
             "email": "newuser@test.com",
             "username": "newuser",
@@ -57,7 +57,7 @@ def test_create_user(test_client, client, auth_headers, tenant_id):
 def test_list_users(test_client, client, auth_headers, sample_user):
     """Test liste des utilisateurs avec pagination"""
     response = test_client.get(
-        "/api/v2/iam/users?page=1&page_size=20&is_active=true",
+        "/v2/iam/users?page=1&page_size=20&is_active=true",
         headers=auth_headers
     )
 
@@ -72,7 +72,7 @@ def test_list_users(test_client, client, auth_headers, sample_user):
 def test_get_current_user_profile(test_client, client, auth_headers, sample_user):
     """Test récupération profil utilisateur connecté (/me)"""
     response = test_client.get(
-        "/api/v2/iam/users/me",
+        "/v2/iam/users/me",
         headers=auth_headers
     )
 
@@ -87,7 +87,7 @@ def test_get_current_user_profile(test_client, client, auth_headers, sample_user
 def test_update_user(test_client, client, auth_headers, sample_user):
     """Test mise à jour d'un utilisateur"""
     response = test_client.patch(
-        f"/api/v2/iam/users/{sample_user.id}",
+        f"/v2/iam/users/{sample_user.id}",
         json={"first_name": "Updated"},
         headers=auth_headers
     )
@@ -114,7 +114,7 @@ def test_lock_unlock_user(test_client, client, auth_headers, db_session, sample_
 
     # Lock
     response = test_client.post(
-        f"/api/v2/iam/users/{user_to_lock.id}/lock?reason=Security breach&duration_minutes=60",
+        f"/v2/iam/users/{user_to_lock.id}/lock?reason=Security breach&duration_minutes=60",
         headers=auth_headers
     )
     assert response.status_code == 200
@@ -122,7 +122,7 @@ def test_lock_unlock_user(test_client, client, auth_headers, db_session, sample_
 
     # Unlock
     response = test_client.post(
-        f"/api/v2/iam/users/{user_to_lock.id}/unlock",
+        f"/v2/iam/users/{user_to_lock.id}/unlock",
         headers=auth_headers
     )
     assert response.status_code == 200
@@ -132,7 +132,7 @@ def test_lock_unlock_user(test_client, client, auth_headers, db_session, sample_
 def test_change_password(test_client, client, auth_headers, sample_user):
     """Test changement de mot de passe"""
     response = test_client.post(
-        "/api/v2/iam/users/me/password",
+        "/v2/iam/users/me/password",
         json={
             "current_password": "OldPassword123!",
             "new_password": "NewSecureP@ssw0rd456"
@@ -160,7 +160,7 @@ def test_users_tenant_isolation(test_client, client, auth_headers, db_session):
 
     # Tenter d'accéder (doit échouer)
     response = test_client.get(
-        f"/api/v2/iam/users/{other_user.id}",
+        f"/v2/iam/users/{other_user.id}",
         headers=auth_headers
     )
 
@@ -174,7 +174,7 @@ def test_users_tenant_isolation(test_client, client, auth_headers, db_session):
 def test_create_role(test_client, client, auth_headers, tenant_id):
     """Test création d'un rôle"""
     response = test_client.post(
-        "/api/v2/iam/roles",
+        "/v2/iam/roles",
         json={
             "code": "TESTER",
             "name": "Testeur",
@@ -195,7 +195,7 @@ def test_create_role(test_client, client, auth_headers, tenant_id):
 def test_list_roles(test_client, client, auth_headers, sample_role):
     """Test liste des rôles"""
     response = test_client.get(
-        "/api/v2/iam/roles",
+        "/v2/iam/roles",
         headers=auth_headers
     )
 
@@ -209,7 +209,7 @@ def test_list_roles(test_client, client, auth_headers, sample_role):
 def test_get_role(test_client, client, auth_headers, sample_role):
     """Test récupération d'un rôle"""
     response = test_client.get(
-        f"/api/v2/iam/roles/{sample_role.id}",
+        f"/v2/iam/roles/{sample_role.id}",
         headers=auth_headers
     )
 
@@ -222,7 +222,7 @@ def test_get_role(test_client, client, auth_headers, sample_role):
 def test_update_role(test_client, client, auth_headers, sample_role):
     """Test mise à jour d'un rôle"""
     response = test_client.patch(
-        f"/api/v2/iam/roles/{sample_role.id}",
+        f"/v2/iam/roles/{sample_role.id}",
         json={"description": "Updated description"},
         headers=auth_headers
     )
@@ -236,7 +236,7 @@ def test_assign_revoke_role(test_client, client, auth_headers, sample_user, samp
     """Test workflow assign/revoke rôle à utilisateur"""
     # Assign
     response = test_client.post(
-        "/api/v2/iam/roles/assign",
+        "/v2/iam/roles/assign",
         json={
             "user_id": sample_user.id,
             "role_code": sample_role.code
@@ -247,7 +247,7 @@ def test_assign_revoke_role(test_client, client, auth_headers, sample_user, samp
 
     # Revoke
     response = test_client.post(
-        "/api/v2/iam/roles/revoke",
+        "/v2/iam/roles/revoke",
         json={
             "user_id": sample_user.id,
             "role_code": sample_role.code
@@ -272,7 +272,7 @@ def test_roles_tenant_isolation(test_client, client, auth_headers, db_session):
 
     # Tenter d'accéder (doit échouer)
     response = test_client.get(
-        f"/api/v2/iam/roles/{other_role.id}",
+        f"/v2/iam/roles/{other_role.id}",
         headers=auth_headers
     )
 
@@ -286,7 +286,7 @@ def test_roles_tenant_isolation(test_client, client, auth_headers, db_session):
 def test_list_permissions(test_client, client, auth_headers, sample_permission):
     """Test liste des permissions"""
     response = test_client.get(
-        "/api/v2/iam/permissions",
+        "/v2/iam/permissions",
         headers=auth_headers
     )
 
@@ -299,7 +299,7 @@ def test_list_permissions(test_client, client, auth_headers, sample_permission):
 def test_check_permission(test_client, client, auth_headers, sample_user, sample_permission):
     """Test vérification d'une permission spécifique"""
     response = test_client.post(
-        "/api/v2/iam/permissions/check",
+        "/v2/iam/permissions/check",
         json={
             "user_id": sample_user.id,
             "permission_code": sample_permission.code
@@ -316,7 +316,7 @@ def test_check_permission(test_client, client, auth_headers, sample_user, sample
 def test_get_user_permissions(test_client, client, auth_headers, sample_user):
     """Test récupération de toutes les permissions d'un utilisateur"""
     response = test_client.get(
-        f"/api/v2/iam/users/{sample_user.id}/permissions",
+        f"/v2/iam/users/{sample_user.id}/permissions",
         headers=auth_headers
     )
 
@@ -333,7 +333,7 @@ def test_get_user_permissions(test_client, client, auth_headers, sample_user):
 def test_create_group(test_client, client, auth_headers, tenant_id):
     """Test création d'un groupe"""
     response = test_client.post(
-        "/api/v2/iam/groups",
+        "/v2/iam/groups",
         json={
             "code": "DEV_TEAM",
             "name": "Équipe Développement",
@@ -352,7 +352,7 @@ def test_create_group(test_client, client, auth_headers, tenant_id):
 def test_list_groups(test_client, client, auth_headers, sample_group):
     """Test liste des groupes"""
     response = test_client.get(
-        "/api/v2/iam/groups",
+        "/v2/iam/groups",
         headers=auth_headers
     )
 
@@ -366,7 +366,7 @@ def test_add_remove_group_member(test_client, client, auth_headers, sample_user,
     """Test workflow add/remove membre d'un groupe"""
     # Add member
     response = test_client.post(
-        f"/api/v2/iam/groups/{sample_group.id}/members",
+        f"/v2/iam/groups/{sample_group.id}/members",
         json={"user_id": sample_user.id},
         headers=auth_headers
     )
@@ -374,7 +374,7 @@ def test_add_remove_group_member(test_client, client, auth_headers, sample_user,
 
     # Remove member
     response = test_client.delete(
-        f"/api/v2/iam/groups/{sample_group.id}/members/{sample_user.id}",
+        f"/v2/iam/groups/{sample_group.id}/members/{sample_user.id}",
         headers=auth_headers
     )
     assert response.status_code == 204
@@ -394,7 +394,7 @@ def test_groups_tenant_isolation(test_client, client, auth_headers, db_session):
 
     # Liste ne doit pas contenir groupes autre tenant
     response = test_client.get(
-        "/api/v2/iam/groups",
+        "/v2/iam/groups",
         headers=auth_headers
     )
 
@@ -410,7 +410,7 @@ def test_groups_tenant_isolation(test_client, client, auth_headers, db_session):
 def test_setup_mfa(test_client, client, auth_headers):
     """Test configuration MFA (2FA)"""
     response = test_client.post(
-        "/api/v2/iam/mfa/setup",
+        "/v2/iam/mfa/setup",
         headers=auth_headers
     )
 
@@ -426,7 +426,7 @@ def test_verify_mfa(test_client, client, auth_headers):
     """Test vérification code MFA"""
     # Setup MFA d'abord (dans un vrai test, on utiliserait un code valide)
     response = test_client.post(
-        "/api/v2/iam/mfa/verify",
+        "/v2/iam/mfa/verify",
         json={"code": "123456"},  # Code de test
         headers=auth_headers
     )
@@ -438,7 +438,7 @@ def test_verify_mfa(test_client, client, auth_headers):
 def test_disable_mfa(test_client, client, auth_headers):
     """Test désactivation MFA"""
     response = test_client.post(
-        "/api/v2/iam/mfa/disable",
+        "/v2/iam/mfa/disable",
         json={"password": "CurrentPassword123!"},
         headers=auth_headers
     )
@@ -454,7 +454,7 @@ def test_disable_mfa(test_client, client, auth_headers):
 def test_create_invitation(test_client, client, auth_headers, sample_role, tenant_id):
     """Test création d'une invitation"""
     response = test_client.post(
-        "/api/v2/iam/invitations",
+        "/v2/iam/invitations",
         json={
             "email": "invited@test.com",
             "role_codes": [sample_role.code],
@@ -486,7 +486,7 @@ def test_accept_invitation(test_client, client, db_session, tenant_id, sample_ro
 
     # Accepter invitation (endpoint public)
     response = test_client.post(
-        "/api/v2/iam/invitations/accept",
+        "/v2/iam/invitations/accept",
         json={
             "token": "test-token-12345",
             "username": "inviteduser",
@@ -507,7 +507,7 @@ def test_accept_invitation(test_client, client, db_session, tenant_id, sample_ro
 def test_list_my_sessions(test_client, client, auth_headers, sample_session):
     """Test liste des sessions de l'utilisateur connecté"""
     response = test_client.get(
-        "/api/v2/iam/sessions/my",
+        "/v2/iam/sessions/my",
         headers=auth_headers
     )
 
@@ -538,7 +538,7 @@ def test_revoke_sessions(test_client, client, auth_headers, sample_user, db_sess
 
     # Révoquer
     response = test_client.post(
-        "/api/v2/iam/sessions/revoke",
+        "/v2/iam/sessions/revoke",
         json={"session_id": str(session.id)},
         headers=auth_headers
     )
@@ -553,7 +553,7 @@ def test_revoke_sessions(test_client, client, auth_headers, sample_user, db_sess
 def test_get_password_policy(test_client, client, auth_headers, sample_password_policy):
     """Test récupération de la politique de mot de passe"""
     response = test_client.get(
-        "/api/v2/iam/password-policy",
+        "/v2/iam/password-policy",
         headers=auth_headers
     )
 
@@ -569,7 +569,7 @@ def test_get_password_policy(test_client, client, auth_headers, sample_password_
 def test_update_password_policy(test_client, client, auth_headers, sample_password_policy):
     """Test mise à jour de la politique de mot de passe (ADMIN)"""
     response = test_client.put(
-        "/api/v2/iam/password-policy",
+        "/v2/iam/password-policy",
         json={
             "min_length": 12,
             "require_uppercase": True,
@@ -593,7 +593,7 @@ def test_saas_context_performance(test_client, client, auth_headers, benchmark):
     """Test performance du context SaaS (doit être <50ms)"""
     def call_endpoint():
         return test_client.get(
-            "/api/v2/iam/users/me",
+            "/v2/iam/users/me",
             headers=auth_headers
         )
 
@@ -604,7 +604,7 @@ def test_saas_context_performance(test_client, client, auth_headers, benchmark):
 def test_audit_trail_automatic(test_client, client, auth_headers):
     """Test audit trail automatique sur création utilisateur"""
     response = test_client.post(
-        "/api/v2/iam/users",
+        "/v2/iam/users",
         json={
             "email": "audittest@test.com",
             "username": "audittest",
@@ -635,7 +635,7 @@ def test_tenant_isolation_strict(test_client, client, auth_headers, db_session):
 
     # Lister tous les utilisateurs (doit filtrer automatiquement)
     response = test_client.get(
-        "/api/v2/iam/users",
+        "/v2/iam/users",
         headers=auth_headers
     )
 

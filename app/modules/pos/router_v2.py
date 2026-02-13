@@ -18,7 +18,7 @@ from app.core.database import get_db
 from app.core.dependencies_v2 import get_saas_context
 from app.core.saas_context import SaaSContext
 
-from .models import POSSessionStatus, POSTerminalStatus, POSTransactionStatus
+from .models import POSProductQuickKey, POSSessionStatus, POSTerminalStatus, POSTransactionStatus
 from .schemas import (
     CashMovementCreate,
     CashMovementResponse,
@@ -34,6 +34,7 @@ from .schemas import (
     QuickKeyCreate,
     QuickKeyResponse,
     SessionCloseRequest,
+    SessionDashboardResponse,
     SessionOpenRequest,
     SessionResponse,
     StoreCreate,
@@ -290,7 +291,7 @@ def get_session(
     return session
 
 
-@router.get("/sessions/{session_id}/dashboard", response_model=dict)
+@router.get("/sessions/{session_id}/dashboard", response_model=SessionDashboardResponse)
 def get_session_dashboard(
     session_id: int,
     service: POSService = Depends(get_pos_service)
@@ -300,15 +301,15 @@ def get_session_dashboard(
     if not session:
         raise HTTPException(status_code=404, detail="Session introuvable")
 
-    return {
-        "session_id": session.id,
-        "session_number": session.session_number,
-        "status": session.status.value,
-        "total_sales": float(session.total_sales or 0),
-        "transaction_count": session.transaction_count or 0,
-        "cash_total": float(session.cash_total or 0),
-        "card_total": float(session.card_total or 0),
-    }
+    return SessionDashboardResponse(
+        session_id=session.id,
+        session_number=session.session_number,
+        status=session.status.value,
+        total_sales=float(session.total_sales or 0),
+        transaction_count=session.transaction_count or 0,
+        cash_total=float(session.cash_total or 0),
+        card_total=float(session.card_total or 0),
+    )
 
 
 # ============================================================================
@@ -496,8 +497,12 @@ def update_quick_key(
     service: POSService = Depends(get_pos_service)
 ):
     """Mettre à jour un raccourci."""
-    # Simple update - recreate with new data
-    existing = service.db.query(service.db.query(QuickKeyResponse).filter_by(id=quick_key_id).first())
+    # SÉCURITÉ: TOUJOURS filtrer par tenant_id
+    existing = service.db.query(POSProductQuickKey).filter(
+        POSProductQuickKey.tenant_id == service.tenant_id,
+        POSProductQuickKey.id == quick_key_id
+    ).first()
+
     if not existing:
         raise HTTPException(status_code=404, detail="Raccourci introuvable")
 

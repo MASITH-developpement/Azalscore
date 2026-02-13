@@ -14,6 +14,10 @@ def require_permission(permission_code: str):
     """
     Décorateur pour vérifier qu'un utilisateur a une permission.
 
+    Supporte deux patterns:
+    1. Legacy: current_user + service dans kwargs
+    2. CORE SaaS: context (SaaSContext) dans kwargs
+
     Usage:
         @router.get("/protected")
         @require_permission("module.resource.action")
@@ -26,15 +30,40 @@ def require_permission(permission_code: str):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # Récupérer le service et l'utilisateur depuis les kwargs
+            # PATTERN 1: CORE SaaS avec SaaSContext
+            context = kwargs.get('context')
+            if context is not None:
+                # Vérifier le rôle dans SaaSContext
+                role = getattr(context, 'role', None)
+                if role:
+                    role_value = role.value if hasattr(role, 'value') else str(role)
+                    if role_value in ADMIN_ROLES:
+                        return await func(*args, **kwargs)
+
+                # Vérifier les permissions dans SaaSContext
+                permissions = getattr(context, 'permissions', set())
+                if '*' in permissions or permission_code in permissions:
+                    return await func(*args, **kwargs)
+
+                # Vérifier les patterns de permissions (ex: "iam.*")
+                module = permission_code.split('.')[0] if '.' in permission_code else permission_code
+                if f"{module}.*" in permissions:
+                    return await func(*args, **kwargs)
+
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Permission '{permission_code}' requise"
+                )
+
+            # PATTERN 2: Legacy avec current_user + service
             service = kwargs.get('service')
             current_user = kwargs.get('current_user')
 
             if not service or not current_user:
-                # SECURITY FIX: Ne PAS bypasser - lever une exception
+                # Ni SaaSContext ni current_user - configuration invalide
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Erreur configuration: service et current_user requis pour vérification permissions"
+                    detail="Erreur configuration: context ou (service + current_user) requis"
                 )
 
             # Bypass pour les rôles admin (vérifier role de la table users)

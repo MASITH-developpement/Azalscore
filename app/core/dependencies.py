@@ -1,8 +1,15 @@
 """
 AZALS - Dépendances FastAPI Multi-Tenant + Authentification
 Injection sécurisée du tenant_id et vérification JWT
+
+SÉCURITÉ MULTI-TENANT:
+- Toute requête DOIT être filtrée par tenant_id
+- Le décorateur @enforce_tenant_isolation vérifie ce principe
+- Les fonctions get_tenant_db et get_current_user_and_tenant garantissent l'isolation
 """
 
+import functools
+import logging
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
@@ -14,6 +21,112 @@ from app.core.models import User
 from app.core.security import decode_access_token
 
 security = HTTPBearer()
+logger = logging.getLogger(__name__)
+
+
+class TenantIsolationError(Exception):
+    """Erreur levée quand l'isolation tenant est violée."""
+    pass
+
+
+def enforce_tenant_isolation(func):
+    """
+    Décorateur de sécurité pour les méthodes de service.
+
+    Vérifie que:
+    1. Le service a un tenant_id défini
+    2. Le tenant_id n'est pas vide ou None
+
+    Usage:
+        class MyService:
+            def __init__(self, db: Session, tenant_id: str):
+                self.db = db
+                self.tenant_id = tenant_id
+
+            @enforce_tenant_isolation
+            def get_items(self):
+                # tenant_id garanti non-null ici
+                return self.db.query(Item).filter(
+                    Item.tenant_id == self.tenant_id
+                ).all()
+
+    ATTENTION: Ce décorateur ne vérifie pas que la requête SQL
+    contient effectivement le filtre tenant_id. Il vérifie seulement
+    que le service a un tenant_id valide. La responsabilité de
+    filtrer correctement reste au développeur.
+    """
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        # Vérifier que self a un tenant_id
+        if not hasattr(self, 'tenant_id'):
+            logger.critical(
+                f"[TENANT_ISOLATION] VIOLATION: {func.__name__} appelé sur un service "
+                f"sans attribut tenant_id. Classe: {self.__class__.__name__}"
+            )
+            raise TenantIsolationError(
+                f"Le service {self.__class__.__name__} n'a pas d'attribut tenant_id. "
+                "Tous les services doivent être initialisés avec un tenant_id."
+            )
+
+        # Vérifier que tenant_id n'est pas vide
+        if not self.tenant_id:
+            logger.critical(
+                f"[TENANT_ISOLATION] VIOLATION: {func.__name__} appelé avec "
+                f"tenant_id vide ou None. Classe: {self.__class__.__name__}"
+            )
+            raise TenantIsolationError(
+                f"tenant_id est vide ou None dans {self.__class__.__name__}. "
+                "Toutes les opérations doivent avoir un tenant_id valide."
+            )
+
+        # Log pour audit (niveau DEBUG en production)
+        logger.debug(
+            f"[TENANT_ISOLATION] {self.__class__.__name__}.{func.__name__} "
+            f"exécuté pour tenant={self.tenant_id}"
+        )
+
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def enforce_tenant_isolation_async(func):
+    """
+    Version async du décorateur enforce_tenant_isolation.
+
+    Usage:
+        @enforce_tenant_isolation_async
+        async def get_items_async(self):
+            ...
+    """
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        if not hasattr(self, 'tenant_id'):
+            logger.critical(
+                f"[TENANT_ISOLATION] VIOLATION: {func.__name__} appelé sur un service "
+                f"sans attribut tenant_id. Classe: {self.__class__.__name__}"
+            )
+            raise TenantIsolationError(
+                f"Le service {self.__class__.__name__} n'a pas d'attribut tenant_id."
+            )
+
+        if not self.tenant_id:
+            logger.critical(
+                f"[TENANT_ISOLATION] VIOLATION: {func.__name__} appelé avec "
+                f"tenant_id vide ou None. Classe: {self.__class__.__name__}"
+            )
+            raise TenantIsolationError(
+                f"tenant_id est vide ou None dans {self.__class__.__name__}."
+            )
+
+        logger.debug(
+            f"[TENANT_ISOLATION] {self.__class__.__name__}.{func.__name__} "
+            f"exécuté pour tenant={self.tenant_id}"
+        )
+
+        return await func(self, *args, **kwargs)
+
+    return wrapper
 
 
 def get_tenant_id(request: Request) -> str:

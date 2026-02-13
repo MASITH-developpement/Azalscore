@@ -348,12 +348,14 @@ class AIAuthManager:
             expires_at=datetime.utcnow() + self.MFA_CODE_VALIDITY
         )
 
-        # En production: envoyer le code par email
-        # Pour la démo, on le logue (À NE PAS FAIRE EN PRODUCTION!)
-        logger.info("[AUTH] MFA code for %s: %s", email, code)
+        # En production: envoyer le code par email via le service email
+        # SÉCURITÉ: Ne JAMAIS logger le code MFA
+        logger.info("[AUTH] MFA code initiated for %s (code masked for security)", email)
 
         # TODO: Implémenter l'envoi réel par email
-        # self._send_email(email, "Code de vérification AZALSCORE", f"Votre code: {code}")
+        # from app.modules.email.service import EmailService
+        # email_service = EmailService(db, tenant_id)
+        # await email_service.send_mfa_code(email, code)
 
     def _invalidate_session(self, session_id: str):
         """Invalide une session"""

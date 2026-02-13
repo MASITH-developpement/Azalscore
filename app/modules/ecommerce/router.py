@@ -444,7 +444,9 @@ def clear_cart(
     service: EcommerceService = Depends(get_service)
 ):
     """Vider le panier."""
-    service.clear_cart(cart_id)
+    success = service.clear_cart(cart_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Panier non trouvé")
     return {"success": True, "message": "Panier vidé"}
 
 

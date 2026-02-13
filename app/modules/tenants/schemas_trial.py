@@ -217,3 +217,23 @@ class TrialRegistrationStatus(BaseModel):
     is_expired: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ResendVerificationRequest(BaseModel):
+    """Requête pour renvoyer l'email de vérification."""
+    registration_id: str = Field(..., description="ID de l'inscription en cours")
+
+
+class ResendVerificationResponse(BaseModel):
+    """Réponse au renvoi de l'email de vérification."""
+    success: bool = Field(..., description="Succès de l'opération")
+    message: str = Field(..., description="Message de confirmation")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "success": True,
+                "message": "Email de vérification renvoyé."
+            }
+        }
+    )

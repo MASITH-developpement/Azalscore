@@ -94,6 +94,22 @@ class EnrichmentAcceptRequest(BaseModel):
 # RESPONSE SCHEMAS
 # ============================================================================
 
+class EnrichmentAcceptResponse(BaseModel):
+    """Reponse a l'acceptation/rejet des donnees enrichies."""
+
+    message: str = Field(..., description="Message de confirmation")
+    history_id: str = Field(..., description="ID de l'historique d'enrichissement")
+    action: str = Field(..., description="Action effectuee (accepted, rejected, partial)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Decision enregistree",
+                "history_id": "123e4567-e89b-12d3-a456-426614174000",
+                "action": "accepted"
+            }
+        }
+
 class AddressSuggestion(BaseModel):
     """Suggestion d'adresse pour autocomplete."""
 

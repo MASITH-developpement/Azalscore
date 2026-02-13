@@ -7,9 +7,12 @@ Service pour le CRM et la gestion commerciale.
 
 import csv
 import io
+import logging
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
@@ -64,6 +67,11 @@ class CommercialService:
         """Créer un client avec code auto-généré si non fourni."""
         from app.core.sequences import SequenceGenerator
 
+        logger.info(
+            "Creating customer | tenant=%s user=%s name=%s type=%s",
+            self.tenant_id, user_id, data.name, data.type
+        )
+
         data_dict = data.model_dump(by_alias=True, exclude_unset=False)
 
         # Auto-génère le code si non fourni ou vide
@@ -79,6 +87,9 @@ class CommercialService:
         self.db.add(customer)
         self.db.commit()
         self.db.refresh(customer)
+
+        logger.info("Customer created | id=%s code=%s", customer.id, customer.code)
+
         return customer
 
     def get_customer(self, customer_id: UUID) -> Customer | None:
@@ -307,6 +318,11 @@ class CommercialService:
 
     def create_opportunity(self, data: OpportunityCreate, user_id: UUID) -> Opportunity:
         """Créer une opportunité."""
+        logger.info(
+            "Creating opportunity | tenant=%s user=%s name=%s customer_id=%s amount=%s",
+            self.tenant_id, user_id, data.name, data.customer_id, data.amount
+        )
+
         # Calculer le montant pondéré
         weighted = data.amount * Decimal(data.probability) / 100
 
@@ -319,6 +335,9 @@ class CommercialService:
         self.db.add(opportunity)
         self.db.commit()
         self.db.refresh(opportunity)
+
+        logger.info("Opportunity created | id=%s code=%s", opportunity.id, opportunity.code)
+
         return opportunity
 
     def get_opportunity(self, opportunity_id: UUID) -> Opportunity | None:
@@ -441,7 +460,9 @@ class CommercialService:
 
     def _calculate_document_totals(self, document: CommercialDocument) -> None:
         """Recalculer les totaux d'un document."""
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         lines = self.db.query(DocumentLine).filter(
+            DocumentLine.tenant_id == self.tenant_id,
             DocumentLine.document_id == document.id
         ).all()
 
@@ -457,6 +478,11 @@ class CommercialService:
 
     def create_document(self, data: DocumentCreate, user_id: UUID) -> CommercialDocument:
         """Créer un document commercial."""
+        logger.info(
+            "Creating document | tenant=%s user=%s type=%s customer_id=%s lines_count=%d",
+            self.tenant_id, user_id, data.document_type, data.customer_id, len(data.lines)
+        )
+
         # Générer le numéro
         number = self._generate_document_number(data.document_type)
 
@@ -487,6 +513,9 @@ class CommercialService:
 
         self.db.commit()
         self.db.refresh(document)
+
+        logger.info("Document created | id=%s number=%s", document.id, document.number)
+
         return document
 
     def get_document(self, document_id: UUID) -> CommercialDocument | None:
@@ -673,6 +702,11 @@ class CommercialService:
 
     def create_invoice_from_order(self, order_id: UUID, user_id: UUID) -> CommercialDocument | None:
         """Créer une facture à partir d'une commande."""
+        logger.info(
+            "Creating invoice from order | tenant=%s user=%s order_id=%s",
+            self.tenant_id, user_id, order_id
+        )
+
         order = self.get_document(order_id)
         if not order or order.type != DocumentType.ORDER:
             return None
@@ -745,6 +779,9 @@ class CommercialService:
 
         self.db.commit()
         self.db.refresh(invoice)
+
+        logger.info("Invoice created | id=%s number=%s", invoice.id, invoice.number)
+
         return invoice
 
     def add_document_line(self, document_id: UUID, data: DocumentLineCreate) -> DocumentLine | None:

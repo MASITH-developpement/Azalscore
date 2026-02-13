@@ -5,11 +5,14 @@ Logique métier pour la plateforme e-commerce.
 Intégration avec: Inventory, Finance, Commercial, Country Packs
 """
 
+import logging
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 
 import bcrypt
+
+logger = logging.getLogger(__name__)
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session
 
@@ -140,6 +143,10 @@ class EcommerceService:
 
     def create_product(self, data: ProductCreate) -> EcommerceProduct:
         """Créer un produit."""
+        logger.info(
+            "Creating product | tenant=%s user=%s sku=%s name=%s",
+            self.tenant_id, self.user_id, data.sku, data.name
+        )
         product_data = data.model_dump()
 
         # Convertir les objets imbriqués en JSON
@@ -154,6 +161,7 @@ class EcommerceService:
         self.db.add(product)
         self.db.commit()
         self.db.refresh(product)
+        logger.info("Product created | product_id=%s sku=%s", product.id, product.sku)
         return product
 
     def get_product(self, product_id: int) -> EcommerceProduct | None:
@@ -294,27 +302,46 @@ class EcommerceService:
         variant_id: int | None = None
     ) -> bool:
         """Mettre à jour le stock."""
+        logger.info(
+            "Updating stock | tenant=%s user=%s product_id=%s variant_id=%s quantity_change=%d",
+            self.tenant_id, self.user_id, product_id, variant_id, quantity_change
+        )
         if variant_id:
             variant = self.db.query(ProductVariant).filter(
                 ProductVariant.tenant_id == self.tenant_id,
                 ProductVariant.id == variant_id
             ).first()
             if variant:
+                old_quantity = variant.stock_quantity
                 variant.stock_quantity += quantity_change
                 self.db.commit()
+                logger.info(
+                    "Stock updated | variant_id=%s old_quantity=%d new_quantity=%d",
+                    variant_id, old_quantity, variant.stock_quantity
+                )
                 return True
         else:
             product = self.get_product(product_id)
             if product:
+                old_quantity = product.stock_quantity
                 product.stock_quantity += quantity_change
 
                 # Vérifier si rupture de stock
                 if product.stock_quantity <= 0:
                     product.status = ProductStatus.OUT_OF_STOCK
+                    logger.warning(
+                        "Product out of stock | product_id=%s sku=%s",
+                        product_id, product.sku
+                    )
 
                 self.db.commit()
+                logger.info(
+                    "Stock updated | product_id=%s old_quantity=%d new_quantity=%d",
+                    product_id, old_quantity, product.stock_quantity
+                )
                 return True
 
+        logger.warning("Stock update failed | product_id=%s variant_id=%s not found", product_id, variant_id)
         return False
 
     # ========================================================================
@@ -451,14 +478,19 @@ class EcommerceService:
         # Déterminer le prix
         price = product.price
         if data.variant_id:
+            # SÉCURITÉ: Toujours filtrer par tenant_id pour l'isolation multi-tenant
             variant = self.db.query(ProductVariant).filter(
-                ProductVariant.id == data.variant_id
+                ProductVariant.tenant_id == self.tenant_id,
+                ProductVariant.id == data.variant_id,
+                ProductVariant.product_id == product.id  # Vérifier aussi l'appartenance au produit
             ).first()
             if variant and variant.price:
                 price = variant.price
 
         # Vérifier si l'article existe déjà
+        # SÉCURITÉ: Toujours filtrer par tenant_id (defense-in-depth)
         existing_item = self.db.query(CartItem).filter(
+            CartItem.tenant_id == self.tenant_id,
             CartItem.cart_id == cart_id,
             CartItem.product_id == data.product_id,
             CartItem.variant_id == data.variant_id
@@ -551,19 +583,28 @@ class EcommerceService:
         return True, "Article retiré"
 
     def clear_cart(self, cart_id: int) -> bool:
-        """Vider le panier."""
+        """Vider le panier.
+
+        SÉCURITÉ: Validation tenant AVANT suppression pour éviter cross-tenant access.
+        """
+        # SÉCURITÉ: Valider que le panier appartient au tenant AVANT toute mutation
+        cart = self.get_cart(cart_id)
+        if not cart:
+            return False  # Panier non trouvé ou n'appartient pas à ce tenant
+
+        # Suppression avec filtre tenant_id explicite (defense-in-depth)
         self.db.query(CartItem).filter(
+            CartItem.tenant_id == self.tenant_id,  # CRITIQUE: filtre tenant
             CartItem.cart_id == cart_id
         ).delete()
 
-        cart = self.get_cart(cart_id)
-        if cart:
-            cart.subtotal = Decimal('0')
-            cart.discount_total = Decimal('0')
-            cart.tax_total = Decimal('0')
-            cart.shipping_total = Decimal('0')
-            cart.total = Decimal('0')
-            cart.coupon_codes = None
+        # Réinitialiser les totaux
+        cart.subtotal = Decimal('0')
+        cart.discount_total = Decimal('0')
+        cart.tax_total = Decimal('0')
+        cart.shipping_total = Decimal('0')
+        cart.total = Decimal('0')
+        cart.coupon_codes = None
 
         self.db.commit()
         return True
@@ -682,15 +723,22 @@ class EcommerceService:
 
     def checkout(self, data: CheckoutRequest) -> tuple[EcommerceOrder | None, str]:
         """Processus de checkout."""
+        logger.info(
+            "Creating order | tenant=%s user=%s cart_id=%s customer_email=%s",
+            self.tenant_id, self.user_id, data.cart_id, data.customer_email
+        )
         cart = self.get_cart(data.cart_id)
         if not cart:
+            logger.warning("Order creation failed | cart_id=%s not found", data.cart_id)
             return None, "Panier non trouvé"
 
         if cart.status != CartStatus.ACTIVE:
+            logger.warning("Order creation failed | cart_id=%s invalid status=%s", data.cart_id, cart.status)
             return None, "Panier invalide"
 
         items = self.get_cart_items(cart.id)
         if not items:
+            logger.warning("Order creation failed | cart_id=%s empty cart", data.cart_id)
             return None, "Panier vide"
 
         # Vérifier les stocks
@@ -811,6 +859,10 @@ class EcommerceService:
         self.db.commit()
         self.db.refresh(order)
 
+        logger.info(
+            "Order created | order_id=%s order_number=%s customer_email=%s items_count=%d total=%s",
+            order.id, order.order_number, order.customer_email, len(items), order.total
+        )
         return order, "Commande créée"
 
     def _generate_order_number(self) -> str:
@@ -917,11 +969,20 @@ class EcommerceService:
 
     def cancel_order(self, order_id: int) -> tuple[bool, str]:
         """Annuler une commande."""
+        logger.info(
+            "Cancelling order | tenant=%s user=%s order_id=%s",
+            self.tenant_id, self.user_id, order_id
+        )
         order = self.get_order(order_id)
         if not order:
+            logger.warning("Order cancellation failed | order_id=%s not found", order_id)
             return False, "Commande non trouvée"
 
         if order.status in [OrderStatus.SHIPPED, OrderStatus.DELIVERED]:
+            logger.warning(
+                "Order cancellation failed | order_id=%s order_number=%s status=%s already shipped/delivered",
+                order_id, order.order_number, order.status
+            )
             return False, "Impossible d'annuler une commande expédiée"
 
         # Restaurer le stock
@@ -934,6 +995,10 @@ class EcommerceService:
         order.cancelled_at = datetime.utcnow()
 
         self.db.commit()
+        logger.info(
+            "Order cancelled | order_id=%s order_number=%s items_restored=%d",
+            order_id, order.order_number, len(items)
+        )
         return True, "Commande annulée"
 
     # ========================================================================
@@ -1363,7 +1428,9 @@ class EcommerceService:
         wishlist = self.get_or_create_wishlist(customer_id)
 
         # Vérifier si déjà présent
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         existing = self.db.query(WishlistItem).filter(
+            WishlistItem.tenant_id == self.tenant_id,
             WishlistItem.wishlist_id == wishlist.id,
             WishlistItem.product_id == data.product_id
         ).first()
@@ -1389,7 +1456,9 @@ class EcommerceService:
         """Retirer un article de la wishlist."""
         wishlist = self.get_or_create_wishlist(customer_id)
 
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         item = self.db.query(WishlistItem).filter(
+            WishlistItem.tenant_id == self.tenant_id,
             WishlistItem.wishlist_id == wishlist.id,
             WishlistItem.product_id == product_id
         ).first()

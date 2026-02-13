@@ -5,6 +5,7 @@ AZALS MODULE M5 - Service Inventaire
 Logique métier pour la gestion des stocks et logistique.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -51,6 +52,8 @@ from .schemas import (
     WarehouseCreate,
     WarehouseUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InventoryService:
@@ -442,6 +445,10 @@ class InventoryService:
 
     def create_lot(self, data: LotCreate) -> Lot:
         """Créer un lot."""
+        logger.info(
+            "Creating lot | tenant=%s user=%s product_id=%s lot_number=%s quantity=%s",
+            self.tenant_id, self.user_id, data.product_id, data.number, data.initial_quantity
+        )
         lot = Lot(
             tenant_id=self.tenant_id,
             product_id=data.product_id,
@@ -459,6 +466,7 @@ class InventoryService:
         self.db.add(lot)
         self.db.commit()
         self.db.refresh(lot)
+        logger.info("Lot created | lot_id=%s lot_number=%s", lot.id, lot.number)
         return lot
 
     def get_lot(self, lot_id: UUID) -> Lot | None:
@@ -547,6 +555,11 @@ class InventoryService:
 
     def create_movement(self, data: MovementCreate) -> StockMovement:
         """Créer un mouvement de stock."""
+        logger.info(
+            "Creating stock movement | tenant=%s user=%s type=%s from_warehouse=%s to_warehouse=%s lines_count=%s",
+            self.tenant_id, self.user_id, data.type.value if data.type else None,
+            data.from_warehouse_id, data.to_warehouse_id, len(data.lines)
+        )
         movement = StockMovement(
             tenant_id=self.tenant_id,
             number=self._generate_movement_number(data.type),
@@ -595,6 +608,10 @@ class InventoryService:
 
         self.db.commit()
         self.db.refresh(movement)
+        logger.info(
+            "Stock movement created | movement_id=%s movement_number=%s total_quantity=%s total_value=%s",
+            movement.id, movement.number, total_quantity, total_value
+        )
         return movement
 
     def get_movement(self, movement_id: UUID) -> StockMovement | None:
@@ -641,12 +658,21 @@ class InventoryService:
 
     def confirm_movement(self, movement_id: UUID) -> StockMovement | None:
         """Confirmer un mouvement (impacter les stocks)."""
+        logger.info(
+            "Confirming stock movement | tenant=%s user=%s movement_id=%s",
+            self.tenant_id, self.user_id, movement_id
+        )
         movement = self.get_movement(movement_id)
         if not movement or movement.status != MovementStatus.DRAFT:
+            logger.warning(
+                "Movement confirmation failed | movement_id=%s reason=%s",
+                movement_id, "not_found" if not movement else "invalid_status"
+            )
             return None
 
-        # Récupérer les lignes
+        # SÉCURITÉ: Récupérer les lignes (défense en profondeur - filtrer par tenant_id)
         lines = self.db.query(StockMovementLine).filter(
+            StockMovementLine.tenant_id == self.tenant_id,
             StockMovementLine.movement_id == movement_id
         ).all()
 
@@ -691,6 +717,10 @@ class InventoryService:
 
         self.db.commit()
         self.db.refresh(movement)
+        logger.info(
+            "Stock movement confirmed | movement_id=%s movement_number=%s lines_applied=%s",
+            movement.id, movement.number, len(lines)
+        )
         return movement
 
     def cancel_movement(self, movement_id: UUID) -> StockMovement | None:
@@ -827,20 +857,23 @@ class InventoryService:
         if data.notes:
             line.notes = data.notes
 
-        # Mettre à jour les totaux du count
+        # SÉCURITÉ: Mettre à jour les totaux du count (défense en profondeur)
         count = self.get_inventory_count(count_id)
         if count:
             counted = self.db.query(InventoryCountLine).filter(
+                InventoryCountLine.tenant_id == self.tenant_id,
                 InventoryCountLine.count_id == count_id,
                 InventoryCountLine.counted_quantity.isnot(None)
             ).count()
             discrepancies = self.db.query(InventoryCountLine).filter(
+                InventoryCountLine.tenant_id == self.tenant_id,
                 InventoryCountLine.count_id == count_id,
                 InventoryCountLine.discrepancy != 0
             ).count()
             total_disc = self.db.query(
                 func.sum(InventoryCountLine.discrepancy_value)
             ).filter(
+                InventoryCountLine.tenant_id == self.tenant_id,
                 InventoryCountLine.count_id == count_id
             ).scalar() or Decimal("0")
 
@@ -858,8 +891,9 @@ class InventoryService:
         if not count or count.status != InventoryStatus.IN_PROGRESS:
             return None
 
-        # Récupérer les lignes avec écart
+        # SÉCURITÉ: Récupérer les lignes avec écart (défense en profondeur)
         lines = self.db.query(InventoryCountLine).filter(
+            InventoryCountLine.tenant_id == self.tenant_id,
             InventoryCountLine.count_id == count_id,
             InventoryCountLine.discrepancy != 0
         ).all()
@@ -876,12 +910,13 @@ class InventoryService:
                     from_location_id=line.location_id if line.discrepancy < 0 else None,
                 ))
 
-            # Récupérer le warehouse depuis la première ligne de stock
+            # SÉCURITÉ: Récupérer le warehouse depuis la première ligne de stock
             warehouse_id = None
             if count.warehouse_id:
                 warehouse_id = count.warehouse_id
             else:
                 first_stock = self.db.query(StockLevel).filter(
+                    StockLevel.tenant_id == self.tenant_id,
                     StockLevel.product_id == lines[0].product_id
                 ).first()
                 if first_stock:
@@ -924,6 +959,11 @@ class InventoryService:
 
     def create_picking(self, data: PickingCreate) -> Picking:
         """Créer une préparation de commande."""
+        logger.info(
+            "Creating picking | tenant=%s user=%s type=%s warehouse_id=%s reference=%s lines_count=%s",
+            self.tenant_id, self.user_id, data.type.value if data.type else None,
+            data.warehouse_id, data.reference_number, len(data.lines)
+        )
         picking = Picking(
             tenant_id=self.tenant_id,
             number=self._generate_picking_number(),
@@ -958,6 +998,7 @@ class InventoryService:
 
         self.db.commit()
         self.db.refresh(picking)
+        logger.info("Picking created | picking_id=%s picking_number=%s", picking.id, picking.number)
         return picking
 
     def get_picking(self, picking_id: UUID) -> Picking | None:
@@ -1042,10 +1083,11 @@ class InventoryService:
         if data.notes:
             line.notes = data.notes
 
-        # Mettre à jour le compteur du picking
+        # SÉCURITÉ: Mettre à jour le compteur du picking (défense en profondeur)
         picking = self.get_picking(picking_id)
         if picking:
             picked = self.db.query(PickingLine).filter(
+                PickingLine.tenant_id == self.tenant_id,
                 PickingLine.picking_id == picking_id,
                 PickingLine.is_picked
             ).count()
@@ -1057,17 +1099,30 @@ class InventoryService:
 
     def complete_picking(self, picking_id: UUID) -> Picking | None:
         """Terminer une préparation et créer le mouvement de sortie."""
+        logger.info(
+            "Completing picking | tenant=%s user=%s picking_id=%s",
+            self.tenant_id, self.user_id, picking_id
+        )
         picking = self.get_picking(picking_id)
         if not picking or picking.status not in [PickingStatus.IN_PROGRESS, PickingStatus.ASSIGNED]:
+            logger.warning(
+                "Picking completion failed | picking_id=%s reason=%s",
+                picking_id, "not_found" if not picking else "invalid_status"
+            )
             return None
 
-        # Récupérer les lignes préparées
+        # SÉCURITÉ: Récupérer les lignes préparées (défense en profondeur)
         lines = self.db.query(PickingLine).filter(
+            PickingLine.tenant_id == self.tenant_id,
             PickingLine.picking_id == picking_id,
             PickingLine.is_picked
         ).all()
 
         if not lines:
+            logger.warning(
+                "Picking completion failed | picking_id=%s reason=no_picked_lines",
+                picking_id
+            )
             return None
 
         # Créer le mouvement de sortie
@@ -1099,6 +1154,10 @@ class InventoryService:
 
         self.db.commit()
         self.db.refresh(picking)
+        logger.info(
+            "Picking completed | picking_id=%s picking_number=%s movement_id=%s lines_processed=%s",
+            picking.id, picking.number, movement.id, len(lines)
+        )
         return picking
 
     # ========================================================================

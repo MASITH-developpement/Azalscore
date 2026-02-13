@@ -6,12 +6,15 @@ Logique métier pour la gestion comptable.
 """
 
 import datetime
+import logging
 from decimal import Decimal
 from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, desc, extract, func, or_
 from sqlalchemy.orm import Session, selectinload
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     AccountingFiscalYear,
@@ -130,6 +133,10 @@ class AccountingService:
 
     def close_fiscal_year(self, fiscal_year_id: UUID, user_id: UUID) -> AccountingFiscalYear:
         """Clôturer un exercice comptable."""
+        logger.info(
+            "Closing fiscal year | tenant=%s user=%s fiscal_year_id=%s",
+            self.tenant_id, user_id, fiscal_year_id
+        )
         fiscal_year = self.get_fiscal_year(fiscal_year_id)
         if not fiscal_year:
             raise ValueError("Exercice comptable non trouvé")
@@ -155,6 +162,10 @@ class AccountingService:
 
         self.db.commit()
         self.db.refresh(fiscal_year)
+        logger.info(
+            "Fiscal year closed | fiscal_year_id=%s code=%s",
+            fiscal_year.id, fiscal_year.code
+        )
         return fiscal_year
 
     # ========================================================================
@@ -163,6 +174,10 @@ class AccountingService:
 
     def create_account(self, data: ChartOfAccountsCreate, user_id: UUID) -> ChartOfAccounts:
         """Créer un compte comptable."""
+        logger.info(
+            "Creating chart of accounts | tenant=%s user=%s account_number=%s account_label=%s",
+            self.tenant_id, user_id, data.account_number, data.account_label
+        )
         # Vérifier que le numéro de compte est unique
         existing = self.db.query(ChartOfAccounts).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
@@ -185,6 +200,10 @@ class AccountingService:
         self.db.add(account)
         self.db.commit()
         self.db.refresh(account)
+        logger.info(
+            "Chart of accounts created | account_id=%s account_number=%s",
+            account.id, account.account_number
+        )
         return account
 
     def get_account(self, account_number: str) -> Optional[ChartOfAccounts]:
@@ -275,6 +294,11 @@ class AccountingService:
         total_credit = sum(line.credit for line in data.lines)
         is_balanced = (total_debit == total_credit)
 
+        logger.info(
+            "Creating journal entry | tenant=%s user=%s entry_number=%s debit=%s credit=%s",
+            self.tenant_id, user_id, entry_number, total_debit, total_credit
+        )
+
         # Créer l'écriture
         entry = AccountingJournalEntry(
             tenant_id=self.tenant_id,
@@ -311,6 +335,7 @@ class AccountingService:
 
         self.db.commit()
         self.db.refresh(entry)
+        logger.info("Journal entry created | entry_id=%s entry_number=%s", entry.id, entry.entry_number)
         return entry
 
     def get_journal_entry(self, entry_id: UUID) -> Optional[AccountingJournalEntry]:
@@ -381,7 +406,9 @@ class AccountingService:
         # Si les lignes sont mises à jour, recalculer les totaux
         if data.lines is not None:
             # Supprimer les anciennes lignes
+            # SÉCURITÉ: Toujours filtrer par tenant_id
             self.db.query(AccountingJournalEntryLine).filter(
+                AccountingJournalEntryLine.tenant_id == self.tenant_id,
                 AccountingJournalEntryLine.entry_id == entry_id
             ).delete()
 
@@ -412,6 +439,10 @@ class AccountingService:
 
     def post_journal_entry(self, entry_id: UUID, user_id: UUID) -> AccountingJournalEntry:
         """Comptabiliser une écriture (DRAFT → POSTED)."""
+        logger.info(
+            "Posting journal entry | tenant=%s user=%s entry_id=%s",
+            self.tenant_id, user_id, entry_id
+        )
         entry = self.get_journal_entry(entry_id)
         if not entry:
             raise ValueError("Écriture non trouvée")
@@ -431,6 +462,10 @@ class AccountingService:
 
         self.db.commit()
         self.db.refresh(entry)
+        logger.info(
+            "Journal entry posted | entry_id=%s entry_number=%s debit=%s credit=%s",
+            entry.id, entry.entry_number, entry.total_debit, entry.total_credit
+        )
         return entry
 
     def validate_journal_entry(self, entry_id: UUID, user_id: UUID) -> AccountingJournalEntry:

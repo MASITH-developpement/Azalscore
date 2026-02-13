@@ -240,6 +240,402 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     ("GET", r"/api/audit/logs/\d+$"): RoutePermission(Module.AUDIT, Action.READ),
     ("POST", r"/api/audit/logs/export$"): RoutePermission(Module.AUDIT, Action.EXPORT),
     ("GET", r"/api/iam/audit/?$"): RoutePermission(Module.AUDIT, Action.READ),
+
+    # =========================================================================
+    # IAM OPERATIONS SENSIBLES (v1 routes)
+    # =========================================================================
+    ("POST", r"/v1/iam/roles/assign/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("POST", r"/v1/iam/roles/revoke/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("PUT", r"/v1/iam/users/[0-9a-fA-F-]+/permissions/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("POST", r"/v1/iam/users/[0-9a-fA-F-]+/lock/?$"): RoutePermission(Module.SECURITY, Action.UPDATE),
+    ("POST", r"/v1/iam/users/[0-9a-fA-F-]+/unlock/?$"): RoutePermission(Module.SECURITY, Action.UPDATE),
+    ("GET", r"/v1/iam/capabilities/modules/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/iam/groups/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v1/iam/groups/?$"): RoutePermission(Module.USERS, Action.CREATE),
+    ("POST", r"/v1/iam/groups/[0-9a-fA-F-]+/members/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("DELETE", r"/v1/iam/groups/[0-9a-fA-F-]+/members/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("GET", r"/v1/iam/password-policy/?$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("PATCH", r"/v1/iam/password-policy/?$"): RoutePermission(Module.SECURITY, Action.UPDATE),
+
+    # =========================================================================
+    # ADMIN (v1 routes)
+    # =========================================================================
+    ("GET", r"/v1/admin/dashboard/?$"): RoutePermission(Module.REPORTING, Action.READ),
+    ("GET", r"/v1/admin/users/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/admin/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/admin/roles/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v1/admin/stats/?$"): RoutePermission(Module.REPORTING, Action.READ),
+    ("GET", r"/v1/admin/sequences/?$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("GET", r"/v1/admin/sequences/entity-types/?$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("GET", r"/v1/admin/sequences/[a-zA-Z_]+$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("PUT", r"/v1/admin/sequences/[a-zA-Z_]+$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("POST", r"/v1/admin/sequences/[a-zA-Z_]+/reset/?$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+
+    # =========================================================================
+    # BACKUP (v1 routes) - SECURITE CRITIQUE
+    # =========================================================================
+    ("GET", r"/v1/backup/?$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("GET", r"/v1/backup/config/?$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("GET", r"/v1/backup/dashboard/stats/?$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("GET", r"/v1/backup/[0-9a-fA-F-]+$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("POST", r"/v1/backup/?$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+    ("POST", r"/v1/backup/config/?$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+    ("PATCH", r"/v1/backup/config/?$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+    ("POST", r"/v1/backup/restore/?$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+    ("POST", r"/v1/backup/[0-9a-fA-F-]+/run/?$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+    ("DELETE", r"/v1/backup/[0-9a-fA-F-]+$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+
+    # =========================================================================
+    # TENANTS (v1 routes) - SECURITE CRITIQUE
+    # =========================================================================
+    ("GET", r"/v1/tenants/?$"): RoutePermission(Module.ORGANIZATION, Action.READ),
+    ("GET", r"/v1/tenants/[0-9a-fA-F-]+$"): RoutePermission(Module.ORGANIZATION, Action.READ),
+    ("POST", r"/v1/tenants/?$"): RoutePermission(Module.ORGANIZATION, Action.ADMIN),
+    ("PUT", r"/v1/tenants/[0-9a-fA-F-]+$"): RoutePermission(Module.ORGANIZATION, Action.UPDATE),
+    ("PATCH", r"/v1/tenants/[0-9a-fA-F-]+$"): RoutePermission(Module.ORGANIZATION, Action.UPDATE),
+    ("DELETE", r"/v1/tenants/[0-9a-fA-F-]+$"): RoutePermission(Module.ORGANIZATION, Action.ADMIN),
+    ("POST", r"/v1/tenants/[0-9a-fA-F-]+/modules/[a-zA-Z_]+$"): RoutePermission(Module.ORGANIZATION, Action.UPDATE),
+    ("DELETE", r"/v1/tenants/[0-9a-fA-F-]+/modules/[a-zA-Z_]+$"): RoutePermission(Module.ORGANIZATION, Action.UPDATE),
+
+    # =========================================================================
+    # COMMERCIAL (v1 routes - sans /api prefix)
+    # =========================================================================
+    ("GET", r"/v1/commercial/customers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/v1/commercial/customers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v1/commercial/customers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v1/commercial/customers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v1/commercial/customers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/v1/commercial/contacts/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/v1/commercial/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v1/commercial/contacts/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v1/commercial/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v1/commercial/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/v1/commercial/documents/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/commercial/documents/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/commercial/documents/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v1/commercial/documents/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v1/commercial/documents/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("POST", r"/v1/commercial/documents/[0-9a-fA-F-]+/validate/?$"): RoutePermission(Module.BILLING, Action.VALIDATE),
+    ("POST", r"/v1/commercial/payments/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("GET", r"/v1/commercial/dashboard/?$"): RoutePermission(Module.REPORTING, Action.READ),
+    ("GET", r"/v1/commercial/activities/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v1/commercial/activities/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+
+    # =========================================================================
+    # STRIPE / PAIEMENTS (v1 routes) - SECURITE CRITIQUE
+    # =========================================================================
+    ("GET", r"/v1/stripe/config/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/stripe/dashboard/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/stripe/customers/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/stripe/customers/[0-9a-zA-Z_-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/stripe/customers/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("GET", r"/v1/stripe/payment-intents/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/stripe/payment-intents/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("POST", r"/v1/stripe/checkout-sessions/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("GET", r"/v1/stripe/checkout-sessions/[0-9a-zA-Z_-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/stripe/refunds/?$"): RoutePermission(Module.BILLING, Action.ADMIN),
+    ("DELETE", r"/v1/stripe/payment-methods/[0-9a-zA-Z_-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # =========================================================================
+    # INVOICING (v1 routes)
+    # =========================================================================
+    ("GET", r"/v1/invoicing/invoices/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/invoicing/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/invoicing/invoices/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("POST", r"/v1/invoicing/invoices/[0-9a-fA-F-]+/send/?$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("GET", r"/v1/invoicing/quotes/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/invoicing/quotes/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/invoicing/quotes/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/v1/invoicing/quotes/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("GET", r"/v1/invoicing/credits/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/invoicing/credits/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+
+    # =========================================================================
+    # PURCHASES / PROCUREMENT (v1 et v2 routes)
+    # =========================================================================
+    ("GET", r"/v1/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/v1/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v1/purchases/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v1/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v1/purchases/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/v1/purchases/orders/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/purchases/orders/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v1/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v1/purchases/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("POST", r"/v1/purchases/orders/[0-9a-fA-F-]+/validate/?$"): RoutePermission(Module.BILLING, Action.VALIDATE),
+    ("GET", r"/v1/purchases/invoices/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v1/purchases/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/purchases/invoices/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/v1/purchases/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("POST", r"/v1/purchases/invoices/[0-9a-fA-F-]+/validate/?$"): RoutePermission(Module.BILLING, Action.VALIDATE),
+    ("GET", r"/v1/purchases/summary/?$"): RoutePermission(Module.REPORTING, Action.READ),
+
+    # Procurement (same as purchases but different prefix)
+    ("GET", r"/v1/procurement/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v1/procurement/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("GET", r"/v1/procurement/orders/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/procurement/orders/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/v1/procurement/orders/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("GET", r"/v1/procurement/invoices/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/procurement/invoices/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/v1/procurement/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("POST", r"/v1/procurement/payments/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("GET", r"/v1/procurement/dashboard/?$"): RoutePermission(Module.REPORTING, Action.READ),
+
+    # =========================================================================
+    # FINANCE / TREASURY / ACCOUNTING (v1 routes)
+    # =========================================================================
+    ("GET", r"/v1/finance/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/finance/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v1/finance/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v1/finance/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("GET", r"/v1/treasury/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/treasury/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v1/treasury/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v1/treasury/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("GET", r"/v1/accounting/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v1/accounting/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+
+    # =========================================================================
+    # API V2 - ROUTES CORE SAAS (mirrored from v1 with same permissions)
+    # =========================================================================
+    # Stripe v2
+    ("GET", r"/v2/stripe/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/stripe/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/v2/stripe/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # Subscriptions v2
+    ("GET", r"/v2/subscriptions/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/subscriptions/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/subscriptions/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("PATCH", r"/v2/subscriptions/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/subscriptions/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # HR v2
+    ("GET", r"/v2/hr/.*$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v2/hr/.*$"): RoutePermission(Module.USERS, Action.CREATE),
+    ("PUT", r"/v2/hr/.*$"): RoutePermission(Module.USERS, Action.UPDATE),
+    ("PATCH", r"/v2/hr/.*$"): RoutePermission(Module.USERS, Action.UPDATE),
+    ("DELETE", r"/v2/hr/.*$"): RoutePermission(Module.USERS, Action.DELETE),
+
+    # Quality v2
+    ("GET", r"/v2/quality/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/quality/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/quality/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/quality/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Contacts v2
+    ("GET", r"/v2/contacts/.*$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v2/contacts/.*$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v2/contacts/.*$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("PATCH", r"/v2/contacts/.*$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v2/contacts/.*$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+
+    # Interventions v2
+    ("GET", r"/v2/interventions/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/interventions/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/interventions/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/interventions/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Marketplace v2
+    ("GET", r"/v2/marketplace/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/marketplace/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+
+    # Mobile v2
+    ("GET", r"/v2/mobile/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/mobile/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/mobile/.*$"): RoutePermission(Module.SETTINGS, Action.DELETE),
+
+    # AI v2
+    ("GET", r"/v2/ai/.*$"): RoutePermission(Module.REPORTING, Action.READ),
+    ("POST", r"/v2/ai/.*$"): RoutePermission(Module.REPORTING, Action.CREATE),
+    ("DELETE", r"/v2/ai/.*$"): RoutePermission(Module.REPORTING, Action.DELETE),
+
+    # Email v2
+    ("GET", r"/v2/email/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/email/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("PATCH", r"/v2/email/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+
+    # Triggers v2
+    ("GET", r"/v2/triggers/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/triggers/.*$"): RoutePermission(Module.SETTINGS, Action.CREATE),
+    ("PUT", r"/v2/triggers/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/triggers/.*$"): RoutePermission(Module.SETTINGS, Action.DELETE),
+
+    # Web/Website v2
+    ("GET", r"/v2/web/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/web/.*$"): RoutePermission(Module.SETTINGS, Action.CREATE),
+    ("PUT", r"/v2/web/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/web/.*$"): RoutePermission(Module.SETTINGS, Action.DELETE),
+    ("GET", r"/v2/website/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/website/.*$"): RoutePermission(Module.SETTINGS, Action.CREATE),
+    ("PUT", r"/v2/website/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/website/.*$"): RoutePermission(Module.SETTINGS, Action.DELETE),
+
+    # Country Packs v2
+    ("GET", r"/v2/country-packs/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/country-packs/.*$"): RoutePermission(Module.SETTINGS, Action.CREATE),
+    ("PUT", r"/v2/country-packs/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+
+    # Autoconfig v2
+    ("GET", r"/v2/autoconfig/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/autoconfig/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("PUT", r"/v2/autoconfig/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/autoconfig/.*$"): RoutePermission(Module.SETTINGS, Action.DELETE),
+
+    # =========================================================================
+    # API V2 - MODULES ADDITIONNELS (24 modules migrés)
+    # =========================================================================
+
+    # IAM v2 - SECURITE CRITIQUE
+    ("GET", r"/v2/iam/users/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("GET", r"/v2/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v2/iam/users/?$"): RoutePermission(Module.USERS, Action.CREATE),
+    ("PUT", r"/v2/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.UPDATE),
+    ("DELETE", r"/v2/iam/users/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.DELETE),
+    ("GET", r"/v2/iam/roles/?$"): RoutePermission(Module.USERS, Action.READ),
+    ("POST", r"/v2/iam/roles/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("PUT", r"/v2/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("DELETE", r"/v2/iam/roles/[0-9a-fA-F-]+$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("POST", r"/v2/iam/roles/assign/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("POST", r"/v2/iam/roles/revoke/?$"): RoutePermission(Module.USERS, Action.ASSIGN),
+    ("POST", r"/v2/iam/users/[0-9a-fA-F-]+/lock/?$"): RoutePermission(Module.SECURITY, Action.UPDATE),
+    ("POST", r"/v2/iam/users/[0-9a-fA-F-]+/unlock/?$"): RoutePermission(Module.SECURITY, Action.UPDATE),
+
+    # Backup v2 - SECURITE CRITIQUE
+    ("GET", r"/v2/backup/?$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("GET", r"/v2/backup/[0-9a-fA-F-]+$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("POST", r"/v2/backup/?$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+    ("POST", r"/v2/backup/restore/?$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+    ("DELETE", r"/v2/backup/[0-9a-fA-F-]+$"): RoutePermission(Module.SECURITY, Action.ADMIN),
+
+    # Tenants v2 - SECURITE CRITIQUE
+    ("GET", r"/v2/tenants/?$"): RoutePermission(Module.ORGANIZATION, Action.READ),
+    ("GET", r"/v2/tenants/[0-9a-fA-F-]+$"): RoutePermission(Module.ORGANIZATION, Action.READ),
+    ("POST", r"/v2/tenants/?$"): RoutePermission(Module.ORGANIZATION, Action.ADMIN),
+    ("PUT", r"/v2/tenants/[0-9a-fA-F-]+$"): RoutePermission(Module.ORGANIZATION, Action.UPDATE),
+    ("DELETE", r"/v2/tenants/[0-9a-fA-F-]+$"): RoutePermission(Module.ORGANIZATION, Action.ADMIN),
+
+    # Guardian v2
+    ("GET", r"/v2/guardian/.*$"): RoutePermission(Module.SECURITY, Action.READ),
+    ("POST", r"/v2/guardian/.*$"): RoutePermission(Module.SECURITY, Action.UPDATE),
+
+    # Accounting v2
+    ("GET", r"/v2/accounting/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/accounting/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/accounting/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/accounting/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # Finance v2
+    ("GET", r"/v2/finance/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/finance/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/finance/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/finance/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # Treasury v2
+    ("GET", r"/v2/treasury/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/treasury/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/treasury/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/treasury/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # Procurement v2
+    ("GET", r"/v2/procurement/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/procurement/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/procurement/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/procurement/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # Purchases v2
+    ("GET", r"/v2/purchases/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/purchases/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/purchases/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/purchases/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # POS v2
+    ("GET", r"/v2/pos/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/pos/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/pos/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/pos/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # Ecommerce v2
+    ("GET", r"/v2/ecommerce/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/ecommerce/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/ecommerce/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/ecommerce/.*$"): RoutePermission(Module.BILLING, Action.DELETE),
+
+    # Inventory v2
+    ("GET", r"/v2/inventory/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/inventory/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/inventory/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/inventory/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Production v2
+    ("GET", r"/v2/production/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/production/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/production/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/production/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Projects v2
+    ("GET", r"/v2/projects/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/projects/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/projects/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/projects/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Maintenance v2
+    ("GET", r"/v2/maintenance/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/maintenance/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/maintenance/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/maintenance/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Field-Service v2
+    ("GET", r"/v2/field-service/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/field-service/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/field-service/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/field-service/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Helpdesk v2
+    ("GET", r"/v2/helpdesk/.*$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v2/helpdesk/.*$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v2/helpdesk/.*$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v2/helpdesk/.*$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+
+    # Commercial v2
+    ("GET", r"/v2/commercial/.*$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v2/commercial/.*$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v2/commercial/.*$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v2/commercial/.*$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+
+    # Audit v2
+    ("GET", r"/v2/audit/.*$"): RoutePermission(Module.AUDIT, Action.READ),
+    ("POST", r"/v2/audit/.*$"): RoutePermission(Module.AUDIT, Action.CREATE),
+
+    # BI v2
+    ("GET", r"/v2/bi/.*$"): RoutePermission(Module.REPORTING, Action.READ),
+    ("POST", r"/v2/bi/.*$"): RoutePermission(Module.REPORTING, Action.CREATE),
+    ("PUT", r"/v2/bi/.*$"): RoutePermission(Module.REPORTING, Action.UPDATE),
+    ("DELETE", r"/v2/bi/.*$"): RoutePermission(Module.REPORTING, Action.DELETE),
+
+    # Broadcast v2
+    ("GET", r"/v2/broadcast/.*$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/broadcast/.*$"): RoutePermission(Module.SETTINGS, Action.CREATE),
+    ("PUT", r"/v2/broadcast/.*$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/broadcast/.*$"): RoutePermission(Module.SETTINGS, Action.DELETE),
+
+    # Compliance v2
+    ("GET", r"/v2/compliance/.*$"): RoutePermission(Module.AUDIT, Action.READ),
+    ("POST", r"/v2/compliance/.*$"): RoutePermission(Module.AUDIT, Action.CREATE),
+    ("PUT", r"/v2/compliance/.*$"): RoutePermission(Module.AUDIT, Action.UPDATE),
+
+    # QC v2
+    ("GET", r"/v2/qc/.*$"): RoutePermission(Module.PROJECTS, Action.READ),
+    ("POST", r"/v2/qc/.*$"): RoutePermission(Module.PROJECTS, Action.CREATE),
+    ("PUT", r"/v2/qc/.*$"): RoutePermission(Module.PROJECTS, Action.UPDATE),
+    ("DELETE", r"/v2/qc/.*$"): RoutePermission(Module.PROJECTS, Action.DELETE),
+
+    # Automated Accounting v2
+    ("GET", r"/v2/automated-accounting/.*$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/automated-accounting/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/automated-accounting/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
 }
 
 
@@ -265,20 +661,25 @@ PUBLIC_ROUTES: list[str] = [
 
 
 # Routes semi-publiques (authentification requise mais pas de permission spécifique)
+# SECURITE: Eviter les wildcards qui bypssent les permissions granulaires
 AUTHENTICATED_ONLY_ROUTES: list[str] = [
+    # Profil utilisateur courant (lecture seule de ses propres infos)
     r"^/api/me/?$",
     r"^/api/users/me/?$",
     r"^/api/iam/me/?$",
     r"^/api/iam/users/me/?$",
     r"^/v1/iam/users/me/?$",
     r"^/v1/iam/me/?$",
-    # Admin routes - bypass RBAC, require only authentication
-    r"^/v1/iam/users.*$",
-    r"^/v1/iam/roles.*$",
-    r"^/v1/iam/permissions.*$",
-    r"^/v1/tenants.*$",
-    r"^/v1/cockpit/.*$",
-    r"^/v1/admin/.*$",
+    r"^/v1/me/.*$",
+    # Cockpit dashboard (lecture seule)
+    r"^/v1/cockpit/dashboard/?$",
+    r"^/v1/cockpit/decisions/?$",
+    # Notifications (lecture seule)
+    r"^/v1/notifications/?$",
+    # Modules disponibles (lecture seule)
+    r"^/v1/modules/?$",
+    # Tenant courant (lecture seule)
+    r"^/v1/tenant/current/?$",
 ]
 
 

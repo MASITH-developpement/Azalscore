@@ -1,17 +1,138 @@
 """
 Fixtures pour les tests Interventions v2
+
+Ce module fournit les fixtures pytest pour tester le module Interventions.
+Les fixtures utilisent MockEntity pour simuler les objets SQLAlchemy avec
+accès par attributs (obj.id au lieu de obj["id"]).
 """
 
 import pytest
 from datetime import datetime, timedelta
+from types import SimpleNamespace
+from typing import Any, Dict, List, Optional, Union
 from unittest.mock import MagicMock
 from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.core.dependencies_v2 import get_saas_context
-from app.core.saas_context import SaaSContext, UserRole
+from app.core.saas_context import SaaSContext, UserRole, TenantScope
 from app.main import app
-from app.modules.interventions.models import InterventionStatut, InterventionPriorite
+from app.modules.interventions.models import (
+    InterventionStatut,
+    InterventionPriorite,
+    TypeIntervention,
+    CorpsEtat,
+)
+
+
+# ============================================================================
+# UTILITAIRES MOCK
+# ============================================================================
+
+class MockEntity:
+    """
+    Classe utilitaire qui convertit un dict en objet avec accès par attributs.
+
+    Permet aux fixtures de retourner des objets compatibles avec les serializers
+    qui utilisent la notation point (ex: donneur.id, intervention.reference).
+
+    Supporte également le déballage dict ({**entity, "key": val}) pour les tests.
+
+    IMPORTANT: Les attributs non définis retournent None (comme les modèles SQLAlchemy)
+    au lieu de lever AttributeError. Cela permet aux serializers de fonctionner
+    même si toutes les colonnes ne sont pas définies dans les fixtures.
+
+    Exemple:
+        data = {"id": "123", "nom": "Test"}
+        entity = MockEntity(data)
+        entity.id  # "123"
+        entity.nom  # "Test"
+        entity.unknown  # None (pas d'erreur)
+        {**entity, "nom": "New"}  # {"id": "123", "nom": "New"}
+    """
+
+    def __init__(self, data: Dict[str, Any]):
+        """
+        Initialise un MockEntity à partir d'un dictionnaire.
+
+        Les valeurs imbriquées (dicts) sont également converties en MockEntity.
+        Les listes de dicts sont converties en listes de MockEntity.
+        """
+        object.__setattr__(self, '_data', data.copy())
+        for key, value in data.items():
+            if isinstance(value, dict):
+                object.__setattr__(self, key, MockEntity(value))
+            elif isinstance(value, list):
+                object.__setattr__(self, key, [
+                    MockEntity(item) if isinstance(item, dict) else item
+                    for item in value
+                ])
+            else:
+                object.__setattr__(self, key, value)
+
+    def __getattr__(self, name: str) -> Any:
+        """
+        Retourne None pour les attributs non définis.
+
+        Cela simule le comportement des modèles SQLAlchemy où les colonnes
+        non renseignées ont une valeur None.
+        """
+        # Ne pas retourner None pour les méthodes spéciales
+        if name.startswith('_'):
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+        return None
+
+    def __repr__(self) -> str:
+        attrs = ", ".join(f"{k}={v!r}" for k, v in self._data.items())
+        return f"MockEntity({attrs})"
+
+    # Support pour le déballage dict (**entity)
+    def keys(self):
+        """Retourne les clés pour le déballage."""
+        return self._data.keys()
+
+    def __iter__(self):
+        """Permet l'itération sur les clés."""
+        return iter(self._data)
+
+    def __getitem__(self, key: str):
+        """Permet l'accès par index entity['key']."""
+        return self._data.get(key)
+
+    def items(self):
+        """Retourne les paires clé-valeur."""
+        return self._data.items()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Retourne le dict original."""
+        return self._data.copy()
+
+    def with_updates(self, **updates) -> "MockEntity":
+        """
+        Retourne un nouveau MockEntity avec les mises à jour spécifiées.
+
+        Exemple:
+            updated = entity.with_updates(nom="Nouveau nom", is_active=False)
+        """
+        new_data = {**self._data, **updates}
+        return MockEntity(new_data)
+
+
+def to_mock_entity(data: Union[Dict, List[Dict], None]) -> Union[MockEntity, List[MockEntity], None]:
+    """
+    Convertit un dict ou une liste de dicts en MockEntity.
+
+    Args:
+        data: Dict, liste de dicts, ou None
+
+    Returns:
+        MockEntity, liste de MockEntity, ou None
+    """
+    if data is None:
+        return None
+    if isinstance(data, list):
+        return [MockEntity(item) for item in data]
+    return MockEntity(data)
 
 
 # ============================================================================
@@ -26,8 +147,8 @@ def tenant_id():
 
 @pytest.fixture
 def user_id():
-    """User ID de test"""
-    return "user-test-interventions-001"
+    """User ID de test (UUID valide)"""
+    return str(uuid4())
 
 
 # ============================================================================
@@ -76,15 +197,18 @@ def mock_interventions_service():
 
 @pytest.fixture
 def mock_get_saas_context(tenant_id, user_id):
-    """Mock de get_saas_context"""
+    """Mock de get_saas_context avec contexte valide pour tests"""
+    # Convertir user_id string en UUID
+    from uuid import UUID
+    user_uuid = UUID(user_id) if isinstance(user_id, str) and "-" in user_id else uuid4()
+
     def _mock_context():
         return SaaSContext(
             tenant_id=tenant_id,
-            user_id=user_id,
+            user_id=user_uuid,
             role=UserRole.ADMIN,
             permissions={"interventions.*"},
-            scope="tenant",
-            session_id="session-test",
+            scope=TenantScope.TENANT,
             ip_address="127.0.0.1",
             user_agent="pytest",
             correlation_id="test-correlation"
@@ -101,15 +225,27 @@ def mock_get_interventions_service(mock_interventions_service):
 
 
 @pytest.fixture
-def client(mock_get_saas_context, mock_interventions_service):
-    """Client de test FastAPI avec mocks"""
-    from app.modules.interventions.router_v2 import get_interventions_service
+def test_client(mock_get_saas_context, mock_interventions_service, tenant_id, user_id):
+    """Client de test FastAPI avec mocks et headers d'authentification"""
+    from app.modules.interventions.router_v2 import _get_service
 
     # Remplacer les dépendances par les mocks
     app.dependency_overrides[get_saas_context] = mock_get_saas_context
-    app.dependency_overrides[get_interventions_service] = lambda: mock_interventions_service
+    app.dependency_overrides[_get_service] = lambda: mock_interventions_service
 
-    client = TestClient(app)
+    class TestClientWithHeaders(TestClient):
+        """TestClient qui ajoute automatiquement les headers requis."""
+
+        def request(self, method: str, url: str, **kwargs):
+            headers = kwargs.get("headers") or {}
+            if "X-Tenant-ID" not in headers:
+                headers["X-Tenant-ID"] = tenant_id
+            if "Authorization" not in headers:
+                headers["Authorization"] = f"Bearer mock-jwt-{user_id}"
+            kwargs["headers"] = headers
+            return super().request(method, url, **kwargs)
+
+    client = TestClientWithHeaders(app)
     yield client
 
     # Nettoyer les overrides
@@ -141,28 +277,36 @@ def donneur_ordre_data():
 
 @pytest.fixture
 def donneur_ordre(donneur_ordre_data, tenant_id):
-    """Instance donneur d'ordre sample"""
-    return {
+    """Instance donneur d'ordre sample (MockEntity pour compatibilité serializer)"""
+    now = datetime.utcnow()
+    data = {
         "id": str(uuid4()),
         "tenant_id": tenant_id,
         **donneur_ordre_data,
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "created_at": now,  # datetime, pas string
+        "updated_at": now,  # datetime, pas string
     }
+    return MockEntity(data)
 
 
 @pytest.fixture
-def donneur_ordre_list(donneur_ordre):
-    """Liste de donneurs d'ordre sample"""
-    return [
-        donneur_ordre,
-        {
-            **donneur_ordre,
-            "id": str(uuid4()),
-            "nom": "Client Secondaire",
-            "email": "contact@client2.com",
-        },
-    ]
+def donneur_ordre_list(donneur_ordre_data, tenant_id):
+    """Liste de donneurs d'ordre sample (MockEntity pour compatibilité serializer)"""
+    now = datetime.utcnow()
+    base_data = {
+        "id": str(uuid4()),
+        "tenant_id": tenant_id,
+        **donneur_ordre_data,
+        "created_at": now,
+        "updated_at": now,
+    }
+    second_data = {
+        **base_data,
+        "id": str(uuid4()),
+        "nom": "Client Secondaire",
+        "email": "contact@client2.com",
+    }
+    return [MockEntity(base_data), MockEntity(second_data)]
 
 
 # ============================================================================
@@ -171,19 +315,24 @@ def donneur_ordre_list(donneur_ordre):
 
 @pytest.fixture
 def intervention_data():
-    """Données d'intervention sample"""
+    """Données d'intervention sample.
+
+    Utilise les noms de champs exacts du modèle Intervention.
+    """
     return {
         "titre": "Installation équipement",
         "description": "Installation d'un nouveau système",
         "client_id": str(uuid4()),
         "donneur_ordre_id": str(uuid4()),
         "projet_id": str(uuid4()),
-        "priorite": "NORMALE",
-        "type_intervention": "installation",
+        "priorite": InterventionPriorite.NORMAL,
+        "type_intervention": TypeIntervention.INSTALLATION,
         "reference_externe": "EXT-2024-001",
-        "adresse_intervention": "456 Avenue des Champs",
-        "code_postal_intervention": "75008",
-        "ville_intervention": "Paris",
+        # Adresse - noms de champs du modèle
+        "adresse_ligne1": "456 Avenue des Champs",
+        "adresse_ligne2": None,
+        "code_postal": "75008",
+        "ville": "Paris",
         "contact_site_nom": "Marie Martin",
         "contact_site_telephone": "+33198765432",
         "duree_prevue_minutes": 120,
@@ -191,13 +340,18 @@ def intervention_data():
 
 
 @pytest.fixture
-def intervention(intervention_data, tenant_id, user_id):
-    """Instance intervention sample"""
+def intervention_dict(intervention_data, tenant_id, user_id):
+    """Données brutes d'intervention (dict) pour construction d'autres fixtures.
+
+    Utilise les Enums appropriés pour simuler le comportement des modèles SQLAlchemy.
+    Les dates sont des objets datetime (pas des chaînes ISO).
+    """
+    now = datetime.utcnow()
     return {
         "id": str(uuid4()),
         "tenant_id": tenant_id,
         "reference": "INT-2024-0001",
-        "statut": "A_PLANIFIER",
+        "statut": InterventionStatut.A_PLANIFIER,
         **intervention_data,
         "intervenant_id": None,
         "date_prevue_debut": None,
@@ -209,57 +363,93 @@ def intervention(intervention_data, tenant_id, user_id):
         "planning_event_id": None,
         "geoloc_arrivee_lat": None,
         "geoloc_arrivee_lng": None,
+        "donneur_ordre": None,  # Relation pour serializer
+        "rapport": None,  # Relation pour serializer
+        "corps_etat": None,  # CorpsEtat optionnel
         "created_by": user_id,
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "created_at": now,  # datetime, pas string
+        "updated_at": now,  # datetime, pas string
         "deleted_at": None,
     }
 
 
 @pytest.fixture
-def intervention_planifiee(intervention, user_id):
-    """Intervention planifiée sample"""
+def intervention(intervention_dict):
+    """Instance intervention sample (MockEntity pour compatibilité serializer)"""
+    return MockEntity(intervention_dict)
+
+
+@pytest.fixture
+def intervention_planifiee(intervention_dict, user_id):
+    """Intervention planifiée sample (MockEntity pour compatibilité serializer)"""
     now = datetime.utcnow()
-    return {
-        **intervention,
-        "statut": "PLANIFIEE",
+    data = {
+        **intervention_dict,
+        "statut": InterventionStatut.PLANIFIEE,
         "intervenant_id": user_id,
-        "date_prevue_debut": (now + timedelta(hours=1)).isoformat(),
-        "date_prevue_fin": (now + timedelta(hours=3)).isoformat(),
+        "date_prevue_debut": now + timedelta(hours=1),  # datetime pour calcul delta
+        "date_prevue_fin": now + timedelta(hours=3),
         "planning_event_id": str(uuid4()),
     }
+    return MockEntity(data)
 
 
 @pytest.fixture
-def intervention_en_cours(intervention_planifiee):
-    """Intervention en cours sample"""
+def intervention_en_cours(intervention_dict, user_id):
+    """Intervention en cours sample (MockEntity pour compatibilité serializer)"""
     now = datetime.utcnow()
-    return {
-        **intervention_planifiee,
-        "statut": "EN_COURS",
-        "date_arrivee_site": now.isoformat(),
-        "date_demarrage": (now + timedelta(minutes=5)).isoformat(),
+    data = {
+        **intervention_dict,
+        "statut": InterventionStatut.EN_COURS,
+        "intervenant_id": user_id,
+        "date_prevue_debut": now - timedelta(hours=1),
+        "date_prevue_fin": now + timedelta(hours=1),
+        "date_arrivee_site": now,
+        "date_demarrage": now + timedelta(minutes=5),
         "geoloc_arrivee_lat": 48.8566,
         "geoloc_arrivee_lng": 2.3522,
+        "planning_event_id": str(uuid4()),
     }
+    return MockEntity(data)
 
 
 @pytest.fixture
-def intervention_terminee(intervention_en_cours):
-    """Intervention terminée sample"""
+def intervention_terminee(intervention_dict, user_id):
+    """Intervention terminée sample (MockEntity pour compatibilité serializer)"""
     now = datetime.utcnow()
-    return {
-        **intervention_en_cours,
-        "statut": "TERMINEE",
-        "date_fin": (now + timedelta(hours=2)).isoformat(),
+    data = {
+        **intervention_dict,
+        "statut": InterventionStatut.TERMINEE,
+        "intervenant_id": user_id,
+        "date_prevue_debut": now - timedelta(hours=3),
+        "date_prevue_fin": now - timedelta(hours=1),
+        "date_arrivee_site": now - timedelta(hours=3),
+        "date_demarrage": now - timedelta(hours=2, minutes=55),
+        "date_fin": now - timedelta(hours=1),
         "duree_reelle_minutes": 115,
+        "geoloc_arrivee_lat": 48.8566,
+        "geoloc_arrivee_lng": 2.3522,
+        "planning_event_id": str(uuid4()),
     }
+    return MockEntity(data)
 
 
 @pytest.fixture
-def intervention_list(intervention, intervention_planifiee):
-    """Liste d'interventions sample"""
-    return [intervention, intervention_planifiee]
+def intervention_list(intervention_dict, user_id):
+    """Liste d'interventions sample (MockEntity pour compatibilité serializer)"""
+    now = datetime.utcnow()
+    intervention1 = MockEntity(intervention_dict)
+    intervention2_data = {
+        **intervention_dict,
+        "id": str(uuid4()),
+        "reference": "INT-2024-0002",
+        "statut": InterventionStatut.PLANIFIEE,
+        "intervenant_id": user_id,
+        "date_prevue_debut": now + timedelta(hours=1),
+        "date_prevue_fin": now + timedelta(hours=3),
+        "planning_event_id": str(uuid4()),
+    }
+    return [intervention1, MockEntity(intervention2_data)]
 
 
 @pytest.fixture
@@ -307,15 +497,16 @@ def rapport_data():
 
 
 @pytest.fixture
-def rapport_intervention(intervention, tenant_id):
-    """Instance rapport intervention sample"""
-    return {
+def rapport_intervention(intervention_dict, tenant_id):
+    """Instance rapport intervention sample (MockEntity pour compatibilité serializer)"""
+    now = datetime.utcnow()
+    data = {
         "id": str(uuid4()),
         "tenant_id": tenant_id,
-        "intervention_id": intervention["id"],
-        "reference_intervention": intervention["reference"],
-        "client_id": intervention["client_id"],
-        "donneur_ordre_id": intervention["donneur_ordre_id"],
+        "intervention_id": intervention_dict["id"],
+        "reference_intervention": intervention_dict["reference"],
+        "client_id": intervention_dict["client_id"],
+        "donneur_ordre_id": intervention_dict["donneur_ordre_id"],
         "resume_actions": "Actions réalisées",
         "anomalies": "Aucune",
         "recommandations": "RAS",
@@ -327,9 +518,10 @@ def rapport_intervention(intervention, tenant_id):
         "geoloc_signature_lng": None,
         "is_signed": False,
         "is_locked": False,
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "created_at": now,  # datetime, pas string
+        "updated_at": now,  # datetime, pas string
     }
+    return MockEntity(data)
 
 
 @pytest.fixture
@@ -363,8 +555,12 @@ def rapport_final_data():
 
 
 @pytest.fixture
-def rapport_final(rapport_final_data, tenant_id, user_id):
-    """Instance rapport final sample"""
+def rapport_final_dict(rapport_final_data, tenant_id, user_id):
+    """Données brutes de rapport final (dict) pour construction d'autres fixtures.
+
+    Les dates sont des objets datetime (pas des chaînes ISO).
+    """
+    now = datetime.utcnow()
     return {
         "id": str(uuid4()),
         "tenant_id": tenant_id,
@@ -374,26 +570,30 @@ def rapport_final(rapport_final_data, tenant_id, user_id):
         "interventions_references": ["INT-2024-0001", "INT-2024-0002"],
         "temps_total_minutes": 240,
         "synthese": rapport_final_data["synthese"],
-        "date_generation": datetime.utcnow().isoformat(),
+        "date_generation": now,  # datetime, pas string
         "is_locked": True,
         "created_by": user_id,
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "created_at": now,  # datetime, pas string
+        "updated_at": now,  # datetime, pas string
     }
 
 
 @pytest.fixture
-def rapport_final_list(rapport_final):
-    """Liste de rapports finaux sample"""
-    return [
-        rapport_final,
-        {
-            **rapport_final,
-            "id": str(uuid4()),
-            "reference": "RFINAL-2024-0002",
-            "temps_total_minutes": 180,
-        },
-    ]
+def rapport_final(rapport_final_dict):
+    """Instance rapport final sample (MockEntity pour compatibilité serializer)"""
+    return MockEntity(rapport_final_dict)
+
+
+@pytest.fixture
+def rapport_final_list(rapport_final_dict):
+    """Liste de rapports finaux sample (MockEntity pour compatibilité serializer)"""
+    second_data = {
+        **rapport_final_dict,
+        "id": str(uuid4()),
+        "reference": "RFINAL-2024-0002",
+        "temps_total_minutes": 180,
+    }
+    return [MockEntity(rapport_final_dict), MockEntity(second_data)]
 
 
 # ============================================================================
@@ -402,8 +602,8 @@ def rapport_final_list(rapport_final):
 
 @pytest.fixture
 def intervention_stats():
-    """Statistiques interventions sample"""
-    return {
+    """Statistiques interventions sample (MockEntity pour compatibilité serializer)"""
+    data = {
         "total": 100,
         "a_planifier": 20,
         "planifiees": 30,
@@ -411,3 +611,4 @@ def intervention_stats():
         "terminees": 40,
         "duree_moyenne_minutes": 125.5,
     }
+    return MockEntity(data)

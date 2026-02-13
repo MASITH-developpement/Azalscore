@@ -5,6 +5,7 @@ AZALS MODULE M11 - Service Conformité
 Service métier pour la gestion de la conformité réglementaire.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
@@ -60,6 +61,8 @@ from .schemas import (
     TrainingCreate,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ComplianceService:
     """Service de gestion de la conformité."""
@@ -75,6 +78,10 @@ class ComplianceService:
 
     def create_regulation(self, data: RegulationCreate, user_id: UUID) -> Regulation:
         """Créer une réglementation."""
+        logger.info(
+            "Creating regulation | tenant=%s user=%s code=%s type=%s",
+            self.tenant_id, user_id, data.code, data.type
+        )
         regulation = Regulation(
             tenant_id=self.tenant_id,
             created_by=user_id,
@@ -83,6 +90,10 @@ class ComplianceService:
         self.db.add(regulation)
         self.db.commit()
         self.db.refresh(regulation)
+        logger.info(
+            "Regulation created | regulation_id=%s code=%s",
+            regulation.id, regulation.code
+        )
         return regulation
 
     def get_regulation(self, regulation_id: UUID) -> Regulation | None:
@@ -134,7 +145,11 @@ class ComplianceService:
     # =========================================================================
 
     def create_requirement(self, data: RequirementCreate, user_id: UUID) -> Requirement:
-        """Créer une exigence."""
+        """Créer une exigence (obligation)."""
+        logger.info(
+            "Creating requirement | tenant=%s user=%s regulation_id=%s code=%s priority=%s",
+            self.tenant_id, user_id, data.regulation_id, data.code, data.priority
+        )
         requirement = Requirement(
             tenant_id=self.tenant_id,
             created_by=user_id,
@@ -143,6 +158,10 @@ class ComplianceService:
         self.db.add(requirement)
         self.db.commit()
         self.db.refresh(requirement)
+        logger.info(
+            "Requirement created | requirement_id=%s code=%s",
+            requirement.id, requirement.code
+        )
         return requirement
 
     def get_requirement(self, requirement_id: UUID) -> Requirement | None:
@@ -203,8 +222,16 @@ class ComplianceService:
         user_id: UUID | None = None
     ) -> Requirement | None:
         """Évaluer la conformité d'une exigence."""
+        logger.info(
+            "Recording compliance check | tenant=%s user=%s requirement_id=%s",
+            self.tenant_id, user_id, requirement_id
+        )
         requirement = self.get_requirement(requirement_id)
         if not requirement:
+            logger.warning(
+                "Compliance check failed - requirement not found | tenant=%s requirement_id=%s",
+                self.tenant_id, requirement_id
+            )
             return None
 
         requirement.compliance_status = status
@@ -214,6 +241,10 @@ class ComplianceService:
 
         self.db.commit()
         self.db.refresh(requirement)
+        logger.info(
+            "Compliance check recorded | requirement_id=%s code=%s status=%s score=%s",
+            requirement.id, requirement.code, status, score
+        )
         return requirement
 
     # =========================================================================
@@ -272,7 +303,9 @@ class ComplianceService:
             return None
 
         # Calculer les résultats
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         gaps = self.db.query(ComplianceGap).filter(
+            ComplianceGap.tenant_id == self.tenant_id,
             ComplianceGap.assessment_id == assessment_id
         ).all()
 
@@ -338,7 +371,11 @@ class ComplianceService:
     # =========================================================================
 
     def create_gap(self, data: GapCreate, user_id: UUID) -> ComplianceGap:
-        """Créer un écart de conformité."""
+        """Créer un écart de conformité (non-conformité)."""
+        logger.warning(
+            "Non-compliance flagged | tenant=%s user=%s requirement_id=%s severity=%s",
+            self.tenant_id, user_id, data.requirement_id, data.severity
+        )
         gap = ComplianceGap(
             tenant_id=self.tenant_id,
             created_by=user_id,
@@ -357,6 +394,10 @@ class ComplianceService:
         self.db.add(gap)
         self.db.commit()
         self.db.refresh(gap)
+        logger.warning(
+            "Compliance gap created | gap_id=%s requirement_id=%s severity=%s risk_score=%s",
+            gap.id, gap.requirement_id, gap.severity, gap.risk_score
+        )
         return gap
 
     def close_gap(
@@ -709,6 +750,10 @@ class ComplianceService:
 
     def create_audit(self, data: AuditCreate, user_id: UUID) -> ComplianceAudit:
         """Créer un audit."""
+        logger.info(
+            "Creating compliance audit | tenant=%s user=%s audit_type=%s",
+            self.tenant_id, user_id, data.audit_type
+        )
         # Générer le numéro
         year = datetime.utcnow().year
         count = self.db.query(ComplianceAudit).filter(
@@ -725,6 +770,10 @@ class ComplianceService:
         self.db.add(audit)
         self.db.commit()
         self.db.refresh(audit)
+        logger.info(
+            "Compliance audit created | audit_id=%s number=%s audit_type=%s",
+            audit.id, audit.number, audit.audit_type
+        )
         return audit
 
     def get_audit(self, audit_id: UUID) -> ComplianceAudit | None:
@@ -760,7 +809,9 @@ class ComplianceService:
             return None
 
         # Comptabiliser les constatations
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         findings = self.db.query(AuditFinding).filter(
+            AuditFinding.tenant_id == self.tenant_id,
             AuditFinding.audit_id == audit_id
         ).all()
 
@@ -800,9 +851,15 @@ class ComplianceService:
 
     def create_finding(self, data: FindingCreate, user_id: UUID) -> AuditFinding:
         """Créer une constatation d'audit."""
+        logger.info(
+            "Creating audit finding | tenant=%s user=%s audit_id=%s severity=%s",
+            self.tenant_id, user_id, data.audit_id, data.severity
+        )
         # Générer le numéro
         audit = self.get_audit(data.audit_id)
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         count = self.db.query(AuditFinding).filter(
+            AuditFinding.tenant_id == self.tenant_id,
             AuditFinding.audit_id == data.audit_id
         ).count()
 
@@ -815,6 +872,10 @@ class ComplianceService:
         self.db.add(finding)
         self.db.commit()
         self.db.refresh(finding)
+        logger.info(
+            "Audit finding created | finding_id=%s number=%s severity=%s",
+            finding.id, finding.number, finding.severity
+        )
         return finding
 
     def respond_to_finding(
@@ -945,6 +1006,10 @@ class ComplianceService:
 
     def create_incident(self, data: IncidentCreate, user_id: UUID) -> ComplianceIncident:
         """Créer un incident."""
+        logger.warning(
+            "Creating compliance incident | tenant=%s user=%s severity=%s",
+            self.tenant_id, user_id, data.severity
+        )
         # Générer le numéro
         year = datetime.utcnow().year
         count = self.db.query(ComplianceIncident).filter(
@@ -961,6 +1026,10 @@ class ComplianceService:
         self.db.add(incident)
         self.db.commit()
         self.db.refresh(incident)
+        logger.warning(
+            "Compliance incident created | incident_id=%s number=%s severity=%s",
+            incident.id, incident.number, incident.severity
+        )
         return incident
 
     def get_incident(self, incident_id: UUID) -> ComplianceIncident | None:
@@ -1028,6 +1097,10 @@ class ComplianceService:
 
     def create_report(self, data: ReportCreate, user_id: UUID) -> ComplianceReport:
         """Créer un rapport."""
+        logger.info(
+            "Generating compliance report | tenant=%s user=%s report_type=%s",
+            self.tenant_id, user_id, data.report_type
+        )
         # Générer le numéro
         year = datetime.utcnow().year
         count = self.db.query(ComplianceReport).filter(
@@ -1044,6 +1117,10 @@ class ComplianceService:
         self.db.add(report)
         self.db.commit()
         self.db.refresh(report)
+        logger.info(
+            "Compliance report generated | report_id=%s number=%s report_type=%s",
+            report.id, report.number, report.report_type
+        )
         return report
 
     def publish_report(

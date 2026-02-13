@@ -237,15 +237,11 @@ async def delete_order(
 ):
     """Supprimer une commande d'achat (seulement si DRAFT)."""
     service = get_purchases_service(db, context.tenant_id, context.user_id)
-    order = service.get_order(order_id)
-    if not order:
-        raise HTTPException(status_code=404, detail="Commande non trouvée")
-
-    if order.status != OrderStatus.DRAFT:
-        raise HTTPException(status_code=400, detail="Seules les commandes en brouillon peuvent être supprimées")
-
-    service.db.delete(order)
-    service.db.commit()
+    try:
+        if not service.delete_order(order_id):
+            raise HTTPException(status_code=404, detail="Commande non trouvée")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ============================================================================
@@ -340,15 +336,11 @@ async def delete_invoice(
 ):
     """Supprimer une facture fournisseur (seulement si DRAFT)."""
     service = get_purchases_service(db, context.tenant_id, context.user_id)
-    invoice = service.get_invoice(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Facture non trouvée")
-
-    if invoice.status != InvoiceStatus.DRAFT:
-        raise HTTPException(status_code=400, detail="Seules les factures en brouillon peuvent être supprimées")
-
-    service.db.delete(invoice)
-    service.db.commit()
+    try:
+        if not service.delete_invoice(invoice_id):
+            raise HTTPException(status_code=404, detail="Facture non trouvée")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ============================================================================

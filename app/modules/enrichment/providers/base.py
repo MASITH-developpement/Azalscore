@@ -88,7 +88,8 @@ class BaseProvider(ABC):
         Format: azals:enrichment:{tenant}:{provider}:{type}:{hash}
         """
         # Hash la valeur pour eviter les cles trop longues
-        value_hash = hashlib.md5(lookup_value.encode()).hexdigest()[:12]
+        # NOTE: MD5 utilisé uniquement pour génération de clé de cache, pas pour sécurité
+        value_hash = hashlib.md5(lookup_value.encode(), usedforsecurity=False).hexdigest()[:12]
         return f"azals:enrichment:{self.tenant_id}:{self.PROVIDER_NAME}:{lookup_type}:{value_hash}"
 
     async def lookup_with_cache(

@@ -1,0 +1,201 @@
+# AZALS - Security Audit
+# =======================
+# Audit de sécurité approfondi
+# Exécuté: hebdomadaire + sur PR vers main
+
+name: Security Audit
+
+on:
+  schedule:
+    # Chaque lundi à 6h UTC
+    - cron: '0 6 * * 1'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # Permet l'exécution manuelle
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  # ============================================================================
+  # DEPENDENCY AUDIT
+  # ============================================================================
+  dependency-audit:
+    name: Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install audit tools
+        run: |
+          pip install pip-audit safety
+
+      - name: Run pip-audit
+        id: pip-audit
+        run: |
+          echo "## Pip Audit Results" >> $GITHUB_STEP_SUMMARY
+          pip-audit -r requirements.txt --format json --output pip-audit.json || true
+          pip-audit -r requirements.txt --ignore-vuln CVE-2024-23342 2>&1 | tee pip-audit.txt || true
+          cat pip-audit.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Run Safety check
+        run: |
+          echo "## Safety Check Results" >> $GITHUB_STEP_SUMMARY
+          safety check -r requirements.txt --full-report 2>&1 | tee safety-report.txt || true
+          cat safety-report.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-reports
+          path: |
+            pip-audit.json
+            pip-audit.txt
+            safety-report.txt
+
+  # ============================================================================
+  # CODE SECURITY SCAN
+  # ============================================================================
+  code-scan:
+    name: Code Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install security tools
+        run: |
+          pip install bandit
+
+      - name: Full Bandit scan
+        run: |
+          echo "## Bandit Security Report" >> $GITHUB_STEP_SUMMARY
+          bandit -r app/ -f json -o bandit-full.json -x '**/tests/**' || true
+          bandit -r app/ -f txt -x '**/tests/**' 2>&1 | tee bandit-full.txt
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat bandit-full.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for HIGH severity issues
+        run: |
+          HIGH_COUNT=$(bandit -r app/ -f json -x '**/tests/**' 2>/dev/null | jq '[.results[] | select(.issue_severity == "HIGH")] | length')
+          echo "High severity issues: $HIGH_COUNT"
+          if [ "$HIGH_COUNT" -gt "0" ]; then
+            echo "CRITICAL: Found $HIGH_COUNT HIGH severity security issues!"
+            exit 1
+          fi
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-full-report
+          path: |
+            bandit-full.json
+            bandit-full.txt
+
+  # ============================================================================
+  # SECRET DETECTION
+  # ============================================================================
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install detect-secrets
+        run: pip install detect-secrets
+
+      - name: Scan for secrets
+        run: |
+          echo "## Secret Detection Report" >> $GITHUB_STEP_SUMMARY
+          detect-secrets scan app/ --exclude-files '__pycache__|\.pyc|tests/' > secrets-scan.json 2>&1 || true
+          SECRETS_COUNT=$(cat secrets-scan.json | jq '.results | to_entries | map(.value | length) | add // 0')
+          echo "Potential secrets found: $SECRETS_COUNT" >> $GITHUB_STEP_SUMMARY
+          if [ "$SECRETS_COUNT" -gt "10" ]; then
+            echo "WARNING: Found $SECRETS_COUNT potential secrets. Review required."
+          fi
+
+      - name: Upload secret scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: secrets-scan-report
+          path: secrets-scan.json
+
+  # ============================================================================
+  # ARCHITECTURE SECURITY
+  # ============================================================================
+  architecture-security:
+    name: Architecture Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run architecture validator (strict mode)
+        run: |
+          echo "## Architecture Validation" >> $GITHUB_STEP_SUMMARY
+          python scripts/validate_architecture.py --strict 2>&1 | tee arch-validation.txt || true
+          cat arch-validation.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for critical violations
+        run: |
+          python scripts/validate_architecture.py
+          if [ $? -ne 0 ]; then
+            echo "CRITICAL: Architecture validation failed!"
+            exit 1
+          fi
+
+  # ============================================================================
+  # SECURITY SUMMARY
+  # ============================================================================
+  security-summary:
+    name: Security Summary
+    needs: [dependency-audit, code-scan, secret-scan, architecture-security]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate security summary
+        run: |
+          echo "# Security Audit Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Audit | ${{ needs.dependency-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Scan | ${{ needs.code-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Detection | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Architecture | ${{ needs.architecture-security.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for failures
+        run: |
+          if [ "${{ needs.code-scan.result }}" == "failure" ]; then
+            echo "SECURITY AUDIT FAILED: Code scan found critical issues"
+            exit 1
+          fi
+          if [ "${{ needs.architecture-security.result }}" == "failure" ]; then
+            echo "SECURITY AUDIT FAILED: Architecture validation failed"
+            exit 1
+          fi
+          echo "Security audit completed"

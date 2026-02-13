@@ -21,6 +21,7 @@ from .models import EnrichmentProvider, EnrichmentStatus, EntityType, LookupType
 from .schemas import (
     AddressSuggestion,
     EnrichmentAcceptRequest,
+    EnrichmentAcceptResponse,
     EnrichmentHistoryResponse,
     EnrichmentLookupRequest,
     EnrichmentLookupResponse,
@@ -227,7 +228,7 @@ async def analyze_risk(
 # ACCEPT/REJECT ENDPOINT
 # ============================================================================
 
-@router.post("/{history_id}/accept", response_model=dict)
+@router.post("/{history_id}/accept", response_model=EnrichmentAcceptResponse)
 async def accept_enrichment(
     history_id: UUID,
     data: EnrichmentAcceptRequest,
@@ -250,11 +251,11 @@ async def accept_enrichment(
             user_id=current_user.id,
         )
 
-        return {
-            "message": "Decision enregistree",
-            "history_id": str(history.id),
-            "action": history.action.value,
-        }
+        return EnrichmentAcceptResponse(
+            message="Decision enregistree",
+            history_id=str(history.id),
+            action=history.action.value,
+        )
 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

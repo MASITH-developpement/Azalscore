@@ -31,8 +31,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies_v2 import get_saas_context
 from app.core.saas_context import SaaSContext
-from app.core.models import User
-from app.core.rbac import UserRole
+from app.core.models import User, UserRole
 
 from .service import get_tenant_service
 from .schemas import (

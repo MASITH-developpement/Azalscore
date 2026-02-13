@@ -527,8 +527,9 @@ class ProcurementService:
         order.notes = data.notes
         order.internal_notes = data.internal_notes
 
-        # Supprimer les anciennes lignes
+        # Supprimer les anciennes lignes (defense-in-depth: filtre tenant explicite)
         self.db.query(PurchaseOrderLine).filter(
+            PurchaseOrderLine.tenant_id == self.tenant_id,
             PurchaseOrderLine.order_id == order_id
         ).delete()
 
@@ -578,8 +579,9 @@ class ProcurementService:
         if not order or order.status != PurchaseOrderStatus.DRAFT:
             return False
 
-        # Supprimer les lignes d'abord
+        # SÉCURITÉ: Supprimer les lignes d'abord (filtrer par tenant_id)
         self.db.query(PurchaseOrderLine).filter(
+            PurchaseOrderLine.tenant_id == self.tenant_id,
             PurchaseOrderLine.order_id == order_id
         ).delete()
 
@@ -742,8 +744,9 @@ class ProcurementService:
             )
             self.db.add(line)
 
-            # Mettre à jour la ligne de commande
+            # SÉCURITÉ: Mettre à jour la ligne de commande (filtrer par tenant_id)
             order_line = self.db.query(PurchaseOrderLine).filter(
+                PurchaseOrderLine.tenant_id == self.tenant_id,
                 PurchaseOrderLine.id == line_data.order_line_id
             ).first()
             if order_line:
@@ -771,13 +774,15 @@ class ProcurementService:
         receipt.validated_by = user_id
         receipt.validated_at = datetime.utcnow()
 
-        # Mettre à jour le statut de la commande
+        # SÉCURITÉ: Mettre à jour le statut de la commande (filtrer par tenant_id)
         order = self.get_purchase_order(receipt.order_id)
         if order:
             total_ordered = sum(l.quantity for l in self.db.query(PurchaseOrderLine).filter(
+                PurchaseOrderLine.tenant_id == self.tenant_id,
                 PurchaseOrderLine.order_id == order.id
             ).all())
             total_received = sum(l.received_quantity for l in self.db.query(PurchaseOrderLine).filter(
+                PurchaseOrderLine.tenant_id == self.tenant_id,
                 PurchaseOrderLine.order_id == order.id
             ).all())
 
@@ -956,8 +961,9 @@ class ProcurementService:
         invoice.payment_method = data.payment_method
         invoice.notes = data.notes
 
-        # Supprimer les anciennes lignes
+        # Supprimer les anciennes lignes (defense-in-depth: filtre tenant explicite)
         self.db.query(PurchaseInvoiceLine).filter(
+            PurchaseInvoiceLine.tenant_id == self.tenant_id,
             PurchaseInvoiceLine.invoice_id == invoice_id
         ).delete()
 
@@ -1010,8 +1016,9 @@ class ProcurementService:
         if not invoice or invoice.status != PurchaseInvoiceStatus.DRAFT:
             return False
 
-        # Supprimer les lignes d'abord
+        # SÉCURITÉ: Supprimer les lignes d'abord (filtrer par tenant_id)
         self.db.query(PurchaseInvoiceLine).filter(
+            PurchaseInvoiceLine.tenant_id == self.tenant_id,
             PurchaseInvoiceLine.invoice_id == invoice_id
         ).delete()
 

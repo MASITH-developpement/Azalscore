@@ -271,8 +271,9 @@ def cached(
                 key = key_builder(*args, **kwargs)
             else:
                 # Clé par défaut: hash des arguments
+                # NOTE: MD5 utilisé uniquement pour génération de clé de cache, pas pour sécurité
                 key_data = f"{args}:{kwargs}"
-                key_hash = hashlib.md5(key_data.encode()).hexdigest()[:16]
+                key_hash = hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()[:16]
                 key = f"{key_prefix}:{func.__name__}:{key_hash}"
 
             # Vérification du cache

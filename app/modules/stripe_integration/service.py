@@ -136,6 +136,10 @@ class StripeService:
 
     def create_customer(self, data: StripeCustomerCreate) -> StripeCustomer:
         """Créer un client Stripe."""
+        logger.info(
+            "Creating Stripe customer | tenant=%s user=%s email=%s",
+            self.tenant_id, self.user_id, data.email
+        )
         # Vérifier si client existe déjà
         existing = self.db.query(StripeCustomer).filter(
             StripeCustomer.tenant_id == self.tenant_id,
@@ -143,6 +147,10 @@ class StripeService:
         ).first()
 
         if existing:
+            logger.warning(
+                "Stripe customer already exists | tenant=%s customer_id=%s",
+                self.tenant_id, data.customer_id
+            )
             raise ValueError("Client Stripe déjà existant pour ce client")
 
         # Appel API Stripe (simulé)
@@ -181,6 +189,10 @@ class StripeService:
         self.db.add(customer)
         self.db.commit()
         self.db.refresh(customer)
+        logger.info(
+            "Stripe customer created | tenant=%s stripe_customer_id=%s customer_id=%s",
+            self.tenant_id, stripe_customer_id, data.customer_id
+        )
         return customer
 
     def get_customer(self, customer_id: int) -> StripeCustomer | None:
@@ -277,7 +289,9 @@ class StripeService:
         self, data: PaymentMethodCreate
     ) -> StripePaymentMethod:
         """Ajouter méthode de paiement."""
+        # SÉCURITÉ: Filtrer par tenant_id
         customer = self.db.query(StripeCustomer).filter(
+            StripeCustomer.tenant_id == self.tenant_id,
             StripeCustomer.stripe_customer_id == data.stripe_customer_id
         ).first()
 
@@ -302,8 +316,9 @@ class StripeService:
         self.db.add(payment_method)
 
         if data.set_as_default:
-            # Retirer default des autres
+            # SÉCURITÉ: Retirer default des autres (filtrer par tenant_id)
             self.db.query(StripePaymentMethod).filter(
+                StripePaymentMethod.tenant_id == self.tenant_id,
                 StripePaymentMethod.stripe_customer_id == customer.id,
                 StripePaymentMethod.id != payment_method.id
             ).update({"is_default": False})
@@ -322,7 +337,9 @@ class StripeService:
         if not customer:
             return []
 
+        # SÉCURITÉ: Filtrer par tenant_id
         return self.db.query(StripePaymentMethod).filter(
+            StripePaymentMethod.tenant_id == self.tenant_id,
             StripePaymentMethod.stripe_customer_id == customer.id,
             StripePaymentMethod.is_active
         ).all()
@@ -377,6 +394,10 @@ class StripeService:
         self, data: PaymentIntentCreate
     ) -> StripePaymentIntent:
         """Créer PaymentIntent."""
+        logger.info(
+            "Creating payment intent | tenant=%s amount=%s currency=%s customer_id=%s",
+            self.tenant_id, data.amount, data.currency, data.customer_id
+        )
         stripe_customer = None
         if data.customer_id:
             stripe_customer = self.get_customer_by_crm_id(data.customer_id)
@@ -421,6 +442,10 @@ class StripeService:
         self.db.add(payment_intent)
         self.db.commit()
         self.db.refresh(payment_intent)
+        logger.info(
+            "Payment intent created | tenant=%s payment_intent_id=%s amount=%s status=%s",
+            self.tenant_id, stripe_pi_id, data.amount, PaymentIntentStatus.REQUIRES_PAYMENT_METHOD.value
+        )
         return payment_intent
 
     def get_payment_intent(
@@ -462,8 +487,16 @@ class StripeService:
         self, payment_intent_id: int, data: PaymentIntentConfirm
     ) -> StripePaymentIntent:
         """Confirmer PaymentIntent."""
+        logger.info(
+            "Confirming payment intent | tenant=%s payment_intent_id=%s",
+            self.tenant_id, payment_intent_id
+        )
         pi = self.get_payment_intent(payment_intent_id)
         if not pi:
+            logger.warning(
+                "Payment intent not found | tenant=%s payment_intent_id=%s",
+                self.tenant_id, payment_intent_id
+            )
             raise ValueError("PaymentIntent non trouvé")
 
         # API Stripe
@@ -490,6 +523,10 @@ class StripeService:
 
         self.db.commit()
         self.db.refresh(pi)
+        logger.info(
+            "Payment intent confirmed | tenant=%s payment_intent_id=%s stripe_id=%s amount=%s",
+            self.tenant_id, payment_intent_id, pi.stripe_payment_intent_id, pi.amount
+        )
         return pi
 
     def capture_payment_intent(
@@ -525,11 +562,23 @@ class StripeService:
         self, payment_intent_id: int, reason: str = None
     ) -> StripePaymentIntent:
         """Annuler PaymentIntent."""
+        logger.info(
+            "Cancelling payment intent | tenant=%s payment_intent_id=%s reason=%s",
+            self.tenant_id, payment_intent_id, reason
+        )
         pi = self.get_payment_intent(payment_intent_id)
         if not pi:
+            logger.warning(
+                "Payment intent not found for cancellation | tenant=%s payment_intent_id=%s",
+                self.tenant_id, payment_intent_id
+            )
             raise ValueError("PaymentIntent non trouvé")
 
         if pi.status == PaymentIntentStatus.SUCCEEDED:
+            logger.warning(
+                "Cannot cancel succeeded payment | tenant=%s payment_intent_id=%s",
+                self.tenant_id, payment_intent_id
+            )
             raise ValueError("Impossible d'annuler un paiement réussi")
 
         # API Stripe
@@ -542,6 +591,10 @@ class StripeService:
 
         self.db.commit()
         self.db.refresh(pi)
+        logger.info(
+            "Payment intent cancelled | tenant=%s payment_intent_id=%s stripe_id=%s",
+            self.tenant_id, payment_intent_id, pi.stripe_payment_intent_id
+        )
         return pi
 
     # ========================================================================
@@ -552,6 +605,10 @@ class StripeService:
         self, data: CheckoutSessionCreate
     ) -> StripeCheckoutSession:
         """Créer session checkout."""
+        logger.info(
+            "Creating checkout session | tenant=%s mode=%s customer_id=%s",
+            self.tenant_id, data.mode, data.customer_id
+        )
         stripe_customer = None
         if data.customer_id:
             stripe_customer = self.get_customer_by_crm_id(data.customer_id)
@@ -613,6 +670,10 @@ class StripeService:
         self.db.add(checkout_session)
         self.db.commit()
         self.db.refresh(checkout_session)
+        logger.info(
+            "Checkout session created | tenant=%s session_id=%s amount=%s",
+            self.tenant_id, session_id, amount_total
+        )
         return checkout_session
 
     def get_checkout_session(
@@ -827,6 +888,10 @@ class StripeService:
         signature: str = None
     ) -> StripeWebhook:
         """Traiter webhook Stripe."""
+        logger.info(
+            "Processing webhook | tenant=%s event_id=%s event_type=%s",
+            self.tenant_id, event_id, event_type
+        )
         # Vérifier signature
         # config = self._get_config()
         # secret = config.webhook_secret_live if config.is_live_mode else config.webhook_secret_test
@@ -849,9 +914,21 @@ class StripeService:
         self.db.flush()
 
         # Traiter selon le type
-        self._handle_webhook(webhook)
-        webhook.status = WebhookStatus.PROCESSED
-        webhook.processed_at = datetime.utcnow()
+        try:
+            self._handle_webhook(webhook)
+            webhook.status = WebhookStatus.PROCESSED
+            webhook.processed_at = datetime.utcnow()
+            logger.info(
+                "Webhook processed successfully | tenant=%s event_id=%s event_type=%s",
+                self.tenant_id, event_id, event_type
+            )
+        except Exception as e:
+            webhook.status = WebhookStatus.FAILED
+            logger.warning(
+                "Webhook processing failed | tenant=%s event_id=%s event_type=%s error_type=%s",
+                self.tenant_id, event_id, event_type, type(e).__name__
+            )
+            raise
 
         self.db.commit()
         self.db.refresh(webhook)
@@ -884,7 +961,9 @@ class StripeService:
     def _handle_payment_succeeded(self, data: dict):
         """Gérer paiement réussi."""
         pi_id = data.get("id")
+        # SÉCURITÉ: TOUJOURS filtrer par tenant_id en plus de l'ID Stripe
         pi = self.db.query(StripePaymentIntent).filter(
+            StripePaymentIntent.tenant_id == self.tenant_id,
             StripePaymentIntent.stripe_payment_intent_id == pi_id
         ).first()
 
@@ -896,7 +975,14 @@ class StripeService:
     def _handle_payment_failed(self, data: dict):
         """Gérer paiement échoué."""
         pi_id = data.get("id")
+        error_code = data.get("last_payment_error", {}).get("code", "unknown")
+        logger.warning(
+            "Payment failed | tenant=%s payment_intent_id=%s error_type=%s",
+            self.tenant_id, pi_id, error_code
+        )
+        # SÉCURITÉ: TOUJOURS filtrer par tenant_id en plus de l'ID Stripe
         pi = self.db.query(StripePaymentIntent).filter(
+            StripePaymentIntent.tenant_id == self.tenant_id,
             StripePaymentIntent.stripe_payment_intent_id == pi_id
         ).first()
 
@@ -979,11 +1065,13 @@ class StripeService:
         Alternative à checkout.session.completed pour les souscriptions
         créées directement via API ou Customer Portal.
         """
-        logger.info("Processing subscription.created: %s", data.get('id'))
-
-        customer_id = data.get("customer")
         subscription_id = data.get("id")
+        customer_id = data.get("customer")
         status = data.get("status")
+        logger.info(
+            "Creating subscription | tenant=%s subscription_id=%s customer_id=%s status=%s",
+            self.tenant_id, subscription_id, customer_id, status
+        )
 
         # Récupérer les metadata
         metadata = data.get("metadata", {})
@@ -998,6 +1086,10 @@ class StripeService:
                 stripe_customer_id=customer_id,
                 stripe_subscription_id=subscription_id,
                 plan=self._determine_plan_from_subscription(data)
+            )
+            logger.info(
+                "Subscription created | tenant=%s subscription_id=%s plan=%s",
+                tenant_id, subscription_id, self._determine_plan_from_subscription(data)
             )
 
     def _handle_subscription_updated(self, data: dict):
@@ -1037,9 +1129,12 @@ class StripeService:
 
         Le tenant est suspendu mais pas supprimé (conservation des données).
         """
-        logger.info("Processing subscription.deleted: %s", data.get('id'))
-
         subscription_id = data.get("id")
+        logger.info(
+            "Cancelling subscription | tenant=%s subscription_id=%s",
+            self.tenant_id, subscription_id
+        )
+
         metadata = data.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
 
@@ -1048,7 +1143,15 @@ class StripeService:
 
         if tenant_id:
             self._suspend_tenant(tenant_id, reason="subscription_cancelled")
-            logger.info("Tenant %s suspended due to subscription cancellation", tenant_id)
+            logger.info(
+                "Subscription cancelled | tenant=%s subscription_id=%s suspended_tenant=%s",
+                self.tenant_id, subscription_id, tenant_id
+            )
+        else:
+            logger.warning(
+                "Subscription cancelled but no tenant found | subscription_id=%s",
+                subscription_id
+            )
 
     def _handle_invoice_paid(self, data: dict):
         """
@@ -1079,10 +1182,12 @@ class StripeService:
         Marque le tenant comme ayant un problème de paiement.
         Après plusieurs échecs, le tenant sera suspendu.
         """
-        logger.info("Processing invoice.payment_failed: %s", data.get('id'))
-
         subscription_id = data.get("subscription")
         attempt_count = data.get("attempt_count", 1)
+        logger.warning(
+            "Invoice payment failed | tenant=%s subscription_id=%s attempt=%s",
+            self.tenant_id, subscription_id, attempt_count
+        )
 
         if not subscription_id:
             return
@@ -1095,7 +1200,10 @@ class StripeService:
             # Suspendre après 3 tentatives échouées
             if attempt_count >= 3:
                 self._suspend_tenant(tenant_id, reason="payment_failed_multiple")
-                logger.warning("Tenant %s suspended after %s payment failures", tenant_id, attempt_count)
+                logger.warning(
+                    "Tenant suspended due to payment failures | tenant=%s subscription_id=%s attempt_count=%s",
+                    tenant_id, subscription_id, attempt_count
+                )
 
     # ========================================================================
     # HELPERS POUR PROVISIONING TENANT

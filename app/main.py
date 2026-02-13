@@ -173,6 +173,7 @@ from app.modules.qc.router import router as qc_router
 
 # Module M7 - Qualité (Quality Management)
 from app.modules.quality.router import router as quality_router
+from app.modules.quality.router_v2 import router as quality_router_v2
 
 # Module M15 - Stripe Integration
 from app.modules.stripe_integration.router import router as stripe_router
@@ -221,6 +222,42 @@ from app.modules.interventions.router_v2 import router as interventions_router_v
 
 # Module Contacts Unifiés v2 - Sous-programmes réutilisables (Clients + Fournisseurs)
 from app.modules.contacts.router_v2 import router as contacts_router_v2
+
+# ============================================================================
+# ROUTERS V2 ADDITIONNELS - Migration CORE SaaS (24 modules)
+# ============================================================================
+
+# MODULES CRITIQUES (Sécurité/Admin)
+from app.modules.iam.router_v2 import router as iam_router_v2
+from app.modules.backup.router_v2 import router as backup_router_v2
+from app.modules.tenants.router_v2 import router as tenants_router_v2
+from app.modules.guardian.router_v2 import router as guardian_router_v2
+
+# MODULES FINANCIERS
+from app.modules.accounting.router_v2 import router as accounting_router_v2
+from app.modules.finance.router_v2 import router as finance_router_v2
+from app.modules.treasury.router_v2 import router as treasury_router_v2
+from app.modules.procurement.router_v2 import router as procurement_router_v2
+from app.modules.purchases.router_v2 import router as purchases_router_v2
+from app.modules.pos.router_v2 import router as pos_router_v2
+from app.modules.ecommerce.router_v2 import router as ecommerce_router_v2
+
+# MODULES OPÉRATIONNELS
+from app.modules.inventory.router_v2 import router as inventory_router_v2
+from app.modules.production.router_v2 import router as production_router_v2
+from app.modules.projects.router_v2 import router as projects_router_v2
+from app.modules.maintenance.router_v2 import router as maintenance_router_v2
+from app.modules.field_service.router_v2 import router as field_service_router_v2
+from app.modules.helpdesk.router_v2 import router as helpdesk_router_v2
+
+# AUTRES MODULES
+from app.modules.commercial.router_v2 import router as commercial_router_v2
+from app.modules.audit.router_v2 import router as audit_router_v2
+from app.modules.bi.router_v2 import router as bi_router_v2
+from app.modules.broadcast.router_v2 import router as broadcast_router_v2
+from app.modules.compliance.router_v2 import router as compliance_router_v2
+from app.modules.qc.router_v2 import router as qc_router_v2
+from app.modules.automated_accounting.router_v2 import router as automated_accounting_router_v2
 
 # Website Tracking API v2 - Analytics, Leads, Demo Requests
 from app.api.v2.website_tracking import router as website_tracking_router
@@ -614,12 +651,13 @@ logger.info(
 
 # 3. CSRF Protection - Anti Cross-Site Request Forgery
 # SÉCURITÉ: Vérifie les tokens CSRF pour POST/PUT/DELETE/PATCH
+# Token obtenu via GET /auth/csrf-token, valide 1 heure
+# Exempté: auth endpoints, webhooks (signature), health checks, Bearer API
 from app.core.csrf_middleware import setup_csrf_middleware
-# En mode audit pour le moment (enforce=False), activer en production après tests
-setup_csrf_middleware(app, enforce=False)
-logger.warning(
-    "[MIDDLEWARE] CSRF en mode AUDIT (enforce=False) — protection non active",
-    extra={"enforce": False, "consequence": "csrf_not_enforced", "action_required": "activer enforce=True après tests"}
+setup_csrf_middleware(app, enforce=True)
+logger.info(
+    "[MIDDLEWARE] CSRF Protection activée — PRODUCTION",
+    extra={"enforce": True, "token_endpoint": "/auth/csrf-token", "expiry": "1h"}
 )
 
 # 4. Compression
@@ -1172,6 +1210,40 @@ app.include_router(interventions_router_v2)
 app.include_router(contacts_router_v2)
 app.include_router(hr_router_v2)
 app.include_router(subscriptions_router_v2)
+app.include_router(quality_router_v2)
+
+# ==================== ROUTERS V2 ADDITIONNELS (24 modules) ====================
+# MODULES CRITIQUES (Sécurité/Admin)
+app.include_router(iam_router_v2)
+app.include_router(backup_router_v2)
+app.include_router(tenants_router_v2)
+app.include_router(guardian_router_v2)
+
+# MODULES FINANCIERS
+app.include_router(accounting_router_v2)
+app.include_router(finance_router_v2)
+app.include_router(treasury_router_v2)
+app.include_router(procurement_router_v2)
+app.include_router(purchases_router_v2)
+app.include_router(pos_router_v2)
+app.include_router(ecommerce_router_v2)
+
+# MODULES OPÉRATIONNELS
+app.include_router(inventory_router_v2)
+app.include_router(production_router_v2)
+app.include_router(projects_router_v2)
+app.include_router(maintenance_router_v2)
+app.include_router(field_service_router_v2)
+app.include_router(helpdesk_router_v2)
+
+# AUTRES MODULES
+app.include_router(commercial_router_v2)
+app.include_router(audit_router_v2)
+app.include_router(bi_router_v2)
+app.include_router(broadcast_router_v2)
+app.include_router(compliance_router_v2)
+app.include_router(qc_router_v2)
+app.include_router(automated_accounting_router_v2)
 
 # Website Tracking API v2 (SEO, Analytics, Leads)
 app.include_router(website_tracking_router, prefix="/api/v2")

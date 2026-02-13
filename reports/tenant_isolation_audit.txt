@@ -1,0 +1,484 @@
+AZALSCORE - Rapport d'audit d'isolation multi-tenant
+================================================================================
+Date: 2026-02-12T06:13:32.625415
+Fichiers scannés: 419
+Problèmes détectés: 43
+  CRITICAL: 25
+  WARNING: 0
+  INFO: 18
+
+================================================================================
+
+[CRITICAL] app/modules/ai_assistant/service.py:903
+  Modèle: AILearningData
+  Code: existing = self.db.query(AILearningData).filter(
+  Contexte:
+    
+            existing = self.db.query(AILearningData).filter(
+                AILearningData.data_hash == data_hash
+            ).first()
+    
+            if existing:
+
+[CRITICAL] app/modules/ai_assistant/service.py:1037
+  Modèle: Unknown
+  Code: self.db.execute("SELECT 1")
+  Contexte:
+            try:
+                self.db.execute("SELECT 1")
+                features_status["database"] = "healthy"
+            except Exception as e:
+                logger.error(
+                    "[AI_HEALTH_DB] Database health check failed",
+
+[CRITICAL] app/modules/guardian/middleware.py:57
+  Modèle: GuardianConfig
+  Code: db.query(GuardianConfig).limit(1).all()
+  Contexte:
+                # Tenter une requête simple
+                db.query(GuardianConfig).limit(1).all()
+                _tables_exist = True
+            except (OperationalError, ProgrammingError):
+                # Tables non créées
+                _tables_exist = False
+
+[CRITICAL] app/modules/iam/service.py:548
+  Modèle: Unknown
+  Code: result = self.db.execute(
+  Contexte:
+    
+            result = self.db.execute(
+                user_roles.delete().where(and_(
+                    user_roles.c.user_id == user_id,
+                    user_roles.c.role_id == role.id,
+                    user_roles.c.tenant_id == self.tenant_id
+
+[CRITICAL] app/modules/iam/service.py:872
+  Modèle: Unknown
+  Code: result = self.db.execute(
+  Contexte:
+    
+            result = self.db.execute(
+                user_groups.delete().where(and_(
+                    user_groups.c.user_id == user_id,
+                    user_groups.c.group_id == group.id,
+                    user_groups.c.tenant_id == self.tenant_id
+
+[CRITICAL] app/modules/iam/service.py:1494
+  Modèle: IAMRateLimit
+  Code: entry = self.db.query(IAMRateLimit).filter(
+  Contexte:
+            """Vérifie le rate limiting."""
+            entry = self.db.query(IAMRateLimit).filter(
+                IAMRateLimit.key == key,
+                IAMRateLimit.action == action
+            ).first()
+    
+
+[CRITICAL] app/modules/iam/service.py:1520
+  Modèle: IAMRateLimit
+  Code: entry = self.db.query(IAMRateLimit).filter(
+  Contexte:
+            """Incrémente le compteur rate limit."""
+            entry = self.db.query(IAMRateLimit).filter(
+                IAMRateLimit.key == key,
+                IAMRateLimit.action == action
+            ).first()
+    
+
+[CRITICAL] app/modules/marceau/memory.py:272
+  Modèle: MarceauMemory
+  Code: memories = self.db.query(MarceauMemory).filter(
+  Contexte:
+    
+                memories = self.db.query(MarceauMemory).filter(
+                    *query_filter
+                ).order_by(
+                    MarceauMemory.importance_score.desc(),
+                    MarceauMemory.created_at.desc()
+
+[CRITICAL] app/modules/marceau/memory.py:317
+  Modèle: MarceauMemory
+  Code: base_query = self.db.query(MarceauMemory).filter(*filters)
+  Contexte:
+    
+            base_query = self.db.query(MarceauMemory).filter(*filters)
+    
+            total = base_query.count()
+    
+            memories = base_query.order_by(
+
+[CRITICAL] app/modules/marceau/router.py:147
+  Modèle: MarceauAction
+  Code: query = db.query(MarceauAction).filter(*filters)
+  Contexte:
+    
+        query = db.query(MarceauAction).filter(*filters)
+        total = query.count()
+    
+        actions = query.order_by(
+            MarceauAction.created_at.desc()
+
+[CRITICAL] app/modules/marceau/router.py:255
+  Modèle: MarceauConversation
+  Code: query = db.query(MarceauConversation).filter(*filters)
+  Contexte:
+    
+        query = db.query(MarceauConversation).filter(*filters)
+        total = query.count()
+    
+        conversations = query.order_by(
+            MarceauConversation.started_at.desc()
+
+[CRITICAL] app/modules/marceau/router.py:516
+  Modèle: MarceauKnowledgeDocument
+  Code: docs = db.query(MarceauKnowledgeDocument).filter(
+  Contexte:
+    
+        docs = db.query(MarceauKnowledgeDocument).filter(
+            *filters
+        ).order_by(
+            MarceauKnowledgeDocument.created_at.desc()
+        ).offset(skip).limit(limit).all()
+
+[CRITICAL] app/modules/marketplace/service.py:51
+  Modèle: CommercialPlan
+  Code: query = self.db.query(CommercialPlan)
+  Contexte:
+            """Récupère les plans disponibles."""
+            query = self.db.query(CommercialPlan)
+            if active_only:
+                query = query.filter(CommercialPlan.is_active)
+            return query.order_by(CommercialPlan.sort_order).all()
+    
+
+[CRITICAL] app/modules/marketplace/service.py:58
+  Modèle: CommercialPlan
+  Code: return self.db.query(CommercialPlan).filter(CommercialPlan.id == plan_id).first()
+  Contexte:
+            """Récupère un plan par ID."""
+            return self.db.query(CommercialPlan).filter(CommercialPlan.id == plan_id).first()
+    
+        def get_plan_by_code(self, code: str) -> CommercialPlan | None:
+            """Récupère un plan par code."""
+            return self.db.query(CommercialPlan).filter(
+
+[CRITICAL] app/modules/marketplace/service.py:62
+  Modèle: CommercialPlan
+  Code: return self.db.query(CommercialPlan).filter(
+  Contexte:
+            """Récupère un plan par code."""
+            return self.db.query(CommercialPlan).filter(
+                CommercialPlan.code == code,
+                CommercialPlan.is_active
+            ).first()
+    
+
+[CRITICAL] app/modules/marketplace/service.py:336
+  Modèle: DiscountCode
+  Code: discount = self.db.query(DiscountCode).filter(
+  Contexte:
+            """Valide un code promo."""
+            discount = self.db.query(DiscountCode).filter(
+                DiscountCode.code == code.upper(),
+                DiscountCode.is_active
+            ).first()
+    
+
+[CRITICAL] app/modules/marketplace/service.py:400
+  Modèle: Order
+  Code: order = self.db.query(Order).filter(Order.id == order_id).first()
+  Contexte:
+            """Provisionne un tenant suite à un paiement confirmé."""
+            order = self.db.query(Order).filter(Order.id == order_id).first()
+            if not order:
+                raise ValueError("Commande non trouvée")
+    
+            if order.status != OrderStatus.PAID:
+
+[CRITICAL] app/modules/marketplace/service.py:532
+  Modèle: WebhookEvent
+  Code: existing = self.db.query(WebhookEvent).filter(
+  Contexte:
+            # Vérifier si déjà traité
+            existing = self.db.query(WebhookEvent).filter(
+                WebhookEvent.event_id == event_id
+            ).first()
+            if existing:
+                return existing
+
+[CRITICAL] app/modules/marketplace/service.py:577
+  Modèle: Order
+  Code: order = self.db.query(Order).filter(
+  Contexte:
+    
+            order = self.db.query(Order).filter(
+                Order.payment_intent_id == payment_intent_id
+            ).first()
+    
+            if order and order.status == OrderStatus.PAYMENT_PENDING:
+
+[CRITICAL] app/modules/marketplace/service.py:600
+  Modèle: Order
+  Code: order = self.db.query(Order).filter(
+  Contexte:
+    
+            order = self.db.query(Order).filter(
+                Order.payment_intent_id == payment_intent_id
+            ).first()
+    
+            if order:
+
+[CRITICAL] app/modules/marketplace/service.py:627
+  Modèle: Order
+  Code: completed = self.db.query(Order).filter(
+  Contexte:
+            # Commandes complétées
+            completed = self.db.query(Order).filter(
+                Order.status == OrderStatus.COMPLETED
+            )
+    
+            total_orders = completed.count()
+
+[CRITICAL] app/modules/marketplace/service.py:649
+  Modèle: Order
+  Code: all_orders_30d = self.db.query(Order).filter(
+  Contexte:
+            # Taux de conversion (30 derniers jours)
+            all_orders_30d = self.db.query(Order).filter(
+                Order.created_at >= now - timedelta(days=30)
+            ).count()
+            completed_30d = completed.filter(
+                Order.completed_at >= now - timedelta(days=30)
+
+[CRITICAL] app/modules/marketplace/service.py:691
+  Modèle: Order
+  Code: return self.db.query(Order).filter(Order.id == order_id).first()
+  Contexte:
+            """Récupère une commande."""
+            return self.db.query(Order).filter(Order.id == order_id).first()
+    
+        def get_order_by_number(self, order_number: str) -> Order | None:
+            """Récupère une commande par numéro."""
+            return self.db.query(Order).filter(Order.order_number == order_number).first()
+
+[CRITICAL] app/modules/marketplace/service.py:695
+  Modèle: Order
+  Code: return self.db.query(Order).filter(Order.order_number == order_number).first()
+  Contexte:
+            """Récupère une commande par numéro."""
+            return self.db.query(Order).filter(Order.order_number == order_number).first()
+    
+        def list_orders(
+            self,
+            status: OrderStatus | None = None,
+
+[CRITICAL] app/modules/marketplace/service.py:704
+  Modèle: Order
+  Code: query = self.db.query(Order)
+  Contexte:
+            """Liste les commandes."""
+            query = self.db.query(Order)
+            if status:
+                query = query.filter(Order.status == status)
+    
+            total = query.count()
+
+[INFO] app/modules/guardian/daily_report.py:276
+  Modèle: Tenant
+  Code: tenants = db.query(Tenant).filter(Tenant.is_active == True).all()
+  Contexte:
+        try:
+            tenants = db.query(Tenant).filter(Tenant.is_active == True).all()
+            reports_generated = 0
+    
+            for tenant in tenants:
+                try:
+
+[INFO] app/modules/stripe_integration/service.py:1137
+  Modèle: Tenant
+  Code: return self.db.query(Tenant).filter(Tenant.email == email).first()
+  Contexte:
+            from app.modules.tenants.models import Tenant
+            return self.db.query(Tenant).filter(Tenant.email == email).first()
+    
+        def _find_tenant_by_subscription(self, subscription_id: str) -> str | None:
+            """Trouve le tenant_id associé à une subscription Stripe."""
+            from app.modules.tenants.models import Tenant
+
+[INFO] app/modules/stripe_integration/service.py:1142
+  Modèle: Tenant
+  Code: tenant = self.db.query(Tenant).filter(
+  Contexte:
+            from app.modules.tenants.models import Tenant
+            tenant = self.db.query(Tenant).filter(
+                Tenant.extra_data["stripe_subscription_id"].astext == subscription_id
+            ).first()
+            return tenant.tenant_id if tenant else None
+    
+
+[INFO] app/modules/tenants/api_trial.py:443
+  Modèle: TrialRegistration
+  Code: registration = db.query(TrialRegistration).filter(
+  Contexte:
+    
+        registration = db.query(TrialRegistration).filter(
+            TrialRegistration.id == reg_uuid
+        ).first()
+    
+        if not registration:
+
+[INFO] app/modules/tenants/service.py:110
+  Modèle: Tenant
+  Code: return self.db.query(Tenant).filter(Tenant.id == pk).first()
+  Contexte:
+            """Récupérer un tenant par clé primaire."""
+            return self.db.query(Tenant).filter(Tenant.id == pk).first()
+    
+        def list_tenants(
+            self,
+            status: str | None = None,
+
+[INFO] app/modules/tenants/service.py:121
+  Modèle: Tenant
+  Code: query = self.db.query(Tenant)
+  Contexte:
+            """Lister les tenants."""
+            query = self.db.query(Tenant)
+    
+            if status:
+                query = query.filter(Tenant.status == TenantStatus[status])
+            if plan:
+
+[INFO] app/modules/tenants/service.py:399
+  Modèle: TenantInvitation
+  Code: return self.db.query(TenantInvitation).filter(
+  Contexte:
+            """Récupérer une invitation par token."""
+            return self.db.query(TenantInvitation).filter(
+                TenantInvitation.token == token
+            ).first()
+    
+        def accept_invitation(self, token: str) -> TenantInvitation | None:
+
+[INFO] app/modules/tenants/service.py:689
+  Modèle: Tenant
+  Code: total = self.db.query(Tenant).count()
+  Contexte:
+            """Statistiques globales de la plateforme."""
+            total = self.db.query(Tenant).count()
+            active = self.db.query(Tenant).filter(Tenant.status == TenantStatus.ACTIVE).count()
+            trial = self.db.query(Tenant).filter(Tenant.status == TenantStatus.TRIAL).count()
+            suspended = self.db.query(Tenant).filter(Tenant.status == TenantStatus.SUSPENDED).count()
+    
+
+[INFO] app/modules/tenants/service.py:690
+  Modèle: Tenant
+  Code: active = self.db.query(Tenant).filter(Tenant.status == TenantStatus.ACTIVE).count()
+  Contexte:
+            total = self.db.query(Tenant).count()
+            active = self.db.query(Tenant).filter(Tenant.status == TenantStatus.ACTIVE).count()
+            trial = self.db.query(Tenant).filter(Tenant.status == TenantStatus.TRIAL).count()
+            suspended = self.db.query(Tenant).filter(Tenant.status == TenantStatus.SUSPENDED).count()
+    
+            # Par plan
+
+[INFO] app/modules/tenants/service.py:691
+  Modèle: Tenant
+  Code: trial = self.db.query(Tenant).filter(Tenant.status == TenantStatus.TRIAL).count()
+  Contexte:
+            active = self.db.query(Tenant).filter(Tenant.status == TenantStatus.ACTIVE).count()
+            trial = self.db.query(Tenant).filter(Tenant.status == TenantStatus.TRIAL).count()
+            suspended = self.db.query(Tenant).filter(Tenant.status == TenantStatus.SUSPENDED).count()
+    
+            # Par plan
+            plan_counts = self.db.query(
+
+[INFO] app/modules/tenants/service.py:692
+  Modèle: Tenant
+  Code: suspended = self.db.query(Tenant).filter(Tenant.status == TenantStatus.SUSPENDED).count()
+  Contexte:
+            trial = self.db.query(Tenant).filter(Tenant.status == TenantStatus.TRIAL).count()
+            suspended = self.db.query(Tenant).filter(Tenant.status == TenantStatus.SUSPENDED).count()
+    
+            # Par plan
+            plan_counts = self.db.query(
+                Tenant.plan,
+
+[INFO] app/modules/tenants/service.py:710
+  Modèle: Tenant
+  Code: new_this_month = self.db.query(Tenant).filter(
+  Contexte:
+            month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            new_this_month = self.db.query(Tenant).filter(
+                Tenant.created_at >= month_start
+            ).count()
+    
+            # Stockage total
+
+[INFO] app/modules/tenants/service_trial.py:144
+  Modèle: TrialRegistration
+  Code: registration = self.db.query(TrialRegistration).filter(
+  Contexte:
+            """Vérifier l'email avec le token."""
+            registration = self.db.query(TrialRegistration).filter(
+                and_(
+                    TrialRegistration.email_verification_token == token,
+                    TrialRegistration.status.in_([
+                        TrialRegistrationStatus.PENDING,
+
+[INFO] app/modules/tenants/service_trial.py:444
+  Modèle: TrialRegistration
+  Code: registration = self.db.query(TrialRegistration).filter(
+  Contexte:
+            # Trouver l'inscription
+            registration = self.db.query(TrialRegistration).filter(
+                TrialRegistration.promo_approval_token == approval_token,
+                TrialRegistration.status == TrialRegistrationStatus.PROMO_PENDING
+            ).first()
+    
+
+[INFO] app/modules/tenants/service_trial.py:534
+  Modèle: TrialRegistration
+  Code: registration = self.db.query(TrialRegistration).filter(
+  Contexte:
+            """Refuser une demande de code promo."""
+            registration = self.db.query(TrialRegistration).filter(
+                TrialRegistration.promo_approval_token == approval_token,
+                TrialRegistration.status == TrialRegistrationStatus.PROMO_PENDING
+            ).first()
+    
+
+[INFO] app/modules/tenants/service_trial.py:729
+  Modèle: TrialRegistration
+  Code: registration = self.db.query(TrialRegistration).filter(
+  Contexte:
+    
+            registration = self.db.query(TrialRegistration).filter(
+                TrialRegistration.id == uuid_id
+            ).first()
+    
+            if not registration:
+
+[INFO] app/modules/tenants/service_trial.py:751
+  Modèle: Tenant
+  Code: existing_tenant = self.db.query(Tenant).filter(
+  Contexte:
+            # Vérifier dans les tenants existants
+            existing_tenant = self.db.query(Tenant).filter(
+                Tenant.email == email
+            ).first()
+            if existing_tenant:
+                raise ValueError("Cet email est déjà associé à un compte")
+
+[INFO] app/modules/tenants/service_trial.py:758
+  Modèle: TrialRegistration
+  Code: existing_registration = self.db.query(TrialRegistration).filter(
+  Contexte:
+            # Vérifier dans les inscriptions en cours (non expirées, non complétées)
+            existing_registration = self.db.query(TrialRegistration).filter(
+                and_(
+                    TrialRegistration.email == email,
+                    TrialRegistration.status.notin_([
+                        TrialRegistrationStatus.EXPIRED,
+

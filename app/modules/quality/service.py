@@ -5,8 +5,11 @@ AZALS MODULE M7 - Service Qualité
 Logique métier pour le module de gestion de la qualité.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, joinedload
@@ -101,9 +104,14 @@ class QualityService:
 
     def create_non_conformance(self, data: NonConformanceCreate) -> NonConformance:
         """Crée une nouvelle non-conformité"""
+        nc_number = self._generate_nc_number()
+        logger.info(
+            "Creating non-conformance | tenant=%s user=%s type=%s severity=%s nc_number=%s",
+            self.tenant_id, self.user_id, data.nc_type, data.severity, nc_number
+        )
         nc = NonConformance(
             tenant_id=self.tenant_id,
-            nc_number=self._generate_nc_number(),
+            nc_number=nc_number,
             title=data.title,
             description=data.description,
             nc_type=data.nc_type,
@@ -132,6 +140,7 @@ class QualityService:
         self.db.add(nc)
         self.db.commit()
         self.db.refresh(nc)
+        logger.info("Non-conformance created | nc_id=%s nc_number=%s", nc.id, nc.nc_number)
         return nc
 
     def get_non_conformance(self, nc_id: int) -> NonConformance | None:
@@ -887,9 +896,14 @@ class QualityService:
 
     def create_capa(self, data: CAPACreate) -> CAPA:
         """Crée un CAPA"""
+        capa_number = self._generate_capa_number()
+        logger.info(
+            "Creating CAPA | tenant=%s user=%s type=%s priority=%s capa_number=%s",
+            self.tenant_id, self.user_id, data.capa_type, data.priority, capa_number
+        )
         capa = CAPA(
             tenant_id=self.tenant_id,
-            capa_number=self._generate_capa_number(),
+            capa_number=capa_number,
             title=data.title,
             description=data.description,
             capa_type=data.capa_type,
@@ -910,6 +924,7 @@ class QualityService:
         self.db.add(capa)
         self.db.commit()
         self.db.refresh(capa)
+        logger.info("CAPA created | capa_id=%s capa_number=%s", capa.id, capa.capa_number)
         return capa
 
     def get_capa(self, capa_id: int) -> CAPA | None:
@@ -1065,9 +1080,14 @@ class QualityService:
 
     def create_claim(self, data: ClaimCreate) -> CustomerClaim:
         """Crée une réclamation client"""
+        claim_number = self._generate_claim_number()
+        logger.info(
+            "Creating customer claim | tenant=%s user=%s customer_id=%s type=%s claim_number=%s",
+            self.tenant_id, self.user_id, data.customer_id, data.claim_type, claim_number
+        )
         claim = CustomerClaim(
             tenant_id=self.tenant_id,
-            claim_number=self._generate_claim_number(),
+            claim_number=claim_number,
             title=data.title,
             description=data.description,
             customer_id=data.customer_id,
@@ -1093,6 +1113,7 @@ class QualityService:
         self.db.add(claim)
         self.db.commit()
         self.db.refresh(claim)
+        logger.info("Customer claim created | claim_id=%s claim_number=%s", claim.id, claim.claim_number)
         return claim
 
     def get_claim(self, claim_id: int) -> CustomerClaim | None:

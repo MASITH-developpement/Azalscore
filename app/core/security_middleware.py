@@ -5,6 +5,12 @@ CORS, Rate Limiting, Security Headers, Request Validation.
 
 SÉCURITÉ: Utilise build_error_response du module Guardian pour garantir
           qu'aucune erreur ne provoque de crash, même sans fichiers HTML.
+
+ARCHITECTURE:
+- Rate limiting distribué via Redis (avec fallback mémoire)
+- Headers de sécurité OWASP
+- Validation des requêtes entrantes
+- Blocklist IP avec auto-block
 """
 
 import logging
@@ -18,6 +24,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from app.core.config import get_settings
+from app.core.rate_limit import (
+    RateLimiter,
+    check_ip_rate_limit,
+    check_tenant_rate_limit,
+    check_endpoint_rate_limit,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +94,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     """
     Rate limiting par IP et par tenant.
     Protection contre les abus et DoS.
+
+    ARCHITECTURE:
+    - Utilise Redis via RateLimiter pour rate limiting distribué
+    - Fallback automatique en mémoire si Redis indisponible
+    - Double vérification: limite par IP + limite par tenant
+    - Rate limiting spécifique pour endpoints sensibles (/auth/login)
     """
+
+    # Endpoints sensibles avec limites réduites (brute-force protection)
+    SENSITIVE_ENDPOINTS = {
+        "/auth/login": 10,      # 10 tentatives/minute
+        "/auth/register": 5,    # 5 inscriptions/minute
+        "/auth/reset-password": 5,
+        "/api/v2/auth/login": 10,
+        "/api/v2/auth/register": 5,
+    }
 
     def __init__(
         self,
@@ -97,17 +124,28 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests_per_minute_per_tenant = requests_per_minute_per_tenant
         self.burst_limit = int(requests_per_minute * burst_multiplier)
 
-        # Stockage des compteurs (en mémoire - utiliser Redis en production distribuée)
-        self._ip_requests: dict[str, list] = defaultdict(list)
-        self._tenant_requests: dict[str, list] = defaultdict(list)
-
         # Paths exclus du rate limiting
         self.excluded_paths = excluded_paths or {
             "/health",
             "/health/live",
             "/health/ready",
             "/metrics",
+            "/docs",
+            "/redoc",
+            "/openapi.json",
         }
+
+        # Log du backend utilisé
+        rate_limiter = RateLimiter.get_instance()
+        logger.info(
+            "[RATE_LIMIT] Middleware initialisé",
+            extra={
+                "backend": "redis" if rate_limiter.is_redis_available() else "memory",
+                "ip_limit": requests_per_minute,
+                "tenant_limit": requests_per_minute_per_tenant,
+                "burst_limit": self.burst_limit
+            }
+        )
 
     async def dispatch(self, request: Request, call_next: Callable):
         # Skip paths exclus
@@ -117,59 +155,93 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Identification
         client_ip = self._get_client_ip(request)
         tenant_id = request.headers.get("X-Tenant-ID", "anonymous")
+        path = request.url.path
 
-        # Nettoyage des anciennes entrées (> 1 minute)
-        current_time = time.time()
-        self._cleanup_old_requests(client_ip, tenant_id, current_time)
+        # 1. Vérification endpoints sensibles (brute-force protection)
+        if path in self.SENSITIVE_ENDPOINTS:
+            endpoint_limit = self.SENSITIVE_ENDPOINTS[path]
+            endpoint_result = check_endpoint_rate_limit(
+                ip=client_ip,
+                endpoint=path,
+                limit=endpoint_limit,
+                window=60
+            )
+            if not endpoint_result.allowed:
+                logger.warning(
+                    "[RATE_LIMIT] Endpoint sensible rate limit dépassé",
+                    extra={
+                        "client_ip": client_ip,
+                        "tenant_id": tenant_id,
+                        "path": path,
+                        "current": endpoint_result.current_count,
+                        "limit": endpoint_limit,
+                        "consequence": "429_response"
+                    }
+                )
+                return self._rate_limit_response(
+                    request,
+                    f"Rate limit exceeded for {path}",
+                    endpoint_limit,
+                    endpoint_result.retry_after
+                )
 
-        # Vérification limite par IP
-        ip_count = len(self._ip_requests[client_ip])
-        if ip_count >= self.burst_limit:
+        # 2. Vérification limite par IP
+        ip_result = check_ip_rate_limit(
+            ip=client_ip,
+            limit=self.burst_limit,
+            window=60
+        )
+        if not ip_result.allowed:
             logger.warning(
                 "[RATE_LIMIT] IP rate limit dépassé — requête bloquée",
                 extra={
                     "client_ip": client_ip,
                     "tenant_id": tenant_id,
-                    "path": request.url.path,
-                    "ip_count": ip_count,
+                    "path": path,
+                    "current": ip_result.current_count,
                     "burst_limit": self.burst_limit,
                     "consequence": "429_response"
                 }
             )
             return self._rate_limit_response(
-                request, "IP rate limit exceeded", self.requests_per_minute
+                request,
+                "IP rate limit exceeded",
+                self.requests_per_minute,
+                ip_result.retry_after
             )
 
-        # Vérification limite par tenant
-        tenant_count = len(self._tenant_requests[tenant_id])
-        if tenant_count >= self.requests_per_minute_per_tenant:
+        # 3. Vérification limite par tenant
+        tenant_result = check_tenant_rate_limit(
+            tenant_id=tenant_id,
+            limit=self.requests_per_minute_per_tenant,
+            window=60
+        )
+        if not tenant_result.allowed:
             logger.warning(
                 "[RATE_LIMIT] Tenant rate limit dépassé — requête bloquée",
                 extra={
                     "client_ip": client_ip,
                     "tenant_id": tenant_id,
-                    "path": request.url.path,
-                    "tenant_count": tenant_count,
+                    "path": path,
+                    "current": tenant_result.current_count,
                     "tenant_limit": self.requests_per_minute_per_tenant,
                     "consequence": "429_response"
                 }
             )
             return self._rate_limit_response(
-                request, "Tenant rate limit exceeded", self.requests_per_minute_per_tenant
+                request,
+                "Tenant rate limit exceeded",
+                self.requests_per_minute_per_tenant,
+                tenant_result.retry_after
             )
-
-        # Enregistrement de la requête
-        self._ip_requests[client_ip].append(current_time)
-        self._tenant_requests[tenant_id].append(current_time)
 
         # Exécution de la requête
         response = await call_next(request)
 
-        # Ajout des headers rate limit
-        remaining = self.requests_per_minute - ip_count - 1
+        # Ajout des headers rate limit (basés sur IP)
         response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
-        response.headers["X-RateLimit-Remaining"] = str(max(0, remaining))
-        response.headers["X-RateLimit-Reset"] = str(int(current_time) + 60)
+        response.headers["X-RateLimit-Remaining"] = str(ip_result.remaining)
+        response.headers["X-RateLimit-Reset"] = str(ip_result.reset_at)
 
         return response
 
@@ -191,21 +263,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         return "unknown"
 
-    def _cleanup_old_requests(
-        self, client_ip: str, tenant_id: str, current_time: float
-    ):
-        """Supprime les requêtes de plus d'une minute."""
-        cutoff = current_time - 60
-
-        self._ip_requests[client_ip] = [
-            t for t in self._ip_requests[client_ip] if t > cutoff
-        ]
-        self._tenant_requests[tenant_id] = [
-            t for t in self._tenant_requests[tenant_id] if t > cutoff
-        ]
-
     def _rate_limit_response(
-        self, request: Request, message: str, limit: int
+        self, request: Request, message: str, limit: int, retry_after: int = 60
     ) -> Response:
         """Retourne une réponse 429 Too Many Requests de manière SAFE."""
         response = build_error_response(
@@ -216,10 +275,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             extra_data={"limit": limit}
         )
         # Ajouter les headers spécifiques au rate limiting
-        response.headers["Retry-After"] = "60"
+        response.headers["Retry-After"] = str(retry_after)
         response.headers["X-RateLimit-Limit"] = str(limit)
         response.headers["X-RateLimit-Remaining"] = "0"
-        response.headers["X-RateLimit-Reset"] = str(int(time.time()) + 60)
+        response.headers["X-RateLimit-Reset"] = str(int(time.time()) + retry_after)
         return response
 
 

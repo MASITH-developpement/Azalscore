@@ -79,6 +79,73 @@ class ModuleName(str, enum.Enum):
 
 
 # ============================================================================
+# DEFAULT FACTORIES (pour éviter mutable defaults)
+# ============================================================================
+
+def _default_enabled_modules() -> dict:
+    """Default modules activés pour Marceau."""
+    return {
+        "telephonie": True,
+        "marketing": False,
+        "seo": False,
+        "commercial": False,
+        "comptabilite": False,
+        "juridique": False,
+        "recrutement": False,
+        "support": False,
+        "orchestration": False,
+    }
+
+
+def _default_autonomy_levels() -> dict:
+    """Default niveaux d'autonomie (0-100%)."""
+    return {
+        "telephonie": 100,
+        "marketing": 100,
+        "seo": 100,
+        "commercial": 100,
+        "comptabilite": 100,
+        "juridique": 100,
+        "recrutement": 100,
+        "support": 100,
+        "orchestration": 100,
+    }
+
+
+def _default_telephony_config() -> dict:
+    """Default configuration téléphonie."""
+    return {
+        "asterisk_ami_host": "localhost",
+        "asterisk_ami_port": 5038,
+        "asterisk_ami_username": "",
+        "asterisk_ami_password": "",
+        "working_hours": {"start": "09:00", "end": "18:00"},
+        "overflow_threshold": 2,
+        "overflow_number": "",
+        "appointment_duration_minutes": 60,
+        "max_wait_days": 14,
+        "use_travel_time": True,
+        "travel_buffer_minutes": 15,
+    }
+
+
+def _default_integrations() -> dict:
+    """Default intégrations externes."""
+    return {
+        "ors_api_key": None,
+        "gmail_credentials": None,
+        "google_calendar_id": None,
+        "linkedin_token": None,
+        "facebook_token": None,
+        "instagram_token": None,
+        "slack_webhook": None,
+        "hubspot_api_key": None,
+        "wordpress_url": None,
+        "wordpress_token": None,
+    }
+
+
+# ============================================================================
 # CONFIGURATION PAR TENANT
 # ============================================================================
 
@@ -93,30 +160,10 @@ class MarceauConfig(Base):
     tenant_id = Column(String(255), nullable=False, unique=True, index=True)
 
     # Modules actives (JSON)
-    enabled_modules = Column(JSON, default={
-        "telephonie": True,
-        "marketing": False,
-        "seo": False,
-        "commercial": False,
-        "comptabilite": False,
-        "juridique": False,
-        "recrutement": False,
-        "support": False,
-        "orchestration": False,
-    })
+    enabled_modules = Column(JSON, default=_default_enabled_modules)
 
     # Niveau d'autonomie par module (0-100%)
-    autonomy_levels = Column(JSON, default={
-        "telephonie": 100,
-        "marketing": 100,
-        "seo": 100,
-        "commercial": 100,
-        "comptabilite": 100,
-        "juridique": 100,
-        "recrutement": 100,
-        "support": 100,
-        "orchestration": 100,
-    })
+    autonomy_levels = Column(JSON, default=_default_autonomy_levels)
 
     # Configuration IA
     llm_temperature = Column(Float, default=0.2)
@@ -125,33 +172,10 @@ class MarceauConfig(Base):
     tts_voice = Column(String(100), default="fr_FR-sise-medium")
 
     # Configuration telephonie
-    telephony_config = Column(JSON, default={
-        "asterisk_ami_host": "localhost",
-        "asterisk_ami_port": 5038,
-        "asterisk_ami_username": "",
-        "asterisk_ami_password": "",
-        "working_hours": {"start": "09:00", "end": "18:00"},
-        "overflow_threshold": 2,
-        "overflow_number": "",
-        "appointment_duration_minutes": 60,
-        "max_wait_days": 14,
-        "use_travel_time": True,
-        "travel_buffer_minutes": 15,
-    })
+    telephony_config = Column(JSON, default=_default_telephony_config)
 
     # Integrations externes
-    integrations = Column(JSON, default={
-        "ors_api_key": None,
-        "gmail_credentials": None,
-        "google_calendar_id": None,
-        "linkedin_token": None,
-        "facebook_token": None,
-        "instagram_token": None,
-        "slack_webhook": None,
-        "hubspot_api_key": None,
-        "wordpress_url": None,
-        "wordpress_token": None,
-    })
+    integrations = Column(JSON, default=_default_integrations)
 
     # Statistiques
     total_actions = Column(Integer, default=0)
@@ -188,8 +212,8 @@ class MarceauAction(Base):
     status = Column(Enum(ActionStatus, values_callable=lambda x: [e.value for e in x]), default=ActionStatus.PENDING, nullable=False)
 
     # Donnees d'entree/sortie
-    input_data = Column(JSON, default={})
-    output_data = Column(JSON, default={})
+    input_data = Column(JSON, default=dict)
+    output_data = Column(JSON, default=dict)
 
     # Scoring et validation
     confidence_score = Column(Float, default=1.0)  # 0-1
@@ -258,7 +282,7 @@ class MarceauMemory(Base):
     related_conversation_id = Column(UniversalUUID(), nullable=True)
 
     # Classification
-    tags = Column(JSON, default=[])
+    tags = Column(JSON, default=list)
     importance_score = Column(Float, default=0.5)  # 0-1, plus c'est haut plus c'est important
 
     # Expiration
@@ -370,7 +394,7 @@ class MarceauKnowledgeDocument(Base):
 
     # Classification
     category = Column(String(100), nullable=True)  # catalog, procedure, faq, etc.
-    tags = Column(JSON, default=[])
+    tags = Column(JSON, default=list)
 
     # Audit
     uploaded_by = Column(UniversalUUID(), nullable=True)
@@ -446,7 +470,7 @@ class MarceauScheduledTask(Base):
     # Module et action
     module = Column(Enum(ModuleName, values_callable=lambda x: [e.value for e in x]), nullable=False)
     action_type = Column(String(100), nullable=False)
-    action_params = Column(JSON, default={})
+    action_params = Column(JSON, default=dict)
 
     # Planification (cron format)
     cron_expression = Column(String(100), nullable=False)  # "0 9 * * 1-5" = 9h lun-ven

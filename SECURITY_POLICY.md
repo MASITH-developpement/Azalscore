@@ -327,6 +327,78 @@ Pour signaler une vulnerabilite ou une question de securite :
 
 ---
 
+## Rotation des Secrets
+
+### Frequence de Rotation
+
+| Secret | Frequence | Procedure |
+|--------|-----------|-----------|
+| SECRET_KEY (JWT) | 90 jours | Voir 8.1 |
+| ENCRYPTION_KEY | 180 jours | Voir 8.2 |
+| Mots de passe DB | 90 jours | Voir 8.3 |
+| Cles API externes | Selon provider | Regenerer dans console provider |
+
+### 8.1 Rotation SECRET_KEY (JWT)
+
+**Impact:** Invalidation de TOUS les tokens JWT actifs.
+
+```bash
+# 1. Generer nouvelle cle
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+
+# 2. Mettre a jour dans le gestionnaire de secrets
+# 3. Deployer avec la nouvelle cle
+# 4. Les utilisateurs devront se reconnecter
+```
+
+### 8.2 Rotation ENCRYPTION_KEY (Fernet)
+
+**Impact:** Les donnees chiffrees doivent etre rechiffrees.
+
+```bash
+# 1. Generer nouvelle cle
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+# 2. Executer le script de migration
+python scripts/rotate_encryption_key.py --old-key <OLD> --new-key <NEW>
+
+# 3. Mettre a jour et deployer
+```
+
+### 8.3 Rotation Mot de Passe PostgreSQL
+
+```sql
+-- 1. Generer nouveau mot de passe
+-- 2. Mettre a jour dans PostgreSQL
+ALTER USER azals_user WITH PASSWORD 'nouveau_mot_de_passe';
+
+-- 3. Mettre a jour DATABASE_URL
+-- 4. Redemarrer l'API
+```
+
+---
+
+## Procedure d'Urgence
+
+### Si un secret est compromis
+
+1. **IMMEDIAT (< 5 min):**
+   - Revoquer/regenerer le secret compromis
+   - Si SECRET_KEY: invalider tous les tokens (redemarrage API)
+   - Bloquer les IPs suspectes si identifiees
+
+2. **COURT TERME (< 1h):**
+   - Analyser les logs pour evaluer l'etendue
+   - Notifier l'equipe securite
+   - Documenter l'incident
+
+3. **SUIVI:**
+   - Audit complet des acces
+   - Post-mortem avec actions correctives
+   - Mise a jour des procedures si necessaire
+
+---
+
 **Document maintenu par l'equipe AZALS**
-**Version: 1.0.0**
-**Derniere mise a jour: 2026-01-10**
+**Version: 1.1.0**
+**Derniere mise a jour: 2026-02-10**

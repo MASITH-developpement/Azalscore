@@ -564,6 +564,21 @@ class CountLineResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LineOperationResponse(BaseModel):
+    """Réponse générique pour les opérations sur les lignes."""
+    message: str = Field(..., description="Message de confirmation")
+    line_id: str = Field(..., description="ID de la ligne concernée")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "message": "Ligne mise à jour",
+                "line_id": "123e4567-e89b-12d3-a456-426614174000"
+            }
+        }
+    )
+
+
 class InventoryCountCreate(BaseModel):
     """Création d'un inventaire."""
     name: str = Field(..., min_length=1, max_length=200)

@@ -498,8 +498,10 @@ class ReconciliationService:
         recon.cancellation_reason = reason
 
         # Remet la transaction en attente
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         if recon.transaction_id:
             transaction = self.db.query(SyncedTransaction).filter(
+                SyncedTransaction.tenant_id == self.tenant_id,
                 SyncedTransaction.id == recon.transaction_id
             ).first()
             if transaction:
@@ -508,8 +510,10 @@ class ReconciliationService:
                 transaction.matched_at = None
 
         # Remet le document en attente
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         if recon.document_id:
             document = self.db.query(AccountingDocument).filter(
+                AccountingDocument.tenant_id == self.tenant_id,
                 AccountingDocument.id == recon.document_id
             ).first()
             if document:
@@ -534,7 +538,9 @@ class ReconciliationService:
         doc_amount = None
 
         if document_id:
+            # SÉCURITÉ: Toujours filtrer par tenant_id
             document = self.db.query(AccountingDocument).filter(
+                AccountingDocument.tenant_id == self.tenant_id,
                 AccountingDocument.id == document_id
             ).first()
             if document:

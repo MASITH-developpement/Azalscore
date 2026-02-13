@@ -606,7 +606,9 @@ class FieldServiceService:
         intervention.updated_at = datetime.utcnow()
 
         # Clôturer le trajet
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         travel_entry = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.tenant_id == self.tenant_id,
             FSTimeEntry.intervention_id == intervention_id,
             FSTimeEntry.entry_type == "travel",
             FSTimeEntry.end_time is None
@@ -725,7 +727,9 @@ class FieldServiceService:
         self._calculate_costs(intervention)
 
         # Clôturer l'entrée de temps travail
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         work_entry = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.tenant_id == self.tenant_id,
             FSTimeEntry.intervention_id == intervention_id,
             FSTimeEntry.entry_type == "work",
             FSTimeEntry.end_time is None
@@ -803,7 +807,9 @@ class FieldServiceService:
             intervention.labor_cost = intervention.labor_hours * hourly_rate
         else:
             # Calculer depuis les time entries
+            # SÉCURITÉ: Toujours filtrer par tenant_id
             work_entries = self.db.query(FSTimeEntry).filter(
+                FSTimeEntry.tenant_id == self.tenant_id,
                 FSTimeEntry.intervention_id == intervention.id,
                 FSTimeEntry.entry_type == "work"
             ).all()
@@ -820,7 +826,9 @@ class FieldServiceService:
             intervention.parts_cost = Decimal("0")
 
         # Coût déplacement
+        # SÉCURITÉ: Toujours filtrer par tenant_id
         travel_entries = self.db.query(FSTimeEntry).filter(
+            FSTimeEntry.tenant_id == self.tenant_id,
             FSTimeEntry.intervention_id == intervention.id,
             FSTimeEntry.entry_type == "travel"
         ).all()
@@ -853,7 +861,9 @@ class FieldServiceService:
             tech = self.get_technician(intervention.technician_id)
             if tech:
                 # Recalculer la moyenne
+                # SÉCURITÉ: Toujours filtrer par tenant_id
                 rated = self.db.query(Intervention).filter(
+                    Intervention.tenant_id == self.tenant_id,
                     Intervention.technician_id == tech.id,
                     Intervention.customer_rating is not None
                 ).all()

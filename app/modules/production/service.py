@@ -5,6 +5,7 @@ AZALS MODULE M6 - Service Production
 Logique métier pour la gestion de production.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
@@ -51,6 +52,8 @@ from .schemas import (
     WorkCenterCreate,
     WorkCenterUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ProductionService:
@@ -158,6 +161,10 @@ class ProductionService:
 
     def create_bom(self, data: BOMCreate) -> BillOfMaterials:
         """Créer une nomenclature."""
+        logger.info(
+            "Creating BOM | tenant=%s user=%s product_id=%s code=%s",
+            self.tenant_id, self.user_id, data.product_id, data.code
+        )
         bom = BillOfMaterials(
             tenant_id=self.tenant_id,
             code=data.code,
@@ -200,6 +207,7 @@ class ProductionService:
 
         self.db.commit()
         self.db.refresh(bom)
+        logger.info("BOM created | bom_id=%s bom_code=%s", bom.id, bom.code)
         return bom
 
     def get_bom(self, bom_id: UUID) -> BillOfMaterials | None:
@@ -299,6 +307,10 @@ class ProductionService:
 
     def create_routing(self, data: RoutingCreate) -> Routing:
         """Créer une gamme de fabrication."""
+        logger.info(
+            "Creating routing | tenant=%s user=%s product_id=%s code=%s",
+            self.tenant_id, self.user_id, data.product_id, data.code
+        )
         routing = Routing(
             tenant_id=self.tenant_id,
             code=data.code,
@@ -358,6 +370,7 @@ class ProductionService:
 
         self.db.commit()
         self.db.refresh(routing)
+        logger.info("Routing created | routing_id=%s routing_code=%s", routing.id, routing.code)
         return routing
 
     def get_routing(self, routing_id: UUID) -> Routing | None:
@@ -413,6 +426,10 @@ class ProductionService:
 
     def create_manufacturing_order(self, data: MOCreate) -> ManufacturingOrder:
         """Créer un ordre de fabrication."""
+        logger.info(
+            "Creating manufacturing order | tenant=%s user=%s product_id=%s quantity=%s",
+            self.tenant_id, self.user_id, data.product_id, data.quantity_planned
+        )
         mo = ManufacturingOrder(
             tenant_id=self.tenant_id,
             number=self._generate_mo_number(),
@@ -438,6 +455,7 @@ class ProductionService:
         self.db.add(mo)
         self.db.commit()
         self.db.refresh(mo)
+        logger.info("Manufacturing order created | order_id=%s order_number=%s", mo.id, mo.number)
         return mo
 
     def get_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
@@ -541,6 +559,10 @@ class ProductionService:
 
     def start_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
         """Démarrer un OF."""
+        logger.info(
+            "Starting manufacturing order | tenant=%s user=%s order_id=%s",
+            self.tenant_id, self.user_id, mo_id
+        )
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status not in [MOStatus.CONFIRMED, MOStatus.PLANNED]:
             return None
@@ -550,10 +572,15 @@ class ProductionService:
 
         self.db.commit()
         self.db.refresh(mo)
+        logger.info("Manufacturing order started | order_id=%s order_number=%s", mo.id, mo.number)
         return mo
 
     def complete_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
         """Terminer un OF."""
+        logger.info(
+            "Completing manufacturing order | tenant=%s user=%s order_id=%s",
+            self.tenant_id, self.user_id, mo_id
+        )
         mo = self.get_manufacturing_order(mo_id)
         if not mo or mo.status != MOStatus.IN_PROGRESS:
             return None
@@ -564,6 +591,10 @@ class ProductionService:
 
         self.db.commit()
         self.db.refresh(mo)
+        logger.info(
+            "Manufacturing order completed | order_id=%s order_number=%s quantity_produced=%s",
+            mo.id, mo.number, mo.quantity_produced
+        )
         return mo
 
     def cancel_manufacturing_order(self, mo_id: UUID) -> ManufacturingOrder | None:
@@ -719,8 +750,9 @@ class ProductionService:
         if not mo or mo.status not in [MOStatus.IN_PROGRESS, MOStatus.CONFIRMED]:
             return None
 
-        # Chercher une consommation planifiée existante
+        # SÉCURITÉ: Chercher une consommation planifiée existante (filtrer par tenant_id)
         consumption = self.db.query(MaterialConsumption).filter(
+            MaterialConsumption.tenant_id == self.tenant_id,
             MaterialConsumption.mo_id == mo_id,
             MaterialConsumption.product_id == data.product_id,
             MaterialConsumption.quantity_consumed == 0

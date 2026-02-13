@@ -527,17 +527,23 @@ class DashboardService:
 
         for doc in documents:
             # Récupère la classification IA
+            # SÉCURITÉ: Toujours filtrer par tenant_id
             classification = self.db.query(AIClassification).filter(
+                AIClassification.tenant_id == self.tenant_id,
                 AIClassification.document_id == doc.id
             ).order_by(AIClassification.created_at.desc()).first()
 
             # Récupère l'écriture auto
+            # SÉCURITÉ: Toujours filtrer par tenant_id
             auto_entry = self.db.query(AutoEntry).filter(
+                AutoEntry.tenant_id == self.tenant_id,
                 AutoEntry.document_id == doc.id
             ).order_by(AutoEntry.created_at.desc()).first()
 
             # Récupère les alertes du document
+            # SÉCURITÉ: Toujours filtrer par tenant_id
             doc_alerts = self.db.query(AccountingAlert).filter(
+                AccountingAlert.tenant_id == self.tenant_id,
                 AccountingAlert.document_id == doc.id,
                 not AccountingAlert.is_resolved
             ).all()

@@ -271,32 +271,42 @@ class BackupService:
             self.db.commit()
             raise
 
+    # Liste blanche des tables autorisées pour le backup (SÉCURITÉ)
+    ALLOWED_BACKUP_TABLES = frozenset([
+        "commercial_customers",
+        "commercial_documents",
+        "commercial_document_lines",
+        "commercial_products",
+        "invoices",
+        "bank_accounts",
+        "bank_transactions",
+        "support_tickets",
+        "support_ticket_comments",
+        "users",
+        "email_logs",
+        "audit_logs"
+    ])
+
     def _collect_tenant_data(self, include_attachments: bool) -> dict[str, Any]:
         """Collecte toutes les données du tenant."""
         data = {}
 
-        # Tables à sauvegarder (principales)
-        tables = [
-            "commercial_customers",
-            "commercial_documents",
-            "commercial_document_lines",
-            "commercial_products",
-            "invoices",
-            "bank_accounts",
-            "bank_transactions",
-            "support_tickets",
-            "support_ticket_comments",
-            "users",
-            "email_logs",
-            "audit_logs"
-        ]
+        for table in self.ALLOWED_BACKUP_TABLES:
+            # SÉCURITÉ: Validation défensive - table doit être dans la whitelist
+            # et ne contenir que des caractères alphanumériques/underscore
+            if table not in self.ALLOWED_BACKUP_TABLES:
+                logger.error("Tentative d'accès à table non autorisée: %s", table)
+                continue
+            if not table.replace("_", "").isalnum():
+                logger.error("Nom de table invalide détecté: %s", table)
+                continue
 
-        for table in tables:
             try:
+                # SÉCURITÉ: Table vient de whitelist hardcodée, pas d'injection possible
                 result = self.db.execute(text(f"""
                     SELECT * FROM {table}
                     WHERE tenant_id = :tenant_id
-                """), {"tenant_id": self.tenant_id})
+                """), {"tenant_id": self.tenant_id})  # nosec B608 - table from hardcoded whitelist
                 columns = result.keys()
                 rows = [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
                 data[table] = rows

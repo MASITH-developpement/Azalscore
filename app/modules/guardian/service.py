@@ -121,6 +121,10 @@ class GuardianService:
         L'erreur est enregistrée puis analysée pour déterminer si une correction
         automatique est possible.
         """
+        logger.info(
+            "Detecting error | tenant=%s source=%s severity=%s type=%s",
+            self.tenant_id, data.source.value, data.severity.value, data.error_type.value
+        )
         config = self.get_config()
         if not config.is_enabled:
             logger.warning("GUARDIAN is disabled, error not recorded")
@@ -177,14 +181,8 @@ class GuardianService:
         self.db.refresh(error)
 
         logger.info(
-            "GUARDIAN: New error detected",
-            extra={
-                "error_uid": error.error_uid,
-                "severity": error.severity.value,
-                "error_type": error.error_type.value,
-                "module": error.module,
-                "tenant_id": self.tenant_id
-            }
+            "Error detected | detection_id=%s fingerprint=%s module=%s",
+            error.id, error.error_uid, error.module
         )
 
         # Créer une alerte si nécessaire
@@ -337,14 +335,9 @@ class GuardianService:
                 self.db.commit()
 
         logger.info(
-            "GUARDIAN: Correction registry entry created",
-            extra={
-                "correction_uid": registry_entry.correction_uid,
-                "action": registry_entry.correction_action.value,
-                "status": registry_entry.status.value,
-                "environment": registry_entry.environment.value,
-                "tenant_id": self.tenant_id
-            }
+            "Correction created | correction_id=%s correction_uid=%s action=%s status=%s",
+            registry_entry.id, registry_entry.correction_uid,
+            registry_entry.correction_action.value, registry_entry.status.value
         )
 
         return registry_entry
@@ -565,6 +558,10 @@ class GuardianService:
         """
         Applique une correction.
         """
+        logger.warning(
+            "Applying auto-correction | tenant=%s detection_id=%s correction_type=%s",
+            self.tenant_id, registry.error_detection_id, registry.correction_action.value
+        )
         start_time = datetime.utcnow()
         registry.status = CorrectionStatus.IN_PROGRESS
         self._update_decision_trail(registry, "STARTED", "GUARDIAN", "Applying correction")
@@ -622,13 +619,9 @@ class GuardianService:
             self.db.commit()
 
             logger.info(
-                "GUARDIAN: Correction %s completed", registry.correction_uid,
-                extra={
-                    "status": registry.status.value,
-                    "success": registry.correction_successful,
-                    "duration_ms": registry.execution_duration_ms,
-                    "tenant_id": self.tenant_id
-                }
+                "Correction applied | correction_id=%s status=%s success=%s duration_ms=%.2f",
+                registry.id, registry.status.value, registry.correction_successful,
+                registry.execution_duration_ms
             )
 
     def _execute_correction_action(self, registry: CorrectionRegistry,
@@ -820,8 +813,8 @@ class GuardianService:
         via les champs rolled_back, rollback_at, rollback_reason.
         """
         logger.warning(
-            "GUARDIAN: Performing rollback for correction %s", registry.correction_uid,
-            extra={"reason": reason, "tenant_id": self.tenant_id}
+            "Rolling back correction | tenant=%s correction_id=%s correction_uid=%s reason=%s",
+            self.tenant_id, registry.id, registry.correction_uid, reason
         )
 
         registry.status = CorrectionStatus.ROLLED_BACK
@@ -834,6 +827,11 @@ class GuardianService:
 
         self._update_decision_trail(registry, "ROLLED_BACK", by, reason)
         self.db.commit()
+
+        logger.info(
+            "Rollback completed | correction_id=%s status=%s rolled_back_by=%s",
+            registry.id, registry.status.value, by
+        )
 
         # Alerte de rollback
         config = self.get_config()
@@ -894,9 +892,10 @@ class GuardianService:
             registry.status = CorrectionStatus.APPROVED
             self._update_decision_trail(registry, "APPROVED", f"user:{user_id}", comment)
 
-            # Si une règle est associée, appliquer la correction
+            # SÉCURITÉ: Si une règle est associée, appliquer la correction (filtrer par tenant_id)
             if registry.correction_details and registry.correction_details.get("rule_uid"):
                 rule = self.db.query(CorrectionRule).filter(
+                    CorrectionRule.tenant_id == self.tenant_id,
                     CorrectionRule.rule_uid == registry.correction_details["rule_uid"]
                 ).first()
                 if rule:
@@ -946,6 +945,10 @@ class GuardianService:
                      target_users: list[int] | None = None,
                      details: dict | None = None) -> GuardianAlert:
         """Crée une alerte GUARDIAN."""
+        logger.info(
+            "Creating alert | tenant=%s type=%s severity=%s",
+            self.tenant_id, alert_type, severity.value
+        )
         alert = GuardianAlert(
             tenant_id=self.tenant_id,
             alert_type=alert_type,
@@ -964,13 +967,8 @@ class GuardianService:
         self.db.refresh(alert)
 
         logger.info(
-            "GUARDIAN: Alert created",
-            extra={
-                "alert_uid": alert.alert_uid,
-                "type": alert_type,
-                "severity": severity.value,
-                "tenant_id": self.tenant_id
-            }
+            "Alert created | alert_id=%s alert_uid=%s type=%s severity=%s",
+            alert.id, alert.alert_uid, alert_type, severity.value
         )
 
         return alert
@@ -999,6 +997,10 @@ class GuardianService:
     def resolve_alert(self, alert_id: int, user_id: int,
                      comment: str | None = None) -> GuardianAlert:
         """Résout une alerte."""
+        logger.info(
+            "Resolving alert | tenant=%s alert_id=%s user_id=%s",
+            self.tenant_id, alert_id, user_id
+        )
         alert = self.db.query(GuardianAlert).filter(
             GuardianAlert.id == alert_id,
             GuardianAlert.tenant_id == self.tenant_id
@@ -1019,6 +1021,11 @@ class GuardianService:
 
         self.db.commit()
         self.db.refresh(alert)
+
+        logger.info(
+            "Alert resolved | alert_id=%s alert_uid=%s resolved_by=%s",
+            alert.id, alert.alert_uid, user_id
+        )
         return alert
 
     # =========================================================================

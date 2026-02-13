@@ -193,6 +193,7 @@ class NonConformance(Base):
         Index("idx_nc_status", "tenant_id", "status"),
         Index("idx_nc_severity", "tenant_id", "severity"),
         Index("idx_nc_detected", "tenant_id", "detected_date"),
+        UniqueConstraint("tenant_id", "nc_number", name="uq_nc_number"),
         {"schema": None},
     )
 
@@ -467,6 +468,7 @@ class QualityControl(Base):
         Index("idx_qc_type", "tenant_id", "control_type"),
         Index("idx_qc_status", "tenant_id", "status"),
         Index("idx_qc_date", "tenant_id", "control_date"),
+        UniqueConstraint("tenant_id", "control_number", name="uq_qc_number"),
         {"schema": None},
     )
 
@@ -607,6 +609,7 @@ class QualityAudit(Base):
         Index("idx_audit_type", "tenant_id", "audit_type"),
         Index("idx_audit_status", "tenant_id", "status"),
         Index("idx_audit_date", "tenant_id", "planned_date"),
+        UniqueConstraint("tenant_id", "audit_number", name="uq_audit_number"),
         {"schema": None},
     )
 
@@ -762,6 +765,7 @@ class CAPA(Base):
         Index("idx_capa_number", "tenant_id", "capa_number"),
         Index("idx_capa_type", "tenant_id", "capa_type"),
         Index("idx_capa_status", "tenant_id", "status"),
+        UniqueConstraint("tenant_id", "capa_number", name="uq_capa_number"),
         {"schema": None},
     )
 
@@ -909,6 +913,7 @@ class CustomerClaim(Base):
         Index("idx_claim_status", "tenant_id", "status"),
         Index("idx_claim_customer", "tenant_id", "customer_id"),
         Index("idx_claim_date", "tenant_id", "received_date"),
+        UniqueConstraint("tenant_id", "claim_number", name="uq_claim_number"),
         {"schema": None},
     )
 
@@ -1172,6 +1177,7 @@ class Certification(Base):
         Index("idx_cert_tenant", "tenant_id"),
         Index("idx_cert_code", "tenant_id", "code"),
         Index("idx_cert_status", "tenant_id", "status"),
+        UniqueConstraint("tenant_id", "code", name="uq_cert_code"),
         {"schema": None},
     )
 

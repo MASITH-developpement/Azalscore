@@ -4,8 +4,11 @@ AZALS MODULE 16 - Helpdesk Service
 Logique métier pour le système de support client.
 """
 
+import logging
 import uuid
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 from decimal import Decimal
 from typing import Any
 
@@ -409,9 +412,10 @@ class HelpdeskService:
             agents.sort(key=lambda a: a.tickets_assigned)
             return agents[0].id
         elif team.auto_assign_method == "least_busy":
-            # Prendre l'agent avec le moins de tickets ouverts
+            # SÉCURITÉ: Prendre l'agent avec le moins de tickets ouverts (filtrer par tenant_id)
             for agent in agents:
                 agent._open_tickets = self.db.query(Ticket).filter(
+                    Ticket.tenant_id == self.tenant_id,
                     Ticket.assigned_to_id == agent.id,
                     Ticket.status.in_([TicketStatus.NEW, TicketStatus.OPEN, TicketStatus.PENDING])
                 ).count()
@@ -500,6 +504,10 @@ class HelpdeskService:
         actor_type: str = "customer"
     ) -> Ticket:
         """Crée un ticket."""
+        logger.info(
+            "Creating ticket | tenant=%s user=%s priority=%s category=%s",
+            self.tenant_id, self.user_id, data.priority, data.category_id
+        )
         # Déterminer la catégorie et récupérer les defaults
         category = None
         if data.category_id:
@@ -591,6 +599,7 @@ class HelpdeskService:
         self.db.commit()
         self.db.refresh(ticket)
 
+        logger.info("Ticket created | ticket_id=%s ticket_number=%s", ticket.id, ticket.ticket_number)
         return ticket
 
     def update_ticket(
@@ -641,6 +650,10 @@ class HelpdeskService:
         actor_name: str | None = None
     ) -> Ticket | None:
         """Assigne un ticket à un agent."""
+        logger.info(
+            "Assigning ticket | tenant=%s ticket_id=%s agent_id=%s actor=%s",
+            self.tenant_id, ticket_id, agent_id, actor_name
+        )
         ticket = self.get_ticket(ticket_id)
         if not ticket:
             return None
@@ -682,6 +695,10 @@ class HelpdeskService:
         self.db.commit()
         self.db.refresh(ticket)
 
+        logger.info(
+            "Ticket assigned | ticket_id=%s ticket_number=%s agent_id=%s",
+            ticket.id, ticket.ticket_number, agent_id
+        )
         return ticket
 
     def change_ticket_status(
@@ -699,6 +716,10 @@ class HelpdeskService:
             return None
 
         old_status = ticket.status
+        logger.info(
+            "Changing ticket status | tenant=%s ticket_id=%s old_status=%s new_status=%s actor=%s",
+            self.tenant_id, ticket_id, old_status.value, new_status.value, actor_name
+        )
         ticket.status = new_status
         ticket.updated_at = datetime.utcnow()
 
@@ -713,9 +734,17 @@ class HelpdeskService:
                 agent = self.get_agent(ticket.assigned_to_id)
                 if agent:
                     agent.tickets_resolved += 1
+            logger.info(
+                "Ticket resolved | ticket_id=%s ticket_number=%s sla_breached=%s",
+                ticket.id, ticket.ticket_number, ticket.sla_breached
+            )
 
         elif new_status == TicketStatus.CLOSED:
             ticket.closed_at = datetime.utcnow()
+            logger.info(
+                "Ticket closed | ticket_id=%s ticket_number=%s",
+                ticket.id, ticket.ticket_number
+            )
 
         # Historique
         history = TicketHistory(
@@ -750,13 +779,15 @@ class HelpdeskService:
         if not source or not target:
             return None
 
-        # Déplacer les réponses
+        # Déplacer les réponses (defense-in-depth: filtre tenant explicite)
         self.db.query(TicketReply).filter(
+            TicketReply.tenant_id == self.tenant_id,
             TicketReply.ticket_id == source.id
         ).update({"ticket_id": target.id})
 
-        # Déplacer les pièces jointes
+        # Déplacer les pièces jointes (defense-in-depth: filtre tenant explicite)
         self.db.query(TicketAttachment).filter(
+            TicketAttachment.tenant_id == self.tenant_id,
             TicketAttachment.ticket_id == source.id
         ).update({"ticket_id": target.id})
 
@@ -1240,12 +1271,14 @@ class HelpdeskService:
         if ticket.assigned_to_id:
             agent = self.get_agent(ticket.assigned_to_id)
             if agent:
-                # Recalculer la moyenne
+                # SÉCURITÉ: Recalculer la moyenne (filtrer par tenant_id)
                 total_surveys = self.db.query(SatisfactionSurvey).filter(
+                    SatisfactionSurvey.tenant_id == self.tenant_id,
                     SatisfactionSurvey.agent_id == agent.id
                 ).count()
                 if total_surveys > 0:
                     avg = self.db.query(func.avg(SatisfactionSurvey.rating)).filter(
+                        SatisfactionSurvey.tenant_id == self.tenant_id,
                         SatisfactionSurvey.agent_id == agent.id
                     ).scalar()
                     agent.satisfaction_score = Decimal(str(round(avg, 2)))

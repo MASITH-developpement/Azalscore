@@ -30,6 +30,8 @@ from .schemas import (
     # Emplacements
     LocationCreate,
     LocationResponse,
+    # Opérations sur lignes
+    LineOperationResponse,
     LotCreate,
     LotResponse,
     # Mouvements
@@ -529,7 +531,7 @@ async def start_inventory_count(
     return count
 
 
-@router.put("/counts/{count_id}/lines/{line_id}", response_model=dict)
+@router.put("/counts/{count_id}/lines/{line_id}", response_model=LineOperationResponse)
 async def update_count_line(
     count_id: UUID,
     line_id: UUID,
@@ -542,7 +544,7 @@ async def update_count_line(
     line = service.update_count_line(count_id, line_id, data)
     if not line:
         raise HTTPException(status_code=404, detail="Ligne non trouvée")
-    return {"message": "Ligne mise à jour", "line_id": str(line_id)}
+    return LineOperationResponse(message="Ligne mise à jour", line_id=str(line_id))
 
 
 @router.post("/counts/{count_id}/validate", response_model=InventoryCountResponse)
@@ -633,7 +635,7 @@ async def start_picking(
     return picking
 
 
-@router.put("/pickings/{picking_id}/lines/{line_id}/pick", response_model=dict)
+@router.put("/pickings/{picking_id}/lines/{line_id}/pick", response_model=LineOperationResponse)
 async def pick_line(
     picking_id: UUID,
     line_id: UUID,
@@ -646,7 +648,7 @@ async def pick_line(
     line = service.pick_line(picking_id, line_id, data)
     if not line:
         raise HTTPException(status_code=404, detail="Ligne non trouvée")
-    return {"message": "Ligne préparée", "line_id": str(line_id)}
+    return LineOperationResponse(message="Ligne préparée", line_id=str(line_id))
 
 
 @router.post("/pickings/{picking_id}/complete", response_model=PickingResponse)
