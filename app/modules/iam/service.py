@@ -65,12 +65,20 @@ class IAMService:
         created_by: int | None = None
     ) -> IAMUser:
         """Crée un nouvel utilisateur."""
+        logger.info(
+            "User creation attempt | tenant=%s email=%s created_by=%s",
+            self.tenant_id, data.email, created_by
+        )
         # Vérifier email unique
         existing = self.db.query(IAMUser).filter(
             IAMUser.tenant_id == self.tenant_id,
             IAMUser.email == data.email
         ).first()
         if existing:
+            logger.warning(
+                "User creation failed | tenant=%s email=%s reason=email_already_used",
+                self.tenant_id, data.email
+            )
             raise ValueError("Email déjà utilisé")
 
         # Hash du mot de passe
@@ -117,6 +125,10 @@ class IAMService:
             "groups": data.group_codes
         })
 
+        logger.info(
+            "User created | tenant=%s user_id=%s email=%s",
+            self.tenant_id, user.id, user.email
+        )
         self.db.commit()
         return user
 
@@ -442,10 +454,18 @@ class IAMService:
         expires_at: datetime | None = None
     ) -> bool:
         """Attribue un rôle à un utilisateur."""
+        logger.info(
+            "Role assignment attempt | tenant=%s user_id=%s role=%s granted_by=%s",
+            self.tenant_id, user_id, role_code, granted_by
+        )
         user = self.get_user(user_id)
         role = self.get_role_by_code(role_code)
 
         if not user or not role:
+            logger.warning(
+                "Role assignment failed | tenant=%s user_id=%s role=%s reason=user_or_role_not_found",
+                self.tenant_id, user_id, role_code
+            )
             raise ValueError("Utilisateur ou rôle non trouvé")
 
         if not role.is_assignable:
@@ -516,6 +536,10 @@ class IAMService:
         self._audit_log("ROLE_ASSIGNED", "USER", user_id, granted_by,
                        new_values={"role_code": role_code, "expires_at": str(expires_at) if expires_at else None})
 
+        logger.info(
+            "Role assigned | tenant=%s user_id=%s role=%s granted_by=%s",
+            self.tenant_id, user_id, role_code, granted_by
+        )
         self.db.commit()
         return True
 
@@ -526,8 +550,16 @@ class IAMService:
         revoked_by: int | None = None
     ) -> bool:
         """Retire un rôle à un utilisateur."""
+        logger.info(
+            "Role revocation attempt | tenant=%s user_id=%s role=%s revoked_by=%s",
+            self.tenant_id, user_id, role_code, revoked_by
+        )
         role = self.get_role_by_code(role_code)
         if not role:
+            logger.warning(
+                "Role revocation failed | tenant=%s user_id=%s role=%s reason=role_not_found",
+                self.tenant_id, user_id, role_code
+            )
             return False
 
         # Protection contre la rétrogradation des comptes protégés
@@ -556,9 +588,17 @@ class IAMService:
         if result.rowcount > 0:
             self._audit_log("ROLE_REVOKED", "USER", user_id, revoked_by,
                            old_values={"role_code": role_code})
+            logger.info(
+                "Role revoked | tenant=%s user_id=%s role=%s revoked_by=%s",
+                self.tenant_id, user_id, role_code, revoked_by
+            )
             self.db.commit()
             return True
 
+        logger.warning(
+            "Role revocation no-op | tenant=%s user_id=%s role=%s reason=role_not_assigned",
+            self.tenant_id, user_id, role_code
+        )
         return False
 
     # ========================================================================
@@ -925,13 +965,25 @@ class IAMService:
         Authentifie un utilisateur.
         Retourne (user, error_message).
         """
+        logger.info(
+            "User authentication attempt | tenant=%s email=%s ip=%s",
+            self.tenant_id, email, ip_address
+        )
         # Rate limiting
         if not self._check_rate_limit(f"login:{email}", "login", 5, 300):
+            logger.warning(
+                "Authentication failed | tenant=%s email=%s reason=rate_limit_exceeded ip=%s",
+                self.tenant_id, email, ip_address
+            )
             return None, "Trop de tentatives. Réessayez dans 5 minutes."
 
         user = self.get_user_by_email(email)
 
         if not user:
+            logger.warning(
+                "Authentication failed | tenant=%s email=%s reason=user_not_found ip=%s",
+                self.tenant_id, email, ip_address
+            )
             self._increment_rate_limit(f"login:{email}", "login")
             return None, "Email ou mot de passe incorrect"
 
@@ -947,6 +999,10 @@ class IAMService:
                 user.failed_login_attempts = 0
 
         if not user.is_active:
+            logger.warning(
+                "Authentication failed | tenant=%s email=%s reason=account_disabled ip=%s",
+                self.tenant_id, email, ip_address
+            )
             return None, "Compte désactivé"
 
         # Vérifier mot de passe
@@ -968,6 +1024,10 @@ class IAMService:
             self._audit_log("LOGIN_FAILED", "USER", user.id, None,
                            details={"ip": ip_address, "attempts": user.failed_login_attempts})
 
+            logger.warning(
+                "Authentication failed | tenant=%s email=%s reason=invalid_password attempts=%s ip=%s",
+                self.tenant_id, email, user.failed_login_attempts, ip_address
+            )
             self.db.commit()
             self._increment_rate_limit(f"login:{email}", "login")
             return None, "Email ou mot de passe incorrect"
@@ -980,6 +1040,10 @@ class IAMService:
         self._audit_log("LOGIN_SUCCESS", "USER", user.id, user.id,
                        details={"ip": ip_address})
 
+        logger.info(
+            "User authenticated | tenant=%s user_id=%s email=%s ip=%s",
+            self.tenant_id, user.id, email, ip_address
+        )
         self.db.commit()
         return user, None
 

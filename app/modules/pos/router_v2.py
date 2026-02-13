@@ -34,6 +34,7 @@ from .schemas import (
     QuickKeyCreate,
     QuickKeyResponse,
     SessionCloseRequest,
+    SessionDashboardResponse,
     SessionOpenRequest,
     SessionResponse,
     StoreCreate,
@@ -290,7 +291,7 @@ def get_session(
     return session
 
 
-@router.get("/sessions/{session_id}/dashboard", response_model=dict)
+@router.get("/sessions/{session_id}/dashboard", response_model=SessionDashboardResponse)
 def get_session_dashboard(
     session_id: int,
     service: POSService = Depends(get_pos_service)
@@ -300,15 +301,15 @@ def get_session_dashboard(
     if not session:
         raise HTTPException(status_code=404, detail="Session introuvable")
 
-    return {
-        "session_id": session.id,
-        "session_number": session.session_number,
-        "status": session.status.value,
-        "total_sales": float(session.total_sales or 0),
-        "transaction_count": session.transaction_count or 0,
-        "cash_total": float(session.cash_total or 0),
-        "card_total": float(session.card_total or 0),
-    }
+    return SessionDashboardResponse(
+        session_id=session.id,
+        session_number=session.session_number,
+        status=session.status.value,
+        total_sales=float(session.total_sales or 0),
+        transaction_count=session.transaction_count or 0,
+        cash_total=float(session.cash_total or 0),
+        card_total=float(session.card_total or 0),
+    )
 
 
 # ============================================================================

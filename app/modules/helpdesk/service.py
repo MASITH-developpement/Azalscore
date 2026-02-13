@@ -4,8 +4,11 @@ AZALS MODULE 16 - Helpdesk Service
 Logique métier pour le système de support client.
 """
 
+import logging
 import uuid
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 from decimal import Decimal
 from typing import Any
 
@@ -501,6 +504,10 @@ class HelpdeskService:
         actor_type: str = "customer"
     ) -> Ticket:
         """Crée un ticket."""
+        logger.info(
+            "Creating ticket | tenant=%s user=%s priority=%s category=%s",
+            self.tenant_id, self.user_id, data.priority, data.category_id
+        )
         # Déterminer la catégorie et récupérer les defaults
         category = None
         if data.category_id:
@@ -592,6 +599,7 @@ class HelpdeskService:
         self.db.commit()
         self.db.refresh(ticket)
 
+        logger.info("Ticket created | ticket_id=%s ticket_number=%s", ticket.id, ticket.ticket_number)
         return ticket
 
     def update_ticket(
@@ -642,6 +650,10 @@ class HelpdeskService:
         actor_name: str | None = None
     ) -> Ticket | None:
         """Assigne un ticket à un agent."""
+        logger.info(
+            "Assigning ticket | tenant=%s ticket_id=%s agent_id=%s actor=%s",
+            self.tenant_id, ticket_id, agent_id, actor_name
+        )
         ticket = self.get_ticket(ticket_id)
         if not ticket:
             return None
@@ -683,6 +695,10 @@ class HelpdeskService:
         self.db.commit()
         self.db.refresh(ticket)
 
+        logger.info(
+            "Ticket assigned | ticket_id=%s ticket_number=%s agent_id=%s",
+            ticket.id, ticket.ticket_number, agent_id
+        )
         return ticket
 
     def change_ticket_status(
@@ -700,6 +716,10 @@ class HelpdeskService:
             return None
 
         old_status = ticket.status
+        logger.info(
+            "Changing ticket status | tenant=%s ticket_id=%s old_status=%s new_status=%s actor=%s",
+            self.tenant_id, ticket_id, old_status.value, new_status.value, actor_name
+        )
         ticket.status = new_status
         ticket.updated_at = datetime.utcnow()
 
@@ -714,9 +734,17 @@ class HelpdeskService:
                 agent = self.get_agent(ticket.assigned_to_id)
                 if agent:
                     agent.tickets_resolved += 1
+            logger.info(
+                "Ticket resolved | ticket_id=%s ticket_number=%s sla_breached=%s",
+                ticket.id, ticket.ticket_number, ticket.sla_breached
+            )
 
         elif new_status == TicketStatus.CLOSED:
             ticket.closed_at = datetime.utcnow()
+            logger.info(
+                "Ticket closed | ticket_id=%s ticket_number=%s",
+                ticket.id, ticket.ticket_number
+            )
 
         # Historique
         history = TicketHistory(

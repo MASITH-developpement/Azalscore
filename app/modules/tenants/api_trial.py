@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.tenants.schemas_trial import (
+    ResendVerificationRequest,
+    ResendVerificationResponse,
     TrialCompleteRequest,
     TrialCompleteResponse,
     TrialEmailVerification,
@@ -129,7 +131,7 @@ def verify_trial_email(
 
 @router.post(
     "/resend-verification",
-    response_model=dict,
+    response_model=ResendVerificationResponse,
     summary="Renvoyer l'email de vérification",
     description="""
     Renvoie l'email de vérification pour une inscription en cours.
@@ -137,22 +139,18 @@ def verify_trial_email(
     """,
 )
 def resend_verification_email(
-    data: dict,
+    data: ResendVerificationRequest,
     db: Session = Depends(get_db),
-) -> dict:
+) -> ResendVerificationResponse:
     """Renvoyer l'email de vérification."""
-    registration_id = data.get("registration_id")
-    if not registration_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="registration_id requis",
-        )
-
     service = TrialRegistrationService(db)
 
     try:
-        service.resend_verification_email(registration_id)
-        return {"success": True, "message": "Email de vérification renvoyé."}
+        service.resend_verification_email(data.registration_id)
+        return ResendVerificationResponse(
+            success=True,
+            message="Email de vérification renvoyé."
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

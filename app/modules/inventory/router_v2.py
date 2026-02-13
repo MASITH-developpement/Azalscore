@@ -35,6 +35,8 @@ from .schemas import (
     # Emplacements
     LocationCreate,
     LocationResponse,
+    # Opérations sur lignes
+    LineOperationResponse,
     LotCreate,
     LotResponse,
     # Mouvements
@@ -692,7 +694,7 @@ async def start_inventory_count(
     return service.start_inventory_count(count_id)
 
 
-@router.put("/counts/{count_id}/lines/{line_id}", response_model=dict)
+@router.put("/counts/{count_id}/lines/{line_id}", response_model=LineOperationResponse)
 async def update_count_line(
     count_id: UUID,
     line_id: UUID,
@@ -707,7 +709,10 @@ async def update_count_line(
     - current_user → context
     """
     service = get_inventory_service(db, context.tenant_id, context.user_id)
-    return service.update_count_line(count_id, line_id, data)
+    line = service.update_count_line(count_id, line_id, data)
+    if not line:
+        raise HTTPException(status_code=404, detail="Ligne non trouvée")
+    return LineOperationResponse(message="Ligne mise à jour", line_id=str(line_id))
 
 
 @router.post("/counts/{count_id}/validate", response_model=InventoryCountResponse)
@@ -820,7 +825,7 @@ async def start_picking(
     return service.start_picking(picking_id)
 
 
-@router.put("/pickings/{picking_id}/lines/{line_id}/pick", response_model=dict)
+@router.put("/pickings/{picking_id}/lines/{line_id}/pick", response_model=LineOperationResponse)
 async def pick_line(
     picking_id: UUID,
     line_id: UUID,
@@ -835,7 +840,10 @@ async def pick_line(
     - current_user → context
     """
     service = get_inventory_service(db, context.tenant_id, context.user_id)
-    return service.pick_line(picking_id, line_id, data)
+    line = service.pick_line(picking_id, line_id, data)
+    if not line:
+        raise HTTPException(status_code=404, detail="Ligne non trouvée")
+    return LineOperationResponse(message="Ligne préparée", line_id=str(line_id))
 
 
 @router.post("/pickings/{picking_id}/complete", response_model=PickingResponse)

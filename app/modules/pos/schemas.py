@@ -208,6 +208,31 @@ class SessionResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SessionDashboardResponse(BaseModel):
+    """Dashboard d'une session POS."""
+    session_id: int = Field(..., description="ID de la session")
+    session_number: str = Field(..., description="Numéro de session")
+    status: str = Field(..., description="Statut de la session")
+    total_sales: float = Field(..., description="Total des ventes")
+    transaction_count: int = Field(..., description="Nombre de transactions")
+    cash_total: float = Field(..., description="Total en espèces")
+    card_total: float = Field(..., description="Total par carte")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "session_id": 1,
+                "session_number": "S-2024-001",
+                "status": "OPEN",
+                "total_sales": 1250.50,
+                "transaction_count": 15,
+                "cash_total": 450.00,
+                "card_total": 800.50
+            }
+        }
+    }
+
+
 class CashMovementCreate(BaseModel):
     """Mouvement de caisse."""
     movement_type: str = Field(..., pattern="^(IN|OUT)$")

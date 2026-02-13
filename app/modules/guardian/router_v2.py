@@ -55,6 +55,9 @@ from .schemas import (
     # Config
     GuardianConfigUpdate,
     GuardianDashboard,
+    # Incidents
+    IncidentCreate,
+    IncidentResponse,
     # Statistics
     GuardianStatistics,
 )
@@ -845,9 +848,9 @@ async def export_audit(
 # INCIDENTS (NOUVEAUX ENDPOINTS DÉCOUVERTS)
 # ============================================================================
 
-@router.post("/incidents", response_model=dict, status_code=status.HTTP_201_CREATED)
+@router.post("/incidents", response_model=IncidentResponse, status_code=status.HTTP_201_CREATED)
 async def create_incident(
-    data: dict,
+    data: IncidentCreate,
     db: Session = Depends(get_db),
     context: SaaSContext = Depends(get_saas_context)
 ):
@@ -857,9 +860,10 @@ async def create_incident(
     Changements:
     - current_user.id → context.user_id
     - tenant_id → context.tenant_id
+    - data: dict → data: IncidentCreate (typage fort)
     """
     service = get_guardian_service(db, context.tenant_id)
-    incident = service.create_incident(data, user_id=context.user_id)
+    incident = service.create_incident(data.model_dump(), user_id=context.user_id)
     return incident
 
 
