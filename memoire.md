@@ -501,7 +501,42 @@ POST /v1/enrichment/lookup
 | NAME | insee, opencorporates |
 | RISK | pappers, opencorporates |
 
-### 26. Deploiement Production azalscore.com [2026-02-14]
+### 26. Erreurs 403 Forbidden sur tous les endpoints [2026-02-14]
+
+**Probleme:** Tous les endpoints API retournaient 403 Forbidden pour l'utilisateur SUPERADMIN:
+```
+/v1/commercial/documents → 403
+/v1/purchases/summary → 403
+/v1/treasury/summary → 403
+/v1/admin/dashboard → 403
+```
+
+**Cause:** Le middleware RBAC dans `/app/modules/iam/rbac_matrix.py` avait `SUPER_ADMIN` (avec underscore) dans `LEGACY_ROLE_MAPPING`, mais l'utilisateur avait le role `SUPERADMIN` (sans underscore) stocke dans `UserRole` enum.
+
+**Solution:** Ajout du mapping manquant dans `LEGACY_ROLE_MAPPING` (ligne 765):
+```python
+LEGACY_ROLE_MAPPING = {
+    "SUPERADMIN": StandardRole.SUPER_ADMIN,  # Sans underscore (UserRole enum)
+    "SUPER_ADMIN": StandardRole.SUPER_ADMIN,  # Avec underscore (legacy)
+    "TENANT_ADMIN": StandardRole.ADMIN,
+    # ...
+}
+```
+
+**Verification:**
+```bash
+# Tous les endpoints retournent 200
+/health → 200
+/v1/iam/capabilities/modules → 200
+/v1/commercial/documents → 200
+/v1/admin/dashboard → 200
+```
+
+**Commit:** c1b0597
+
+---
+
+### 27. Deploiement Production azalscore.com - Reseau Docker [2026-02-14]
 
 **Probleme:** Apres rebuild de l'API, nginx ne pouvait plus atteindre le backend.
 
@@ -756,6 +791,8 @@ for c in db.query(EnrichmentProviderConfig).all():
 14. `/app/modules/enrichment/providers/opencorporates.py` - **NOUVEAU** Provider OpenCorporates
 15. `/app/modules/enrichment/providers/__init__.py` - Export OpenCorporatesProvider
 16. `/app/modules/purchases/schemas.py` - code: Optional[str] auto-genere
+17. `/app/modules/inventory/models.py` - 11 champs ERP (tax_rate, is_sellable, etc.)
+18. `/app/modules/iam/rbac_matrix.py` - Mapping SUPERADMIN dans LEGACY_ROLE_MAPPING
 
 ### Frontend (frontend/src/)
 1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules", onglet "Enrichissement"
@@ -770,6 +807,7 @@ for c in db.query(EnrichmentProviderConfig).all():
 
 ### Migrations (alembic/)
 1. `/alembic/versions/20260214_enrichment_provider_config.py` - Table enrichment_provider_config
+2. `/alembic/versions/20260214_product_erp_fields.py` - Champs ERP produits (11 colonnes)
 
 ---
 
@@ -954,7 +992,7 @@ def auth_headers(tenant_id):
 
 ---
 
-### 27. Champs ERP Produits - Conformite Chorus Pro [2026-02-14]
+### 28. Champs ERP Produits - Conformite Chorus Pro [2026-02-14]
 
 **Contexte:** Ajout de champs au modele `inventory_products` pour assurer la compatibilite avec:
 - Chorus Pro / Factur-X / EN 16931 (facturation electronique francaise)
