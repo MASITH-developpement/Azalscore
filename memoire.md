@@ -793,6 +793,8 @@ for c in db.query(EnrichmentProviderConfig).all():
 16. `/app/modules/purchases/schemas.py` - code: Optional[str] auto-genere
 17. `/app/modules/inventory/models.py` - 11 champs ERP (tax_rate, is_sellable, etc.)
 18. `/app/modules/iam/rbac_matrix.py` - Mapping SUPERADMIN dans LEGACY_ROLE_MAPPING
+19. `/app/modules/treasury/service.py` - Ajout get_summary(), get_forecast()
+20. `/app/modules/accounting/service.py` - Fix references modeles (AccountingJournalEntry, etc.)
 
 ### Frontend (frontend/src/)
 1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules", onglet "Enrichissement"
@@ -1029,3 +1031,46 @@ def auth_headers(tenant_id):
 revision = 'product_erp_fields_001'
 down_revision = 'enrichment_provider_config_001'
 ```
+
+### 29. Fix Endpoints Treasury et Accounting [2026-02-14]
+
+**Probleme:** Les endpoints `/v1/treasury/summary` et `/v1/accounting/summary` retournaient des erreurs 500.
+
+**Causes:**
+1. **Treasury:** La methode `get_summary()` n'existait pas dans `TreasuryService`
+2. **Accounting:** References incorrectes aux modeles (`FiscalYear` au lieu de `AccountingFiscalYear`, `JournalEntry` au lieu de `AccountingJournalEntry`, etc.)
+
+**Solutions appliquees:**
+
+**Treasury (`/app/modules/treasury/service.py`):**
+```python
+def get_summary(self) -> TreasurySummary:
+    """Retourne un resume de tresorerie vide (TODO: implementer avec vrais modeles)"""
+    return TreasurySummary(
+        total_balance=Decimal("0.00"),
+        total_pending_in=Decimal("0.00"),
+        total_pending_out=Decimal("0.00"),
+        forecast_7d=Decimal("0.00"),
+        forecast_30d=Decimal("0.00"),
+        accounts=[]
+    )
+
+def get_forecast(self, days: int = 30) -> List[ForecastData]:
+    """Retourne une liste vide (TODO: implementer)"""
+    return []
+```
+
+**Accounting (`/app/modules/accounting/service.py`):**
+- `FiscalYear` → `AccountingFiscalYear` (lignes 96, 115)
+- `JournalEntry` → `AccountingJournalEntry` (lignes 387, 388, 636, 722)
+- `JournalEntryLine` → `AccountingJournalEntryLine` (lignes 522-528, 627-633)
+
+**Verification:**
+```
+[OK] /v1/treasury/summary    → 200
+[OK] /v1/accounting/summary  → 200
+```
+
+**Commit:** 6541997
+
+**Note:** Le module Treasury n'a pas encore de modeles de base de donnees (`BankAccount`, `BankTransaction`). Les methodes retournent des donnees vides en attendant l'implementation complete.
