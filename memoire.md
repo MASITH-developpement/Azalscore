@@ -951,3 +951,43 @@ def client(test_client):
 def auth_headers(tenant_id):
     return {"Authorization": "Bearer test-token", "X-Tenant-ID": tenant_id}
 ```
+
+---
+
+### 27. Champs ERP Produits - Conformite Chorus Pro [2026-02-14]
+
+**Contexte:** Ajout de champs au modele `inventory_products` pour assurer la compatibilite avec:
+- Chorus Pro / Factur-X / EN 16931 (facturation electronique francaise)
+- Axonaut, Odoo, Sellsy (ERP francais)
+
+**Analyse comparative effectuee:**
+- AXONAUT: product_code, name, price, tax_rate, type
+- ODOO: default_code, sale_ok, purchase_ok, taxes_id, seller_ids
+- SELLSY: tradename, unitAmount, taxrate, taxid, ecoTax
+- CHORUS PRO: BT-152 (tax_rate), BT-151 (tax_id), BT-156 (customer_product_code), BT-158 (cpv_code)
+
+**11 champs ajoutes a `inventory_products`:**
+
+| Champ | Type | Description | Source |
+|-------|------|-------------|--------|
+| `trade_name` | String(255) | Nom commercial | Sellsy |
+| `cpv_code` | String(20) | Code marches publics | EN 16931 BT-158 |
+| `supplier_product_code` | String(100) | Reference fournisseur | Odoo |
+| `customer_product_code` | String(100) | Reference client | EN 16931 BT-156 |
+| `tax_rate` | Numeric(5,2) | Taux TVA vente % | EN 16931 BT-152 |
+| `tax_id` | UUID | Reference taxe vente | EN 16931 BT-151 |
+| `supplier_tax_rate` | Numeric(5,2) | Taux TVA achat % | Odoo |
+| `supplier_tax_id` | UUID | Reference taxe achat | Odoo |
+| `eco_tax` | Numeric(10,4) | Eco-contribution EUR | Sellsy |
+| `is_sellable` | Boolean | Produit vendable | Odoo sale_ok |
+| `is_purchasable` | Boolean | Produit achetable | Odoo purchase_ok |
+
+**Fichiers modifies:**
+- `/app/modules/inventory/models.py` - Ajout des 11 colonnes au modele Product
+- `/alembic/versions/20260214_product_erp_fields.py` - Migration Alembic
+
+**Migration:**
+```
+revision = 'product_erp_fields_001'
+down_revision = 'enrichment_provider_config_001'
+```
