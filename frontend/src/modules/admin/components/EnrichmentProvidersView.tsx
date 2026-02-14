@@ -466,68 +466,63 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, provider, is
         </div>
 
         <div className="azals-form__group">
-          <label className="azals-form__label" htmlFor="priority">
+          <label className="azals-form__label">
             Priorite (1-999, plus bas = plus prioritaire)
           </label>
           <Input
-            id="priority"
             type="number"
             value={formData.priority}
-            onChange={(e) => updateField('priority', parseInt(e.target.value) || 100)}
+            onChange={(value) => updateField('priority', parseInt(value) || 100)}
             min={1}
             max={999}
           />
         </div>
 
         <div className="azals-form__group">
-          <label className="azals-form__label" htmlFor="api_key">
+          <label className="azals-form__label">
             <Key size={14} /> Cle API
           </label>
           <Input
-            id="api_key"
             type="password"
             value={formData.api_key}
-            onChange={(e) => updateField('api_key', e.target.value)}
+            onChange={(value) => updateField('api_key', value)}
             placeholder={!isNew ? '(laisser vide pour conserver)' : 'Entrez la cle API'}
           />
         </div>
 
         <div className="azals-form__group">
-          <label className="azals-form__label" htmlFor="api_secret">
+          <label className="azals-form__label">
             Secret API (optionnel)
           </label>
           <Input
-            id="api_secret"
             type="password"
             value={formData.api_secret}
-            onChange={(e) => updateField('api_secret', e.target.value)}
+            onChange={(value) => updateField('api_secret', value)}
             placeholder={!isNew ? '(laisser vide pour conserver)' : 'Entrez le secret API'}
           />
         </div>
 
         <Grid cols={2} gap="md">
           <div className="azals-form__group">
-            <label className="azals-form__label" htmlFor="custom_requests_per_minute">
+            <label className="azals-form__label">
               Limite / minute
             </label>
             <Input
-              id="custom_requests_per_minute"
               type="number"
               value={formData.custom_requests_per_minute}
-              onChange={(e) => updateField('custom_requests_per_minute', e.target.value)}
+              onChange={(value) => updateField('custom_requests_per_minute', value)}
               placeholder="Par defaut"
             />
           </div>
 
           <div className="azals-form__group">
-            <label className="azals-form__label" htmlFor="custom_requests_per_day">
+            <label className="azals-form__label">
               Limite / jour
             </label>
             <Input
-              id="custom_requests_per_day"
               type="number"
               value={formData.custom_requests_per_day}
-              onChange={(e) => updateField('custom_requests_per_day', e.target.value)}
+              onChange={(value) => updateField('custom_requests_per_day', value)}
               placeholder="Par defaut"
             />
           </div>
