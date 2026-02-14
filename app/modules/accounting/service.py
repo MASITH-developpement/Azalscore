@@ -93,7 +93,7 @@ class AccountingService:
         return self.db.query(AccountingFiscalYear).filter(
             AccountingFiscalYear.tenant_id == self.tenant_id,
             AccountingFiscalYear.status == FiscalYearStatus.OPEN,
-            FiscalYear.is_active == True
+            AccountingFiscalYear.is_active == True
         ).first()
 
     def list_fiscal_years(
@@ -112,7 +112,7 @@ class AccountingService:
 
         total = query.count()
 
-        items = query.order_by(desc(FiscalYear.start_date)).offset(
+        items = query.order_by(desc(AccountingFiscalYear.start_date)).offset(
             (page - 1) * per_page
         ).limit(per_page).all()
 
@@ -384,8 +384,8 @@ class AccountingService:
             query = query.filter(
                 or_(
                     AccountingJournalEntry.entry_number.ilike(f"%{search}%"),
-                    JournalEntry.piece_number.ilike(f"%{search}%"),
-                    JournalEntry.label.ilike(f"%{search}%")
+                    AccountingJournalEntry.piece_number.ilike(f"%{search}%"),
+                    AccountingJournalEntry.label.ilike(f"%{search}%")
                 )
             )
 
@@ -519,16 +519,16 @@ class AccountingService:
         # Calculer les totaux par type de compte
         query = self.db.query(
             ChartOfAccounts.account_type,
-            func.sum(JournalEntryLine.debit).label('total_debit'),
-            func.sum(JournalEntryLine.credit).label('total_credit')
+            func.sum(AccountingJournalEntryLine.debit).label('total_debit'),
+            func.sum(AccountingJournalEntryLine.credit).label('total_credit')
         ).join(
-            JournalEntryLine,
+            AccountingJournalEntryLine,
             and_(
                 ChartOfAccounts.account_number == AccountingJournalEntryLine.account_number,
                 ChartOfAccounts.tenant_id == AccountingJournalEntryLine.tenant_id
             )
         ).join(
-            JournalEntry,
+            AccountingJournalEntry,
             AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
         ).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
@@ -624,16 +624,16 @@ class AccountingService:
         query = self.db.query(
             ChartOfAccounts.account_number,
             ChartOfAccounts.account_label,
-            func.sum(JournalEntryLine.debit).label('debit_total'),
-            func.sum(JournalEntryLine.credit).label('credit_total')
+            func.sum(AccountingJournalEntryLine.debit).label('debit_total'),
+            func.sum(AccountingJournalEntryLine.credit).label('credit_total')
         ).outerjoin(
-            JournalEntryLine,
+            AccountingJournalEntryLine,
             and_(
                 ChartOfAccounts.account_number == AccountingJournalEntryLine.account_number,
                 ChartOfAccounts.tenant_id == AccountingJournalEntryLine.tenant_id
             )
         ).outerjoin(
-            JournalEntry,
+            AccountingJournalEntry,
             AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
         ).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
@@ -716,10 +716,10 @@ class AccountingService:
 
             # Mouvements de la période
             movements_query = self.db.query(
-                func.sum(JournalEntryLine.debit).label('period_debit'),
-                func.sum(JournalEntryLine.credit).label('period_credit')
+                func.sum(AccountingJournalEntryLine.debit).label('period_debit'),
+                func.sum(AccountingJournalEntryLine.credit).label('period_credit')
             ).join(
-                JournalEntry,
+                AccountingJournalEntry,
                 AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
             ).filter(
                 AccountingJournalEntryLine.tenant_id == self.tenant_id,
