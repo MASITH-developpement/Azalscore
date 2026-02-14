@@ -40,11 +40,14 @@ class EnrichmentProvider(str, enum.Enum):
     OPENBEAUTYFACTS = "openbeautyfacts"
     OPENPETFOODFACTS = "openpetfoodfacts"
     VIES = "vies"  # Validation TVA UE
+    OPENCORPORATES = "opencorporates"  # Registres mondiaux
     # APIs payantes (documentation future)
     PAPPERS = "pappers"
     GOOGLE_PLACES = "google_places"
     AMAZON_PAAPI = "amazon_paapi"
     PAGES_JAUNES = "pages_jaunes"
+    CREDITSAFE = "creditsafe"
+    KOMPANY = "kompany"
 
 
 class EnrichmentStatus(str, enum.Enum):
@@ -227,5 +230,150 @@ PROVIDER_RATE_LIMITS = {
     EnrichmentProvider.VIES: {
         "requests_per_minute": 20,
         "requests_per_day": 500,
+    },
+    # OpenCorporates: API gratuite limitee (500 req/mois pour version gratuite)
+    EnrichmentProvider.OPENCORPORATES: {
+        "requests_per_minute": 10,
+        "requests_per_day": 20,  # ~600/mois
+    },
+    # APIs payantes - limites elevees si cle API configuree
+    EnrichmentProvider.CREDITSAFE: {
+        "requests_per_minute": 30,
+        "requests_per_day": 1000,
+    },
+    EnrichmentProvider.KOMPANY: {
+        "requests_per_minute": 30,
+        "requests_per_day": 1000,
+    },
+}
+
+
+# ============================================================================
+# PROVIDER CONFIG MODEL
+# ============================================================================
+
+class EnrichmentProviderConfig(Base):
+    """
+    Configuration des fournisseurs d'enrichissement par tenant.
+    Stocke les API keys et parametres specifiques.
+    """
+    __tablename__ = "enrichment_provider_config"
+
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, nullable=False, index=True)
+    tenant_id = Column(String(50), nullable=False, index=True)
+    provider = Column(
+        Enum(EnrichmentProvider, values_callable=lambda x: [e.value for e in x]),
+        nullable=False
+    )
+
+    # Configuration
+    is_enabled = Column(Boolean, default=True)
+    is_primary = Column(Boolean, default=False)  # Provider principal pour ce type
+    priority = Column(Integer, default=100)  # Ordre de priorite (plus bas = plus prioritaire)
+
+    # Credentials (chiffres en DB)
+    api_key = Column(String(500), nullable=True)  # Cle API principale
+    api_secret = Column(String(500), nullable=True)  # Secret optionnel
+    api_endpoint = Column(String(500), nullable=True)  # URL custom si applicable
+
+    # Limites personnalisees
+    custom_requests_per_minute = Column(Integer, nullable=True)
+    custom_requests_per_day = Column(Integer, nullable=True)
+
+    # Metadata
+    config_data = Column(JSON, default=dict)  # Config specifique au provider
+    last_success_at = Column(DateTime, nullable=True)
+    last_error_at = Column(DateTime, nullable=True)
+    last_error_message = Column(Text, nullable=True)
+    total_requests = Column(Integer, default=0)
+    total_errors = Column(Integer, default=0)
+
+    # Audit
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_by = Column(UniversalUUID(), nullable=True)
+    updated_by = Column(UniversalUUID(), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint('tenant_id', 'provider', name='uq_provider_config_tenant_provider'),
+        Index('idx_provider_config_tenant', 'tenant_id'),
+        Index('idx_provider_config_enabled', 'tenant_id', 'is_enabled'),
+        Index('idx_provider_config_primary', 'tenant_id', 'is_primary'),
+    )
+
+
+# Informations sur les providers (pour l'interface admin)
+PROVIDER_INFO = {
+    EnrichmentProvider.INSEE: {
+        "name": "INSEE (SIRENE)",
+        "description": "Recherche entreprises francaises par SIRET/SIREN/nom",
+        "requires_api_key": False,
+        "is_free": True,
+        "country": "FR",
+        "capabilities": ["siret", "siren", "name"],
+        "documentation_url": "https://api.insee.fr/catalogue/site/themes/wso2/subthemes/insee/pages/item-info.jag?name=Sirene&version=V3&provider=insee",
+    },
+    EnrichmentProvider.ADRESSE_GOUV: {
+        "name": "API Adresse (data.gouv.fr)",
+        "description": "Geocodage et autocomplete adresses francaises",
+        "requires_api_key": False,
+        "is_free": True,
+        "country": "FR",
+        "capabilities": ["address"],
+        "documentation_url": "https://adresse.data.gouv.fr/api-doc/adresse",
+    },
+    EnrichmentProvider.OPENFOODFACTS: {
+        "name": "Open Food Facts",
+        "description": "Base de donnees produits alimentaires par code-barres",
+        "requires_api_key": False,
+        "is_free": True,
+        "country": "WORLD",
+        "capabilities": ["barcode"],
+        "documentation_url": "https://openfoodfacts.github.io/openfoodfacts-server/api/",
+    },
+    EnrichmentProvider.VIES: {
+        "name": "VIES (Commission Europeenne)",
+        "description": "Validation numeros TVA intracommunautaires",
+        "requires_api_key": False,
+        "is_free": True,
+        "country": "EU",
+        "capabilities": ["vat_number"],
+        "documentation_url": "https://ec.europa.eu/taxation_customs/vies/#/vat-validation",
+    },
+    EnrichmentProvider.PAPPERS: {
+        "name": "Pappers",
+        "description": "Analyse de risque et informations legales entreprises francaises",
+        "requires_api_key": True,
+        "is_free": False,  # Version gratuite limitee
+        "country": "FR",
+        "capabilities": ["risk", "siret", "siren"],
+        "documentation_url": "https://www.pappers.fr/api",
+    },
+    EnrichmentProvider.OPENCORPORATES: {
+        "name": "OpenCorporates",
+        "description": "Registres d'entreprises mondiaux (140+ pays)",
+        "requires_api_key": True,
+        "is_free": False,  # Version gratuite limitee
+        "country": "WORLD",
+        "capabilities": ["name", "company_number"],
+        "documentation_url": "https://api.opencorporates.com/documentation",
+    },
+    EnrichmentProvider.CREDITSAFE: {
+        "name": "Creditsafe",
+        "description": "Notation credit et risque internationale",
+        "requires_api_key": True,
+        "is_free": False,
+        "country": "WORLD",
+        "capabilities": ["risk", "credit_score"],
+        "documentation_url": "https://www.creditsafe.com/",
+    },
+    EnrichmentProvider.KOMPANY: {
+        "name": "Kompany",
+        "description": "Documents officiels et comptes annuels europeens",
+        "requires_api_key": True,
+        "is_free": False,
+        "country": "EU",
+        "capabilities": ["documents", "financials"],
+        "documentation_url": "https://www.kompany.com/",
     },
 }

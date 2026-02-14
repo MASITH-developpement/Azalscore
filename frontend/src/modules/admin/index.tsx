@@ -18,6 +18,7 @@ import {
   Settings, Package
 } from 'lucide-react';
 import type { TableColumn } from '@/types';
+import { unwrapApiResponse } from '@/types';
 import type { AdminUser, Role } from './types';
 import {
   USER_STATUS_CONFIG, getUserFullName, isUserActive, isUserLocked,
@@ -26,7 +27,7 @@ import {
 import { formatDateTime } from '@/utils/formatters';
 import {
   UserInfoTab, UserPermissionsTab, UserActivityTab,
-  UserHistoryTab, UserIATab, SequencesView
+  UserHistoryTab, UserIATab, SequencesView, EnrichmentProvidersView
 } from './components';
 
 // ============================================================================
@@ -197,8 +198,14 @@ const formatDateTimeFn = (date: string): string => {
   return new Date(date).toLocaleString('fr-FR');
 };
 
-const getStatusInfo = (statuses: any[], status: string) => {
-  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
+interface StatusInfo {
+  value: string;
+  label: string;
+  color: string;
+}
+
+const getStatusInfo = (statuses: StatusInfo[], status: string): StatusInfo => {
+  return statuses.find(s => s.value === status) || { value: status, label: status, color: 'gray' };
 };
 
 const formatBytes = (bytes: number): string => {
@@ -256,7 +263,7 @@ const useUsers = (filters?: { status?: string; role_id?: string }) => {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
-        const data = res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+        const data = unwrapApiResponse<{ items: User[]; total: number }>(res);
         return data?.items || [];
       } catch {
         return [];
@@ -288,42 +295,32 @@ const useUser = (id: string | undefined) => {
   });
 };
 
+// Helper pour extraire un tableau d'une réponse API multi-format
+function extractArrayFromResponse<T>(response: unknown): T[] {
+  if (Array.isArray(response)) {
+    return response;
+  }
+  if (response && typeof response === 'object') {
+    const r = response as Record<string, unknown>;
+    if (Array.isArray(r.data)) return r.data;
+    if (Array.isArray(r.items)) return r.items;
+    const keys = Object.keys(r);
+    if (keys.length === 1 && Array.isArray(r[keys[0]])) {
+      return r[keys[0]] as T[];
+    }
+  }
+  return [];
+}
+
 const useRoles = () => {
   return useQuery({
     queryKey: ['admin', 'roles'],
     queryFn: async (): Promise<Role[]> => {
       try {
-        // L'API retourne directement un tableau, pas un objet { data: [...] }
         const response = await api.get<Role[]>('/v1/iam/roles', {
           headers: { 'X-Silent-Error': 'true' }
         });
-        console.log('[useRoles] API response:', response);
-        // Gérer tous les formats possibles
-        if (Array.isArray(response)) {
-          console.log('[useRoles] Format: direct array, count:', response.length);
-          return response as Role[];
-        }
-        const r = response as any;
-        // Format { data: [...] }
-        if (r?.data && Array.isArray(r.data)) {
-          console.log('[useRoles] Format: { data: [...] }, count:', r.data.length);
-          return r.data;
-        }
-        // Format { items: [...] }
-        if (r?.items && Array.isArray(r.items)) {
-          console.log('[useRoles] Format: { items: [...] }, count:', r.items.length);
-          return r.items;
-        }
-        // Format avec une seule clé contenant un tableau
-        if (r && typeof r === 'object') {
-          const keys = Object.keys(r);
-          if (keys.length === 1 && Array.isArray(r[keys[0]])) {
-            console.log('[useRoles] Format: single key array, count:', r[keys[0]].length);
-            return r[keys[0]];
-          }
-        }
-        console.log('[useRoles] Unknown format, returning empty');
-        return [];
+        return extractArrayFromResponse<Role>(response);
       } catch (err) {
         console.error('[useRoles] Error:', err);
         return [];
@@ -347,7 +344,7 @@ const useCreateRole = () => {
       max_users?: number;
     }) => {
       const res = await api.post('/v1/iam/roles', data);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
   });
@@ -368,7 +365,7 @@ const useUpdateRole = () => {
       }
     }) => {
       const res = await api.patch(`/v1/iam/roles/${id}`, data);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
   });
@@ -400,12 +397,7 @@ const usePermissions = () => {
         const response = await api.get<{ items: Permission[] }>('/v1/iam/permissions', {
           headers: { 'X-Silent-Error': 'true' }
         });
-        if (Array.isArray(response)) return response as Permission[];
-        const r = response as any;
-        if (r?.items) return r.items;
-        if (r?.data?.items) return r.data.items;
-        if (r?.data && Array.isArray(r.data)) return r.data;
-        return [];
+        return extractArrayFromResponse<Permission>(response);
       } catch {
         return [];
       }
@@ -434,16 +426,13 @@ const useCapabilitiesByModule = () => {
   return useQuery({
     queryKey: ['admin', 'capabilities-modules'],
     queryFn: async (): Promise<CapabilitiesByModule> => {
-      console.log('[useCapabilitiesByModule] Fetching capabilities...');
       const response = await api.get('/v1/iam/capabilities/modules');
-      console.log('[useCapabilitiesByModule] Raw response:', response);
 
       // La réponse est directement l'objet CAPABILITIES_BY_MODULE
       const data = response as unknown;
       if (data && typeof data === 'object' && !Array.isArray(data)) {
         const obj = data as Record<string, any>;
         const keys = Object.keys(obj);
-        console.log('[useCapabilitiesByModule] Found modules:', keys.length);
 
         // Vérifier que c'est bien le format attendu (au moins un module avec capabilities)
         const firstKey = keys[0];
@@ -452,7 +441,6 @@ const useCapabilitiesByModule = () => {
         }
       }
 
-      console.warn('[useCapabilitiesByModule] Unexpected format:', response);
       return {};
     },
     retry: 2,
@@ -574,7 +562,7 @@ const useCreateUser = () => {
   return useMutation({
     mutationFn: async (data: Partial<User> & { password: string }) => {
       const res = await api.post('/v1/iam/users', data);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
   });
@@ -585,7 +573,7 @@ const useUpdateUserStatus = () => {
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const res = await api.patch(`/v1/iam/users/${id}`, { status });
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
@@ -599,7 +587,7 @@ const useUpdateUser = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
       const res = await api.patch(`/v1/iam/users/${id}`, data);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
@@ -613,7 +601,7 @@ const useDeleteUser = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await api.delete(`/v1/iam/users/${id}`);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
@@ -626,7 +614,7 @@ const useRunBackup = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await api.post(`/v1/backup/${id}/run`);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'backups'] })
   });
@@ -741,7 +729,7 @@ const UserDetailView: React.FC = () => {
       label: 'Modifier',
       icon: <Edit3 size={16} />,
       variant: 'secondary',
-      onClick: () => console.log('Edit user')
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editUser', userId: user.id } })); }
     }
   ];
 
@@ -1118,8 +1106,6 @@ const UserPermissionsModal: React.FC<{
 
   // Debug: log data loading
   React.useEffect(() => {
-    console.log('[UserPermissionsModal] modulesCaps:', modulesCaps, 'keys:', Object.keys(modulesCaps).length);
-    console.log('[UserPermissionsModal] userPerms:', userPerms);
     if (modulesError) console.error('[UserPermissionsModal] Error:', modulesError);
   }, [modulesCaps, userPerms, modulesError]);
 
@@ -1200,9 +1186,7 @@ const UserPermissionsModal: React.FC<{
 
     // Toujours rafraîchir les capabilities après enregistrement
     // pour mettre à jour l'affichage des menus immédiatement
-    console.log('[Permissions] Saved, refreshing capabilities...');
     await refreshCapabilities();
-    console.log('[Permissions] Capabilities refreshed');
 
     onClose();
   };
@@ -1541,12 +1525,12 @@ const RoleFormModal: React.FC<{
       setCode(editingRole?.code || '');
       setName(editingRole?.name || '');
       setDescription(editingRole?.description || '');
-      setLevel((editingRole as any)?.level ?? 5);
+      setLevel(editingRole?.level ?? 5);
       setParentCode('');
       setSelectedPermissions(editingRole?.permissions || []);
-      setRequiresApproval((editingRole as any)?.requires_approval || false);
-      setMaxUsers((editingRole as any)?.max_users?.toString() || '');
-      setIsActive((editingRole as any)?.is_active !== false);
+      setRequiresApproval(editingRole?.requires_approval || false);
+      setMaxUsers(editingRole?.max_users?.toString() || '');
+      setIsActive(editingRole?.is_active !== false);
       setShowPermissions(false);
     }
   }, [isOpen, editingRole]);
@@ -1874,7 +1858,7 @@ const RolesView: React.FC = () => {
       if (role.is_system) {
         return <Badge color="orange">Systeme</Badge>;
       }
-      return <span className="text-gray-700">{(role as any).created_by_name || 'Utilisateur'}</span>;
+      return <span className="text-gray-700">{role.created_by_name || 'Utilisateur'}</span>;
     }},
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => {
       const role = row as Role;
@@ -1923,7 +1907,7 @@ const useSuspendTenant = () => {
   return useMutation({
     mutationFn: async (tenantId: string) => {
       const res = await api.post(`/v1/tenants/${tenantId}/suspend`);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
   });
@@ -1934,7 +1918,7 @@ const useActivateTenant = () => {
   return useMutation({
     mutationFn: async (tenantId: string) => {
       const res = await api.post(`/v1/tenants/${tenantId}/activate`);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
   });
@@ -1945,7 +1929,7 @@ const useCancelTenant = () => {
   return useMutation({
     mutationFn: async (tenantId: string) => {
       const res = await api.post(`/v1/tenants/${tenantId}/cancel`);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
   });
@@ -1956,7 +1940,7 @@ const useUpdateTenant = () => {
   return useMutation({
     mutationFn: async ({ tenantId, data }: { tenantId: string; data: Partial<Tenant> }) => {
       const res = await api.put(`/v1/tenants/${tenantId}`, data);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
   });
@@ -2064,7 +2048,7 @@ const TenantsView: React.FC = () => {
     }},
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const info = getStatusInfo(TENANT_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => {
       const tenant = row as Tenant;
@@ -2321,7 +2305,7 @@ const BackupsView: React.FC = () => {
     { id: 'last_status', header: 'Statut', accessor: 'last_status', render: (v) => {
       if (!v) return '-';
       const colors: Record<string, string> = { SUCCESS: 'green', FAILED: 'red', IN_PROGRESS: 'orange' };
-      return <Badge color={(colors[v as string] || 'gray') as any}>{v as string}</Badge>;
+      return <Badge color={colors[v as string] || 'gray'}>{v as string}</Badge>;
     }},
     { id: 'actions', header: 'Actions', accessor: 'id', render: (v, row) => (
       (row as BackupConfig).is_active ? (
@@ -2345,7 +2329,7 @@ const BackupsView: React.FC = () => {
 // MODULE PRINCIPAL
 // ============================================================================
 
-type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'sequences' | 'audit' | 'backups';
+type View = 'dashboard' | 'users' | 'permissions' | 'roles' | 'tenants' | 'sequences' | 'enrichment' | 'audit' | 'backups';
 
 const AdminDashboardView: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -2358,6 +2342,7 @@ const AdminDashboardView: React.FC = () => {
     { id: 'roles', label: 'Roles' },
     { id: 'tenants', label: 'Tenants' },
     { id: 'sequences', label: 'Numerotation' },
+    { id: 'enrichment', label: 'Enrichissement' },
     { id: 'audit', label: 'Audit' },
     { id: 'backups', label: 'Sauvegardes' }
   ];
@@ -2374,6 +2359,8 @@ const AdminDashboardView: React.FC = () => {
         return <TenantsView />;
       case 'sequences':
         return <SequencesView />;
+      case 'enrichment':
+        return <EnrichmentProvidersView />;
       case 'audit':
         return <AuditView />;
       case 'backups':

@@ -452,13 +452,20 @@ POST /v1/enrichment/lookup
   - Procedures collectives
   - Score de risque AZALS (0-100)
   - Fallback vers INSEE si pas de cle API
-- [ ] **Configuration Provider Risque** - Permettre de choisir le provider
-  - Interface admin pour configurer API keys
-  - Selection du provider principal (Pappers, Creditsafe, etc.)
+- [x] **Configuration Provider Risque** - IMPLEMENTE (2026-02-14)
+  - Interface admin pour configurer API keys: `/frontend/src/modules/admin/components/EnrichmentProvidersView.tsx`
+  - Selection du provider principal (Pappers, OpenCorporates, Creditsafe, etc.)
   - Fallback automatique vers provider secondaire
-- [ ] **OpenCorporates** - Registres mondiaux (API gratuite limitee)
-  - Donnees de base entreprise
+  - Backend: `/app/modules/enrichment/models.py` (EnrichmentProviderConfig)
+  - Backend: `/app/modules/enrichment/router.py` (endpoints /admin/providers)
+  - Migration: `/alembic/versions/20260214_enrichment_provider_config.py`
+  - Onglet "Enrichissement" dans Administration
+- [x] **OpenCorporates** - IMPLEMENTE (2026-02-14)
+  - Provider: `/app/modules/enrichment/providers/opencorporates.py`
+  - Donnees de base entreprise (140+ pays)
   - Statut juridique
+  - Recherche par nom ou numero d'entreprise
+  - API gratuite limitee (500 req/mois) ou payante
 - [ ] **Creditsafe / Coface** (payant) - Notation credit internationale
   - Score credit D&B
   - Notation Moody's / S&P / Fitch
