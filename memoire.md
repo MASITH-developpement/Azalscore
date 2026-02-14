@@ -1,6 +1,6 @@
 # AZALSCORE - Memoire de Session
 
-## Derniere mise a jour: 2026-02-10
+## Derniere mise a jour: 2026-02-14
 
 ---
 
@@ -428,6 +428,114 @@ POST /v1/enrichment/lookup
 }
 ```
 
+### 24. Configuration Provider Enrichissement - Interface Admin [2026-02-14]
+
+**Fonctionnalite:** Interface complete pour configurer les providers d'enrichissement par tenant.
+
+**Backend:**
+- `/app/modules/enrichment/models.py`:
+  - Ajout enum `OPENCORPORATES`, `CREDITSAFE`, `KOMPANY` dans `EnrichmentProvider`
+  - Nouveau modele `EnrichmentProviderConfig` avec champs:
+    - `tenant_id`, `provider`, `is_enabled`, `is_primary`, `priority`
+    - `api_key`, `api_secret`, `api_endpoint` (credentials)
+    - `custom_requests_per_minute`, `custom_requests_per_day` (rate limits)
+    - `config_data` (JSON), statistiques (`total_requests`, `total_errors`)
+  - Dictionnaire `PROVIDER_INFO` avec metadata de chaque provider
+- `/app/modules/enrichment/router.py` - Nouveaux endpoints admin:
+  - `GET /v1/enrichment/admin/providers` - Liste tous les providers avec leur config
+  - `POST /v1/enrichment/admin/providers` - Cree une config provider
+  - `PATCH /v1/enrichment/admin/providers/{provider_code}` - Met a jour une config
+  - `DELETE /v1/enrichment/admin/providers/{provider_code}` - Supprime une config
+  - `POST /v1/enrichment/admin/providers/{provider_code}/test` - Teste la connexion
+- `/app/modules/enrichment/schemas.py` - Nouveaux schemas:
+  - `ProviderInfoResponse`, `ProviderConfigResponse`
+  - `ProviderConfigCreateRequest`, `ProviderConfigUpdateRequest`
+  - `ProviderTestResult`, `ProvidersListResponse`
+- `/app/modules/enrichment/service.py`:
+  - Methodes `_load_provider_config()`, `_is_provider_enabled()`, `_get_provider_api_key()`
+  - Integration config dans initialisation des providers
+
+**Frontend:**
+- `/frontend/src/modules/admin/components/EnrichmentProvidersView.tsx` - **NOUVEAU** Composant complet:
+  - Liste des providers avec cartes (nom, description, statut, stats)
+  - Indicateurs: gratuit/payant, actif/inactif, primaire
+  - Boutons: Activer/Desactiver, Configurer, Tester, Definir primaire
+  - Modal de configuration avec:
+    - Cle API, Secret API, Endpoint personnalise
+    - Limites de requetes (par minute, par jour)
+    - Configuration JSON additionnelle
+- `/frontend/src/modules/admin/components/index.ts` - Export EnrichmentProvidersView
+- `/frontend/src/modules/admin/index.tsx`:
+  - Ajout `'enrichment'` dans type `View`
+  - Ajout onglet "Enrichissement" dans menu admin
+  - Rendu conditionnel `EnrichmentProvidersView`
+
+**Migration:**
+- `/alembic/versions/20260214_enrichment_provider_config.py`:
+  - Table `enrichment_provider_config`
+  - Index sur `tenant_id`, `is_enabled`, `is_primary`
+  - Contrainte unique `(tenant_id, provider)`
+
+### 25. Provider OpenCorporates [2026-02-14]
+
+**Fonctionnalite:** Integration du registre mondial d'entreprises OpenCorporates (140+ pays).
+
+**Backend:**
+- `/app/modules/enrichment/providers/opencorporates.py` - **NOUVEAU** Provider:
+  - API REST `api.opencorporates.com/v0.4`
+  - Lookup par nom d'entreprise (`name`) ou numero (`company_number`)
+  - Detection automatique juridiction France (SIRET/SIREN)
+  - Mapping vers entite Contact
+  - Cache 24h
+  - Rate limits: 50 req/min gratuit, 500 req/jour
+- `/app/modules/enrichment/providers/__init__.py` - Export OpenCorporatesProvider
+- `/app/modules/enrichment/service.py`:
+  - Import et enregistrement dans `PROVIDER_REGISTRY`
+  - OpenCorporates comme fallback pour SIRET, SIREN, NAME, RISK
+
+**Capabilities:**
+| Lookup Type | Providers (ordre priorite) |
+|-------------|---------------------------|
+| SIRET | insee, opencorporates |
+| SIREN | insee, opencorporates |
+| NAME | insee, opencorporates |
+| RISK | pappers, opencorporates |
+
+### 26. Deploiement Production azalscore.com [2026-02-14]
+
+**Probleme:** Apres rebuild de l'API, nginx ne pouvait plus atteindre le backend.
+
+**Cause:** L'API avait une nouvelle IP Docker (172.19.0.3) mais nginx avait cache l'ancienne (172.18.0.12).
+
+**Solution:**
+```bash
+# Reconnecter API aux reseaux
+docker network connect azalscore_azals_internal azals_api
+docker network connect azalscore_azals_external azals_api
+
+# Recharger nginx pour refresh DNS
+docker exec azals_nginx nginx -s reload
+```
+
+**Verification deploiement:**
+```bash
+# Health check
+curl https://azalscore.com/health
+
+# Test endpoint admin (401 = OK, auth requise)
+curl -H "X-Tenant-ID: masith" https://azalscore.com/v1/enrichment/admin/providers
+```
+
+**Etat final:**
+| Composant | Status |
+|-----------|--------|
+| Frontend | OK |
+| API Health | Healthy |
+| Database | Connected (2.8ms) |
+| Redis | Connected (1.1ms) |
+| Nginx → API | Fixed |
+| Enrichment Admin | 401 (normal sans token) |
+
 ---
 
 ## Taches en Attente
@@ -466,17 +574,19 @@ POST /v1/enrichment/lookup
   - Statut juridique
   - Recherche par nom ou numero d'entreprise
   - API gratuite limitee (500 req/mois) ou payante
-- [ ] **Creditsafe / Coface** (payant) - Notation credit internationale
-  - Score credit D&B
-  - Notation Moody's / S&P / Fitch
 - [x] **VIES** (gratuit) - Validation TVA intracommunautaire - IMPLEMENTE (2026-02-13)
   - Verification numero TVA europeen via API REST Commission Europeenne
   - Nom et adresse de l'entreprise
   - Formats TVA par pays (27 pays UE + XI)
   - Integration dans module enrichment
+- [ ] **Creditsafe** (payant) - Notation credit internationale
+  - Enum ajoute dans EnrichmentProvider
+  - Provider a implementer quand cle API disponible
+  - Score credit D&B, notation Moody's / S&P / Fitch
 - [ ] **Kompany** (payant) - Registres europeens
-  - Documents officiels
-  - Comptes annuels
+  - Enum ajoute dans EnrichmentProvider
+  - Provider a implementer quand cle API disponible
+  - Documents officiels, comptes annuels
 
 ---
 
@@ -598,6 +708,33 @@ docker inspect azals_api --format '{{range $k, $v := .NetworkSettings.Networks}}
 docker network connect azalscore_azals_internal azals_api
 ```
 
+### Rebuild et deployer le frontend
+```bash
+cd /home/ubuntu/azalscore/frontend
+docker build -f Dockerfile.prod -t azalscore-frontend:0.5.4-tailwind .
+docker stop azals_frontend && docker rm azals_frontend
+docker run -d --name azals_frontend --network azalscore_azals_external azalscore-frontend:0.5.4-tailwind
+docker exec azals_nginx nginx -s reload
+```
+
+### Lister les providers enrichissement
+```bash
+docker exec azals_api python -c "
+from app.modules.enrichment.models import PROVIDER_INFO
+for p, info in PROVIDER_INFO.items():
+    print(f'{p.value}: {info[\"name\"]}')"
+```
+
+### Verifier la table enrichment_provider_config
+```bash
+docker exec azals_api python -c "
+from app.core.database import SessionLocal
+from app.modules.enrichment.models import EnrichmentProviderConfig
+db = SessionLocal()
+for c in db.query(EnrichmentProviderConfig).all():
+    print(f'{c.tenant_id}/{c.provider.value}: enabled={c.is_enabled}')"
+```
+
 ---
 
 ## Fichiers Modifies
@@ -612,17 +749,27 @@ docker network connect azalscore_azals_internal azals_api
 7. `/app/api/auth.py` - SUPERADMIN dans role_capabilities, format reponse capabilities
 8. `/app/api/admin.py` - **NOUVEAU** endpoint /v1/admin/dashboard
 9. `/app/main.py` - Import et inclusion du router admin_dashboard
-10. `/app/modules/enrichment/schemas.py` - suggestions: list[dict[str, Any]] pour entreprises
-11. `/app/modules/purchases/schemas.py` - code: Optional[str] auto-genere
+10. `/app/modules/enrichment/schemas.py` - suggestions, ProviderConfigResponse, ProviderTestResult, etc.
+11. `/app/modules/enrichment/models.py` - EnrichmentProviderConfig, PROVIDER_INFO, nouveaux enums
+12. `/app/modules/enrichment/router.py` - Endpoints admin /admin/providers (CRUD + test)
+13. `/app/modules/enrichment/service.py` - Config loading, OpenCorporates integration
+14. `/app/modules/enrichment/providers/opencorporates.py` - **NOUVEAU** Provider OpenCorporates
+15. `/app/modules/enrichment/providers/__init__.py` - Export OpenCorporatesProvider
+16. `/app/modules/purchases/schemas.py` - code: Optional[str] auto-genere
 
 ### Frontend (frontend/src/)
-1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules"
+1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules", onglet "Enrichissement"
 2. `/modules/admin/types.ts` - Ajout created_by_name dans interface Role
 3. `/modules/admin/components/SequencesView.tsx` - Hooks corriges
-4. `/ui-engine/simple/PermissionsManager.tsx` - Hooks corriges
-5. `/core/capabilities/index.tsx` - Parsing robuste avec logging
-6. `/modules/enrichment/` - **NOUVEAU MODULE** CompanyAutocomplete, AddressAutocomplete, SiretLookup, BarcodeLookup
-7. `/modules/purchases/index.tsx` - Integration enrichissement, hooks corriges format reponse, code auto-genere
+4. `/modules/admin/components/EnrichmentProvidersView.tsx` - **NOUVEAU** Interface admin providers
+5. `/modules/admin/components/index.ts` - Export EnrichmentProvidersView
+6. `/ui-engine/simple/PermissionsManager.tsx` - Hooks corriges
+7. `/core/capabilities/index.tsx` - Parsing robuste avec logging
+8. `/modules/enrichment/` - **NOUVEAU MODULE** CompanyAutocomplete, AddressAutocomplete, SiretLookup, BarcodeLookup
+9. `/modules/purchases/index.tsx` - Integration enrichissement, hooks corriges format reponse, code auto-genere
+
+### Migrations (alembic/)
+1. `/alembic/versions/20260214_enrichment_provider_config.py` - Table enrichment_provider_config
 
 ---
 
