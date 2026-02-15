@@ -510,7 +510,7 @@ export const BreakGlassPage: React.FC = () => {
     if (step === 'intention') {
       trackBreakGlassEvent('initiated');
     }
-  }, []);
+  }, [step]);
 
   // Countdown timer
   useEffect(() => {

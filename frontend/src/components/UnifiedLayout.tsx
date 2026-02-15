@@ -328,19 +328,23 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewChange }) => {
   const { capabilities } = useCapabilities();
 
-  // Filtrer les items selon les capabilities
-  const visibleItems = MENU_ITEMS.filter(item => {
-    if (!item.capability) return true;
-    return capabilities.includes(item.capability);
-  });
+  // Filtrer les items selon les capabilities (mémorisé)
+  const visibleItems = useMemo(() => {
+    return MENU_ITEMS.filter(item => {
+      if (!item.capability) return true;
+      return capabilities.includes(item.capability);
+    });
+  }, [capabilities]);
 
-  // Grouper les items filtrés
-  const groups = visibleItems.reduce((acc, item) => {
-    const group = item.group || 'Autre';
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(item);
-    return acc;
-  }, {} as Record<string, MenuItem[]>);
+  // Grouper les items filtrés (mémorisé)
+  const groups = useMemo(() => {
+    return visibleItems.reduce((acc, item) => {
+      const group = item.group || 'Autre';
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(item);
+      return acc;
+    }, {} as Record<string, MenuItem[]>);
+  }, [visibleItems]);
 
   return (
     <>
