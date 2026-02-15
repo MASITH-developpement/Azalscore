@@ -33,6 +33,7 @@ MODULES_TO_LOAD = [
 
     # MODULES FINANCIERS
     ("accounting", "Accounting"),
+    ("treasury", "Treasury"),
     ("finance", "Finance"),
     ("procurement", "Procurement"),
     ("purchases", "Purchases"),
