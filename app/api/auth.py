@@ -23,17 +23,112 @@ from app.core.two_factor import TwoFactorService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# Import pour la validation d'IP
+import ipaddress
+import logging
+
+_ip_logger = logging.getLogger("app.auth.ip_security")
+
+
+def _is_valid_ip(ip_str: str) -> bool:
+    """
+    Valide qu'une chaîne est une adresse IP valide (IPv4 ou IPv6).
+
+    SÉCURITÉ: Empêche l'injection de valeurs malveillantes via les headers.
+    """
+    if not ip_str:
+        return False
+    try:
+        ipaddress.ip_address(ip_str.strip())
+        return True
+    except ValueError:
+        return False
+
+
+def _is_private_ip(ip_str: str) -> bool:
+    """Vérifie si une IP est privée (RFC 1918 / loopback)."""
+    try:
+        ip = ipaddress.ip_address(ip_str.strip())
+        return ip.is_private or ip.is_loopback
+    except ValueError:
+        return False
+
 
 def get_client_ip(request: Request) -> str:
-    """Extrait l'IP client de manière sécurisée."""
+    """
+    Extrait l'IP client de manière sécurisée.
+
+    SÉCURITÉ - AVERTISSEMENT:
+    Les headers X-Forwarded-For et X-Real-IP peuvent être spoofés par un attaquant
+    si l'application n'est pas derrière un reverse proxy de confiance.
+
+    ARCHITECTURE RECOMMANDÉE:
+    1. L'application doit être derrière un reverse proxy (nginx, Caddy, etc.)
+    2. Le reverse proxy doit être configuré pour:
+       - Supprimer/écraser les headers X-Forwarded-For entrants
+       - Ajouter l'IP réelle du client au header
+    3. Seules les connexions depuis le reverse proxy sont acceptées
+
+    COMPORTEMENT:
+    - Si X-Forwarded-For est présent et valide → utilise la première IP
+    - Sinon si X-Real-IP est présent et valide → utilise cette IP
+    - Sinon → utilise l'IP de la connexion TCP (request.client.host)
+    - En dernier recours → "unknown"
+
+    La fonction valide le format des IPs pour éviter les injections.
+    """
+    socket_ip = request.client.host if request.client else None
+
+    # Option 1: X-Forwarded-For (standard de facto pour les proxies)
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        # X-Forwarded-For peut contenir plusieurs IPs: "client, proxy1, proxy2"
+        # La première est censée être l'IP du client original
+        first_ip = forwarded.split(",")[0].strip()
+
+        if _is_valid_ip(first_ip):
+            # Log si l'IP socket et l'IP forwarded sont différentes (normal derrière un proxy)
+            # mais suspect si l'IP socket n'est pas privée (pas de proxy)
+            if socket_ip and not _is_private_ip(socket_ip) and socket_ip != first_ip:
+                _ip_logger.warning(
+                    "[IP_SECURITY] X-Forwarded-For reçu sans proxy de confiance",
+                    extra={
+                        "socket_ip": socket_ip,
+                        "forwarded_ip": first_ip,
+                        "risk": "possible_spoofing"
+                    }
+                )
+            return first_ip
+        else:
+            # Header malformé - possible tentative d'injection
+            _ip_logger.warning(
+                "[IP_SECURITY] X-Forwarded-For invalide détecté",
+                extra={
+                    "raw_value": forwarded[:100],  # Tronquer pour éviter log injection
+                    "socket_ip": socket_ip
+                }
+            )
+
+    # Option 2: X-Real-IP (utilisé par nginx)
     real_ip = request.headers.get("X-Real-IP")
     if real_ip:
-        return real_ip
-    if request.client:
-        return request.client.host
+        real_ip_clean = real_ip.strip()
+        if _is_valid_ip(real_ip_clean):
+            return real_ip_clean
+        else:
+            _ip_logger.warning(
+                "[IP_SECURITY] X-Real-IP invalide détecté",
+                extra={
+                    "raw_value": real_ip[:100],
+                    "socket_ip": socket_ip
+                }
+            )
+
+    # Option 3: IP de la connexion TCP directe
+    if socket_ip and _is_valid_ip(socket_ip):
+        return socket_ip
+
+    # Fallback
     return "unknown"
 
 
@@ -223,14 +318,6 @@ def login(
     client_ip = get_client_ip(request)
     auth_rate_limiter.check_login_rate(client_ip, user_data.email)
 
-    # DEBUG TEMPORAIRE: diagnostiquer les échecs de login navigateur
-    import logging
-    _login_logger = logging.getLogger("app.auth.login_debug")
-    _login_logger.warning(
-        f"[LOGIN_DEBUG] email='{user_data.email}' email_len={len(user_data.email)} "
-        f"pwd_len={len(user_data.password)} tenant={tenant_id} ip={client_ip}"
-    )
-
     # SÉCURITÉ P0-3: Recherche de l'utilisateur DANS LE TENANT UNIQUEMENT
     # Correction: ajout du filtre tenant_id pour isolation multi-tenant
     user = db.query(User).filter(
@@ -240,7 +327,6 @@ def login(
 
     if not user:
         # Enregistrer l'échec (timing constant pour éviter user enumeration)
-        _login_logger.warning(f"[LOGIN_DEBUG] USER NOT FOUND for email='{user_data.email}' tenant={tenant_id}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -249,7 +335,6 @@ def login(
 
     # Vérification du mot de passe
     if not verify_password(user_data.password, user.password_hash):
-        _login_logger.warning(f"[LOGIN_DEBUG] PASSWORD MISMATCH for email='{user_data.email}' pwd_len={len(user_data.password)}")
         auth_rate_limiter.record_login_attempt(client_ip, user_data.email, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -1045,6 +1130,16 @@ def get_user_capabilities(
         "marceau.memory.view", "marceau.memory.manage",
         "marceau.settings.view", "marceau.settings.manage",
         "marceau.admin",
+        # Import de données
+        "import.config.create", "import.config.read", "import.config.update", "import.config.delete",
+        "import.execute", "import.cancel",
+        "import.history.read", "import.history.export",
+        "import.odoo.config", "import.odoo.execute", "import.odoo.preview",
+        "import.axonaut.config", "import.axonaut.execute",
+        "import.pennylane.config", "import.pennylane.execute",
+        "import.sage.config", "import.sage.execute",
+        "import.chorus.config", "import.chorus.execute",
+        "import.admin",
     ]
 
     # Capacites basees sur le role
@@ -1084,7 +1179,19 @@ def get_user_capabilities(
 class ChangePasswordRequest(BaseModel):
     """Schema pour changement de mot de passe."""
     current_password: str
-    new_password: str = Field(..., min_length=8)
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Nouveau mot de passe sécurisé"
+    )
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v):
+        """Valide le nouveau mot de passe avec les règles de sécurité."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 class ChangePasswordResponse(BaseModel):

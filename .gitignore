@@ -29,13 +29,20 @@ ENV/
 env/
 .venv
 
-# Variables d'environnement
+# Variables d'environnement et secrets
+# SECURITE CRITIQUE: Ne JAMAIS committer de fichiers contenant des secrets
 .env
 .env.*
 .env.local
+.env.production
+.env.development
+.env.staging
 *.env
 *.secret
 secrets/
+# Garder uniquement les templates
+!.env.example
+!.env.*.template
 
 # Tests
 .pytest_cache/

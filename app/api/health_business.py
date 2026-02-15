@@ -24,7 +24,8 @@ from app.core.version import AZALS_VERSION
 router = APIRouter(prefix="/health/business", tags=["Health Business"])
 
 # Liste des modules critiques a verifier
-CRITICAL_MODULES = [
+# SÉCURITÉ: Cette liste sert aussi de whitelist pour les imports dynamiques
+CRITICAL_MODULES = frozenset([
     "accounting",
     "purchases",
     "treasury",
@@ -33,11 +34,50 @@ CRITICAL_MODULES = [
     "commercial",
     "iam",
     "tenants",
-]
+])
+
+# Pattern de validation pour les noms de modules (alphanumériques et underscores uniquement)
+import re
+_MODULE_NAME_PATTERN = re.compile(r'^[a-zA-Z][a-zA-Z0-9_]*$')
+
+
+def _validate_module_name(module_name: str) -> bool:
+    """
+    Valide qu'un nom de module est sécurisé.
+
+    SÉCURITÉ:
+    - Vérifie que le module est dans la whitelist
+    - Vérifie que le nom ne contient que des caractères alphanumériques et underscores
+    - Empêche les attaques par path traversal ou injection
+    """
+    if not module_name:
+        return False
+
+    # Vérifier le pattern (alphanumériques et underscores uniquement)
+    if not _MODULE_NAME_PATTERN.match(module_name):
+        return False
+
+    # Vérifier la whitelist
+    if module_name not in CRITICAL_MODULES:
+        return False
+
+    return True
 
 
 def check_module_health(module_name: str) -> dict[str, Any]:
-    """Verifier la sante d'un module specifique."""
+    """
+    Verifier la sante d'un module specifique.
+
+    SÉCURITÉ: Le module doit être dans la whitelist CRITICAL_MODULES.
+    """
+    # SÉCURITÉ: Validation stricte du nom de module avant import
+    if not _validate_module_name(module_name):
+        return {
+            "status": "error",
+            "code": 400,
+            "error": "Module name not allowed",
+        }
+
     try:
         # Essayer d'importer le router_v2 du module
         __import__(f"app.modules.{module_name}.router_v2")
@@ -54,17 +94,19 @@ def check_module_health(module_name: str) -> dict[str, Any]:
                 "code": 200,
                 "note": "v1 only",
             }
-        except ImportError as e:
+        except ImportError:
+            # SÉCURITÉ: Ne pas exposer les détails de l'erreur d'import
             return {
                 "status": "unhealthy",
                 "code": 503,
-                "error": str(e),
+                "error": "Module not found or failed to load",
             }
-    except Exception as e:
+    except Exception:
+        # SÉCURITÉ: Ne pas exposer les détails des exceptions internes
         return {
             "status": "unhealthy",
             "code": 503,
-            "error": str(e),
+            "error": "Module health check failed",
         }
 
 

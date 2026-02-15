@@ -38,18 +38,10 @@ class UserCreate(UserBase):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        """Validation complexité mot de passe."""
-        if len(v) < 12:
-            raise ValueError('Le mot de passe doit contenir au moins 12 caractères')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une majuscule')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une minuscule')
-        if not re.search(r'\d', v):
-            raise ValueError('Le mot de passe doit contenir au moins un chiffre')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            raise ValueError('Le mot de passe doit contenir au moins un caractère spécial')
-        return v
+        """Validation complexité mot de passe via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        # IAM exige 12 caractères minimum (plus strict que signup)
+        return validate_password_or_raise(v)
 
 
 class UserUpdate(BaseModel):
@@ -109,17 +101,9 @@ class PasswordChange(BaseModel):
     @field_validator('new_password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 12:
-            raise ValueError('Le mot de passe doit contenir au moins 12 caractères')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une majuscule')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Le mot de passe doit contenir au moins une minuscule')
-        if not re.search(r'\d', v):
-            raise ValueError('Le mot de passe doit contenir au moins un chiffre')
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            raise ValueError('Le mot de passe doit contenir au moins un caractère spécial')
-        return v
+        """Validation via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 class PasswordReset(BaseModel):
@@ -131,6 +115,13 @@ class PasswordResetConfirm(BaseModel):
     """Confirmation réinitialisation mot de passe."""
     token: str
     new_password: str = Field(..., min_length=12, max_length=128)
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """Validation via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 # ============================================================================
@@ -378,6 +369,13 @@ class InvitationAccept(BaseModel):
     password: str = Field(..., min_length=12, max_length=128)
     first_name: str | None = None
     last_name: str | None = None
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """Validation via module centralisé."""
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
 
 # ============================================================================

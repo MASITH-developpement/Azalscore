@@ -183,10 +183,25 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Bypass si API token (authentification Bearer)
+        # SÉCURITÉ: Les requêtes avec Bearer token sont protégées contre CSRF car:
+        # 1. Les tokens JWT sont stockés côté client (localStorage/sessionStorage)
+        # 2. JavaScript cross-origin ne peut pas accéder à ces storages (Same-Origin Policy)
+        # 3. Le token doit être explicitement ajouté au header Authorization
+        # 4. Contrairement aux cookies, les tokens ne sont PAS envoyés automatiquement
+        # Référence: OWASP - "CSRF tokens are not needed for APIs that use bearer tokens"
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            # Les API calls avec JWT sont protégés différemment
-            return await call_next(request)
+            # Validation supplémentaire: vérifier que le token a un format valide
+            token_parts = auth_header.split(" ", 1)
+            if len(token_parts) == 2 and len(token_parts[1]) > 20:
+                # Token présent et de longueur minimale (JWT = ~100+ chars)
+                return await call_next(request)
+            else:
+                # Token malformé - ne pas bypasser CSRF
+                logger.warning(
+                    "[CSRF] Bearer token malformé détecté",
+                    extra={"path": path, "method": request.method}
+                )
 
         # Extraire le token CSRF
         csrf_token = self._get_csrf_token(request)

@@ -5,6 +5,10 @@ Endpoints publics pour l'inscription de nouvelles entreprises.
 
 Chaque entreprise = 1 Tenant isolé
 Nom entreprise → tenant_id (slug unique)
+
+SÉCURITÉ:
+- Rate limiting strict pour prévenir les abus
+- Validation des entrées via Pydantic
 """
 
 from datetime import datetime
@@ -23,6 +27,83 @@ logger = get_logger(__name__)
 
 
 # ============================================================================
+# RATE LIMITING POUR SIGNUP
+# ============================================================================
+
+def _get_client_ip(request: Request) -> str:
+    """Extrait l'IP client de manière sécurisée."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
+def _check_signup_rate_limit(request: Request) -> None:
+    """
+    Vérifie le rate limit pour les endpoints signup.
+
+    SÉCURITÉ:
+    - 5 inscriptions par heure par IP
+    - 10 vérifications d'email par minute par IP
+    - 10 vérifications de nom d'entreprise par minute par IP
+    """
+    from app.core.rate_limiter import rate_limiter
+
+    client_ip = _get_client_ip(request)
+    path = request.url.path
+
+    # Rate limiting différent selon l'endpoint
+    if path == "/signup/" or path == "/signup":
+        # Inscription: 5 par heure
+        allowed, count = rate_limiter.check_rate("signup:create", client_ip, 5, 3600)
+        if not allowed:
+            logger.warning(
+                "[SIGNUP] Rate limit dépassé pour inscription",
+                extra={"client_ip": client_ip, "count": count}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "code": "RATE_LIMIT_EXCEEDED",
+                    "message": "Trop de tentatives d'inscription. Réessayez dans 1 heure."
+                },
+                headers={"Retry-After": "3600"}
+            )
+        rate_limiter.record_attempt("signup:create", client_ip, 3600)
+    elif "check-email" in path:
+        # Vérification email: 10 par minute
+        allowed, count = rate_limiter.check_rate("signup:check_email", client_ip, 10, 60)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "code": "RATE_LIMIT_EXCEEDED",
+                    "message": "Trop de vérifications. Réessayez dans 1 minute."
+                },
+                headers={"Retry-After": "60"}
+            )
+        rate_limiter.record_attempt("signup:check_email", client_ip, 60)
+    elif "check-company" in path:
+        # Vérification entreprise: 10 par minute
+        allowed, count = rate_limiter.check_rate("signup:check_company", client_ip, 10, 60)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "code": "RATE_LIMIT_EXCEEDED",
+                    "message": "Trop de vérifications. Réessayez dans 1 minute."
+                },
+                headers={"Retry-After": "60"}
+            )
+        rate_limiter.record_attempt("signup:check_company", client_ip, 60)
+
+
+# ============================================================================
 # SCHEMAS
 # ============================================================================
 
@@ -37,7 +118,12 @@ class SignupRequest(BaseModel):
     
     # Admin
     admin_email: EmailStr = Field(..., description="Email de l'administrateur")
-    admin_password: str = Field(..., min_length=8, description="Mot de passe (8 caractères min)")
+    admin_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Mot de passe sécurisé (8-128 caractères, majuscule, minuscule, chiffre, caractère spécial)"
+    )
     admin_first_name: str = Field(..., min_length=1, max_length=50, description="Prénom")
     admin_last_name: str = Field(..., min_length=1, max_length=50, description="Nom")
     admin_phone: Optional[str] = Field(default=None, max_length=20, description="Téléphone")
@@ -58,13 +144,13 @@ class SignupRequest(BaseModel):
     @field_validator('admin_password')
     @classmethod
     def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Le mot de passe doit contenir au moins 8 caractères')
-        if not any(c.isupper() for c in v):
-            raise ValueError('Le mot de passe doit contenir au moins une majuscule')
-        if not any(c.isdigit() for c in v):
-            raise ValueError('Le mot de passe doit contenir au moins un chiffre')
-        return v
+        """
+        Validation stricte du mot de passe via le module centralisé.
+
+        Voir app/core/password_validator.py pour les règles complètes.
+        """
+        from app.core.password_validator import validate_password_or_raise
+        return validate_password_or_raise(v)
 
     @field_validator('accept_terms', 'accept_privacy')
     @classmethod
@@ -104,18 +190,26 @@ async def signup(
 ):
     """
     Inscrire une nouvelle entreprise.
-    
+
     Crée automatiquement:
     - Le tenant (espace isolé pour l'entreprise)
     - L'utilisateur administrateur
     - L'abonnement d'essai (14 jours)
     - Les modules selon le plan choisi
-    
+
     **Aucune carte bancaire requise pour l'essai.**
+
+    SÉCURITÉ: Rate limité à 5 inscriptions par heure par IP.
     """
-    # Log de la tentative
-    client_ip = request.client.host if request.client else "unknown"
-    logger.info(f"[SIGNUP] Tentative: {data.company_name} / {data.admin_email} depuis {client_ip}")
+    # SÉCURITÉ: Rate limiting strict
+    _check_signup_rate_limit(request)
+
+    # Log de la tentative (sans exposer d'informations sensibles)
+    client_ip = _get_client_ip(request)
+    logger.info(
+        "[SIGNUP] Tentative d'inscription",
+        extra={"client_ip": client_ip, "company_name": data.company_name[:20]}
+    )
     
     service = SignupService(db)
     
@@ -177,13 +271,19 @@ async def signup(
 @router.get("/check-email", response_model=CheckAvailabilityResponse)
 async def check_email_availability(
     email: EmailStr,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
     Vérifier si un email est disponible pour l'inscription.
-    
+
     Utilisé pour la validation en temps réel dans le formulaire.
+
+    SÉCURITÉ: Rate limité à 10 vérifications par minute par IP.
     """
+    # SÉCURITÉ: Rate limiting
+    _check_signup_rate_limit(request)
+
     service = SignupService(db)
     available = service.check_email_available(email)
     
@@ -196,13 +296,19 @@ async def check_email_availability(
 @router.get("/check-company", response_model=CheckAvailabilityResponse)
 async def check_company_availability(
     name: str,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
     Vérifier si un nom d'entreprise est disponible.
-    
+
     Utilisé pour la validation en temps réel dans le formulaire.
+
+    SÉCURITÉ: Rate limité à 10 vérifications par minute par IP.
     """
+    # SÉCURITÉ: Rate limiting
+    _check_signup_rate_limit(request)
+
     if len(name.strip()) < 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -33,6 +33,27 @@ TENANT_BRANDING_DIR = Path(__file__).parent.parent.parent / "ui" / "tenants"
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".ico", ".svg"}
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB
 
+# SÉCURITÉ: Signatures de fichiers (magic numbers) pour validation MIME
+# Format: {extension: [(offset, bytes), ...]}
+FILE_SIGNATURES = {
+    ".png": [(0, b'\x89PNG\r\n\x1a\n')],
+    ".jpg": [(0, b'\xff\xd8\xff')],
+    ".jpeg": [(0, b'\xff\xd8\xff')],
+    ".ico": [
+        (0, b'\x00\x00\x01\x00'),  # ICO
+        (0, b'\x00\x00\x02\x00'),  # CUR
+    ],
+    ".svg": [],  # SVG est vérifié par contenu XML
+}
+
+# Extensions exécutables dangereuses à bloquer
+DANGEROUS_EXTENSIONS = {
+    ".php", ".php3", ".php4", ".php5", ".phtml",
+    ".exe", ".bat", ".cmd", ".sh", ".ps1",
+    ".js", ".html", ".htm", ".asp", ".aspx",
+    ".py", ".pl", ".rb", ".cgi",
+}
+
 
 # ============================================================================
 # SCHEMAS
@@ -83,6 +104,39 @@ def _require_admin_role(context: SaaSContext) -> None:
         )
 
 
+def _validate_file_signature(content: bytes, ext: str) -> bool:
+    """
+    Valide la signature (magic number) du fichier.
+
+    SÉCURITÉ: Empêche l'upload de fichiers malveillants déguisés en images.
+    """
+    if ext not in FILE_SIGNATURES:
+        return False
+
+    signatures = FILE_SIGNATURES[ext]
+
+    # SVG: vérifier que c'est du XML/SVG valide
+    if ext == ".svg":
+        try:
+            content_str = content.decode('utf-8', errors='ignore').strip()
+            # Vérifier les patterns SVG/XML
+            if content_str.startswith('<?xml') or content_str.startswith('<svg'):
+                return True
+            # Vérifier si contient une balise SVG
+            if '<svg' in content_str.lower():
+                return True
+            return False
+        except Exception:
+            return False
+
+    # Autres formats: vérifier les magic numbers
+    for offset, signature in signatures:
+        if content[offset:offset + len(signature)] == signature:
+            return True
+
+    return False
+
+
 def _validate_image_file(file: UploadFile) -> None:
     """Valide le fichier image uploade."""
     if not file.filename:
@@ -91,7 +145,27 @@ def _validate_image_file(file: UploadFile) -> None:
             detail="Nom de fichier manquant"
         )
 
-    ext = Path(file.filename).suffix.lower()
+    # SÉCURITÉ: Nettoyer le nom de fichier (pas de path traversal)
+    filename = Path(file.filename).name
+    if '..' in filename or '/' in filename or '\\' in filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nom de fichier invalide"
+        )
+
+    ext = Path(filename).suffix.lower()
+
+    # SÉCURITÉ: Bloquer les extensions dangereuses
+    if ext in DANGEROUS_EXTENSIONS:
+        logger.warning(
+            "[BRANDING_V2] Tentative d'upload de fichier dangereux",
+            extra={"filename": filename, "extension": ext}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Type de fichier non autorise pour des raisons de securite"
+        )
+
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -185,6 +259,22 @@ async def upload_favicon(
         )
 
     ext = Path(file.filename).suffix.lower()
+
+    # SÉCURITÉ: Valider la signature MIME du fichier
+    if not _validate_file_signature(content, ext):
+        logger.warning(
+            "[BRANDING_V2] Signature MIME invalide pour favicon",
+            extra={
+                "tenant_id": context.tenant_id,
+                "extension": ext,
+                "content_length": len(content)
+            }
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le contenu du fichier ne correspond pas a son extension. Fichier potentiellement corrompu ou malveillant."
+        )
+
     tenant_dir = _get_tenant_dir(context.tenant_id)
 
     favicon_path = tenant_dir / "favicon-custom.png" if ext in [".png", ".ico"] else tenant_dir / f"favicon-custom{ext}"
@@ -238,6 +328,22 @@ async def upload_logo(
         )
 
     ext = Path(file.filename).suffix.lower()
+
+    # SÉCURITÉ: Valider la signature MIME du fichier
+    if not _validate_file_signature(content, ext):
+        logger.warning(
+            "[BRANDING_V2] Signature MIME invalide pour logo",
+            extra={
+                "tenant_id": context.tenant_id,
+                "extension": ext,
+                "content_length": len(content)
+            }
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le contenu du fichier ne correspond pas a son extension. Fichier potentiellement corrompu ou malveillant."
+        )
+
     tenant_dir = _get_tenant_dir(context.tenant_id)
     logo_path = tenant_dir / f"logo-custom{ext}"
 

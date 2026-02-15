@@ -26,10 +26,45 @@ from typing import Any, Generator
 from unittest.mock import patch
 from uuid import UUID
 
+# ============================================================================
+# SÉCURITÉ: Configuration de l'environnement de test
+# ============================================================================
+# IMPORTANT: Les clés de test sont générées dynamiquement à chaque session.
+# Cela évite d'exposer des clés hardcodées qui pourraient être accidentellement
+# utilisées en production.
+
+def _generate_test_fernet_key() -> str:
+    """
+    Génère une clé Fernet valide pour les tests.
+
+    SÉCURITÉ: Cette clé est unique à chaque session de test et ne doit
+    JAMAIS être utilisée en production.
+    """
+    try:
+        from cryptography.fernet import Fernet
+        return Fernet.generate_key().decode()
+    except ImportError:
+        # Fallback si cryptography n'est pas disponible
+        import base64
+        import secrets
+        return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()
+
+
 # Configure test environment BEFORE any imports that use encryption
-# Use a valid Fernet key (base64-encoded 32 bytes)
 os.environ.setdefault("ENVIRONMENT", "test")
-os.environ.setdefault("ENCRYPTION_KEY", "J37-b0UuiaXxpvZmlu95ZmK0cNKYQK57SqplMtAmdn4=")
+
+# SÉCURITÉ: Générer une clé unique pour cette session de test
+# Note: Cette clé est éphémère et différente à chaque exécution de pytest
+if "ENCRYPTION_KEY" not in os.environ:
+    _test_encryption_key = _generate_test_fernet_key()
+    os.environ["ENCRYPTION_KEY"] = _test_encryption_key
+    # Afficher un avertissement pour rappeler que c'est une clé de test
+    import warnings
+    warnings.warn(
+        "ENCRYPTION_KEY générée automatiquement pour les tests. "
+        "Cette clé est UNIQUEMENT pour les tests et change à chaque session.",
+        UserWarning
+    )
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event, String

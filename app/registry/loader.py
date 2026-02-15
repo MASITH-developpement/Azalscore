@@ -10,11 +10,14 @@ Règle : "Le manifest est la vérité, pas le code"
 SÉCURITÉ P1:
 - Validation JSON Schema formelle des manifests
 - Reject manifests non conformes
+- Validation cryptographique (SHA256) des fichiers impl.py
+- Protection contre path traversal
 """
 
 import json
 import importlib.util
 import re
+import hashlib
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
@@ -59,6 +62,11 @@ class ProgramNotFoundError(RegistryError):
 
 class VersionError(RegistryError):
     """Erreur de résolution de version"""
+    pass
+
+
+class SecurityError(RegistryError):
+    """Erreur de sécurité lors du chargement d'un module"""
     pass
 
 
@@ -157,11 +165,78 @@ class Program:
         if not isinstance(self.manifest["outputs"], dict):
             raise ManifestValidationError("outputs doit être un objet")
 
+    def _compute_file_hash(self, file_path: Path) -> str:
+        """Calcule le hash SHA256 d'un fichier."""
+        sha256_hash = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        return sha256_hash.hexdigest()
+
+    def _validate_path_security(self, impl_path: Path) -> None:
+        """
+        Valide que le chemin est sécurisé (pas de path traversal).
+
+        SÉCURITÉ: Empêche le chargement de fichiers en dehors du répertoire du programme.
+        """
+        # Résoudre les chemins absolus pour détecter le path traversal
+        resolved_impl = impl_path.resolve()
+        resolved_program_dir = self.program_dir.resolve()
+
+        # Vérifier que impl_path est bien un enfant de program_dir
+        try:
+            resolved_impl.relative_to(resolved_program_dir)
+        except ValueError:
+            raise SecurityError(
+                f"SÉCURITÉ: Path traversal détecté! "
+                f"Le fichier {impl_path} est en dehors du répertoire autorisé {self.program_dir}"
+            )
+
+        # Vérifier qu'il n'y a pas de liens symboliques malveillants
+        if impl_path.is_symlink():
+            symlink_target = impl_path.resolve()
+            try:
+                symlink_target.relative_to(resolved_program_dir)
+            except ValueError:
+                raise SecurityError(
+                    f"SÉCURITÉ: Lien symbolique malveillant détecté! "
+                    f"Le lien {impl_path} pointe vers {symlink_target} en dehors du répertoire autorisé"
+                )
+
+    def _validate_impl_hash(self, impl_path: Path) -> None:
+        """
+        Valide le hash SHA256 du fichier impl.py si spécifié dans le manifest.
+
+        SÉCURITÉ: Assure l'intégrité du code avant exécution.
+        """
+        expected_hash = self.manifest.get("impl_sha256")
+
+        if expected_hash:
+            actual_hash = self._compute_file_hash(impl_path)
+            if actual_hash != expected_hash:
+                raise SecurityError(
+                    f"SÉCURITÉ: Hash invalide pour {impl_path}! "
+                    f"Attendu: {expected_hash}, Obtenu: {actual_hash}. "
+                    f"Le fichier a peut-être été modifié de manière non autorisée."
+                )
+            logger.debug("[REGISTRY] Hash validé pour %s", impl_path)
+        else:
+            # Avertissement si pas de hash défini (recommandé mais pas obligatoire)
+            logger.warning(
+                "[REGISTRY] Pas de impl_sha256 dans le manifest pour %s. "
+                "Recommandé: ajouter le hash pour valider l'intégrité.",
+                self.manifest.get('id')
+            )
+
     def _load_implementation(self):
         """
         Charge l'implémentation Python du sous-programme
 
         L'implémentation doit exposer une fonction execute(inputs) -> outputs
+
+        SÉCURITÉ P1:
+        - Validation du chemin (anti path traversal)
+        - Validation du hash SHA256 (intégrité)
         """
         impl_path = self.program_dir / "impl.py"
 
@@ -170,7 +245,13 @@ class Program:
                 f"Implémentation manquante : {impl_path}"
             )
 
-        # Chargement dynamique du module
+        # SÉCURITÉ: Valider le chemin avant toute opération
+        self._validate_path_security(impl_path)
+
+        # SÉCURITÉ: Valider le hash si présent
+        self._validate_impl_hash(impl_path)
+
+        # Chargement dynamique du module (après validation)
         spec = importlib.util.spec_from_file_location(
             f"registry.{self.manifest['id']}", impl_path
         )

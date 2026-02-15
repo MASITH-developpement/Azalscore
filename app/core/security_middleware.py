@@ -44,11 +44,27 @@ from app.modules.guardian.error_response import (
 # CONFIGURATION CORS
 # ============================================================================
 
+def _is_ip_address(host: str) -> bool:
+    """Vérifie si une chaîne est une adresse IP (IPv4 ou IPv6)."""
+    import re
+    # Pattern IPv4
+    ipv4_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    # Pattern IPv6 simplifié (couvre les cas courants)
+    ipv6_pattern = r'^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$'
+
+    return bool(re.match(ipv4_pattern, host) or re.match(ipv6_pattern, host))
+
+
 def setup_cors(app: FastAPI) -> None:
     """
     Configure CORS pour l'application.
     PRODUCTION: Utilise CORS_ORIGINS depuis la configuration (OBLIGATOIRE).
     DÉVELOPPEMENT: Autorise toutes les origines.
+
+    SÉCURITÉ:
+    - Interdit les wildcards (*)
+    - Interdit localhost/127.0.0.1
+    - Interdit les adresses IP (utiliser des noms de domaine)
     """
     settings = get_settings()
 
@@ -66,10 +82,34 @@ def setup_cors(app: FastAPI) -> None:
     if "*" in origins:
         raise ValueError("CORS_ORIGINS=* est INTERDIT en production")
 
-    # Validation: pas de localhost en production
+    # Validation stricte de chaque origine
     for origin in origins:
+        # Validation: pas de localhost
         if "localhost" in origin.lower() or "127.0.0.1" in origin:
             raise ValueError(f"localhost interdit dans CORS_ORIGINS en production: {origin}")
+
+        # SÉCURITÉ: Validation - pas d'adresses IP (seulement des noms de domaine)
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(origin)
+            host = parsed.hostname or ""
+
+            if _is_ip_address(host):
+                raise ValueError(
+                    f"SÉCURITÉ: Adresse IP interdite dans CORS_ORIGINS: {origin}. "
+                    f"Utilisez un nom de domaine (ex: https://app.example.com)"
+                )
+
+            # Validation: protocole HTTPS obligatoire
+            if parsed.scheme != "https":
+                raise ValueError(
+                    f"SÉCURITÉ: Protocole HTTPS obligatoire dans CORS_ORIGINS: {origin}. "
+                    f"Remplacez {parsed.scheme}:// par https://"
+                )
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.warning(f"[CORS] Impossible de parser l'origine {origin}: {e}")
 
     app.add_middleware(
         CORSMiddleware,
