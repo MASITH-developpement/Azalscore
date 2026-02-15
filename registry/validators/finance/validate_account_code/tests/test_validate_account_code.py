@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.finance.validate_account_code.impl import execute
 
 
 class TestValidateAccountCode:
@@ -31,7 +31,7 @@ class TestValidateAccountCode:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "account_code": "test_value",
             "chart_of_accounts": "test_value",
         }
@@ -44,7 +44,7 @@ class TestValidateAccountCode:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "account_code": "test",
             "chart_of_accounts": "test",
         }

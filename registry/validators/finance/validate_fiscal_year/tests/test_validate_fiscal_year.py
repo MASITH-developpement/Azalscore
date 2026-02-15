@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.finance.validate_fiscal_year.impl import execute
 
 
 class TestValidateFiscalYear:
@@ -31,7 +31,7 @@ class TestValidateFiscalYear:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "start_date": "test_value",
             "end_date": "test_value",
         }
@@ -44,7 +44,7 @@ class TestValidateFiscalYear:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "start_date": "test",
             "end_date": "test",
         }

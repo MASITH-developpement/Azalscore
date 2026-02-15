@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.numbers.convert_currency.impl import execute
 
 
 class TestConvertCurrency:
@@ -31,7 +31,7 @@ class TestConvertCurrency:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "amount": 100.0,
             "from_currency": "test_value",
             "to_currency": "test_value",
@@ -46,7 +46,7 @@ class TestConvertCurrency:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "amount": "test",
             "from_currency": "test",
             "to_currency": "test",

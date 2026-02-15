@@ -20,6 +20,7 @@ from .models import (
     EnrichmentAction,
     EnrichmentHistory,
     EnrichmentProvider,
+    EnrichmentProviderConfig,
     EnrichmentRateLimit,
     EnrichmentStatus,
     EntityType,
@@ -34,6 +35,8 @@ from .providers import (
     OpenBeautyFactsProvider,
     OpenPetFoodFactsProvider,
     PappersProvider,
+    VIESProvider,
+    OpenCorporatesProvider,
 )
 from .providers.base import EnrichmentResult
 
@@ -45,22 +48,24 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 # Mapping lookup_type -> providers (ordre de priorite)
+# Note: L'ordre peut etre personnalise par tenant via EnrichmentProviderConfig
 PROVIDER_REGISTRY: dict[LookupType, list[EnrichmentProvider]] = {
-    LookupType.SIRET: [EnrichmentProvider.INSEE],
-    LookupType.SIREN: [EnrichmentProvider.INSEE],
-    LookupType.NAME: [EnrichmentProvider.INSEE],  # Recherche par nom
+    LookupType.SIRET: [EnrichmentProvider.INSEE, EnrichmentProvider.OPENCORPORATES],
+    LookupType.SIREN: [EnrichmentProvider.INSEE, EnrichmentProvider.OPENCORPORATES],
+    LookupType.NAME: [EnrichmentProvider.INSEE, EnrichmentProvider.OPENCORPORATES],  # Recherche par nom
     LookupType.ADDRESS: [EnrichmentProvider.ADRESSE_GOUV],
     LookupType.BARCODE: [
         EnrichmentProvider.OPENFOODFACTS,
         EnrichmentProvider.OPENBEAUTYFACTS,
         EnrichmentProvider.OPENPETFOODFACTS,
     ],
-    LookupType.RISK: [EnrichmentProvider.PAPPERS],  # Analyse de risque
+    LookupType.VAT_NUMBER: [EnrichmentProvider.VIES],  # Validation TVA UE
+    LookupType.RISK: [EnrichmentProvider.PAPPERS, EnrichmentProvider.OPENCORPORATES],  # Analyse de risque
 }
 
 # Mapping entity_type -> lookup_types valides
 ENTITY_LOOKUP_MAPPING: dict[EntityType, list[LookupType]] = {
-    EntityType.CONTACT: [LookupType.SIRET, LookupType.SIREN, LookupType.NAME, LookupType.ADDRESS, LookupType.RISK],
+    EntityType.CONTACT: [LookupType.SIRET, LookupType.SIREN, LookupType.NAME, LookupType.ADDRESS, LookupType.VAT_NUMBER, LookupType.RISK],
     EntityType.PRODUCT: [LookupType.BARCODE],
 }
 
@@ -91,6 +96,56 @@ class EnrichmentService:
         self.db = db
         self.tenant_id = tenant_id
         self._providers: dict[EnrichmentProvider, BaseProvider] = {}
+        self._provider_configs: dict[EnrichmentProvider, EnrichmentProviderConfig] = {}
+
+    def _load_provider_config(self, provider: EnrichmentProvider) -> Optional[EnrichmentProviderConfig]:
+        """
+        Charge la configuration du provider depuis la DB.
+
+        Args:
+            provider: Type de provider
+
+        Returns:
+            Config du provider ou None
+        """
+        if provider not in self._provider_configs:
+            config = self.db.query(EnrichmentProviderConfig).filter(
+                EnrichmentProviderConfig.tenant_id == self.tenant_id,
+                EnrichmentProviderConfig.provider == provider,
+            ).first()
+            if config:
+                self._provider_configs[provider] = config
+        return self._provider_configs.get(provider)
+
+    def _is_provider_enabled(self, provider: EnrichmentProvider) -> bool:
+        """
+        Verifie si un provider est active pour ce tenant.
+
+        Args:
+            provider: Type de provider
+
+        Returns:
+            True si active (ou pas de config = actif par defaut)
+        """
+        config = self._load_provider_config(provider)
+        if config is None:
+            return True  # Actif par defaut si pas de config
+        return config.is_enabled
+
+    def _get_provider_api_key(self, provider: EnrichmentProvider) -> Optional[str]:
+        """
+        Recupere la cle API du provider depuis la config.
+
+        Args:
+            provider: Type de provider
+
+        Returns:
+            Cle API ou None
+        """
+        config = self._load_provider_config(provider)
+        if config:
+            return config.api_key
+        return None
 
     def _get_provider(self, provider: EnrichmentProvider) -> Optional[BaseProvider]:
         """
@@ -102,7 +157,15 @@ class EnrichmentService:
         Returns:
             Instance du provider ou None
         """
+        # Verifier si le provider est active
+        if not self._is_provider_enabled(provider):
+            logger.debug(f"[ENRICHMENT] Provider {provider.value} desactive pour tenant {self.tenant_id}")
+            return None
+
         if provider not in self._providers:
+            # Recuperer la cle API si configuree
+            api_key = self._get_provider_api_key(provider)
+
             if provider == EnrichmentProvider.INSEE:
                 self._providers[provider] = INSEEProvider(self.tenant_id)
             elif provider == EnrichmentProvider.ADRESSE_GOUV:
@@ -114,9 +177,11 @@ class EnrichmentService:
             elif provider == EnrichmentProvider.OPENPETFOODFACTS:
                 self._providers[provider] = OpenPetFoodFactsProvider(self.tenant_id)
             elif provider == EnrichmentProvider.PAPPERS:
-                # API key optionnelle depuis config
-                api_key = None  # TODO: Charger depuis settings si disponible
                 self._providers[provider] = PappersProvider(self.tenant_id, api_key=api_key)
+            elif provider == EnrichmentProvider.VIES:
+                self._providers[provider] = VIESProvider(self.tenant_id)
+            elif provider == EnrichmentProvider.OPENCORPORATES:
+                self._providers[provider] = OpenCorporatesProvider(self.tenant_id, api_key=api_key)
             # Providers payants non implementes
             else:
                 logger.warning(f"[ENRICHMENT] Provider {provider.value} non implemente")

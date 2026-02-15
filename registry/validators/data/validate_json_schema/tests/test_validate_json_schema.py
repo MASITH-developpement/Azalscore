@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_json_schema.impl import execute
 
 
 class TestValidateJsonSchema:
@@ -30,7 +30,7 @@ class TestValidateJsonSchema:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "data": "test_value",
             "schema": "test_value",
         }
@@ -43,7 +43,7 @@ class TestValidateJsonSchema:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "data": "test",
             "schema": "test",
         }

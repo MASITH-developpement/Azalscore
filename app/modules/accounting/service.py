@@ -14,6 +14,8 @@ from uuid import UUID
 from sqlalchemy import and_, desc, extract, func, or_
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.query_optimizer import QueryOptimizer
+
 logger = logging.getLogger(__name__)
 
 from .models import (
@@ -27,6 +29,7 @@ from .models import (
     AccountingJournalEntryLine,
 )
 from .schemas import (
+    AccountingStatus,
     AccountingSummary,
     BalanceEntry,
     ChartOfAccountsCreate,
@@ -46,6 +49,7 @@ class AccountingService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id  # Pour CORE SaaS v2
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # FISCAL YEARS
@@ -89,7 +93,7 @@ class AccountingService:
         return self.db.query(AccountingFiscalYear).filter(
             AccountingFiscalYear.tenant_id == self.tenant_id,
             AccountingFiscalYear.status == FiscalYearStatus.OPEN,
-            FiscalYear.is_active == True
+            AccountingFiscalYear.is_active == True
         ).first()
 
     def list_fiscal_years(
@@ -108,7 +112,7 @@ class AccountingService:
 
         total = query.count()
 
-        items = query.order_by(desc(FiscalYear.start_date)).offset(
+        items = query.order_by(desc(AccountingFiscalYear.start_date)).offset(
             (page - 1) * per_page
         ).limit(per_page).all()
 
@@ -380,8 +384,8 @@ class AccountingService:
             query = query.filter(
                 or_(
                     AccountingJournalEntry.entry_number.ilike(f"%{search}%"),
-                    JournalEntry.piece_number.ilike(f"%{search}%"),
-                    JournalEntry.label.ilike(f"%{search}%")
+                    AccountingJournalEntry.piece_number.ilike(f"%{search}%"),
+                    AccountingJournalEntry.label.ilike(f"%{search}%")
                 )
             )
 
@@ -515,16 +519,16 @@ class AccountingService:
         # Calculer les totaux par type de compte
         query = self.db.query(
             ChartOfAccounts.account_type,
-            func.sum(JournalEntryLine.debit).label('total_debit'),
-            func.sum(JournalEntryLine.credit).label('total_credit')
+            func.sum(AccountingJournalEntryLine.debit).label('total_debit'),
+            func.sum(AccountingJournalEntryLine.credit).label('total_credit')
         ).join(
-            JournalEntryLine,
+            AccountingJournalEntryLine,
             and_(
                 ChartOfAccounts.account_number == AccountingJournalEntryLine.account_number,
                 ChartOfAccounts.tenant_id == AccountingJournalEntryLine.tenant_id
             )
         ).join(
-            JournalEntry,
+            AccountingJournalEntry,
             AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
         ).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
@@ -567,6 +571,48 @@ class AccountingService:
             currency="EUR"
         )
 
+    def get_status(self) -> AccountingStatus:
+        """Obtenir le statut de la comptabilité pour monitoring."""
+        from datetime import date, timedelta
+
+        # Compter les écritures en attente (DRAFT ou PENDING)
+        pending_count = self.db.query(AccountingJournalEntry).filter(
+            AccountingJournalEntry.tenant_id == self.tenant_id,
+            AccountingJournalEntry.status.in_([EntryStatus.DRAFT, EntryStatus.PENDING])
+        ).count()
+
+        # Trouver la dernière clôture
+        last_closed_year = self.db.query(AccountingFiscalYear).filter(
+            AccountingFiscalYear.tenant_id == self.tenant_id,
+            AccountingFiscalYear.status == FiscalYearStatus.CLOSED
+        ).order_by(desc(AccountingFiscalYear.closed_at)).first()
+
+        last_closure_date = None
+        days_since_closure = None
+
+        if last_closed_year and last_closed_year.closed_at:
+            last_closure_date = last_closed_year.closed_at.date()
+            days_since_closure = (date.today() - last_closure_date).days
+
+        # Vérifier si les écritures sont à jour (moins de 5 en attente)
+        entries_up_to_date = pending_count <= 5
+
+        # Déterminer le statut visuel
+        # 🟢 = tout va bien (écritures à jour et clôture récente < 45 jours)
+        # 🟠 = attention (écritures en retard ou clôture > 45 jours)
+        if entries_up_to_date and (days_since_closure is None or days_since_closure < 45):
+            status = "🟢"
+        else:
+            status = "🟠"
+
+        return AccountingStatus(
+            status=status,
+            entries_up_to_date=entries_up_to_date,
+            last_closure_date=last_closure_date,
+            pending_entries_count=pending_count,
+            days_since_closure=days_since_closure
+        )
+
     def get_ledger(
         self,
         account_number: Optional[str] = None,
@@ -578,16 +624,16 @@ class AccountingService:
         query = self.db.query(
             ChartOfAccounts.account_number,
             ChartOfAccounts.account_label,
-            func.sum(JournalEntryLine.debit).label('debit_total'),
-            func.sum(JournalEntryLine.credit).label('credit_total')
+            func.sum(AccountingJournalEntryLine.debit).label('debit_total'),
+            func.sum(AccountingJournalEntryLine.credit).label('credit_total')
         ).outerjoin(
-            JournalEntryLine,
+            AccountingJournalEntryLine,
             and_(
                 ChartOfAccounts.account_number == AccountingJournalEntryLine.account_number,
                 ChartOfAccounts.tenant_id == AccountingJournalEntryLine.tenant_id
             )
         ).outerjoin(
-            JournalEntry,
+            AccountingJournalEntry,
             AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
         ).filter(
             ChartOfAccounts.tenant_id == self.tenant_id,
@@ -670,10 +716,10 @@ class AccountingService:
 
             # Mouvements de la période
             movements_query = self.db.query(
-                func.sum(JournalEntryLine.debit).label('period_debit'),
-                func.sum(JournalEntryLine.credit).label('period_credit')
+                func.sum(AccountingJournalEntryLine.debit).label('period_debit'),
+                func.sum(AccountingJournalEntryLine.credit).label('period_credit')
             ).join(
-                JournalEntry,
+                AccountingJournalEntry,
                 AccountingJournalEntryLine.entry_id == AccountingJournalEntry.id
             ).filter(
                 AccountingJournalEntryLine.tenant_id == self.tenant_id,

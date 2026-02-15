@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_vat_rate.impl import execute
 
 
 class TestValidateVatRate:
@@ -31,7 +31,7 @@ class TestValidateVatRate:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "vat_rate": 100.0,
             "country": "test_value",
         }
@@ -44,7 +44,7 @@ class TestValidateVatRate:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "vat_rate": "test",
             "country": "test",
         }

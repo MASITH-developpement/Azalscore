@@ -43,9 +43,11 @@ from .schemas import (
     PickingLineUpdate,
     PickingResponse,
     # Produits
+    ProductAutocompleteResponse,
     ProductCreate,
     ProductList,
     ProductResponse,
+    ProductSuggestion,
     ProductUpdate,
     # Numéros de série
     SerialCreate,
@@ -268,6 +270,27 @@ async def list_products(
     service = get_inventory_service(db, current_user.tenant_id)
     items, total = service.list_products(category_id, status, search, active_only, skip, limit)
     return {"items": items, "total": total}
+
+
+@router.get("/products/autocomplete", response_model=ProductAutocompleteResponse)
+async def autocomplete_products(
+    q: str = Query(..., min_length=2, description="Terme de recherche (min 2 caractères)"),
+    limit: int = Query(10, ge=1, le=50, description="Nombre max de suggestions"),
+    category_id: UUID | None = Query(None, description="Filtrer par catégorie"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Recherche de produits pour autocomplete.
+
+    Retourne une liste légère de suggestions avec seulement les champs
+    nécessaires pour remplir une ligne de document (devis, commande, facture).
+
+    Recherche dans: code, nom, code-barres, SKU.
+    """
+    service = get_inventory_service(db, current_user.tenant_id)
+    suggestions = service.search_products_autocomplete(q, limit, category_id)
+    return {"suggestions": suggestions, "total": len(suggestions)}
 
 
 @router.get("/products/{product_id}", response_model=ProductResponse)

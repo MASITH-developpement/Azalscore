@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     CatalogProduct,
     CommercialDocument,
@@ -58,6 +60,7 @@ class CommercialService:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # GESTION DES CLIENTS
@@ -544,10 +547,13 @@ class CommercialService:
         page: int = 1,
         page_size: int = 20
     ) -> tuple[list[CommercialDocument], int]:
-        """Lister les documents."""
-        query = self.db.query(CommercialDocument).filter(
-            CommercialDocument.tenant_id == self.tenant_id
-        )
+        """Lister les documents (optimise avec eager loading)."""
+        # Utiliser QueryOptimizer pour eviter N+1 sur lines et customer
+        query = self._optimizer.query_with_relations(
+            CommercialDocument,
+            ['lines', 'customer'],
+            use_selectin=True
+        ).filter(CommercialDocument.tenant_id == self.tenant_id)
 
         if doc_type:
             query = query.filter(CommercialDocument.type == doc_type)
@@ -560,16 +566,15 @@ class CommercialService:
         if date_to:
             query = query.filter(CommercialDocument.date <= date_to)
         if search:
-            query = query.outerjoin(Customer, CommercialDocument.customer_id == Customer.id)
             search_filter = or_(
-                CommercialDocument.number.ilike(f"%{search}%"),
-                Customer.name.ilike(f"%{search}%")
+                CommercialDocument.number.ilike(f"%{search}%")
             )
             query = query.filter(search_filter)
 
-        total = query.count()
-        items = query.order_by(CommercialDocument.date.desc()).offset((page - 1) * page_size).limit(page_size).all()
-        return items, total
+        query = query.order_by(CommercialDocument.date.desc())
+
+        # Pagination optimisee
+        return self._optimizer.paginate(query, page=page, page_size=page_size)
 
     def update_document(self, document_id: UUID, data: DocumentUpdate) -> CommercialDocument | None:
         """Mettre à jour un document."""

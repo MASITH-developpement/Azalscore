@@ -17,6 +17,7 @@ from app.core.models import User
 
 from .models import AccountType, EntryStatus, FiscalYearStatus
 from .schemas import (
+    AccountingStatus,
     AccountingSummary,
     ChartOfAccountsCreate,
     ChartOfAccountsResponse,
@@ -57,6 +58,16 @@ async def get_accounting_summary(
     """Obtenir le résumé comptable (dashboard)."""
     service = get_accounting_service(db, current_user.tenant_id)
     return service.get_summary(fiscal_year_id)
+
+
+@router.get("/status", response_model=AccountingStatus)
+async def get_accounting_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Obtenir le statut de la comptabilité (monitoring)."""
+    service = get_accounting_service(db, current_user.tenant_id)
+    return service.get_status()
 
 
 # ============================================================================

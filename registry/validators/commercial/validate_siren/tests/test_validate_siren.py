@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.commercial.validate_siren.impl import execute
 
 
 class TestValidateSiren:
@@ -30,7 +30,7 @@ class TestValidateSiren:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "siren": "test_value",
         }
 
@@ -42,7 +42,7 @@ class TestValidateSiren:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "siren": "test",
         }
         inputs_copy = inputs.copy()

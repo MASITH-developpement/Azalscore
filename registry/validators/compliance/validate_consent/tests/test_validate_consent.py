@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.compliance.validate_consent.impl import execute
 
 
 class TestValidateConsent:
@@ -28,7 +28,7 @@ class TestValidateConsent:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "consent": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateConsent:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "consent": "test",
         }
         inputs_copy = inputs.copy()

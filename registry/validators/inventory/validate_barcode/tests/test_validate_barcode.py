@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.inventory.validate_barcode.impl import execute
 
 
 class TestValidateBarcode:
@@ -32,7 +32,7 @@ class TestValidateBarcode:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "barcode": "test_value",
             "type": "test_value",
         }
@@ -45,7 +45,7 @@ class TestValidateBarcode:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "barcode": "test",
             "type": "test",
         }

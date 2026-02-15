@@ -1,4 +1,7 @@
-"""Configuration pytest et fixtures pour les tests Marketplace."""
+"""Configuration pytest et fixtures pour les tests Marketplace.
+
+Hérite des fixtures globales de app/conftest.py.
+"""
 
 import pytest
 from decimal import Decimal
@@ -6,6 +9,36 @@ from datetime import datetime
 
 from app.modules.marketplace.models import OrderStatus, BillingCycle, PaymentMethod, PlanType
 from app.modules.marketplace.schemas import DiscountCodeResponse, TenantProvisionResponse, MarketplaceStats
+
+
+# ============================================================================
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
+# ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
+
+
+@pytest.fixture
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
 
 
 @pytest.fixture

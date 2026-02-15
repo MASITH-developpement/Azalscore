@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.payments.validate_credit_card.impl import execute
 
 
 class TestValidateCreditCard:
@@ -28,7 +28,7 @@ class TestValidateCreditCard:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "card_number": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateCreditCard:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "card_number": "test",
         }
         inputs_copy = inputs.copy()

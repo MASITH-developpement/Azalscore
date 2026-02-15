@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.commercial.validate_invoice_number.impl import execute
 
 
 class TestValidateInvoiceNumber:
@@ -30,7 +30,7 @@ class TestValidateInvoiceNumber:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "invoice_number": "test_value",
             "format_pattern": "test_value",
         }
@@ -43,7 +43,7 @@ class TestValidateInvoiceNumber:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "invoice_number": "test",
             "format_pattern": "test",
         }

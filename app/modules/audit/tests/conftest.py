@@ -1,58 +1,39 @@
 """
 Fixtures pour les tests audit v2
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 import pytest
 from datetime import datetime, timedelta, date
 from uuid import uuid4
-from fastapi.testclient import TestClient
-
-from app.core.dependencies_v2 import get_saas_context
-from app.core.saas_context import SaaSContext, UserRole
-from app.main import app
 
 
-@pytest.fixture
-def client():
-    """Client de test FastAPI"""
-    return TestClient(app)
-
-
-@pytest.fixture
-def tenant_id():
-    """Tenant ID de test"""
-    return "tenant-test-001"
+# ============================================================================
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
+# ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
 
 @pytest.fixture
-def user_id():
-    """User ID de test"""
-    return "user-test-001"
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
 
 
 @pytest.fixture
-def auth_headers():
-    """Headers d'authentification"""
-    return {"Authorization": "Bearer test-token"}
-
-
-@pytest.fixture(autouse=True)
-def mock_saas_context(monkeypatch, tenant_id, user_id):
-    """Mock get_saas_context pour tous les tests"""
-    def mock_get_context():
-        return SaaSContext(
-            tenant_id=tenant_id,
-            user_id=user_id,
-            role=UserRole.ADMIN,
-            permissions={"audit.*"},
-            scope="tenant",
-            session_id="session-test",
-            ip_address="127.0.0.1",
-            user_agent="pytest",
-            correlation_id="test-correlation"
-        )
-
-    from app.modules.audit import router_v2
-    monkeypatch.setattr(router_v2, "get_saas_context", mock_get_context)
-
-    return mock_get_context
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }

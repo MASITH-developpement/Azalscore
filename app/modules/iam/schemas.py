@@ -309,7 +309,7 @@ class GroupListResponse(BaseModel):
 
 class GroupMembership(BaseModel):
     """Gestion membres groupe."""
-    user_ids: list[int]
+    user_ids: list[UUID]
 
 
 # ============================================================================
@@ -360,12 +360,13 @@ class InvitationResponse(BaseModel):
     id: UUID
     tenant_id: str
     email: str
+    token: str  # Token d'invitation pour acceptation
     status: str
     roles_to_assign: list[str] = []
     groups_to_assign: list[str] = []
     created_at: datetime
     expires_at: datetime
-    invited_by: str
+    invited_by: UUID
     accepted_at: datetime | None
 
     model_config = {"from_attributes": True}

@@ -1,16 +1,14 @@
 """
 Fixtures pour les tests Maintenance v2
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 import pytest
 from datetime import date, datetime
 from decimal import Decimal
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
 
-from app.core.dependencies_v2 import get_saas_context
-from app.core.saas_context import SaaSContext, UserRole
-from app.main import app
 from app.modules.maintenance.models import (
     AssetCategory,
     AssetCriticality,
@@ -23,19 +21,33 @@ from app.modules.maintenance.models import (
 
 
 # ============================================================================
-# FIXTURES GLOBALES
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
+
 
 @pytest.fixture
-def tenant_id():
-    """Tenant ID de test"""
-    return "123"
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
 
 
 @pytest.fixture
-def user_id():
-    """User ID de test"""
-    return "456"
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
 
 
 # ============================================================================
@@ -100,40 +112,6 @@ def mock_maintenance_service():
     mock_service.get_dashboard.return_value = None
 
     return mock_service
-
-
-@pytest.fixture
-def mock_get_saas_context(tenant_id, user_id):
-    """Mock de get_saas_context"""
-    def _mock_context():
-        return SaaSContext(
-            tenant_id=tenant_id,
-            user_id=user_id,
-            role=UserRole.ADMIN,
-            permissions={"maintenance.*"},
-            scope="tenant",
-            session_id="session-test",
-            ip_address="127.0.0.1",
-            user_agent="pytest",
-            correlation_id="test-correlation"
-        )
-    return _mock_context
-
-
-@pytest.fixture
-def client(mock_get_saas_context, mock_maintenance_service):
-    """Client de test FastAPI avec mocks"""
-    from app.modules.maintenance.router_v2 import get_maintenance_service
-
-    # Remplacer les dépendances par les mocks
-    app.dependency_overrides[get_saas_context] = mock_get_saas_context
-    app.dependency_overrides[get_maintenance_service] = lambda: mock_maintenance_service
-
-    client = TestClient(app)
-    yield client
-
-    # Nettoyer les overrides
-    app.dependency_overrides.clear()
 
 
 # ============================================================================

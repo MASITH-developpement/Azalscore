@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_api_key.impl import execute
 
 
 class TestValidateApiKey:
@@ -30,7 +30,7 @@ class TestValidateApiKey:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "api_key": "test_value",
             "format": "test_value",
         }
@@ -43,7 +43,7 @@ class TestValidateApiKey:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "api_key": "test",
             "format": "test",
         }

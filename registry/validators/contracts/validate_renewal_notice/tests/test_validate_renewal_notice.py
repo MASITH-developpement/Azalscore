@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.contracts.validate_renewal_notice.impl import execute
 
 
 class TestValidateRenewalNotice:
@@ -28,7 +28,7 @@ class TestValidateRenewalNotice:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "end_date": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateRenewalNotice:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "end_date": "test",
         }
         inputs_copy = inputs.copy()

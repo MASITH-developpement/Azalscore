@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.numbers.format_number.impl import execute
 
 
 class TestFormatNumber:
@@ -30,7 +30,7 @@ class TestFormatNumber:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "value": 100.0,
             "locale": "test_value",
             "decimals": 100.0,
@@ -44,7 +44,7 @@ class TestFormatNumber:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "value": "test",
             "locale": "test",
             "decimals": "test",

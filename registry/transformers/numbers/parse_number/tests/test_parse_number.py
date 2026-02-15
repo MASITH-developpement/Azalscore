@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.numbers.parse_number.impl import execute
 
 
 class TestParseNumber:
@@ -30,7 +30,7 @@ class TestParseNumber:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "value": "test_value",
             "locale": "test_value",
         }
@@ -43,7 +43,7 @@ class TestParseNumber:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "value": "test",
             "locale": "test",
         }

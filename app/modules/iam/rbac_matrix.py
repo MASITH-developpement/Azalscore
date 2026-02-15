@@ -762,7 +762,8 @@ LEGACY_ROLE_MAPPING = {
     "EMPLOYE": StandardRole.READONLY,
 
     # Rôles IAM existants
-    "SUPER_ADMIN": StandardRole.SUPER_ADMIN,
+    "SUPERADMIN": StandardRole.SUPER_ADMIN,  # Sans underscore (UserRole enum)
+    "SUPER_ADMIN": StandardRole.SUPER_ADMIN,  # Avec underscore (legacy)
     "TENANT_ADMIN": StandardRole.ADMIN,
     "DRH": StandardRole.MANAGER,
     "RESPONSABLE_COMMERCIAL": StandardRole.MANAGER,

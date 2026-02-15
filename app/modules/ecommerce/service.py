@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     CartItem,
     CartStatus,
@@ -68,6 +70,7 @@ class EcommerceService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id  # Pour CORE SaaS v2
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # CATEGORIES

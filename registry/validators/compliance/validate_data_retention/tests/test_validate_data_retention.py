@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.compliance.validate_data_retention.impl import execute
 
 
 class TestValidateDataRetention:
@@ -28,7 +28,7 @@ class TestValidateDataRetention:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "retention_days": 100.0,
         }
 
@@ -40,7 +40,7 @@ class TestValidateDataRetention:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "retention_days": "test",
         }
         inputs_copy = inputs.copy()

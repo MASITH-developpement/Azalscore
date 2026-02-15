@@ -13,6 +13,8 @@ from uuid import UUID
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     InvoiceStatus,
     OrderStatus,
@@ -43,6 +45,7 @@ class PurchasesService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id  # Pour CORE SaaS v2
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # GESTION DES FOURNISSEURS

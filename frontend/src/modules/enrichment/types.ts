@@ -14,6 +14,7 @@ export type EnrichmentProvider =
   | 'openfoodfacts'
   | 'openbeautyfacts'
   | 'openpetfoodfacts'
+  | 'vies'
   | 'pappers'
   | 'google_places'
   | 'amazon_paapi'
@@ -29,7 +30,7 @@ export type EnrichmentStatus =
 
 export type EnrichmentAction = 'pending' | 'accepted' | 'rejected' | 'partial';
 
-export type LookupType = 'siret' | 'siren' | 'address' | 'barcode' | 'name' | 'risk';
+export type LookupType = 'siret' | 'siren' | 'address' | 'barcode' | 'name' | 'vat_number' | 'risk';
 
 export type EntityType = 'contact' | 'product';
 
@@ -185,6 +186,8 @@ export interface EnrichedContactFields {
   legal_form?: string;
   siret?: string;
   siren?: string;
+  vat_number?: string;
+  vat_valid?: boolean;
   naf_code?: string;
   naf_label?: string;
   address?: string;           // Adresse complete (depuis suggestions)
@@ -193,8 +196,22 @@ export interface EnrichedContactFields {
   postal_code?: string;
   city?: string;
   country?: string;
+  country_code?: string;
   latitude?: number;
   longitude?: number;
+}
+
+/**
+ * Champs enrichis depuis VIES (validation TVA UE)
+ */
+export interface EnrichedVatFields {
+  valid: boolean;
+  country_code: string;
+  vat_number: string;
+  full_vat_number: string;
+  name?: string;
+  address?: string;
+  request_date: string;
 }
 
 // ============================================================================
@@ -268,6 +285,15 @@ export interface BarcodeLookupProps {
   value?: string;
   onEnrich?: (fields: EnrichedProductFields) => void;
   onHistoryId?: (id: string) => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+export interface VatLookupProps {
+  value?: string;
+  onEnrich?: (fields: EnrichedVatFields) => void;
+  onHistoryId?: (id: string) => void;
+  onValidation?: (valid: boolean, fields: EnrichedVatFields | null) => void;
   disabled?: boolean;
   className?: string;
 }

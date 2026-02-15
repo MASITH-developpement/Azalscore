@@ -1,6 +1,6 @@
 # AZALSCORE - Memoire de Session
 
-## Derniere mise a jour: 2026-02-10
+## Derniere mise a jour: 2026-02-14
 
 ---
 
@@ -358,16 +358,236 @@ import { RiskAnalysis } from '@/modules/enrichment';
 />
 ```
 
+### 23. Provider VIES - Validation TVA Europeenne [2026-02-13]
+
+**Fonctionnalite:** Validation des numeros de TVA intracommunautaires via l'API VIES de la Commission Europeenne.
+
+**Backend:**
+- `/app/modules/enrichment/providers/vies.py` - **NOUVEAU** Provider VIES avec:
+  - Validation format TVA par pays (27 pays UE + Irlande du Nord XI)
+  - Appel API REST `ec.europa.eu/taxation_customs/vies/rest-api`
+  - Parsing adresse intelligente par pays (codes postaux differents)
+  - Mapping vers entite Contact (vat_number, vat_valid, address, etc.)
+  - Cache 24h (donnees stables)
+- `/app/modules/enrichment/models.py`:
+  - Ajout `EnrichmentProvider.VIES`
+  - Ajout `LookupType.VAT_NUMBER`
+  - Rate limits: 20 req/min, 500 req/jour
+- `/app/modules/enrichment/service.py`:
+  - Import et enregistrement VIESProvider
+  - Ajout `VAT_NUMBER` dans PROVIDER_REGISTRY et ENTITY_LOOKUP_MAPPING
+- `/app/modules/enrichment/providers/__init__.py` - Export VIESProvider
+- `/app/modules/enrichment/schemas.py` - Exemple vat_number dans documentation
+- `/app/modules/enrichment/router.py` - Documentation mise a jour
+
+**Frontend:**
+- `/frontend/src/modules/enrichment/types.ts`:
+  - Ajout `'vies'` dans EnrichmentProvider
+  - Ajout `'vat_number'` dans LookupType
+  - Ajout interface `EnrichedVatFields`
+  - Ajout interface `VatLookupProps`
+  - Ajout `vat_number`, `vat_valid`, `country_code` dans EnrichedContactFields
+
+**Formats TVA supportes (exemples):**
+| Pays | Format | Exemple |
+|------|--------|---------|
+| FR | 2 caracteres + 9 chiffres | FR40303265045 |
+| DE | 9 chiffres | DE123456789 |
+| BE | 0/1 + 9 chiffres | BE0123456789 |
+| ES | lettre/chiffre + 7 chiffres + lettre/chiffre | ESX1234567X |
+| IT | 11 chiffres | IT12345678901 |
+| NL | 9 chiffres + B + 2 chiffres | NL123456789B01 |
+
+**Usage API:**
+```http
+POST /v1/enrichment/lookup
+{
+  "lookup_type": "vat_number",
+  "lookup_value": "FR40303265045",
+  "entity_type": "contact"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "enriched_fields": {
+    "name": "GOOGLE FRANCE SARL",
+    "company_name": "GOOGLE FRANCE SARL",
+    "vat_number": "FR40303265045",
+    "vat_valid": true,
+    "address_line1": "8 RUE DE LONDRES",
+    "postal_code": "75009",
+    "city": "PARIS",
+    "country_code": "FR",
+    "country": "France"
+  },
+  "confidence": 1.0,
+  "source": "vies"
+}
+```
+
+### 24. Configuration Provider Enrichissement - Interface Admin [2026-02-14]
+
+**Fonctionnalite:** Interface complete pour configurer les providers d'enrichissement par tenant.
+
+**Backend:**
+- `/app/modules/enrichment/models.py`:
+  - Ajout enum `OPENCORPORATES`, `CREDITSAFE`, `KOMPANY` dans `EnrichmentProvider`
+  - Nouveau modele `EnrichmentProviderConfig` avec champs:
+    - `tenant_id`, `provider`, `is_enabled`, `is_primary`, `priority`
+    - `api_key`, `api_secret`, `api_endpoint` (credentials)
+    - `custom_requests_per_minute`, `custom_requests_per_day` (rate limits)
+    - `config_data` (JSON), statistiques (`total_requests`, `total_errors`)
+  - Dictionnaire `PROVIDER_INFO` avec metadata de chaque provider
+- `/app/modules/enrichment/router.py` - Nouveaux endpoints admin:
+  - `GET /v1/enrichment/admin/providers` - Liste tous les providers avec leur config
+  - `POST /v1/enrichment/admin/providers` - Cree une config provider
+  - `PATCH /v1/enrichment/admin/providers/{provider_code}` - Met a jour une config
+  - `DELETE /v1/enrichment/admin/providers/{provider_code}` - Supprime une config
+  - `POST /v1/enrichment/admin/providers/{provider_code}/test` - Teste la connexion
+- `/app/modules/enrichment/schemas.py` - Nouveaux schemas:
+  - `ProviderInfoResponse`, `ProviderConfigResponse`
+  - `ProviderConfigCreateRequest`, `ProviderConfigUpdateRequest`
+  - `ProviderTestResult`, `ProvidersListResponse`
+- `/app/modules/enrichment/service.py`:
+  - Methodes `_load_provider_config()`, `_is_provider_enabled()`, `_get_provider_api_key()`
+  - Integration config dans initialisation des providers
+
+**Frontend:**
+- `/frontend/src/modules/admin/components/EnrichmentProvidersView.tsx` - **NOUVEAU** Composant complet:
+  - Liste des providers avec cartes (nom, description, statut, stats)
+  - Indicateurs: gratuit/payant, actif/inactif, primaire
+  - Boutons: Activer/Desactiver, Configurer, Tester, Definir primaire
+  - Modal de configuration avec:
+    - Cle API, Secret API, Endpoint personnalise
+    - Limites de requetes (par minute, par jour)
+    - Configuration JSON additionnelle
+- `/frontend/src/modules/admin/components/index.ts` - Export EnrichmentProvidersView
+- `/frontend/src/modules/admin/index.tsx`:
+  - Ajout `'enrichment'` dans type `View`
+  - Ajout onglet "Enrichissement" dans menu admin
+  - Rendu conditionnel `EnrichmentProvidersView`
+
+**Migration:**
+- `/alembic/versions/20260214_enrichment_provider_config.py`:
+  - Table `enrichment_provider_config`
+  - Index sur `tenant_id`, `is_enabled`, `is_primary`
+  - Contrainte unique `(tenant_id, provider)`
+
+### 25. Provider OpenCorporates [2026-02-14]
+
+**Fonctionnalite:** Integration du registre mondial d'entreprises OpenCorporates (140+ pays).
+
+**Backend:**
+- `/app/modules/enrichment/providers/opencorporates.py` - **NOUVEAU** Provider:
+  - API REST `api.opencorporates.com/v0.4`
+  - Lookup par nom d'entreprise (`name`) ou numero (`company_number`)
+  - Detection automatique juridiction France (SIRET/SIREN)
+  - Mapping vers entite Contact
+  - Cache 24h
+  - Rate limits: 50 req/min gratuit, 500 req/jour
+- `/app/modules/enrichment/providers/__init__.py` - Export OpenCorporatesProvider
+- `/app/modules/enrichment/service.py`:
+  - Import et enregistrement dans `PROVIDER_REGISTRY`
+  - OpenCorporates comme fallback pour SIRET, SIREN, NAME, RISK
+
+**Capabilities:**
+| Lookup Type | Providers (ordre priorite) |
+|-------------|---------------------------|
+| SIRET | insee, opencorporates |
+| SIREN | insee, opencorporates |
+| NAME | insee, opencorporates |
+| RISK | pappers, opencorporates |
+
+### 26. Erreurs 403 Forbidden sur tous les endpoints [2026-02-14]
+
+**Probleme:** Tous les endpoints API retournaient 403 Forbidden pour l'utilisateur SUPERADMIN:
+```
+/v1/commercial/documents → 403
+/v1/purchases/summary → 403
+/v1/treasury/summary → 403
+/v1/admin/dashboard → 403
+```
+
+**Cause:** Le middleware RBAC dans `/app/modules/iam/rbac_matrix.py` avait `SUPER_ADMIN` (avec underscore) dans `LEGACY_ROLE_MAPPING`, mais l'utilisateur avait le role `SUPERADMIN` (sans underscore) stocke dans `UserRole` enum.
+
+**Solution:** Ajout du mapping manquant dans `LEGACY_ROLE_MAPPING` (ligne 765):
+```python
+LEGACY_ROLE_MAPPING = {
+    "SUPERADMIN": StandardRole.SUPER_ADMIN,  # Sans underscore (UserRole enum)
+    "SUPER_ADMIN": StandardRole.SUPER_ADMIN,  # Avec underscore (legacy)
+    "TENANT_ADMIN": StandardRole.ADMIN,
+    # ...
+}
+```
+
+**Verification:**
+```bash
+# Tous les endpoints retournent 200
+/health → 200
+/v1/iam/capabilities/modules → 200
+/v1/commercial/documents → 200
+/v1/admin/dashboard → 200
+```
+
+**Commit:** c1b0597
+
+---
+
+### 27. Deploiement Production azalscore.com - Reseau Docker [2026-02-14]
+
+**Probleme:** Apres rebuild de l'API, nginx ne pouvait plus atteindre le backend.
+
+**Cause:** L'API avait une nouvelle IP Docker (172.19.0.3) mais nginx avait cache l'ancienne (172.18.0.12).
+
+**Solution:**
+```bash
+# Reconnecter API aux reseaux
+docker network connect azalscore_azals_internal azals_api
+docker network connect azalscore_azals_external azals_api
+
+# Recharger nginx pour refresh DNS
+docker exec azals_nginx nginx -s reload
+```
+
+**Verification deploiement:**
+```bash
+# Health check
+curl https://azalscore.com/health
+
+# Test endpoint admin (401 = OK, auth requise)
+curl -H "X-Tenant-ID: masith" https://azalscore.com/v1/enrichment/admin/providers
+```
+
+**Etat final:**
+| Composant | Status |
+|-----------|--------|
+| Frontend | OK |
+| API Health | Healthy |
+| Database | Connected (2.8ms) |
+| Redis | Connected (1.1ms) |
+| Nginx → API | Fixed |
+| Enrichment Admin | 401 (normal sans token) |
+
 ---
 
 ## Taches en Attente
 
 ### TODO: Autocomplete Articles dans Devis/Commandes/Factures
-- [ ] Creer composant `ProductAutocomplete` pour recherche d'articles
-- [ ] Integrer dans lignes de devis (`/invoicing/quotes`)
-- [ ] Integrer dans lignes de commande (`/invoicing/orders`)
-- [ ] Integrer dans lignes de facture (`/invoicing/invoices`)
-- [ ] Auto-remplir: description, prix unitaire, TVA, code article
+- [x] Creer composant `ProductAutocomplete` pour recherche d'articles - FAIT (2026-02-13)
+  - Backend: `/app/modules/inventory/router.py` endpoint `/products/autocomplete`
+  - Backend: `/app/modules/inventory/service.py` methode `search_products_autocomplete`
+  - Frontend: `/frontend/src/modules/inventory/components/ProductAutocomplete.tsx`
+- [x] Integrer dans module invoicing - FAIT (2026-02-13)
+  - `/frontend/src/modules/invoicing/components/LineEditor.tsx` - Editeur de ligne modal
+  - Auto-remplir: description, prix unitaire, TVA, code article, unite
+- [x] Utiliser LineEditor dans les vues de creation/edition de documents - FAIT (2026-02-13)
+  - `/frontend/src/modules/invoicing/index.tsx` - LinesEditor refactorise
+  - Modal LineEditorModal avec ProductAutocomplete
+  - Boutons Edit/Delete par ligne
+  - Fonctionne pour devis, commandes et factures
 
 ### TODO: Notations Credit Internationales
 - [x] **Pappers** (France) - IMPLEMENTE (2026-02-10)
@@ -375,22 +595,33 @@ import { RiskAnalysis } from '@/modules/enrichment';
   - Procedures collectives
   - Score de risque AZALS (0-100)
   - Fallback vers INSEE si pas de cle API
-- [ ] **Configuration Provider Risque** - Permettre de choisir le provider
-  - Interface admin pour configurer API keys
-  - Selection du provider principal (Pappers, Creditsafe, etc.)
+- [x] **Configuration Provider Risque** - IMPLEMENTE (2026-02-14)
+  - Interface admin pour configurer API keys: `/frontend/src/modules/admin/components/EnrichmentProvidersView.tsx`
+  - Selection du provider principal (Pappers, OpenCorporates, Creditsafe, etc.)
   - Fallback automatique vers provider secondaire
-- [ ] **OpenCorporates** - Registres mondiaux (API gratuite limitee)
-  - Donnees de base entreprise
+  - Backend: `/app/modules/enrichment/models.py` (EnrichmentProviderConfig)
+  - Backend: `/app/modules/enrichment/router.py` (endpoints /admin/providers)
+  - Migration: `/alembic/versions/20260214_enrichment_provider_config.py`
+  - Onglet "Enrichissement" dans Administration
+- [x] **OpenCorporates** - IMPLEMENTE (2026-02-14)
+  - Provider: `/app/modules/enrichment/providers/opencorporates.py`
+  - Donnees de base entreprise (140+ pays)
   - Statut juridique
-- [ ] **Creditsafe / Coface** (payant) - Notation credit internationale
-  - Score credit D&B
-  - Notation Moody's / S&P / Fitch
-- [ ] **VIES** (gratuit) - Validation TVA intracommunautaire
-  - Verification numero TVA europeen
+  - Recherche par nom ou numero d'entreprise
+  - API gratuite limitee (500 req/mois) ou payante
+- [x] **VIES** (gratuit) - Validation TVA intracommunautaire - IMPLEMENTE (2026-02-13)
+  - Verification numero TVA europeen via API REST Commission Europeenne
   - Nom et adresse de l'entreprise
+  - Formats TVA par pays (27 pays UE + XI)
+  - Integration dans module enrichment
+- [ ] **Creditsafe** (payant) - Notation credit internationale
+  - Enum ajoute dans EnrichmentProvider
+  - Provider a implementer quand cle API disponible
+  - Score credit D&B, notation Moody's / S&P / Fitch
 - [ ] **Kompany** (payant) - Registres europeens
-  - Documents officiels
-  - Comptes annuels
+  - Enum ajoute dans EnrichmentProvider
+  - Provider a implementer quand cle API disponible
+  - Documents officiels, comptes annuels
 
 ---
 
@@ -512,6 +743,33 @@ docker inspect azals_api --format '{{range $k, $v := .NetworkSettings.Networks}}
 docker network connect azalscore_azals_internal azals_api
 ```
 
+### Rebuild et deployer le frontend
+```bash
+cd /home/ubuntu/azalscore/frontend
+docker build -f Dockerfile.prod -t azalscore-frontend:0.5.4-tailwind .
+docker stop azals_frontend && docker rm azals_frontend
+docker run -d --name azals_frontend --network azalscore_azals_external azalscore-frontend:0.5.4-tailwind
+docker exec azals_nginx nginx -s reload
+```
+
+### Lister les providers enrichissement
+```bash
+docker exec azals_api python -c "
+from app.modules.enrichment.models import PROVIDER_INFO
+for p, info in PROVIDER_INFO.items():
+    print(f'{p.value}: {info[\"name\"]}')"
+```
+
+### Verifier la table enrichment_provider_config
+```bash
+docker exec azals_api python -c "
+from app.core.database import SessionLocal
+from app.modules.enrichment.models import EnrichmentProviderConfig
+db = SessionLocal()
+for c in db.query(EnrichmentProviderConfig).all():
+    print(f'{c.tenant_id}/{c.provider.value}: enabled={c.is_enabled}')"
+```
+
 ---
 
 ## Fichiers Modifies
@@ -526,17 +784,32 @@ docker network connect azalscore_azals_internal azals_api
 7. `/app/api/auth.py` - SUPERADMIN dans role_capabilities, format reponse capabilities
 8. `/app/api/admin.py` - **NOUVEAU** endpoint /v1/admin/dashboard
 9. `/app/main.py` - Import et inclusion du router admin_dashboard
-10. `/app/modules/enrichment/schemas.py` - suggestions: list[dict[str, Any]] pour entreprises
-11. `/app/modules/purchases/schemas.py` - code: Optional[str] auto-genere
+10. `/app/modules/enrichment/schemas.py` - suggestions, ProviderConfigResponse, ProviderTestResult, etc.
+11. `/app/modules/enrichment/models.py` - EnrichmentProviderConfig, PROVIDER_INFO, nouveaux enums
+12. `/app/modules/enrichment/router.py` - Endpoints admin /admin/providers (CRUD + test)
+13. `/app/modules/enrichment/service.py` - Config loading, OpenCorporates integration
+14. `/app/modules/enrichment/providers/opencorporates.py` - **NOUVEAU** Provider OpenCorporates
+15. `/app/modules/enrichment/providers/__init__.py` - Export OpenCorporatesProvider
+16. `/app/modules/purchases/schemas.py` - code: Optional[str] auto-genere
+17. `/app/modules/inventory/models.py` - 11 champs ERP (tax_rate, is_sellable, etc.)
+18. `/app/modules/iam/rbac_matrix.py` - Mapping SUPERADMIN dans LEGACY_ROLE_MAPPING
+19. `/app/modules/treasury/service.py` - Ajout get_summary(), get_forecast()
+20. `/app/modules/accounting/service.py` - Fix references modeles (AccountingJournalEntry, etc.)
 
 ### Frontend (frontend/src/)
-1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules"
+1. `/modules/admin/index.tsx` - Hooks, gestion roles, Createur, **UserPermissionsModal**, **UsersPermissionsView**, onglet "Acces Modules", onglet "Enrichissement"
 2. `/modules/admin/types.ts` - Ajout created_by_name dans interface Role
 3. `/modules/admin/components/SequencesView.tsx` - Hooks corriges
-4. `/ui-engine/simple/PermissionsManager.tsx` - Hooks corriges
-5. `/core/capabilities/index.tsx` - Parsing robuste avec logging
-6. `/modules/enrichment/` - **NOUVEAU MODULE** CompanyAutocomplete, AddressAutocomplete, SiretLookup, BarcodeLookup
-7. `/modules/purchases/index.tsx` - Integration enrichissement, hooks corriges format reponse, code auto-genere
+4. `/modules/admin/components/EnrichmentProvidersView.tsx` - **NOUVEAU** Interface admin providers
+5. `/modules/admin/components/index.ts` - Export EnrichmentProvidersView
+6. `/ui-engine/simple/PermissionsManager.tsx` - Hooks corriges
+7. `/core/capabilities/index.tsx` - Parsing robuste avec logging
+8. `/modules/enrichment/` - **NOUVEAU MODULE** CompanyAutocomplete, AddressAutocomplete, SiretLookup, BarcodeLookup
+9. `/modules/purchases/index.tsx` - Integration enrichissement, hooks corriges format reponse, code auto-genere
+
+### Migrations (alembic/)
+1. `/alembic/versions/20260214_enrichment_provider_config.py` - Table enrichment_provider_config
+2. `/alembic/versions/20260214_product_erp_fields.py` - Champs ERP produits (11 colonnes)
 
 ---
 
@@ -673,3 +946,131 @@ Toutes les classes utilitaires Tailwind standard:
 - Les roles definis dans `/app/api/auth.py` fonction `get_user_capabilities()`
 - `SUPERADMIN`, `SUPER_ADMIN`, `DIRIGEANT`, `ADMIN` ont ALL_CAPABILITIES
 - Le frontend verifie `admin.view` pour afficher le module Admin
+
+---
+
+## Documentation Technique
+
+### Variables et Configuration
+
+**IMPORTANT:** Avant de modifier la configuration ou les variables d'environnement, consulter:
+- `/docs/architecture/VARIABLES.md` - **Guide complet des variables**
+  - Variables d'environnement (obligatoires et optionnelles)
+  - Constantes de configuration (app/core/config.py, app/ai/config.py)
+  - Constantes de test
+  - Inconsistances detectees et plan d'harmonisation
+  - Conventions de nommage
+
+### Fixtures de Test
+
+**IMPORTANT:** Avant de modifier ou creer des tests, consulter:
+- `/docs/guides/FIXTURES_STANDARD.md` - Guide de reference complet
+
+**Principes cles:**
+1. Toutes les fixtures de base sont dans `app/conftest.py` (global)
+2. Les modules NE DOIVENT PAS redefinir `tenant_id`, `user_id`, `mock_saas_context` (autouse)
+3. Chaque module DOIT definir `client(test_client)` et `auth_headers(tenant_id)` comme alias
+
+**Fixtures globales disponibles:**
+| Fixture | Type | Valeur |
+|---------|------|--------|
+| `tenant_id` | str | `"tenant-test-001"` |
+| `user_id` | str (UUID) | `"12345678-1234-1234-1234-123456789001"` |
+| `user_uuid` | UUID | UUID object |
+| `db_session` | Session | SQLite in-memory |
+| `test_client` | TestClient | Headers auto-injectes |
+| `saas_context` | SaaSContext | Contexte ADMIN |
+
+**Template conftest module:**
+```python
+@pytest.fixture
+def client(test_client):
+    return test_client
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    return {"Authorization": "Bearer test-token", "X-Tenant-ID": tenant_id}
+```
+
+---
+
+### 28. Champs ERP Produits - Conformite Chorus Pro [2026-02-14]
+
+**Contexte:** Ajout de champs au modele `inventory_products` pour assurer la compatibilite avec:
+- Chorus Pro / Factur-X / EN 16931 (facturation electronique francaise)
+- Axonaut, Odoo, Sellsy (ERP francais)
+
+**Analyse comparative effectuee:**
+- AXONAUT: product_code, name, price, tax_rate, type
+- ODOO: default_code, sale_ok, purchase_ok, taxes_id, seller_ids
+- SELLSY: tradename, unitAmount, taxrate, taxid, ecoTax
+- CHORUS PRO: BT-152 (tax_rate), BT-151 (tax_id), BT-156 (customer_product_code), BT-158 (cpv_code)
+
+**11 champs ajoutes a `inventory_products`:**
+
+| Champ | Type | Description | Source |
+|-------|------|-------------|--------|
+| `trade_name` | String(255) | Nom commercial | Sellsy |
+| `cpv_code` | String(20) | Code marches publics | EN 16931 BT-158 |
+| `supplier_product_code` | String(100) | Reference fournisseur | Odoo |
+| `customer_product_code` | String(100) | Reference client | EN 16931 BT-156 |
+| `tax_rate` | Numeric(5,2) | Taux TVA vente % | EN 16931 BT-152 |
+| `tax_id` | UUID | Reference taxe vente | EN 16931 BT-151 |
+| `supplier_tax_rate` | Numeric(5,2) | Taux TVA achat % | Odoo |
+| `supplier_tax_id` | UUID | Reference taxe achat | Odoo |
+| `eco_tax` | Numeric(10,4) | Eco-contribution EUR | Sellsy |
+| `is_sellable` | Boolean | Produit vendable | Odoo sale_ok |
+| `is_purchasable` | Boolean | Produit achetable | Odoo purchase_ok |
+
+**Fichiers modifies:**
+- `/app/modules/inventory/models.py` - Ajout des 11 colonnes au modele Product
+- `/alembic/versions/20260214_product_erp_fields.py` - Migration Alembic
+
+**Migration:**
+```
+revision = 'product_erp_fields_001'
+down_revision = 'enrichment_provider_config_001'
+```
+
+### 29. Fix Endpoints Treasury et Accounting [2026-02-14]
+
+**Probleme:** Les endpoints `/v1/treasury/summary` et `/v1/accounting/summary` retournaient des erreurs 500.
+
+**Causes:**
+1. **Treasury:** La methode `get_summary()` n'existait pas dans `TreasuryService`
+2. **Accounting:** References incorrectes aux modeles (`FiscalYear` au lieu de `AccountingFiscalYear`, `JournalEntry` au lieu de `AccountingJournalEntry`, etc.)
+
+**Solutions appliquees:**
+
+**Treasury (`/app/modules/treasury/service.py`):**
+```python
+def get_summary(self) -> TreasurySummary:
+    """Retourne un resume de tresorerie vide (TODO: implementer avec vrais modeles)"""
+    return TreasurySummary(
+        total_balance=Decimal("0.00"),
+        total_pending_in=Decimal("0.00"),
+        total_pending_out=Decimal("0.00"),
+        forecast_7d=Decimal("0.00"),
+        forecast_30d=Decimal("0.00"),
+        accounts=[]
+    )
+
+def get_forecast(self, days: int = 30) -> List[ForecastData]:
+    """Retourne une liste vide (TODO: implementer)"""
+    return []
+```
+
+**Accounting (`/app/modules/accounting/service.py`):**
+- `FiscalYear` → `AccountingFiscalYear` (lignes 96, 115)
+- `JournalEntry` → `AccountingJournalEntry` (lignes 387, 388, 636, 722)
+- `JournalEntryLine` → `AccountingJournalEntryLine` (lignes 522-528, 627-633)
+
+**Verification:**
+```
+[OK] /v1/treasury/summary    → 200
+[OK] /v1/accounting/summary  → 200
+```
+
+**Commit:** 6541997
+
+**Note:** Le module Treasury n'a pas encore de modeles de base de donnees (`BankAccount`, `BankTransaction`). Les methodes retournent des donnees vides en attendant l'implementation complete.

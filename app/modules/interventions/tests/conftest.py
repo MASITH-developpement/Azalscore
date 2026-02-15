@@ -4,6 +4,8 @@ Fixtures pour les tests Interventions v2
 Ce module fournit les fixtures pytest pour tester le module Interventions.
 Les fixtures utilisent MockEntity pour simuler les objets SQLAlchemy avec
 accès par attributs (obj.id au lieu de obj["id"]).
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 import pytest
@@ -12,11 +14,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Union
 from unittest.mock import MagicMock
 from uuid import uuid4
-from fastapi.testclient import TestClient
 
-from app.core.dependencies_v2 import get_saas_context
-from app.core.saas_context import SaaSContext, UserRole, TenantScope
-from app.main import app
 from app.modules.interventions.models import (
     InterventionStatut,
     InterventionPriorite,
@@ -136,19 +134,33 @@ def to_mock_entity(data: Union[Dict, List[Dict], None]) -> Union[MockEntity, Lis
 
 
 # ============================================================================
-# FIXTURES GLOBALES
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
+
 
 @pytest.fixture
-def tenant_id():
-    """Tenant ID de test"""
-    return "tenant-test-interventions-001"
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
 
 
 @pytest.fixture
-def user_id():
-    """User ID de test (UUID valide)"""
-    return str(uuid4())
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
 
 
 # ============================================================================

@@ -2,8 +2,7 @@
 Pytest fixtures for purchases module tests.
 
 Provides reusable test fixtures following CORE SaaS v2 patterns:
-- Test client configuration
-- Mock SaaSContext with tenant isolation
+- Inherits global fixtures from app/conftest.py
 - Sample data dictionaries for all entities
 - Helper utilities for assertions
 """
@@ -12,69 +11,36 @@ import pytest
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from uuid import uuid4
-from fastapi.testclient import TestClient
-
-from app.core.dependencies_v2 import get_saas_context
-from app.core.saas_context import SaaSContext, UserRole
-from app.main import app
 
 
-# ===========================
-# Client and Auth
-# ===========================
-
-@pytest.fixture
-def client():
-    """FastAPI test client."""
-    return TestClient(app)
+# ============================================================================
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
+# ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
 
 @pytest.fixture
-def tenant_id():
-    """Test tenant ID."""
-    return "tenant-test-purchases"
-
-
-@pytest.fixture
-def user_id():
-    """Test user ID."""
-    return "user-test-purchases"
-
-
-@pytest.fixture
-def auth_headers():
-    """Authentication headers for requests."""
-    return {"Authorization": "Bearer test-token"}
-
-
-# ===========================
-# SaaSContext Mock
-# ===========================
-
-@pytest.fixture(autouse=True)
-def mock_saas_context(monkeypatch, tenant_id, user_id):
+def client(test_client):
     """
-    Mock SaaSContext for all tests.
+    Alias pour test_client (compatibilité avec anciens tests).
 
-    Automatically applied to all tests via autouse=True.
-    Provides a tenant-scoped admin context with full permissions.
+    Le test_client du conftest global ajoute déjà les headers requis.
     """
-    def mock_get_context():
-        return SaaSContext(
-            tenant_id=tenant_id,
-            user_id=user_id,
-            role=UserRole.ADMIN,
-            permissions={"purchases.*"},
-            scope="tenant",
-            session_id="session-test",
-            ip_address="127.0.0.1",
-            user_agent="pytest",
-            correlation_id="test-correlation"
-        )
+    return test_client
 
-    from app.modules.purchases import router_v2
-    monkeypatch.setattr(router_v2, "get_saas_context", mock_get_context)
-    return mock_get_context
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
 
 
 # ===========================

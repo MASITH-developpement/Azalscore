@@ -13,6 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
+from app.core.cache import cached, invalidate_cache
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
@@ -38,16 +39,21 @@ class AdminDashboard(BaseModel):
 
 
 # ============================================================================
-# ENDPOINTS
+# FONCTIONS CACHABLES (separees des endpoints pour @cached)
 # ============================================================================
 
-@router.get("/dashboard", response_model=AdminDashboard)
-def get_admin_dashboard(
-    db: Session = Depends(get_db),
-    tenant_id: str = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user)
-):
-    """Dashboard d'administration avec statistiques systeme."""
+def _build_dashboard_cache_key(db, tenant_id: str) -> str:
+    """Construit la cle de cache pour le dashboard admin."""
+    return f"admin:dashboard:{tenant_id}"
+
+
+@cached(ttl=300, key_builder=lambda db, tenant_id: f"admin:dashboard:{tenant_id}")
+def _get_admin_dashboard_data(db: Session, tenant_id: str) -> dict:
+    """
+    Calcule les donnees du dashboard admin (CACHABLE 5min).
+
+    Separe de l'endpoint pour permettre le caching.
+    """
     dashboard = AdminDashboard()
 
     # Compter les utilisateurs
@@ -65,7 +71,6 @@ def get_admin_dashboard(
             dashboard.active_users = row[1] or 0
     except Exception as e:
         logger.warning(f"[ADMIN] Erreur comptage users: {e}")
-        # Fallback sur la table users si iam_users n'existe pas
         try:
             result = db.execute(text("""
                 SELECT
@@ -118,7 +123,7 @@ def get_admin_dashboard(
     except Exception as e:
         logger.warning(f"[ADMIN] Erreur lecture stockage: {e}")
 
-    # Appels API aujourd'hui (depuis audit_logs si disponible)
+    # Appels API aujourd'hui
     try:
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         result = db.execute(text("""
@@ -130,7 +135,7 @@ def get_admin_dashboard(
     except Exception as e:
         logger.warning(f"[ADMIN] Erreur comptage API calls: {e}")
 
-    # Erreurs aujourd'hui (depuis guardian_errors si disponible)
+    # Erreurs aujourd'hui
     try:
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         result = db.execute(text("""
@@ -142,4 +147,19 @@ def get_admin_dashboard(
     except Exception as e:
         logger.warning(f"[ADMIN] Erreur comptage erreurs: {e}")
 
-    return dashboard
+    return dashboard.model_dump()
+
+
+# ============================================================================
+# ENDPOINTS
+# ============================================================================
+
+@router.get("/dashboard", response_model=AdminDashboard)
+def get_admin_dashboard(
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant_id),
+    current_user: User = Depends(get_current_user)
+):
+    """Dashboard d'administration avec statistiques systeme (cache 5min)."""
+    data = _get_admin_dashboard_data(db, tenant_id)
+    return AdminDashboard(**data)

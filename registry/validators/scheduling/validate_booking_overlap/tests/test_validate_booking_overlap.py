@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.scheduling.validate_booking_overlap.impl import execute
 
 
 class TestValidateBookingOverlap:
@@ -28,7 +28,7 @@ class TestValidateBookingOverlap:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "bookings": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateBookingOverlap:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "bookings": "test",
         }
         inputs_copy = inputs.copy()

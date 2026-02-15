@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.text.extract_domain_from_email.impl import execute
 
 
 class TestExtractDomainFromEmail:
@@ -28,7 +28,7 @@ class TestExtractDomainFromEmail:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "email": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestExtractDomainFromEmail:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "email": "test",
         }
         inputs_copy = inputs.copy()

@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.commercial.validate_tva_intra.impl import execute
 
 
 class TestValidateTvaIntra:
@@ -32,7 +32,7 @@ class TestValidateTvaIntra:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "tva": "test_value",
             "country": "test_value",
         }
@@ -45,7 +45,7 @@ class TestValidateTvaIntra:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "tva": "test",
             "country": "test",
         }

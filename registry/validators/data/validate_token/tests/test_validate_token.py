@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_token.impl import execute
 
 
 class TestValidateToken:
@@ -31,7 +31,7 @@ class TestValidateToken:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "token": "test_value",
             "secret": "test_value",
         }
@@ -44,7 +44,7 @@ class TestValidateToken:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "token": "test",
             "secret": "test",
         }

@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.numbers.format_percentage.impl import execute
 
 
 class TestFormatPercentage:
@@ -29,7 +29,7 @@ class TestFormatPercentage:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "value": 100.0,
             "decimals": 100.0,
         }
@@ -42,7 +42,7 @@ class TestFormatPercentage:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "value": "test",
             "decimals": "test",
         }

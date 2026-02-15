@@ -56,8 +56,10 @@ import {
   InvoicingFinancialTab,
   InvoicingDocumentsTab,
   InvoicingHistoryTab,
-  InvoicingIATab
+  InvoicingIATab,
+  LineEditor as LineEditorModal
 } from './components';
+import type { LineFormData } from './types';
 
 // ============================================================
 // TYPES - Alignés avec le backend
@@ -121,15 +123,7 @@ interface Customer {
   email?: string;
 }
 
-interface LineFormData {
-  id?: string;
-  description: string;
-  quantity: number;
-  unit?: string;
-  unit_price: number;
-  discount_percent: number;
-  tax_rate: number;
-}
+// LineFormData est importe depuis ./types
 
 // ============================================================
 // CONSTANTES
@@ -441,10 +435,10 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 };
 
 // ============================================================
-// COMPONENTS - Line Editor
+// COMPONENTS - Lines Editor (avec modal ProductAutocomplete)
 // ============================================================
 
-interface LineEditorProps {
+interface LinesEditorProps {
   lines: LineFormData[];
   onChange: (lines: LineFormData[]) => void;
   readOnly?: boolean;
@@ -461,33 +455,44 @@ const calculateLineTotal = (line: LineFormData): { subtotal: number; taxAmount: 
   return { subtotal, taxAmount, total };
 };
 
-const LineEditor: React.FC<LineEditorProps> = ({ lines, onChange, readOnly = false, currency = 'EUR' }) => {
-  const [editingLine, setEditingLine] = useState<number | null>(null);
+const LinesEditor: React.FC<LinesEditorProps> = ({ lines, onChange, readOnly = false, currency = 'EUR' }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const addLine = () => {
-    const newLine: LineFormData = {
-      id: `temp-${Date.now()}`,
-      description: '',
-      quantity: 1,
-      unit: 'unité',
-      unit_price: 0,
-      discount_percent: 0,
-      tax_rate: 20,
-    };
-    onChange([...lines, newLine]);
-    setEditingLine(lines.length);
+  // Ouvrir modal pour nouvelle ligne
+  const openAddModal = () => {
+    setEditingIndex(null);
+    setShowModal(true);
   };
 
-  const updateLine = (index: number, updates: Partial<LineFormData>) => {
-    const newLines = [...lines];
-    newLines[index] = { ...newLines[index], ...updates };
-    onChange(newLines);
+  // Ouvrir modal pour editer une ligne existante
+  const openEditModal = (index: number) => {
+    setEditingIndex(index);
+    setShowModal(true);
+  };
+
+  // Sauvegarder depuis le modal
+  const handleSaveLine = (lineData: LineFormData) => {
+    if (editingIndex !== null) {
+      // Edition d'une ligne existante
+      const newLines = [...lines];
+      newLines[editingIndex] = { ...newLines[editingIndex], ...lineData };
+      onChange(newLines);
+    } else {
+      // Nouvelle ligne
+      const newLine: LineFormData = {
+        ...lineData,
+        id: lineData.id || `temp-${Date.now()}`,
+      };
+      onChange([...lines, newLine]);
+    }
+    setShowModal(false);
+    setEditingIndex(null);
   };
 
   const removeLine = (index: number) => {
     const newLines = lines.filter((_, i) => i !== index);
     onChange(newLines);
-    setEditingLine(null);
   };
 
   const totals = useMemo(() => {
@@ -504,6 +509,9 @@ const LineEditor: React.FC<LineEditorProps> = ({ lines, onChange, readOnly = fal
     );
   }, [lines]);
 
+  // Donnees initiales pour le modal
+  const editingLineData = editingIndex !== null ? lines[editingIndex] : undefined;
+
   return (
     <div className="azals-line-editor">
       <div className="azals-line-editor__header">
@@ -512,7 +520,7 @@ const LineEditor: React.FC<LineEditorProps> = ({ lines, onChange, readOnly = fal
           <Button
             size="sm"
             leftIcon={<Plus size={14} />}
-            onClick={addLine}
+            onClick={openAddModal}
           >
             Ajouter une ligne
           </Button>
@@ -528,122 +536,54 @@ const LineEditor: React.FC<LineEditorProps> = ({ lines, onChange, readOnly = fal
         <table className="azals-line-editor__table">
           <thead>
             <tr>
-              <th style={{ width: '40%' }}>Description</th>
+              <th style={{ width: '35%' }}>Description</th>
               <th style={{ width: '10%' }}>Qté</th>
-              <th style={{ width: '15%' }}>Prix unit. HT</th>
+              <th style={{ width: '12%' }}>Prix unit. HT</th>
               <th style={{ width: '10%' }}>Remise</th>
-              <th style={{ width: '10%' }}>TVA</th>
-              <th style={{ width: '10%' }}>Total HT</th>
-              {!readOnly && <th style={{ width: '5%' }}></th>}
+              <th style={{ width: '8%' }}>TVA</th>
+              <th style={{ width: '15%' }}>Total HT</th>
+              {!readOnly && <th style={{ width: '10%' }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {lines.map((line, index) => {
               const calc = calculateLineTotal(line);
-              const isEditing = editingLine === index && !readOnly;
 
               return (
-                <tr key={line.id || index} className={isEditing ? 'editing' : ''}>
+                <tr key={line.id || index}>
                   <td>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        className="azals-input azals-input--sm"
-                        value={line.description}
-                        onChange={(e) => updateLine(index, { description: e.target.value })}
-                        placeholder="Description"
-                        autoFocus
-                      />
-                    ) : (
-                      <span
-                        className={readOnly ? '' : 'clickable'}
-                        onClick={() => !readOnly && setEditingLine(index)}
-                      >
-                        {line.description || <em className="text-muted">Cliquez pour éditer</em>}
-                      </span>
-                    )}
+                    <div className="font-medium">{line.description || <em className="text-muted">Sans description</em>}</div>
+                    {line.unit && <div className="text-xs text-muted">Unité: {line.unit}</div>}
                   </td>
-                  <td>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        className="azals-input azals-input--sm"
-                        value={line.quantity}
-                        onChange={(e) => updateLine(index, { quantity: parseFloat(e.target.value) || 0 })}
-                        min="0"
-                        step="0.01"
-                      />
-                    ) : (
-                      <span onClick={() => !readOnly && setEditingLine(index)}>
-                        {line.quantity}
-                      </span>
-                    )}
+                  <td className="text-right">{line.quantity}</td>
+                  <td className="text-right">{formatCurrency(line.unit_price, currency)}</td>
+                  <td className="text-right">
+                    {line.discount_percent > 0 ? (
+                      <span className="text-orange">{line.discount_percent}%</span>
+                    ) : '-'}
                   </td>
-                  <td>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        className="azals-input azals-input--sm"
-                        value={line.unit_price}
-                        onChange={(e) => updateLine(index, { unit_price: parseFloat(e.target.value) || 0 })}
-                        min="0"
-                        step="0.01"
-                      />
-                    ) : (
-                      <span onClick={() => !readOnly && setEditingLine(index)}>
-                        {formatCurrency(line.unit_price, currency)}
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        className="azals-input azals-input--sm"
-                        value={line.discount_percent}
-                        onChange={(e) => updateLine(index, { discount_percent: parseFloat(e.target.value) || 0 })}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                      />
-                    ) : (
-                      <span onClick={() => !readOnly && setEditingLine(index)}>
-                        {line.discount_percent}%
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {isEditing ? (
-                      <select
-                        className="azals-select azals-select--sm"
-                        value={line.tax_rate}
-                        onChange={(e) => updateLine(index, { tax_rate: parseFloat(e.target.value) })}
-                      >
-                        {TVA_RATES.map((rate) => (
-                          <option key={rate.value} value={rate.value}>
-                            {rate.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span onClick={() => !readOnly && setEditingLine(index)}>
-                        {line.tax_rate}%
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-right font-medium">
-                    {formatCurrency(calc.subtotal, currency)}
-                  </td>
+                  <td className="text-right">{line.tax_rate}%</td>
+                  <td className="text-right font-medium">{formatCurrency(calc.subtotal, currency)}</td>
                   {!readOnly && (
                     <td>
-                      <button
-                        type="button"
-                        className="azals-btn-icon azals-btn-icon--danger"
-                        onClick={() => removeLine(index)}
-                        title="Supprimer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          className="azals-btn-icon"
+                          onClick={() => openEditModal(index)}
+                          title="Modifier"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="azals-btn-icon azals-btn-icon--danger"
+                          onClick={() => removeLine(index)}
+                          title="Supprimer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -667,9 +607,26 @@ const LineEditor: React.FC<LineEditorProps> = ({ lines, onChange, readOnly = fal
           <span>{formatCurrency(totals.total, currency)}</span>
         </div>
       </div>
+
+      {/* Modal d'edition de ligne avec ProductAutocomplete */}
+      {showModal && (
+        <LineEditorModal
+          initialData={editingLineData}
+          currency={currency}
+          onSave={handleSaveLine}
+          onCancel={() => {
+            setShowModal(false);
+            setEditingIndex(null);
+          }}
+          isModal={true}
+        />
+      )}
     </div>
   );
 };
+
+// Alias pour compatibilite avec le code existant
+const LineEditor = LinesEditor;
 
 // ============================================================
 // COMPONENTS - Filter Bar

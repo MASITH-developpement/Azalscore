@@ -11,6 +11,8 @@ from .adresse import AdresseGouvProvider
 from .openfoodfacts import OpenFoodFactsProvider, OpenBeautyFactsProvider, OpenPetFoodFactsProvider
 from .pappers import PappersProvider
 from .internal_scoring import InternalScoringProvider
+from .vies import VIESProvider
+from .opencorporates import OpenCorporatesProvider
 
 __all__ = [
     "BaseProvider",
@@ -22,4 +24,6 @@ __all__ = [
     "OpenPetFoodFactsProvider",
     "PappersProvider",
     "InternalScoringProvider",
+    "VIESProvider",
+    "OpenCorporatesProvider",
 ]

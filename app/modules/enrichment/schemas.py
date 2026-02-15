@@ -30,7 +30,7 @@ class EnrichmentLookupRequest(BaseModel):
 
     lookup_type: LookupType = Field(
         ...,
-        description="Type de recherche: siret, siren, address, barcode"
+        description="Type de recherche: siret, siren, address, barcode, vat_number"
     )
     lookup_value: str = Field(
         ...,
@@ -63,6 +63,11 @@ class EnrichmentLookupRequest(BaseModel):
                 {
                     "lookup_type": "address",
                     "lookup_value": "10 rue de la paix paris",
+                    "entity_type": "contact"
+                },
+                {
+                    "lookup_type": "vat_number",
+                    "lookup_value": "FR40303265045",
                     "entity_type": "contact"
                 }
             ]
@@ -309,3 +314,108 @@ class RateLimitStatus(BaseModel):
     day_remaining: int
     reset_minute_at: Optional[datetime]
     reset_day_at: Optional[datetime]
+
+
+# ============================================================================
+# PROVIDER CONFIG SCHEMAS (Admin)
+# ============================================================================
+
+class ProviderInfoResponse(BaseModel):
+    """Informations sur un provider d'enrichissement."""
+
+    provider: str = Field(..., description="Code du provider")
+    name: str = Field(..., description="Nom affichable")
+    description: str = Field(..., description="Description du provider")
+    requires_api_key: bool = Field(..., description="Necessite une cle API")
+    is_free: bool = Field(..., description="Gratuit ou payant")
+    country: str = Field(..., description="Couverture geographique (FR, EU, WORLD)")
+    capabilities: list[str] = Field(default_factory=list, description="Types de recherche supportes")
+    documentation_url: Optional[str] = Field(None, description="URL documentation")
+
+
+class ProviderConfigResponse(BaseModel):
+    """Configuration d'un provider pour un tenant."""
+
+    id: UUID
+    provider: str
+    name: str
+    description: str
+    is_enabled: bool = Field(..., description="Provider active")
+    is_primary: bool = Field(False, description="Provider principal pour son type")
+    priority: int = Field(100, description="Priorite (plus bas = plus prioritaire)")
+    has_api_key: bool = Field(False, description="Cle API configuree")
+    requires_api_key: bool = Field(..., description="Necessite une cle API")
+    is_free: bool = Field(..., description="Gratuit ou payant")
+    country: str = Field(..., description="Couverture geographique")
+    capabilities: list[str] = Field(default_factory=list)
+    custom_requests_per_minute: Optional[int] = None
+    custom_requests_per_day: Optional[int] = None
+    last_success_at: Optional[datetime] = None
+    last_error_at: Optional[datetime] = None
+    last_error_message: Optional[str] = None
+    total_requests: int = 0
+    total_errors: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ProviderConfigCreateRequest(BaseModel):
+    """Creation/mise a jour configuration provider."""
+
+    provider: EnrichmentProvider = Field(..., description="Provider a configurer")
+    is_enabled: bool = Field(True, description="Activer le provider")
+    is_primary: bool = Field(False, description="Definir comme provider principal")
+    priority: int = Field(100, ge=1, le=999, description="Priorite (1-999)")
+    api_key: Optional[str] = Field(None, min_length=1, max_length=500, description="Cle API")
+    api_secret: Optional[str] = Field(None, min_length=1, max_length=500, description="Secret API")
+    api_endpoint: Optional[str] = Field(None, max_length=500, description="URL endpoint custom")
+    custom_requests_per_minute: Optional[int] = Field(None, ge=1, le=1000, description="Limite custom par minute")
+    custom_requests_per_day: Optional[int] = Field(None, ge=1, le=100000, description="Limite custom par jour")
+    config_data: Optional[dict] = Field(None, description="Configuration specifique au provider")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "provider": "pappers",
+                "is_enabled": True,
+                "is_primary": True,
+                "priority": 10,
+                "api_key": "pk_live_xxxxxxxx",
+                "custom_requests_per_minute": 30,
+                "custom_requests_per_day": 500
+            }
+        }
+
+
+class ProviderConfigUpdateRequest(BaseModel):
+    """Mise a jour partielle configuration provider."""
+
+    is_enabled: Optional[bool] = None
+    is_primary: Optional[bool] = None
+    priority: Optional[int] = Field(None, ge=1, le=999)
+    api_key: Optional[str] = Field(None, max_length=500)
+    api_secret: Optional[str] = Field(None, max_length=500)
+    api_endpoint: Optional[str] = Field(None, max_length=500)
+    custom_requests_per_minute: Optional[int] = Field(None, ge=1, le=1000)
+    custom_requests_per_day: Optional[int] = Field(None, ge=1, le=100000)
+    config_data: Optional[dict] = None
+
+
+class ProviderTestResult(BaseModel):
+    """Resultat du test de connexion a un provider."""
+
+    provider: str
+    success: bool
+    response_time_ms: int
+    error: Optional[str] = None
+    details: Optional[dict] = None
+
+
+class ProvidersListResponse(BaseModel):
+    """Liste des providers avec leur configuration."""
+
+    providers: list[ProviderConfigResponse]
+    available_providers: list[ProviderInfoResponse]

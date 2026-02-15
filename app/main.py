@@ -32,6 +32,11 @@ from app.api.cockpit import router as cockpit_router
 from app.api.decision import router as decision_router
 from app.api.hr import router as hr_router
 from app.api.invoicing import router as invoicing_router
+from app.api.invoicing_v2 import router as invoicing_router_v2
+from app.api.cockpit_v2 import router as cockpit_router_v2
+from app.api.partners_v2 import router as partners_router_v2
+from app.api.decision_v2 import router as decision_router_v2
+from app.api.branding_v2 import router as branding_router_v2
 from app.api.items import router as items_router
 from app.api.journal import router as journal_router
 from app.api.legal import router as legal_router
@@ -1244,6 +1249,11 @@ app.include_router(broadcast_router_v2)
 app.include_router(compliance_router_v2)
 app.include_router(qc_router_v2)
 app.include_router(automated_accounting_router_v2)
+app.include_router(invoicing_router_v2)
+app.include_router(cockpit_router_v2)
+app.include_router(partners_router_v2)
+app.include_router(decision_router_v2)
+app.include_router(branding_router_v2)
 
 # Website Tracking API v2 (SEO, Analytics, Leads)
 app.include_router(website_tracking_router, prefix="/api/v2")

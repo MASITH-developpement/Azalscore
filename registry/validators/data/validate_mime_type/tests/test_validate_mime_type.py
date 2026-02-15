@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_mime_type.impl import execute
 
 
 class TestValidateMimeType:
@@ -30,7 +30,7 @@ class TestValidateMimeType:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "mime_type": "test_value",
             "allowed_types": "test_value",
         }
@@ -43,7 +43,7 @@ class TestValidateMimeType:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "mime_type": "test",
             "allowed_types": "test",
         }

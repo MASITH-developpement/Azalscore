@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.data.validate_file_extension.impl import execute
 
 
 class TestValidateFileExtension:
@@ -31,7 +31,7 @@ class TestValidateFileExtension:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "filename": "test_value",
             "allowed_extensions": "test_value",
         }
@@ -44,7 +44,7 @@ class TestValidateFileExtension:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "filename": "test",
             "allowed_extensions": "test",
         }

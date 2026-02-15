@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.subscriptions.validate_upgrade_path.impl import execute
 
 
 class TestValidateUpgradePath:
@@ -28,7 +28,7 @@ class TestValidateUpgradePath:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "from_plan": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateUpgradePath:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "from_plan": "test",
         }
         inputs_copy = inputs.copy()

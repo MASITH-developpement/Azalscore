@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.payments.validate_cvv.impl import execute
 
 
 class TestValidateCvv:
@@ -28,7 +28,7 @@ class TestValidateCvv:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "cvv": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateCvv:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "cvv": "test",
         }
         inputs_copy = inputs.copy()

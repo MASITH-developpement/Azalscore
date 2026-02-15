@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.dates.get_quarter_from_date.impl import execute
 
 
 class TestGetQuarterFromDate:
@@ -29,7 +29,7 @@ class TestGetQuarterFromDate:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "date": "test_value",
         }
 
@@ -41,7 +41,7 @@ class TestGetQuarterFromDate:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "date": "test",
         }
         inputs_copy = inputs.copy()

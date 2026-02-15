@@ -252,6 +252,15 @@ class AccountingSummary(BaseModel):
     currency: str = "EUR"
 
 
+class AccountingStatus(BaseModel):
+    """Statut de la comptabilité pour monitoring."""
+    status: str = Field(..., description="Indicateur visuel (🟢 ou 🟠)")
+    entries_up_to_date: bool = Field(..., description="Ecritures à jour")
+    last_closure_date: Optional[datetime.date] = Field(None, description="Date dernière clôture")
+    pending_entries_count: int = Field(0, description="Nombre d'écritures en attente")
+    days_since_closure: Optional[int] = Field(None, description="Jours depuis dernière clôture")
+
+
 class LedgerAccount(BaseModel):
     """Compte du grand livre."""
     account_number: str

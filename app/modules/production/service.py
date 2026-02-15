@@ -13,6 +13,8 @@ from uuid import UUID
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from app.core.query_optimizer import QueryOptimizer
+
 from .models import (
     BillOfMaterials,
     BOMLine,
@@ -63,6 +65,7 @@ class ProductionService:
         self.db = db
         self.tenant_id = tenant_id
         self.user_id = user_id
+        self._optimizer = QueryOptimizer(db)
 
     # ========================================================================
     # CENTRES DE TRAVAIL

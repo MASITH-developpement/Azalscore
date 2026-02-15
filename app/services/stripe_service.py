@@ -22,7 +22,12 @@ logger = get_logger(__name__)
 
 
 # Configuration Stripe
-STRIPE_API_KEY = os.getenv("STRIPE_API_KEY_LIVE") or os.getenv("STRIPE_API_KEY_TEST")
+# Utilise STRIPE_SECRET_KEY (standard) avec fallback vers anciens noms pour compatibilité
+STRIPE_API_KEY = (
+    os.getenv("STRIPE_SECRET_KEY") or
+    os.getenv("STRIPE_API_KEY_LIVE") or
+    os.getenv("STRIPE_API_KEY_TEST")
+)
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 STRIPE_LIVE_MODE = os.getenv("STRIPE_LIVE_MODE", "false").lower() == "true"
 

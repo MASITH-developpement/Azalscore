@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.inventory.validate_serial_number.impl import execute
 
 
 class TestValidateSerialNumber:
@@ -30,7 +30,7 @@ class TestValidateSerialNumber:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "serial_number": "test_value",
             "format_pattern": "test_value",
         }
@@ -43,7 +43,7 @@ class TestValidateSerialNumber:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "serial_number": "test",
             "format_pattern": "test",
         }

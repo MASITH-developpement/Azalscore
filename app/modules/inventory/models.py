@@ -247,18 +247,22 @@ class Product(Base):
     # Identification
     code = Column(String(100), nullable=False)
     name = Column(String(500), nullable=False)
+    trade_name = Column(String(255), nullable=True)  # Nom commercial (Sellsy tradename)
     description = Column(Text, nullable=True)
     type = Column(SQLEnum(ProductType), default=ProductType.STOCKABLE)
     status = Column(SQLEnum(ProductStatus), default=ProductStatus.DRAFT)
 
     # Classification
     category_id = Column(UniversalUUID(), ForeignKey("inventory_categories.id"), nullable=True)
+    cpv_code = Column(String(20), nullable=True)  # Code CPV marchés publics (EN 16931 BT-158)
 
     # Codes
     barcode = Column(String(100), nullable=True)
     ean13 = Column(String(13), nullable=True)
     sku = Column(String(100), nullable=True)
     manufacturer_code = Column(String(100), nullable=True)
+    supplier_product_code = Column(String(100), nullable=True)  # Référence fournisseur (Odoo seller_ids)
+    customer_product_code = Column(String(100), nullable=True)  # Référence client (EN 16931 BT-156)
 
     # Unités
     unit = Column(String(20), default="UNIT")
@@ -273,6 +277,13 @@ class Product(Base):
     last_purchase_price = Column(Numeric(15, 4), nullable=True)
     sale_price = Column(Numeric(15, 4), nullable=True)
     currency = Column(String(3), default="EUR")
+
+    # TVA / Taxes (Chorus Pro / Factur-X conformité)
+    tax_rate = Column(Numeric(5, 2), default=20.00)  # Taux TVA vente % (EN 16931 BT-152)
+    tax_id = Column(UniversalUUID(), nullable=True)  # Référence taxe vente (EN 16931 BT-151)
+    supplier_tax_rate = Column(Numeric(5, 2), default=20.00)  # Taux TVA achat %
+    supplier_tax_id = Column(UniversalUUID(), nullable=True)  # Référence taxe achat
+    eco_tax = Column(Numeric(10, 4), default=0)  # Éco-contribution (Sellsy ecoTax)
 
     # Valorisation
     valuation_method = Column(SQLEnum(ValuationMethod), default=ValuationMethod.AVG)
@@ -314,6 +325,10 @@ class Product(Base):
     custom_fields = Column(JSONB, default=dict)
     image_url = Column(String(500), nullable=True)
     notes = Column(Text, nullable=True)
+
+    # Flags vendable/achetable (Odoo sale_ok/purchase_ok)
+    is_sellable = Column(Boolean, default=True)  # Peut être vendu
+    is_purchasable = Column(Boolean, default=True)  # Peut être acheté
 
     is_active = Column(Boolean, default=True)
     created_by = Column(UniversalUUID(), nullable=True)

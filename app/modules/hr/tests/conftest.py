@@ -38,62 +38,40 @@ from app.modules.hr.models import (
 
 
 # ============================================================================
-# FIXTURES GLOBALES
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
-@pytest.fixture(scope="session")
-def test_config():
-    """Configuration de test"""
+
+@pytest.fixture
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
     return {
-        "database_url": "sqlite:///:memory:",
-        "testing": True
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
     }
-
-
-@pytest.fixture(autouse=True)
-def mock_saas_context(monkeypatch):
-    """
-    Mock get_saas_context pour tous les tests
-    Remplace la dépendance FastAPI par un mock
-    """
-    def mock_get_context():
-        return SaaSContext(
-            tenant_id="tenant-test-001",
-            user_id="user-test-001",
-            role=UserRole.ADMIN,
-            permissions=["hr.*"],
-            scope="full",
-            session_id="session-test",
-            ip_address="127.0.0.1",
-            user_agent="pytest",
-            created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow()
-        )
-
-    # Remplacer la dépendance FastAPI
-    from app.modules.hr import router_v2
-    monkeypatch.setattr(router_v2, "get_saas_context", mock_get_context)
-
-    return mock_get_context
 
 
 @pytest.fixture(scope="function")
 def clean_database(db_session):
-    """Nettoyer la base après chaque test"""
+    """Nettoyer la base après chaque test."""
     yield
     db_session.rollback()
-
-
-@pytest.fixture
-def tenant_id():
-    """ID du tenant de test"""
-    return "tenant-test-001"
-
-
-@pytest.fixture
-def user_id():
-    """ID de l'utilisateur de test"""
-    return "user-test-001"
 
 
 # ============================================================================

@@ -1,6 +1,7 @@
 """
 Fixtures pour les tests du module QC - CORE SaaS v2
-====================================================
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 from datetime import date, datetime
@@ -9,10 +10,7 @@ from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
-from fastapi.testclient import TestClient
 
-from app.main import app
-from app.core.saas_context import SaaSContext, UserRole, TenantScope
 from app.modules.qc.models import (
     ModuleRegistry,
     ModuleStatus,
@@ -33,28 +31,39 @@ from app.modules.qc.models import (
 
 
 # ============================================================================
-# MOCK SAAS CONTEXT
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
-
-@pytest.fixture
-def mock_saas_context():
-    """Mock SaaSContext pour les tests"""
-    return SaaSContext(
-        tenant_id="1",
-        user_id=UUID("00000000-0000-0000-0000-000000000101"),
-        role=UserRole.ADMIN,
-        permissions={"qc.*"},
-        scope=TenantScope.TENANT,
-        ip_address="127.0.0.1",
-        user_agent="pytest",
-        correlation_id="test-qc-001"
-    )
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
 
 @pytest.fixture
-def client():
-    """Client de test FastAPI."""
-    return TestClient(app)
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
+
+
+@pytest.fixture
+def mock_saas_context(saas_context):
+    """Alias pour saas_context du conftest global."""
+    return saas_context
 
 
 # ============================================================================
@@ -437,12 +446,15 @@ def mock_qc_service(
 
 
 # ============================================================================
-# MOCK DEPENDENCIES
+# MOCK DEPENDENCIES (optionnel, pour tests unitaires avec service mocké)
 # ============================================================================
 
-@pytest.fixture(autouse=True)
+# NOTE: Le conftest global (app/conftest.py) gère le mock_auth_global autouse.
+# Ce mock_dependencies est disponible pour les tests qui veulent un service mocké.
+
+@pytest.fixture
 def mock_dependencies(mock_saas_context, mock_qc_service):
-    """Mock des dépendances FastAPI pour tous les tests"""
+    """Mock des dépendances FastAPI pour tests unitaires avec service mocké."""
     from unittest.mock import patch
 
     with patch("app.modules.qc.router_v2.get_saas_context", return_value=mock_saas_context), \

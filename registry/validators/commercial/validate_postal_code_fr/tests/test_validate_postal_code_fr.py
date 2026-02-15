@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.commercial.validate_postal_code_fr.impl import execute
 
 
 class TestValidatePostalCodeFr:
@@ -31,7 +31,7 @@ class TestValidatePostalCodeFr:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "postal_code": "test_value",
         }
 
@@ -43,7 +43,7 @@ class TestValidatePostalCodeFr:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "postal_code": "test",
         }
         inputs_copy = inputs.copy()

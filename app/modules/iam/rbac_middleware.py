@@ -636,6 +636,54 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], RoutePermission] = {
     ("GET", r"/v2/automated-accounting/.*$"): RoutePermission(Module.BILLING, Action.READ),
     ("POST", r"/v2/automated-accounting/.*$"): RoutePermission(Module.BILLING, Action.CREATE),
     ("PUT", r"/v2/automated-accounting/.*$"): RoutePermission(Module.BILLING, Action.UPDATE),
+
+    # Invoicing v2 (Devis, Factures, Avoirs)
+    ("GET", r"/v2/invoicing/quotes/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v2/invoicing/quotes/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/invoicing/quotes/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("PUT", r"/v2/invoicing/quotes/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("DELETE", r"/v2/invoicing/quotes/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("POST", r"/v2/invoicing/quotes/[0-9a-fA-F-]+/send/?$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("GET", r"/v2/invoicing/invoices/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("GET", r"/v2/invoicing/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/invoicing/invoices/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+    ("DELETE", r"/v2/invoicing/invoices/[0-9a-fA-F-]+$"): RoutePermission(Module.BILLING, Action.DELETE),
+    ("POST", r"/v2/invoicing/invoices/[0-9a-fA-F-]+/send/?$"): RoutePermission(Module.BILLING, Action.UPDATE),
+    ("GET", r"/v2/invoicing/credits/?$"): RoutePermission(Module.BILLING, Action.READ),
+    ("POST", r"/v2/invoicing/credits/?$"): RoutePermission(Module.BILLING, Action.CREATE),
+
+    # Cockpit v2 (Tableau de bord dirigeant)
+    ("GET", r"/v2/cockpit/dashboard/?$"): RoutePermission(Module.REPORTING, Action.READ),
+    ("GET", r"/v2/cockpit/decisions/?$"): RoutePermission(Module.REPORTING, Action.READ),
+    ("POST", r"/v2/cockpit/alerts/[0-9a-zA-Z_-]+/acknowledge/?$"): RoutePermission(Module.REPORTING, Action.UPDATE),
+
+    # Partners v2 (Clients, Fournisseurs, Contacts)
+    ("GET", r"/v2/partners/clients/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/v2/partners/clients/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v2/partners/clients/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v2/partners/clients/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v2/partners/clients/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/v2/partners/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/v2/partners/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v2/partners/suppliers/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v2/partners/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v2/partners/suppliers/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+    ("GET", r"/v2/partners/contacts/?$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("GET", r"/v2/partners/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.READ),
+    ("POST", r"/v2/partners/contacts/?$"): RoutePermission(Module.CLIENTS, Action.CREATE),
+    ("PUT", r"/v2/partners/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.UPDATE),
+    ("DELETE", r"/v2/partners/contacts/[0-9a-fA-F-]+$"): RoutePermission(Module.CLIENTS, Action.DELETE),
+
+    # Decision v2 (Classification decisionnelle)
+    ("POST", r"/v2/decision/classify/?$"): RoutePermission(Module.ORGANIZATION, Action.UPDATE),
+    ("GET", r"/v2/decision/status/[^/]+/[^/]+$"): RoutePermission(Module.ORGANIZATION, Action.READ),
+
+    # Branding v2 (Configuration visuelle tenant)
+    ("GET", r"/v2/branding/?$"): RoutePermission(Module.SETTINGS, Action.READ),
+    ("POST", r"/v2/branding/favicon/?$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("POST", r"/v2/branding/logo/?$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/branding/favicon/?$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
+    ("DELETE", r"/v2/branding/logo/?$"): RoutePermission(Module.SETTINGS, Action.UPDATE),
 }
 
 

@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.commercial.validate_quote_validity.impl import execute
 
 
 class TestValidateQuoteValidity:
@@ -33,7 +33,7 @@ class TestValidateQuoteValidity:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "issue_date": "test_value",
             "validity_days": 100.0,
             "current_date": "test_value",
@@ -47,7 +47,7 @@ class TestValidateQuoteValidity:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "issue_date": "test",
             "validity_days": "test",
             "current_date": "test",

@@ -9,3 +9,7 @@ export { InvoicingFinancialTab } from './InvoicingFinancialTab';
 export { InvoicingDocumentsTab } from './InvoicingDocumentsTab';
 export { InvoicingHistoryTab } from './InvoicingHistoryTab';
 export { InvoicingIATab } from './InvoicingIATab';
+
+// Line Editor avec ProductAutocomplete
+export { LineEditor } from './LineEditor';
+export type { LineEditorProps } from './LineEditor';

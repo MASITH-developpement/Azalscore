@@ -1,6 +1,7 @@
 """
 Fixtures de test pour le module Field Service - CORE SaaS v2
-=============================================================
+
+Hérite des fixtures globales de app/conftest.py.
 """
 
 from datetime import date, datetime, time
@@ -19,31 +20,51 @@ from app.modules.field_service.models import (
 )
 
 
-# =============================================================================
-# MOCK SAAS CONTEXT
-# =============================================================================
-
-@pytest.fixture
-def mock_saas_context():
-    """Mock SaaSContext pour les tests."""
-    return SaaSContext(
-        tenant_id="test-tenant-123",
-        user_id=UUID("12345678-1234-5678-1234-567812345678"),
-        role=UserRole.ADMIN,
-        permissions={"field_service.*"},
-        scope=TenantScope.TENANT,
-        ip_address="192.168.1.100",
-        user_agent="pytest-agent",
-        correlation_id="test-correlation-123",
-        timestamp=datetime.utcnow(),
-    )
+# ============================================================================
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
+# ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
 
 @pytest.fixture
-def mock_technician_context():
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
+
+
+@pytest.fixture
+def mock_saas_context(saas_context):
+    """Alias pour saas_context du conftest global."""
+    return saas_context
+
+
+# ============================================================================
+# CONTEXTES SPÉCIFIQUES AUX RÔLES
+# ============================================================================
+
+@pytest.fixture
+def mock_technician_context(tenant_id):
     """Mock SaaSContext pour un technicien."""
     return SaaSContext(
-        tenant_id="test-tenant-123",
+        tenant_id=tenant_id,
         user_id=UUID("87654321-4321-8765-4321-876543218765"),
         role=UserRole.EMPLOYE,
         permissions={"field_service.intervention.read", "field_service.intervention.update"},

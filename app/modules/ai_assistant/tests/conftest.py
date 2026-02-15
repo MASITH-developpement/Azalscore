@@ -1,94 +1,43 @@
-"""Configuration pytest et fixtures pour les tests AI Assistant."""
+"""Configuration pytest et fixtures pour les tests AI Assistant.
+
+Hérite des fixtures globales de app/conftest.py.
+"""
 
 import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
-from fastapi.testclient import TestClient
 
 from app.core.saas_context import SaaSContext, UserRole
 
 
-@pytest.fixture
-def client(mock_db, mock_saas_context, mock_ai_service):
-    """Test client with all mocks applied."""
-    from app.main import app
-    return TestClient(app)
+# ============================================================================
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
+# ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
 
 @pytest.fixture
-def tenant_id():
-    return "tenant-test-001"
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
 
 
 @pytest.fixture
-def user_id():
-    return "user-test-001"
-
-
-@pytest.fixture(autouse=True)
-def mock_db():
-    """Mock database session."""
-    class MockDB:
-        def query(self, *args, **kwargs):
-            return self
-
-        def filter(self, *args, **kwargs):
-            return self
-
-        def first(self):
-            return None
-
-        def all(self):
-            return []
-
-        def commit(self):
-            pass
-
-        def refresh(self, obj):
-            pass
-
-    mock_session = MockDB()
-
-    from app.core.database import get_db
-    from app.main import app
-
-    def mock_get_db():
-        yield mock_session
-
-    app.dependency_overrides[get_db] = mock_get_db
-
-    yield mock_session
-
-    app.dependency_overrides.pop(get_db, None)
-
-
-@pytest.fixture(autouse=True)
-def mock_saas_context(tenant_id, user_id):
-    """Mock SaaSContext using FastAPI dependency_overrides."""
-    def mock_get_context():
-        return SaaSContext(
-            tenant_id=tenant_id,
-            user_id=user_id,
-            role=UserRole.ADMIN,
-            permissions={"ai.*"},
-            scope="tenant",
-            session_id="session-test",
-            ip_address="127.0.0.1",
-            user_agent="pytest",
-            created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(hours=1)
-        )
-
-    from app.core.dependencies_v2 import get_saas_context
-    from app.main import app
-
-    # Use FastAPI's dependency_overrides instead of monkeypatching
-    app.dependency_overrides[get_saas_context] = mock_get_context
-
-    yield mock_get_context
-
-    # Cleanup: remove the override after the test
-    app.dependency_overrides.pop(get_saas_context, None)
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
+    return {
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
+    }
 
 
 @pytest.fixture(autouse=True)

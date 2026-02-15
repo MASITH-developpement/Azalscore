@@ -1,9 +1,9 @@
 """
 Configuration pytest et fixtures communes pour les tests Treasury
-==================================================================
 
-Fixtures:
-- Mock SaaSContext pour tous les tests
+Hérite des fixtures globales de app/conftest.py.
+
+Fixtures spécifiques:
 - Données de test: comptes, transactions, rapprochements
 - Helpers pour assertions
 """
@@ -14,8 +14,6 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from uuid import uuid4, UUID
 
-from app.core.saas_context import SaaSContext, UserRole, TenantScope
-
 from app.modules.treasury.models import (
     AccountType,
     TransactionType,
@@ -23,53 +21,33 @@ from app.modules.treasury.models import (
 
 
 # ============================================================================
-# FIXTURES GLOBALES
+# FIXTURES HÉRITÉES DU CONFTEST GLOBAL
 # ============================================================================
+# Les fixtures suivantes sont héritées de app/conftest.py:
+# - tenant_id, user_id, user_uuid
+# - db_session, test_db_session
+# - test_client (avec headers auto-injectés)
+# - mock_auth_global (autouse=True)
+# - saas_context
 
-@pytest.fixture(scope="session")
-def test_config():
-    """Configuration de test"""
+
+@pytest.fixture
+def client(test_client):
+    """
+    Alias pour test_client (compatibilité avec anciens tests).
+
+    Le test_client du conftest global ajoute déjà les headers requis.
+    """
+    return test_client
+
+
+@pytest.fixture
+def auth_headers(tenant_id):
+    """Headers d'authentification avec tenant ID."""
     return {
-        "database_url": "sqlite:///:memory:",
-        "testing": True
+        "Authorization": "Bearer test-token",
+        "X-Tenant-ID": tenant_id
     }
-
-
-@pytest.fixture(autouse=True)
-def mock_saas_context(monkeypatch):
-    """
-    Mock get_saas_context pour tous les tests.
-    Remplace la dépendance FastAPI par un mock.
-    """
-    def mock_get_context():
-        return SaaSContext(
-            tenant_id="tenant-test-001",
-            user_id=UUID("00000000-0000-0000-0000-000000000001"),
-            role=UserRole.ADMIN,
-            permissions={"treasury.*"},
-            scope=TenantScope.TENANT,
-            ip_address="127.0.0.1",
-            user_agent="pytest",
-            correlation_id="test-correlation-id"
-        )
-
-    # Remplacer la dépendance FastAPI
-    from app.modules.treasury import router_v2
-    monkeypatch.setattr(router_v2, "get_saas_context", mock_get_context)
-
-    return mock_get_context
-
-
-@pytest.fixture
-def tenant_id():
-    """ID du tenant de test"""
-    return "tenant-test-001"
-
-
-@pytest.fixture
-def user_id():
-    """ID de l'utilisateur de test"""
-    return UUID("00000000-0000-0000-0000-000000000001")
 
 
 # ============================================================================

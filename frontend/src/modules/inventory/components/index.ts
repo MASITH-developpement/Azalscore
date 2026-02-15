@@ -9,3 +9,7 @@ export { ProductFinancialTab } from './ProductFinancialTab';
 export { ProductDocsTab } from './ProductDocsTab';
 export { ProductHistoryTab } from './ProductHistoryTab';
 export { ProductIATab } from './ProductIATab';
+
+// Autocomplete
+export { ProductAutocomplete } from './ProductAutocomplete';
+export type { ProductAutocompleteProps } from './ProductAutocomplete';

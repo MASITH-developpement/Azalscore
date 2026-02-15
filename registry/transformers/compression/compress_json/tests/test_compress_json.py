@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.transformers.compression.compress_json.impl import execute
 
 
 class TestCompressJson:
@@ -28,7 +28,7 @@ class TestCompressJson:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "data": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestCompressJson:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "data": "test",
         }
         inputs_copy = inputs.copy()

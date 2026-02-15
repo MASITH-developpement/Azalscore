@@ -5,7 +5,7 @@ Couverture cible : >= 80%
 """
 
 import pytest
-from ..impl import execute
+from registry.validators.payments.validate_card_expiry.impl import execute
 
 
 class TestValidateCardExpiry:
@@ -28,7 +28,7 @@ class TestValidateCardExpiry:
 
     def test_idempotence(self):
         """Test d'idempotence (même input = même output)"""
-        inputs = {{
+        inputs = {
             "expiry": "test_value",
         }
 
@@ -40,7 +40,7 @@ class TestValidateCardExpiry:
 
     def test_no_side_effects_on_inputs(self):
         """Test absence d'effets de bord sur les inputs"""
-        inputs = {{
+        inputs = {
             "expiry": "test",
         }
         inputs_copy = inputs.copy()

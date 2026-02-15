@@ -64,6 +64,7 @@ async def lookup_enrichment(
     - **SIRET/SIREN**: Lookup entreprises francaises (INSEE)
     - **address**: Autocomplete adresses francaises (API Adresse gouv.fr)
     - **barcode**: Lookup produits par code-barres (Open Food/Beauty/Pet Facts)
+    - **vat_number**: Validation numero TVA UE (VIES)
 
     L'enrichissement est mis en cache pour eviter les appels redondants.
     """
@@ -517,3 +518,368 @@ async def get_internal_score(
         raise HTTPException(status_code=500, detail=str(e))
 
 from .providers.internal_scoring import InternalScoringProvider
+
+
+# ============================================================================
+# ADMIN - PROVIDER CONFIG ENDPOINTS
+# ============================================================================
+
+from .models import EnrichmentProviderConfig, PROVIDER_INFO
+from .schemas import (
+    ProviderInfoResponse,
+    ProviderConfigResponse,
+    ProviderConfigCreateRequest,
+    ProviderConfigUpdateRequest,
+    ProviderTestResult,
+    ProvidersListResponse,
+)
+
+
+@router.get("/admin/providers", response_model=ProvidersListResponse)
+async def list_provider_configs(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Liste tous les providers avec leur configuration pour ce tenant.
+
+    Retourne:
+    - Les providers configures avec leurs parametres
+    - Les providers disponibles (non encore configures)
+    """
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant non identifie")
+
+    # Recuperer les configs existantes
+    configs = db.query(EnrichmentProviderConfig).filter(
+        EnrichmentProviderConfig.tenant_id == tenant_id
+    ).all()
+
+    # Construire la liste des providers configures
+    configured_providers = []
+    configured_provider_codes = set()
+
+    for config in configs:
+        provider_info = PROVIDER_INFO.get(config.provider, {})
+        configured_provider_codes.add(config.provider)
+
+        configured_providers.append(ProviderConfigResponse(
+            id=config.id,
+            provider=config.provider.value,
+            name=provider_info.get("name", config.provider.value),
+            description=provider_info.get("description", ""),
+            is_enabled=config.is_enabled,
+            is_primary=config.is_primary,
+            priority=config.priority,
+            has_api_key=bool(config.api_key),
+            requires_api_key=provider_info.get("requires_api_key", False),
+            is_free=provider_info.get("is_free", True),
+            country=provider_info.get("country", "UNKNOWN"),
+            capabilities=provider_info.get("capabilities", []),
+            custom_requests_per_minute=config.custom_requests_per_minute,
+            custom_requests_per_day=config.custom_requests_per_day,
+            last_success_at=config.last_success_at,
+            last_error_at=config.last_error_at,
+            last_error_message=config.last_error_message,
+            total_requests=config.total_requests,
+            total_errors=config.total_errors,
+            created_at=config.created_at,
+            updated_at=config.updated_at,
+        ))
+
+    # Construire la liste des providers disponibles (non configures)
+    available_providers = []
+    for provider_enum, info in PROVIDER_INFO.items():
+        if provider_enum not in configured_provider_codes:
+            available_providers.append(ProviderInfoResponse(
+                provider=provider_enum.value,
+                name=info.get("name", provider_enum.value),
+                description=info.get("description", ""),
+                requires_api_key=info.get("requires_api_key", False),
+                is_free=info.get("is_free", True),
+                country=info.get("country", "UNKNOWN"),
+                capabilities=info.get("capabilities", []),
+                documentation_url=info.get("documentation_url"),
+            ))
+
+    return ProvidersListResponse(
+        providers=configured_providers,
+        available_providers=available_providers,
+    )
+
+
+@router.post("/admin/providers", response_model=ProviderConfigResponse)
+async def create_provider_config(
+    data: ProviderConfigCreateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Configure un nouveau provider pour ce tenant.
+    """
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant non identifie")
+
+    # Verifier si deja configure
+    existing = db.query(EnrichmentProviderConfig).filter(
+        EnrichmentProviderConfig.tenant_id == tenant_id,
+        EnrichmentProviderConfig.provider == data.provider,
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Provider {data.provider.value} deja configure pour ce tenant"
+        )
+
+    # Creer la config
+    config = EnrichmentProviderConfig(
+        tenant_id=tenant_id,
+        provider=data.provider,
+        is_enabled=data.is_enabled,
+        is_primary=data.is_primary,
+        priority=data.priority,
+        api_key=data.api_key,
+        api_secret=data.api_secret,
+        api_endpoint=data.api_endpoint,
+        custom_requests_per_minute=data.custom_requests_per_minute,
+        custom_requests_per_day=data.custom_requests_per_day,
+        config_data=data.config_data or {},
+        created_by=current_user.id,
+    )
+
+    db.add(config)
+    db.commit()
+    db.refresh(config)
+
+    provider_info = PROVIDER_INFO.get(config.provider, {})
+
+    return ProviderConfigResponse(
+        id=config.id,
+        provider=config.provider.value,
+        name=provider_info.get("name", config.provider.value),
+        description=provider_info.get("description", ""),
+        is_enabled=config.is_enabled,
+        is_primary=config.is_primary,
+        priority=config.priority,
+        has_api_key=bool(config.api_key),
+        requires_api_key=provider_info.get("requires_api_key", False),
+        is_free=provider_info.get("is_free", True),
+        country=provider_info.get("country", "UNKNOWN"),
+        capabilities=provider_info.get("capabilities", []),
+        custom_requests_per_minute=config.custom_requests_per_minute,
+        custom_requests_per_day=config.custom_requests_per_day,
+        last_success_at=config.last_success_at,
+        last_error_at=config.last_error_at,
+        last_error_message=config.last_error_message,
+        total_requests=config.total_requests,
+        total_errors=config.total_errors,
+        created_at=config.created_at,
+        updated_at=config.updated_at,
+    )
+
+
+@router.patch("/admin/providers/{provider_code}", response_model=ProviderConfigResponse)
+async def update_provider_config(
+    provider_code: str,
+    data: ProviderConfigUpdateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Met a jour la configuration d'un provider.
+    """
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant non identifie")
+
+    # Trouver le provider
+    try:
+        provider_enum = EnrichmentProvider(provider_code)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Provider inconnu: {provider_code}")
+
+    config = db.query(EnrichmentProviderConfig).filter(
+        EnrichmentProviderConfig.tenant_id == tenant_id,
+        EnrichmentProviderConfig.provider == provider_enum,
+    ).first()
+
+    if not config:
+        raise HTTPException(status_code=404, detail="Configuration non trouvee")
+
+    # Mettre a jour les champs fournis
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(config, field, value)
+
+    config.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(config)
+
+    provider_info = PROVIDER_INFO.get(config.provider, {})
+
+    return ProviderConfigResponse(
+        id=config.id,
+        provider=config.provider.value,
+        name=provider_info.get("name", config.provider.value),
+        description=provider_info.get("description", ""),
+        is_enabled=config.is_enabled,
+        is_primary=config.is_primary,
+        priority=config.priority,
+        has_api_key=bool(config.api_key),
+        requires_api_key=provider_info.get("requires_api_key", False),
+        is_free=provider_info.get("is_free", True),
+        country=provider_info.get("country", "UNKNOWN"),
+        capabilities=provider_info.get("capabilities", []),
+        custom_requests_per_minute=config.custom_requests_per_minute,
+        custom_requests_per_day=config.custom_requests_per_day,
+        last_success_at=config.last_success_at,
+        last_error_at=config.last_error_at,
+        last_error_message=config.last_error_message,
+        total_requests=config.total_requests,
+        total_errors=config.total_errors,
+        created_at=config.created_at,
+        updated_at=config.updated_at,
+    )
+
+
+@router.delete("/admin/providers/{provider_code}")
+async def delete_provider_config(
+    provider_code: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Supprime la configuration d'un provider (retour aux valeurs par defaut).
+    """
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant non identifie")
+
+    try:
+        provider_enum = EnrichmentProvider(provider_code)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Provider inconnu: {provider_code}")
+
+    config = db.query(EnrichmentProviderConfig).filter(
+        EnrichmentProviderConfig.tenant_id == tenant_id,
+        EnrichmentProviderConfig.provider == provider_enum,
+    ).first()
+
+    if not config:
+        raise HTTPException(status_code=404, detail="Configuration non trouvee")
+
+    db.delete(config)
+    db.commit()
+
+    return {"message": f"Configuration {provider_code} supprimee"}
+
+
+@router.post("/admin/providers/{provider_code}/test", response_model=ProviderTestResult)
+async def test_provider_connection(
+    provider_code: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Teste la connexion a un provider avec sa configuration actuelle.
+    """
+    import time
+
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="Tenant non identifie")
+
+    try:
+        provider_enum = EnrichmentProvider(provider_code)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Provider inconnu: {provider_code}")
+
+    # Obtenir le service pour ce tenant
+    service = get_service(request, db)
+
+    # Obtenir le provider
+    provider = service._get_provider(provider_enum)
+    if not provider:
+        return ProviderTestResult(
+            provider=provider_code,
+            success=False,
+            response_time_ms=0,
+            error="Provider non disponible ou desactive",
+        )
+
+    # Test selon le type de provider
+    start_time = time.time()
+    test_value = ""
+    test_type = ""
+
+    if provider_enum == EnrichmentProvider.INSEE:
+        test_type = "siret"
+        test_value = "44306184100047"  # SIRET Google France
+    elif provider_enum == EnrichmentProvider.VIES:
+        test_type = "vat_number"
+        test_value = "FR40303265045"  # TVA Google France
+    elif provider_enum == EnrichmentProvider.PAPPERS:
+        test_type = "siren"
+        test_value = "443061841"  # SIREN Google France
+    elif provider_enum == EnrichmentProvider.OPENCORPORATES:
+        test_type = "name"
+        test_value = "Google"
+    elif provider_enum == EnrichmentProvider.ADRESSE_GOUV:
+        test_type = "address"
+        test_value = "8 rue de londres paris"
+    elif provider_enum in (
+        EnrichmentProvider.OPENFOODFACTS,
+        EnrichmentProvider.OPENBEAUTYFACTS,
+        EnrichmentProvider.OPENPETFOODFACTS,
+    ):
+        test_type = "barcode"
+        test_value = "3017620422003"  # Nutella
+    else:
+        return ProviderTestResult(
+            provider=provider_code,
+            success=False,
+            response_time_ms=0,
+            error="Test non implemente pour ce provider",
+        )
+
+    try:
+        result = await provider.lookup(test_type, test_value)
+        response_time = int((time.time() - start_time) * 1000)
+
+        if result.success:
+            return ProviderTestResult(
+                provider=provider_code,
+                success=True,
+                response_time_ms=response_time,
+                details={
+                    "test_type": test_type,
+                    "test_value": test_value,
+                    "confidence": result.confidence,
+                    "cached": result.cached,
+                }
+            )
+        else:
+            return ProviderTestResult(
+                provider=provider_code,
+                success=False,
+                response_time_ms=response_time,
+                error=result.error or "Echec du test",
+            )
+
+    except Exception as e:
+        response_time = int((time.time() - start_time) * 1000)
+        return ProviderTestResult(
+            provider=provider_code,
+            success=False,
+            response_time_ms=response_time,
+            error=str(e),
+        )

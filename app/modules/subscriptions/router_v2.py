@@ -15,6 +15,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.core.cache import cached
 from app.core.database import get_db
 from app.core.dependencies_v2 import get_saas_context
 from app.core.saas_context import SaaSContext
@@ -595,6 +596,35 @@ def list_webhooks(
 
 
 # ============================================================================
+# FONCTIONS CACHABLES
+# ============================================================================
+
+@cached(ttl=300, key_builder=lambda service: f"subscriptions_v2:stats:{service.tenant_id}")
+def _get_cached_stats_v2(service: SubscriptionService) -> dict:
+    """Calcule les stats abonnements v2 (cache 5min)."""
+    dashboard = service.get_dashboard()
+    plans_data = service.list_plans(is_active=True, skip=0, limit=1000)
+    total_plans = plans_data[1] if plans_data else 0
+    return {
+        "total_plans": total_plans,
+        "active_subscriptions": dashboard.total_active,
+        "trial_subscriptions": dashboard.trialing,
+        "mrr": dashboard.mrr,
+        "arr": dashboard.arr,
+        "churn_rate": dashboard.churn_rate,
+        "new_subscribers_month": dashboard.canceled_this_month,
+        "revenue_this_month": dashboard.new_mrr + dashboard.expansion_mrr,
+    }
+
+
+@cached(ttl=300, key_builder=lambda service: f"subscriptions_v2:dashboard:{service.tenant_id}")
+def _get_cached_dashboard_v2(service: SubscriptionService) -> dict:
+    """Calcule le dashboard abonnements v2 (cache 5min)."""
+    dashboard = service.get_dashboard()
+    return dashboard.model_dump() if hasattr(dashboard, 'model_dump') else dashboard
+
+
+# ============================================================================
 # STATS
 # ============================================================================
 
@@ -602,21 +632,9 @@ def list_webhooks(
 def get_stats(
     service: SubscriptionService = Depends(get_subscription_service)
 ):
-    """Statistiques abonnements simplifié."""
-    dashboard = service.get_dashboard()
-    plans_data = service.list_plans(is_active=True, skip=0, limit=1000)
-    total_plans = plans_data[1] if plans_data else 0
-
-    return SubscriptionStatsResponse(
-        total_plans=total_plans,
-        active_subscriptions=dashboard.total_active,
-        trial_subscriptions=dashboard.trialing,
-        mrr=dashboard.mrr,
-        arr=dashboard.arr,
-        churn_rate=dashboard.churn_rate,
-        new_subscribers_month=dashboard.canceled_this_month,
-        revenue_this_month=dashboard.new_mrr + dashboard.expansion_mrr,
-    )
+    """Statistiques abonnements simplifié (cache 5min)."""
+    data = _get_cached_stats_v2(service)
+    return SubscriptionStatsResponse(**data)
 
 
 # ============================================================================
@@ -627,5 +645,6 @@ def get_stats(
 def get_dashboard(
     service: SubscriptionService = Depends(get_subscription_service)
 ):
-    """Dashboard abonnements."""
-    return service.get_dashboard()
+    """Dashboard abonnements (cache 5min)."""
+    data = _get_cached_dashboard_v2(service)
+    return SubscriptionDashboard(**data)
