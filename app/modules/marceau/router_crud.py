@@ -6,6 +6,8 @@ Router minimaliste utilisant CRUDRouter.
 Agent IA Marceau - Endpoints API.
 """
 
+from __future__ import annotations
+
 from typing import List, Optional
 from uuid import UUID
 
