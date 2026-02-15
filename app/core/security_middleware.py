@@ -286,22 +286,95 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return response
 
     def _get_client_ip(self, request: Request) -> str:
-        """Extrait l'IP client, en tenant compte des proxies."""
-        # X-Forwarded-For pour les proxies/load balancers
+        """
+        Extrait l'IP client de manière SÉCURISÉE.
+
+        SÉCURITÉ: Les headers X-Forwarded-For et X-Real-IP peuvent être forgés
+        par des attaquants. On ne fait confiance à ces headers QUE si:
+        1. TRUSTED_PROXIES est configuré
+        2. L'IP directe du client est dans la liste des proxies de confiance
+
+        Configuration via variable d'environnement:
+        TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+        """
+        import ipaddress
+        import os
+
+        # IP directe (toujours fiable)
+        direct_ip = request.client.host if request.client else None
+
+        if not direct_ip:
+            return "unknown"
+
+        # Récupérer les proxies de confiance depuis la configuration
+        trusted_proxies_str = os.getenv("TRUSTED_PROXIES", "")
+
+        # Si aucun proxy de confiance configuré, utiliser l'IP directe uniquement
+        if not trusted_proxies_str:
+            # En production sans config, on ne fait PAS confiance aux headers proxy
+            forwarded = request.headers.get("X-Forwarded-For")
+            if forwarded:
+                logger.warning(
+                    "[SECURITY] X-Forwarded-For ignoré - TRUSTED_PROXIES non configuré",
+                    extra={
+                        "direct_ip": direct_ip,
+                        "x_forwarded_for": forwarded[:100],
+                        "consequence": "using_direct_ip"
+                    }
+                )
+            return direct_ip
+
+        # Parser les réseaux de confiance
+        try:
+            trusted_networks = []
+            for cidr in trusted_proxies_str.split(","):
+                cidr = cidr.strip()
+                if cidr:
+                    trusted_networks.append(ipaddress.ip_network(cidr, strict=False))
+        except ValueError as e:
+            logger.error(
+                "[SECURITY] TRUSTED_PROXIES invalide: %s",
+                str(e),
+                extra={"trusted_proxies": trusted_proxies_str}
+            )
+            return direct_ip
+
+        # Vérifier si l'IP directe vient d'un proxy de confiance
+        try:
+            direct_ip_obj = ipaddress.ip_address(direct_ip)
+            is_trusted_proxy = any(
+                direct_ip_obj in network for network in trusted_networks
+            )
+        except ValueError:
+            # IP invalide
+            return direct_ip
+
+        if not is_trusted_proxy:
+            # L'IP directe n'est PAS un proxy de confiance - ignorer les headers
+            return direct_ip
+
+        # L'IP vient d'un proxy de confiance - on peut lire X-Forwarded-For
+        # SÉCURITÉ: Prendre la DERNIÈRE IP non-proxy dans la chaîne
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
-            return forwarded.split(",")[0].strip()
+            ips = [ip.strip() for ip in forwarded.split(",")]
+            # Parcourir de droite à gauche pour trouver la première IP non-proxy
+            for ip in reversed(ips):
+                try:
+                    ip_obj = ipaddress.ip_address(ip)
+                    if not any(ip_obj in network for network in trusted_networks):
+                        return ip
+                except ValueError:
+                    continue
+            # Toutes les IPs sont des proxies - prendre la première
+            return ips[0] if ips else direct_ip
 
-        # X-Real-IP (nginx)
+        # X-Real-IP (nginx) - seulement si venant d'un proxy de confiance
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
-            return real_ip
+            return real_ip.strip()
 
-        # IP directe
-        if request.client:
-            return request.client.host
-
-        return "unknown"
+        return direct_ip
 
     def _rate_limit_response(
         self, request: Request, message: str, limit: int, retry_after: int = 60

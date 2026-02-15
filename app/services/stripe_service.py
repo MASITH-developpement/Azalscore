@@ -461,10 +461,30 @@ class StripeWebhookHandler:
     def __init__(self, db: Session):
         self.db = db
 
+    def _validate_tenant_id(self, tenant_id: Optional[str]) -> bool:
+        """
+        Valide que le tenant_id existe dans la base.
+
+        SÉCURITÉ: Empêche le traitement de webhooks avec des tenant_id forgés.
+        """
+        if not tenant_id:
+            return False
+
+        try:
+            from app.modules.tenants.models import Tenant
+            tenant = self.db.query(Tenant).filter(
+                Tenant.id == tenant_id,
+                Tenant.is_active == True
+            ).first()
+            return tenant is not None
+        except Exception as e:
+            logger.error(f"[WEBHOOK] Erreur validation tenant_id: {e}")
+            return False
+
     def handle_event(self, event: Dict) -> bool:
         """
         Router l'événement vers le bon handler.
-        
+
         Returns:
             True si traité avec succès
         """
@@ -497,7 +517,7 @@ class StripeWebhookHandler:
     def _handle_checkout_completed(self, session: Dict):
         """Checkout terminé - Activer l'abonnement."""
         from app.services.tenant_status_guard import convert_trial_to_active
-        
+
         metadata = session.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
         plan = metadata.get("plan", "STARTER")
@@ -509,8 +529,13 @@ class StripeWebhookHandler:
             f"plan={plan}, subscription={subscription_id}"
         )
 
-        # Convertir le trial en compte actif
+        # SÉCURITÉ: Valider que le tenant_id existe avant traitement
         if tenant_id:
+            if not self._validate_tenant_id(tenant_id):
+                logger.error(
+                    f"[WEBHOOK] SÉCURITÉ: tenant_id invalide ou inexistant dans checkout: {tenant_id}"
+                )
+                raise ValueError(f"Invalid tenant_id in webhook metadata: {tenant_id}")
             convert_trial_to_active(self.db, tenant_id, plan)
             
             # TODO: Envoyer email de confirmation
@@ -546,7 +571,7 @@ class StripeWebhookHandler:
     def _handle_subscription_deleted(self, subscription: Dict):
         """Abonnement annulé/expiré."""
         from app.services.tenant_status_guard import suspend_tenant
-        
+
         subscription_id = subscription.get("id")
         metadata = subscription.get("metadata", {})
         tenant_id = metadata.get("tenant_id")
@@ -556,8 +581,13 @@ class StripeWebhookHandler:
             f"tenant={tenant_id}"
         )
 
-        # Suspendre le tenant
+        # SÉCURITÉ: Valider que le tenant_id existe avant suspension
         if tenant_id:
+            if not self._validate_tenant_id(tenant_id):
+                logger.error(
+                    f"[WEBHOOK] SÉCURITÉ: tenant_id invalide dans subscription deleted: {tenant_id}"
+                )
+                raise ValueError(f"Invalid tenant_id in webhook metadata: {tenant_id}")
             suspend_tenant(self.db, tenant_id, reason="subscription_cancelled")
 
     def _handle_invoice_paid(self, invoice: Dict):

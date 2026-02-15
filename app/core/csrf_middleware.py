@@ -60,14 +60,27 @@ CSRF_EXEMPT_PATHS = {
 
 def _get_csrf_secret() -> str:
     """Récupère le secret CSRF depuis les settings."""
+    import os
     try:
         from app.core.config import get_settings
         settings = get_settings()
         return getattr(settings, 'csrf_secret', None) or settings.secret_key
     except Exception as e:
-        # Fallback pour tests
+        # SÉCURITÉ: En production, JAMAIS de fallback - lever une exception
+        env = os.getenv("AZALS_ENV", "development")
+        if env == "production":
+            logger.error(
+                "[CSRF_CONFIG] CRITICAL: Impossible de charger le secret CSRF en production",
+                extra={"error": str(e)[:200]}
+            )
+            raise RuntimeError(
+                "CSRF secret configuration mandatory in production. "
+                "Set CSRF_SECRET or SECRET_KEY environment variable."
+            )
+        # Fallback UNIQUEMENT pour tests/développement
         logger.warning(
-            "[CSRF_CONFIG] Échec chargement secret CSRF depuis settings",
+            "[CSRF_CONFIG] Échec chargement secret CSRF depuis settings (env=%s)",
+            env,
             extra={"error": str(e)[:200], "consequence": "fallback_secret_used"}
         )
         return "csrf-secret-fallback-not-for-production"
