@@ -1016,11 +1016,17 @@ def get_user_capabilities(
     logger = logging.getLogger(__name__)
 
     # Vérifier si l'utilisateur a des permissions IAM personnalisées
+    # SÉCURITÉ: Filtrer par tenant_id pour éviter les fuites cross-tenant
     try:
         result = db.execute(text("""
             SELECT permission_code FROM iam_user_permissions
             WHERE user_id = :user_id
-        """), {"user_id": str(current_user.id)})
+            AND tenant_id = :tenant_id
+            AND is_active = true
+        """), {
+            "user_id": str(current_user.id),
+            "tenant_id": current_user.tenant_id
+        })
         iam_permissions = [row[0] for row in result]
 
         logger.info(f"[AUTH] User {current_user.id}: found {len(iam_permissions)} IAM permissions")
