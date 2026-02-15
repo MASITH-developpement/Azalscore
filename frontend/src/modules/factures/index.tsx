@@ -15,6 +15,7 @@ import {
   Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
@@ -56,7 +57,7 @@ import {
 
 const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType; status?: string; search?: string }) => {
   return useQuery({
-    queryKey: ['commercial', 'documents', 'factures', page, pageSize, filters],
+    queryKey: ['commercial', 'documents', 'factures', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),

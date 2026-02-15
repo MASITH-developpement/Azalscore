@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { useCapabilitiesStore } from '@core/capabilities';
 import { useAuth } from '@core/auth';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -259,7 +260,7 @@ const useAdminDashboard = () => {
 
 const useUsers = (filters?: { status?: string; role_id?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'users', filters],
+    queryKey: ['admin', 'users', serializeFilters(filters)],
     queryFn: async (): Promise<User[]> => {
       try {
         const params = new URLSearchParams();
@@ -493,7 +494,7 @@ const useUpdateUserPermissions = () => {
 
 const useTenants = (filters?: { status?: string; plan?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'tenants', filters],
+    queryKey: ['admin', 'tenants', serializeFilters(filters)],
     queryFn: async (): Promise<Tenant[]> => {
       try {
         const response = await api.get<Tenant[]>('/tenants', {
@@ -517,7 +518,7 @@ const useTenants = (filters?: { status?: string; plan?: string }) => {
 
 const useAuditLogs = (filters?: { resource_type?: string }) => {
   return useQuery({
-    queryKey: ['admin', 'audit-logs', filters],
+    queryKey: ['admin', 'audit-logs', serializeFilters(filters)],
     queryFn: async (): Promise<AuditLog[]> => {
       try {
         const params = new URLSearchParams();

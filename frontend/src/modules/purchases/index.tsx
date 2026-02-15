@@ -37,6 +37,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -284,7 +285,7 @@ const useSuppliers = (page = 1, pageSize = 25, filters?: FilterState) => {
   if (filters?.status) params.append('status', filters.status);
 
   return useQuery({
-    queryKey: ['purchases', 'suppliers', page, pageSize, filters],
+    queryKey: ['purchases', 'suppliers', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
         `/purchases/suppliers?${params.toString()}`
@@ -385,7 +386,7 @@ const usePurchaseOrders = (page = 1, pageSize = 25, filters?: FilterState) => {
   if (filters?.date_to) params.append('date_to', filters.date_to);
 
   return useQuery({
-    queryKey: ['purchases', 'orders', page, pageSize, filters],
+    queryKey: ['purchases', 'orders', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseOrder>>(
         `/purchases/orders?${params.toString()}`
@@ -507,7 +508,7 @@ const usePurchaseInvoices = (page = 1, pageSize = 25, filters?: FilterState) => 
   if (filters?.date_to) params.append('date_to', filters.date_to);
 
   return useQuery({
-    queryKey: ['purchases', 'invoices', page, pageSize, filters],
+    queryKey: ['purchases', 'invoices', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseInvoice>>(
         `/purchases/invoices?${params.toString()}`

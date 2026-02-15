@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -103,7 +104,7 @@ const usePaymentStats = () => {
 
 const usePayments = (filters?: { status?: string; method?: string; date_from?: string; date_to?: string }) => {
   return useQuery({
-    queryKey: ['payments', 'list', filters],
+    queryKey: ['payments', 'list', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -131,7 +132,7 @@ const usePayment = (id: string) => {
 
 const useRefunds = (filters?: { status?: string }) => {
   return useQuery({
-    queryKey: ['payments', 'refunds', filters],
+    queryKey: ['payments', 'refunds', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -145,7 +146,7 @@ const useRefunds = (filters?: { status?: string }) => {
 
 const usePaymentMethods = (filters?: { customer_id?: string }) => {
   return useQuery({
-    queryKey: ['payments', 'methods', filters],
+    queryKey: ['payments', 'methods', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);

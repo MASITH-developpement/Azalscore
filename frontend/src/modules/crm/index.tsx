@@ -15,6 +15,7 @@ import {
   Sparkles, ArrowLeft, Printer, Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
@@ -79,7 +80,7 @@ const OpportunityStatusBadge: React.FC<{ status: OpportunityStatus }> = ({ statu
 
 const useCustomers = (page = 1, pageSize = 25, filters?: { type?: string; search?: string; is_active?: boolean }) => {
   return useQuery({
-    queryKey: ['commercial', 'customers', page, pageSize, filters],
+    queryKey: ['commercial', 'customers', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.type) params.append('type', filters.type);
@@ -104,7 +105,7 @@ const useCustomer = (id: string) => {
 
 const useOpportunities = (page = 1, pageSize = 25, filters?: { status?: string; customer_id?: string }) => {
   return useQuery({
-    queryKey: ['commercial', 'opportunities', page, pageSize, filters],
+    queryKey: ['commercial', 'opportunities', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.status) params.append('status', filters.status);

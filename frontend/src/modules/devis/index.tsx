@@ -14,6 +14,7 @@ import {
   FileArchive, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
@@ -50,7 +51,7 @@ import {
 
 const useDevisList = (page = 1, pageSize = 25, filters?: { status?: string; customer_id?: string; search?: string }) => {
   return useQuery({
-    queryKey: ['commercial', 'documents', 'QUOTE', page, pageSize, filters],
+    queryKey: ['commercial', 'documents', 'QUOTE', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),

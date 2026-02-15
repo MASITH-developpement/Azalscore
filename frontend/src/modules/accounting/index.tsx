@@ -9,6 +9,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, FileSpreadsheet, BarChart3, FileText, Download, Filter } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { API_CONFIG, MODULES } from '@core/api-client/config';
 import { CapabilityGuard } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -87,7 +88,7 @@ const useAccountingSummary = (period?: string) => {
 
 const useJournalEntries = (page = 1, pageSize = 50, filters?: Record<string, string>) => {
   return useQuery({
-    queryKey: ['accounting', 'journal', page, pageSize, filters],
+    queryKey: ['accounting', 'journal', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),

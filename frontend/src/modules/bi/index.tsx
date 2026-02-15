@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, FileText, Play, Users } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button } from '@ui/actions';
@@ -185,7 +186,7 @@ const useDashboards = (type?: string) => {
 
 const useReports = (filters?: { type?: string; category?: string }) => {
   return useQuery({
-    queryKey: ['bi', 'reports', filters],
+    queryKey: ['bi', 'reports', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);

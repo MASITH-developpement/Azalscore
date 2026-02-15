@@ -6,6 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { unwrapApiResponse } from '@/types';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import {
@@ -34,7 +35,7 @@ import {
 
 const useInterventions = (filters?: { statut?: string }) => {
   return useQuery({
-    queryKey: ['interventions', 'list', filters],
+    queryKey: ['interventions', 'list', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.statut) params.append('statut', filters.statut);

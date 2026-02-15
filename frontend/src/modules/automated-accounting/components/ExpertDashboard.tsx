@@ -40,6 +40,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
@@ -136,7 +137,7 @@ const useValidationQueue = (
   filters: Record<string, string> = {}
 ) => {
   return useQuery<ValidationQueueResponse>({
-    queryKey: ['accounting', 'expert', 'validation-queue', page, pageSize, filters],
+    queryKey: ['accounting', 'expert', 'validation-queue', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),

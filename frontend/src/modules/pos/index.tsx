@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -208,7 +209,7 @@ const useTerminals = (storeId?: string) => {
 
 const useSessions = (filters?: { status?: string; store_id?: string }) => {
   return useQuery({
-    queryKey: ['pos', 'sessions', filters],
+    queryKey: ['pos', 'sessions', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);

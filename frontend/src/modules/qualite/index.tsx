@@ -10,6 +10,7 @@ import {
   Plus, Edit, FileText, Clock, Shield, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -82,7 +83,7 @@ const useQualityDashboard = () => {
 
 const useNonConformances = (filters?: { type?: string; status?: string; severity?: string }) => {
   return useQuery({
-    queryKey: ['quality', 'non-conformances', filters],
+    queryKey: ['quality', 'non-conformances', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
@@ -106,7 +107,7 @@ const useNonConformance = (id: string) => {
 
 const useQCRules = (filters?: { type?: string }) => {
   return useQuery({
-    queryKey: ['qc', 'rules', filters],
+    queryKey: ['qc', 'rules', serializeFilters(filters)],
     queryFn: async () => {
       const query = filters?.type ? `?type=${encodeURIComponent(filters.type)}` : '';
       return api.get<QCRule[]>(`/qc/rules${query}`).then(r => r.data);
@@ -116,7 +117,7 @@ const useQCRules = (filters?: { type?: string }) => {
 
 const useQCInspections = (filters?: { type?: string; status?: string }) => {
   return useQuery({
-    queryKey: ['qc', 'inspections', filters],
+    queryKey: ['qc', 'inspections', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);

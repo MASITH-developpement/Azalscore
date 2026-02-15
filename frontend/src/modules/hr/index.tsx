@@ -6,6 +6,7 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -183,7 +184,7 @@ const usePositions = () => {
 
 const useEmployees = (filters?: { department_id?: string; status?: string; contract_type?: string }) => {
   return useQuery<Employee[], Error>({
-    queryKey: ['hr', 'employees', filters],
+    queryKey: ['hr', 'employees', serializeFilters(filters)],
     queryFn: async (): Promise<Employee[]> => {
       const url = buildUrlWithParams('/hr/employees', filters);
       const response: any = await api.get(url);
@@ -218,7 +219,7 @@ const useEmployee = (id: string) => {
 
 const useLeaveRequests = (filters?: { status?: string; type?: string }) => {
   return useQuery<LeaveRequest[], Error>({
-    queryKey: ['hr', 'leave-requests', filters],
+    queryKey: ['hr', 'leave-requests', serializeFilters(filters)],
     queryFn: async (): Promise<LeaveRequest[]> => {
       const url = buildUrlWithParams('/hr/leave-requests', filters);
       const response: any = await api.get(url);
@@ -236,7 +237,7 @@ const useLeaveRequests = (filters?: { status?: string; type?: string }) => {
 
 const useTimeEntries = (filters?: { employee_id?: string; from_date?: string; to_date?: string }) => {
   return useQuery({
-    queryKey: ['hr', 'time-entries', filters],
+    queryKey: ['hr', 'time-entries', serializeFilters(filters)],
     queryFn: async () => {
       const url = buildUrlWithParams('/hr/time-entries', filters);
       const response = await api.get<TimeEntry[] | { items: TimeEntry[] }>(url).then(r => r.data);

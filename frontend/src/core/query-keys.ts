@@ -19,7 +19,7 @@
  * // Utiliser:
  * queryKey: ['products', serializeFilters(filters)]  // Cache hit si mêmes valeurs
  */
-export function serializeFilters(filters: Record<string, unknown> | undefined | null): string {
+export function serializeFilters<T extends object>(filters: T | undefined | null): string {
   if (!filters) return '';
 
   // Trier les clés pour garantir un ordre stable
@@ -28,7 +28,7 @@ export function serializeFilters(filters: Record<string, unknown> | undefined | 
   // Construire une chaîne avec seulement les valeurs non-null/undefined
   const parts: string[] = [];
   for (const key of sortedKeys) {
-    const value = filters[key];
+    const value = (filters as Record<string, unknown>)[key];
     if (value !== null && value !== undefined && value !== '') {
       parts.push(`${key}:${String(value)}`);
     }

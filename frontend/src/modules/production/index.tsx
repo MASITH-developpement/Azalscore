@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -156,7 +157,7 @@ const useBOMs = () => {
 
 const useProductionOrders = (filters?: { status?: string; priority?: string }) => {
   return useQuery({
-    queryKey: ['production', 'orders', filters],
+    queryKey: ['production', 'orders', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);

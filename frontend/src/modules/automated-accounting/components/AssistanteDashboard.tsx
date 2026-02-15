@@ -33,6 +33,7 @@ import {
   Inbox,
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
@@ -121,7 +122,7 @@ const useAssistanteDashboard = () => {
 
 const useDocuments = (page = 1, pageSize = 20, filters: Record<string, string> = {}) => {
   return useQuery({
-    queryKey: ['accounting', 'documents', page, pageSize, filters],
+    queryKey: ['accounting', 'documents', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),

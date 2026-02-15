@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
 import { CapabilityGuard, useHasCapability } from '@core/capabilities';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -208,7 +209,7 @@ const useDocuments = (
   });
 
   return useQuery({
-    queryKey: ['documents', type, page, pageSize, filters],
+    queryKey: ['documents', type, page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Document>>(
         `/commercial/documents?${queryParams}`

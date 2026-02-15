@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -218,7 +219,7 @@ const useComplianceStats = () => {
 
 const usePolicies = (filters?: { type?: string; status?: string }) => {
   return useQuery({
-    queryKey: ['compliance', 'policies', filters],
+    queryKey: ['compliance', 'policies', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
@@ -232,7 +233,7 @@ const usePolicies = (filters?: { type?: string; status?: string }) => {
 
 const useAudits = (filters?: { type?: string; status?: string }) => {
   return useQuery({
-    queryKey: ['compliance', 'audits', filters],
+    queryKey: ['compliance', 'audits', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
@@ -246,7 +247,7 @@ const useAudits = (filters?: { type?: string; status?: string }) => {
 
 const useGDPRRequests = (filters?: { type?: string; status?: string }) => {
   return useQuery({
-    queryKey: ['compliance', 'gdpr', filters],
+    queryKey: ['compliance', 'gdpr', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
@@ -260,7 +261,7 @@ const useGDPRRequests = (filters?: { type?: string; status?: string }) => {
 
 const useConsents = (filters?: { consent_type?: string }) => {
   return useQuery({
-    queryKey: ['compliance', 'consents', filters],
+    queryKey: ['compliance', 'consents', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.consent_type) params.append('consent_type', filters.consent_type);

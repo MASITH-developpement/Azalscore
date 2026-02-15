@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button } from '@ui/actions';
@@ -106,7 +107,7 @@ const useSubscriptionStats = () => {
 
 const usePlans = (filters?: { is_active?: boolean }) => {
   return useQuery({
-    queryKey: ['subscriptions', 'plans', filters],
+    queryKey: ['subscriptions', 'plans', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
@@ -119,7 +120,7 @@ const usePlans = (filters?: { is_active?: boolean }) => {
 
 const useSubscriptions = (filters?: { status?: string; plan_id?: string }) => {
   return useQuery({
-    queryKey: ['subscriptions', 'list', filters],
+    queryKey: ['subscriptions', 'list', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -143,7 +144,7 @@ const useSubscription = (id: string) => {
 
 const useInvoices = (filters?: { status?: string }) => {
   return useQuery({
-    queryKey: ['subscriptions', 'invoices', filters],
+    queryKey: ['subscriptions', 'invoices', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);

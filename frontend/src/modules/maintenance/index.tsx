@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -100,7 +101,7 @@ const useMaintenanceDashboard = () => {
 
 const useAssets = (filters?: { type?: string; status?: string; criticality?: string }) => {
   return useQuery({
-    queryKey: ['maintenance', 'assets', filters],
+    queryKey: ['maintenance', 'assets', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);
@@ -125,7 +126,7 @@ const useAsset = (id: string) => {
 
 const useMaintenanceOrders = (filters?: { type?: string; status?: string; priority?: string }) => {
   return useQuery({
-    queryKey: ['maintenance', 'orders', filters],
+    queryKey: ['maintenance', 'orders', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.type) params.append('type', filters.type);

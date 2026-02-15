@@ -12,6 +12,7 @@ import {
   Calendar, Clock, Play, CheckCircle2, X, Trash2, Users, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
@@ -46,7 +47,7 @@ import {
 
 const useInterventionsList = (page = 1, pageSize = 25, filters?: { statut?: string; priorite?: string; search?: string }) => {
   return useQuery({
-    queryKey: ['interventions', page, pageSize, filters],
+    queryKey: ['interventions', page, pageSize, serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.statut) params.append('statut', filters.statut);

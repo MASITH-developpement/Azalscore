@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, Modal } from '@ui/actions';
@@ -120,7 +121,7 @@ const useMarketplaceStats = () => {
 
 const useSellers = (filters?: { status?: string }) => {
   return useQuery({
-    queryKey: ['marketplace', 'sellers', filters],
+    queryKey: ['marketplace', 'sellers', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -133,7 +134,7 @@ const useSellers = (filters?: { status?: string }) => {
 
 const useMarketplaceProducts = (filters?: { status?: string; seller_id?: string }) => {
   return useQuery({
-    queryKey: ['marketplace', 'products', filters],
+    queryKey: ['marketplace', 'products', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -147,7 +148,7 @@ const useMarketplaceProducts = (filters?: { status?: string; seller_id?: string 
 
 const useMarketplaceOrders = (filters?: { status?: string; seller_id?: string }) => {
   return useQuery({
-    queryKey: ['marketplace', 'orders', filters],
+    queryKey: ['marketplace', 'orders', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -161,7 +162,7 @@ const useMarketplaceOrders = (filters?: { status?: string; seller_id?: string })
 
 const usePayouts = (filters?: { status?: string; seller_id?: string }) => {
   return useQuery({
-    queryKey: ['marketplace', 'payouts', filters],
+    queryKey: ['marketplace', 'payouts', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);

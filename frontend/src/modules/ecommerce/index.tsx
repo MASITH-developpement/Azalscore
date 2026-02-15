@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import { api } from '@core/api-client';
+import { serializeFilters } from '@core/query-keys';
 import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button } from '@ui/actions';
@@ -134,7 +135,7 @@ const useEcommerceStats = () => {
 
 const useProducts = (filters?: { status?: string; category_id?: string }) => {
   return useQuery({
-    queryKey: ['ecommerce', 'products', filters],
+    queryKey: ['ecommerce', 'products', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -159,7 +160,7 @@ const useProduct = (id: string) => {
 
 const useOrders = (filters?: { status?: string; payment_status?: string }) => {
   return useQuery({
-    queryKey: ['ecommerce', 'orders', filters],
+    queryKey: ['ecommerce', 'orders', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -194,7 +195,7 @@ const useCategories = () => {
 
 const useShippings = (filters?: { status?: string }) => {
   return useQuery({
-    queryKey: ['ecommerce', 'shippings', filters],
+    queryKey: ['ecommerce', 'shippings', serializeFilters(filters)],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
