@@ -8,7 +8,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from .models import DisputeStatus, PaymentIntentStatus, RefundStatus, StripeAccountStatus, WebhookStatus
 
@@ -164,6 +164,14 @@ class PaymentIntentConfirm(BaseModel):
     payment_method_id: str | None = None
     return_url: str | None = None
 
+    @field_validator("return_url")
+    @classmethod
+    def validate_return_url(cls, v):
+        """SÉCURITÉ: Valider l'URL de retour."""
+        if v is None:
+            return v
+        return _validate_redirect_url(v)
+
 
 class PaymentIntentCapture(BaseModel):
     """Capture PaymentIntent."""
@@ -182,6 +190,59 @@ class CheckoutLineItem(BaseModel):
     currency: str = "EUR"
     quantity: int = 1
     images: list[str] | None = None
+
+
+def _validate_redirect_url(url: str) -> str:
+    """
+    SÉCURITÉ: Valide qu'une URL de redirection est sûre.
+
+    Empêche les attaques d'open redirect en:
+    1. Vérifiant que l'URL est bien formée
+    2. Vérifiant que le domaine est autorisé (APP_URL)
+    3. Rejetant les URLs malveillantes (javascript:, data:, etc.)
+    """
+    import os
+    from urllib.parse import urlparse
+
+    if not url:
+        raise ValueError("URL required")
+
+    # Vérifier le format
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        raise ValueError("Invalid URL format")
+
+    # SÉCURITÉ: Rejeter les protocoles dangereux
+    if parsed.scheme.lower() not in ("https", "http"):
+        raise ValueError(f"Invalid URL scheme: {parsed.scheme}")
+
+    # SÉCURITÉ: Exiger HTTPS en production
+    env = os.getenv("AZALS_ENV", "development")
+    if env == "production" and parsed.scheme.lower() != "https":
+        raise ValueError("HTTPS required for redirect URLs in production")
+
+    # SÉCURITÉ: Valider le domaine
+    app_url = os.getenv("APP_URL", "https://app.azalscore.com")
+    app_parsed = urlparse(app_url)
+    allowed_domains = [
+        app_parsed.netloc,
+        # Domaines Stripe autorisés pour les retours checkout
+        "checkout.stripe.com",
+    ]
+
+    # Ajouter les domaines supplémentaires configurés
+    extra_domains = os.getenv("ALLOWED_REDIRECT_DOMAINS", "")
+    if extra_domains:
+        allowed_domains.extend([d.strip() for d in extra_domains.split(",") if d.strip()])
+
+    if parsed.netloc not in allowed_domains:
+        raise ValueError(
+            f"Redirect domain not allowed: {parsed.netloc}. "
+            f"Allowed: {', '.join(allowed_domains)}"
+        )
+
+    return url
 
 
 class CheckoutSessionCreate(BaseModel):
@@ -205,6 +266,12 @@ class CheckoutSessionCreate(BaseModel):
     order_id: int | None = None
     subscription_id: int | None = None
     metadata: dict[str, str] | None = None
+
+    @field_validator("success_url", "cancel_url")
+    @classmethod
+    def validate_urls(cls, v):
+        """SÉCURITÉ: Valider les URLs de redirection."""
+        return _validate_redirect_url(v)
 
 
 class CheckoutSessionResponse(BaseModel):
@@ -348,6 +415,12 @@ class ConnectAccountCreate(BaseModel):
     business_type: str = "company"  # individual, company
     return_url: str
     refresh_url: str
+
+    @field_validator("return_url", "refresh_url")
+    @classmethod
+    def validate_urls(cls, v):
+        """SÉCURITÉ: Valider les URLs de redirection."""
+        return _validate_redirect_url(v)
 
 
 class ConnectAccountResponse(BaseModel):
