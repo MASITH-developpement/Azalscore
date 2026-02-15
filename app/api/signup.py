@@ -31,16 +31,15 @@ logger = get_logger(__name__)
 # ============================================================================
 
 def _get_client_ip(request: Request) -> str:
-    """Extrait l'IP client de manière sécurisée."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    real_ip = request.headers.get("X-Real-IP")
-    if real_ip:
-        return real_ip
-    if request.client:
-        return request.client.host
-    return "unknown"
+    """
+    Extrait l'IP client de manière SÉCURISÉE.
+
+    SÉCURITÉ: Utilise la fonction centralisée du rate limiter
+    qui valide les proxies de confiance avant de faire confiance
+    aux headers X-Forwarded-For.
+    """
+    from app.core.rate_limit import get_client_ip
+    return get_client_ip(request)
 
 
 def _check_signup_rate_limit(request: Request) -> None:
@@ -279,17 +278,36 @@ async def check_email_availability(
 
     Utilisé pour la validation en temps réel dans le formulaire.
 
-    SÉCURITÉ: Rate limité à 10 vérifications par minute par IP.
+    SÉCURITÉ:
+    - Rate limité à 10 vérifications par minute par IP
+    - Délai aléatoire pour prévenir les timing attacks
+    - Réponse générique pour limiter l'énumération d'emails
     """
+    import asyncio
+    import random
+
     # SÉCURITÉ: Rate limiting
     _check_signup_rate_limit(request)
 
+    # SÉCURITÉ: Délai aléatoire (100-300ms) pour prévenir les timing attacks
+    # Empêche un attaquant de différencier les emails existants des nouveaux
+    await asyncio.sleep(random.uniform(0.1, 0.3))
+
     service = SignupService(db)
     available = service.check_email_available(email)
-    
+
+    # SÉCURITÉ: Message générique qui ne confirme pas l'existence de l'email
+    # pour limiter l'énumération (OWASP recommandation)
+    suggestion = None
+    if not available:
+        suggestion = (
+            "Cet email ne peut pas être utilisé pour l'inscription. "
+            "Si vous avez déjà un compte, connectez-vous."
+        )
+
     return CheckAvailabilityResponse(
         available=available,
-        suggestion="Cet email est déjà utilisé. Connectez-vous ou utilisez un autre email." if not available else None
+        suggestion=suggestion
     )
 
 

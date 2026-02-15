@@ -372,10 +372,95 @@ def check_endpoint_rate_limit(
     )
 
 
+def get_client_ip(request) -> str:
+    """
+    Extrait l'IP client de manière SÉCURISÉE.
+
+    SÉCURITÉ: Les headers X-Forwarded-For et X-Real-IP peuvent être forgés.
+    On ne fait confiance à ces headers QUE si:
+    1. TRUSTED_PROXIES est configuré
+    2. L'IP directe du client est dans la liste des proxies de confiance
+
+    Configuration via variable d'environnement:
+    TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+
+    Args:
+        request: FastAPI Request object
+
+    Returns:
+        IP client validée
+    """
+    import ipaddress
+
+    # IP directe (toujours fiable)
+    direct_ip = request.client.host if request.client else None
+
+    if not direct_ip:
+        return "unknown"
+
+    # Récupérer les proxies de confiance depuis la configuration
+    trusted_proxies_str = os.environ.get("TRUSTED_PROXIES", "")
+
+    # Si aucun proxy de confiance configuré, utiliser l'IP directe uniquement
+    if not trusted_proxies_str:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            logger.debug(
+                "[RATE_LIMIT] X-Forwarded-For ignoré - TRUSTED_PROXIES non configuré",
+                extra={"direct_ip": direct_ip}
+            )
+        return direct_ip
+
+    # Parser les réseaux de confiance
+    try:
+        trusted_networks = []
+        for cidr in trusted_proxies_str.split(","):
+            cidr = cidr.strip()
+            if cidr:
+                trusted_networks.append(ipaddress.ip_network(cidr, strict=False))
+    except ValueError as e:
+        logger.error("[RATE_LIMIT] TRUSTED_PROXIES invalide: %s", str(e))
+        return direct_ip
+
+    # Vérifier si l'IP directe vient d'un proxy de confiance
+    try:
+        direct_ip_obj = ipaddress.ip_address(direct_ip)
+        is_trusted_proxy = any(
+            direct_ip_obj in network for network in trusted_networks
+        )
+    except ValueError:
+        return direct_ip
+
+    if not is_trusted_proxy:
+        return direct_ip
+
+    # L'IP vient d'un proxy de confiance - on peut lire X-Forwarded-For
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        ips = [ip.strip() for ip in forwarded.split(",")]
+        # Parcourir de droite à gauche pour trouver la première IP non-proxy
+        for ip in reversed(ips):
+            try:
+                ip_obj = ipaddress.ip_address(ip)
+                if not any(ip_obj in network for network in trusted_networks):
+                    return ip
+            except ValueError:
+                continue
+        return ips[0] if ips else direct_ip
+
+    # X-Real-IP (nginx)
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+
+    return direct_ip
+
+
 __all__ = [
     'RateLimiter',
     'RateLimitResult',
     'check_ip_rate_limit',
     'check_tenant_rate_limit',
     'check_endpoint_rate_limit',
+    'get_client_ip',
 ]

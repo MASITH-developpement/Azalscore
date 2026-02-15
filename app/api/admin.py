@@ -91,20 +91,22 @@ def _get_admin_dashboard_data(db: Session, tenant_id: str) -> dict:
         except Exception:
             pass
 
-    # Compter les tenants
+    # SÉCURITÉ: Chaque admin ne voit QUE son propre tenant
+    # La requête précédente comptait TOUS les tenants (fuite cross-tenant)
+    # Correction: On ne montre que les stats du tenant courant
     try:
         result = db.execute(text("""
             SELECT
-                COUNT(*) as total,
-                COUNT(*) FILTER (WHERE status = 'ACTIVE') as active
+                CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END as is_active
             FROM tenants
-        """))
+            WHERE tenant_id = :tenant_id
+        """), {"tenant_id": tenant_id})
         row = result.fetchone()
-        if row:
-            dashboard.total_tenants = row[0] or 0
-            dashboard.active_tenants = row[1] or 0
+        # Un admin ne voit que SON tenant
+        dashboard.total_tenants = 1
+        dashboard.active_tenants = 1 if (row and row[0] == 1) else 0
     except Exception as e:
-        logger.warning(f"[ADMIN] Erreur comptage tenants: {e}")
+        logger.warning(f"[ADMIN] Erreur vérification tenant: {e}")
         dashboard.total_tenants = 1
         dashboard.active_tenants = 1
 
