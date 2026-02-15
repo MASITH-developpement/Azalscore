@@ -219,9 +219,15 @@ async def execute_workflow(
         )
 
     except Exception as e:
+        # SÉCURITÉ: Ne pas exposer les détails d'erreur internes
+        logger.error(
+            "[WORKFLOWS] Erreur exécution workflow",
+            extra={"error": str(e)[:200], "module_id": dag.get("module_id")},
+            exc_info=True
+        )
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de l'exécution du workflow : {str(e)}"
+            detail="Erreur lors de l'exécution du workflow"
         )
 
 
