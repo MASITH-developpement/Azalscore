@@ -9,3 +9,4 @@ export { CustomerFinancialTab } from './CustomerFinancialTab';
 export { CustomerDocsTab } from './CustomerDocsTab';
 export { CustomerHistoryTab } from './CustomerHistoryTab';
 export { CustomerIATab } from './CustomerIATab';
+export { CustomerRiskTab } from './CustomerRiskTab';

@@ -104,7 +104,7 @@ export const InvoiceFinancialTab: React.FC<TabContentProps<PurchaseInvoice>> = (
 
         {canPayInvoice(invoice) && (
           <div className="mt-4">
-            <Button leftIcon={<CreditCard size={16} />}>
+            <Button leftIcon={<CreditCard size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'recordPayment', invoiceId: invoice.id } })); }}>
               Enregistrer un paiement
             </Button>
           </div>

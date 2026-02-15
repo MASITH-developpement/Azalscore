@@ -89,7 +89,7 @@ export const TicketMessagesTab: React.FC<TabContentProps<Ticket>> = ({ data: tic
               <span className="text-sm">Note interne (non visible par le client)</span>
             </label>
             <div className="flex gap-2">
-              <Button variant="ghost" leftIcon={<Paperclip size={16} />}>
+              <Button variant="ghost" leftIcon={<Paperclip size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'attachFile', ticketId: ticket.id } })); }}>
                 Joindre
               </Button>
               <Button

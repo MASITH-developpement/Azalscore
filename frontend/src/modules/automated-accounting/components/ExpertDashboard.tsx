@@ -859,7 +859,8 @@ export const ExpertDashboard: React.FC = () => {
             columns={columns}
             data={validationQueue?.items || dashboard?.validation_queue || []}
             keyField="id"
-            isLoading={queueLoading}
+          filterable
+          isLoading={queueLoading}
             actions={rowActions}
             pagination={{
               page,

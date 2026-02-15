@@ -32,7 +32,7 @@ from .models import (
     RiskLevel,
     TrainingCompletion,
 )
-from .router import router
+from .router_crud import router
 from .schemas import (
     AcknowledgmentCreate,
     AcknowledgmentResponse,

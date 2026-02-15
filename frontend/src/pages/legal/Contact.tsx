@@ -53,7 +53,7 @@ const Contact: React.FC = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('/api/v2/website/contact', {
+      const response = await fetch('/api/v3/website/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

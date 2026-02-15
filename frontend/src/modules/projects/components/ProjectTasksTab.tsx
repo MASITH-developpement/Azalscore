@@ -87,7 +87,7 @@ export const ProjectTasksTab: React.FC<TabContentProps<Project>> = ({ data: proj
           <div className="azals-empty azals-empty--sm">
             <CheckSquare size={32} className="text-muted" />
             <p className="text-muted">Aucune tache{filterStatus !== 'ALL' ? ' dans ce statut' : ''}</p>
-            <Button size="sm" variant="ghost">
+            <Button size="sm" variant="ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createTask', projectId: project.id } })); }}>
               Ajouter une tache
             </Button>
           </div>

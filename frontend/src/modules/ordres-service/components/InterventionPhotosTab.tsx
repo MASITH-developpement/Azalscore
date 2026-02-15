@@ -23,11 +23,9 @@ export const InterventionPhotosTab: React.FC<TabContentProps<Intervention>> = ({
   const documents = intervention.documents || [];
 
   const handleAddPhoto = () => {
-    console.log('Add photo to intervention', intervention.id);
   };
 
   const handleAddDocument = () => {
-    console.log('Add document to intervention', intervention.id);
   };
 
   return (

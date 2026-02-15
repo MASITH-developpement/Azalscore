@@ -73,7 +73,7 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
     set({ isLoading: true, status: 'loading' });
 
     try {
-      const response = await api.get<CapabilitiesResponse>('/v1/auth/capabilities');
+      const response = await api.get<CapabilitiesResponse>('/v3/auth/capabilities');
 
       // Handle all possible response formats
       let capabilities: string[] = [];
@@ -92,10 +92,6 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
         capabilities = r;
       }
 
-      console.log('[Capabilities] Loaded:', capabilities.length, 'capabilities');
-      console.log('[Capabilities] admin.view:', capabilities.includes('admin.view'));
-      console.log('[Capabilities] accounting.view:', capabilities.includes('accounting.view'));
-      console.log('[Capabilities] First 10:', capabilities.slice(0, 10));
 
       set({
         capabilities,

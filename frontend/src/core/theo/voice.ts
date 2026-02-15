@@ -129,7 +129,6 @@ export const useTheoVoiceStore = create<TheoVoiceStore>((set, get) => ({
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
-        console.log('[TheoVoice] Connected');
         set({ connectionState: 'connected' });
       };
 
@@ -148,7 +147,6 @@ export const useTheoVoiceStore = create<TheoVoiceStore>((set, get) => ({
       };
 
       ws.onclose = () => {
-        console.log('[TheoVoice] Disconnected');
         set({
           connectionState: 'disconnected',
           websocket: null,

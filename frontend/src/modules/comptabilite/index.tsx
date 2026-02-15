@@ -212,7 +212,7 @@ const useFinanceDashboard = () => {
   return useQuery({
     queryKey: ['finance', 'dashboard'],
     queryFn: async () => {
-      return api.get<FinanceDashboard>('/v1/finance/dashboard').then(r => r.data);
+      return api.get<FinanceDashboard>('/v3/finance/dashboard').then(r => r.data);
     }
   });
 };
@@ -221,7 +221,7 @@ const useAccounts = () => {
   return useQuery({
     queryKey: ['finance', 'accounts'],
     queryFn: async () => {
-      const response = await api.get<Account[] | { items: Account[] }>('/v1/finance/accounts').then(r => r.data);
+      const response = await api.get<Account[] | { items: Account[] }>('/v3/finance/accounts').then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
   });
@@ -231,7 +231,7 @@ const useJournals = () => {
   return useQuery({
     queryKey: ['finance', 'journals'],
     queryFn: async () => {
-      const response = await api.get<Journal[] | { items: Journal[] }>('/v1/finance/journals').then(r => r.data);
+      const response = await api.get<Journal[] | { items: Journal[] }>('/v3/finance/journals').then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
   });
@@ -245,7 +245,7 @@ const useEntries = (params?: { journal_id?: string; status?: string }) => {
       if (params?.journal_id) queryParams.append('journal_id', params.journal_id);
       if (params?.status) queryParams.append('status', params.status);
       const queryString = queryParams.toString();
-      const url = queryString ? `/v1/finance/entries?${queryString}` : '/v1/finance/entries';
+      const url = queryString ? `/v3/finance/entries?${queryString}` : '/v3/finance/entries';
       const response = await api.get<Entry[] | { items: Entry[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
@@ -256,7 +256,7 @@ const useBankAccounts = () => {
   return useQuery({
     queryKey: ['finance', 'bank-accounts'],
     queryFn: async () => {
-      const response = await api.get<BankAccount[] | { items: BankAccount[] }>('/v1/finance/bank-accounts').then(r => r.data);
+      const response = await api.get<BankAccount[] | { items: BankAccount[] }>('/v3/finance/bank-accounts').then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
   });
@@ -267,8 +267,8 @@ const useBankTransactions = (bankAccountId?: string) => {
     queryKey: ['finance', 'bank-transactions', bankAccountId],
     queryFn: async () => {
       const url = bankAccountId
-        ? `/v1/finance/bank-transactions?bank_account_id=${encodeURIComponent(bankAccountId)}`
-        : '/v1/finance/bank-transactions';
+        ? `/v3/finance/bank-transactions?bank_account_id=${encodeURIComponent(bankAccountId)}`
+        : '/v3/finance/bank-transactions';
       const response = await api.get<BankTransaction[] | { items: BankTransaction[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     },
@@ -280,7 +280,7 @@ const useCashForecasts = () => {
   return useQuery({
     queryKey: ['finance', 'cash-forecasts'],
     queryFn: async () => {
-      const response = await api.get<CashForecast[] | { items: CashForecast[] }>('/v1/finance/cash-forecasts').then(r => r.data);
+      const response = await api.get<CashForecast[] | { items: CashForecast[] }>('/v3/finance/cash-forecasts').then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
   });
@@ -290,7 +290,7 @@ const useCreateAccount = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Account>) => {
-      return api.post('/v1/finance/accounts', data).then(r => r.data);
+      return api.post('/v3/finance/accounts', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['finance', 'accounts'] })
   });
@@ -300,7 +300,7 @@ const useCreateJournal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Journal>) => {
-      return api.post('/v1/finance/journals', data).then(r => r.data);
+      return api.post('/v3/finance/journals', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['finance', 'journals'] })
   });
@@ -310,7 +310,7 @@ const useCreateEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Entry>) => {
-      return api.post('/v1/finance/entries', data).then(r => r.data);
+      return api.post('/v3/finance/entries', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['finance', 'entries'] })
   });
@@ -320,7 +320,7 @@ const useValidateEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v1/finance/entries/${id}/validate`).then(r => r.data);
+      return api.post(`/v3/finance/entries/${id}/validate`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['finance', 'entries'] })
   });
@@ -330,7 +330,7 @@ const usePostEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v1/finance/entries/${id}/post`).then(r => r.data);
+      return api.post(`/v3/finance/entries/${id}/post`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['finance'] })
   });
@@ -340,7 +340,7 @@ const useEntry = (id: string) => {
   return useQuery({
     queryKey: ['finance', 'entries', id],
     queryFn: async () => {
-      return api.get<EntryType>(`/v1/finance/entries/${id}`).then(r => r.data);
+      return api.get<EntryType>(`/v3/finance/entries/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -382,7 +382,7 @@ const AccountsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Plan Comptable</h3>
         <Button onClick={() => setShowModal(true)}>Nouveau compte</Button>
       </div>
-      <DataTable columns={columns} data={accounts} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={accounts} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau compte">
         <form onSubmit={handleSubmit}>
@@ -449,7 +449,7 @@ const JournalsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Journaux</h3>
         <Button onClick={() => setShowModal(true)}>Nouveau journal</Button>
       </div>
-      <DataTable columns={columns} data={journals} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={journals} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau journal">
         <form onSubmit={handleSubmit}>
@@ -550,7 +550,7 @@ const EntriesView: React.FC = () => {
         <h3 className="text-lg font-semibold">Ecritures comptables</h3>
         <Button onClick={() => setShowModal(true)}>Nouvelle ecriture</Button>
       </div>
-      <DataTable columns={columns} data={entries} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={entries} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvelle ecriture" size="lg">
         <form onSubmit={handleSubmit}>
@@ -655,7 +655,7 @@ const BankView: React.FC = () => {
     <div className="space-y-4">
       <Card>
         <h3 className="text-lg font-semibold mb-4">Comptes bancaires</h3>
-        <DataTable columns={bankColumns} data={bankAccounts} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+        <DataTable columns={bankColumns} data={bankAccounts} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
       </Card>
 
       {selectedBank && (
@@ -664,7 +664,7 @@ const BankView: React.FC = () => {
             <h3 className="text-lg font-semibold">Mouvements bancaires</h3>
             <Button variant="secondary" onClick={() => setSelectedBank(null)}>Fermer</Button>
           </div>
-          <DataTable columns={transactionColumns} data={transactions} keyField="id" />
+          <DataTable columns={transactionColumns} data={transactions} keyField="id" filterable />
         </Card>
       )}
     </div>
@@ -689,7 +689,7 @@ const CashForecastView: React.FC = () => {
   return (
     <Card>
       <h3 className="text-lg font-semibold mb-4">Previsions de tresorerie</h3>
-      <DataTable columns={columns} data={forecasts} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={forecasts} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -831,7 +831,6 @@ const EntryDetailView: React.FC = () => {
       label: 'Modifier',
       icon: <EditIcon size={16} />,
       variant: 'secondary' as const,
-      onClick: () => console.log('Edit entry:', entry.id)
     }] : []),
     ...(entry.status === 'DRAFT' && balanced ? [{
       id: 'validate',
@@ -852,7 +851,6 @@ const EntryDetailView: React.FC = () => {
       label: 'Annuler',
       icon: <XCircle size={16} />,
       variant: 'danger' as const,
-      onClick: () => console.log('Cancel entry:', entry.id)
     }] : [])
   ];
 

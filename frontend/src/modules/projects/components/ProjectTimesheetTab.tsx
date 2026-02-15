@@ -75,7 +75,7 @@ export const ProjectTimesheetTab: React.FC<TabContentProps<Project>> = ({ data: 
 
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Clock size={16} />}>
+        <Button variant="secondary" leftIcon={<Clock size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'logTime', projectId: project.id } })); }}>
           Saisir du temps
         </Button>
       </div>
@@ -105,7 +105,7 @@ export const ProjectTimesheetTab: React.FC<TabContentProps<Project>> = ({ data: 
           <div className="azals-empty azals-empty--sm">
             <Clock size={32} className="text-muted" />
             <p className="text-muted">Aucune saisie de temps</p>
-            <Button size="sm" variant="ghost" leftIcon={<Clock size={14} />}>
+            <Button size="sm" variant="ghost" leftIcon={<Clock size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'logTime', projectId: project.id } })); }}>
               Saisir du temps
             </Button>
           </div>

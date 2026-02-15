@@ -3,10 +3,10 @@
  * Onglet informations générales de la facture
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Building2, MapPin, FileText, Calendar, User, CreditCard,
-  Hash, AlertTriangle
+  Hash, AlertTriangle, Shield, ShieldCheck, ShieldAlert, ShieldX
 } from 'lucide-react';
 import { Card, Grid } from '@ui/layout';
 import type { TabContentProps } from '@ui/standards';
@@ -16,6 +16,66 @@ import {
   PAYMENT_METHODS, isOverdue, getDaysUntilDue
 } from '../types';
 import { formatDate, formatCurrency } from '@/utils/formatters';
+import { useRiskAnalysis, useInternalScore, ScoreGauge } from '@/modules/enrichment';
+
+/**
+ * Compact Risk Badge Component
+ */
+const CompactRiskBadge: React.FC<{ identifier?: string; customerId?: string }> = ({ identifier, customerId }) => {
+  const { analysis, isLoading: riskLoading, analyze: analyzeRisk } = useRiskAnalysis();
+  const { score: internalScore, isLoading: scoreLoading, analyze: analyzeScore } = useInternalScore();
+
+  useEffect(() => {
+    if (identifier && identifier.length >= 9) {
+      analyzeRisk(identifier);
+    }
+  }, [identifier, analyzeRisk]);
+
+  useEffect(() => {
+    if (customerId) {
+      analyzeScore(customerId);
+    }
+  }, [customerId, analyzeScore]);
+
+  const isLoading = riskLoading || scoreLoading;
+
+  if (isLoading) {
+    return <span className="text-xs text-gray-400">Chargement...</span>;
+  }
+
+  // Prioritize external risk if available
+  if (analysis) {
+    const IconComponent = analysis.level === 'low' ? ShieldCheck :
+                          analysis.level === 'medium' ? Shield :
+                          analysis.level === 'elevated' ? ShieldAlert : ShieldX;
+    const colorClass = analysis.level === 'low' ? 'text-green-600' :
+                       analysis.level === 'medium' ? 'text-yellow-600' :
+                       analysis.level === 'elevated' ? 'text-orange-600' : 'text-red-600';
+
+    return (
+      <div className={`flex items-center gap-1 ${colorClass}`}>
+        <IconComponent size={14} />
+        <span className="text-xs font-medium">{analysis.score}/100</span>
+      </div>
+    );
+  }
+
+  // Fallback to internal score
+  if (internalScore) {
+    const colorClass = internalScore.score >= 80 ? 'text-green-600' :
+                       internalScore.score >= 60 ? 'text-yellow-600' :
+                       internalScore.score >= 40 ? 'text-orange-600' : 'text-red-600';
+
+    return (
+      <div className={`flex items-center gap-1 ${colorClass}`}>
+        <Shield size={14} />
+        <span className="text-xs font-medium">{internalScore.score}/100</span>
+      </div>
+    );
+  }
+
+  return null;
+};
 
 /**
  * FactureInfoTab - Informations générales de la facture
@@ -55,12 +115,27 @@ export const FactureInfoTab: React.FC<TabContentProps<Facture>> = ({ data: factu
         <Card title="Client" icon={<Building2 size={18} />}>
           <dl className="azals-dl">
             <dt><Building2 size={14} /> Raison sociale</dt>
-            <dd><strong>{facture.customer_name}</strong></dd>
+            <dd className="flex items-center justify-between">
+              <strong>{facture.customer_name}</strong>
+              <CompactRiskBadge
+                identifier={facture.customer_siret || facture.customer_siren}
+                customerId={facture.customer_id}
+              />
+            </dd>
 
             {facture.customer_code && (
               <>
                 <dt className="azals-std-field--secondary"><Hash size={14} /> Code client</dt>
                 <dd className="azals-std-field--secondary">{facture.customer_code}</dd>
+              </>
+            )}
+
+            {(facture.customer_siret || facture.customer_siren) && (
+              <>
+                <dt className="azals-std-field--secondary"><Hash size={14} /> SIRET/SIREN</dt>
+                <dd className="azals-std-field--secondary font-mono">
+                  {facture.customer_siret || facture.customer_siren}
+                </dd>
               </>
             )}
 
@@ -147,10 +222,15 @@ export const FactureInfoTab: React.FC<TabContentProps<Facture>> = ({ data: factu
 
           <div className="azals-info-block">
             <span className="azals-info-block__label">Statut</span>
-            <span className={`azals-badge azals-badge--${STATUS_CONFIG[facture.status].color}`}>
-              {STATUS_CONFIG[facture.status].icon}
-              <span className="ml-1">{STATUS_CONFIG[facture.status].label}</span>
-            </span>
+            {(() => {
+              const config = STATUS_CONFIG[facture.status] || { label: facture.status, color: 'gray', icon: null };
+              return (
+                <span className={`azals-badge azals-badge--${config.color}`}>
+                  {config.icon}
+                  <span className="ml-1">{config.label}</span>
+                </span>
+              );
+            })()}
           </div>
         </Grid>
       </Card>

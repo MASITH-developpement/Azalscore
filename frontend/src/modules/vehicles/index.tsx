@@ -184,11 +184,10 @@ const useVehicules = (page = 1, pageSize = 25) => {
 
       try {
         const response = await api.get<PaginatedResponse<Vehicule>>(
-          `/v1/fleet/vehicles?page=${page}&page_size=${pageSize}`
+          `/v3/fleet/vehicles?page=${page}&page_size=${pageSize}`
         );
         return (response as unknown as PaginatedResponse<Vehicule>) || { items: [], total: 0 };
       } catch (error) {
-        console.warn('API vehicules non disponible, utilisation des donnees de demonstration');
         const start = (page - 1) * pageSize;
         const items = DEMO_VEHICLES.slice(start, start + pageSize);
         return { items, total: DEMO_VEHICLES.length };
@@ -210,7 +209,7 @@ const useVehicule = (id: string) => {
       }
 
       try {
-        const response = await api.get<Vehicule>(`/v1/fleet/vehicles/${id}`);
+        const response = await api.get<Vehicule>(`/v3/fleet/vehicles/${id}`);
         return response as unknown as Vehicule;
       } catch (error) {
         const vehicule = DEMO_VEHICLES.find(v => v.id === id);
@@ -235,7 +234,7 @@ const useDeleteVehicule = () => {
         }
         return id;
       }
-      await api.delete(`/v1/fleet/vehicles/${id}`);
+      await api.delete(`/v3/fleet/vehicles/${id}`);
       return id;
     },
     onSuccess: () => {
@@ -985,6 +984,7 @@ const VehiculesListPage: React.FC<{
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           error={error && typeof error === 'object' && 'message' in error ? error as Error : null}

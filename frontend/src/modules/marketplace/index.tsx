@@ -113,7 +113,7 @@ const useMarketplaceStats = () => {
   return useQuery({
     queryKey: ['marketplace', 'stats'],
     queryFn: async () => {
-      return api.get<MarketplaceStats>('/v1/marketplace/stats').then(r => r.data);
+      return api.get<MarketplaceStats>('/v3/marketplace/stats').then(r => r.data);
     }
   });
 };
@@ -125,7 +125,7 @@ const useSellers = (filters?: { status?: string }) => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v1/marketplace/sellers?${queryString}` : '/v1/marketplace/sellers';
+      const url = queryString ? `/v3/marketplace/sellers?${queryString}` : '/v3/marketplace/sellers';
       return api.get<Seller[]>(url).then(r => r.data);
     }
   });
@@ -139,7 +139,7 @@ const useMarketplaceProducts = (filters?: { status?: string; seller_id?: string 
       if (filters?.status) params.append('status', filters.status);
       if (filters?.seller_id) params.append('seller_id', filters.seller_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/marketplace/products?${queryString}` : '/v1/marketplace/products';
+      const url = queryString ? `/v3/marketplace/products?${queryString}` : '/v3/marketplace/products';
       return api.get<MarketplaceProduct[]>(url).then(r => r.data);
     }
   });
@@ -153,7 +153,7 @@ const useMarketplaceOrders = (filters?: { status?: string; seller_id?: string })
       if (filters?.status) params.append('status', filters.status);
       if (filters?.seller_id) params.append('seller_id', filters.seller_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/marketplace/orders?${queryString}` : '/v1/marketplace/orders';
+      const url = queryString ? `/v3/marketplace/orders?${queryString}` : '/v3/marketplace/orders';
       return api.get<MarketplaceOrder[]>(url).then(r => r.data);
     }
   });
@@ -167,7 +167,7 @@ const usePayouts = (filters?: { status?: string; seller_id?: string }) => {
       if (filters?.status) params.append('status', filters.status);
       if (filters?.seller_id) params.append('seller_id', filters.seller_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/marketplace/payouts?${queryString}` : '/v1/marketplace/payouts';
+      const url = queryString ? `/v3/marketplace/payouts?${queryString}` : '/v3/marketplace/payouts';
       return api.get<Payout[]>(url).then(r => r.data);
     }
   });
@@ -177,7 +177,7 @@ const useUpdateSellerStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v1/marketplace/sellers/${id}/status`, { status }).then(r => r.data);
+      return api.patch(`/v3/marketplace/sellers/${id}/status`, { status }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'sellers'] });
@@ -190,7 +190,7 @@ const useApproveProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
-      return api.patch(`/v1/marketplace/products/${id}/review`, { approved }).then(r => r.data);
+      return api.patch(`/v3/marketplace/products/${id}/review`, { approved }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'products'] });
@@ -203,7 +203,7 @@ const useSeller = (id: string) => {
   return useQuery({
     queryKey: ['marketplace', 'seller', id],
     queryFn: async () => {
-      return api.get<Seller>(`/v1/marketplace/sellers/${id}`).then(r => r.data);
+      return api.get<Seller>(`/v3/marketplace/sellers/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -350,7 +350,7 @@ const SellerDetailView: React.FC = () => {
       label: 'Modifier',
       icon: <Edit size={16} />,
       variant: 'primary',
-      onClick: () => console.log('Edit seller', seller.id)
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:edit', { detail: { module: 'marketplace', type: 'seller', id: seller.id } })); }
     }
   ];
 
@@ -436,7 +436,7 @@ const SellersView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={sellers} isLoading={isLoading} keyField="id" onRowClick={handleViewSeller} error={sellersError instanceof Error ? sellersError : null} onRetry={() => refetchSellers()} />
+      <DataTable columns={columns} data={sellers} isLoading={isLoading} keyField="id" filterable onRowClick={handleViewSeller} error={sellersError instanceof Error ? sellersError : null} onRetry={() => refetchSellers()} />
     </Card>
   );
 };
@@ -473,7 +473,7 @@ const ProductsView: React.FC = () => {
             <Button size="sm" variant="danger" onClick={() => approveProduct.mutate({ id: (row as MarketplaceProduct).id, approved: false })}>Refuser</Button>
           </>
         )}
-        <Button size="sm" variant="secondary">Voir</Button>
+        <Button size="sm" variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'marketplace', type: 'product', id: (row as MarketplaceProduct).id } })); }}>Voir</Button>
       </div>
     )}
   ];
@@ -500,7 +500,7 @@ const ProductsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" error={productsError instanceof Error ? productsError : null} onRetry={() => refetchProducts()} />
+      <DataTable columns={columns} data={products} isLoading={isLoading} keyField="id" filterable error={productsError instanceof Error ? productsError : null} onRetry={() => refetchProducts()} />
     </Card>
   );
 };
@@ -526,7 +526,7 @@ const OrdersView: React.FC = () => {
       return <Badge color={STATUS_COLORS[v as string] || 'gray'}>{info?.label || (v as string)}</Badge>;
     }},
     { id: 'created_at', header: 'Date', accessor: 'created_at', render: (v) => formatDate(v as string) },
-    { id: 'actions', header: 'Actions', accessor: 'id', render: () => <Button size="sm" variant="secondary">Detail</Button> }
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => <Button size="sm" variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'marketplace', type: 'order', id: (row as MarketplaceOrder).id } })); }}>Detail</Button> }
   ];
 
   return (
@@ -551,7 +551,7 @@ const OrdersView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" error={ordersError instanceof Error ? ordersError : null} onRetry={() => refetchOrders()} />
+      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" filterable error={ordersError instanceof Error ? ordersError : null} onRetry={() => refetchOrders()} />
     </Card>
   );
 };
@@ -580,9 +580,9 @@ const PayoutsView: React.FC = () => {
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
       <div className="flex gap-1">
         {(row as Payout).status === 'PENDING' && (
-          <Button size="sm" variant="success">Valider</Button>
+          <Button size="sm" variant="success" onClick={() => { window.dispatchEvent(new CustomEvent('azals:validate', { detail: { module: 'marketplace', type: 'payout', id: (row as Payout).id } })); }}>Valider</Button>
         )}
-        <Button size="sm" variant="secondary">Detail</Button>
+        <Button size="sm" variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'marketplace', type: 'payout', id: (row as Payout).id } })); }}>Detail</Button>
       </div>
     )}
   ];
@@ -609,7 +609,7 @@ const PayoutsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={payouts} isLoading={isLoading} keyField="id" error={payoutsError instanceof Error ? payoutsError : null} onRetry={() => refetchPayouts()} />
+      <DataTable columns={columns} data={payouts} isLoading={isLoading} keyField="id" filterable error={payoutsError instanceof Error ? payoutsError : null} onRetry={() => refetchPayouts()} />
     </Card>
   );
 };

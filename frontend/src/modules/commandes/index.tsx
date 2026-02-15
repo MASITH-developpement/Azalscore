@@ -18,6 +18,7 @@ import { PageWrapper, Card, Grid } from '@ui/layout';
 import { DataTable } from '@ui/tables';
 import { Button, ButtonGroup } from '@ui/actions';
 import { KPICard } from '@ui/dashboards';
+import { SmartSelector } from '@/components/SmartSelector';
 import {
   BaseViewStandard,
   type TabDefinition,
@@ -58,7 +59,7 @@ const useCommandesList = (page = 1, pageSize = 25, filters?: { status?: string; 
       if (filters?.status) params.append('status', filters.status);
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
       if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Commande>>(`/v1/commercial/documents?${params}`);
+      const response = await api.get<PaginatedResponse<Commande>>(`/v3/commercial/documents?${params}`);
       return response.data;
     },
   });
@@ -68,7 +69,7 @@ const useCommande = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', id],
     queryFn: async () => {
-      const response = await api.get<Commande>(`/v1/commercial/documents/${id}`);
+      const response = await api.get<Commande>(`/v3/commercial/documents/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -81,7 +82,7 @@ const useCustomers = (search?: string) => {
     queryFn: async () => {
       const params = new URLSearchParams({ page: '1', page_size: '50' });
       if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/v1/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/v3/commercial/customers?${params}`);
       return response.data.items;
     },
   });
@@ -91,7 +92,7 @@ const useCreateCommande = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CommandeFormData) => {
-      const response = await api.post<Commande>('/v1/commercial/documents', { ...data, type: 'ORDER' });
+      const response = await api.post<Commande>('/v3/commercial/documents', { ...data, type: 'ORDER' });
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -102,7 +103,7 @@ const useUpdateCommande = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CommandeFormData> }) => {
-      const response = await api.put<Commande>(`/v1/commercial/documents/${id}`, data);
+      const response = await api.put<Commande>(`/v3/commercial/documents/${id}`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -113,7 +114,7 @@ const useValidateCommande = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Commande>(`/v1/commercial/documents/${id}/validate`);
+      const response = await api.post<Commande>(`/v3/commercial/documents/${id}/validate`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -124,7 +125,7 @@ const useMarkDelivered = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Commande>(`/v1/commercial/documents/${id}/deliver`);
+      const response = await api.post<Commande>(`/v3/commercial/documents/${id}/deliver`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -135,7 +136,7 @@ const useCreateInvoice = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (orderId: string) => {
-      const response = await api.post<{ id: string; number: string }>(`/v1/commercial/orders/${orderId}/invoice`);
+      const response = await api.post<{ id: string; number: string }>(`/v3/commercial/orders/${orderId}/invoice`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -146,7 +147,7 @@ const useCreateAffaire = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (orderId: string) => {
-      const response = await api.post<{ id: string; reference: string }>(`/v1/commercial/orders/${orderId}/affaire`);
+      const response = await api.post<{ id: string; reference: string }>(`/v3/commercial/orders/${orderId}/affaire`);
       return response.data;
     },
     onSuccess: () => {
@@ -160,7 +161,7 @@ const useAddLine = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ documentId, data }: { documentId: string; data: Partial<DocumentLine> }) => {
-      const response = await api.post<DocumentLine>(`/v1/commercial/documents/${documentId}/lines`, data);
+      const response = await api.post<DocumentLine>(`/v3/commercial/documents/${documentId}/lines`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -329,6 +330,7 @@ const CommandeListView: React.FC<{
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -759,20 +761,22 @@ const CommandeFormView: React.FC<{
       <form onSubmit={handleSubmit}>
         <Grid cols={2} gap="lg">
           <Card title="Client">
-            <div className="azals-form-field">
-              <label>Client *</label>
-              <select
-                className="azals-select"
-                value={form.customer_id}
-                onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
-                required
-              >
-                <option value="">-- Sélectionner un client --</option>
-                {customers?.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
-                ))}
-              </select>
-            </div>
+            <SmartSelector
+              items={customers || []}
+              value={form.customer_id}
+              onChange={(id) => setForm({ ...form, customer_id: id })}
+              label="Client"
+              placeholder="Rechercher un client..."
+              entityName="client"
+              createEndpoint="/v3/commercial/customers"
+              createFields={[
+                { key: 'name', label: 'Nom', required: true },
+                { key: 'email', label: 'Email', type: 'email' },
+                { key: 'phone', label: 'Téléphone', type: 'tel' },
+              ]}
+              queryKeys={['customers']}
+              allowCreate={true}
+            />
             <div className="azals-form-field">
               <label>Référence client</label>
               <input

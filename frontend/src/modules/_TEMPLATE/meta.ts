@@ -46,8 +46,8 @@ export const moduleMeta = {
     lastCheck: '2024-01-23', // Date dernière vérification (YYYY-MM-DD)
     endpoints: [
       // Liste des endpoints API disponibles
-      // '/api/v1/resource',
-      // '/api/v1/resource/:id',
+      // '/api/v3/resource',
+      // '/api/v3/resource/:id',
     ],
   },
 

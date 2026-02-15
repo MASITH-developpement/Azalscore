@@ -22,6 +22,35 @@ import { formatDate } from '@/utils/formatters';
 export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: employee }) => {
   const documents = employee.documents || [];
 
+  // Handler functions
+  const handlePrint = (): void => {
+    window.print();
+  };
+
+  const handleExportDossier = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:employee:export-dossier', {
+      detail: { employeeId: employee.id }
+    }));
+  };
+
+  const handleUpload = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:upload', {
+      detail: { type: 'employee', id: employee.id }
+    }));
+  };
+
+  const handlePreview = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:preview', {
+      detail: { type: 'employee', id: employee.id }
+    }));
+  };
+
+  const handleDownloadPdf = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:download', {
+      detail: { type: 'employee', id: employee.id, format: 'pdf' }
+    }));
+  };
+
   // Grouper par type
   const contracts = documents.filter(d => d.type === 'contract');
   const ids = documents.filter(d => d.type === 'id');
@@ -52,13 +81,13 @@ export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: emp
 
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Printer size={16} />}>
+        <Button variant="secondary" leftIcon={<Printer size={16} />} onClick={handlePrint}>
           Imprimer fiche employe
         </Button>
-        <Button variant="secondary" leftIcon={<Download size={16} />}>
+        <Button variant="secondary" leftIcon={<Download size={16} />} onClick={handleExportDossier}>
           Exporter dossier
         </Button>
-        <Button variant="ghost" leftIcon={<Upload size={16} />}>
+        <Button variant="ghost" leftIcon={<Upload size={16} />} onClick={handleUpload}>
           Ajouter un document
         </Button>
       </div>
@@ -75,10 +104,10 @@ export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: emp
               <p className="text-sm text-muted">{getFullName(employee)}</p>
             </div>
             <div className="azals-document-preview__actions">
-              <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />}>
+              <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />} onClick={handlePreview}>
                 Apercu
               </Button>
-              <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+              <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={handleDownloadPdf}>
                 PDF
               </Button>
             </div>
@@ -97,7 +126,7 @@ export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             <div className="azals-empty azals-empty--sm">
               <FileText size={32} className="text-muted" />
               <p className="text-muted">Aucun contrat</p>
-              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>
             </div>
@@ -116,7 +145,7 @@ export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             <div className="azals-empty azals-empty--sm">
               <CreditCard size={32} className="text-muted" />
               <p className="text-muted">Aucune piece d'identite</p>
-              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>
             </div>
@@ -135,7 +164,7 @@ export const EmployeeDocsTab: React.FC<TabContentProps<Employee>> = ({ data: emp
             <div className="azals-empty azals-empty--sm">
               <GraduationCap size={32} className="text-muted" />
               <p className="text-muted">Aucun diplome</p>
-              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>
             </div>
@@ -176,6 +205,32 @@ interface DocumentItemProps {
 }
 
 const DocumentItem: React.FC<DocumentItemProps> = ({ document }) => {
+  const handlePreview = (): void => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:preview', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDownload = (): void => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:download', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDelete = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:delete', {
+      detail: { documentId: document.id }
+    }));
+  };
+
   const isExpiringSoon = document.expiry_date && (() => {
     const expiry = new Date(document.expiry_date);
     const now = new Date();
@@ -225,13 +280,13 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document }) => {
         </span>
       </div>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Apercu">
+        <button className="azals-btn-icon" title="Apercu" onClick={handlePreview}>
           <Eye size={16} />
         </button>
-        <button className="azals-btn-icon" title="Telecharger">
+        <button className="azals-btn-icon" title="Telecharger" onClick={handleDownload}>
           <Download size={16} />
         </button>
-        <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+        <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={handleDelete}>
           <Trash2 size={16} />
         </button>
       </div>

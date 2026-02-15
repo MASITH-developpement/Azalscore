@@ -21,7 +21,7 @@ import type {
 // Re-export CompanySuggestion for convenience
 export type { CompanySuggestion } from './types';
 
-const BASE_URL = '/v1/enrichment';
+const BASE_URL = '/v3/enrichment';
 
 // ============================================================================
 // LOOKUP API

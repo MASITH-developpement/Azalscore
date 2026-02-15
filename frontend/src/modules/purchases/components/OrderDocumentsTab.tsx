@@ -16,15 +16,12 @@ import { formatDate } from '@/utils/formatters';
  */
 export const OrderDocumentsTab: React.FC<TabContentProps<PurchaseOrder>> = ({ data: order }) => {
   const handleUpload = () => {
-    console.log('Upload document for order:', order.id);
   };
 
   const handlePrint = () => {
-    console.log('Print order:', order.id);
   };
 
   const handleDownloadPDF = () => {
-    console.log('Download PDF for order:', order.id);
   };
 
   return (

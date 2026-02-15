@@ -57,6 +57,7 @@ export interface RiskAnalysis {
   alerts: string[];
   recommendation: string;
   cotation_bdf?: string;   // Cotation Banque de France
+  _limited_data?: boolean; // Indique analyse simplifiee (sans API Pappers)
 }
 
 export interface EnrichedRiskFields {

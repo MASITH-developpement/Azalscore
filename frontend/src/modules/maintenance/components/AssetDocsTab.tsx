@@ -21,6 +21,31 @@ import { formatDate } from '@/utils/formatters';
 export const AssetDocsTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) => {
   const documents = asset.documents || [];
 
+  // Handler functions
+  const handleExportDossier = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:asset:export-dossier', {
+      detail: { assetId: asset.id }
+    }));
+  };
+
+  const handleUpload = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:upload', {
+      detail: { type: 'asset', id: asset.id }
+    }));
+  };
+
+  const handlePreview = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:preview', {
+      detail: { type: 'asset', id: asset.id }
+    }));
+  };
+
+  const handleDownloadPdf = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:download', {
+      detail: { type: 'asset', id: asset.id, format: 'pdf' }
+    }));
+  };
+
   // Grouper par type
   const manuals = documents.filter(d => d.type === 'manual');
   const certificates = documents.filter(d => d.type === 'certificate');
@@ -46,10 +71,10 @@ export const AssetDocsTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
 
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Download size={16} />}>
+        <Button variant="secondary" leftIcon={<Download size={16} />} onClick={handleExportDossier}>
           Exporter dossier
         </Button>
-        <Button variant="ghost" leftIcon={<Upload size={16} />}>
+        <Button variant="ghost" leftIcon={<Upload size={16} />} onClick={handleUpload}>
           Ajouter un document
         </Button>
       </div>
@@ -66,10 +91,10 @@ export const AssetDocsTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
               <p className="text-sm text-muted">{asset.name}</p>
             </div>
             <div className="azals-document-preview__actions">
-              <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />}>
+              <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />} onClick={handlePreview}>
                 Apercu
               </Button>
-              <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+              <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={handleDownloadPdf}>
                 PDF
               </Button>
             </div>
@@ -88,7 +113,7 @@ export const AssetDocsTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
             <div className="azals-empty azals-empty--sm">
               <FileText size={32} className="text-muted" />
               <p className="text-muted">Aucun manuel</p>
-              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>
             </div>
@@ -107,7 +132,7 @@ export const AssetDocsTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
             <div className="azals-empty azals-empty--sm">
               <Award size={32} className="text-muted" />
               <p className="text-muted">Aucun certificat</p>
-              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>
             </div>
@@ -126,7 +151,7 @@ export const AssetDocsTab: React.FC<TabContentProps<Asset>> = ({ data: asset }) 
             <div className="azals-empty azals-empty--sm">
               <Shield size={32} className="text-muted" />
               <p className="text-muted">Aucun document de garantie</p>
-              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+              <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                 Ajouter
               </Button>
             </div>
@@ -183,6 +208,32 @@ interface DocumentItemProps {
 }
 
 const DocumentItem: React.FC<DocumentItemProps> = ({ document }) => {
+  const handlePreview = (): void => {
+    if (document.file_url) {
+      window.open(document.file_url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:preview', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDownload = (): void => {
+    if (document.file_url) {
+      window.open(document.file_url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:download', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDelete = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:delete', {
+      detail: { documentId: document.id }
+    }));
+  };
+
   const typeConfig = DOCUMENT_TYPE_CONFIG[document.type] || DOCUMENT_TYPE_CONFIG.other;
 
   const isExpiringSoon = document.expiry_date && (() => {
@@ -238,13 +289,13 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document }) => {
         {typeConfig.label}
       </span>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Apercu">
+        <button className="azals-btn-icon" title="Apercu" onClick={handlePreview}>
           <Eye size={16} />
         </button>
-        <button className="azals-btn-icon" title="Telecharger">
+        <button className="azals-btn-icon" title="Telecharger" onClick={handleDownload}>
           <Download size={16} />
         </button>
-        <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+        <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={handleDelete}>
           <Trash2 size={16} />
         </button>
       </div>

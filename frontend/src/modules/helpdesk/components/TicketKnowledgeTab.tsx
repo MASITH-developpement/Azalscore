@@ -32,7 +32,7 @@ export const TicketKnowledgeTab: React.FC<TabContentProps<Ticket>> = ({ data: ti
               placeholder="Rechercher dans la base de connaissances..."
             />
           </div>
-          <Button variant="secondary">Rechercher</Button>
+          <Button variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'searchKnowledge', ticketId: ticket.id } })); }}>Rechercher</Button>
         </div>
       </Card>
 
@@ -62,10 +62,10 @@ export const TicketKnowledgeTab: React.FC<TabContentProps<Ticket>> = ({ data: ti
         className="mt-4 azals-std-field--secondary"
       >
         <Grid cols={2} gap="md">
-          <Button variant="ghost" leftIcon={<BookOpen size={16} />} className="justify-start">
+          <Button variant="ghost" leftIcon={<BookOpen size={16} />} className="justify-start" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createArticleFromTicket', ticketId: ticket.id } })); }}>
             Creer un article depuis ce ticket
           </Button>
-          <Button variant="ghost" leftIcon={<ExternalLink size={16} />} className="justify-start">
+          <Button variant="ghost" leftIcon={<ExternalLink size={16} />} className="justify-start" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'sendArticleToClient', ticketId: ticket.id } })); }}>
             Envoyer un article au client
           </Button>
         </Grid>
@@ -94,11 +94,14 @@ const ArticleItem: React.FC<ArticleItemProps> = ({ article }) => {
     <div className="azals-knowledge-item">
       <div className="azals-knowledge-item__header">
         <h4 className="azals-knowledge-item__title">
-          <a href="#" className="text-primary hover:underline">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'helpdesk', params: { articleId: article.id } } }))}
+            className="text-primary hover:underline text-left"
+          >
             {article.title}
-          </a>
+          </button>
         </h4>
-        <button className="azals-btn-icon" title="Ouvrir">
+        <button className="azals-btn-icon" title="Ouvrir" onClick={() => window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'helpdesk', params: { articleId: article.id } } }))}>
           <ExternalLink size={14} />
         </button>
       </div>

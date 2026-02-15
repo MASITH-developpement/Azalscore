@@ -21,15 +21,15 @@ export const SubscriptionDocumentsTab: React.FC<TabContentProps<Subscription>> =
   const paidInvoicesCount = getPaidInvoicesCount(subscription);
 
   const handleDownloadContract = () => {
-    console.log('Download contract for subscription:', subscription.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadContract', subscriptionId: subscription.id } }));
   };
 
   const handleSendWelcome = () => {
-    console.log('Send welcome email for subscription:', subscription.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'sendWelcomeEmail', subscriptionId: subscription.id } }));
   };
 
   const handleExportInvoices = () => {
-    console.log('Export all invoices for subscription:', subscription.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'exportInvoices', subscriptionId: subscription.id } }));
   };
 
   return (
@@ -58,6 +58,7 @@ export const SubscriptionDocumentsTab: React.FC<TabContentProps<Subscription>> =
                 variant="secondary"
                 leftIcon={<Printer size={16} />}
                 className="flex-1"
+                onClick={() => { window.print(); }}
               >
                 Imprimer
               </Button>
@@ -104,7 +105,7 @@ export const SubscriptionDocumentsTab: React.FC<TabContentProps<Subscription>> =
                 <div className="font-medium">Rappel de paiement</div>
                 <div className="text-sm text-muted">Si facture impayee</div>
               </div>
-              <Button variant="ghost" size="sm" leftIcon={<Mail size={14} />}>
+              <Button variant="ghost" size="sm" leftIcon={<Mail size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'sendPaymentReminder', subscriptionId: subscription.id } })); }}>
                 Envoyer
               </Button>
             </div>
@@ -113,7 +114,7 @@ export const SubscriptionDocumentsTab: React.FC<TabContentProps<Subscription>> =
                 <div className="font-medium">Confirmation de renouvellement</div>
                 <div className="text-sm text-muted">Apres chaque cycle</div>
               </div>
-              <Button variant="ghost" size="sm" leftIcon={<Mail size={14} />}>
+              <Button variant="ghost" size="sm" leftIcon={<Mail size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'sendRenewalConfirmation', subscriptionId: subscription.id } })); }}>
                 Envoyer
               </Button>
             </div>
@@ -123,18 +124,27 @@ export const SubscriptionDocumentsTab: React.FC<TabContentProps<Subscription>> =
         {/* Liens utiles */}
         <Card title="Liens utiles" icon={<ExternalLink size={18} />} className="azals-std-field--secondary">
           <div className="space-y-2">
-            <a href="#" className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded text-primary">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'profile', params: { tab: 'subscriptions' } } }))}
+              className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded text-primary w-full text-left"
+            >
               <ExternalLink size={14} />
               Portail client
-            </a>
-            <a href="#" className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded text-primary">
+            </button>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'settings', params: { tab: 'notifications' } } }))}
+              className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded text-primary w-full text-left"
+            >
               <ExternalLink size={14} />
               Gestion des preferences
-            </a>
-            <a href="#" className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded text-primary">
+            </button>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'helpdesk' } }))}
+              className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded text-primary w-full text-left"
+            >
               <ExternalLink size={14} />
               Centre d'aide
-            </a>
+            </button>
           </div>
         </Card>
       </Grid>

@@ -38,7 +38,7 @@ from .models import (
     RiskCategory,
     RiskLevel,
 )
-from .router import router
+from .router_crud import router
 from .schemas import (
     AIConfigResponse,
     # Config

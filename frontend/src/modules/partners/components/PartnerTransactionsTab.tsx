@@ -70,7 +70,7 @@ export const PartnerTransactionsTab: React.FC<TabContentProps<Partner>> = ({ dat
             <ShoppingCart size={32} className="text-muted" />
             <p className="text-muted">Aucune commande recente</p>
             {isClient && (
-              <Button variant="ghost" size="sm" className="mt-2">
+              <Button variant="ghost" size="sm" className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'partners', type: 'order', partnerId: partner.id } })); }}>
                 Creer une commande
               </Button>
             )}
@@ -140,16 +140,16 @@ export const PartnerTransactionsTab: React.FC<TabContentProps<Partner>> = ({ dat
       {isClient && (
         <Card title="Actions rapides" icon={<Clock size={18} />} className="mt-4">
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'partners', type: 'quote', partnerId: partner.id } })); }}>
               Nouveau devis
             </Button>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'partners', type: 'order', partnerId: partner.id } })); }}>
               Nouvelle commande
             </Button>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'partners', type: 'invoice', partnerId: partner.id } })); }}>
               Nouvelle facture
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'partner-history', params: { partnerId: partner.id } } })); }}>
               Voir tout l'historique
             </Button>
           </div>

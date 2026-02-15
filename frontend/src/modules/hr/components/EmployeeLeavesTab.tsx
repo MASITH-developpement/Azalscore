@@ -140,7 +140,7 @@ export const EmployeeLeavesTab: React.FC<TabContentProps<Employee>> = ({ data: e
 
       {/* Actions */}
       <div className="azals-std-tab-actions mt-4">
-        <Button variant="primary" leftIcon={<Calendar size={16} />}>
+        <Button variant="primary" leftIcon={<Calendar size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createLeaveRequest', employeeId: employee.id } })); }}>
           Nouvelle demande de conge
         </Button>
       </div>
@@ -239,8 +239,8 @@ const LeaveRequestItem: React.FC<LeaveRequestItemProps> = ({ request, showAction
       )}
       {showActions && request.status === 'PENDING' && (
         <div className="azals-leave-request-item__actions mt-2">
-          <Button size="sm" variant="ghost">Modifier</Button>
-          <Button size="sm" variant="danger">Annuler</Button>
+          <Button size="sm" variant="ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editLeaveRequest', requestId: request.id } })); }}>Modifier</Button>
+          <Button size="sm" variant="danger" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'cancelLeaveRequest', requestId: request.id } })); }}>Annuler</Button>
         </div>
       )}
     </div>

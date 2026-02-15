@@ -16,6 +16,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Plus, Trash2, ChevronDown, Loader2, X, UserPlus, Package } from 'lucide-react';
 import { api } from '@core/api-client';
+import { unwrapApiResponse } from '@/types';
 import { useTranslation } from '../i18n';
 import { ErrorState } from '../../ui-engine/components/StateViews';
 
@@ -72,9 +73,10 @@ const useClients = () => {
     queryKey: ['clients', 'lookup'],
     queryFn: async () => {
       const response = await api.get<{ items: Client[] }>(
-        '/v1/commercial/customers?page_size=100&is_active=true'
+        '/v3/commercial/customers?page_size=100&is_active=true'
       );
-      return (response as any).items || [];
+      const data = unwrapApiResponse<{ items: Client[] }>(response);
+      return data?.items || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
@@ -86,8 +88,8 @@ const useSaveDocument = () => {
   return useMutation({
     mutationFn: async (data: DocumentData) => {
       const endpoint = data.type === 'INTERVENTION'
-        ? '/v1/interventions'
-        : '/v1/commercial/documents';
+        ? '/v3/interventions'
+        : '/v3/commercial/documents';
 
       const payload = data.type === 'INTERVENTION'
         ? {
@@ -123,7 +125,7 @@ const useCreateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Client>) => {
-      const response = await api.post<Client>('/v1/commercial/customers', data);
+      const response = await api.post<Client>('/v3/commercial/customers', data);
       return response as unknown as Client;
     },
     onSuccess: () => {
@@ -137,9 +139,10 @@ const useProducts = () => {
     queryKey: ['products', 'lookup'],
     queryFn: async () => {
       const response = await api.get<{ items: Product[] }>(
-        '/v1/inventory/products?page_size=100&is_active=true'
+        '/v3/inventory/products?page_size=100&is_active=true'
       );
-      return (response as any).items || [];
+      const data = unwrapApiResponse<{ items: Product[] }>(response);
+      return data?.items || [];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -149,7 +152,7 @@ const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Product>) => {
-      const response = await api.post<Product>('/v1/inventory/products', data);
+      const response = await api.post<Product>('/v3/inventory/products', data);
       return response as unknown as Product;
     },
     onSuccess: () => {

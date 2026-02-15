@@ -16,15 +16,15 @@ import { formatDate } from '@/utils/formatters';
  */
 export const InvoiceDocumentsTab: React.FC<TabContentProps<PurchaseInvoice>> = ({ data: invoice }) => {
   const handleUpload = () => {
-    console.log('Upload document for invoice:', invoice.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadDocument', invoiceId: invoice.id } }));
   };
 
   const handlePrint = () => {
-    console.log('Print invoice:', invoice.id);
+    window.print();
   };
 
   const handleDownloadPDF = () => {
-    console.log('Download PDF for invoice:', invoice.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadInvoicePDF', invoiceId: invoice.id } }));
   };
 
   return (
@@ -40,7 +40,7 @@ export const InvoiceDocumentsTab: React.FC<TabContentProps<PurchaseInvoice>> = (
                 Cette facture est liee a une commande fournisseur
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'purchases', type: 'order', id: invoice.order_id } })); }}>
               Voir la commande
             </Button>
           </div>

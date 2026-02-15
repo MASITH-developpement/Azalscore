@@ -13,6 +13,7 @@ import { Button, Modal } from '@ui/actions';
 import { Select, Input, CheckboxInput } from '@ui/forms';
 import { Hash, Settings, RotateCcw, Eye, Check, X } from 'lucide-react';
 import type { TableColumn } from '@/types';
+import { unwrapApiResponse } from '@/types';
 
 // ============================================================================
 // TYPES
@@ -93,11 +94,11 @@ const useSequences = () => {
     queryKey: ['admin', 'sequences'],
     queryFn: async (): Promise<SequenceConfig[]> => {
       try {
-        const res = await api.get<{ items: SequenceConfig[]; total: number }>('/v1/admin/sequences', {
+        const res = await api.get<{ items: SequenceConfig[]; total: number }>('/v3/admin/sequences', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
-        const data = res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+        const data = unwrapApiResponse<{ items: SequenceConfig[]; total: number }>(res);
         return data?.items || [];
       } catch {
         return [];
@@ -111,8 +112,8 @@ const useUpdateSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ entityType, data }: { entityType: string; data: SequenceUpdateData }) => {
-      const res = await api.put<SequenceConfig>(`/v1/admin/sequences/${entityType}`, data);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      const res = await api.put<SequenceConfig>(`/v3/admin/sequences/${entityType}`, data);
+      return unwrapApiResponse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sequences'] });
@@ -124,8 +125,8 @@ const useResetSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (entityType: string) => {
-      const res = await api.post<SequenceConfig>(`/v1/admin/sequences/${entityType}/reset`);
-      return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+      const res = await api.post<SequenceConfig>(`/v3/admin/sequences/${entityType}/reset`);
+      return unwrapApiResponse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sequences'] });
@@ -148,8 +149,8 @@ const usePreviewSequence = (
         if (config.padding) params.append('padding', String(config.padding));
         if (config.separator) params.append('separator', config.separator);
         const queryString = params.toString();
-        const res = await api.get<PreviewResponse>(`/v1/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
-        return res && typeof res === 'object' && 'data' in res ? (res as any).data : res;
+        const res = await api.get<PreviewResponse>(`/v3/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
+        return unwrapApiResponse(res);
       } catch {
         return null;
       }
@@ -491,7 +492,8 @@ const SequencesView: React.FC = () => {
         data={filteredSequences}
         isLoading={isLoading}
         keyField="entity_type"
-        onRowClick={handleEdit}
+          filterable
+          onRowClick={handleEdit}
       />
 
       <EditModal

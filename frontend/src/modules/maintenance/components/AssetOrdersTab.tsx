@@ -97,7 +97,7 @@ export const AssetOrdersTab: React.FC<TabContentProps<Asset>> = ({ data: asset }
 
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Wrench size={16} />}>
+        <Button variant="secondary" leftIcon={<Wrench size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMaintenanceOrder', assetId: asset.id } })); }}>
           Nouvel ordre
         </Button>
       </div>
@@ -114,7 +114,7 @@ export const AssetOrdersTab: React.FC<TabContentProps<Asset>> = ({ data: asset }
           <div className="azals-empty azals-empty--sm">
             <Wrench size={32} className="text-muted" />
             <p className="text-muted">Aucun ordre de maintenance{filterStatus !== 'ALL' ? ' dans ce statut' : ''}</p>
-            <Button size="sm" variant="ghost">
+            <Button size="sm" variant="ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMaintenanceOrder', assetId: asset.id } })); }}>
               Creer un ordre
             </Button>
           </div>

@@ -47,7 +47,7 @@ from .models import (
     Wishlist,
     WishlistItem,
 )
-from .router import router
+from .router_crud import router
 from .service import EcommerceService
 
 __all__ = [

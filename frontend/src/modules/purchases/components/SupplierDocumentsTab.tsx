@@ -27,7 +27,7 @@ export const SupplierDocumentsTab: React.FC<TabContentProps<Supplier & { documen
   const documents = data.documents || [];
 
   const handleUpload = () => {
-    console.log('Upload document for supplier:', data.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadDocument', supplierId: data.id } }));
   };
 
   const getFileIcon = (type: string) => {
@@ -69,7 +69,7 @@ export const SupplierDocumentsTab: React.FC<TabContentProps<Supplier & { documen
                     {doc.uploaded_by && ` par ${doc.uploaded_by}`}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadDocument', documentId: doc.id } })); }}>
                   Telecharger
                 </Button>
               </div>

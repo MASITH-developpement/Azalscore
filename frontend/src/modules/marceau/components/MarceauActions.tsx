@@ -65,7 +65,7 @@ export function MarceauActions() {
       params.append('limit', String(pageSize));
 
       const response = await api.get<{ items: MarceauAction[]; total: number }>(
-        `/v1/marceau/actions?${params}`
+        `/v3/marceau/actions?${params}`
       );
       setActions(response.data.items || []);
       setTotal(response.data.total || 0);
@@ -80,7 +80,7 @@ export function MarceauActions() {
   const validateAction = async (actionId: string, approved: boolean, notes?: string) => {
     setValidating(actionId);
     try {
-      await api.post(`/v1/marceau/actions/${actionId}/validate`, {
+      await api.post(`/v3/marceau/actions/${actionId}/validate`, {
         approved,
         notes,
       });

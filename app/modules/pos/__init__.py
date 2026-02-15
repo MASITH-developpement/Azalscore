@@ -44,7 +44,7 @@ from .models import (
     POSTransactionStatus,
     POSUser,
 )
-from .router import router
+from .router_crud import router
 from .service import POSService
 
 __all__ = [

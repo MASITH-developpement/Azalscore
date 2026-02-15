@@ -11,8 +11,9 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Briefcase, Euro, Calendar, Target, Edit, Eye, Plus, ArrowLeft } from 'lucide-react';
+import { Briefcase, Euro, Calendar, Target, Edit, Eye, Plus, ArrowLeft, Sparkles } from 'lucide-react';
 import { api } from '@core/api-client';
+import { unwrapApiResponse } from '@/types';
 import {
   Page, PageHeader, Section, Grid, Stats, SearchBar, SimpleTable,
   Badge, Progress, Totals, Footer, Button, Loading,
@@ -64,7 +65,7 @@ const PRIORITY_OPTIONS = [
 
 // Configuration du sélecteur de client
 const CLIENT_ENTITY: EntityConfig = {
-  endpoint: '/v1/partners/clients',
+  endpoint: '/v3/partners/clients',
   displayField: 'name',
   secondaryField: 'code',
   searchField: 'search',
@@ -86,26 +87,30 @@ const useAffaires = (search?: string) => useQuery({
   queryKey: ['affaires', search],
   queryFn: async () => {
     const params = search ? `?search=${search}&limit=100` : '?limit=100';
-    const res = await api.get(`/v1/projects${params}`);
-    return (res as any).items || [];
+    const res = await api.get<{ items: Affaire[] }>(`/v3/projects${params}`);
+    const data = unwrapApiResponse<{ items: Affaire[] }>(res);
+    return data?.items || [];
   },
 });
 
 const useAffaire = (id?: string) => useQuery({
   queryKey: ['affaire', id],
-  queryFn: () => api.get(`/v1/projects/${id}`),
+  queryFn: () => api.get(`/v3/projects/${id}`),
   enabled: !!id,
 });
 
 const useSaveAffaire = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id?: string; data: Partial<Affaire> }) => {
+    mutationFn: async ({ id, data }: { id?: string; data: Partial<Affaire> }): Promise<Affaire> => {
       const payload = id ? data : {
         ...data,
         code: data.code || `AFF-${Date.now().toString(36).toUpperCase()}`,
       };
-      return id ? api.put(`/v1/projects/${id}`, payload) : api.post('/v1/projects', payload);
+      const res = id
+        ? await api.put<Affaire>(`/v3/projects/${id}`, payload)
+        : await api.post<Affaire>('/v3/projects', payload);
+      return unwrapApiResponse<Affaire>(res);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['affaires'] });
@@ -237,7 +242,7 @@ const FormView: React.FC<FormViewProps> = ({ id, onBack, onSaved, contextMode })
     setSaved(true);
 
     if (contextMode === 'create' && onSaved) {
-      setTimeout(() => onSaved((res as any).id), 1000);
+      setTimeout(() => onSaved(res.id), 1000);
     } else {
       setEditing(false);
       setTimeout(() => setSaved(false), 2000);
@@ -398,6 +403,34 @@ const FormView: React.FC<FormViewProps> = ({ id, onBack, onSaved, contextMode })
             { label: 'Reste', value: formatCurrency(reste), isMain: true },
           ]}
         />
+      )}
+
+      {/* Section IA Marceau */}
+      {id && affaire && !editing && (
+        <Section>
+          <div className="azals-ia-assist">
+            <div className="azals-ia-assist__header">
+              <Sparkles size={18} className="text-primary" />
+              <span className="font-medium">Assistant IA</span>
+            </div>
+            <div className="azals-ia-assist__content">
+              <p className="text-sm text-muted">
+                {affaire.progress_percent && affaire.progress_percent >= 80
+                  ? "Cette affaire est presque terminée. Pensez à préparer la facturation finale."
+                  : reste < 0
+                  ? "Attention : Le budget est dépassé. Analysez les dépenses ou ajustez le budget."
+                  : "L'affaire progresse normalement. Continuez le suivi régulier."}
+              </p>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('marceau:open', { detail: { context: `Affaire ${affaire.reference || affaire.name}` } }))}
+                className="azals-btn azals-btn--ghost azals-btn--sm mt-2"
+              >
+                <Sparkles size={14} />
+                Demander à Marceau
+              </button>
+            </div>
+          </div>
+        </Section>
       )}
     </Page>
   );

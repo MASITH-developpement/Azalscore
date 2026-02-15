@@ -48,6 +48,16 @@ import {
 } from './components';
 
 // ============================================================================
+// LOCAL TYPES & HELPERS
+// ============================================================================
+
+interface StatusInfo {
+  value: string;
+  label: string;
+  color: string;
+}
+
+// ============================================================================
 // LOCAL COMPONENTS
 // ============================================================================
 
@@ -83,7 +93,7 @@ const useMaintenanceDashboard = () => {
   return useQuery({
     queryKey: ['maintenance', 'dashboard'],
     queryFn: async () => {
-      return api.get<MaintenanceDashboard>('/v1/maintenance/dashboard').then(r => r.data);
+      return api.get<MaintenanceDashboard>('/v3/maintenance/dashboard').then(r => r.data);
     }
   });
 };
@@ -97,7 +107,7 @@ const useAssets = (filters?: { type?: string; status?: string; criticality?: str
       if (filters?.status) params.append('status', filters.status);
       if (filters?.criticality) params.append('criticality', filters.criticality);
       const queryString = params.toString();
-      const url = `/v1/maintenance/assets${queryString ? `?${queryString}` : ''}`;
+      const url = `/v3/maintenance/assets${queryString ? `?${queryString}` : ''}`;
       return api.get<Asset[]>(url).then(r => r.data);
     }
   });
@@ -107,7 +117,7 @@ const useAsset = (id: string) => {
   return useQuery({
     queryKey: ['maintenance', 'asset', id],
     queryFn: async () => {
-      return api.get<Asset>(`/v1/maintenance/assets/${id}`).then(r => r.data);
+      return api.get<Asset>(`/v3/maintenance/assets/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -122,7 +132,7 @@ const useMaintenanceOrders = (filters?: { type?: string; status?: string; priori
       if (filters?.status) params.append('status', filters.status);
       if (filters?.priority) params.append('priority', filters.priority);
       const queryString = params.toString();
-      const url = `/v1/maintenance/orders${queryString ? `?${queryString}` : ''}`;
+      const url = `/v3/maintenance/orders${queryString ? `?${queryString}` : ''}`;
       return api.get<MaintenanceOrder[]>(url).then(r => r.data);
     }
   });
@@ -132,7 +142,7 @@ const useMaintenancePlans = () => {
   return useQuery({
     queryKey: ['maintenance', 'plans'],
     queryFn: async () => {
-      return api.get<MaintenancePlan[]>('/v1/maintenance/plans').then(r => r.data);
+      return api.get<MaintenancePlan[]>('/v3/maintenance/plans').then(r => r.data);
     }
   });
 };
@@ -141,7 +151,7 @@ const useCreateAsset = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Asset>) => {
-      return api.post('/v1/maintenance/assets', data).then(r => r.data);
+      return api.post('/v3/maintenance/assets', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance', 'assets'] })
   });
@@ -151,7 +161,7 @@ const useCreateMaintenanceOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<MaintenanceOrder>) => {
-      return api.post('/v1/maintenance/orders', data).then(r => r.data);
+      return api.post('/v3/maintenance/orders', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance'] })
   });
@@ -161,7 +171,7 @@ const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v1/maintenance/orders/${id}`, { status }).then(r => r.data);
+      return api.patch(`/v3/maintenance/orders/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance'] })
   });
@@ -351,13 +361,15 @@ const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onEd
       id: 'create-order',
       label: 'Nouvel ordre',
       icon: <Wrench size={16} />,
-      variant: 'primary'
+      variant: 'primary',
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMaintenanceOrder', assetId: asset.id } })); }
     },
     {
       id: 'print',
       label: 'Imprimer',
       icon: <Printer size={16} />,
-      variant: 'ghost'
+      variant: 'ghost',
+      onClick: () => { window.print(); }
     }
   ];
 
@@ -441,8 +453,8 @@ const FREQUENCIES = [
   { value: 'CYCLES_BASED', label: 'Par cycles' }
 ];
 
-const getStatusInfo = (statuses: any[], status: string) => {
-  return statuses.find(s => s.value === status) || { label: status, color: 'gray' };
+const getStatusInfo = (statuses: StatusInfo[], status: string): StatusInfo => {
+  return statuses.find(s => s.value === status) || { value: status, label: status, color: 'gray' };
 };
 
 const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelectAsset }) => {
@@ -474,11 +486,11 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
     { id: 'location', header: 'Emplacement', accessor: 'location', render: (v) => (v as string) || '-' },
     { id: 'criticality', header: 'Criticite', accessor: 'criticality', render: (v) => {
       const info = getStatusInfo(CRITICALITIES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'status', header: 'Statut', accessor: 'status', render: (v) => {
       const info = getStatusInfo(ASSET_STATUSES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'next_maintenance_date', header: 'Proch. maint.', accessor: 'next_maintenance_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row: Asset) => (
@@ -512,7 +524,7 @@ const AssetsView: React.FC<{ onSelectAsset: (id: string) => void }> = ({ onSelec
           <Button onClick={() => setShowModal(true)}>Nouvel equipement</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={assets} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel equipement" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
@@ -646,7 +658,7 @@ const MaintenanceOrdersView: React.FC = () => {
     }},
     { id: 'priority', header: 'Priorite', accessor: 'priority', render: (v) => {
       const info = getStatusInfo(ORDER_PRIORITIES, v as string);
-      return <Badge color={info.color as any}>{info.label}</Badge>;
+      return <Badge color={info.color}>{info.label}</Badge>;
     }},
     { id: 'planned_start_date', header: 'Date prevue', accessor: 'planned_start_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'assigned_to_name', header: 'Assigne a', accessor: 'assigned_to_name', render: (v) => (v as string) || '-' },
@@ -687,7 +699,7 @@ const MaintenanceOrdersView: React.FC = () => {
           <Button onClick={() => setShowModal(true)}>Nouvel ordre</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={orders} isLoading={isLoading} keyField="id" filterable />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel ordre de maintenance" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
@@ -773,7 +785,7 @@ const PlansView: React.FC = () => {
       const info = FREQUENCIES.find(f => f.value === v);
       return `${info?.label || (v as string)} (${row.frequency_value})`;
     }},
-    { id: 'tasks', header: 'Taches', accessor: 'tasks', render: (v) => <Badge color="blue">{(v as any[])?.length || 0}</Badge> },
+    { id: 'tasks', header: 'Taches', accessor: 'tasks', render: (v) => <Badge color="blue">{Array.isArray(v) ? v.length : 0}</Badge> },
     { id: 'next_execution_date', header: 'Proch. execution', accessor: 'next_execution_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
@@ -791,10 +803,10 @@ const PlansView: React.FC = () => {
             options={[{ value: '', label: 'Toutes frequences' }, ...FREQUENCIES]}
             className="w-48"
           />
-          <Button>Nouveau plan</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createMaintenancePlan' } })); }}>Nouveau plan</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };

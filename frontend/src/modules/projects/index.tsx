@@ -83,7 +83,7 @@ const useProjectStats = () => {
   return useQuery({
     queryKey: ['projects', 'stats'],
     queryFn: async () => {
-      const response = await api.get<ProjectStats>('/v1/projects/summary').then(r => r.data);
+      const response = await api.get<ProjectStats>('/v3/projects/summary').then(r => r.data);
       return response;
     }
   });
@@ -97,9 +97,9 @@ const useProjects = (filters?: { status?: string; client_id?: string }) => {
       if (filters?.status) params.append('status', filters.status);
       if (filters?.client_id) params.append('client_id', filters.client_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/projects?${queryString}` : '/v1/projects';
-      const response = await api.get<{ items: Project[] } | Project[]>(url).then(r => r.data);
-      return (response as any)?.items || response as Project[];
+      const url = queryString ? `/v3/projects?${queryString}` : '/v3/projects';
+      const response = await api.get<{ items: Project[] }>(url).then(r => r.data);
+      return response?.items || [];
     }
   });
 };
@@ -108,7 +108,7 @@ const useProject = (id: string) => {
   return useQuery({
     queryKey: ['projects', 'detail', id],
     queryFn: async () => {
-      const response = await api.get<Project>(`/v1/projects/${id}`).then(r => r.data);
+      const response = await api.get<Project>(`/v3/projects/${id}`).then(r => r.data);
       return response;
     },
     enabled: !!id
@@ -124,9 +124,9 @@ const useTasks = (filters?: { status?: string; project_id?: string; assignee_id?
       if (filters?.project_id) params.append('project_id', filters.project_id);
       if (filters?.assignee_id) params.append('assignee_id', filters.assignee_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/projects/tasks?${queryString}` : '/v1/projects/tasks';
-      const response = await api.get<{ items: Task[] } | Task[]>(url).then(r => r.data);
-      return (response as any)?.items || response as Task[];
+      const url = queryString ? `/v3/projects/tasks?${queryString}` : '/v3/projects/tasks';
+      const response = await api.get<{ items: Task[] }>(url).then(r => r.data);
+      return response?.items || [];
     }
   });
 };
@@ -140,7 +140,7 @@ const useTimeEntries = (filters?: { project_id?: string; date_from?: string; dat
       if (filters?.date_from) params.append('date_from', filters.date_from);
       if (filters?.date_to) params.append('date_to', filters.date_to);
       const queryString = params.toString();
-      const url = queryString ? `/v1/projects/time-entries?${queryString}` : '/v1/projects/time-entries';
+      const url = queryString ? `/v3/projects/time-entries?${queryString}` : '/v3/projects/time-entries';
       const response = await api.get<TimeEntry[]>(url).then(r => r.data);
       return response;
     }
@@ -151,7 +151,7 @@ const useCreateProject = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Project>) => {
-      return api.post<Project>('/v1/projects', data).then(r => r.data);
+      return api.post<Project>('/v3/projects', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -163,7 +163,7 @@ const useUpdateTaskStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch<Task>(`/v1/projects/tasks/${id}/status`, { status }).then(r => r.data);
+      return api.patch<Task>(`/v3/projects/tasks/${id}/status`, { status }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', 'tasks'] });
@@ -176,7 +176,7 @@ const useLogTime = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { project_id: string; task_id?: string; date: string; hours: number; description?: string; is_billable?: boolean }) => {
-      return api.post<TimeEntry>('/v1/projects/time-entries', data).then(r => r.data);
+      return api.post<TimeEntry>('/v3/projects/time-entries', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', 'time-entries'] });
@@ -492,10 +492,10 @@ const ProjectsListView: React.FC<{ onSelectProject: (id: string) => void }> = ({
             options={[{ value: '', label: 'Tous statuts' }, ...PROJECT_STATUS]}
             className="w-36"
           />
-          <Button>Nouveau projet</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:modal', { detail: { type: 'project-create' } })); }}>Nouveau projet</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={projects} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -590,10 +590,10 @@ const TasksView: React.FC = () => {
             options={[{ value: '', label: 'Tous statuts' }, ...TASK_STATUS]}
             className="w-32"
           />
-          <Button>Nouvelle tache</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:modal', { detail: { type: 'task-create' } })); }}>Nouvelle tache</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={tasks} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -662,7 +662,7 @@ const TimesheetView: React.FC = () => {
             <Button onClick={() => setShowLogModal(true)}>Saisir du temps</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" error={timeError instanceof Error ? timeError : null} onRetry={() => timeRefetch()} />
+        <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" filterable error={timeError instanceof Error ? timeError : null} onRetry={() => timeRefetch()} />
       </Card>
 
       {showLogModal && (

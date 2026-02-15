@@ -168,7 +168,7 @@ const UnreconciledRow: React.FC<{ transaction: Transaction; currency: string }> 
         {isCredit ? '+' : '-'}{formatCurrency(transaction.amount, currency)}
       </td>
       <td className="text-center">
-        <Button size="sm" variant="secondary" leftIcon={<Link2 size={14} />}>
+        <Button size="sm" variant="secondary" leftIcon={<Link2 size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'reconcileTransaction', transactionId: transaction.id } })); }}>
           Rapprocher
         </Button>
       </td>

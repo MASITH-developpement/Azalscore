@@ -12,7 +12,7 @@ import {
   TrendingUp, Target, Calendar, Clock, Euro,
   ChevronRight, Plus, Edit, Trash2, Search,
   CheckCircle2, XCircle, FileText, Star, AlertTriangle,
-  Sparkles, ArrowLeft, Printer
+  Sparkles, ArrowLeft, Printer, Shield
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -47,7 +47,8 @@ import {
   CustomerFinancialTab,
   CustomerDocsTab,
   CustomerHistoryTab,
-  CustomerIATab
+  CustomerIATab,
+  CustomerRiskTab
 } from './components';
 
 // ============================================================
@@ -84,7 +85,7 @@ const useCustomers = (page = 1, pageSize = 25, filters?: { type?: string; search
       if (filters?.type) params.append('type', filters.type);
       if (filters?.search) params.append('search', filters.search);
       if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
-      const response = await api.get<PaginatedResponse<Customer>>(`/v1/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/v3/commercial/customers?${params}`);
       return response.data;
     },
   });
@@ -94,7 +95,7 @@ const useCustomer = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'customers', id],
     queryFn: async () => {
-      const response = await api.get<Customer>(`/v1/commercial/customers/${id}`);
+      const response = await api.get<Customer>(`/v3/commercial/customers/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -108,7 +109,7 @@ const useOpportunities = (page = 1, pageSize = 25, filters?: { status?: string; 
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.status) params.append('status', filters.status);
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
-      const response = await api.get<PaginatedResponse<Opportunity>>(`/v1/commercial/opportunities?${params}`);
+      const response = await api.get<PaginatedResponse<Opportunity>>(`/v3/commercial/opportunities?${params}`);
       return response.data;
     },
   });
@@ -118,7 +119,7 @@ const usePipelineStats = () => {
   return useQuery({
     queryKey: ['commercial', 'pipeline', 'stats'],
     queryFn: async () => {
-      const response = await api.get<PipelineStats>('/v1/commercial/pipeline/stats');
+      const response = await api.get<PipelineStats>('/v3/commercial/pipeline/stats');
       return response.data;
     },
   });
@@ -128,7 +129,7 @@ const useSalesDashboard = () => {
   return useQuery({
     queryKey: ['commercial', 'dashboard'],
     queryFn: async () => {
-      const response = await api.get<SalesDashboard>('/v1/commercial/dashboard');
+      const response = await api.get<SalesDashboard>('/v3/commercial/dashboard');
       return response.data;
     },
   });
@@ -138,7 +139,7 @@ const useCreateCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Customer>) => {
-      const response = await api.post<Customer>('/v1/commercial/customers', data);
+      const response = await api.post<Customer>('/v3/commercial/customers', data);
       return response.data;
     },
     onSuccess: () => {
@@ -151,7 +152,7 @@ const useUpdateCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Customer> }) => {
-      const response = await api.put<Customer>(`/v1/commercial/customers/${id}`, data);
+      const response = await api.put<Customer>(`/v3/commercial/customers/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -164,7 +165,7 @@ const useDeleteCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/commercial/customers/${id}`);
+      await api.delete(`/v3/commercial/customers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commercial', 'customers'] });
@@ -176,7 +177,7 @@ const useConvertProspect = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (customerId: string) => {
-      const response = await api.post<Customer>(`/v1/commercial/customers/${customerId}/convert`);
+      const response = await api.post<Customer>(`/v3/commercial/customers/${customerId}/convert`);
       return response.data;
     },
     onSuccess: () => {
@@ -273,6 +274,12 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({ customerId, onB
       label: 'Historique',
       icon: <Clock size={16} />,
       component: CustomerHistoryTab
+    },
+    {
+      id: 'risk',
+      label: 'Risque',
+      icon: <Shield size={16} />,
+      component: CustomerRiskTab
     },
     {
       id: 'ia',
@@ -638,6 +645,7 @@ const CustomersList: React.FC<CustomersListProps> = ({ onSelectCustomer, onCreat
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -916,6 +924,7 @@ const OpportunitiesList: React.FC<OpportunitiesListProps> = ({ onSelectOpportuni
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,

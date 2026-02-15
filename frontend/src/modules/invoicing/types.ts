@@ -40,6 +40,11 @@ export interface Document {
   customer_id: string;
   customer_name?: string;
   customer_email?: string;
+  customer_code?: string;
+  customer_siret?: string;
+  customer_siren?: string;
+  customer_vat_number?: string;
+  customer_legal_form?: string;
   opportunity_id?: string;
   date: string;
   due_date?: string;

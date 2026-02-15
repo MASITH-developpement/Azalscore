@@ -95,7 +95,7 @@ const usePaymentStats = () => {
   return useQuery({
     queryKey: ['payments', 'stats'],
     queryFn: async () => {
-      const response = await api.get<PaymentStats>('/v1/payments/summary').then(r => r.data);
+      const response = await api.get<PaymentStats>('/v3/payments/summary').then(r => r.data);
       return response;
     }
   });
@@ -111,7 +111,7 @@ const usePayments = (filters?: { status?: string; method?: string; date_from?: s
       if (filters?.date_from) params.append('date_from', filters.date_from);
       if (filters?.date_to) params.append('date_to', filters.date_to);
       const queryString = params.toString();
-      const url = queryString ? `/v1/payments?${queryString}` : '/v1/payments';
+      const url = queryString ? `/v3/payments?${queryString}` : '/v3/payments';
       const response = await api.get<{ items: Payment[] }>(url).then(r => r.data);
       return response?.items || [];
     }
@@ -122,7 +122,7 @@ const usePayment = (id: string) => {
   return useQuery({
     queryKey: ['payments', 'detail', id],
     queryFn: async () => {
-      const response = await api.get<Payment>(`/v1/payments/${id}`).then(r => r.data);
+      const response = await api.get<Payment>(`/v3/payments/${id}`).then(r => r.data);
       return response;
     },
     enabled: !!id
@@ -136,7 +136,7 @@ const useRefunds = (filters?: { status?: string }) => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v1/payments/refunds?${queryString}` : '/v1/payments/refunds';
+      const url = queryString ? `/v3/payments/refunds?${queryString}` : '/v3/payments/refunds';
       const response = await api.get<Refund[]>(url).then(r => r.data);
       return response;
     }
@@ -150,7 +150,7 @@ const usePaymentMethods = (filters?: { customer_id?: string }) => {
       const params = new URLSearchParams();
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/payments/methods?${queryString}` : '/v1/payments/methods';
+      const url = queryString ? `/v3/payments/methods?${queryString}` : '/v3/payments/methods';
       const response = await api.get<SavedPaymentMethod[]>(url).then(r => r.data);
       return response;
     }
@@ -161,7 +161,7 @@ const useCreateRefund = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { payment_id: string; amount: number; reason: string }) => {
-      return api.post('/v1/payments/refunds', data).then(r => r.data);
+      return api.post('/v3/payments/refunds', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
@@ -173,7 +173,7 @@ const useRetryPayment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (paymentId: string) => {
-      return api.post(`/v1/payments/${paymentId}/retry`).then(r => r.data);
+      return api.post(`/v3/payments/${paymentId}/retry`).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
@@ -424,7 +424,7 @@ const TransactionsView: React.FC<TransactionsViewProps> = ({ onViewPayment }) =>
             </div>
           </div>
         </div>
-        <DataTable columns={columns} data={payments} isLoading={isLoading} keyField="id" />
+        <DataTable columns={columns} data={payments} isLoading={isLoading} keyField="id" filterable />
       </Card>
 
       {/* Modal de remboursement */}
@@ -522,7 +522,7 @@ const RefundsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={refunds} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={refunds} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -562,7 +562,7 @@ const PaymentMethodsView: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Moyens de paiement enregistres</h3>
       </div>
-      <DataTable columns={columns} data={methods} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={methods} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -577,7 +577,7 @@ const TapToPayView: React.FC = () => {
           <p className="text-gray-600 mb-6">
             Encaissez directement avec votre smartphone grace au paiement sans contact NFC.
           </p>
-          <Button size="lg">Configurer Tap-to-Pay</Button>
+          <Button size="lg" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'configureTapToPay' } })); }}>Configurer Tap-to-Pay</Button>
         </div>
       </Card>
 

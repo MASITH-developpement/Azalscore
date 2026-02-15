@@ -134,8 +134,7 @@ const useHRDashboard = () => {
   return useQuery<HRDashboard | null, Error>({
     queryKey: ['hr', 'dashboard'],
     queryFn: async (): Promise<HRDashboard | null> => {
-      const response: any = await api.get('/v2/hr/dashboard');
-      console.log('[HR] Dashboard response:', JSON.stringify(response).slice(0, 300));
+      const response: any = await api.get('/v3/hr/dashboard');
       // Handle both direct response and wrapped { data: {...} }
       if (response?.pending_leave_requests !== undefined) {
         return response as HRDashboard;
@@ -152,7 +151,7 @@ const useDepartments = () => {
   return useQuery({
     queryKey: ['hr', 'departments'],
     queryFn: async () => {
-      const response = await api.get<{ data: Department[] } | Department[]>('/v2/hr/departments');
+      const response = await api.get<{ data: Department[] } | Department[]>('/v3/hr/departments');
       // Handle both wrapped { data: [...] } and direct [...] responses
       if (Array.isArray(response)) {
         return response;
@@ -169,7 +168,7 @@ const usePositions = () => {
   return useQuery({
     queryKey: ['hr', 'positions'],
     queryFn: async () => {
-      const response = await api.get<{ data: Position[] } | Position[]>('/v2/hr/positions');
+      const response = await api.get<{ data: Position[] } | Position[]>('/v3/hr/positions');
       // Handle both wrapped { data: [...] } and direct [...] responses
       if (Array.isArray(response)) {
         return response;
@@ -186,7 +185,7 @@ const useEmployees = (filters?: { department_id?: string; status?: string; contr
   return useQuery<Employee[], Error>({
     queryKey: ['hr', 'employees', filters],
     queryFn: async (): Promise<Employee[]> => {
-      const url = buildUrlWithParams('/v2/hr/employees', filters);
+      const url = buildUrlWithParams('/v3/hr/employees', filters);
       const response: any = await api.get(url);
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
       if (response?.items) {
@@ -204,7 +203,7 @@ const useEmployee = (id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ['hr', 'employee', id],
     queryFn: async (): Promise<Employee | null> => {
-      const response: any = await api.get(`/v1/hr/employees/${id}`);
+      const response: any = await api.get(`/v3/hr/employees/${id}`);
       if (response?.data) {
         return response.data as Employee;
       }
@@ -221,19 +220,15 @@ const useLeaveRequests = (filters?: { status?: string; type?: string }) => {
   return useQuery<LeaveRequest[], Error>({
     queryKey: ['hr', 'leave-requests', filters],
     queryFn: async (): Promise<LeaveRequest[]> => {
-      const url = buildUrlWithParams('/v2/hr/leave-requests', filters);
+      const url = buildUrlWithParams('/v3/hr/leave-requests', filters);
       const response: any = await api.get(url);
-      console.log('[HR] useLeaveRequests response:', JSON.stringify(response).slice(0, 500));
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
       if (response?.items) {
-        console.log('[HR] Found items directly:', response.items.length);
         return response.items as LeaveRequest[];
       }
       if (response?.data?.items) {
-        console.log('[HR] Found items in data:', response.data.items.length);
         return response.data.items as LeaveRequest[];
       }
-      console.log('[HR] No items found, returning empty array');
       return [];
     }
   });
@@ -243,7 +238,7 @@ const useTimeEntries = (filters?: { employee_id?: string; from_date?: string; to
   return useQuery({
     queryKey: ['hr', 'time-entries', filters],
     queryFn: async () => {
-      const url = buildUrlWithParams('/v2/hr/time-entries', filters);
+      const url = buildUrlWithParams('/v3/hr/time-entries', filters);
       const response = await api.get<TimeEntry[] | { items: TimeEntry[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
@@ -268,7 +263,7 @@ const useCreateTimeEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ employee_id, data }: { employee_id: string; data: TimeEntryCreateData }) => {
-      return api.post<TimeEntry>(`/v2/hr/employees/${employee_id}/time-entries`, data).then(r => r.data);
+      return api.post<TimeEntry>(`/v3/hr/employees/${employee_id}/time-entries`, data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'time-entries'] })
   });
@@ -278,7 +273,7 @@ const useCreateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Employee>) => {
-      return api.post<Employee>('/v2/hr/employees', data).then(r => r.data);
+      return api.post<Employee>('/v3/hr/employees', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -296,7 +291,7 @@ const useCreateLeaveRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: LeaveRequestCreateData) => {
-      const response = await api.post<LeaveRequest>('/v2/hr/leave-requests', data);
+      const response = await api.post<LeaveRequest>('/v3/hr/leave-requests', data);
       // Handle both wrapped and direct response
       return (response as { data?: LeaveRequest }).data || response;
     },
@@ -308,7 +303,7 @@ const useApproveLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response: any = await api.post(`/v2/hr/leave-requests/${id}/approve`);
+      const response: any = await api.post(`/v3/hr/leave-requests/${id}/approve`);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -319,7 +314,7 @@ const useRejectLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response: any = await api.post(`/v2/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
+      const response: any = await api.post(`/v3/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -340,7 +335,7 @@ const useUpdateLeaveRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: LeaveRequestUpdateData }) => {
-      const response: any = await api.put(`/v2/hr/leave-requests/${id}`, data);
+      const response: any = await api.put(`/v3/hr/leave-requests/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -487,7 +482,7 @@ const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({ employeeId, onB
       sidebarSections={sidebarSections}
       headerActions={headerActions}
       primaryActions={primaryActions}
-      error={(error as any) instanceof Error ? error : error ? new Error(String(error)) : null}
+      error={error ? (error as Error) : null}
       onRetry={() => refetch()}
     />
   );
@@ -768,7 +763,7 @@ const EmployeesView: React.FC<EmployeesViewProps> = ({ onSelectEmployee }) => {
           {deleteError}
         </div>
       )}
-      <DataTable columns={columns} data={employees} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={employees} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvel employe" size="lg">
         <form key={formKey} ref={formRef} onSubmit={handleSubmit}>
@@ -1320,7 +1315,7 @@ const LeaveRequestsView: React.FC = () => {
           <Button onClick={() => setShowModal(true)}>Nouvelle demande</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" error={leaveError instanceof Error ? leaveError : null} onRetry={() => leaveRefetch()} />
+      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" filterable error={leaveError instanceof Error ? leaveError : null} onRetry={() => leaveRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouvelle demande de conge">
         <form key={leaveFormKey} ref={leaveFormRef} onSubmit={handleSubmit}>
@@ -1480,7 +1475,7 @@ const useCreateDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Department>) => {
-      return api.post<Department>('/v2/hr/departments', data).then(r => r.data);
+      return api.post<Department>('/v3/hr/departments', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1491,7 +1486,7 @@ const useCreatePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Position>) => {
-      return api.post<Position>('/v2/hr/positions', data).then(r => r.data);
+      return api.post<Position>('/v3/hr/positions', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1502,7 +1497,7 @@ const useUpdateDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Department> }) => {
-      const response: any = await api.put(`/v2/hr/departments/${id}`, data);
+      const response: any = await api.put(`/v3/hr/departments/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
@@ -1514,7 +1509,7 @@ const useUpdatePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Position> }) => {
-      const response: any = await api.put(`/v2/hr/positions/${id}`, data);
+      const response: any = await api.put(`/v3/hr/positions/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
@@ -1526,7 +1521,7 @@ const useUpdateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Employee> }) => {
-      const response: any = await api.put(`/v2/hr/employees/${id}`, data);
+      const response: any = await api.put(`/v3/hr/employees/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -1538,7 +1533,7 @@ const useDeleteDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v2/hr/departments/${id}`);
+      return api.delete(`/v3/hr/departments/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1549,7 +1544,7 @@ const useDeletePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v2/hr/positions/${id}`);
+      return api.delete(`/v3/hr/positions/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1560,7 +1555,7 @@ const useDeleteEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v2/hr/employees/${id}`);
+      return api.delete(`/v3/hr/employees/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -1761,7 +1756,7 @@ const DepartmentsView: React.FC = () => {
           {deleteError}
         </div>
       )}
-      <DataTable columns={columns} data={departments} isLoading={isLoading} keyField="id" error={deptError instanceof Error ? deptError : null} onRetry={() => deptRefetch()} />
+      <DataTable columns={columns} data={departments} isLoading={isLoading} keyField="id" filterable error={deptError instanceof Error ? deptError : null} onRetry={() => deptRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau departement" size="md">
         <DepartmentForm
@@ -2034,7 +2029,7 @@ const PositionsView: React.FC = () => {
           {deleteError}
         </div>
       )}
-      <DataTable columns={columns} data={positions} isLoading={isLoading} keyField="id" error={posError instanceof Error ? posError : null} onRetry={() => posRefetch()} />
+      <DataTable columns={columns} data={positions} isLoading={isLoading} keyField="id" filterable error={posError instanceof Error ? posError : null} onRetry={() => posRefetch()} />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau poste" size="lg">
         <PositionForm
@@ -2206,7 +2201,7 @@ const TimesheetsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" error={tsError instanceof Error ? tsError : null} onRetry={() => tsRefetch()} />
+      <DataTable columns={columns} data={timeEntries} isLoading={isLoading} keyField="id" filterable error={tsError instanceof Error ? tsError : null} onRetry={() => tsRefetch()} />
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Nouvelle saisie de temps">
         <TimeEntryForm
           onSubmit={handleCreate}

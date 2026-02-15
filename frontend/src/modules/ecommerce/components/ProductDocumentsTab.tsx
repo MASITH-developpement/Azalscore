@@ -17,7 +17,7 @@ import { formatDateTime } from '@/utils/formatters';
  */
 export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: product }) => {
   const handleUpload = () => {
-    console.log('Upload document for product:', product.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadDocument', productId: product.id } }));
   };
 
   return (
@@ -38,7 +38,7 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted">Image du produit</p>
-              <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />} className="mt-2">
+              <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />} className="mt-2" onClick={() => { window.open(product.image_url, '_blank'); }}>
                 Voir en taille reelle
               </Button>
             </div>
@@ -47,7 +47,7 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
           <div className="azals-empty azals-empty--sm">
             <Image size={32} className="text-muted" />
             <p className="text-muted">Aucune image principale</p>
-            <Button variant="secondary" size="sm" leftIcon={<Upload size={14} />} className="mt-2">
+            <Button variant="secondary" size="sm" leftIcon={<Upload size={14} />} className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'uploadImage', productId: product.id } })); }}>
               Ajouter une image
             </Button>
           </div>
@@ -99,7 +99,7 @@ export const ProductDocumentsTab: React.FC<TabContentProps<Product>> = ({ data: 
                     {doc.type} - {formatFileSize(doc.size)} - {formatDateTime(doc.uploaded_at)}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={() => { window.open(doc.url, '_blank'); }}>
                   Telecharger
                 </Button>
               </div>

@@ -37,6 +37,7 @@ import {
   HeadphonesIcon,
   Contact,
   Bot,
+  Download,
   type LucideIcon,
 } from 'lucide-react';
 import { useCapabilities, CapabilityGuard } from '@core/capabilities';
@@ -74,6 +75,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   subscriptions: CalendarClock,
   helpdesk: HeadphonesIcon,
   marceau: Bot,
+  download: Download,
 };
 
 // ============================================================
@@ -401,6 +403,47 @@ const MENU_SECTIONS: MenuSection[] = [
     ],
   },
   {
+    id: 'import',
+    title: 'Import de Données',
+    items: [
+      {
+        id: 'import-odoo',
+        label: 'Import Odoo',
+        icon: 'download',
+        path: '/import/odoo',
+        capability: 'import.odoo.config',
+      },
+      {
+        id: 'import-axonaut',
+        label: 'Import Axonaut',
+        icon: 'download',
+        path: '/import/axonaut',
+        capability: 'import.axonaut.config',
+      },
+      {
+        id: 'import-pennylane',
+        label: 'Import Pennylane',
+        icon: 'download',
+        path: '/import/pennylane',
+        capability: 'import.pennylane.config',
+      },
+      {
+        id: 'import-sage',
+        label: 'Import Sage',
+        icon: 'download',
+        path: '/import/sage',
+        capability: 'import.sage.config',
+      },
+      {
+        id: 'import-chorus',
+        label: 'Import Chorus Pro',
+        icon: 'download',
+        path: '/import/chorus',
+        capability: 'import.chorus.config',
+      },
+    ],
+  },
+  {
     id: 'admin',
     title: 'Administration',
     capability: 'admin.view',
@@ -569,8 +612,6 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
 
   // DEBUG: Log les capabilities utilisées par le menu
   React.useEffect(() => {
-    console.log('[Menu] Section:', section.title, 'Capabilities count:', capabilities.length);
-    console.log('[Menu] accounting.view in capabilities:', capabilities.includes('accounting.view'));
   }, [capabilities, section.title]);
 
   // Filtrer les items selon les capacités
@@ -580,7 +621,6 @@ const MenuSectionComponent: React.FC<MenuSectionComponentProps> = ({
       if (!item.capability) return true;
       const hasCapability = capabilities.includes(item.capability);
       if (item.id === 'accounting') {
-        console.log('[Menu] Filtering accounting:', item.capability, '=', hasCapability);
       }
       return hasCapability;
     });
@@ -622,25 +662,12 @@ interface DynamicMenuProps {
 export const DynamicMenu: React.FC<DynamicMenuProps> = ({ onItemClick }) => {
   const { capabilities, isLoading } = useCapabilities();
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('[DynamicMenu] Capabilities state:', {
-      isLoading,
-      count: capabilities.length,
-      capabilities: capabilities.slice(0, 10),
-    });
-  }, [capabilities, isLoading]);
-
   if (isLoading) {
     return (
       <nav className="azals-menu">
         <div className="azals-menu__loading">Chargement du menu...</div>
       </nav>
     );
-  }
-
-  if (capabilities.length === 0) {
-    console.warn('[DynamicMenu] No capabilities available, menu will be empty');
   }
 
   return (

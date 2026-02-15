@@ -25,6 +25,7 @@ import {
 } from '@ui/standards';
 import { z } from 'zod';
 import type { PaginatedResponse, TableColumn } from '@/types';
+import { unwrapApiResponse } from '@/types';
 import type { Partner, Client } from './types';
 import {
   PARTNER_TYPE_CONFIG, CLIENT_TYPE_CONFIG,
@@ -70,7 +71,7 @@ const usePartners = (type: 'client' | 'supplier' | 'contact', page = 1, pageSize
     queryKey: ['partners', type, page, pageSize],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PartnerLegacy>>(
-        `/v1/partners/${type}s?page=${page}&page_size=${pageSize}`
+        `/v3/partners/${type}s?page=${page}&page_size=${pageSize}`
       );
       return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
@@ -81,7 +82,7 @@ const usePartner = (type: 'client' | 'supplier' | 'contact', id: string | undefi
   return useQuery({
     queryKey: ['partner', type, id],
     queryFn: async () => {
-      const response = await api.get<Partner>(`/v1/partners/${type}s/${id}`);
+      const response = await api.get<Partner>(`/v3/partners/${type}s/${id}`);
       return response as unknown as Partner;
     },
     enabled: !!id,
@@ -92,7 +93,7 @@ const useCreatePartner = (type: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<PartnerLegacy>) => {
-      const response = await api.post<PartnerLegacy>(`/v1/partners/${type}s`, data);
+      const response = await api.post<PartnerLegacy>(`/v3/partners/${type}s`, data);
       return response as unknown as PartnerLegacy;
     },
     onSuccess: () => {
@@ -184,6 +185,7 @@ const PartnerList: React.FC<PartnerListProps> = ({ type, title }) => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -227,7 +229,7 @@ export const ClientsPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'clients', page, pageSize],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<PartnerLegacy>>(`/v1/partners/clients?page=${page}&page_size=${pageSize}`);
+      const response = await api.get<PaginatedResponse<PartnerLegacy>>(`/v3/partners/clients?page=${page}&page_size=${pageSize}`);
       return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
   });
@@ -281,6 +283,7 @@ export const ClientsPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -313,7 +316,7 @@ export const ContactsPage: React.FC = () => {
   const { data: clientsData, isLoading: loadingClients } = useQuery({
     queryKey: ['partners', 'clients-for-select'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<PartnerLegacy>>('/v1/partners/clients?page=1&page_size=100&is_active=true');
+      const response = await api.get<PaginatedResponse<PartnerLegacy>>('/v3/partners/clients?page=1&page_size=100&is_active=true');
       return response as unknown as PaginatedResponse<PartnerLegacy>;
     },
   });
@@ -322,7 +325,7 @@ export const ContactsPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['partners', 'contacts', page, pageSize],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<any>>(`/v1/partners/contacts?page=${page}&page_size=${pageSize}`);
+      const response = await api.get<PaginatedResponse<any>>(`/v3/partners/contacts?page=${page}&page_size=${pageSize}`);
       return response as unknown as PaginatedResponse<any>;
     },
   });
@@ -330,7 +333,7 @@ export const ContactsPage: React.FC = () => {
   // Mutation pour créer un contact
   const createContact = useMutation({
     mutationFn: async (contactData: any) => {
-      const response = await api.post('/v1/partners/contacts', contactData);
+      const response = await api.post('/v3/partners/contacts', contactData);
       return response;
     },
     onSuccess: () => {
@@ -425,6 +428,7 @@ export const ContactsPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -455,7 +459,6 @@ export const ContactsPage: React.FC = () => {
               fields={contactFields}
               schema={contactSchema}
               onSubmit={async (formData) => {
-                console.log('Contact form data:', formData);
                 await createContact.mutateAsync(formData);
               }}
               onCancel={() => setShowCreate(false)}
@@ -735,8 +738,8 @@ const useClient = (id: string) => {
   return useQuery({
     queryKey: ['partners', 'clients', id],
     queryFn: async () => {
-      const response = await api.get<Client>(`/v1/partners/clients/${id}`);
-      return (response as any)?.data ?? response;
+      const response = await api.get<Client>(`/v3/partners/clients/${id}`);
+      return unwrapApiResponse<Client>(response);
     },
     enabled: !!id && id !== 'new',
   });
@@ -746,8 +749,8 @@ const useCreateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<ClientFormData>) => {
-      const response = await api.post<Client>('/v1/partners/clients', data);
-      return (response as any)?.data ?? response;
+      const response = await api.post<Client>('/v3/partners/clients', data);
+      return unwrapApiResponse<Client>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
@@ -759,8 +762,8 @@ const useUpdateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ClientFormData> }) => {
-      const response = await api.put<Client>(`/v1/partners/clients/${id}`, data);
-      return (response as any)?.data ?? response;
+      const response = await api.put<Client>(`/v3/partners/clients/${id}`, data);
+      return unwrapApiResponse<Client>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners', 'clients'] });
@@ -814,15 +817,15 @@ export const ClientFormPage: React.FC = () => {
       setForm({
         code: client.code || '',
         name: client.name || '',
-        type: (client as any).customer_type || (client as any).type || 'CUSTOMER',
+        type: client.client_type || 'CUSTOMER',
         email: client.email || '',
         phone: client.phone || '',
-        address_line1: (client as any).address_line1 || (client as any).address || '',
+        address_line1: client.address_line1 || client.address || '',
         city: client.city || '',
         postal_code: client.postal_code || '',
-        country_code: (client as any).country_code || 'FR',
-        tax_id: (client as any).tax_id || '',
-        notes: (client as any).notes || '',
+        country_code: client.country_code || 'FR',
+        tax_id: client.tax_id || '',
+        notes: client.notes || '',
       });
     }
   }, [client]);
@@ -832,7 +835,7 @@ export const ClientFormPage: React.FC = () => {
     try {
       if (isNew) {
         const result = await createMutation.mutateAsync(form);
-        navigate(`/partners/clients/${(result as any).id}`);
+        navigate(`/partners/clients/${result.id}`);
       } else {
         await updateMutation.mutateAsync({ id: id!, data: form });
         navigate(`/partners/clients/${id}`);

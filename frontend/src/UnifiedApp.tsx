@@ -60,6 +60,13 @@ const SettingsModule = lazy(() => import('./modules/settings'));
 const MarceauModule = lazy(() => import('./modules/marceau'));
 const SaisieModule = lazy(() => import('./modules/saisie'));
 
+// Import modules
+const OdooImport = lazy(() => import('./modules/import').then(m => ({ default: m.OdooImportModule })));
+const AxonautImport = lazy(() => import('./modules/import').then(m => ({ default: m.AxonautImportModule })));
+const PennylaneImport = lazy(() => import('./modules/import').then(m => ({ default: m.PennylaneImportModule })));
+const SageImport = lazy(() => import('./modules/import').then(m => ({ default: m.SageImportModule })));
+const ChorusImport = lazy(() => import('./modules/import').then(m => ({ default: m.ChorusImportModule })));
+
 // ============================================================
 // VIEW KEY → CAPABILITY MAPPING
 // Maps each ViewKey to the capability required to access it.
@@ -95,6 +102,11 @@ const VIEW_CAPABILITY_MAP: Partial<Record<ViewKey, string>> = {
   'compta': 'accounting.view',
   'tresorerie': 'treasury.view',
   'admin': 'admin.view',
+  'import-odoo': 'import.odoo.config',
+  'import-axonaut': 'import.axonaut.config',
+  'import-pennylane': 'import.pennylane.config',
+  'import-sage': 'import.sage.config',
+  'import-chorus': 'import.chorus.config',
 };
 
 // ============================================================
@@ -233,11 +245,9 @@ const Login: React.FC = () => {
       // Définir le tenant AVANT le login
       const normalizedTenant = tenant.toLowerCase().trim();
       setTenantId(normalizedTenant);
-      console.log('[LOGIN] Tenant défini:', normalizedTenant);
 
       // Utiliser la fonction login du store qui gère tout (tokens + user data)
       await login({ email, password });
-      console.log('[LOGIN] Connexion réussie');
     } catch (err) {
       console.error('[LOGIN] Erreur:', err);
       setError(err instanceof Error ? err.message : 'Identifiants invalides');
@@ -460,6 +470,18 @@ const ViewRenderer: React.FC<{ viewKey: ViewKey }> = ({ viewKey }) => {
       case 'marceau':
         return <MarceauModule />;
 
+      // Import
+      case 'import-odoo':
+        return <OdooImport />;
+      case 'import-axonaut':
+        return <AxonautImport />;
+      case 'import-pennylane':
+        return <PennylaneImport />;
+      case 'import-sage':
+        return <SageImport />;
+      case 'import-chorus':
+        return <ChorusImport />;
+
       // Système
       case 'admin':
         return <AdminModule />;
@@ -516,7 +538,7 @@ const AppContent: React.FC = () => {
   const loadCapabilities = useCapabilitiesStore((state) => state.loadCapabilities);
   const capStatus = useCapabilitiesStore((state) => state.status);
 
-  // Charger les capabilities au montage (production : appel API /v1/auth/capabilities)
+  // Charger les capabilities au montage (production : appel API /v3/auth/capabilities)
   useEffect(() => {
     if (capStatus === 'idle') {
       loadCapabilities();

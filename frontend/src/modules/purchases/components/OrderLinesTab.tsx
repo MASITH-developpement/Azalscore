@@ -25,7 +25,7 @@ export const OrderLinesTab: React.FC<TabContentProps<PurchaseOrder>> = ({ data: 
         icon={<List size={18} />}
         actions={
           canEdit && (
-            <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />}>
+            <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addOrderLine', orderId: order.id } })); }}>
               Ajouter une ligne
             </Button>
           )
@@ -86,7 +86,7 @@ export const OrderLinesTab: React.FC<TabContentProps<PurchaseOrder>> = ({ data: 
             <AlertCircle size={32} className="text-muted" />
             <p className="text-muted">Aucune ligne de commande</p>
             {canEdit && (
-              <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />} className="mt-2">
+              <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />} className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addOrderLine', orderId: order.id } })); }}>
                 Ajouter une ligne
               </Button>
             )}

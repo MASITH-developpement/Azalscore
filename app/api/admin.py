@@ -17,6 +17,11 @@ from app.core.cache import cached, invalidate_cache
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_id
 from app.core.models import User
+from app.core.modules_registry import (
+    get_all_modules,
+    get_modules_grouped_by_category,
+    get_categories,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -163,3 +168,28 @@ def get_admin_dashboard(
     """Dashboard d'administration avec statistiques systeme (cache 5min)."""
     data = _get_admin_dashboard_data(db, tenant_id)
     return AdminDashboard(**data)
+
+
+# ============================================================================
+# MODULES DISPONIBLES (source unique de verite)
+# ============================================================================
+
+@router.get("/modules/available")
+def get_available_modules():
+    """
+    Liste tous les modules disponibles groupes par categorie.
+
+    C'est la SOURCE UNIQUE DE VERITE pour les modules.
+    Le frontend doit utiliser cet endpoint au lieu de listes codees en dur.
+    """
+    return {
+        "categories": get_categories(),
+        "modules": get_all_modules(),
+        "modules_by_category": get_modules_grouped_by_category(),
+    }
+
+
+@router.get("/modules/list")
+def get_modules_list():
+    """Liste simple des modules (pour compatibilite)."""
+    return {"items": get_all_modules()}

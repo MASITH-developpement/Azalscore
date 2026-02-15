@@ -30,11 +30,11 @@ export const AffaireDocsTab: React.FC<TabContentProps<Affaire>> = ({ data: affai
     <div className="azals-std-tab-content">
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Download size={16} />}>
+        <Button variant="secondary" leftIcon={<Download size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadAll', affaireId: affaire.id } })); }}>
           Télécharger tout
         </Button>
         {canEdit && (
-          <Button variant="ghost" leftIcon={<Upload size={16} />}>
+          <Button variant="ghost" leftIcon={<Upload size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addDocument', affaireId: affaire.id } })); }}>
             Ajouter un document
           </Button>
         )}
@@ -102,7 +102,7 @@ export const AffaireDocsTab: React.FC<TabContentProps<Affaire>> = ({ data: affai
               <File size={32} className="text-muted" />
               <p className="text-muted">Aucune pièce jointe</p>
               {canEdit && (
-                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addDocument', affaireId: affaire.id } })); }}>
                   Ajouter
                 </Button>
               )}
@@ -285,14 +285,14 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
         </span>
       </div>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Aperçu">
+        <button className="azals-btn-icon" title="Aperçu" onClick={() => { window.open(document.url, '_blank'); }}>
           <Eye size={16} />
         </button>
-        <button className="azals-btn-icon" title="Télécharger">
+        <button className="azals-btn-icon" title="Télécharger" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'download', documentId: document.id } })); }}>
           <Download size={16} />
         </button>
         {canEdit && (
-          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'deleteDocument', documentId: document.id } })); }}>
             <Trash2 size={16} />
           </button>
         )}

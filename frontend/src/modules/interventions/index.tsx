@@ -3,7 +3,7 @@
  * Gestion des interventions terrain - Migré vers BaseViewStandard
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -492,10 +492,16 @@ const InterventionDetailView: React.FC<InterventionDetailViewProps> = ({ interve
 // LIST VIEW
 // ============================================================================
 
+// Import column filter types
+import type { ColumnFilterConfig, ColumnFilters } from '@ui/tables';
+
 const InterventionsListView: React.FC<{ onNewIntervention?: () => void; onEditIntervention?: (id: string) => void }> = ({ onNewIntervention, onEditIntervention }) => {
   const [filterStatut, setFilterStatut] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterPriorite, setFilterPriorite] = useState<string>('');
+
+  // Column filters state
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
   const [selectedIntervention, setSelectedIntervention] = useState<Intervention | null>(null);
 
   // Workflow: planifier modal from list
@@ -526,6 +532,75 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void; onEditIn
       await deleteIntervention.mutateAsync(row.id);
     }
   };
+
+  // Column filter configurations
+  const columnFilterConfigs: Record<string, ColumnFilterConfig> = {
+    reference: { type: 'text', placeholder: 'Filtrer par référence...' },
+    titre: { type: 'text', placeholder: 'Filtrer par titre...' },
+    client_name: { type: 'text', placeholder: 'Filtrer par client...' },
+    type_intervention: {
+      type: 'select',
+      options: TYPES_INTERVENTION,
+    },
+    corps_etat: {
+      type: 'select',
+      options: Object.entries(CORPS_ETAT_CONFIG).map(([value, config]) => ({
+        value,
+        label: config.label,
+      })),
+    },
+    priorite: {
+      type: 'select',
+      options: PRIORITES,
+    },
+    intervenant_name: { type: 'text', placeholder: 'Filtrer par intervenant...' },
+    statut: {
+      type: 'select',
+      options: STATUTS,
+    },
+  };
+
+  // Handle column filter change
+  const handleColumnFilterChange = useCallback((columnId: string, value: string | string[] | null) => {
+    setColumnFilters(prev => {
+      if (value === null || value === '') {
+        const { [columnId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [columnId]: value };
+    });
+  }, []);
+
+  // Clear all column filters
+  const handleClearAllFilters = useCallback(() => {
+    setColumnFilters({});
+  }, []);
+
+  // Filter data based on column filters
+  const filteredInterventions = useMemo(() => {
+    if (Object.keys(columnFilters).length === 0) {
+      return interventions;
+    }
+
+    return interventions.filter((row) => {
+      return Object.entries(columnFilters).every(([columnId, filterValue]) => {
+        if (!filterValue) return true;
+
+        const cellValue = row[columnId as keyof Intervention];
+        if (cellValue === null || cellValue === undefined) {
+          return filterValue === '';
+        }
+
+        const config = columnFilterConfigs[columnId];
+        if (config?.type === 'select') {
+          return String(cellValue) === filterValue;
+        }
+
+        // Text filter - case insensitive contains
+        return String(cellValue).toLowerCase().includes(String(filterValue).toLowerCase());
+      });
+    });
+  }, [interventions, columnFilters]);
 
   const columns: TableColumn<Intervention>[] = [
     { id: 'reference', header: 'Référence', accessor: 'reference', render: (v) => (
@@ -620,7 +695,20 @@ const InterventionsListView: React.FC<{ onNewIntervention?: () => void; onEditIn
             <Button onClick={onNewIntervention}>Nouvelle intervention</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={interventions} isLoading={isLoading} keyField="id" error={interventionsError instanceof Error ? interventionsError : null} onRetry={() => refetchInterventions()} />
+        <DataTable
+          columns={columns}
+          data={filteredInterventions}
+          isLoading={isLoading}
+          keyField="id"
+          error={interventionsError instanceof Error ? interventionsError : null}
+          onRetry={() => refetchInterventions()}
+          columnFilters={{
+            filters: columnFilters,
+            configs: columnFilterConfigs,
+            onFilterChange: handleColumnFilterChange,
+            onClearAllFilters: handleClearAllFilters,
+          }}
+        />
       </Card>
 
       {/* Detail View with BaseViewStandard */}
@@ -755,7 +843,7 @@ const DonneursOrdreView: React.FC = () => {
 
   const createDonneur = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return api.post('/v2/interventions/donneurs-ordre', data);
+      return api.post('/v3/interventions/donneurs-ordre', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
@@ -812,7 +900,8 @@ const DonneursOrdreView: React.FC = () => {
         <h3 className="text-lg font-semibold">Donneurs d'ordre</h3>
         <Button onClick={() => setShowCreate(true)}>Nouveau donneur d'ordre</Button>
       </div>
-      <DataTable columns={columns} data={donneursOrdre} isLoading={isLoading} keyField="id" error={donneursError instanceof Error ? donneursError : null} onRetry={() => refetchDonneurs()} />
+      <DataTable columns={columns} data={donneursOrdre} isLoading={isLoading} keyField="id"
+          filterable error={donneursError instanceof Error ? donneursError : null} onRetry={() => refetchDonneurs()} />
 
       {showCreate && (
         <Modal isOpen onClose={closeCreateModal} title="Nouveau donneur d'ordre">

@@ -241,13 +241,13 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder, highlight }) =
 
       {workOrder.status === 'READY' && (
         <div className="azals-work-order-card__actions">
-          <Button size="sm" leftIcon={<Play size={14} />}>Demarrer</Button>
+          <Button size="sm" leftIcon={<Play size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'startWorkOrder', workOrderId: workOrder.id } })); }}>Demarrer</Button>
         </div>
       )}
       {workOrder.status === 'IN_PROGRESS' && (
         <div className="azals-work-order-card__actions">
-          <Button size="sm" variant="secondary" leftIcon={<Pause size={14} />}>Pause</Button>
-          <Button size="sm" leftIcon={<CheckCircle size={14} />}>Terminer</Button>
+          <Button size="sm" variant="secondary" leftIcon={<Pause size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'pauseWorkOrder', workOrderId: workOrder.id } })); }}>Pause</Button>
+          <Button size="sm" leftIcon={<CheckCircle size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'completeWorkOrder', workOrderId: workOrder.id } })); }}>Terminer</Button>
         </div>
       )}
     </div>

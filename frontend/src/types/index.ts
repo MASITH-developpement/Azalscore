@@ -87,6 +87,18 @@ export interface ApiRequestConfig {
   timeout?: number;
   retries?: number;
   headers?: Record<string, string>;
+  responseType?: 'json' | 'blob' | 'text' | 'arraybuffer';
+}
+
+/**
+ * Utilitaire pour extraire les données d'une réponse API
+ * Gère le cas où la réponse est wrappée dans { data: ... } ou non
+ */
+export function unwrapApiResponse<T>(response: ApiResponse<T> | T): T {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return (response as ApiResponse<T>).data;
+  }
+  return response as T;
 }
 
 // ============================================================

@@ -9,6 +9,7 @@ export { SupplierOrdersTab } from './SupplierOrdersTab';
 export { SupplierInvoicesTab } from './SupplierInvoicesTab';
 export { SupplierDocumentsTab } from './SupplierDocumentsTab';
 export { SupplierHistoryTab } from './SupplierHistoryTab';
+export { SupplierRiskTab } from './SupplierRiskTab';
 export { SupplierIATab } from './SupplierIATab';
 
 // Order tabs

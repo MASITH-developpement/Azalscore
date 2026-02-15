@@ -69,7 +69,7 @@ const useTreasurySummary = () => {
   return useQuery({
     queryKey: ['treasury', 'summary'],
     queryFn: async () => {
-      const response = await api.get<TreasurySummary>('/v1/treasury/summary');
+      const response = await api.get<TreasurySummary>('/v3/treasury/summary');
       return response.data;
     },
   });
@@ -79,7 +79,7 @@ const useBankAccounts = () => {
   return useQuery({
     queryKey: ['treasury', 'accounts'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<BankAccount>>('/v1/treasury/accounts');
+      const response = await api.get<PaginatedResponse<BankAccount>>('/v3/treasury/accounts');
       return response.data;
     },
   });
@@ -90,8 +90,8 @@ const useTransactions = (accountId?: string, page = 1, pageSize = 25) => {
     queryKey: ['treasury', 'transactions', accountId, page, pageSize],
     queryFn: async () => {
       const url = accountId
-        ? `/v1/treasury/accounts/${accountId}/transactions?page=${page}&page_size=${pageSize}`
-        : `/v1/treasury/transactions?page=${page}&page_size=${pageSize}`;
+        ? `/v3/treasury/accounts/${accountId}/transactions?page=${page}&page_size=${pageSize}`
+        : `/v3/treasury/transactions?page=${page}&page_size=${pageSize}`;
       const response = await api.get<PaginatedResponse<Transaction>>(url);
       return response.data;
     },
@@ -102,7 +102,7 @@ const useForecast = (days = 30) => {
   return useQuery({
     queryKey: ['treasury', 'forecast', days],
     queryFn: async () => {
-      const response = await api.get<ForecastData[]>(`/v1/treasury/forecast?days=${days}`);
+      const response = await api.get<ForecastData[]>(`/v3/treasury/forecast?days=${days}`);
       return response.data;
     },
   });
@@ -117,7 +117,7 @@ const useReconcileTransaction = () => {
       documentType: string;
       documentId: string;
     }) => {
-      await api.post(`/v1/treasury/transactions/${transactionId}/reconcile`, {
+      await api.post(`/v3/treasury/transactions/${transactionId}/reconcile`, {
         document_type: documentType,
         document_id: documentId,
       });
@@ -132,7 +132,7 @@ const useBankAccount = (id: string) => {
   return useQuery({
     queryKey: ['treasury', 'account', id],
     queryFn: async () => {
-      const response = await api.get<BankAccount>(`/v1/treasury/accounts/${id}`);
+      const response = await api.get<BankAccount>(`/v3/treasury/accounts/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -277,7 +277,7 @@ const BankAccountDetailView: React.FC = () => {
       label: 'Synchroniser',
       icon: <RefreshCw size={16} />,
       variant: 'secondary',
-      onClick: () => console.log('Sync account', account.id)
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'syncBankAccount', accountId: account.id } })); },
     },
     {
       id: 'edit',
@@ -520,6 +520,7 @@ export const BankAccountsPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           error={error && typeof error === 'object' && 'message' in error ? error as Error : null}
           onRetry={() => refetch()}
@@ -616,7 +617,8 @@ const TransactionsList: React.FC<TransactionsListProps> = ({ accountId, maxItems
         columns={columns}
         data={data?.items.slice(0, maxItems) || []}
         keyField="id"
-        isLoading={isLoading}
+          filterable
+          isLoading={isLoading}
         pagination={
           !maxItems
             ? {

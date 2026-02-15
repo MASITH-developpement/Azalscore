@@ -19,7 +19,7 @@ export const EntryDocumentsTab: React.FC<TabContentProps<Entry>> = ({ data: entr
   const relatedEntries = entry.related_entries || [];
 
   const handleUpload = () => {
-    console.log('Upload attachment for entry:', entry.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addJustificatif', entryId: entry.id } }));
   };
 
   return (
@@ -35,7 +35,7 @@ export const EntryDocumentsTab: React.FC<TabContentProps<Entry>> = ({ data: entr
                 {entry.source_document_type || 'Document commercial'}
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'invoicing', params: { documentId: entry.source_document_id } } })); }}>
               Voir
             </Button>
           </div>
@@ -73,7 +73,7 @@ export const EntryDocumentsTab: React.FC<TabContentProps<Entry>> = ({ data: entr
                 <div className="text-right font-medium">
                   {formatCurrency(related.total_debit)}
                 </div>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'comptabilite', params: { entryId: related.id } } })); }}>
                   Voir
                 </Button>
               </div>

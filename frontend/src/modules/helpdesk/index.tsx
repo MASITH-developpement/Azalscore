@@ -80,7 +80,7 @@ const useHelpdeskDashboard = () => {
   return useQuery({
     queryKey: ['helpdesk', 'dashboard'],
     queryFn: async () => {
-      return api.get<HelpdeskDashboard>('/v1/helpdesk/dashboard').then(r => r.data);
+      return api.get<HelpdeskDashboard>('/v3/helpdesk/dashboard').then(r => r.data);
     }
   });
 };
@@ -89,7 +89,7 @@ const useTicketCategories = () => {
   return useQuery({
     queryKey: ['helpdesk', 'categories'],
     queryFn: async () => {
-      return api.get<TicketCategory[]>('/v1/helpdesk/categories').then(r => r.data);
+      return api.get<TicketCategory[]>('/v3/helpdesk/categories').then(r => r.data);
     }
   });
 };
@@ -103,7 +103,7 @@ const useTickets = (filters?: { status?: string; priority?: string; category_id?
       if (filters?.priority) params.append('priority', filters.priority);
       if (filters?.category_id) params.append('category_id', filters.category_id);
       const queryString = params.toString();
-      const url = queryString ? `/v1/helpdesk/tickets?${queryString}` : '/v1/helpdesk/tickets';
+      const url = queryString ? `/v3/helpdesk/tickets?${queryString}` : '/v3/helpdesk/tickets';
       return api.get<Ticket[]>(url).then(r => r.data);
     }
   });
@@ -113,7 +113,7 @@ const useTicket = (id: string) => {
   return useQuery({
     queryKey: ['helpdesk', 'tickets', id],
     queryFn: async () => {
-      return api.get<Ticket>(`/v1/helpdesk/tickets/${id}`).then(r => r.data);
+      return api.get<Ticket>(`/v3/helpdesk/tickets/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -123,7 +123,7 @@ const useKnowledgeArticles = () => {
   return useQuery({
     queryKey: ['helpdesk', 'articles'],
     queryFn: async () => {
-      return api.get<KnowledgeArticle[]>('/v1/helpdesk/articles').then(r => r.data);
+      return api.get<KnowledgeArticle[]>('/v3/helpdesk/articles').then(r => r.data);
     }
   });
 };
@@ -132,7 +132,7 @@ const useCreateTicket = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Ticket>) => {
-      return api.post('/v1/helpdesk/tickets', data).then(r => r.data);
+      return api.post('/v3/helpdesk/tickets', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
   });
@@ -142,7 +142,7 @@ const useUpdateTicketStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v1/helpdesk/tickets/${id}`, { status }).then(r => r.data);
+      return api.patch(`/v3/helpdesk/tickets/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
   });
@@ -298,7 +298,7 @@ const TicketDetailView: React.FC<TicketDetailViewProps> = ({ ticketId, onBack })
       id: 'edit',
       label: 'Modifier',
       icon: <Edit size={16} />,
-      onClick: () => console.log('Edit ticket'),
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editTicket', ticketId: ticket.id } })); },
     },
   ];
 
@@ -401,7 +401,7 @@ const TicketsView: React.FC<{ onSelectTicket: (id: string) => void }> = ({ onSel
             <Button onClick={() => setShowModal(true)}>Nouveau ticket</Button>
           </div>
         </div>
-        <DataTable columns={columns} data={tickets} isLoading={isLoading} keyField="id" />
+        <DataTable columns={columns} data={tickets} isLoading={isLoading} keyField="id" filterable />
       </Card>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nouveau ticket" size="lg">
@@ -484,9 +484,9 @@ const CategoriesView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Categories</h3>
-        <Button>Nouvelle categorie</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createCategory' } })); }}>Nouvelle categorie</Button>
       </div>
-      <DataTable columns={columns} data={categories} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={categories} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -530,10 +530,10 @@ const KnowledgeBaseView: React.FC = () => {
             ]}
             className="w-32"
           />
-          <Button>Nouvel article</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createArticle' } })); }}>Nouvel article</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={filteredData} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };

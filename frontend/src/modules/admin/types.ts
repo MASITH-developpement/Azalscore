@@ -51,6 +51,10 @@ export interface Role {
   user_count: number;
   created_at: string;
   created_by_name?: string | null;
+  level?: number;
+  requires_approval?: boolean;
+  max_users?: number;
+  is_active?: boolean;
 }
 
 /**

@@ -38,7 +38,7 @@ from .models import (
     TicketSource,
     TicketStatus,
 )
-from .router import router
+from .router_crud import router
 from .service import HelpdeskService
 
 __all__ = [

@@ -15,7 +15,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQueryClient } from '@
 import { BrowserRouter } from 'react-router-dom';
 import { tokenManager, api } from '@core/api-client';
 import { useTranslation } from './modules/i18n';
-import { LogOut, Loader2, ChevronDown, Plus, Users, Package, Truck, Wrench, X, LayoutGrid, User, Settings, Search, FileText, ShoppingCart, Star, Clock, Copy, ArrowRight, Database, AlertTriangle } from 'lucide-react';
+import { LogOut, Loader2, ChevronDown, Plus, Users, Package, Truck, Wrench, X, LayoutGrid, User, Search, FileText, Star, Clock, Database, AlertTriangle } from 'lucide-react';
 import { setInterfaceMode } from './utils/interfaceMode';
 import { isDemoMode, setDemoMode } from './utils/demoMode';
 import { COLORS } from '@core/design-tokens';
@@ -81,7 +81,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         // Search clients
         try {
-          const clientsRes = await api.get<{ items: any[] }>(`/v1/partners/clients?search=${encodeURIComponent(query)}&page_size=5`);
+          const clientsRes = await api.get<{ items: any[] }>(`/v3/partners/clients?search=${encodeURIComponent(query)}&page_size=5`);
           const clients = (clientsRes as any)?.items || [];
           clients.forEach((c: any) => {
             searchResults.push({
@@ -96,7 +96,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         // Search documents (invoices/quotes)
         try {
-          const docsRes = await api.get<{ items: any[] }>(`/v1/commercial/documents?search=${encodeURIComponent(query)}&page_size=5`);
+          const docsRes = await api.get<{ items: any[] }>(`/v3/commercial/documents?search=${encodeURIComponent(query)}&page_size=5`);
           const docs = (docsRes as any)?.items || [];
           docs.forEach((d: any) => {
             searchResults.push({
@@ -111,7 +111,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         // Search products
         try {
-          const productsRes = await api.get<{ items: any[] }>(`/v1/inventory/products?search=${encodeURIComponent(query)}&page_size=5`);
+          const productsRes = await api.get<{ items: any[] }>(`/v3/inventory/products?search=${encodeURIComponent(query)}&page_size=5`);
           const products = (productsRes as any)?.items || [];
           products.forEach((p: any) => {
             searchResults.push({
@@ -467,10 +467,10 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ type, onClose, onSu
 
   const getEndpoint = () => {
     switch (type) {
-      case 'client': return '/v1/commercial/customers';
-      case 'supplier': return '/v1/commercial/suppliers';
-      case 'article': return '/v1/inventory/products';
-      case 'intervenant': return '/v1/hr/employees';
+      case 'client': return '/v3/commercial/customers';
+      case 'supplier': return '/v3/commercial/suppliers';
+      case 'article': return '/v3/inventory/products';
+      case 'intervenant': return '/v3/hr/employees';
     }
   };
 
@@ -663,7 +663,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/v1/auth/login', {
+      const response = await fetch('/v3/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -745,15 +745,29 @@ const TopBar: React.FC<TopBarProps> = ({
 
   // Handle search navigation
   const handleSearchNavigate = (type: string, id: string) => {
-    // Navigate based on type
+    // Navigate based on type and dispatch detail view event
     if (type === 'client') {
       onViewChange('crm');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('azals:navigate', {
+          detail: { view: 'crm', params: { id } }
+        }));
+      }, 100);
     } else if (type === 'document') {
       onViewChange('gestion-factures');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('azals:navigate', {
+          detail: { view: 'factures', params: { id } }
+        }));
+      }, 100);
     } else if (type === 'article') {
       onViewChange('stock');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('azals:navigate', {
+          detail: { view: 'inventory', params: { id } }
+        }));
+      }, 100);
     }
-    // TODO: Open specific item detail
   };
 
   // Grouper les items

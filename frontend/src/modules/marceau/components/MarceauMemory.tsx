@@ -67,8 +67,8 @@ export function MarceauMemory() {
     setLoading(true);
     try {
       const [statsRes, docsRes] = await Promise.all([
-        api.get<MemoryStats>('/v1/marceau/memory/stats'),
-        api.get<KnowledgeDocument[]>('/v1/marceau/knowledge'),
+        api.get<MemoryStats>('/v3/marceau/memory/stats'),
+        api.get<KnowledgeDocument[]>('/v3/marceau/knowledge'),
       ]);
       setStats(statsRes.data);
       setDocuments(docsRes.data);
@@ -87,7 +87,7 @@ export function MarceauMemory() {
     }
 
     try {
-      const response = await api.post<{ memories: MarceauMemory[] }>('/v1/marceau/memory/search', {
+      const response = await api.post<{ memories: MarceauMemory[] }>('/v3/marceau/memory/search', {
         query: searchQuery,
         limit: 20,
       });
@@ -103,7 +103,7 @@ export function MarceauMemory() {
     formData.append('file', file);
 
     try {
-      await api.post('/v1/marceau/knowledge/upload', formData);
+      await api.post('/v3/marceau/knowledge/upload', formData);
       loadData();
     } catch (e: any) {
       setError(e.message || 'Erreur upload');
@@ -116,7 +116,7 @@ export function MarceauMemory() {
     if (!confirm('Supprimer ce document ?')) return;
 
     try {
-      await api.delete(`/v1/marceau/knowledge/${id}`);
+      await api.delete(`/v3/marceau/knowledge/${id}`);
       loadData();
     } catch (e: any) {
       setError(e.message || 'Erreur suppression');

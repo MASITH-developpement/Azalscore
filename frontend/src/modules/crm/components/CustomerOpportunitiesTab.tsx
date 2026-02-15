@@ -90,7 +90,7 @@ export const CustomerOpportunitiesTab: React.FC<TabContentProps<Customer>> = ({ 
           <div className="azals-empty azals-empty--sm">
             <Target size={32} className="text-muted" />
             <p className="text-muted">Aucune opportunité en cours</p>
-            <Button size="sm" variant="ghost">
+            <Button size="sm" variant="ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createOpportunity', customerId: customer.id } })); }}>
               Créer une opportunité
             </Button>
           </div>

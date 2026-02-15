@@ -38,23 +38,40 @@ export const FactureDocsTab: React.FC<TabContentProps<Facture>> = ({ data: factu
       : []),
   ];
 
+  const handleDownloadPdf = () => { if (facture.pdf_url) window.open(facture.pdf_url, '_blank'); };
+  const handlePrint = () => { window.print(); };
+  const handleSendEmail = () => { window.dispatchEvent(new CustomEvent('azals:email', { detail: { entity: 'facture', id: facture.id } })); };
+  const handleUpload = () => { window.dispatchEvent(new CustomEvent('azals:upload', { detail: { entity: 'facture', id: facture.id } })); };
+  const handleViewParent = () => {
+    if (facture.parent_id) {
+      window.dispatchEvent(new CustomEvent('azals:navigate', {
+        detail: { view: facture.parent_type === 'ORDER' ? 'commandes' : 'interventions', params: { id: facture.parent_id } }
+      }));
+    }
+  };
+  const handleCreateCreditNote = () => {
+    window.dispatchEvent(new CustomEvent('azals:navigate', {
+      detail: { view: 'factures', params: { action: 'credit-note', parentId: facture.id } }
+    }));
+  };
+
   return (
     <div className="azals-std-tab-content">
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Download size={16} />}>
+        <Button variant="secondary" leftIcon={<Download size={16} />} onClick={handleDownloadPdf}>
           Télécharger le PDF
         </Button>
-        <Button variant="secondary" leftIcon={<Printer size={16} />}>
+        <Button variant="secondary" leftIcon={<Printer size={16} />} onClick={handlePrint}>
           Imprimer
         </Button>
         {facture.status === 'VALIDATED' && (
-          <Button variant="secondary" leftIcon={<Send size={16} />}>
+          <Button variant="secondary" leftIcon={<Send size={16} />} onClick={handleSendEmail}>
             Envoyer par email
           </Button>
         )}
         {canEdit && (
-          <Button variant="ghost" leftIcon={<Upload size={16} />}>
+          <Button variant="ghost" leftIcon={<Upload size={16} />} onClick={handleUpload}>
             Ajouter un document
           </Button>
         )}
@@ -73,10 +90,10 @@ export const FactureDocsTab: React.FC<TabContentProps<Facture>> = ({ data: factu
                 {TYPE_CONFIG[facture.type].label} générée automatiquement
               </p>
               <div className="azals-document-preview__actions mt-2">
-                <Button size="sm" leftIcon={<Eye size={14} />}>
+                <Button size="sm" leftIcon={<Eye size={14} />} onClick={handleDownloadPdf}>
                   Aperçu
                 </Button>
-                <Button size="sm" variant="ghost" leftIcon={<Download size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Download size={14} />} onClick={handleDownloadPdf}>
                   Télécharger
                 </Button>
               </div>
@@ -97,7 +114,7 @@ export const FactureDocsTab: React.FC<TabContentProps<Facture>> = ({ data: factu
               <File size={32} className="text-muted" />
               <p className="text-muted">Aucune pièce jointe</p>
               {canEdit && (
-                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                   Ajouter
                 </Button>
               )}
@@ -132,7 +149,7 @@ export const FactureDocsTab: React.FC<TabContentProps<Facture>> = ({ data: factu
                   <span className="azals-badge azals-badge--green">Terminé</span>
                 </td>
                 <td>
-                  <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />}>
+                  <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />} onClick={handleViewParent}>
                     Voir
                   </Button>
                 </td>
@@ -142,7 +159,7 @@ export const FactureDocsTab: React.FC<TabContentProps<Facture>> = ({ data: factu
             {facture.type === 'INVOICE' && facture.status === 'PAID' && (
               <tr className="text-muted">
                 <td colSpan={5} className="text-center py-2">
-                  <Button size="sm" variant="ghost">
+                  <Button size="sm" variant="ghost" onClick={handleCreateCreditNote}>
                     + Créer un avoir
                   </Button>
                 </td>
@@ -182,7 +199,7 @@ export const FactureDocsTab: React.FC<TabContentProps<Facture>> = ({ data: factu
               <td>{facture.created_by || 'Système'}</td>
               <td>Création initiale</td>
               <td>
-                <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />} onClick={handleDownloadPdf}>
                   Voir
                 </Button>
               </td>
@@ -221,6 +238,9 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const handleDownload = () => { if (document.url) window.open(document.url, '_blank'); };
+  const handleDelete = () => { window.dispatchEvent(new CustomEvent('azals:delete', { detail: { entity: 'document', id: document.id } })); };
+
   return (
     <li className="azals-document-list__item">
       <div className="azals-document-list__icon">{getIcon()}</div>
@@ -231,11 +251,11 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
         </span>
       </div>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Télécharger">
+        <button className="azals-btn-icon" title="Télécharger" onClick={handleDownload}>
           <Download size={16} />
         </button>
         {canEdit && (
-          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={handleDelete}>
             <Trash2 size={16} />
           </button>
         )}

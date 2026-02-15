@@ -9,7 +9,7 @@ import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Wrench, Plus, Edit, Search, Download, FileText,
-  Calendar, Clock, Play, CheckCircle2, X, Trash2, Users
+  Calendar, Clock, Play, CheckCircle2, X, Trash2, Users, Sparkles
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { PageWrapper, Card, Grid } from '@ui/layout';
@@ -52,7 +52,7 @@ const useInterventionsList = (page = 1, pageSize = 25, filters?: { statut?: stri
       if (filters?.statut) params.append('statut', filters.statut);
       if (filters?.priorite) params.append('priorite', filters.priorite);
       if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Intervention>>(`/v1/interventions?${params}`);
+      const response = await api.get<PaginatedResponse<Intervention>>(`/v3/interventions?${params}`);
       return response.data;
     },
   });
@@ -62,7 +62,7 @@ const useIntervention = (id: string) => {
   return useQuery({
     queryKey: ['interventions', id],
     queryFn: async () => {
-      const response = await api.get<Intervention>(`/v1/interventions/${id}`);
+      const response = await api.get<Intervention>(`/v3/interventions/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -73,7 +73,7 @@ const useInterventionStats = () => {
   return useQuery({
     queryKey: ['interventions', 'stats'],
     queryFn: async () => {
-      const response = await api.get<InterventionStats>('/v1/interventions/stats');
+      const response = await api.get<InterventionStats>('/v3/interventions/stats');
       return response.data;
     },
   });
@@ -83,7 +83,7 @@ const useDonneursOrdre = () => {
   return useQuery({
     queryKey: ['interventions', 'donneurs-ordre'],
     queryFn: async () => {
-      const response = await api.get<DonneurOrdre[]>('/v1/interventions/donneurs-ordre');
+      const response = await api.get<DonneurOrdre[]>('/v3/interventions/donneurs-ordre');
       return response.data;
     },
   });
@@ -99,7 +99,7 @@ const useClients = () => {
   return useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const response = await api.get<Client[] | { items: Client[] }>('/v1/crm/customers');
+      const response = await api.get<Client[] | { items: Client[] }>('/v3/crm/customers');
       const data = response.data;
       return Array.isArray(data) ? data : (data?.items || []);
     },
@@ -116,7 +116,7 @@ const useIntervenants = () => {
   return useQuery({
     queryKey: ['intervenants'],
     queryFn: async () => {
-      const response = await api.get<Intervenant[] | { items: Intervenant[] }>('/v2/hr/employees');
+      const response = await api.get<Intervenant[] | { items: Intervenant[] }>('/v3/hr/employees');
       const data = response.data;
       return Array.isArray(data) ? data : (data?.items || []);
     },
@@ -128,7 +128,7 @@ const useCreateDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<DonneurOrdre>) => {
-      const response = await api.post<DonneurOrdre>('/v1/interventions/donneurs-ordre', data);
+      const response = await api.post<DonneurOrdre>('/v3/interventions/donneurs-ordre', data);
       return response.data;
     },
     onSuccess: () => {
@@ -141,7 +141,7 @@ const useUpdateDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<DonneurOrdre> }) => {
-      const response = await api.put<DonneurOrdre>(`/v1/interventions/donneurs-ordre/${id}`, data);
+      const response = await api.put<DonneurOrdre>(`/v3/interventions/donneurs-ordre/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -154,7 +154,7 @@ const useDeleteDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/interventions/donneurs-ordre/${id}`);
+      await api.delete(`/v3/interventions/donneurs-ordre/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions', 'donneurs-ordre'] });
@@ -167,7 +167,7 @@ const useDeleteIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/interventions/${id}`);
+      await api.delete(`/v3/interventions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -179,7 +179,7 @@ const useCreateIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Intervention>) => {
-      const response = await api.post<Intervention>('/v1/interventions', data);
+      const response = await api.post<Intervention>('/v3/interventions', data);
       return response.data;
     },
     onSuccess: () => {
@@ -192,7 +192,7 @@ const useUpdateIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Intervention> }) => {
-      const response = await api.put<Intervention>(`/v1/interventions/${id}`, data);
+      const response = await api.put<Intervention>(`/v3/interventions/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -205,7 +205,7 @@ const useDemarrerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Intervention>(`/v1/interventions/${id}/demarrer`);
+      const response = await api.post<Intervention>(`/v3/interventions/${id}/demarrer`);
       return response.data;
     },
     onSuccess: () => {
@@ -218,7 +218,7 @@ const useTerminerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: { commentaire_cloture?: string; montant_reel?: number } }) => {
-      const response = await api.post<Intervention>(`/v1/interventions/${id}/terminer`, data);
+      const response = await api.post<Intervention>(`/v3/interventions/${id}/terminer`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -444,6 +444,7 @@ const ODSListView: React.FC<{
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           pagination={{
             page,
@@ -546,8 +547,8 @@ const InterventionDetailView: React.FC<{
     },
     {
       id: 'ia',
-      label: 'IA',
-      icon: <Wrench size={16} />,
+      label: 'Assistant IA',
+      icon: <Sparkles size={16} />,
       component: InterventionIATab,
     },
   ];
@@ -659,7 +660,7 @@ const InterventionDetailView: React.FC<{
       label: 'PDF',
       variant: 'ghost',
       icon: <Download size={16} />,
-      onClick: () => console.log('Download PDF'),
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'downloadPDF', interventionId } })); },
     },
   ];
 
@@ -1314,6 +1315,7 @@ const DonneursOrdreView: React.FC<{
           columns={columns}
           data={donneursOrdre || []}
           keyField="id"
+          filterable
           isLoading={isLoading}
           onRefresh={refetch}
           emptyMessage="Aucun donneur d'ordre"

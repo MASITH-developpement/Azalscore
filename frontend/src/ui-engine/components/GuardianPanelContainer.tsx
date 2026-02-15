@@ -41,7 +41,6 @@ export const GuardianPanelContainer: React.FC = () => {
         GuardianActions.goToCockpit(incidentId);
         break;
       default:
-        console.warn('[GUARDIAN] Unknown action:', action);
     }
   }, []);
 

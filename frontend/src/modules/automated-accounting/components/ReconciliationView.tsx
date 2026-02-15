@@ -364,7 +364,7 @@ const TransactionCard: React.FC<{
           {transaction.suggested_matches.length > 0 && (
             <StatusBadge variant="info" size="sm" status={`${transaction.suggested_matches.length} suggestion(s)`} />
           )}
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
             {expanded ? 'Masquer' : 'Voir suggestions'}
           </Button>
         </div>
@@ -444,7 +444,7 @@ const TransactionCard: React.FC<{
             <div className="azals-auto-accounting__no-matches">
               <AlertTriangle size={20} />
               <p>Aucune correspondance trouvée automatiquement</p>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'searchManually', transactionId: transaction.id } })); }}>
                 Rechercher manuellement
               </Button>
             </div>

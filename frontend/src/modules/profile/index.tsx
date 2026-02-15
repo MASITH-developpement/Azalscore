@@ -101,15 +101,15 @@ export default function ProfileModule() {
             </h2>
 
             <div style={{ display: 'grid', gap: 'var(--azals-spacing-md)' }}>
-              <button className="azals-btn azals-btn--primary" style={{ justifyContent: 'flex-start' }}>
+              <button className="azals-btn azals-btn--primary" style={{ justifyContent: 'flex-start' }} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'changePassword' } })); }}>
                 <Key size={16} /> Changer le mot de passe
               </button>
 
-              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }}>
+              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'configure2FA' } })); }}>
                 <ShieldCheck size={16} /> Configurer l'authentification à deux facteurs
               </button>
 
-              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }}>
+              <button className="azals-btn azals-btn--secondary" style={{ justifyContent: 'flex-start' }} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'manageSessions' } })); }}>
                 <Smartphone size={16} /> Gérer les sessions actives
               </button>
             </div>

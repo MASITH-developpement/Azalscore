@@ -23,15 +23,46 @@ export const InterventionDocsTab: React.FC<TabContentProps<Intervention>> = ({ d
   const documents = intervention.documents || [];
   const rapport = intervention.rapport;
 
+  // Handler functions
+  const handleDownloadAll = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:intervention:download-all', {
+      detail: { interventionId: intervention.id }
+    }));
+  };
+
+  const handleUpload = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:upload', {
+      detail: { type: 'intervention', id: intervention.id }
+    }));
+  };
+
+  const handleViewRapport = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:intervention:view-rapport', {
+      detail: { interventionId: intervention.id, rapportId: rapport?.id }
+    }));
+  };
+
+  const handleDownloadRapportPdf = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:download', {
+      detail: { type: 'rapport-intervention', id: intervention.id, format: 'pdf' }
+    }));
+  };
+
+  const handleSaisirRapport = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:intervention:saisir-rapport', {
+      detail: { interventionId: intervention.id }
+    }));
+  };
+
   return (
     <div className="azals-std-tab-content">
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Download size={16} />}>
+        <Button variant="secondary" leftIcon={<Download size={16} />} onClick={handleDownloadAll}>
           Télécharger tout
         </Button>
         {canEdit && (
-          <Button variant="ghost" leftIcon={<Upload size={16} />}>
+          <Button variant="ghost" leftIcon={<Upload size={16} />} onClick={handleUpload}>
             Ajouter un document
           </Button>
         )}
@@ -111,10 +142,10 @@ export const InterventionDocsTab: React.FC<TabContentProps<Intervention>> = ({ d
               )}
 
               <div className="mt-4 pt-4 border-t">
-                <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />}>
+                <Button variant="secondary" size="sm" leftIcon={<Eye size={14} />} onClick={handleViewRapport}>
                   Voir le rapport complet
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} className="ml-2">
+                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} className="ml-2" onClick={handleDownloadRapportPdf}>
                   Télécharger PDF
                 </Button>
               </div>
@@ -130,7 +161,7 @@ export const InterventionDocsTab: React.FC<TabContentProps<Intervention>> = ({ d
               <PenTool size={32} className="text-primary" />
               <p className="text-muted">Rapport en attente</p>
               <p className="text-sm text-muted">Le rapport sera disponible une fois l'intervention terminée.</p>
-              <Button size="sm" variant="secondary" leftIcon={<PenTool size={14} />} className="mt-2">
+              <Button size="sm" variant="secondary" leftIcon={<PenTool size={14} />} className="mt-2" onClick={handleSaisirRapport}>
                 Saisir le rapport maintenant
               </Button>
             </div>
@@ -157,7 +188,7 @@ export const InterventionDocsTab: React.FC<TabContentProps<Intervention>> = ({ d
                 <File size={32} className="text-muted" />
                 <p className="text-muted">Aucune pièce jointe</p>
                 {canEdit && (
-                  <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+                  <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                     Ajouter
                   </Button>
                 )}
@@ -245,6 +276,32 @@ interface DocumentItemProps {
 }
 
 const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
+  const handlePreview = (): void => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:preview', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDownload = (): void => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:download', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDelete = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:delete', {
+      detail: { documentId: document.id }
+    }));
+  };
+
   const getIcon = () => {
     switch (document.type) {
       case 'pdf':
@@ -273,14 +330,14 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
         </span>
       </div>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Aperçu">
+        <button className="azals-btn-icon" title="Aperçu" onClick={handlePreview}>
           <Eye size={16} />
         </button>
-        <button className="azals-btn-icon" title="Télécharger">
+        <button className="azals-btn-icon" title="Télécharger" onClick={handleDownload}>
           <Download size={16} />
         </button>
         {canEdit && (
-          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={handleDelete}>
             <Trash2 size={16} />
           </button>
         )}

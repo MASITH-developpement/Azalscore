@@ -24,7 +24,7 @@ export const DevisLinesTab: React.FC<TabContentProps<Devis>> = ({ data: devis })
           <h3>Aucune ligne</h3>
           <p>Ce devis ne contient pas encore de lignes.</p>
           {canEdit && (
-            <Button leftIcon={<Plus size={16} />}>
+            <Button leftIcon={<Plus size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addLine', devisId: devis.id } })); }}>
               Ajouter une ligne
             </Button>
           )}
@@ -38,10 +38,10 @@ export const DevisLinesTab: React.FC<TabContentProps<Devis>> = ({ data: devis })
       {/* Actions si éditable */}
       {canEdit && (
         <div className="azals-std-tab-actions mb-4">
-          <Button variant="secondary" leftIcon={<Plus size={16} />}>
+          <Button variant="secondary" leftIcon={<Plus size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addLine', devisId: devis.id } })); }}>
             Ajouter une ligne
           </Button>
-          <Button variant="ghost" leftIcon={<Copy size={16} />}>
+          <Button variant="ghost" leftIcon={<Copy size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'duplicateSelection', devisId: devis.id } })); }}>
             Dupliquer la sélection
           </Button>
         </div>
@@ -158,10 +158,10 @@ const LineRow: React.FC<LineRowProps> = ({ line, canEdit, currency }) => {
       {canEdit && (
         <td className="azals-table__td">
           <div className="azals-btn-group">
-            <button className="azals-btn-icon" title="Modifier">
+            <button className="azals-btn-icon" title="Modifier" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editLine', lineId: line.id } })); }}>
               <Edit size={14} />
             </button>
-            <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+            <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'deleteLine', lineId: line.id } })); }}>
               <Trash2 size={14} />
             </button>
           </div>

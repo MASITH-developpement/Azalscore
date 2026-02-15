@@ -132,7 +132,7 @@ const sendErrorToGuardian = async (report: GuardianErrorReport): Promise<void> =
       return;
     }
 
-    const response = await fetch(`${getApiUrl()}/api/v1/guardian/errors/frontend`, {
+    const response = await fetch(`${getApiUrl()}/api/v3/guardian/errors/frontend`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export const fetchGuardianAlerts = async (): Promise<GuardianAlert[]> => {
 
     if (!token || !tenantId) return [];
 
-    const response = await fetch(`${getApiUrl()}/api/v1/guardian/alerts?is_resolved=false`, {
+    const response = await fetch(`${getApiUrl()}/api/v3/guardian/alerts?is_resolved=false`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'X-Tenant-ID': tenantId,
@@ -188,7 +188,7 @@ export const acknowledgeGuardianAlert = async (alertId: number): Promise<boolean
 
     if (!token || !tenantId) return false;
 
-    const response = await fetch(`${getApiUrl()}/api/v1/guardian/alerts/${alertId}/acknowledge`, {
+    const response = await fetch(`${getApiUrl()}/api/v3/guardian/alerts/${alertId}/acknowledge`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

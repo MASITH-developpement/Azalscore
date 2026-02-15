@@ -70,7 +70,7 @@ class TokenManager {
     }
 
     this.refreshPromise = axios
-      .post(`${API_BASE_URL}/v1/auth/refresh`, { refresh_token: refresh })
+      .post(`${API_BASE_URL}/v3/auth/refresh`, { refresh_token: refresh })
       .then((response) => {
         const { access_token, refresh_token } = response.data;
         this.setTokens(access_token, refresh_token);
@@ -108,8 +108,16 @@ const createApiClient = (): AxiosInstance => {
       const token = tokenManager.getAccessToken();
 
       // Auth gate : bloquer les requêtes métier si pas de token
-      const isAuthEndpoint = config.url?.includes('/auth/') || config.url?.includes('/health');
-      if (!token && !isAuthEndpoint && !config.headers['Skip-Auth']) {
+      // Note: /auth/capabilities nécessite un token (c'est un endpoint authentifié)
+      const isPublicAuthEndpoint = (
+        config.url?.includes('/auth/login') ||
+        config.url?.includes('/auth/register') ||
+        config.url?.includes('/auth/refresh') ||
+        config.url?.includes('/auth/forgot') ||
+        config.url?.includes('/auth/reset') ||
+        config.url?.includes('/health')
+      );
+      if (!token && !isPublicAuthEndpoint && !config.headers['Skip-Auth']) {
         return Promise.reject(new Error('AUTH_NOT_READY: No token available. Business requests blocked until authenticated.'));
       }
 
@@ -269,6 +277,7 @@ export const api = {
       () => apiClient.get<ApiResponse<T>>(url, {
         timeout: config?.timeout,
         headers: buildHeaders(config),
+        responseType: config?.responseType,
       }),
       config
     );

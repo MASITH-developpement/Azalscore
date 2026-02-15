@@ -24,7 +24,7 @@ export const SupplierOrdersTab: React.FC<TabContentProps<Supplier & { orders?: P
         title="Commandes"
         icon={<ShoppingCart size={18} />}
         actions={
-          <Button variant="secondary" size="sm" leftIcon={<ShoppingCart size={14} />}>
+          <Button variant="secondary" size="sm" leftIcon={<ShoppingCart size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'purchases', type: 'order', supplierId: data.id } })); }}>
             Nouvelle commande
           </Button>
         }
@@ -56,7 +56,7 @@ export const SupplierOrdersTab: React.FC<TabContentProps<Supplier & { orders?: P
                       {formatCurrency(order.total_ttc, order.currency)}
                     </td>
                     <td className="text-right">
-                      <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />}>
+                      <Button variant="ghost" size="sm" leftIcon={<ExternalLink size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:view', { detail: { module: 'purchases', type: 'order', id: order.id } })); }}>
                         Voir
                       </Button>
                     </td>
@@ -69,7 +69,7 @@ export const SupplierOrdersTab: React.FC<TabContentProps<Supplier & { orders?: P
           <div className="azals-empty azals-empty--sm">
             <ShoppingCart size={32} className="text-muted" />
             <p className="text-muted">Aucune commande pour ce fournisseur</p>
-            <Button variant="secondary" size="sm" leftIcon={<ShoppingCart size={14} />} className="mt-2">
+            <Button variant="secondary" size="sm" leftIcon={<ShoppingCart size={14} />} className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'purchases', type: 'order', supplierId: data.id } })); }}>
               Creer une commande
             </Button>
           </div>

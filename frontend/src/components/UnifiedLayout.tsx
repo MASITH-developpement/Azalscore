@@ -42,6 +42,7 @@ export type ViewKey =
   | 'helpdesk' | 'bi' | 'compliance' | 'web'
   | 'compta' | 'tresorerie'
   | 'cockpit' | 'marceau'
+  | 'import-odoo' | 'import-axonaut' | 'import-pennylane' | 'import-sage' | 'import-chorus'
   | 'admin'
   | 'profile' | 'settings';
 
@@ -91,6 +92,11 @@ const MENU_ITEMS: MenuItem[] = [
   { key: 'tresorerie', label: 'Trésorerie', group: 'Finance', capability: 'treasury.view' },
   { key: 'cockpit', label: 'Cockpit Dirigeant', group: 'Direction', capability: 'cockpit.view' },
   { key: 'marceau', label: 'Marceau IA', group: 'IA', capability: 'marceau.view' },
+  { key: 'import-odoo', label: 'Import Odoo', group: 'Import', capability: 'import.odoo.config' },
+  { key: 'import-axonaut', label: 'Import Axonaut', group: 'Import', capability: 'import.axonaut.config' },
+  { key: 'import-pennylane', label: 'Import Pennylane', group: 'Import', capability: 'import.pennylane.config' },
+  { key: 'import-sage', label: 'Import Sage', group: 'Import', capability: 'import.sage.config' },
+  { key: 'import-chorus', label: 'Import Chorus', group: 'Import', capability: 'import.chorus.config' },
   { key: 'admin', label: 'Administration', group: 'Système', capability: 'admin.view' },
 ];
 

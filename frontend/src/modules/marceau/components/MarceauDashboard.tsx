@@ -38,7 +38,7 @@ export function MarceauDashboard() {
 
   const loadDashboard = async () => {
     try {
-      const response = await api.get<DashboardData>('/v1/marceau/dashboard');
+      const response = await api.get<DashboardData>('/v3/marceau/dashboard');
       setData(response.data);
       setError(null);
     } catch (e: any) {

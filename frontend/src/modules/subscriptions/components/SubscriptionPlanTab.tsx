@@ -10,7 +10,7 @@ import {
 import { Card, Grid } from '@ui/layout';
 import { Button } from '@ui/actions';
 import type { TabContentProps } from '@ui/standards';
-import type { Subscription } from '../types';
+import type { Subscription, SubscriptionInterval } from '../types';
 import {
   getMonthlyEquivalent, getYearlyEquivalent,
   INTERVAL_CONFIG
@@ -68,13 +68,13 @@ export const SubscriptionPlanTab: React.FC<TabContentProps<Subscription>> = ({ d
             <div className="azals-std-field azals-std-field--secondary">
               <label>Equivalent mensuel</label>
               <div>
-                {formatCurrency(getMonthlyEquivalent(subscription.amount, subscription.plan_code as any || 'MONTHLY'), subscription.currency)} /mois
+                {formatCurrency(getMonthlyEquivalent(subscription.amount, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /mois
               </div>
             </div>
             <div className="azals-std-field azals-std-field--secondary">
               <label>Equivalent annuel</label>
               <div>
-                {formatCurrency(getYearlyEquivalent(subscription.amount, subscription.plan_code as any || 'MONTHLY'), subscription.currency)} /an
+                {formatCurrency(getYearlyEquivalent(subscription.amount, (subscription.plan_code || 'MONTHLY') as SubscriptionInterval), subscription.currency)} /an
               </div>
             </div>
             <div className="azals-std-field">
@@ -127,10 +127,10 @@ export const SubscriptionPlanTab: React.FC<TabContentProps<Subscription>> = ({ d
         className="mt-4 azals-std-field--secondary"
       >
         <div className="flex gap-2">
-          <Button variant="secondary">
+          <Button variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'changePlan', subscriptionId: subscription.id } })); }}>
             Changer de plan
           </Button>
-          <Button variant="secondary">
+          <Button variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'modifyBilling', subscriptionId: subscription.id } })); }}>
             Modifier la facturation
           </Button>
         </div>

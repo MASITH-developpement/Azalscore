@@ -16,7 +16,7 @@ export const usePlanifierIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: PlanificationData }) => {
-      return api.post(`/v2/interventions/${id}/planifier`, data);
+      return api.post(`/v3/interventions/${id}/planifier`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -28,7 +28,7 @@ export const useModifierPlanification = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: PlanificationData }) => {
-      return api.put(`/v2/interventions/${id}/planification`, data);
+      return api.put(`/v3/interventions/${id}/planification`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -40,7 +40,7 @@ export const useAnnulerPlanification = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v2/interventions/${id}/planification`);
+      return api.delete(`/v3/interventions/${id}/planification`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });

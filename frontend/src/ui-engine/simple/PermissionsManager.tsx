@@ -35,7 +35,7 @@ export const PermissionsManager: React.FC = () => {
     queryKey: ['iam-users'],
     queryFn: async () => {
       try {
-        const r = await api.get('/v1/iam/users?page_size=100', {
+        const r = await api.get('/v3/iam/users?page_size=100', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles
@@ -52,7 +52,7 @@ export const PermissionsManager: React.FC = () => {
     queryKey: ['perms', userId],
     queryFn: async () => {
       try {
-        const r = await api.get(`/v1/iam/users/${userId}/permissions`, {
+        const r = await api.get(`/v3/iam/users/${userId}/permissions`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // L'API retourne directement un tableau de permissions
@@ -68,7 +68,7 @@ export const PermissionsManager: React.FC = () => {
 
   // Sauvegarder
   const saveMutation = useMutation({
-    mutationFn: () => api.put(`/v1/iam/users/${userId}/permissions`, { capabilities: perms }),
+    mutationFn: () => api.put(`/v3/iam/users/${userId}/permissions`, { capabilities: perms }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['perms', userId] }); setSaved(true); setTimeout(() => setSaved(false), 2000); },
   });
 

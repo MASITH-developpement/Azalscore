@@ -20,6 +20,49 @@ import { formatDate } from '@/utils/formatters';
 export const CommandeDocsTab: React.FC<TabContentProps<Commande>> = ({ data: commande }) => {
   const canEdit = commande.status === 'DRAFT';
 
+  // Handler functions
+  const handleDownloadPdf = (): void => {
+    if (commande.pdf_url) {
+      window.open(commande.pdf_url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:download', {
+        detail: { type: 'commande', id: commande.id, format: 'pdf' }
+      }));
+    }
+  };
+
+  const handlePrint = (): void => {
+    window.print();
+  };
+
+  const handleUpload = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:upload', {
+      detail: { type: 'commande', id: commande.id }
+    }));
+  };
+
+  const handlePreview = (): void => {
+    if (commande.pdf_url) {
+      window.open(commande.pdf_url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:preview', {
+        detail: { type: 'commande', id: commande.id }
+      }));
+    }
+  };
+
+  const handleViewRelated = (type: string, reference: string): void => {
+    window.dispatchEvent(new CustomEvent('azals:navigate', {
+      detail: { view: type, params: { reference } }
+    }));
+  };
+
+  const handleViewVersion = (version: string): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:version', {
+      detail: { type: 'commande', id: commande.id, version }
+    }));
+  };
+
   // Documents simulés (à remplacer par des vraies données)
   const documents: CommandeDocument[] = [
     ...(commande.pdf_url
@@ -40,14 +83,14 @@ export const CommandeDocsTab: React.FC<TabContentProps<Commande>> = ({ data: com
     <div className="azals-std-tab-content">
       {/* Actions */}
       <div className="azals-std-tab-actions mb-4">
-        <Button variant="secondary" leftIcon={<Download size={16} />}>
+        <Button variant="secondary" leftIcon={<Download size={16} />} onClick={handleDownloadPdf}>
           Télécharger le PDF
         </Button>
-        <Button variant="secondary" leftIcon={<Printer size={16} />}>
+        <Button variant="secondary" leftIcon={<Printer size={16} />} onClick={handlePrint}>
           Imprimer
         </Button>
         {canEdit && (
-          <Button variant="ghost" leftIcon={<Upload size={16} />}>
+          <Button variant="ghost" leftIcon={<Upload size={16} />} onClick={handleUpload}>
             Ajouter un document
           </Button>
         )}
@@ -66,10 +109,10 @@ export const CommandeDocsTab: React.FC<TabContentProps<Commande>> = ({ data: com
                 Généré automatiquement
               </p>
               <div className="azals-document-preview__actions mt-2">
-                <Button size="sm" leftIcon={<Eye size={14} />}>
+                <Button size="sm" leftIcon={<Eye size={14} />} onClick={handlePreview}>
                   Aperçu
                 </Button>
-                <Button size="sm" variant="ghost" leftIcon={<Download size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Download size={14} />} onClick={handleDownloadPdf}>
                   Télécharger
                 </Button>
               </div>
@@ -90,7 +133,7 @@ export const CommandeDocsTab: React.FC<TabContentProps<Commande>> = ({ data: com
               <File size={32} className="text-muted" />
               <p className="text-muted">Aucune pièce jointe</p>
               {canEdit && (
-                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Upload size={14} />} onClick={handleUpload}>
                   Ajouter
                 </Button>
               )}
@@ -123,7 +166,7 @@ export const CommandeDocsTab: React.FC<TabContentProps<Commande>> = ({ data: com
                   <span className="azals-badge azals-badge--green">Accepté</span>
                 </td>
                 <td>
-                  <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />}>
+                  <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />} onClick={() => { handleViewRelated('devis', commande.parent_number || ''); }}>
                     Voir
                   </Button>
                 </td>
@@ -140,7 +183,7 @@ export const CommandeDocsTab: React.FC<TabContentProps<Commande>> = ({ data: com
                   <span className="azals-badge azals-badge--green">Émise</span>
                 </td>
                 <td>
-                  <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />}>
+                  <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />} onClick={() => { handleViewRelated('factures', `FAC-${commande.number.replace('COM-', '')}`); }}>
                     Voir
                   </Button>
                 </td>
@@ -180,7 +223,7 @@ export const CommandeDocsTab: React.FC<TabContentProps<Commande>> = ({ data: com
               <td>{commande.created_by || 'Système'}</td>
               <td>Création initiale</td>
               <td>
-                <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />}>
+                <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />} onClick={() => { handleViewVersion('v1.0'); }}>
                   Voir
                 </Button>
               </td>
@@ -201,6 +244,22 @@ interface DocumentItemProps {
 }
 
 const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
+  const handleDownload = (): void => {
+    if (document.url) {
+      window.open(document.url, '_blank');
+    } else {
+      window.dispatchEvent(new CustomEvent('azals:document:download', {
+        detail: { documentId: document.id }
+      }));
+    }
+  };
+
+  const handleDelete = (): void => {
+    window.dispatchEvent(new CustomEvent('azals:document:delete', {
+      detail: { documentId: document.id }
+    }));
+  };
+
   const getIcon = () => {
     switch (document.type) {
       case 'pdf':
@@ -229,11 +288,11 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ document, canEdit }) => {
         </span>
       </div>
       <div className="azals-document-list__actions">
-        <button className="azals-btn-icon" title="Télécharger">
+        <button className="azals-btn-icon" title="Télécharger" onClick={handleDownload}>
           <Download size={16} />
         </button>
         {canEdit && (
-          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer">
+          <button className="azals-btn-icon azals-btn-icon--danger" title="Supprimer" onClick={handleDelete}>
             <Trash2 size={16} />
           </button>
         )}

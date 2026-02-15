@@ -77,33 +77,33 @@ interface MenuItem {
 
 const useThemes = () => useQuery({
   queryKey: ['web', 'themes'],
-  queryFn: () => api.get<{ items: Theme[] }>('/v1/web/themes').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: Theme[] }>('/v3/web/themes').then(r => r.data.items || [])
 });
 
 const useWidgets = () => useQuery({
   queryKey: ['web', 'widgets'],
-  queryFn: () => api.get<{ items: Widget[] }>('/v1/web/widgets').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: Widget[] }>('/v3/web/widgets').then(r => r.data.items || [])
 });
 
 const useDashboards = () => useQuery({
   queryKey: ['web', 'dashboards'],
-  queryFn: () => api.get<{ items: Dashboard[] }>('/v1/web/dashboards').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: Dashboard[] }>('/v3/web/dashboards').then(r => r.data.items || [])
 });
 
 const usePages = () => useQuery({
   queryKey: ['web', 'pages'],
-  queryFn: () => api.get<{ items: CustomPage[] }>('/v1/web/pages').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: CustomPage[] }>('/v3/web/pages').then(r => r.data.items || [])
 });
 
 const useMenuItems = () => useQuery({
   queryKey: ['web', 'menu-items'],
-  queryFn: () => api.get<MenuItem[]>('/v1/web/menu-items').then(r => r.data || [])
+  queryFn: () => api.get<MenuItem[]>('/v3/web/menu-items').then(r => r.data || [])
 });
 
 const useCreateTheme = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Theme>) => api.post('/v1/web/themes', data).then(r => r.data),
+    mutationFn: (data: Partial<Theme>) => api.post('/v3/web/themes', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'themes'] })
   });
 };
@@ -111,7 +111,7 @@ const useCreateTheme = () => {
 const useCreatePage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<CustomPage>) => api.post('/v1/web/pages', data).then(r => r.data),
+    mutationFn: (data: Partial<CustomPage>) => api.post('/v3/web/pages', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'pages'] })
   });
 };
@@ -119,7 +119,7 @@ const useCreatePage = () => {
 const useDeletePage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/v1/web/pages/${id}`),
+    mutationFn: (id: string) => api.delete(`/v3/web/pages/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'pages'] })
   });
 };
@@ -187,7 +187,7 @@ const ThemesView: React.FC = () => {
         <h3 className="text-lg font-semibold flex items-center gap-2"><Palette size={20} /> Thèmes</h3>
         <Button onClick={() => setShowModal(true)}><Plus size={16} className="mr-2" />Nouveau thème</Button>
       </div>
-      <DataTable columns={columns} data={themes} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={themes} isLoading={isLoading} keyField="id" filterable />
       <Modal isOpen={showModal} onClose={handleCloseModal} title="Nouveau thème">
         <div className="space-y-4">
           <div className="azals-field">
@@ -232,9 +232,9 @@ const WidgetsView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold flex items-center gap-2"><Layers size={20} /> Widgets</h3>
-        <Button><Plus size={16} className="mr-2" />Nouveau widget</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'web', type: 'widget' } })); }}><Plus size={16} className="mr-2" />Nouveau widget</Button>
       </div>
-      <DataTable columns={columns} data={widgets} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={widgets} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -258,9 +258,9 @@ const DashboardsView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold flex items-center gap-2"><LayoutGrid size={20} /> Tableaux de bord</h3>
-        <Button><Plus size={16} className="mr-2" />Nouveau dashboard</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'web', type: 'dashboard' } })); }}><Plus size={16} className="mr-2" />Nouveau dashboard</Button>
       </div>
-      <DataTable columns={columns} data={dashboards} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={dashboards} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -293,8 +293,8 @@ const PagesView: React.FC = () => {
     { id: 'created_at', header: 'Créé le', accessor: 'created_at', render: (v) => new Date(v as string).toLocaleDateString('fr-FR') },
     { id: 'actions', header: 'Actions', accessor: 'id', render: (_, row) => (
       <div className="flex gap-2">
-        <Button size="sm" variant="ghost"><Eye size={14} /></Button>
-        <Button size="sm" variant="ghost"><Edit size={14} /></Button>
+        <Button size="sm" variant="ghost" onClick={() => { window.open(`/web/pages/${(row as CustomPage).id}/preview`, '_blank'); }}><Eye size={14} /></Button>
+        <Button size="sm" variant="ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:edit', { detail: { module: 'web', type: 'page', id: (row as CustomPage).id } })); }}><Edit size={14} /></Button>
         <Button size="sm" variant="ghost" onClick={() => handleDelete((row as CustomPage).id)}><Trash2 size={14} /></Button>
       </div>
     )}
@@ -306,7 +306,7 @@ const PagesView: React.FC = () => {
         <h3 className="text-lg font-semibold flex items-center gap-2"><FileText size={20} /> Pages personnalisées</h3>
         <Button onClick={() => setShowModal(true)}><Plus size={16} className="mr-2" />Nouvelle page</Button>
       </div>
-      <DataTable columns={columns} data={pages} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={pages} isLoading={isLoading} keyField="id" filterable />
       <Modal isOpen={showModal} onClose={handleCloseModal} title="Nouvelle page">
         <div className="space-y-4">
           <div className="azals-field">
@@ -350,9 +350,9 @@ const MenuView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold flex items-center gap-2"><Menu size={20} /> Menu de navigation</h3>
-        <Button><Plus size={16} className="mr-2" />Nouveau menu</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'web', type: 'menu' } })); }}><Plus size={16} className="mr-2" />Nouveau menu</Button>
       </div>
-      <DataTable columns={columns} data={menuItems} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={menuItems} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };

@@ -588,7 +588,8 @@ export const AssistanteDashboard: React.FC = () => {
             columns={columns}
             data={documents?.items || []}
             keyField="id"
-            isLoading={documentsLoading}
+          filterable
+          isLoading={documentsLoading}
             actions={rowActions}
             pagination={{
               page,

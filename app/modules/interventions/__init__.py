@@ -23,7 +23,7 @@ from .models import (
     RapportFinal,
     RapportIntervention,
 )
-from .router import router
+from .router_crud import router
 from .schemas import (
     ArriveeRequest,
     DemarrageRequest,

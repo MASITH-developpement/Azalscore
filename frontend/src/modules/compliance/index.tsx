@@ -211,7 +211,7 @@ const useComplianceStats = () => {
   return useQuery({
     queryKey: ['compliance', 'stats'],
     queryFn: async () => {
-      return api.get<ComplianceStats>('/v1/compliance/stats').then(r => r.data);
+      return api.get<ComplianceStats>('/v3/compliance/stats').then(r => r.data);
     }
   });
 };
@@ -224,7 +224,7 @@ const usePolicies = (filters?: { type?: string; status?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v1/compliance/policies?${queryString}` : '/v1/compliance/policies';
+      const url = queryString ? `/v3/compliance/policies?${queryString}` : '/v3/compliance/policies';
       return api.get<Policy[]>(url).then(r => r.data);
     }
   });
@@ -238,7 +238,7 @@ const useAudits = (filters?: { type?: string; status?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v1/compliance/audits?${queryString}` : '/v1/compliance/audits';
+      const url = queryString ? `/v3/compliance/audits?${queryString}` : '/v3/compliance/audits';
       return api.get<Audit[]>(url).then(r => r.data);
     }
   });
@@ -252,7 +252,7 @@ const useGDPRRequests = (filters?: { type?: string; status?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v1/compliance/gdpr-requests?${queryString}` : '/v1/compliance/gdpr-requests';
+      const url = queryString ? `/v3/compliance/gdpr-requests?${queryString}` : '/v3/compliance/gdpr-requests';
       return api.get<GDPRRequest[]>(url).then(r => r.data);
     }
   });
@@ -265,7 +265,7 @@ const useConsents = (filters?: { consent_type?: string }) => {
       const params = new URLSearchParams();
       if (filters?.consent_type) params.append('consent_type', filters.consent_type);
       const queryString = params.toString();
-      const url = queryString ? `/v1/compliance/consents?${queryString}` : '/v1/compliance/consents';
+      const url = queryString ? `/v3/compliance/consents?${queryString}` : '/v3/compliance/consents';
       return api.get<Consent[]>(url).then(r => r.data);
     }
   });
@@ -275,7 +275,7 @@ const useUpdateGDPRStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch<void>(`/v1/compliance/gdpr-requests/${id}/status`, { status }).then(r => r.data);
+      return api.patch<void>(`/v3/compliance/gdpr-requests/${id}/status`, { status }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['compliance', 'gdpr'] });
@@ -288,7 +288,7 @@ const useAudit = (id: string) => {
   return useQuery({
     queryKey: ['compliance', 'audits', id],
     queryFn: async () => {
-      return api.get<AuditType>(`/v1/compliance/audits/${id}`).then(r => r.data);
+      return api.get<AuditType>(`/v3/compliance/audits/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -322,7 +322,7 @@ const PoliciesView: React.FC = () => {
     { id: 'is_mandatory', header: 'Obligatoire', accessor: 'is_mandatory', render: (v) => (v as boolean) ? <Badge color="red">Oui</Badge> : '-' },
     { id: 'effective_date', header: 'Effective', accessor: 'effective_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
     { id: 'review_date', header: 'Revision', accessor: 'review_date', render: (v) => (v as string) ? formatDate(v as string) : '-' },
-    { id: 'actions', header: 'Actions', accessor: 'id', render: () => <Button size="sm" variant="secondary">Voir</Button> }
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (v) => <Button size="sm" variant="secondary" onClick={() => { window.dispatchEvent(new CustomEvent('azals:navigate', { detail: { view: 'compliance', params: { policyId: v } } })); }}>Voir</Button> }
   ];
 
   return (
@@ -342,10 +342,10 @@ const PoliciesView: React.FC = () => {
             options={[{ value: '', label: 'Tous statuts' }, ...POLICY_STATUS]}
             className="w-32"
           />
-          <Button>Nouvelle politique</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createPolicy' } })); }}>Nouvelle politique</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={policies} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={policies} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -407,10 +407,10 @@ const AuditsView: React.FC = () => {
             options={[{ value: '', label: 'Tous statuts' }, ...AUDIT_STATUS]}
             className="w-32"
           />
-          <Button>Planifier audit</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'planAudit' } })); }}>Planifier audit</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={audits} isLoading={isLoading} keyField="id" error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
+      <DataTable columns={columns} data={audits} isLoading={isLoading} keyField="id" filterable error={error && typeof error === 'object' && 'message' in error ? error as Error : null} onRetry={() => refetch()} />
     </Card>
   );
 };
@@ -476,7 +476,7 @@ const GDPRView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={requests} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -517,7 +517,7 @@ const ConsentsView: React.FC = () => {
           className="w-40"
         />
       </div>
-      <DataTable columns={columns} data={consents} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={consents} isLoading={isLoading} keyField="id" filterable />
     </Card>
   );
 };
@@ -675,7 +675,7 @@ const AuditDetailView: React.FC = () => {
       label: 'Modifier',
       icon: <Edit size={16} />,
       variant: 'secondary',
-      onClick: () => console.log('Edit audit')
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'editAudit', auditId: audit.id } })); }
     },
     {
       id: 'print',
@@ -695,7 +695,7 @@ const AuditDetailView: React.FC = () => {
       label: 'Demarrer l\'audit',
       icon: <Play size={16} />,
       variant: 'primary',
-      onClick: () => console.log('Start audit')
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'startAudit', auditId: audit.id } })); }
     });
   }
 
@@ -705,7 +705,7 @@ const AuditDetailView: React.FC = () => {
       label: 'Cloturer l\'audit',
       icon: <CheckCircle2 size={16} />,
       variant: 'success',
-      onClick: () => console.log('Complete audit')
+      onClick: () => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'completeAudit', auditId: audit.id } })); }
     });
   }
 

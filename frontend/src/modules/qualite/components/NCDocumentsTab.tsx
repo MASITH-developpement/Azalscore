@@ -24,7 +24,6 @@ export const NCDocumentsTab: React.FC<TabContentProps<NonConformance>> = ({ data
   const others = documents.filter(d => !['photo', 'rapport'].includes(d.doc_type || '') && !d.mime_type?.startsWith('image/'));
 
   const handleAddDocument = () => {
-    console.log('Add document to NC', nc.id);
   };
 
   return (

@@ -6,7 +6,7 @@
  * Fonctionne pour tous les types: particuliers, professionnels, donneurs d'ordre.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { getInternalScore } from '../api';
 import type { RiskAnalysis } from '../types';
@@ -42,12 +42,17 @@ export function useInternalScore(): UseInternalScoreResult {
   const [error, setError] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
 
+  // Track analyzed customer to prevent duplicate requests
+  const analyzedCustomerRef = useRef<string | null>(null);
+  const isPendingRef = useRef(false);
+
   const mutation = useMutation({
     mutationFn: async (customerId: string) => {
       const result = await getInternalScore(customerId);
       return result;
     },
     onSuccess: (data) => {
+      isPendingRef.current = false;
       if (data.success && data.enriched_fields?._internal_scoring) {
         const internalScore = data.enriched_fields._internal_scoring as InternalScoreResult;
         setScore(internalScore);
@@ -59,23 +64,32 @@ export function useInternalScore(): UseInternalScoreResult {
       }
     },
     onError: (err: Error) => {
+      isPendingRef.current = false;
       setError(err.message || 'Erreur lors du calcul du score');
       setScore(null);
     },
   });
 
+  // Stable analyze function that won't change between renders
   const analyze = useCallback((customerId: string) => {
-    if (customerId) {
-      mutation.mutate(customerId);
+    // Prevent duplicate requests for same customer or while loading
+    if (!customerId || isPendingRef.current || analyzedCustomerRef.current === customerId) {
+      return;
     }
-  }, [mutation]);
+    // CRITICAL: Set flags BEFORE calling async mutation
+    isPendingRef.current = true;
+    analyzedCustomerRef.current = customerId;
+    mutation.mutate(customerId);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
     setScore(null);
     setError(null);
     setHistoryId(null);
+    analyzedCustomerRef.current = null;
+    isPendingRef.current = false;
     mutation.reset();
-  }, [mutation]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     score,

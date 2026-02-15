@@ -167,7 +167,7 @@ const useBIDashboardStats = () => {
   return useQuery({
     queryKey: ['bi', 'stats'],
     queryFn: async () => {
-      const response = await api.get<BIDashboardStats>('/v1/bi/stats');
+      const response = await api.get<BIDashboardStats>('/v3/bi/stats');
       return response.data;
     }
   });
@@ -177,7 +177,7 @@ const useDashboards = (type?: string) => {
   return useQuery({
     queryKey: ['bi', 'dashboards', type],
     queryFn: async () => {
-      const response = await api.get<Dashboard[]>(`/v1/bi/dashboards${type ? `?type=${type}` : ''}`);
+      const response = await api.get<Dashboard[]>(`/v3/bi/dashboards${type ? `?type=${type}` : ''}`);
       return response.data;
     }
   });
@@ -191,7 +191,7 @@ const useReports = (filters?: { type?: string; category?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.category) params.append('category', filters.category);
       const queryString = params.toString();
-      const response = await api.get<Report[]>(`/v1/bi/reports${queryString ? `?${queryString}` : ''}`);
+      const response = await api.get<Report[]>(`/v3/bi/reports${queryString ? `?${queryString}` : ''}`);
       return response.data;
     }
   });
@@ -201,7 +201,7 @@ const useDataSources = () => {
   return useQuery({
     queryKey: ['bi', 'data-sources'],
     queryFn: async () => {
-      const response = await api.get<DataSource[]>('/v1/bi/data-sources');
+      const response = await api.get<DataSource[]>('/v3/bi/data-sources');
       return response.data;
     }
   });
@@ -227,8 +227,8 @@ const DashboardsView: React.FC = () => {
     { id: 'is_public', header: 'Public', accessor: 'is_public', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
     )},
-    { id: 'actions', header: 'Actions', accessor: 'id', render: (_v, _row) => (
-      <Button size="sm">Ouvrir</Button>
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_v, row) => (
+      <Button size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:open', { detail: { module: 'bi', type: 'dashboard', id: (row as Dashboard).id } })); }}>Ouvrir</Button>
     )}
   ];
 
@@ -243,10 +243,10 @@ const DashboardsView: React.FC = () => {
             options={[{ value: '', label: 'Tous les types' }, ...DASHBOARD_TYPES]}
             className="w-40"
           />
-          <Button>Nouveau tableau</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'bi', type: 'dashboard' } })); }}>Nouveau tableau</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={dashboards} isLoading={isLoading} keyField="id" error={dashboardsError instanceof Error ? dashboardsError : null} onRetry={() => refetchDashboards()} />
+      <DataTable columns={columns} data={dashboards} isLoading={isLoading} keyField="id" filterable error={dashboardsError instanceof Error ? dashboardsError : null} onRetry={() => refetchDashboards()} />
     </Card>
   );
 };
@@ -278,8 +278,8 @@ const ReportsView: React.FC = () => {
     { id: 'is_active', header: 'Actif', accessor: 'is_active', render: (v) => (
       <Badge color={(v as boolean) ? 'green' : 'gray'}>{(v as boolean) ? 'Oui' : 'Non'}</Badge>
     )},
-    { id: 'actions', header: 'Actions', accessor: 'id', render: (_v) => (
-      <Button size="sm">Executer</Button>
+    { id: 'actions', header: 'Actions', accessor: 'id', render: (_v, row) => (
+      <Button size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:execute', { detail: { module: 'bi', type: 'report', id: (row as Report).id } })); }}>Executer</Button>
     )}
   ];
 
@@ -300,10 +300,10 @@ const ReportsView: React.FC = () => {
             options={[{ value: '', label: 'Tous types' }, ...REPORT_TYPES]}
             className="w-36"
           />
-          <Button>Nouveau rapport</Button>
+          <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'bi', type: 'report' } })); }}>Nouveau rapport</Button>
         </div>
       </div>
-      <DataTable columns={columns} data={reports} isLoading={isLoading} keyField="id" error={reportsError instanceof Error ? reportsError : null} onRetry={() => refetchReports()} />
+      <DataTable columns={columns} data={reports} isLoading={isLoading} keyField="id" filterable error={reportsError instanceof Error ? reportsError : null} onRetry={() => refetchReports()} />
     </Card>
   );
 };
@@ -326,9 +326,9 @@ const DataSourcesView: React.FC = () => {
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Sources de donnees</h3>
-        <Button>Nouvelle source</Button>
+        <Button onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'bi', type: 'data-source' } })); }}>Nouvelle source</Button>
       </div>
-      <DataTable columns={columns} data={dataSources} isLoading={isLoading} keyField="id" error={dataSourcesError instanceof Error ? dataSourcesError : null} onRetry={() => refetchDataSources()} />
+      <DataTable columns={columns} data={dataSources} isLoading={isLoading} keyField="id" filterable error={dataSourcesError instanceof Error ? dataSourcesError : null} onRetry={() => refetchDataSources()} />
     </Card>
   );
 };

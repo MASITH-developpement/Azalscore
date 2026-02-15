@@ -73,7 +73,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
   loadModules: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<{ modules: ModuleInfo[] }>('/v1/modules');
+      const response = await api.get<{ modules: ModuleInfo[] }>('/v3/modules');
       set({ modules: response.data.modules, isLoading: false });
     } catch (error) {
       set({
@@ -114,7 +114,7 @@ export const useTenantStore = create<TenantState>((set) => ({
   loadTenant: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<Tenant>('/v1/tenant/current');
+      const response = await api.get<Tenant>('/v3/tenant/current');
       set({ tenant: response.data, isLoading: false });
     } catch (error) {
       set({
@@ -160,7 +160,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   loadNotifications: async () => {
     set({ isLoading: true });
     try {
-      const response = await api.get<{ notifications: Notification[] }>('/v1/notifications');
+      const response = await api.get<{ notifications: Notification[] }>('/v3/notifications');
       const notifications = response.data.notifications;
       set({
         notifications,
@@ -174,7 +174,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAsRead: async (id: string) => {
     try {
-      await api.post(`/v1/notifications/${id}/read`);
+      await api.post(`/v3/notifications/${id}/read`);
       set((state) => ({
         notifications: state.notifications.map((n) =>
           n.id === id ? { ...n, read: true } : n
@@ -188,7 +188,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAllAsRead: async () => {
     try {
-      await api.post('/v1/notifications/read-all');
+      await api.post('/v3/notifications/read-all');
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, read: true })),
         unreadCount: 0,

@@ -74,7 +74,7 @@ const useProviders = () => {
   return useQuery<ProvidersListResponse>({
     queryKey: ['enrichment', 'providers'],
     queryFn: async () => {
-      const response = await api.get('/v1/enrichment/admin/providers');
+      const response = await api.get('/v3/enrichment/admin/providers');
       return (response as any)?.data ?? response;
     },
   });
@@ -84,7 +84,7 @@ const useCreateProvider = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const response = await api.post('/v1/enrichment/admin/providers', data);
+      const response = await api.post('/v3/enrichment/admin/providers', data);
       return (response as any)?.data ?? response;
     },
     onSuccess: () => {
@@ -97,7 +97,7 @@ const useUpdateProvider = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ provider, data }: { provider: string; data: Record<string, unknown> }) => {
-      const response = await api.patch(`/v1/enrichment/admin/providers/${provider}`, data);
+      const response = await api.patch(`/v3/enrichment/admin/providers/${provider}`, data);
       return (response as any)?.data ?? response;
     },
     onSuccess: () => {
@@ -110,7 +110,7 @@ const useDeleteProvider = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (provider: string) => {
-      const response = await api.delete(`/v1/enrichment/admin/providers/${provider}`);
+      const response = await api.delete(`/v3/enrichment/admin/providers/${provider}`);
       return (response as any)?.data ?? response;
     },
     onSuccess: () => {
@@ -122,7 +122,7 @@ const useDeleteProvider = () => {
 const useTestProvider = () => {
   return useMutation<TestResult, Error, string>({
     mutationFn: async (provider: string) => {
-      const response = await api.post(`/v1/enrichment/admin/providers/${provider}/test`);
+      const response = await api.post(`/v3/enrichment/admin/providers/${provider}/test`);
       return (response as any)?.data ?? response;
     },
   });

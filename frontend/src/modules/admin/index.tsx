@@ -29,6 +29,34 @@ import {
   UserInfoTab, UserPermissionsTab, UserActivityTab,
   UserHistoryTab, UserIATab, SequencesView, EnrichmentProvidersView
 } from './components';
+import type { AvailableModule } from '@/constants/modules';
+
+// ============================================================================
+// HOOK: Charger les modules depuis l'API (source unique de verite)
+// ============================================================================
+
+interface ModulesResponse {
+  categories: string[];
+  modules: AvailableModule[];
+  modules_by_category: Record<string, AvailableModule[]>;
+}
+
+const useAvailableModules = () => {
+  return useQuery({
+    queryKey: ['admin', 'modules', 'available'],
+    queryFn: async (): Promise<ModulesResponse> => {
+      try {
+        const response = await api.get<ModulesResponse>('/v3/admin/modules/available');
+        const data = response?.data || response;
+        return data as ModulesResponse;
+      } catch {
+        // Fallback vide si API non disponible
+        return { categories: [], modules: [], modules_by_category: {} };
+      }
+    },
+    staleTime: 5 * 60 * 1000, // Cache 5 minutes
+  });
+};
 
 // ============================================================================
 // LOCAL COMPONENTS
@@ -77,18 +105,16 @@ interface User {
 
 interface Tenant {
   id: string;
-  code: string;
+  tenant_id: string;
   name: string;
-  domain?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'SUSPENDED';
-  plan: 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+  email: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'SUSPENDED' | 'PENDING';
+  plan: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE' | 'CUSTOM';
   modules_enabled: string[];
-  user_count: number;
-  storage_used: number;
   max_users: number;
-  max_storage: number;
+  max_storage_gb: number;
+  storage_used_gb: number;
   created_at: string;
-  expires_at?: string;
 }
 
 interface AuditLog {
@@ -152,26 +178,7 @@ const TENANT_PLANS = [
   { value: 'ENTERPRISE', label: 'Enterprise' }
 ];
 
-const AVAILABLE_MODULES = [
-  { code: 'invoicing', label: 'Facturation', description: 'Devis, commandes, factures' },
-  { code: 'payments', label: 'Paiements', description: 'Gestion des paiements' },
-  { code: 'projects', label: 'Projets/Affaires', description: 'Suivi des projets et affaires' },
-  { code: 'partners', label: 'CRM/Clients', description: 'Gestion relation client' },
-  { code: 'inventory', label: 'Stock', description: 'Gestion des stocks' },
-  { code: 'purchases', label: 'Achats', description: 'Commandes fournisseurs' },
-  { code: 'hr', label: 'RH', description: 'Ressources humaines' },
-  { code: 'production', label: 'Production', description: 'Gestion de production' },
-  { code: 'maintenance', label: 'Maintenance', description: 'GMAO' },
-  { code: 'quality', label: 'Qualite', description: 'Controle qualite' },
-  { code: 'pos', label: 'Point de Vente', description: 'Caisse et POS' },
-  { code: 'ecommerce', label: 'E-commerce', description: 'Boutique en ligne' },
-  { code: 'helpdesk', label: 'Support', description: 'Tickets support client' },
-  { code: 'accounting', label: 'Comptabilite', description: 'Comptabilite generale' },
-  { code: 'treasury', label: 'Tresorerie', description: 'Gestion de tresorerie' },
-  { code: 'bi', label: 'BI/Reporting', description: 'Tableaux de bord et analyses' },
-  { code: 'compliance', label: 'Conformite', description: 'Conformite reglementaire' },
-  { code: 'interventions', label: 'Interventions', description: 'Gestion des interventions' },
-];
+// Modules charges dynamiquement depuis l'API via useAvailableModules()
 
 const BACKUP_TYPES = [
   { value: 'FULL', label: 'Complete' },
@@ -234,7 +241,7 @@ const useAdminDashboard = () => {
         errors_today: 0
       };
       try {
-        const response = await api.get<AdminDashboard>('/v1/admin/dashboard', {
+        const response = await api.get<AdminDashboard>('/v3/admin/dashboard', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles
@@ -259,7 +266,7 @@ const useUsers = (filters?: { status?: string; role_id?: string }) => {
         if (filters?.status) params.append('is_active', filters.status === 'active' ? 'true' : 'false');
         if (filters?.role_id) params.append('role_code', filters.role_id);
         const queryString = params.toString();
-        const res = await api.get<{ items: User[]; total: number }>(`/v1/iam/users${queryString ? `?${queryString}` : ''}`, {
+        const res = await api.get<{ items: User[]; total: number }>(`/v3/iam/users${queryString ? `?${queryString}` : ''}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
@@ -278,7 +285,7 @@ const useUser = (id: string | undefined) => {
     queryKey: ['admin', 'user', id],
     queryFn: async (): Promise<AdminUser | null> => {
       try {
-        const response = await api.get<AdminUser>(`/v1/iam/users/${id}`, {
+        const response = await api.get<AdminUser>(`/v3/iam/users/${id}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (objet direct ou enveloppé)
@@ -317,7 +324,7 @@ const useRoles = () => {
     queryKey: ['admin', 'roles'],
     queryFn: async (): Promise<Role[]> => {
       try {
-        const response = await api.get<Role[]>('/v1/iam/roles', {
+        const response = await api.get<Role[]>('/v3/iam/roles', {
           headers: { 'X-Silent-Error': 'true' }
         });
         return extractArrayFromResponse<Role>(response);
@@ -343,7 +350,7 @@ const useCreateRole = () => {
       requires_approval?: boolean;
       max_users?: number;
     }) => {
-      const res = await api.post('/v1/iam/roles', data);
+      const res = await api.post('/v3/iam/roles', data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
@@ -364,7 +371,7 @@ const useUpdateRole = () => {
         is_active?: boolean;
       }
     }) => {
-      const res = await api.patch(`/v1/iam/roles/${id}`, data);
+      const res = await api.patch(`/v3/iam/roles/${id}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
@@ -375,7 +382,7 @@ const useDeleteRole = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/iam/roles/${id}`);
+      await api.delete(`/v3/iam/roles/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
   });
@@ -394,7 +401,7 @@ const usePermissions = () => {
     queryKey: ['admin', 'permissions'],
     queryFn: async (): Promise<Permission[]> => {
       try {
-        const response = await api.get<{ items: Permission[] }>('/v1/iam/permissions', {
+        const response = await api.get<{ items: Permission[] }>('/v3/iam/permissions', {
           headers: { 'X-Silent-Error': 'true' }
         });
         return extractArrayFromResponse<Permission>(response);
@@ -426,7 +433,7 @@ const useCapabilitiesByModule = () => {
   return useQuery({
     queryKey: ['admin', 'capabilities-modules'],
     queryFn: async (): Promise<CapabilitiesByModule> => {
-      const response = await api.get('/v1/iam/capabilities/modules');
+      const response = await api.get('/v3/iam/capabilities/modules');
 
       // La réponse est directement l'objet CAPABILITIES_BY_MODULE
       const data = response as unknown;
@@ -455,7 +462,7 @@ const useUserPermissions = (userId: string | undefined) => {
     queryFn: async (): Promise<string[]> => {
       if (!userId) return [];
       try {
-        const response = await api.get<string[]>(`/v1/iam/users/${userId}/permissions`, {
+        const response = await api.get<string[]>(`/v3/iam/users/${userId}/permissions`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) return response;
@@ -474,7 +481,7 @@ const useUpdateUserPermissions = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, capabilities }: { userId: string; capabilities: string[] }) => {
-      const res = await api.put(`/v1/iam/users/${userId}/permissions`, { capabilities });
+      const res = await api.put(`/v3/iam/users/${userId}/permissions`, { capabilities });
       return res;
     },
     onSuccess: (_, variables) => {
@@ -489,7 +496,7 @@ const useTenants = (filters?: { status?: string; plan?: string }) => {
     queryKey: ['admin', 'tenants', filters],
     queryFn: async (): Promise<Tenant[]> => {
       try {
-        const response = await api.get<Tenant[]>('/v1/tenants', {
+        const response = await api.get<Tenant[]>('/v3/tenants', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (tableau direct ou enveloppé)
@@ -516,7 +523,7 @@ const useAuditLogs = (filters?: { resource_type?: string }) => {
         const params = new URLSearchParams();
         if (filters?.resource_type) params.append('resource_type', filters.resource_type);
         const queryString = params.toString();
-        const response = await api.get<AuditLog[]>(`/v1/audit/logs${queryString ? `?${queryString}` : ''}`, {
+        const response = await api.get<AuditLog[]>(`/v3/audit/logs${queryString ? `?${queryString}` : ''}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) {
@@ -539,7 +546,7 @@ const useBackupConfigs = () => {
     queryKey: ['admin', 'backups'],
     queryFn: async (): Promise<BackupConfig[]> => {
       try {
-        const response = await api.get<BackupConfig[]>('/v1/backup/config', {
+        const response = await api.get<BackupConfig[]>('/v3/backup/config', {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) {
@@ -561,7 +568,7 @@ const useCreateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<User> & { password: string }) => {
-      const res = await api.post('/v1/iam/users', data);
+      const res = await api.post('/v3/iam/users', data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -572,7 +579,7 @@ const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await api.patch(`/v1/iam/users/${id}`, { status });
+      const res = await api.patch(`/v3/iam/users/${id}`, { status });
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -586,7 +593,7 @@ const useUpdateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
-      const res = await api.patch(`/v1/iam/users/${id}`, data);
+      const res = await api.patch(`/v3/iam/users/${id}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -600,7 +607,7 @@ const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.delete(`/v1/iam/users/${id}`);
+      const res = await api.delete(`/v3/iam/users/${id}`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -613,7 +620,7 @@ const useRunBackup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.post(`/v1/backup/${id}/run`);
+      const res = await api.post(`/v3/backup/${id}/run`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'backups'] })
@@ -945,7 +952,7 @@ const UsersView: React.FC = () => {
         data={users}
         isLoading={isLoading}
         keyField="id"
-        onRowClick={handleRowClick}
+          onRowClick={handleRowClick}
       />
 
       <Modal isOpen={showModal} onClose={handleCloseModal} title="Nouvel utilisateur">
@@ -1462,7 +1469,8 @@ const UsersPermissionsView: React.FC = () => {
           Configurez les acces specifiques a chaque module et fonctionnalite pour chaque utilisateur.
         </p>
       </div>
-      <DataTable columns={columns} data={users} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={users} isLoading={isLoading} keyField="id"
+          filterable />
 
       <UserPermissionsModal
         isOpen={showPermissionsModal}
@@ -1887,7 +1895,8 @@ const RolesView: React.FC = () => {
         <h3 className="text-lg font-semibold">Roles</h3>
         <Button onClick={handleOpenCreate}>Nouveau role</Button>
       </div>
-      <DataTable columns={columns} data={roles} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={roles} isLoading={isLoading} keyField="id"
+          filterable />
 
       <RoleFormModal
         isOpen={showModal}
@@ -1906,7 +1915,7 @@ const useSuspendTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v1/tenants/${tenantId}/suspend`);
+      const res = await api.post(`/v3/tenants/${tenantId}/suspend`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1917,7 +1926,7 @@ const useActivateTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v1/tenants/${tenantId}/activate`);
+      const res = await api.post(`/v3/tenants/${tenantId}/activate`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1928,7 +1937,7 @@ const useCancelTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v1/tenants/${tenantId}/cancel`);
+      const res = await api.post(`/v3/tenants/${tenantId}/cancel`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1939,10 +1948,12 @@ const useUpdateTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ tenantId, data }: { tenantId: string; data: Partial<Tenant> }) => {
-      const res = await api.put(`/v1/tenants/${tenantId}`, data);
+      const res = await api.put(`/v3/tenants/${tenantId}`, data);
       return unwrapApiResponse(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] });
+    }
   });
 };
 
@@ -1952,6 +1963,11 @@ const TenantsView: React.FC = () => {
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState<Partial<Tenant>>({});
+
+  // Charger les modules depuis l'API (source unique)
+  const { data: modulesData } = useAvailableModules();
+  const availableModules = modulesData?.modules || [];
+  const modulesByCategory = modulesData?.modules_by_category || {};
 
   const { data: tenants = [], isLoading } = useTenants({
     status: filterStatus || undefined,
@@ -1967,13 +1983,9 @@ const TenantsView: React.FC = () => {
     setSelectedTenant(tenant);
     setEditData({
       name: tenant.name,
-      domain: tenant.domain || '',
-      plan: tenant.plan,
-      status: tenant.status,
       max_users: tenant.max_users || 0,
-      max_storage: tenant.max_storage || 0,
+      max_storage_gb: tenant.max_storage_gb || 0,
       modules_enabled: tenant.modules_enabled || [],
-      expires_at: tenant.expires_at || ''
     });
     setShowEditModal(true);
   };
@@ -1989,56 +2001,55 @@ const TenantsView: React.FC = () => {
 
   const handleSaveEdit = async () => {
     if (selectedTenant) {
-      await updateTenant.mutateAsync({ tenantId: selectedTenant.code, data: editData });
-      setShowEditModal(false);
-      setSelectedTenant(null);
+      try {
+        // Envoi direct - memes noms de champs que le backend
+        await updateTenant.mutateAsync({
+          tenantId: selectedTenant.tenant_id,
+          data: editData
+        });
+        setShowEditModal(false);
+        setSelectedTenant(null);
+      } catch (err: unknown) {
+        alert('Erreur: ' + (err instanceof Error ? err.message : String(err)));
+      }
     }
   };
 
   const handleSuspend = async (tenant: Tenant) => {
     if (confirm(`Suspendre le tenant "${tenant.name}" ?`)) {
-      await suspendTenant.mutateAsync(tenant.code);
+      await suspendTenant.mutateAsync(tenant.tenant_id);
     }
   };
 
   const handleActivate = async (tenant: Tenant) => {
-    await activateTenant.mutateAsync(tenant.code);
+    await activateTenant.mutateAsync(tenant.tenant_id);
   };
 
   const handleCancel = async (tenant: Tenant) => {
     if (confirm(`ATTENTION: Annuler definitivement le tenant "${tenant.name}" ? Cette action est irreversible.`)) {
-      await cancelTenant.mutateAsync(tenant.code);
+      await cancelTenant.mutateAsync(tenant.tenant_id);
     }
   };
 
   const columns: TableColumn<Tenant>[] = [
-    { id: 'code', header: 'Code', accessor: 'code', render: (v) => <code className="font-mono text-xs">{v as string}</code> },
+    { id: 'tenant_id', header: 'Code', accessor: 'tenant_id', render: (v) => <code className="font-mono text-xs">{v as string}</code> },
     { id: 'name', header: 'Nom', accessor: 'name' },
     { id: 'plan', header: 'Plan', accessor: 'plan', render: (v) => {
       const info = TENANT_PLANS.find(p => p.value === (v as string));
       return <Badge color="blue">{info?.label || (v as string)}</Badge>;
     }},
-    { id: 'user_count', header: 'Utilisateurs', accessor: 'user_count', render: (v, row) => {
+    { id: 'max_users', header: 'Utilisateurs max', accessor: 'max_users', render: (v) => (
+      <span className="text-sm">{v as number}</span>
+    )},
+    { id: 'storage_used_gb', header: 'Stockage', accessor: 'storage_used_gb', render: (v, row) => {
       const tenant = row as Tenant;
-      const count = v as number;
-      const max = tenant.max_users || 0;
-      const percent = max > 0 ? Math.round((count / max) * 100) : 0;
-      return (
-        <div className="text-sm">
-          <span className={percent > 90 ? 'text-red-600 font-semibold' : ''}>{count}</span>
-          {max > 0 && <span className="text-gray-400">/{max}</span>}
-        </div>
-      );
-    }},
-    { id: 'storage_used', header: 'Stockage', accessor: 'storage_used', render: (v, row) => {
-      const tenant = row as Tenant;
-      const used = v as number;
-      const max = tenant.max_storage || 0;
+      const used = (v as number) || 0;
+      const max = tenant.max_storage_gb || 0;
       const percent = max > 0 ? Math.round((used / max) * 100) : 0;
       return (
         <div className="text-sm">
-          <span className={percent > 90 ? 'text-red-600 font-semibold' : ''}>{formatBytes(used)}</span>
-          {max > 0 && <span className="text-gray-400">/{formatBytes(max)}</span>}
+          <span className={percent > 90 ? 'text-red-600 font-semibold' : ''}>{used} Go</span>
+          {max > 0 && <span className="text-gray-400">/{max} Go</span>}
         </div>
       );
     }},
@@ -2090,7 +2101,8 @@ const TenantsView: React.FC = () => {
           />
         </div>
       </div>
-      <DataTable columns={columns} data={tenants} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={tenants} isLoading={isLoading} keyField="id"
+          filterable />
 
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`Modifier: ${selectedTenant?.name}`} size="lg">
         <div className="space-y-6">
@@ -2109,104 +2121,68 @@ const TenantsView: React.FC = () => {
                 />
               </div>
               <div className="azals-field">
-                <label>Domaine personnalise</label>
-                <Input
-                  value={(editData.domain as string) || ''}
-                  onChange={(v) => setEditData({ ...editData, domain: v })}
-                  placeholder="exemple.azalscore.com"
-                />
-              </div>
-              <div className="azals-field">
-                <label>Plan</label>
-                <Select
-                  value={editData.plan || ''}
-                  onChange={(val) => setEditData({ ...editData, plan: val as Tenant['plan'] })}
-                  options={TENANT_PLANS}
-                />
-              </div>
-              <div className="azals-field">
-                <label>Statut</label>
-                <Select
-                  value={editData.status || ''}
-                  onChange={(val) => setEditData({ ...editData, status: val as Tenant['status'] })}
-                  options={TENANT_STATUSES}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Limites */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <Settings size={16} />
-              Limites et quotas
-            </h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="azals-field">
                 <label>Utilisateurs max</label>
                 <Input
                   type="number"
                   value={String(editData.max_users || 0)}
                   onChange={(v) => setEditData({ ...editData, max_users: parseInt(v) || 0 })}
                 />
-                <span className="text-xs text-gray-500">Actuel: {selectedTenant?.user_count || 0}</span>
               </div>
               <div className="azals-field">
                 <label>Stockage max (Go)</label>
                 <Input
                   type="number"
-                  value={String(Math.round((editData.max_storage || 0) / (1024 * 1024 * 1024)))}
-                  onChange={(v) => setEditData({ ...editData, max_storage: (parseInt(v) || 0) * 1024 * 1024 * 1024 })}
+                  value={String(editData.max_storage_gb || 0)}
+                  onChange={(v) => setEditData({ ...editData, max_storage_gb: parseInt(v) || 0 })}
                 />
-                <span className="text-xs text-gray-500">Utilise: {formatBytes(selectedTenant?.storage_used || 0)}</span>
-              </div>
-              <div className="azals-field">
-                <label>Date d'expiration</label>
-                <input
-                  type="date"
-                  className="azals-input w-full"
-                  value={(editData.expires_at as string)?.split('T')[0] || ''}
-                  onChange={(e) => setEditData({ ...editData, expires_at: e.target.value ? `${e.target.value}T23:59:59Z` : undefined })}
-                />
-                <span className="text-xs text-gray-500">Vide = illimite</span>
+                <span className="text-xs text-gray-500">Utilise: {selectedTenant?.storage_used_gb || 0} Go</span>
               </div>
             </div>
           </div>
 
-          {/* Modules */}
+          {/* Modules - groupes par categorie */}
           <div>
             <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <Package size={16} />
-              Modules actives ({(editData.modules_enabled || []).length}/{AVAILABLE_MODULES.length})
+              Modules actives ({(editData.modules_enabled || []).length}/{availableModules.length})
             </h4>
-            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border rounded bg-gray-50">
-              {AVAILABLE_MODULES.map((mod) => {
-                const isEnabled = (editData.modules_enabled || []).includes(mod.code);
-                return (
-                  <label
-                    key={mod.code}
-                    className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
-                      isEnabled ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isEnabled}
-                      onChange={() => toggleModule(mod.code)}
-                      className="rounded text-blue-600"
-                    />
-                    <div>
-                      <div className="text-sm font-medium">{mod.label}</div>
-                      <div className="text-xs text-gray-500">{mod.description}</div>
-                    </div>
-                  </label>
-                );
-              })}
+            <div className="max-h-64 overflow-y-auto border rounded bg-gray-50 p-2 space-y-4">
+              {Object.entries(modulesByCategory).map(([category, mods]) => (
+                <div key={category}>
+                  <h5 className="text-xs font-bold text-gray-600 uppercase mb-2 sticky top-0 bg-gray-50 py-1">
+                    {category}
+                  </h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    {mods.map((mod) => {
+                      const isEnabled = (editData.modules_enabled || []).includes(mod.code);
+                      return (
+                        <label
+                          key={mod.code}
+                          className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
+                            isEnabled ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={() => toggleModule(mod.code)}
+                            className="rounded text-blue-600"
+                          />
+                          <div>
+                            <div className="text-sm font-medium">{mod.name}</div>
+                            <div className="text-xs text-gray-500">{mod.description}</div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="flex gap-2 mt-2">
               <button
                 type="button"
-                onClick={() => setEditData({ ...editData, modules_enabled: AVAILABLE_MODULES.map(m => m.code) })}
+                onClick={() => setEditData({ ...editData, modules_enabled: availableModules.map(m => m.code) })}
                 className="text-xs text-blue-600 hover:underline"
               >
                 Tout selectionner
@@ -2280,7 +2256,8 @@ const AuditView: React.FC = () => {
           className="w-48"
         />
       </div>
-      <DataTable columns={columns} data={logs} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={logs} isLoading={isLoading} keyField="id"
+          filterable />
     </Card>
   );
 };
@@ -2320,7 +2297,8 @@ const BackupsView: React.FC = () => {
         <h3 className="text-lg font-semibold">Sauvegardes</h3>
         <Button>Nouvelle config</Button>
       </div>
-      <DataTable columns={columns} data={backups} isLoading={isLoading} keyField="id" />
+      <DataTable columns={columns} data={backups} isLoading={isLoading} keyField="id"
+          filterable />
     </Card>
   );
 };

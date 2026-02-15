@@ -24,11 +24,11 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
   const readyToShip = canShipOrder(order);
 
   const handleCreateShipment = () => {
-    console.log('Create shipment for order:', order.id);
+    window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'createShipment', orderId: order.id } }));
   };
 
   const handlePrintLabel = () => {
-    console.log('Print label for order:', order.id);
+    window.print();
   };
 
   return (
@@ -93,7 +93,7 @@ export const OrderShippingTab: React.FC<TabContentProps<Order>> = ({ data: order
           </Grid>
 
           <div className="mt-4 flex gap-2">
-            <Button variant="secondary" leftIcon={<Truck size={16} />}>
+            <Button variant="secondary" leftIcon={<Truck size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'trackPackage', orderId: order.id, trackingNumber: order.tracking_number, carrier: order.carrier } })); }}>
               Suivre le colis
             </Button>
             <Button variant="ghost" onClick={handlePrintLabel}>

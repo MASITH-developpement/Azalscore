@@ -5,10 +5,12 @@
 
 import React, { useState } from 'react';
 import {
-  RotateCcw, Plus, Clock, CheckCircle, XCircle, AlertCircle
+  RotateCcw, Plus, Clock, CheckCircle, XCircle, AlertCircle, Loader2
 } from 'lucide-react';
 import { Card } from '@ui/layout';
 import { Button, Modal } from '@ui/actions';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@core/api-client';
 import type { TabContentProps } from '@ui/standards';
 import type { Payment, Refund } from '../types';
 import { formatCurrency, formatDateTime } from '@/utils/formatters';
@@ -22,10 +24,29 @@ import {
  */
 export const PaymentRefundsTab: React.FC<TabContentProps<Payment>> = ({ data: payment }) => {
   const [showRefundModal, setShowRefundModal] = useState(false);
+  const queryClient = useQueryClient();
   const refunds = payment.refunds || [];
   const refundTotal = getRefundTotal(payment);
   const remainingAmount = payment.amount - refundTotal;
   const canCreateRefund = canRefund(payment) && remainingAmount > 0;
+
+  const createRefund = useMutation({
+    mutationFn: async (data: { amount: number; reason: string }) => {
+      return api.post(`/v3/payments/${payment.id}/refunds`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments', payment.id] });
+      setShowRefundModal(false);
+      window.dispatchEvent(new CustomEvent('azals:toast', {
+        detail: { type: 'success', message: 'Demande de remboursement créée' }
+      }));
+    },
+    onError: () => {
+      window.dispatchEvent(new CustomEvent('azals:toast', {
+        detail: { type: 'error', message: 'Erreur lors de la création du remboursement' }
+      }));
+    }
+  });
 
   return (
     <div className="azals-std-tab-content">
@@ -83,8 +104,11 @@ export const PaymentRefundsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
         >
           <form onSubmit={(e) => {
             e.preventDefault();
-            // TODO: Implement refund creation
-            setShowRefundModal(false);
+            const formData = new FormData(e.currentTarget);
+            createRefund.mutate({
+              amount: parseFloat(formData.get('amount') as string),
+              reason: formData.get('reason') as string
+            });
           }}>
             <div className="space-y-4">
               <div className="azals-field">
@@ -113,10 +137,11 @@ export const PaymentRefundsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
                 />
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="secondary" onClick={() => setShowRefundModal(false)}>
+                <Button type="button" variant="secondary" onClick={() => setShowRefundModal(false)} disabled={createRefund.isPending}>
                   Annuler
                 </Button>
-                <Button type="submit" variant="danger">
+                <Button type="submit" variant="danger" disabled={createRefund.isPending}>
+                  {createRefund.isPending ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
                   Rembourser
                 </Button>
               </div>

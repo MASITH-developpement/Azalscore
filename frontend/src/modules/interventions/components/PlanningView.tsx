@@ -6,6 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@core/api-client';
+import { unwrapApiResponse } from '@/types';
 import { LoadingState, ErrorState } from '@ui/components/StateViews';
 import {
   ChevronLeft, ChevronRight, Calendar, User, X, AlertCircle
@@ -39,10 +40,10 @@ const useInterventions = (filters?: { statut?: string }) => {
       if (filters?.statut) params.append('statut', filters.statut);
       params.append('page_size', '200');
       const queryString = params.toString();
-      const url = `/v2/interventions${queryString ? `?${queryString}` : ''}`;
+      const url = `/v3/interventions${queryString ? `?${queryString}` : ''}`;
       const response = await api.get<{ items: Intervention[]; total: number }>(url);
-      const items = (response as any)?.items || [];
-      return items;
+      const data = unwrapApiResponse<{ items: Intervention[]; total: number }>(response);
+      return data?.items || [];
     },
   });
 };
@@ -51,9 +52,9 @@ const useIntervenants = () => {
   return useQuery({
     queryKey: ['intervenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v1/hr/employees');
-      const items = (response as any)?.items || [];
-      return items;
+      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v3/hr/employees');
+      const data = unwrapApiResponse<{ items: { id: string; first_name: string; last_name: string }[] }>(response);
+      return data?.items || [];
     },
   });
 };

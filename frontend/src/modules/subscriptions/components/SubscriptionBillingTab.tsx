@@ -61,7 +61,7 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
                     <span className="font-mono">**** **** **** {subscription.payment_method_last_four}</span>
                   </div>
                 </div>
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('azals:edit', { detail: { module: 'subscriptions', type: 'payment-method', subscriptionId: subscription.id } })); }}>
                   Modifier le moyen de paiement
                 </Button>
               </>
@@ -69,7 +69,7 @@ export const SubscriptionBillingTab: React.FC<TabContentProps<Subscription>> = (
               <div className="text-center py-4">
                 <CreditCard size={32} className="text-muted mx-auto mb-2" />
                 <p className="text-muted">Aucun moyen de paiement enregistre</p>
-                <Button variant="secondary" size="sm" className="mt-2">
+                <Button variant="secondary" size="sm" className="mt-2" onClick={() => { window.dispatchEvent(new CustomEvent('azals:create', { detail: { module: 'subscriptions', type: 'payment-method', subscriptionId: subscription.id } })); }}>
                   Ajouter une carte
                 </Button>
               </div>
@@ -177,7 +177,7 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice, currency }) => {
         {invoice.paid_at ? formatDate(invoice.paid_at) : '-'}
       </td>
       <td>
-        <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+        <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:download', { detail: { module: 'subscriptions', type: 'invoice-pdf', invoiceId: invoice.id } })); }}>
           PDF
         </Button>
       </td>

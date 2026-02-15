@@ -81,7 +81,7 @@ export function MarceauChat({ position = 'bottom-right', defaultOpen = false }: 
         conversation_id: string;
         intent: string | null;
         confidence: number;
-      }>('/v1/marceau/chat/message', {
+      }>('/v3/marceau/chat/message', {
         message: userMessage.content,
         conversation_id: conversationId,
       });
@@ -275,7 +275,14 @@ export function useMarceauChat() {
 
   const openChat = (initialMessage?: string) => {
     setIsOpen(true);
-    // TODO: Envoyer le message initial si fourni
+    if (initialMessage) {
+      // Dispatch event to send initial message after chat opens
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('marceau:send', {
+          detail: { message: initialMessage }
+        }));
+      }, 300);
+    }
   };
 
   const closeChat = () => {

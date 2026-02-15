@@ -56,7 +56,7 @@ export function MarceauSettings() {
 
   const loadConfig = async () => {
     try {
-      const response = await api.get<MarceauConfig>('/v1/marceau/config');
+      const response = await api.get<MarceauConfig>('/v3/marceau/config');
       setConfig(response.data);
       setError(null);
     } catch (e: any) {
@@ -73,7 +73,7 @@ export function MarceauSettings() {
     setSuccess(null);
 
     try {
-      await api.patch('/v1/marceau/config', {
+      await api.patch('/v3/marceau/config', {
         enabled_modules: config.enabled_modules,
         autonomy_levels: config.autonomy_levels,
         llm_temperature: config.llm_temperature,
@@ -96,7 +96,7 @@ export function MarceauSettings() {
     if (!confirm('Reinitialiser la configuration aux valeurs par defaut ?')) return;
 
     try {
-      const response = await api.post<MarceauConfig>('/v1/marceau/config/reset', {});
+      const response = await api.post<MarceauConfig>('/v3/marceau/config/reset', {});
       setConfig(response.data);
       setSuccess('Configuration reinitialisee');
     } catch (e: any) {

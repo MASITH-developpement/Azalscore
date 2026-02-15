@@ -458,7 +458,6 @@ export const wrapApiCall = async <T>(
  */
 export function logError(error: unknown, context: string): void {
   const message = error instanceof Error ? error.message : String(error);
-  console.warn(`[AZALS] ${context}:`, message);
 }
 
 // ============================================================

@@ -42,7 +42,7 @@ from .models import (
     StripeWebhook,
     WebhookStatus,
 )
-from .router import router
+from .router_crud import router
 from .service import StripeService
 
 __all__ = [

@@ -17,15 +17,15 @@ import { formatDateTime } from '@/utils/formatters';
  */
 export const OrderDocumentsTab: React.FC<TabContentProps<Order>> = ({ data: order }) => {
   const handlePrintInvoice = () => {
-    console.log('Print invoice for order:', order.id);
+    window.print();
   };
 
   const handleDownloadInvoice = () => {
-    console.log('Download invoice for order:', order.id);
+    window.dispatchEvent(new CustomEvent('azals:download', { detail: { module: 'ecommerce', type: 'invoice', orderId: order.id } }));
   };
 
   const handlePrintDeliveryNote = () => {
-    console.log('Print delivery note for order:', order.id);
+    window.print();
   };
 
   return (
@@ -62,7 +62,7 @@ export const OrderDocumentsTab: React.FC<TabContentProps<Order>> = ({ data: orde
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" leftIcon={<Download size={14} />}>
+            <Button variant="secondary" size="sm" leftIcon={<Download size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:download', { detail: { module: 'ecommerce', type: 'delivery-note', orderId: order.id } })); }}>
               PDF
             </Button>
             <Button variant="secondary" size="sm" leftIcon={<Printer size={14} />} onClick={handlePrintDeliveryNote}>
@@ -88,7 +88,7 @@ export const OrderDocumentsTab: React.FC<TabContentProps<Order>> = ({ data: orde
                     {doc.type} - {formatFileSize(doc.size)} - {formatDateTime(doc.created_at)}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />}>
+                <Button variant="ghost" size="sm" leftIcon={<Download size={14} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:download', { detail: { module: 'ecommerce', type: 'document', documentId: doc.id } })); }}>
                   Telecharger
                 </Button>
               </div>
@@ -105,13 +105,13 @@ export const OrderDocumentsTab: React.FC<TabContentProps<Order>> = ({ data: orde
       {/* Actions documents (ERP only) */}
       <Card title="Generer des documents" className="mt-4 azals-std-field--secondary">
         <Grid cols={3} gap="md">
-          <Button variant="secondary" className="justify-start" leftIcon={<Receipt size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<Receipt size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:generate', { detail: { module: 'ecommerce', type: 'invoice', orderId: order.id } })); }}>
             Generer facture
           </Button>
-          <Button variant="secondary" className="justify-start" leftIcon={<Package size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<Package size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:generate', { detail: { module: 'ecommerce', type: 'delivery-note', orderId: order.id } })); }}>
             Generer bon de livraison
           </Button>
-          <Button variant="secondary" className="justify-start" leftIcon={<FileText size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<FileText size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:generate', { detail: { module: 'ecommerce', type: 'return-label', orderId: order.id } })); }}>
             Generer etiquette retour
           </Button>
         </Grid>

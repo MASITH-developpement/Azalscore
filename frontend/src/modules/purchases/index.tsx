@@ -34,6 +34,7 @@ import {
   Paperclip,
   Sparkles,
   CreditCard,
+  Shield,
 } from 'lucide-react';
 import { api } from '@core/api-client';
 import { SmartSelector, FieldConfig } from '@/components/SmartSelector';
@@ -45,11 +46,12 @@ import { KPICard } from '@ui/dashboards';
 import { BaseViewStandard } from '@ui/standards';
 import type { InfoBarItem, SidebarSection, TabDefinition } from '@ui/standards';
 import type { PaginatedResponse, TableColumn, TableAction, DashboardKPI } from '@/types';
+import { unwrapApiResponse } from '@/types';
 
 // Import tab components
 import {
   SupplierInfoTab, SupplierOrdersTab, SupplierInvoicesTab,
-  SupplierDocumentsTab, SupplierHistoryTab, SupplierIATab,
+  SupplierDocumentsTab, SupplierHistoryTab, SupplierRiskTab, SupplierIATab,
   OrderInfoTab, OrderLinesTab, OrderFinancialTab,
   OrderDocumentsTab, OrderHistoryTab, OrderIATab,
   InvoiceInfoTab, InvoiceLinesTab, InvoiceFinancialTab,
@@ -285,10 +287,9 @@ const useSuppliers = (page = 1, pageSize = 25, filters?: FilterState) => {
     queryKey: ['purchases', 'suppliers', page, pageSize, filters],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
-        `/v1/purchases/suppliers?${params.toString()}`
+        `/v3/purchases/suppliers?${params.toString()}`
       );
-      // Handle both wrapped { data: ... } and direct response formats
-      return (response as any)?.data ?? response ?? { items: [], total: 0, page: 1, pages: 0 };
+      return unwrapApiResponse<PaginatedResponse<Supplier>>(response) ?? { items: [], total: 0, page: 1, pages: 0 };
     },
   });
 };
@@ -297,8 +298,8 @@ const useSupplier = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'suppliers', id],
     queryFn: async () => {
-      const response = await api.get<Supplier>(`/v1/purchases/suppliers/${id}`);
-      return (response as any)?.data ?? response;
+      const response = await api.get<Supplier>(`/v3/purchases/suppliers/${id}`);
+      return unwrapApiResponse<Supplier>(response);
     },
     enabled: !!id && id !== 'new',
   });
@@ -309,9 +310,9 @@ const useSuppliersLookup = () => {
     queryKey: ['purchases', 'suppliers', 'lookup'],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
-        '/v1/purchases/suppliers?page_size=500&status=APPROVED'
+        '/v3/purchases/suppliers?page_size=500&status=APPROVED'
       );
-      const data = (response as any)?.data ?? response;
+      const data = unwrapApiResponse<PaginatedResponse<Supplier>>(response);
       return data?.items ?? [];
     },
   });
@@ -322,8 +323,8 @@ const useCreateSupplier = () => {
 
   return useMutation({
     mutationFn: async (data: SupplierCreate) => {
-      const response = await api.post<Supplier>('/v1/purchases/suppliers', data);
-      return (response as any)?.data ?? response;
+      const response = await api.post<Supplier>('/v3/purchases/suppliers', data);
+      return unwrapApiResponse<Supplier>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -336,8 +337,8 @@ const useUpdateSupplier = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<SupplierCreate> }) => {
-      const response = await api.put<Supplier>(`/v1/purchases/suppliers/${id}`, data);
-      return (response as any)?.data ?? response;
+      const response = await api.put<Supplier>(`/v3/purchases/suppliers/${id}`, data);
+      return unwrapApiResponse<Supplier>(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -350,7 +351,7 @@ const useDeleteSupplier = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/purchases/suppliers/${id}`);
+      await api.delete(`/v3/purchases/suppliers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -366,7 +367,7 @@ const usePurchaseSummary = () => {
   return useQuery({
     queryKey: ['purchases', 'summary'],
     queryFn: async () => {
-      const response = await api.get<PurchaseSummary>('/v1/purchases/summary');
+      const response = await api.get<PurchaseSummary>('/v3/purchases/summary');
       return response.data;
     },
   });
@@ -387,7 +388,7 @@ const usePurchaseOrders = (page = 1, pageSize = 25, filters?: FilterState) => {
     queryKey: ['purchases', 'orders', page, pageSize, filters],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseOrder>>(
-        `/v1/purchases/orders?${params.toString()}`
+        `/v3/purchases/orders?${params.toString()}`
       );
       return response.data;
     },
@@ -398,7 +399,7 @@ const usePurchaseOrder = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'orders', id],
     queryFn: async () => {
-      const response = await api.get<PurchaseOrder>(`/v1/purchases/orders/${id}`);
+      const response = await api.get<PurchaseOrder>(`/v3/purchases/orders/${id}`);
       return response.data;
     },
     enabled: !!id && id !== 'new',
@@ -417,7 +418,7 @@ const useCreatePurchaseOrder = () => {
       notes?: string;
       lines: Omit<PurchaseOrderLine, 'id'>[];
     }) => {
-      const response = await api.post<PurchaseOrder>('/v1/purchases/orders', data);
+      const response = await api.post<PurchaseOrder>('/v3/purchases/orders', data);
       return response.data;
     },
     onSuccess: () => {
@@ -432,7 +433,7 @@ const useUpdatePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PurchaseOrder> }) => {
-      const response = await api.put<PurchaseOrder>(`/v1/purchases/orders/${id}`, data);
+      const response = await api.put<PurchaseOrder>(`/v3/purchases/orders/${id}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -447,7 +448,7 @@ const useDeletePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/purchases/orders/${id}`);
+      await api.delete(`/v3/purchases/orders/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'orders'] });
@@ -461,7 +462,7 @@ const useValidatePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<PurchaseOrder>(`/v1/purchases/orders/${id}/validate`);
+      const response = await api.post<PurchaseOrder>(`/v3/purchases/orders/${id}/validate`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -478,7 +479,7 @@ const useCreateInvoiceFromOrder = () => {
   return useMutation({
     mutationFn: async (orderId: string) => {
       const response = await api.post<PurchaseInvoice>(
-        `/v1/purchases/orders/${orderId}/create-invoice`
+        `/v3/purchases/orders/${orderId}/create-invoice`
       );
       return response.data;
     },
@@ -509,7 +510,7 @@ const usePurchaseInvoices = (page = 1, pageSize = 25, filters?: FilterState) => 
     queryKey: ['purchases', 'invoices', page, pageSize, filters],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseInvoice>>(
-        `/v1/purchases/invoices?${params.toString()}`
+        `/v3/purchases/invoices?${params.toString()}`
       );
       return response.data;
     },
@@ -520,7 +521,7 @@ const usePurchaseInvoice = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'invoices', id],
     queryFn: async () => {
-      const response = await api.get<PurchaseInvoice>(`/v1/purchases/invoices/${id}`);
+      const response = await api.get<PurchaseInvoice>(`/v3/purchases/invoices/${id}`);
       return response.data;
     },
     enabled: !!id && id !== 'new',
@@ -540,7 +541,7 @@ const useCreatePurchaseInvoice = () => {
       notes?: string;
       lines: Omit<PurchaseOrderLine, 'id'>[];
     }) => {
-      const response = await api.post<PurchaseInvoice>('/v1/purchases/invoices', data);
+      const response = await api.post<PurchaseInvoice>('/v3/purchases/invoices', data);
       return response.data;
     },
     onSuccess: () => {
@@ -555,7 +556,7 @@ const useUpdatePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PurchaseInvoice> }) => {
-      const response = await api.put<PurchaseInvoice>(`/v1/purchases/invoices/${id}`, data);
+      const response = await api.put<PurchaseInvoice>(`/v3/purchases/invoices/${id}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -570,7 +571,7 @@ const useDeletePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/purchases/invoices/${id}`);
+      await api.delete(`/v3/purchases/invoices/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'invoices'] });
@@ -584,7 +585,7 @@ const useValidatePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<PurchaseInvoice>(`/v1/purchases/invoices/${id}/validate`);
+      const response = await api.post<PurchaseInvoice>(`/v3/purchases/invoices/${id}/validate`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -1178,6 +1179,7 @@ export const SuppliersListPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -1673,6 +1675,7 @@ export const OrdersListPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -1813,7 +1816,7 @@ export const OrderFormPage: React.FC = () => {
                 secondaryField="code"
                 entityName="fournisseur"
                 entityIcon={<Building2 size={16} />}
-                createEndpoint="/v1/purchases/suppliers"
+                createEndpoint="/v3/purchases/suppliers"
                 createFields={SUPPLIER_CREATE_FIELDS}
                 queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
@@ -2183,6 +2186,7 @@ export const InvoicesListPage: React.FC = () => {
           columns={columns}
           data={data?.items || []}
           keyField="id"
+          filterable
           actions={actions}
           isLoading={isLoading}
           pagination={{
@@ -2323,7 +2327,7 @@ export const InvoiceFormPage: React.FC = () => {
                 secondaryField="code"
                 entityName="fournisseur"
                 entityIcon={<Building2 size={16} />}
-                createEndpoint="/v1/purchases/suppliers"
+                createEndpoint="/v3/purchases/suppliers"
                 createFields={SUPPLIER_CREATE_FIELDS}
                 queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
@@ -2598,6 +2602,7 @@ const SupplierDetailView: React.FC = () => {
     { id: 'invoices', label: 'Factures', icon: <FileText size={16} />, badge: supplier.total_invoices, component: SupplierInvoicesTab },
     { id: 'documents', label: 'Documents', icon: <Paperclip size={16} />, component: SupplierDocumentsTab },
     { id: 'history', label: 'Historique', icon: <Clock size={16} />, component: SupplierHistoryTab },
+    { id: 'risk', label: 'Risque', icon: <Shield size={16} />, component: SupplierRiskTab },
     { id: 'ia', label: 'Assistant IA', icon: <Sparkles size={16} />, component: SupplierIATab },
   ];
 
@@ -2814,7 +2819,6 @@ const InvoiceDetailView: React.FC = () => {
     { id: 'back', label: 'Retour', icon: <ArrowLeft size={16} />, variant: 'ghost' as const, onClick: () => navigate('/purchases/invoices') },
     ...(canEditInvoice(invoice) ? [{ id: 'edit', label: 'Modifier', icon: <Edit size={16} />, variant: 'secondary' as const, onClick: () => navigate(`/purchases/invoices/${id}/edit`) }] : []),
     ...(canValidateInvoice(invoice) ? [{ id: 'validate', label: 'Valider', icon: <CheckCircle2 size={16} />, variant: 'primary' as const, onClick: () => validateMutation.mutate(id!) }] : []),
-    ...(canPayInvoice(invoice) ? [{ id: 'pay', label: 'Payer', icon: <CreditCard size={16} />, variant: 'primary' as const, onClick: () => console.log('Pay invoice:', id) }] : []),
     ...(canEditInvoice(invoice) ? [{ id: 'delete', label: 'Supprimer', icon: <Trash2 size={16} />, variant: 'danger' as const, onClick: async () => { if (window.confirm('Supprimer cette facture ?')) { await deleteMutation.mutateAsync(id!); navigate('/purchases/invoices'); } } }] : []),
   ];
 

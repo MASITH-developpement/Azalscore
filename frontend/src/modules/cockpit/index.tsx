@@ -59,6 +59,44 @@ interface RiskAlert {
   analyzed_at: string;
 }
 
+// Types pour les reponses API paginées
+interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+}
+
+interface DocumentItem {
+  id: string;
+  reference: string;
+  customer_name?: string;
+  status: string;
+  created_at: string;
+  total?: number;
+  subtotal?: number;
+}
+
+interface InterventionItem {
+  id: string;
+  reference: string;
+  title?: string;
+  status: string;
+  created_at: string;
+}
+
+interface ProjectItem {
+  id: string;
+  reference: string;
+  name?: string;
+  status: string;
+  budget_total?: number;
+}
+
+interface OpportunityItem {
+  id: string;
+  name: string;
+  status: string;
+}
+
 // ============================================================
 // CONSTANTES
 // ============================================================
@@ -119,33 +157,35 @@ const useCockpitStats = () => {
         projectsRes,
         facturesRes,
       ] = await Promise.all([
-        api.get('/v1/commercial/customers?page_size=1').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/opportunities?page_size=100').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/documents?type=QUOTE&page_size=100').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/documents?type=ORDER&page_size=100').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/interventions?page_size=100').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/projects?limit=200').catch(() => ({ total: 0, items: [] })),
-        api.get('/v1/commercial/documents?type=INVOICE&page_size=100').catch(() => ({ total: 0, items: [] })),
+        api.get('/v3/commercial/customers?page_size=1').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<unknown>>,
+        api.get('/v3/commercial/opportunities?page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<OpportunityItem>>,
+        api.get('/v3/commercial/documents?type=QUOTE&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/v3/commercial/documents?type=ORDER&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/v3/interventions?page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<InterventionItem>>,
+        api.get('/v3/projects?limit=200').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<ProjectItem>>,
+        api.get('/v3/commercial/documents?type=INVOICE&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
       ]);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const opportunities = ((opportunitiesRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const devis = ((devisRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const commandes = ((commandesRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const interventions = ((interventionsRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const projects = ((projectsRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const factures = ((facturesRes as any).items || []) as any[];
+      const opportunities = opportunitiesRes.items || [];
+      const devis = devisRes.items || [];
+      const commandes = commandesRes.items || [];
+      const interventions = interventionsRes.items || [];
+      const projects = projectsRes.items || [];
+      const factures = facturesRes.items || [];
+
+      // DEBUG: Log pour debugger les montants
+      console.log('[COCKPIT DEBUG] facturesRes:', facturesRes);
+      console.log('[COCKPIT DEBUG] factures count:', factures.length);
+      if (factures.length > 0) {
+        console.log('[COCKPIT DEBUG] first facture:', factures[0]);
+        console.log('[COCKPIT DEBUG] first facture total:', factures[0]?.total, 'type:', typeof factures[0]?.total);
+      }
 
       // Calculer les stats
       const stats: FluxStats = {
         crm: {
-          prospects: ((customersRes as { total?: number }).total || 0),
-          clients: ((customersRes as { total?: number }).total || 0),
+          prospects: customersRes.total || 0,
+          clients: customersRes.total || 0,
           opportunites: opportunities.length,
         },
         devis: {
@@ -153,13 +193,13 @@ const useCockpitStats = () => {
           en_attente: devis.filter((d) => d.status === 'DRAFT' || d.status === 'SENT').length,
           acceptes: devis.filter((d) => d.status === 'ACCEPTED').length,
           refuses: devis.filter((d) => d.status === 'REJECTED').length,
-          montant_total: devis.reduce((sum, d) => sum + (d.total_ht || 0), 0),
+          montant_total: devis.reduce((sum, d) => sum + Number(d.total || d.subtotal || 0), 0),
         },
         commandes: {
           total: commandes.length,
           en_cours: commandes.filter((c) => c.status === 'CONFIRMED' || c.status === 'IN_PROGRESS').length,
           livrees: commandes.filter((c) => c.status === 'DELIVERED').length,
-          montant_total: commandes.reduce((sum, c) => sum + (c.total_ht || 0), 0),
+          montant_total: commandes.reduce((sum, c) => sum + Number(c.total || c.subtotal || 0), 0),
         },
         ods: {
           total: interventions.length,
@@ -171,16 +211,16 @@ const useCockpitStats = () => {
           total: projects.length,
           en_cours: projects.filter((p) => p.status === 'EN_COURS').length,
           terminees: projects.filter((p) => p.status === 'TERMINE').length,
-          ca_total: projects.reduce((sum, p) => sum + (p.budget_total || 0), 0),
+          ca_total: projects.reduce((sum, p) => sum + Number(p.budget_total || 0), 0),
         },
         factures: {
           total: factures.length,
           en_attente: factures.filter((f) => f.status === 'DRAFT' || f.status === 'SENT').length,
           payees: factures.filter((f) => f.status === 'PAID').length,
-          montant_total: factures.reduce((sum, f) => sum + (f.total_ht || 0), 0),
+          montant_total: factures.reduce((sum, f) => sum + Number(f.total || f.subtotal || 0), 0),
           montant_encaisse: factures
             .filter((f) => f.status === 'PAID')
-            .reduce((sum: number, f) => sum + (f.total_ht || 0), 0),
+            .reduce((sum: number, f) => sum + Number(f.total || f.subtotal || 0), 0),
         },
       };
 
@@ -196,22 +236,18 @@ const useRecentActivity = () => {
     queryFn: async () => {
       // Recuperer les items recents de chaque module
       const [devisRes, commandesRes, interventionsRes, facturesRes] = await Promise.all([
-        api.get('/v1/commercial/documents?type=QUOTE&limit=5').catch(() => ({ items: [] })),
-        api.get('/v1/commercial/documents?type=ORDER&limit=5').catch(() => ({ items: [] })),
-        api.get('/v1/interventions?limit=5').catch(() => ({ items: [] })),
-        api.get('/v1/commercial/documents?type=INVOICE&limit=5').catch(() => ({ items: [] })),
+        api.get('/v3/commercial/documents?type=QUOTE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/v3/commercial/documents?type=ORDER&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/v3/interventions?limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<InterventionItem>>,
+        api.get('/v3/commercial/documents?type=INVOICE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
       ]);
 
       const items: RecentItem[] = [];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const devisList = ((devisRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const commandesList = ((commandesRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const interventionsList = ((interventionsRes as any).items || []) as any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const facturesList = ((facturesRes as any).items || []) as any[];
+      const devisList = devisRes.items || [];
+      const commandesList = commandesRes.items || [];
+      const interventionsList = interventionsRes.items || [];
+      const facturesList = facturesRes.items || [];
 
       // Ajouter les devis
       devisList.forEach((d) => {
@@ -222,7 +258,7 @@ const useRecentActivity = () => {
           type: 'devis',
           status: d.status || '',
           date: d.created_at || '',
-          montant: d.total_ht,
+          montant: d.total || d.subtotal,
         });
       });
 
@@ -235,7 +271,7 @@ const useRecentActivity = () => {
           type: 'commande',
           status: c.status || '',
           date: c.created_at || '',
-          montant: c.total_ht,
+          montant: c.total || c.subtotal,
         });
       });
 
@@ -260,7 +296,7 @@ const useRecentActivity = () => {
           type: 'facture',
           status: f.status || '',
           date: f.created_at || '',
-          montant: f.total_ht,
+          montant: f.total || f.subtotal,
         });
       });
 
@@ -277,7 +313,7 @@ const useRiskAlerts = () => {
     queryKey: ['cockpit-risk-alerts'],
     queryFn: async (): Promise<RiskAlert[]> => {
       try {
-        const response = await api.get('/v1/enrichment/risk/alerts');
+        const response = await api.get('/v3/enrichment/risk/alerts');
         return (response as unknown as RiskAlert[]) || [];
       } catch {
         // Silently fail if user doesn't have permission or module not available
@@ -313,7 +349,7 @@ const useStrategicKPIs = () => {
     queryKey: ['cockpit-strategic-kpis'],
     queryFn: async (): Promise<AllStrategicKPIs | null> => {
       try {
-        const response = await api.get('/v1/cockpit/helpers/all-strategic');
+        const response = await api.get('/v3/cockpit/helpers/all-strategic');
         return response as unknown as AllStrategicKPIs;
       } catch {
         return null;
@@ -589,8 +625,12 @@ export const CockpitModule: React.FC = () => {
 
   // Calculer les KPIs globaux
   const globalKPIs = useMemo(() => {
+    // CA = montant total des factures (source principale de revenu)
+    // Si pas de factures, fallback sur affaires + commandes
+    const caFromInvoices = currentStats.factures.montant_total;
+    const caFallback = currentStats.affaires.ca_total + currentStats.commandes.montant_total;
     return {
-      caTotal: currentStats.affaires.ca_total + currentStats.commandes.montant_total,
+      caTotal: caFromInvoices > 0 ? caFromInvoices : caFallback,
       facturesEnAttente: currentStats.factures.montant_total - currentStats.factures.montant_encaisse,
       tauxConversion: currentStats.devis.total > 0
         ? Math.round((currentStats.devis.acceptes / currentStats.devis.total) * 100)

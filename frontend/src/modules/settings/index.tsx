@@ -138,15 +138,15 @@ export default function SettingsModule() {
             </h2>
 
             <div style={{ display: 'grid', gap: 'var(--azals-spacing-md)' }}>
-              <button className="azals-btn azals-btn--success">
+              <button className="azals-btn azals-btn--success" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'saveSettings' } })); }}>
                 <Save size={16} /> Enregistrer les paramètres
               </button>
 
-              <button className="azals-btn azals-btn--ghost">
+              <button className="azals-btn azals-btn--ghost" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'resetSettings' } })); }}>
                 <RotateCcw size={16} /> Réinitialiser aux valeurs par défaut
               </button>
 
-              <button className="azals-btn azals-btn--danger">
+              <button className="azals-btn azals-btn--danger" onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'deleteAccount' } })); }}>
                 <Trash2 size={16} /> Supprimer le compte
               </button>
             </div>

@@ -82,13 +82,13 @@ export const AuditDocumentsTab: React.FC<TabContentProps<Audit>> = ({ data: audi
       {/* Actions documents (ERP only) */}
       <Card title="Gestion des documents" className="mt-4 azals-std-field--secondary">
         <Grid cols={3} gap="md">
-          <Button variant="secondary" className="justify-start" leftIcon={<Upload size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<Upload size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'addDocument', auditId: audit.id } })); }}>
             Ajouter un document
           </Button>
-          <Button variant="secondary" className="justify-start" leftIcon={<FileText size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<FileText size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'generateReport', auditId: audit.id } })); }}>
             Generer rapport
           </Button>
-          <Button variant="secondary" className="justify-start" leftIcon={<Download size={16} />}>
+          <Button variant="secondary" className="justify-start" leftIcon={<Download size={16} />} onClick={() => { window.dispatchEvent(new CustomEvent('azals:action', { detail: { type: 'exportAllDocuments', auditId: audit.id } })); }}>
             Exporter tous les documents
           </Button>
         </Grid>
