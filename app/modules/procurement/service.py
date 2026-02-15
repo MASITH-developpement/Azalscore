@@ -780,14 +780,15 @@ class ProcurementService:
         # SÉCURITÉ: Mettre à jour le statut de la commande (filtrer par tenant_id)
         order = self.get_purchase_order(receipt.order_id)
         if order:
-            total_ordered = sum(l.quantity for l in self.db.query(PurchaseOrderLine).filter(
+            # Performance: Utiliser SQL SUM au lieu de Python sum (évite chargement N lignes)
+            total_ordered = self.db.query(func.sum(PurchaseOrderLine.quantity)).filter(
                 PurchaseOrderLine.tenant_id == self.tenant_id,
                 PurchaseOrderLine.order_id == order.id
-            ).all())
-            total_received = sum(l.received_quantity for l in self.db.query(PurchaseOrderLine).filter(
+            ).scalar() or Decimal("0")
+            total_received = self.db.query(func.sum(PurchaseOrderLine.received_quantity)).filter(
                 PurchaseOrderLine.tenant_id == self.tenant_id,
                 PurchaseOrderLine.order_id == order.id
-            ).all())
+            ).scalar() or Decimal("0")
 
             if total_received >= total_ordered:
                 order.status = PurchaseOrderStatus.RECEIVED

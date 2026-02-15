@@ -11,7 +11,8 @@
  */
 
 import React, { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
-import { QueryClient, QueryClientProvider, useMutation, useQueryClient } from '@tanstack/react-query';
+import { QueryClientProvider, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryClient } from '@core/query-client';
 import { BrowserRouter } from 'react-router-dom';
 import { tokenManager, api } from '@core/api-client';
 import { useTranslation } from './modules/i18n';
@@ -77,52 +78,52 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
     const searchTimeout = setTimeout(async () => {
       setIsSearching(true);
       try {
+        const encodedQuery = encodeURIComponent(query);
+
+        // Lancer les 3 recherches en parallèle (Promise.all)
+        const [clientsRes, docsRes, productsRes] = await Promise.all([
+          api.get<{ items: any[] }>(`/partners/clients?search=${encodedQuery}&page_size=5`).catch(() => ({ items: [] })),
+          api.get<{ items: any[] }>(`/commercial/documents?search=${encodedQuery}&page_size=5`).catch(() => ({ items: [] })),
+          api.get<{ items: any[] }>(`/inventory/products?search=${encodedQuery}&page_size=5`).catch(() => ({ items: [] })),
+        ]);
+
         const searchResults: SearchResult[] = [];
 
-        // Search clients
-        try {
-          const clientsRes = await api.get<{ items: any[] }>(`/partners/clients?search=${encodeURIComponent(query)}&page_size=5`);
-          const clients = (clientsRes as any)?.items || [];
-          clients.forEach((c: any) => {
-            searchResults.push({
-              id: c.id,
-              type: 'client',
-              title: c.name,
-              subtitle: c.email || c.phone || c.code,
-              icon: <Users size={16} />,
-            });
+        // Process clients
+        const clients = (clientsRes as any)?.items || [];
+        clients.forEach((c: any) => {
+          searchResults.push({
+            id: c.id,
+            type: 'client',
+            title: c.name,
+            subtitle: c.email || c.phone || c.code,
+            icon: <Users size={16} />,
           });
-        } catch (e) { logError(e, 'GlobalSearch.searchClients'); }
+        });
 
-        // Search documents (invoices/quotes)
-        try {
-          const docsRes = await api.get<{ items: any[] }>(`/commercial/documents?search=${encodeURIComponent(query)}&page_size=5`);
-          const docs = (docsRes as any)?.items || [];
-          docs.forEach((d: any) => {
-            searchResults.push({
-              id: d.id,
-              type: 'document',
-              title: `${d.document_type} ${d.number || d.id.slice(0, 8)}`,
-              subtitle: d.customer_name || d.total_ttc?.toFixed(2) + ' €',
-              icon: <FileText size={16} />,
-            });
+        // Process documents
+        const docs = (docsRes as any)?.items || [];
+        docs.forEach((d: any) => {
+          searchResults.push({
+            id: d.id,
+            type: 'document',
+            title: `${d.document_type} ${d.number || d.id.slice(0, 8)}`,
+            subtitle: d.customer_name || d.total_ttc?.toFixed(2) + ' €',
+            icon: <FileText size={16} />,
           });
-        } catch (e) { logError(e, 'GlobalSearch.searchDocuments'); }
+        });
 
-        // Search products
-        try {
-          const productsRes = await api.get<{ items: any[] }>(`/inventory/products?search=${encodeURIComponent(query)}&page_size=5`);
-          const products = (productsRes as any)?.items || [];
-          products.forEach((p: any) => {
-            searchResults.push({
-              id: p.id,
-              type: 'article',
-              title: p.name,
-              subtitle: p.sku || p.code,
-              icon: <Package size={16} />,
-            });
+        // Process products
+        const products = (productsRes as any)?.items || [];
+        products.forEach((p: any) => {
+          searchResults.push({
+            id: p.id,
+            type: 'article',
+            title: p.name,
+            subtitle: p.sku || p.code,
+            icon: <Package size={16} />,
           });
-        } catch (e) { logError(e, 'GlobalSearch.searchProducts'); }
+        });
 
         setResults(searchResults);
         setSelectedIndex(0);
@@ -338,22 +339,9 @@ const VehiculesModule = lazy(() => import('./modules/vehicles'));
 const AffairesModule = lazy(() => import('./modules/affaires'));
 
 // ============================================================
-// QUERY CLIENT
-// ============================================================
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-// ============================================================
 // CONFIGURATION DU MENU
 // ============================================================
+// Note: QueryClient importé depuis @core/query-client (singleton)
 
 type ViewKey =
   // Saisie

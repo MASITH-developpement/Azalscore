@@ -11,7 +11,7 @@
  * FUTURE : Permettre à l'utilisateur de personnaliser son interface
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   Menu, X, Bell, User, LogOut, Settings, ChevronDown,
@@ -128,26 +128,43 @@ const Header: React.FC<HeaderProps> = ({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const demoMode = isDemoMode();
 
-  const currentItem = MENU_ITEMS.find(m => m.key === currentView);
+  const currentItem = useMemo(
+    () => MENU_ITEMS.find(m => m.key === currentView),
+    [currentView]
+  );
 
-  // Filtrer les items selon les capabilities
-  const visibleItems = MENU_ITEMS.filter(item => {
-    if (!item.capability) return true;
-    return capabilities.includes(item.capability);
-  });
+  // Filtrer les items selon les capabilities (mémorisé pour éviter recalcul)
+  const visibleItems = useMemo(() => {
+    return MENU_ITEMS.filter(item => {
+      if (!item.capability) return true;
+      return capabilities.includes(item.capability);
+    });
+  }, [capabilities]);
 
-  // Grouper les items filtrés pour le dropdown
-  const groups = visibleItems.reduce((acc, item) => {
-    const group = item.group || 'Autre';
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(item);
-    return acc;
-  }, {} as Record<string, MenuItem[]>);
+  // Grouper les items filtrés pour le dropdown (mémorisé)
+  const groups = useMemo(() => {
+    return visibleItems.reduce((acc, item) => {
+      const group = item.group || 'Autre';
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(item);
+      return acc;
+    }, {} as Record<string, MenuItem[]>);
+  }, [visibleItems]);
 
-  const handleModeSwitch = () => {
+  // Handlers mémorisés pour éviter re-renders enfants
+  const handleModeSwitch = useCallback(() => {
     const newMode = mode === 'azalscore' ? 'erp' : 'azalscore';
     setInterfaceMode(newMode);
-  };
+  }, [mode]);
+
+  const toggleDropdown = useCallback(() => {
+    setDropdownOpen(prev => !prev);
+  }, []);
+
+  const handleItemClick = useCallback((key: ViewKey) => {
+    onViewChange(key);
+    setDropdownOpen(false);
+  }, [onViewChange]);
 
   return (
     <header className={clsx('azals-unified-header', {
@@ -175,7 +192,7 @@ const Header: React.FC<HeaderProps> = ({
           <div className="azals-unified-header__selector-container">
             <button
               className="azals-unified-header__selector"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              onClick={toggleDropdown}
             >
               <span>{currentItem?.label || 'Sélectionner'}</span>
               <ChevronDown size={18} className={dropdownOpen ? 'rotate' : ''} />
@@ -192,10 +209,7 @@ const Header: React.FC<HeaderProps> = ({
                         className={clsx('azals-unified-header__item', {
                           'azals-unified-header__item--active': currentView === item.key
                         })}
-                        onClick={() => {
-                          onViewChange(item.key);
-                          setDropdownOpen(false);
-                        }}
+                        onClick={() => handleItemClick(item.key)}
                       >
                         {item.label}
                       </button>

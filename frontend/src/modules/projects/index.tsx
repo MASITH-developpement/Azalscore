@@ -90,8 +90,9 @@ const useProjectStats = () => {
 };
 
 const useProjects = (filters?: { status?: string; client_id?: string }) => {
+  // Query key avec valeurs primitives (évite cache miss sur référence objet)
   return useQuery({
-    queryKey: ['projects', 'list', filters],
+    queryKey: ['projects', 'list', filters?.status ?? null, filters?.client_id ?? null],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -116,8 +117,9 @@ const useProject = (id: string) => {
 };
 
 const useTasks = (filters?: { status?: string; project_id?: string; assignee_id?: string }) => {
+  // Query key avec valeurs primitives (évite cache miss sur référence objet)
   return useQuery({
-    queryKey: ['projects', 'tasks', filters],
+    queryKey: ['projects', 'tasks', filters?.status ?? null, filters?.project_id ?? null, filters?.assignee_id ?? null],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
@@ -132,8 +134,9 @@ const useTasks = (filters?: { status?: string; project_id?: string; assignee_id?
 };
 
 const useTimeEntries = (filters?: { project_id?: string; date_from?: string; date_to?: string }) => {
+  // Query key avec valeurs primitives (évite cache miss sur référence objet)
   return useQuery({
-    queryKey: ['projects', 'time-entries', filters],
+    queryKey: ['projects', 'time-entries', filters?.project_id ?? null, filters?.date_from ?? null, filters?.date_to ?? null],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.project_id) params.append('project_id', filters.project_id);
