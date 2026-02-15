@@ -93,7 +93,7 @@ const useMaintenanceDashboard = () => {
   return useQuery({
     queryKey: ['maintenance', 'dashboard'],
     queryFn: async () => {
-      return api.get<MaintenanceDashboard>('/v3/maintenance/dashboard').then(r => r.data);
+      return api.get<MaintenanceDashboard>('/maintenance/dashboard').then(r => r.data);
     }
   });
 };
@@ -107,7 +107,7 @@ const useAssets = (filters?: { type?: string; status?: string; criticality?: str
       if (filters?.status) params.append('status', filters.status);
       if (filters?.criticality) params.append('criticality', filters.criticality);
       const queryString = params.toString();
-      const url = `/v3/maintenance/assets${queryString ? `?${queryString}` : ''}`;
+      const url = `/maintenance/assets${queryString ? `?${queryString}` : ''}`;
       return api.get<Asset[]>(url).then(r => r.data);
     }
   });
@@ -117,7 +117,7 @@ const useAsset = (id: string) => {
   return useQuery({
     queryKey: ['maintenance', 'asset', id],
     queryFn: async () => {
-      return api.get<Asset>(`/v3/maintenance/assets/${id}`).then(r => r.data);
+      return api.get<Asset>(`/maintenance/assets/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -132,7 +132,7 @@ const useMaintenanceOrders = (filters?: { type?: string; status?: string; priori
       if (filters?.status) params.append('status', filters.status);
       if (filters?.priority) params.append('priority', filters.priority);
       const queryString = params.toString();
-      const url = `/v3/maintenance/orders${queryString ? `?${queryString}` : ''}`;
+      const url = `/maintenance/orders${queryString ? `?${queryString}` : ''}`;
       return api.get<MaintenanceOrder[]>(url).then(r => r.data);
     }
   });
@@ -142,7 +142,7 @@ const useMaintenancePlans = () => {
   return useQuery({
     queryKey: ['maintenance', 'plans'],
     queryFn: async () => {
-      return api.get<MaintenancePlan[]>('/v3/maintenance/plans').then(r => r.data);
+      return api.get<MaintenancePlan[]>('/maintenance/plans').then(r => r.data);
     }
   });
 };
@@ -151,7 +151,7 @@ const useCreateAsset = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Asset>) => {
-      return api.post('/v3/maintenance/assets', data).then(r => r.data);
+      return api.post('/maintenance/assets', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance', 'assets'] })
   });
@@ -161,7 +161,7 @@ const useCreateMaintenanceOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<MaintenanceOrder>) => {
-      return api.post('/v3/maintenance/orders', data).then(r => r.data);
+      return api.post('/maintenance/orders', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance'] })
   });
@@ -171,7 +171,7 @@ const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v3/maintenance/orders/${id}`, { status }).then(r => r.data);
+      return api.patch(`/maintenance/orders/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['maintenance'] })
   });

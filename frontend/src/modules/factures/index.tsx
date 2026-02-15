@@ -69,7 +69,7 @@ const useFacturesList = (page = 1, pageSize = 25, filters?: { type?: FactureType
       }
       if (filters?.status) params.append('status', filters.status);
       if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Facture>>(`/v3/commercial/documents?${params}`);
+      const response = await api.get<PaginatedResponse<Facture>>(`/commercial/documents?${params}`);
       return response.data;
     },
   });
@@ -79,7 +79,7 @@ const useFacture = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', id],
     queryFn: async () => {
-      const response = await api.get<Facture>(`/v3/commercial/documents/${id}`);
+      const response = await api.get<Facture>(`/commercial/documents/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -90,7 +90,7 @@ const useFacturePayments = (documentId: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', documentId, 'payments'],
     queryFn: async () => {
-      const response = await api.get<Payment[]>(`/v3/commercial/documents/${documentId}/payments`);
+      const response = await api.get<Payment[]>(`/commercial/documents/${documentId}/payments`);
       return response.data;
     },
     enabled: !!documentId,
@@ -103,7 +103,7 @@ const useCustomers = (search?: string) => {
     queryFn: async () => {
       const params = new URLSearchParams({ page: '1', page_size: '50' });
       if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/v3/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
       return response.data.items;
     },
   });
@@ -113,7 +113,7 @@ const useCreateFacture = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: FactureFormData) => {
-      const response = await api.post<Facture>('/v3/commercial/documents', data);
+      const response = await api.post<Facture>('/commercial/documents', data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -124,7 +124,7 @@ const useValidateFacture = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Facture>(`/v3/commercial/documents/${id}/validate`);
+      const response = await api.post<Facture>(`/commercial/documents/${id}/validate`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -135,7 +135,7 @@ const useSendFacture = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Facture>(`/v3/commercial/documents/${id}/send`);
+      const response = await api.post<Facture>(`/commercial/documents/${id}/send`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -146,7 +146,7 @@ const useCreatePayment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ documentId, data }: { documentId: string; data: PaymentFormData }) => {
-      const response = await api.post<Payment>('/v3/commercial/payments', {
+      const response = await api.post<Payment>('/commercial/payments', {
         document_id: documentId,
         ...data,
       });
@@ -160,7 +160,7 @@ const useCreateAvoir = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (factureId: string) => {
-      const response = await api.post<Facture>(`/v3/commercial/documents/${factureId}/credit-note`);
+      const response = await api.post<Facture>(`/commercial/documents/${factureId}/credit-note`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -585,7 +585,7 @@ const FactureDetailView: React.FC<{
       label: 'PDF',
       icon: <Download size={16} />,
       variant: 'ghost',
-      onClick: () => { window.open(`/api/v3/commercial/documents/${facture.id}/pdf`, '_blank'); },
+      onClick: () => { window.open(`/api/commercial/documents/${facture.id}/pdf`, '_blank'); },
     });
 
     actions.push({

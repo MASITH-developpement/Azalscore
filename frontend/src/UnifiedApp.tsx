@@ -538,7 +538,7 @@ const AppContent: React.FC = () => {
   const loadCapabilities = useCapabilitiesStore((state) => state.loadCapabilities);
   const capStatus = useCapabilitiesStore((state) => state.status);
 
-  // Charger les capabilities au montage (production : appel API /v3/auth/capabilities)
+  // Charger les capabilities au montage (production : appel API /auth/capabilities)
   useEffect(() => {
     if (capStatus === 'idle') {
       loadCapabilities();

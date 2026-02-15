@@ -60,7 +60,7 @@ export function MarceauConversations() {
       params.append('limit', String(pageSize));
 
       const response = await api.get<{ items: MarceauConversation[]; total: number }>(
-        `/v3/marceau/conversations?${params}`
+        `/marceau/conversations?${params}`
       );
       setConversations(response.data.items || []);
       setTotal(response.data.total || 0);

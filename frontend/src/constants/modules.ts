@@ -3,7 +3,7 @@
  * =================================
  * CE FICHIER EST DEPRECIE.
  *
- * La source de verite est maintenant: GET /api/v3/admin/modules/available
+ * La source de verite est maintenant: GET /api/admin/modules/available
  *
  * Ce fichier reste pour compatibilite mais ne doit plus etre modifie.
  * Pour ajouter un module, modifier: app/core/modules_registry.py
@@ -24,4 +24,4 @@ export interface AvailableModule {
 export const AVAILABLE_MODULES: AvailableModule[] = [];
 
 // Hook pour charger les modules depuis l'API
-export const MODULES_API_ENDPOINT = '/api/v3/admin/modules/available';
+export const MODULES_API_ENDPOINT = '/api/admin/modules/available';

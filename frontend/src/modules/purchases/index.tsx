@@ -287,7 +287,7 @@ const useSuppliers = (page = 1, pageSize = 25, filters?: FilterState) => {
     queryKey: ['purchases', 'suppliers', page, pageSize, filters],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
-        `/v3/purchases/suppliers?${params.toString()}`
+        `/purchases/suppliers?${params.toString()}`
       );
       return unwrapApiResponse<PaginatedResponse<Supplier>>(response) ?? { items: [], total: 0, page: 1, pages: 0 };
     },
@@ -298,7 +298,7 @@ const useSupplier = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'suppliers', id],
     queryFn: async () => {
-      const response = await api.get<Supplier>(`/v3/purchases/suppliers/${id}`);
+      const response = await api.get<Supplier>(`/purchases/suppliers/${id}`);
       return unwrapApiResponse<Supplier>(response);
     },
     enabled: !!id && id !== 'new',
@@ -310,7 +310,7 @@ const useSuppliersLookup = () => {
     queryKey: ['purchases', 'suppliers', 'lookup'],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Supplier>>(
-        '/v3/purchases/suppliers?page_size=500&status=APPROVED'
+        '/purchases/suppliers?page_size=500&status=APPROVED'
       );
       const data = unwrapApiResponse<PaginatedResponse<Supplier>>(response);
       return data?.items ?? [];
@@ -323,7 +323,7 @@ const useCreateSupplier = () => {
 
   return useMutation({
     mutationFn: async (data: SupplierCreate) => {
-      const response = await api.post<Supplier>('/v3/purchases/suppliers', data);
+      const response = await api.post<Supplier>('/purchases/suppliers', data);
       return unwrapApiResponse<Supplier>(response);
     },
     onSuccess: () => {
@@ -337,7 +337,7 @@ const useUpdateSupplier = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<SupplierCreate> }) => {
-      const response = await api.put<Supplier>(`/v3/purchases/suppliers/${id}`, data);
+      const response = await api.put<Supplier>(`/purchases/suppliers/${id}`, data);
       return unwrapApiResponse<Supplier>(response);
     },
     onSuccess: () => {
@@ -351,7 +351,7 @@ const useDeleteSupplier = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v3/purchases/suppliers/${id}`);
+      await api.delete(`/purchases/suppliers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'suppliers'] });
@@ -367,7 +367,7 @@ const usePurchaseSummary = () => {
   return useQuery({
     queryKey: ['purchases', 'summary'],
     queryFn: async () => {
-      const response = await api.get<PurchaseSummary>('/v3/purchases/summary');
+      const response = await api.get<PurchaseSummary>('/purchases/summary');
       return response.data;
     },
   });
@@ -388,7 +388,7 @@ const usePurchaseOrders = (page = 1, pageSize = 25, filters?: FilterState) => {
     queryKey: ['purchases', 'orders', page, pageSize, filters],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseOrder>>(
-        `/v3/purchases/orders?${params.toString()}`
+        `/purchases/orders?${params.toString()}`
       );
       return response.data;
     },
@@ -399,7 +399,7 @@ const usePurchaseOrder = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'orders', id],
     queryFn: async () => {
-      const response = await api.get<PurchaseOrder>(`/v3/purchases/orders/${id}`);
+      const response = await api.get<PurchaseOrder>(`/purchases/orders/${id}`);
       return response.data;
     },
     enabled: !!id && id !== 'new',
@@ -418,7 +418,7 @@ const useCreatePurchaseOrder = () => {
       notes?: string;
       lines: Omit<PurchaseOrderLine, 'id'>[];
     }) => {
-      const response = await api.post<PurchaseOrder>('/v3/purchases/orders', data);
+      const response = await api.post<PurchaseOrder>('/purchases/orders', data);
       return response.data;
     },
     onSuccess: () => {
@@ -433,7 +433,7 @@ const useUpdatePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PurchaseOrder> }) => {
-      const response = await api.put<PurchaseOrder>(`/v3/purchases/orders/${id}`, data);
+      const response = await api.put<PurchaseOrder>(`/purchases/orders/${id}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -448,7 +448,7 @@ const useDeletePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v3/purchases/orders/${id}`);
+      await api.delete(`/purchases/orders/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'orders'] });
@@ -462,7 +462,7 @@ const useValidatePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<PurchaseOrder>(`/v3/purchases/orders/${id}/validate`);
+      const response = await api.post<PurchaseOrder>(`/purchases/orders/${id}/validate`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -479,7 +479,7 @@ const useCreateInvoiceFromOrder = () => {
   return useMutation({
     mutationFn: async (orderId: string) => {
       const response = await api.post<PurchaseInvoice>(
-        `/v3/purchases/orders/${orderId}/create-invoice`
+        `/purchases/orders/${orderId}/create-invoice`
       );
       return response.data;
     },
@@ -510,7 +510,7 @@ const usePurchaseInvoices = (page = 1, pageSize = 25, filters?: FilterState) => 
     queryKey: ['purchases', 'invoices', page, pageSize, filters],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<PurchaseInvoice>>(
-        `/v3/purchases/invoices?${params.toString()}`
+        `/purchases/invoices?${params.toString()}`
       );
       return response.data;
     },
@@ -521,7 +521,7 @@ const usePurchaseInvoice = (id: string) => {
   return useQuery({
     queryKey: ['purchases', 'invoices', id],
     queryFn: async () => {
-      const response = await api.get<PurchaseInvoice>(`/v3/purchases/invoices/${id}`);
+      const response = await api.get<PurchaseInvoice>(`/purchases/invoices/${id}`);
       return response.data;
     },
     enabled: !!id && id !== 'new',
@@ -541,7 +541,7 @@ const useCreatePurchaseInvoice = () => {
       notes?: string;
       lines: Omit<PurchaseOrderLine, 'id'>[];
     }) => {
-      const response = await api.post<PurchaseInvoice>('/v3/purchases/invoices', data);
+      const response = await api.post<PurchaseInvoice>('/purchases/invoices', data);
       return response.data;
     },
     onSuccess: () => {
@@ -556,7 +556,7 @@ const useUpdatePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<PurchaseInvoice> }) => {
-      const response = await api.put<PurchaseInvoice>(`/v3/purchases/invoices/${id}`, data);
+      const response = await api.put<PurchaseInvoice>(`/purchases/invoices/${id}`, data);
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -571,7 +571,7 @@ const useDeletePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v3/purchases/invoices/${id}`);
+      await api.delete(`/purchases/invoices/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases', 'invoices'] });
@@ -585,7 +585,7 @@ const useValidatePurchaseInvoice = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<PurchaseInvoice>(`/v3/purchases/invoices/${id}/validate`);
+      const response = await api.post<PurchaseInvoice>(`/purchases/invoices/${id}/validate`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -1816,7 +1816,7 @@ export const OrderFormPage: React.FC = () => {
                 secondaryField="code"
                 entityName="fournisseur"
                 entityIcon={<Building2 size={16} />}
-                createEndpoint="/v3/purchases/suppliers"
+                createEndpoint="/purchases/suppliers"
                 createFields={SUPPLIER_CREATE_FIELDS}
                 queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}
@@ -2327,7 +2327,7 @@ export const InvoiceFormPage: React.FC = () => {
                 secondaryField="code"
                 entityName="fournisseur"
                 entityIcon={<Building2 size={16} />}
-                createEndpoint="/v3/purchases/suppliers"
+                createEndpoint="/purchases/suppliers"
                 createFields={SUPPLIER_CREATE_FIELDS}
                 queryKeys={['purchases', 'suppliers']}
                 disabled={!canEdit}

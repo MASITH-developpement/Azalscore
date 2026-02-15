@@ -167,7 +167,7 @@ const useBIDashboardStats = () => {
   return useQuery({
     queryKey: ['bi', 'stats'],
     queryFn: async () => {
-      const response = await api.get<BIDashboardStats>('/v3/bi/stats');
+      const response = await api.get<BIDashboardStats>('/bi/stats');
       return response.data;
     }
   });
@@ -177,7 +177,7 @@ const useDashboards = (type?: string) => {
   return useQuery({
     queryKey: ['bi', 'dashboards', type],
     queryFn: async () => {
-      const response = await api.get<Dashboard[]>(`/v3/bi/dashboards${type ? `?type=${type}` : ''}`);
+      const response = await api.get<Dashboard[]>(`/bi/dashboards${type ? `?type=${type}` : ''}`);
       return response.data;
     }
   });
@@ -191,7 +191,7 @@ const useReports = (filters?: { type?: string; category?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.category) params.append('category', filters.category);
       const queryString = params.toString();
-      const response = await api.get<Report[]>(`/v3/bi/reports${queryString ? `?${queryString}` : ''}`);
+      const response = await api.get<Report[]>(`/bi/reports${queryString ? `?${queryString}` : ''}`);
       return response.data;
     }
   });
@@ -201,7 +201,7 @@ const useDataSources = () => {
   return useQuery({
     queryKey: ['bi', 'data-sources'],
     queryFn: async () => {
-      const response = await api.get<DataSource[]>('/v3/bi/data-sources');
+      const response = await api.get<DataSource[]>('/bi/data-sources');
       return response.data;
     }
   });

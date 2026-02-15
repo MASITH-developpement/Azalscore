@@ -82,33 +82,33 @@ interface Preferences {
 
 const useMobileStats = () => useQuery({
   queryKey: ['mobile', 'stats'],
-  queryFn: () => api.get<MobileStats>('/v3/mobile/stats').then(r => r.data)
+  queryFn: () => api.get<MobileStats>('/mobile/stats').then(r => r.data)
 });
 
 const useDevices = () => useQuery({
   queryKey: ['mobile', 'devices'],
-  queryFn: () => api.get<Device[]>('/v3/mobile/devices').then(r => r.data || [])
+  queryFn: () => api.get<Device[]>('/mobile/devices').then(r => r.data || [])
 });
 
 const useSessions = () => useQuery({
   queryKey: ['mobile', 'sessions'],
-  queryFn: () => api.get<MobileSession[]>('/v3/mobile/sessions').then(r => r.data || [])
+  queryFn: () => api.get<MobileSession[]>('/mobile/sessions').then(r => r.data || [])
 });
 
 const useNotifications = () => useQuery({
   queryKey: ['mobile', 'notifications'],
-  queryFn: () => api.get<Notification[]>('/v3/mobile/notifications').then(r => r.data || [])
+  queryFn: () => api.get<Notification[]>('/mobile/notifications').then(r => r.data || [])
 });
 
 const usePreferences = () => useQuery({
   queryKey: ['mobile', 'preferences'],
-  queryFn: () => api.get<Preferences>('/v3/mobile/preferences').then(r => r.data)
+  queryFn: () => api.get<Preferences>('/mobile/preferences').then(r => r.data)
 });
 
 const useDeleteDevice = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/v3/mobile/devices/${id}`),
+    mutationFn: (id: string) => api.delete(`/mobile/devices/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'devices'] })
   });
 };
@@ -116,7 +116,7 @@ const useDeleteDevice = () => {
 const useDeleteSession = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/v3/mobile/sessions/${id}`),
+    mutationFn: (id: string) => api.delete(`/mobile/sessions/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'sessions'] })
   });
 };
@@ -124,7 +124,7 @@ const useDeleteSession = () => {
 const useMarkNotificationRead = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.put(`/v3/mobile/notifications/${id}/read`),
+    mutationFn: (id: string) => api.put(`/mobile/notifications/${id}/read`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'notifications'] })
   });
 };
@@ -132,7 +132,7 @@ const useMarkNotificationRead = () => {
 const useMarkAllNotificationsRead = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.put('/v3/mobile/notifications/read-all'),
+    mutationFn: () => api.put('/mobile/notifications/read-all'),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'notifications'] })
   });
 };
@@ -140,7 +140,7 @@ const useMarkAllNotificationsRead = () => {
 const useUpdatePreferences = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Preferences>) => api.put('/v3/mobile/preferences', data).then(r => r.data),
+    mutationFn: (data: Partial<Preferences>) => api.put('/mobile/preferences', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile', 'preferences'] })
   });
 };

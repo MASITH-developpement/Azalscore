@@ -73,7 +73,7 @@ export const useCapabilitiesStore = create<CapabilitiesStore>((set, get) => ({
     set({ isLoading: true, status: 'loading' });
 
     try {
-      const response = await api.get<CapabilitiesResponse>('/v3/auth/capabilities');
+      const response = await api.get<CapabilitiesResponse>('/auth/capabilities');
 
       // Handle all possible response formats
       let capabilities: string[] = [];

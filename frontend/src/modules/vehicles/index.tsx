@@ -184,7 +184,7 @@ const useVehicules = (page = 1, pageSize = 25) => {
 
       try {
         const response = await api.get<PaginatedResponse<Vehicule>>(
-          `/v3/fleet/vehicles?page=${page}&page_size=${pageSize}`
+          `/fleet/vehicles?page=${page}&page_size=${pageSize}`
         );
         return (response as unknown as PaginatedResponse<Vehicule>) || { items: [], total: 0 };
       } catch (error) {
@@ -209,7 +209,7 @@ const useVehicule = (id: string) => {
       }
 
       try {
-        const response = await api.get<Vehicule>(`/v3/fleet/vehicles/${id}`);
+        const response = await api.get<Vehicule>(`/fleet/vehicles/${id}`);
         return response as unknown as Vehicule;
       } catch (error) {
         const vehicule = DEMO_VEHICLES.find(v => v.id === id);
@@ -234,7 +234,7 @@ const useDeleteVehicule = () => {
         }
         return id;
       }
-      await api.delete(`/v3/fleet/vehicles/${id}`);
+      await api.delete(`/fleet/vehicles/${id}`);
       return id;
     },
     onSuccess: () => {

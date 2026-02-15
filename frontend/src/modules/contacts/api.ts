@@ -24,7 +24,7 @@ import type {
   RelationType,
 } from './types';
 
-const API_BASE = '/v3/contacts';
+const API_BASE = '/contacts';
 
 // ============================================================================
 // HELPERS

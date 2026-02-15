@@ -211,7 +211,7 @@ const useComplianceStats = () => {
   return useQuery({
     queryKey: ['compliance', 'stats'],
     queryFn: async () => {
-      return api.get<ComplianceStats>('/v3/compliance/stats').then(r => r.data);
+      return api.get<ComplianceStats>('/compliance/stats').then(r => r.data);
     }
   });
 };
@@ -224,7 +224,7 @@ const usePolicies = (filters?: { type?: string; status?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v3/compliance/policies?${queryString}` : '/v3/compliance/policies';
+      const url = queryString ? `/compliance/policies?${queryString}` : '/compliance/policies';
       return api.get<Policy[]>(url).then(r => r.data);
     }
   });
@@ -238,7 +238,7 @@ const useAudits = (filters?: { type?: string; status?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v3/compliance/audits?${queryString}` : '/v3/compliance/audits';
+      const url = queryString ? `/compliance/audits?${queryString}` : '/compliance/audits';
       return api.get<Audit[]>(url).then(r => r.data);
     }
   });
@@ -252,7 +252,7 @@ const useGDPRRequests = (filters?: { type?: string; status?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v3/compliance/gdpr-requests?${queryString}` : '/v3/compliance/gdpr-requests';
+      const url = queryString ? `/compliance/gdpr-requests?${queryString}` : '/compliance/gdpr-requests';
       return api.get<GDPRRequest[]>(url).then(r => r.data);
     }
   });
@@ -265,7 +265,7 @@ const useConsents = (filters?: { consent_type?: string }) => {
       const params = new URLSearchParams();
       if (filters?.consent_type) params.append('consent_type', filters.consent_type);
       const queryString = params.toString();
-      const url = queryString ? `/v3/compliance/consents?${queryString}` : '/v3/compliance/consents';
+      const url = queryString ? `/compliance/consents?${queryString}` : '/compliance/consents';
       return api.get<Consent[]>(url).then(r => r.data);
     }
   });
@@ -275,7 +275,7 @@ const useUpdateGDPRStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch<void>(`/v3/compliance/gdpr-requests/${id}/status`, { status }).then(r => r.data);
+      return api.patch<void>(`/compliance/gdpr-requests/${id}/status`, { status }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['compliance', 'gdpr'] });
@@ -288,7 +288,7 @@ const useAudit = (id: string) => {
   return useQuery({
     queryKey: ['compliance', 'audits', id],
     queryFn: async () => {
-      return api.get<AuditType>(`/v3/compliance/audits/${id}`).then(r => r.data);
+      return api.get<AuditType>(`/compliance/audits/${id}`).then(r => r.data);
     },
     enabled: !!id
   });

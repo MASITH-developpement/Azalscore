@@ -139,7 +139,7 @@ const sendIncidentToBackend = async (incident: GuardianIncident): Promise<boolea
 
     const apiUrl = import.meta.env.VITE_API_URL || '';
 
-    const response = await fetch(`${apiUrl}/v3/incidents`, {
+    const response = await fetch(`${apiUrl}/incidents`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -351,7 +351,7 @@ export const GuardianActions = {
       }
 
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiUrl}/v3/auth/refresh`, {
+      const response = await fetch(`${apiUrl}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -517,7 +517,7 @@ export const createAuthIncident = async (
     user_id: getUserId(),
     page: getPageTitle(),
     route: getRouteFromLocation(),
-    endpoint: '/v3/auth/*',
+    endpoint: '/auth/*',
     method: null,
     http_status: null,
     message: reason,

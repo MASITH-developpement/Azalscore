@@ -75,7 +75,7 @@ const useQualityDashboard = () => {
   return useQuery({
     queryKey: ['quality', 'dashboard'],
     queryFn: async () => {
-      return api.get<QualityDashboard>('/v3/quality/dashboard').then(r => r.data);
+      return api.get<QualityDashboard>('/quality/dashboard').then(r => r.data);
     }
   });
 };
@@ -89,7 +89,7 @@ const useNonConformances = (filters?: { type?: string; status?: string; severity
       if (filters?.status) params.append('status', filters.status);
       if (filters?.severity) params.append('severity', filters.severity);
       const query = params.toString();
-      return api.get<NonConformance[]>(`/v3/quality/non-conformances${query ? `?${query}` : ''}`).then(r => r.data);
+      return api.get<NonConformance[]>(`/quality/non-conformances${query ? `?${query}` : ''}`).then(r => r.data);
     }
   });
 };
@@ -98,7 +98,7 @@ const useNonConformance = (id: string) => {
   return useQuery({
     queryKey: ['quality', 'non-conformances', id],
     queryFn: async () => {
-      return api.get<NonConformance>(`/v3/quality/non-conformances/${id}`).then(r => r.data);
+      return api.get<NonConformance>(`/quality/non-conformances/${id}`).then(r => r.data);
     },
     enabled: !!id,
   });
@@ -109,7 +109,7 @@ const useQCRules = (filters?: { type?: string }) => {
     queryKey: ['qc', 'rules', filters],
     queryFn: async () => {
       const query = filters?.type ? `?type=${encodeURIComponent(filters.type)}` : '';
-      return api.get<QCRule[]>(`/v3/qc/rules${query}`).then(r => r.data);
+      return api.get<QCRule[]>(`/qc/rules${query}`).then(r => r.data);
     }
   });
 };
@@ -122,7 +122,7 @@ const useQCInspections = (filters?: { type?: string; status?: string }) => {
       if (filters?.type) params.append('type', filters.type);
       if (filters?.status) params.append('status', filters.status);
       const query = params.toString();
-      return api.get<QCInspection[]>(`/v3/qc/inspections${query ? `?${query}` : ''}`).then(r => r.data);
+      return api.get<QCInspection[]>(`/qc/inspections${query ? `?${query}` : ''}`).then(r => r.data);
     }
   });
 };
@@ -131,7 +131,7 @@ const useCreateNonConformance = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<NonConformance>) => {
-      return api.post<NonConformance>('/v3/quality/non-conformances', data).then(r => r.data);
+      return api.post<NonConformance>('/quality/non-conformances', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });
@@ -141,7 +141,7 @@ const useUpdateNCStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v3/quality/non-conformances/${id}`, { status }).then(r => r.data);
+      return api.patch(`/quality/non-conformances/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });
@@ -151,7 +151,7 @@ const useCloseNC = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/quality/non-conformances/${id}/close`).then(r => r.data);
+      return api.post(`/quality/non-conformances/${id}/close`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quality'] })
   });

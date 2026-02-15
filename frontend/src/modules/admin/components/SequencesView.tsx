@@ -94,7 +94,7 @@ const useSequences = () => {
     queryKey: ['admin', 'sequences'],
     queryFn: async (): Promise<SequenceConfig[]> => {
       try {
-        const res = await api.get<{ items: SequenceConfig[]; total: number }>('/v3/admin/sequences', {
+        const res = await api.get<{ items: SequenceConfig[]; total: number }>('/admin/sequences', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
@@ -112,7 +112,7 @@ const useUpdateSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ entityType, data }: { entityType: string; data: SequenceUpdateData }) => {
-      const res = await api.put<SequenceConfig>(`/v3/admin/sequences/${entityType}`, data);
+      const res = await api.put<SequenceConfig>(`/admin/sequences/${entityType}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -125,7 +125,7 @@ const useResetSequence = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (entityType: string) => {
-      const res = await api.post<SequenceConfig>(`/v3/admin/sequences/${entityType}/reset`);
+      const res = await api.post<SequenceConfig>(`/admin/sequences/${entityType}/reset`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -149,7 +149,7 @@ const usePreviewSequence = (
         if (config.padding) params.append('padding', String(config.padding));
         if (config.separator) params.append('separator', config.separator);
         const queryString = params.toString();
-        const res = await api.get<PreviewResponse>(`/v3/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
+        const res = await api.get<PreviewResponse>(`/admin/sequences/${entityType}/preview${queryString ? `?${queryString}` : ''}`);
         return unwrapApiResponse(res);
       } catch {
         return null;

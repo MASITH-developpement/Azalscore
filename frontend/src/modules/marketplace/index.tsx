@@ -113,7 +113,7 @@ const useMarketplaceStats = () => {
   return useQuery({
     queryKey: ['marketplace', 'stats'],
     queryFn: async () => {
-      return api.get<MarketplaceStats>('/v3/marketplace/stats').then(r => r.data);
+      return api.get<MarketplaceStats>('/marketplace/stats').then(r => r.data);
     }
   });
 };
@@ -125,7 +125,7 @@ const useSellers = (filters?: { status?: string }) => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v3/marketplace/sellers?${queryString}` : '/v3/marketplace/sellers';
+      const url = queryString ? `/marketplace/sellers?${queryString}` : '/marketplace/sellers';
       return api.get<Seller[]>(url).then(r => r.data);
     }
   });
@@ -139,7 +139,7 @@ const useMarketplaceProducts = (filters?: { status?: string; seller_id?: string 
       if (filters?.status) params.append('status', filters.status);
       if (filters?.seller_id) params.append('seller_id', filters.seller_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/marketplace/products?${queryString}` : '/v3/marketplace/products';
+      const url = queryString ? `/marketplace/products?${queryString}` : '/marketplace/products';
       return api.get<MarketplaceProduct[]>(url).then(r => r.data);
     }
   });
@@ -153,7 +153,7 @@ const useMarketplaceOrders = (filters?: { status?: string; seller_id?: string })
       if (filters?.status) params.append('status', filters.status);
       if (filters?.seller_id) params.append('seller_id', filters.seller_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/marketplace/orders?${queryString}` : '/v3/marketplace/orders';
+      const url = queryString ? `/marketplace/orders?${queryString}` : '/marketplace/orders';
       return api.get<MarketplaceOrder[]>(url).then(r => r.data);
     }
   });
@@ -167,7 +167,7 @@ const usePayouts = (filters?: { status?: string; seller_id?: string }) => {
       if (filters?.status) params.append('status', filters.status);
       if (filters?.seller_id) params.append('seller_id', filters.seller_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/marketplace/payouts?${queryString}` : '/v3/marketplace/payouts';
+      const url = queryString ? `/marketplace/payouts?${queryString}` : '/marketplace/payouts';
       return api.get<Payout[]>(url).then(r => r.data);
     }
   });
@@ -177,7 +177,7 @@ const useUpdateSellerStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v3/marketplace/sellers/${id}/status`, { status }).then(r => r.data);
+      return api.patch(`/marketplace/sellers/${id}/status`, { status }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'sellers'] });
@@ -190,7 +190,7 @@ const useApproveProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
-      return api.patch(`/v3/marketplace/products/${id}/review`, { approved }).then(r => r.data);
+      return api.patch(`/marketplace/products/${id}/review`, { approved }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marketplace', 'products'] });
@@ -203,7 +203,7 @@ const useSeller = (id: string) => {
   return useQuery({
     queryKey: ['marketplace', 'seller', id],
     queryFn: async () => {
-      return api.get<Seller>(`/v3/marketplace/sellers/${id}`).then(r => r.data);
+      return api.get<Seller>(`/marketplace/sellers/${id}`).then(r => r.data);
     },
     enabled: !!id
   });

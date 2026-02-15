@@ -83,7 +83,7 @@ const useProjectStats = () => {
   return useQuery({
     queryKey: ['projects', 'stats'],
     queryFn: async () => {
-      const response = await api.get<ProjectStats>('/v3/projects/summary').then(r => r.data);
+      const response = await api.get<ProjectStats>('/projects/summary').then(r => r.data);
       return response;
     }
   });
@@ -97,7 +97,7 @@ const useProjects = (filters?: { status?: string; client_id?: string }) => {
       if (filters?.status) params.append('status', filters.status);
       if (filters?.client_id) params.append('client_id', filters.client_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/projects?${queryString}` : '/v3/projects';
+      const url = queryString ? `/projects?${queryString}` : '/projects';
       const response = await api.get<{ items: Project[] }>(url).then(r => r.data);
       return response?.items || [];
     }
@@ -108,7 +108,7 @@ const useProject = (id: string) => {
   return useQuery({
     queryKey: ['projects', 'detail', id],
     queryFn: async () => {
-      const response = await api.get<Project>(`/v3/projects/${id}`).then(r => r.data);
+      const response = await api.get<Project>(`/projects/${id}`).then(r => r.data);
       return response;
     },
     enabled: !!id
@@ -124,7 +124,7 @@ const useTasks = (filters?: { status?: string; project_id?: string; assignee_id?
       if (filters?.project_id) params.append('project_id', filters.project_id);
       if (filters?.assignee_id) params.append('assignee_id', filters.assignee_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/projects/tasks?${queryString}` : '/v3/projects/tasks';
+      const url = queryString ? `/projects/tasks?${queryString}` : '/projects/tasks';
       const response = await api.get<{ items: Task[] }>(url).then(r => r.data);
       return response?.items || [];
     }
@@ -140,7 +140,7 @@ const useTimeEntries = (filters?: { project_id?: string; date_from?: string; dat
       if (filters?.date_from) params.append('date_from', filters.date_from);
       if (filters?.date_to) params.append('date_to', filters.date_to);
       const queryString = params.toString();
-      const url = queryString ? `/v3/projects/time-entries?${queryString}` : '/v3/projects/time-entries';
+      const url = queryString ? `/projects/time-entries?${queryString}` : '/projects/time-entries';
       const response = await api.get<TimeEntry[]>(url).then(r => r.data);
       return response;
     }
@@ -151,7 +151,7 @@ const useCreateProject = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Project>) => {
-      return api.post<Project>('/v3/projects', data).then(r => r.data);
+      return api.post<Project>('/projects', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -163,7 +163,7 @@ const useUpdateTaskStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch<Task>(`/v3/projects/tasks/${id}/status`, { status }).then(r => r.data);
+      return api.patch<Task>(`/projects/tasks/${id}/status`, { status }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', 'tasks'] });
@@ -176,7 +176,7 @@ const useLogTime = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { project_id: string; task_id?: string; date: string; hours: number; description?: string; is_billable?: boolean }) => {
-      return api.post<TimeEntry>('/v3/projects/time-entries', data).then(r => r.data);
+      return api.post<TimeEntry>('/projects/time-entries', data).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', 'time-entries'] });

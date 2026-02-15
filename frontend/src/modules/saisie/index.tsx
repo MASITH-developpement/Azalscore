@@ -79,7 +79,7 @@ const useQuickCustomers = (search: string) => {
       });
       try {
         const response = await api.get<PaginatedResponse<QuickCustomer>>(
-          `/v3/partners/clients?${params}`
+          `/partners/clients?${params}`
         );
         return (response as unknown as PaginatedResponse<QuickCustomer>).items || [];
       } catch {
@@ -102,7 +102,7 @@ const useQuickProducts = (search: string) => {
       });
       try {
         const response = await api.get<PaginatedResponse<QuickProduct>>(
-          `/v3/inventory/products?${params}`
+          `/inventory/products?${params}`
         );
         return (response as unknown as PaginatedResponse<QuickProduct>).items || [];
       } catch {
@@ -136,7 +136,7 @@ const useCreateQuickDevis = () => {
           discount_percent: 0,
         })),
       };
-      const response = await api.post<QuickDevisResult>('/v3/commercial/documents', payload);
+      const response = await api.post<QuickDevisResult>('/commercial/documents', payload);
       return response as unknown as QuickDevisResult;
     },
     onSuccess: () => {
@@ -158,7 +158,7 @@ const useCreateQuickCustomer = () => {
       city?: string;
       postal_code?: string;
     }) => {
-      const response = await api.post<QuickCustomer>('/v3/partners/clients', {
+      const response = await api.post<QuickCustomer>('/partners/clients', {
         ...data,
         type: 'CUSTOMER',
         is_active: true,

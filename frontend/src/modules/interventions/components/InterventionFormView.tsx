@@ -79,7 +79,7 @@ const useClients = () => {
   return useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/v3/commercial/customers');
+      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/commercial/customers');
       const data = unwrapApiResponse<{ items: { id: string; name: string; code?: string }[] }>(response);
       return data?.items || [];
     }
@@ -90,7 +90,7 @@ const useDonneursOrdre = () => {
   return useQuery({
     queryKey: ['interventions', 'donneurs-ordre'],
     queryFn: async () => {
-      const response = await api.get<DonneurOrdre[]>('/v3/interventions/donneurs-ordre');
+      const response = await api.get<DonneurOrdre[]>('/interventions/donneurs-ordre');
       return unwrapApiResponse<DonneurOrdre[]>(response);
     }
   });
@@ -100,7 +100,7 @@ const useIntervenants = () => {
   return useQuery({
     queryKey: ['intervenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v3/hr/employees');
+      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/hr/employees');
       const data = unwrapApiResponse<{ items: { id: string; first_name: string; last_name: string }[] }>(response);
       return data?.items || [];
     }
@@ -111,7 +111,7 @@ const useIntervention = (id?: string) => {
   return useQuery({
     queryKey: ['interventions', 'detail', id],
     queryFn: async () => {
-      const response = await api.get<Intervention>(`/v3/interventions/${id}`);
+      const response = await api.get<Intervention>(`/interventions/${id}`);
       return response as unknown as Intervention;
     },
     enabled: !!id
@@ -275,9 +275,9 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
     try {
       let result: any;
       if (isEdit && interventionId) {
-        result = await api.put(`/v3/interventions/${interventionId}`, apiData);
+        result = await api.put(`/interventions/${interventionId}`, apiData);
       } else {
-        result = await api.post('/v3/interventions', apiData);
+        result = await api.post('/interventions', apiData);
       }
 
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -329,7 +329,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
                   displayField="name"
                   entityName="donneur d'ordre"
                   entityIcon={<Users size={16} />}
-                  createEndpoint="/v3/interventions/donneurs-ordre"
+                  createEndpoint="/interventions/donneurs-ordre"
                   createFields={DONNEUR_ORDRE_CREATE_FIELDS}
                   queryKeys={['interventions', 'donneurs-ordre']}
                   allowCreate={true}
@@ -356,7 +356,7 @@ export const InterventionFormView: React.FC<InterventionFormViewProps> = ({
                   secondaryField="code"
                   entityName="client"
                   entityIcon={<Building2 size={16} />}
-                  createEndpoint="/v3/commercial/customers"
+                  createEndpoint="/commercial/customers"
                   createFields={CLIENT_CREATE_FIELDS}
                   queryKeys={['clients', 'commercial', 'customers']}
                   allowCreate={true}

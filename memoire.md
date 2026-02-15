@@ -878,15 +878,116 @@ Toutes les classes utilitaires Tailwind standard:
    - N'est PAS utilise car l'app charge `UnifiedApp` et non `App.tsx`
    - Reserve pour future migration vers systeme de menu dynamique
 
-### Pour ajouter un nouveau module au menu:
+### Pour ajouter un nouveau module au menu (COMPLET):
 
-1. Modifier `/frontend/src/components/UnifiedLayout.tsx`:
-   - Ajouter la cle dans le type `ViewKey`
-   - Ajouter l'entree dans `MENU_ITEMS` avec label, group et capability
+Il faut modifier **5 fichiers** pour qu'un module apparaisse dans le menu ET dans "Acces Modules":
 
-2. (Optionnel) Modifier `/frontend/src/ui-engine/menu-dynamic/index.tsx`:
-   - Ajouter l'icone dans `ICON_MAP`
-   - Ajouter l'entree dans `MENU_SECTIONS`
+#### 1. Menu ACTIF - `/frontend/src/components/UnifiedLayout.tsx` (OBLIGATOIRE)
+
+C'est le menu utilise en production. Modifier:
+
+```typescript
+// Type ViewKey (ligne ~35)
+export type ViewKey =
+  | 'saisie'
+  // ...existant
+  | 'import-odoo' | 'import-axonaut'  // Ajouter les nouvelles cles
+  | 'admin'
+  | 'profile' | 'settings';
+
+// MENU_ITEMS (ligne ~66)
+const MENU_ITEMS: MenuItem[] = [
+  // ...existant
+  { key: 'import-odoo', label: 'Import Odoo', group: 'Import', capability: 'import.odoo.config' },
+  { key: 'import-axonaut', label: 'Import Axonaut', group: 'Import', capability: 'import.axonaut.config' },
+  { key: 'admin', label: 'Administration', group: 'Système', capability: 'admin.view' },
+];
+```
+
+#### 2. Menu dynamique (optionnel) - `/frontend/src/ui-engine/menu-dynamic/index.tsx`
+
+```typescript
+// Ajouter l'icone dans ICON_MAP (ligne ~50)
+import { Download, /* autres imports */ } from 'lucide-react';
+
+const ICON_MAP = {
+  // ...existant
+  download: Download,
+};
+
+// Ajouter la section dans MENU_SECTIONS (avant 'admin')
+{
+  id: 'import',
+  title: 'Import de Donnees',
+  items: [
+    {
+      id: 'import-odoo',
+      label: 'Import Odoo',
+      icon: 'download',
+      path: '/import/odoo',
+      capability: 'import.odoo.config',  // DOIT correspondre au code dans CAPABILITIES_BY_MODULE
+    },
+    // ... autres items
+  ],
+},
+```
+
+#### 2. Capabilities utilisateur - `/app/api/auth.py`
+
+```python
+# Ajouter dans ALL_CAPABILITIES (ligne ~1040)
+ALL_CAPABILITIES = [
+    # ...existant
+    # Import de donnees
+    "import.config.create", "import.config.read", "import.config.update", "import.config.delete",
+    "import.execute", "import.cancel",
+    "import.odoo.config", "import.odoo.execute", "import.odoo.preview",
+    # ... autres
+]
+```
+
+#### 3. Interface "Acces Modules" - `/app/modules/iam/router.py`
+
+```python
+# Ajouter dans CAPABILITIES_BY_MODULE (ligne ~730)
+CAPABILITIES_BY_MODULE = {
+    # ...existant
+    "import": {
+        "name": "Import de Donnees",
+        "icon": "Download",
+        "capabilities": [
+            {"code": "import.config.create", "name": "Créer config import", "description": "..."},
+            {"code": "import.odoo.config", "name": "Configurer Odoo", "description": "..."},
+            # ... autres
+        ]
+    },
+}
+```
+
+#### 4. Permissions backend - `/app/modules/iam/permissions.py`
+
+```python
+# Ajouter le dictionnaire de permissions (si pas deja present)
+IMPORT_PERMISSIONS = {
+    "import.config.create": "Créer des configurations d'import",
+    "import.config.read": "Voir les configurations d'import",
+    # ... autres
+}
+
+# L'ajouter dans ALL_PERMISSIONS
+ALL_PERMISSIONS = {
+    # ...existant
+    **IMPORT_PERMISSIONS,
+}
+```
+
+#### 5. Deployer
+
+```bash
+./deploy-quick.sh all   # Rebuild frontend + restart API
+```
+
+Puis Ctrl+Shift+R dans le navigateur pour vider le cache.
 
 ### Exemple - Ajout Marceau IA (2026-02-09):
 
@@ -898,9 +999,44 @@ Toutes les classes utilitaires Tailwind standard:
 { key: 'marceau', label: 'Marceau IA', group: 'IA', capability: 'marceau.view' },
 ```
 
+### Exemple - Ajout Import de Donnees (2026-02-14):
+
+Fichiers modifies:
+- `/frontend/src/ui-engine/menu-dynamic/index.tsx` - Section "Import de Donnees" avec 5 items
+- `/app/api/auth.py` - 18 capabilities ajoutees dans ALL_CAPABILITIES
+- `/app/modules/iam/router.py` - Module "import" dans CAPABILITIES_BY_MODULE avec 19 capabilities
+- `/app/modules/iam/permissions.py` - IMPORT_PERMISSIONS (deja present)
+
 ---
 
 ## Principes de Developpement
+
+### API Sans Version (URLs Stables)
+
+**REGLE:** L'API AZALSCORE n'utilise PAS de prefixe de version (/v1, /v2, /v3).
+
+**URLs:**
+- ✅ Correct: `/commercial/customers`, `/accounting/summary`, `/iam/users`
+- ❌ Incorrect: `/v1/commercial/customers`, `/v3/accounting/summary`
+
+**Avantages:**
+- URLs simples et stables
+- Pas de migration frontend a chaque changement de version
+- Moins de confusion pour les developpeurs
+
+**Implementation:**
+- Backend: Routers montes sans prefixe (`APIRouter()` sans `prefix`)
+- Frontend: Appels API directs (`/commercial/customers`)
+- Legacy: Routes essentielles (auth, cockpit) integrees au router principal
+
+**Fichiers concernes:**
+- `/app/api/v3/__init__.py` - Router principal sans prefixe
+- `/app/main.py` - Montage direct des routers
+- Frontend: Tous les fichiers `.ts/.tsx` utilisent des URLs sans version
+
+**Date d'application:** 2026-02-15
+
+---
 
 ### Reutilisabilite - Sous-Programmes
 **REGLE:** Tout element repete doit faire l'objet d'un sous-programme (composant, hook, fonction, vue) appele au besoin.
@@ -1074,3 +1210,64 @@ def get_forecast(self, days: int = 30) -> List[ForecastData]:
 **Commit:** 6541997
 
 **Note:** Le module Treasury n'a pas encore de modeles de base de donnees (`BankAccount`, `BankTransaction`). Les methodes retournent des donnees vides en attendant l'implementation complete.
+
+### 30. Module Odoo Import [2026-02-14]
+
+**Objectif:** Creer un module d'import de donnees depuis Odoo (versions 8-18) pour permettre la migration des donnees existantes vers AZALSCORE.
+
+**Fonctionnalites:**
+- Configuration de connexion Odoo par tenant (URL, database, API key)
+- Import des produits (`product.product` → `Product`)
+- Import des contacts/clients (`res.partner` → `UnifiedContact`)
+- Import des fournisseurs (`res.partner` avec `supplier_rank > 0`)
+- Delta sync base sur `write_date` Odoo
+- Historique complet des imports
+- Previsualisation des donnees avant import
+- Mapping personnalisable des champs
+
+**Architecture:**
+```
+app/modules/odoo_import/
+├── __init__.py          # Exports du module
+├── models.py            # OdooConnectionConfig, OdooImportHistory, OdooFieldMapping
+├── schemas.py           # Schemas Pydantic pour l'API
+├── connector.py         # Client XML-RPC Odoo (versions 8-18)
+├── mapper.py            # Mapping des champs Odoo → AZALSCORE
+├── service.py           # OdooImportService (orchestration)
+└── router.py            # Endpoints API REST
+```
+
+**Endpoints API:**
+- `POST /api/v1/odoo/config` - Creer une configuration
+- `GET /api/v1/odoo/config` - Lister les configurations
+- `POST /api/v1/odoo/test` - Tester une connexion
+- `POST /api/v1/odoo/import/products` - Importer les produits
+- `POST /api/v1/odoo/import/contacts` - Importer les contacts
+- `POST /api/v1/odoo/import/suppliers` - Importer les fournisseurs
+- `POST /api/v1/odoo/import/full` - Synchronisation complete
+- `GET /api/v1/odoo/history` - Historique des imports
+- `POST /api/v1/odoo/preview` - Previsualiser les donnees
+
+**Compatibilite Odoo:**
+- Versions 8-13: Authentification username/password
+- Versions 14-18: Authentification API key (recommandee)
+- API XML-RPC (`/xmlrpc/2/common`, `/xmlrpc/2/object`)
+
+**Fichiers crees:**
+21. `/app/modules/odoo_import/__init__.py`
+22. `/app/modules/odoo_import/models.py`
+23. `/app/modules/odoo_import/schemas.py`
+24. `/app/modules/odoo_import/connector.py`
+25. `/app/modules/odoo_import/mapper.py`
+26. `/app/modules/odoo_import/service.py`
+27. `/app/modules/odoo_import/router.py`
+28. `/alembic/versions/20260214_odoo_import.py`
+
+**Fichiers modifies:**
+- `/app/main.py` - Import et enregistrement du router
+
+**Multi-tenant:** Isolation complete par `tenant_id` sur toutes les tables et requetes.
+
+**Activation:** Menu Administration > Acces Modules > Import de donnees
+
+**Note:** Ce module servira de base pour les futurs imports (Axonaut, Pennylane, Sage, Chorus, etc.)

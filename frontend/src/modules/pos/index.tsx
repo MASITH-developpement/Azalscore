@@ -182,7 +182,7 @@ const usePOSDashboard = () => {
   return useQuery({
     queryKey: ['pos', 'dashboard'],
     queryFn: async () => {
-      return api.get<POSDashboard>('/v3/pos/dashboard').then(r => r.data);
+      return api.get<POSDashboard>('/pos/dashboard').then(r => r.data);
     }
   });
 };
@@ -191,7 +191,7 @@ const useStores = () => {
   return useQuery({
     queryKey: ['pos', 'stores'],
     queryFn: async () => {
-      return api.get<POSStore[]>('/v3/pos/stores').then(r => r.data);
+      return api.get<POSStore[]>('/pos/stores').then(r => r.data);
     }
   });
 };
@@ -200,7 +200,7 @@ const useTerminals = (storeId?: string) => {
   return useQuery({
     queryKey: ['pos', 'terminals', storeId],
     queryFn: async () => {
-      const url = storeId ? `/v3/pos/terminals?store_id=${storeId}` : '/v3/pos/terminals';
+      const url = storeId ? `/pos/terminals?store_id=${storeId}` : '/pos/terminals';
       return api.get<POSTerminal[]>(url).then(r => r.data);
     }
   });
@@ -214,7 +214,7 @@ const useSessions = (filters?: { status?: string; store_id?: string }) => {
       if (filters?.status) params.append('status', filters.status);
       if (filters?.store_id) params.append('store_id', filters.store_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/pos/sessions?${queryString}` : '/v3/pos/sessions';
+      const url = queryString ? `/pos/sessions?${queryString}` : '/pos/sessions';
       return api.get<POSSession[]>(url).then(r => r.data);
     }
   });
@@ -224,7 +224,7 @@ const useTransactions = (sessionId?: string) => {
   return useQuery({
     queryKey: ['pos', 'transactions', sessionId],
     queryFn: async () => {
-      const url = sessionId ? `/v3/pos/transactions?session_id=${sessionId}` : '/v3/pos/transactions';
+      const url = sessionId ? `/pos/transactions?session_id=${sessionId}` : '/pos/transactions';
       return api.get<POSTransaction[]>(url).then(r => r.data);
     }
   });
@@ -234,7 +234,7 @@ const useOpenSession = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { terminal_id: string; opening_balance: number }) => {
-      return api.post('/v3/pos/sessions', data).then(r => r.data);
+      return api.post('/pos/sessions', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pos'] })
   });
@@ -244,7 +244,7 @@ const useCloseSession = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, closing_balance }: { id: string; closing_balance: number }) => {
-      return api.post(`/v3/pos/sessions/${id}/close`, { closing_balance }).then(r => r.data);
+      return api.post(`/pos/sessions/${id}/close`, { closing_balance }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pos'] })
   });
@@ -254,7 +254,7 @@ const useSession = (id: string) => {
   return useQuery({
     queryKey: ['pos', 'sessions', id],
     queryFn: async () => {
-      return api.get<POSSessionType>(`/v3/pos/sessions/${id}`).then(r => r.data);
+      return api.get<POSSessionType>(`/pos/sessions/${id}`).then(r => r.data);
     },
     enabled: !!id
   });

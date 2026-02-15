@@ -129,7 +129,7 @@ const useProductionDashboard = () => {
   return useQuery({
     queryKey: ['production', 'dashboard'],
     queryFn: async () => {
-      return api.get<ProductionDashboard>('/v3/production/dashboard').then(r => r.data);
+      return api.get<ProductionDashboard>('/production/dashboard').then(r => r.data);
     }
   });
 };
@@ -138,7 +138,7 @@ const useWorkCenters = () => {
   return useQuery({
     queryKey: ['production', 'work-centers'],
     queryFn: async () => {
-      const response = await api.get<WorkCenter[] | { items: WorkCenter[] }>('/v3/production/work-centers').then(r => r.data);
+      const response = await api.get<WorkCenter[] | { items: WorkCenter[] }>('/production/work-centers').then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
   });
@@ -148,7 +148,7 @@ const useBOMs = () => {
   return useQuery({
     queryKey: ['production', 'boms'],
     queryFn: async () => {
-      const response = await api.get<BillOfMaterials[] | { items: BillOfMaterials[] }>('/v3/production/boms').then(r => r.data);
+      const response = await api.get<BillOfMaterials[] | { items: BillOfMaterials[] }>('/production/boms').then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
   });
@@ -162,7 +162,7 @@ const useProductionOrders = (filters?: { status?: string; priority?: string }) =
       if (filters?.status) params.append('status', filters.status);
       if (filters?.priority) params.append('priority', filters.priority);
       const queryString = params.toString();
-      const url = queryString ? `/v3/production/orders?${queryString}` : '/v3/production/orders';
+      const url = queryString ? `/production/orders?${queryString}` : '/production/orders';
       const response = await api.get<ProductionOrder[] | { items: ProductionOrder[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
@@ -173,7 +173,7 @@ const useProductionOrder = (id: string) => {
   return useQuery({
     queryKey: ['production', 'order', id],
     queryFn: async () => {
-      return api.get<ProductionOrder>(`/v3/production/orders/${id}`).then(r => r.data);
+      return api.get<ProductionOrder>(`/production/orders/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -184,8 +184,8 @@ const useWorkOrders = (productionOrderId?: string) => {
     queryKey: ['production', 'work-orders', productionOrderId],
     queryFn: async () => {
       const url = productionOrderId
-        ? `/v3/production/work-orders?production_order_id=${encodeURIComponent(productionOrderId)}`
-        : '/v3/production/work-orders';
+        ? `/production/work-orders?production_order_id=${encodeURIComponent(productionOrderId)}`
+        : '/production/work-orders';
       const response = await api.get<WorkOrder[] | { items: WorkOrder[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
@@ -196,7 +196,7 @@ const useCreateWorkCenter = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<WorkCenter>) => {
-      return api.post('/v3/production/work-centers', data).then(r => r.data);
+      return api.post('/production/work-centers', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production', 'work-centers'] })
   });
@@ -206,7 +206,7 @@ const useCreateProductionOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<ProductionOrder>) => {
-      return api.post('/v3/production/orders', data).then(r => r.data);
+      return api.post('/production/orders', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production'] })
   });
@@ -216,7 +216,7 @@ const useConfirmOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/production/orders/${id}/confirm`).then(r => r.data);
+      return api.post(`/production/orders/${id}/confirm`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production'] })
   });
@@ -226,7 +226,7 @@ const useStartOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/production/orders/${id}/start`).then(r => r.data);
+      return api.post(`/production/orders/${id}/start`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production'] })
   });
@@ -236,7 +236,7 @@ const useCompleteOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/production/orders/${id}/complete`).then(r => r.data);
+      return api.post(`/production/orders/${id}/complete`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production'] })
   });
@@ -246,7 +246,7 @@ const useCancelOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/production/orders/${id}/cancel`).then(r => r.data);
+      return api.post(`/production/orders/${id}/cancel`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['production'] })
   });

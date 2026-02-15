@@ -19,7 +19,7 @@ import type {
   HistorySearchResponse,
 } from './types';
 
-const BASE_URL = '/v3/odoo';
+const BASE_URL = '/odoo';
 
 // ============================================================
 // CONFIGURATION CRUD

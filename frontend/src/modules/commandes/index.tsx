@@ -59,7 +59,7 @@ const useCommandesList = (page = 1, pageSize = 25, filters?: { status?: string; 
       if (filters?.status) params.append('status', filters.status);
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
       if (filters?.search) params.append('search', filters.search);
-      const response = await api.get<PaginatedResponse<Commande>>(`/v3/commercial/documents?${params}`);
+      const response = await api.get<PaginatedResponse<Commande>>(`/commercial/documents?${params}`);
       return response.data;
     },
   });
@@ -69,7 +69,7 @@ const useCommande = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', id],
     queryFn: async () => {
-      const response = await api.get<Commande>(`/v3/commercial/documents/${id}`);
+      const response = await api.get<Commande>(`/commercial/documents/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -82,7 +82,7 @@ const useCustomers = (search?: string) => {
     queryFn: async () => {
       const params = new URLSearchParams({ page: '1', page_size: '50' });
       if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/v3/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
       return response.data.items;
     },
   });
@@ -92,7 +92,7 @@ const useCreateCommande = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CommandeFormData) => {
-      const response = await api.post<Commande>('/v3/commercial/documents', { ...data, type: 'ORDER' });
+      const response = await api.post<Commande>('/commercial/documents', { ...data, type: 'ORDER' });
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -103,7 +103,7 @@ const useUpdateCommande = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CommandeFormData> }) => {
-      const response = await api.put<Commande>(`/v3/commercial/documents/${id}`, data);
+      const response = await api.put<Commande>(`/commercial/documents/${id}`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -114,7 +114,7 @@ const useValidateCommande = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Commande>(`/v3/commercial/documents/${id}/validate`);
+      const response = await api.post<Commande>(`/commercial/documents/${id}/validate`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -125,7 +125,7 @@ const useMarkDelivered = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Commande>(`/v3/commercial/documents/${id}/deliver`);
+      const response = await api.post<Commande>(`/commercial/documents/${id}/deliver`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -136,7 +136,7 @@ const useCreateInvoice = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (orderId: string) => {
-      const response = await api.post<{ id: string; number: string }>(`/v3/commercial/orders/${orderId}/invoice`);
+      const response = await api.post<{ id: string; number: string }>(`/commercial/orders/${orderId}/invoice`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -147,7 +147,7 @@ const useCreateAffaire = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (orderId: string) => {
-      const response = await api.post<{ id: string; reference: string }>(`/v3/commercial/orders/${orderId}/affaire`);
+      const response = await api.post<{ id: string; reference: string }>(`/commercial/orders/${orderId}/affaire`);
       return response.data;
     },
     onSuccess: () => {
@@ -161,7 +161,7 @@ const useAddLine = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ documentId, data }: { documentId: string; data: Partial<DocumentLine> }) => {
-      const response = await api.post<DocumentLine>(`/v3/commercial/documents/${documentId}/lines`, data);
+      const response = await api.post<DocumentLine>(`/commercial/documents/${documentId}/lines`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -768,7 +768,7 @@ const CommandeFormView: React.FC<{
               label="Client"
               placeholder="Rechercher un client..."
               entityName="client"
-              createEndpoint="/v3/commercial/customers"
+              createEndpoint="/commercial/customers"
               createFields={[
                 { key: 'name', label: 'Nom', required: true },
                 { key: 'email', label: 'Email', type: 'email' },

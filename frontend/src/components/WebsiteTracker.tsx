@@ -18,7 +18,7 @@ export const WebsiteTracker = () => {
         const sessionId = getSessionId();
         const urlParams = new URLSearchParams(window.location.search);
 
-        await fetch(`${API_URL}/api/v3/website/track-visit`, {
+        await fetch(`${API_URL}/api/website/track-visit`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

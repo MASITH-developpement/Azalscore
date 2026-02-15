@@ -18,7 +18,7 @@ const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      await api.post('/v3/auth/forgot-password', { email }, { skipAuth: true });
+      await api.post('/auth/forgot-password', { email }, { skipAuth: true });
       setIsSubmitted(true);
     } catch {
       setError('Une erreur est survenue. Veuillez réessayer.');

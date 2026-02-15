@@ -81,7 +81,7 @@ export const LandingPage: React.FC = () => {
     if (!demoEmail) return;
 
     try {
-      await fetch('/api/v3/website/leads', {
+      await fetch('/api/website/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

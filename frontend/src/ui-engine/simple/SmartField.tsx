@@ -39,7 +39,7 @@ export interface SelectOption {
 }
 
 export interface EntityConfig {
-  endpoint: string;           // ex: '/v3/partners/clients'
+  endpoint: string;           // ex: '/partners/clients'
   displayField: string;       // ex: 'name'
   secondaryField?: string;    // ex: 'code'
   searchField?: string;       // ex: 'search'

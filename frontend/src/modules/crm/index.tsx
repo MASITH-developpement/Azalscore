@@ -85,7 +85,7 @@ const useCustomers = (page = 1, pageSize = 25, filters?: { type?: string; search
       if (filters?.type) params.append('type', filters.type);
       if (filters?.search) params.append('search', filters.search);
       if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
-      const response = await api.get<PaginatedResponse<Customer>>(`/v3/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
       return response.data;
     },
   });
@@ -95,7 +95,7 @@ const useCustomer = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'customers', id],
     queryFn: async () => {
-      const response = await api.get<Customer>(`/v3/commercial/customers/${id}`);
+      const response = await api.get<Customer>(`/commercial/customers/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -109,7 +109,7 @@ const useOpportunities = (page = 1, pageSize = 25, filters?: { status?: string; 
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (filters?.status) params.append('status', filters.status);
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
-      const response = await api.get<PaginatedResponse<Opportunity>>(`/v3/commercial/opportunities?${params}`);
+      const response = await api.get<PaginatedResponse<Opportunity>>(`/commercial/opportunities?${params}`);
       return response.data;
     },
   });
@@ -119,7 +119,7 @@ const usePipelineStats = () => {
   return useQuery({
     queryKey: ['commercial', 'pipeline', 'stats'],
     queryFn: async () => {
-      const response = await api.get<PipelineStats>('/v3/commercial/pipeline/stats');
+      const response = await api.get<PipelineStats>('/commercial/pipeline/stats');
       return response.data;
     },
   });
@@ -129,7 +129,7 @@ const useSalesDashboard = () => {
   return useQuery({
     queryKey: ['commercial', 'dashboard'],
     queryFn: async () => {
-      const response = await api.get<SalesDashboard>('/v3/commercial/dashboard');
+      const response = await api.get<SalesDashboard>('/commercial/dashboard');
       return response.data;
     },
   });
@@ -139,7 +139,7 @@ const useCreateCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Customer>) => {
-      const response = await api.post<Customer>('/v3/commercial/customers', data);
+      const response = await api.post<Customer>('/commercial/customers', data);
       return response.data;
     },
     onSuccess: () => {
@@ -152,7 +152,7 @@ const useUpdateCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Customer> }) => {
-      const response = await api.put<Customer>(`/v3/commercial/customers/${id}`, data);
+      const response = await api.put<Customer>(`/commercial/customers/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -165,7 +165,7 @@ const useDeleteCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v3/commercial/customers/${id}`);
+      await api.delete(`/commercial/customers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commercial', 'customers'] });
@@ -177,7 +177,7 @@ const useConvertProspect = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (customerId: string) => {
-      const response = await api.post<Customer>(`/v3/commercial/customers/${customerId}/convert`);
+      const response = await api.post<Customer>(`/commercial/customers/${customerId}/convert`);
       return response.data;
     },
     onSuccess: () => {

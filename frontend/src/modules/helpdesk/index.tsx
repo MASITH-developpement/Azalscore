@@ -80,7 +80,7 @@ const useHelpdeskDashboard = () => {
   return useQuery({
     queryKey: ['helpdesk', 'dashboard'],
     queryFn: async () => {
-      return api.get<HelpdeskDashboard>('/v3/helpdesk/dashboard').then(r => r.data);
+      return api.get<HelpdeskDashboard>('/helpdesk/dashboard').then(r => r.data);
     }
   });
 };
@@ -89,7 +89,7 @@ const useTicketCategories = () => {
   return useQuery({
     queryKey: ['helpdesk', 'categories'],
     queryFn: async () => {
-      return api.get<TicketCategory[]>('/v3/helpdesk/categories').then(r => r.data);
+      return api.get<TicketCategory[]>('/helpdesk/categories').then(r => r.data);
     }
   });
 };
@@ -103,7 +103,7 @@ const useTickets = (filters?: { status?: string; priority?: string; category_id?
       if (filters?.priority) params.append('priority', filters.priority);
       if (filters?.category_id) params.append('category_id', filters.category_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/helpdesk/tickets?${queryString}` : '/v3/helpdesk/tickets';
+      const url = queryString ? `/helpdesk/tickets?${queryString}` : '/helpdesk/tickets';
       return api.get<Ticket[]>(url).then(r => r.data);
     }
   });
@@ -113,7 +113,7 @@ const useTicket = (id: string) => {
   return useQuery({
     queryKey: ['helpdesk', 'tickets', id],
     queryFn: async () => {
-      return api.get<Ticket>(`/v3/helpdesk/tickets/${id}`).then(r => r.data);
+      return api.get<Ticket>(`/helpdesk/tickets/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -123,7 +123,7 @@ const useKnowledgeArticles = () => {
   return useQuery({
     queryKey: ['helpdesk', 'articles'],
     queryFn: async () => {
-      return api.get<KnowledgeArticle[]>('/v3/helpdesk/articles').then(r => r.data);
+      return api.get<KnowledgeArticle[]>('/helpdesk/articles').then(r => r.data);
     }
   });
 };
@@ -132,7 +132,7 @@ const useCreateTicket = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Ticket>) => {
-      return api.post('/v3/helpdesk/tickets', data).then(r => r.data);
+      return api.post('/helpdesk/tickets', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
   });
@@ -142,7 +142,7 @@ const useUpdateTicketStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v3/helpdesk/tickets/${id}`, { status }).then(r => r.data);
+      return api.patch(`/helpdesk/tickets/${id}`, { status }).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['helpdesk'] })
   });

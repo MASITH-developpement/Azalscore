@@ -32,7 +32,7 @@ export const PaymentRefundsTab: React.FC<TabContentProps<Payment>> = ({ data: pa
 
   const createRefund = useMutation({
     mutationFn: async (data: { amount: number; reason: string }) => {
-      return api.post(`/v3/payments/${payment.id}/refunds`, data);
+      return api.post(`/payments/${payment.id}/refunds`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments', payment.id] });

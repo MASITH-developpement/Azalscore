@@ -157,13 +157,13 @@ const useCockpitStats = () => {
         projectsRes,
         facturesRes,
       ] = await Promise.all([
-        api.get('/v3/commercial/customers?page_size=1').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<unknown>>,
-        api.get('/v3/commercial/opportunities?page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<OpportunityItem>>,
-        api.get('/v3/commercial/documents?type=QUOTE&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
-        api.get('/v3/commercial/documents?type=ORDER&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
-        api.get('/v3/interventions?page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<InterventionItem>>,
-        api.get('/v3/projects?limit=200').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<ProjectItem>>,
-        api.get('/v3/commercial/documents?type=INVOICE&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/commercial/customers?page_size=1').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<unknown>>,
+        api.get('/commercial/opportunities?page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<OpportunityItem>>,
+        api.get('/commercial/documents?type=QUOTE&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/commercial/documents?type=ORDER&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/interventions?page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<InterventionItem>>,
+        api.get('/projects?limit=200').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<ProjectItem>>,
+        api.get('/commercial/documents?type=INVOICE&page_size=100').catch(() => ({ total: 0, items: [] })) as Promise<PaginatedResponse<DocumentItem>>,
       ]);
 
       const opportunities = opportunitiesRes.items || [];
@@ -236,10 +236,10 @@ const useRecentActivity = () => {
     queryFn: async () => {
       // Recuperer les items recents de chaque module
       const [devisRes, commandesRes, interventionsRes, facturesRes] = await Promise.all([
-        api.get('/v3/commercial/documents?type=QUOTE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
-        api.get('/v3/commercial/documents?type=ORDER&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
-        api.get('/v3/interventions?limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<InterventionItem>>,
-        api.get('/v3/commercial/documents?type=INVOICE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/commercial/documents?type=QUOTE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/commercial/documents?type=ORDER&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
+        api.get('/interventions?limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<InterventionItem>>,
+        api.get('/commercial/documents?type=INVOICE&limit=5').catch(() => ({ items: [], total: 0 })) as Promise<PaginatedResponse<DocumentItem>>,
       ]);
 
       const items: RecentItem[] = [];
@@ -313,7 +313,7 @@ const useRiskAlerts = () => {
     queryKey: ['cockpit-risk-alerts'],
     queryFn: async (): Promise<RiskAlert[]> => {
       try {
-        const response = await api.get('/v3/enrichment/risk/alerts');
+        const response = await api.get('/enrichment/risk/alerts');
         return (response as unknown as RiskAlert[]) || [];
       } catch {
         // Silently fail if user doesn't have permission or module not available
@@ -349,7 +349,7 @@ const useStrategicKPIs = () => {
     queryKey: ['cockpit-strategic-kpis'],
     queryFn: async (): Promise<AllStrategicKPIs | null> => {
       try {
-        const response = await api.get('/v3/cockpit/helpers/all-strategic');
+        const response = await api.get('/cockpit/helpers/all-strategic');
         return response as unknown as AllStrategicKPIs;
       } catch {
         return null;

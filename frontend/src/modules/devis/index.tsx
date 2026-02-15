@@ -59,7 +59,7 @@ const useDevisList = (page = 1, pageSize = 25, filters?: { status?: string; cust
       });
       if (filters?.status) params.append('status', filters.status);
       if (filters?.customer_id) params.append('customer_id', filters.customer_id);
-      const response = await api.get<PaginatedResponse<Devis>>(`/v3/commercial/documents?${params}`);
+      const response = await api.get<PaginatedResponse<Devis>>(`/commercial/documents?${params}`);
       return response.data;
     },
   });
@@ -69,7 +69,7 @@ const useDevis = (id: string) => {
   return useQuery({
     queryKey: ['commercial', 'documents', id],
     queryFn: async () => {
-      const response = await api.get<Devis>(`/v3/commercial/documents/${id}`);
+      const response = await api.get<Devis>(`/commercial/documents/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -82,7 +82,7 @@ const useCustomers = (search?: string) => {
     queryFn: async () => {
       const params = new URLSearchParams({ page: '1', page_size: '50' });
       if (search) params.append('search', search);
-      const response = await api.get<PaginatedResponse<Customer>>(`/v3/commercial/customers?${params}`);
+      const response = await api.get<PaginatedResponse<Customer>>(`/commercial/customers?${params}`);
       return response.data.items;
     },
   });
@@ -92,7 +92,7 @@ const useCreateDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: DevisFormData) => {
-      const response = await api.post<Devis>('/v3/commercial/documents', { ...data, type: 'QUOTE' });
+      const response = await api.post<Devis>('/commercial/documents', { ...data, type: 'QUOTE' });
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -103,7 +103,7 @@ const useUpdateDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<DevisFormData> }) => {
-      const response = await api.put<Devis>(`/v3/commercial/documents/${id}`, data);
+      const response = await api.put<Devis>(`/commercial/documents/${id}`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -114,7 +114,7 @@ const useValidateDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Devis>(`/v3/commercial/documents/${id}/validate`);
+      const response = await api.post<Devis>(`/commercial/documents/${id}/validate`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -125,7 +125,7 @@ const useSendDevis = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.post<Devis>(`/v3/commercial/documents/${id}/send`);
+      const response = await api.post<Devis>(`/commercial/documents/${id}/send`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -136,7 +136,7 @@ const useConvertToOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (quoteId: string) => {
-      const response = await api.post<Devis>(`/v3/commercial/quotes/${quoteId}/convert`);
+      const response = await api.post<Devis>(`/commercial/quotes/${quoteId}/convert`);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -147,7 +147,7 @@ const useAddLine = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ documentId, data }: { documentId: string; data: Partial<DocumentLine> }) => {
-      const response = await api.post<DocumentLine>(`/v3/commercial/documents/${documentId}/lines`, data);
+      const response = await api.post<DocumentLine>(`/commercial/documents/${documentId}/lines`, data);
       return response.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['commercial', 'documents'] }),
@@ -718,7 +718,7 @@ const DevisFormView: React.FC<{
               label="Client"
               placeholder="Rechercher un client..."
               entityName="client"
-              createEndpoint="/v3/commercial/customers"
+              createEndpoint="/commercial/customers"
               createFields={[
                 { key: 'name', label: 'Nom', required: true },
                 { key: 'email', label: 'Email', type: 'email' },

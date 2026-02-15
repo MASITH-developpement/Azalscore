@@ -46,7 +46,7 @@ const useAvailableModules = () => {
     queryKey: ['admin', 'modules', 'available'],
     queryFn: async (): Promise<ModulesResponse> => {
       try {
-        const response = await api.get<ModulesResponse>('/v3/admin/modules/available');
+        const response = await api.get<ModulesResponse>('/admin/modules/available');
         const data = response?.data || response;
         return data as ModulesResponse;
       } catch {
@@ -241,7 +241,7 @@ const useAdminDashboard = () => {
         errors_today: 0
       };
       try {
-        const response = await api.get<AdminDashboard>('/v3/admin/dashboard', {
+        const response = await api.get<AdminDashboard>('/admin/dashboard', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles
@@ -266,7 +266,7 @@ const useUsers = (filters?: { status?: string; role_id?: string }) => {
         if (filters?.status) params.append('is_active', filters.status === 'active' ? 'true' : 'false');
         if (filters?.role_id) params.append('role_code', filters.role_id);
         const queryString = params.toString();
-        const res = await api.get<{ items: User[]; total: number }>(`/v3/iam/users${queryString ? `?${queryString}` : ''}`, {
+        const res = await api.get<{ items: User[]; total: number }>(`/iam/users${queryString ? `?${queryString}` : ''}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (réponse directe ou enveloppée dans data)
@@ -285,7 +285,7 @@ const useUser = (id: string | undefined) => {
     queryKey: ['admin', 'user', id],
     queryFn: async (): Promise<AdminUser | null> => {
       try {
-        const response = await api.get<AdminUser>(`/v3/iam/users/${id}`, {
+        const response = await api.get<AdminUser>(`/iam/users/${id}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (objet direct ou enveloppé)
@@ -324,7 +324,7 @@ const useRoles = () => {
     queryKey: ['admin', 'roles'],
     queryFn: async (): Promise<Role[]> => {
       try {
-        const response = await api.get<Role[]>('/v3/iam/roles', {
+        const response = await api.get<Role[]>('/iam/roles', {
           headers: { 'X-Silent-Error': 'true' }
         });
         return extractArrayFromResponse<Role>(response);
@@ -350,7 +350,7 @@ const useCreateRole = () => {
       requires_approval?: boolean;
       max_users?: number;
     }) => {
-      const res = await api.post('/v3/iam/roles', data);
+      const res = await api.post('/iam/roles', data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
@@ -371,7 +371,7 @@ const useUpdateRole = () => {
         is_active?: boolean;
       }
     }) => {
-      const res = await api.patch(`/v3/iam/roles/${id}`, data);
+      const res = await api.patch(`/iam/roles/${id}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
@@ -382,7 +382,7 @@ const useDeleteRole = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v3/iam/roles/${id}`);
+      await api.delete(`/iam/roles/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'roles'] })
   });
@@ -401,7 +401,7 @@ const usePermissions = () => {
     queryKey: ['admin', 'permissions'],
     queryFn: async (): Promise<Permission[]> => {
       try {
-        const response = await api.get<{ items: Permission[] }>('/v3/iam/permissions', {
+        const response = await api.get<{ items: Permission[] }>('/iam/permissions', {
           headers: { 'X-Silent-Error': 'true' }
         });
         return extractArrayFromResponse<Permission>(response);
@@ -433,7 +433,7 @@ const useCapabilitiesByModule = () => {
   return useQuery({
     queryKey: ['admin', 'capabilities-modules'],
     queryFn: async (): Promise<CapabilitiesByModule> => {
-      const response = await api.get('/v3/iam/capabilities/modules');
+      const response = await api.get('/iam/capabilities/modules');
 
       // La réponse est directement l'objet CAPABILITIES_BY_MODULE
       const data = response as unknown;
@@ -462,7 +462,7 @@ const useUserPermissions = (userId: string | undefined) => {
     queryFn: async (): Promise<string[]> => {
       if (!userId) return [];
       try {
-        const response = await api.get<string[]>(`/v3/iam/users/${userId}/permissions`, {
+        const response = await api.get<string[]>(`/iam/users/${userId}/permissions`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) return response;
@@ -481,7 +481,7 @@ const useUpdateUserPermissions = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, capabilities }: { userId: string; capabilities: string[] }) => {
-      const res = await api.put(`/v3/iam/users/${userId}/permissions`, { capabilities });
+      const res = await api.put(`/iam/users/${userId}/permissions`, { capabilities });
       return res;
     },
     onSuccess: (_, variables) => {
@@ -496,7 +496,7 @@ const useTenants = (filters?: { status?: string; plan?: string }) => {
     queryKey: ['admin', 'tenants', filters],
     queryFn: async (): Promise<Tenant[]> => {
       try {
-        const response = await api.get<Tenant[]>('/v3/tenants', {
+        const response = await api.get<Tenant[]>('/tenants', {
           headers: { 'X-Silent-Error': 'true' }
         });
         // Gérer les deux formats possibles (tableau direct ou enveloppé)
@@ -523,7 +523,7 @@ const useAuditLogs = (filters?: { resource_type?: string }) => {
         const params = new URLSearchParams();
         if (filters?.resource_type) params.append('resource_type', filters.resource_type);
         const queryString = params.toString();
-        const response = await api.get<AuditLog[]>(`/v3/audit/logs${queryString ? `?${queryString}` : ''}`, {
+        const response = await api.get<AuditLog[]>(`/audit/logs${queryString ? `?${queryString}` : ''}`, {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) {
@@ -546,7 +546,7 @@ const useBackupConfigs = () => {
     queryKey: ['admin', 'backups'],
     queryFn: async (): Promise<BackupConfig[]> => {
       try {
-        const response = await api.get<BackupConfig[]>('/v3/backup/config', {
+        const response = await api.get<BackupConfig[]>('/backup/config', {
           headers: { 'X-Silent-Error': 'true' }
         });
         if (Array.isArray(response)) {
@@ -568,7 +568,7 @@ const useCreateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<User> & { password: string }) => {
-      const res = await api.post('/v3/iam/users', data);
+      const res = await api.post('/iam/users', data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -579,7 +579,7 @@ const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const res = await api.patch(`/v3/iam/users/${id}`, { status });
+      const res = await api.patch(`/iam/users/${id}`, { status });
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -593,7 +593,7 @@ const useUpdateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
-      const res = await api.patch(`/v3/iam/users/${id}`, data);
+      const res = await api.patch(`/iam/users/${id}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -607,7 +607,7 @@ const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.delete(`/v3/iam/users/${id}`);
+      const res = await api.delete(`/iam/users/${id}`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {
@@ -620,7 +620,7 @@ const useRunBackup = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.post(`/v3/backup/${id}/run`);
+      const res = await api.post(`/backup/${id}/run`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'backups'] })
@@ -1915,7 +1915,7 @@ const useSuspendTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v3/tenants/${tenantId}/suspend`);
+      const res = await api.post(`/tenants/${tenantId}/suspend`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1926,7 +1926,7 @@ const useActivateTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v3/tenants/${tenantId}/activate`);
+      const res = await api.post(`/tenants/${tenantId}/activate`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1937,7 +1937,7 @@ const useCancelTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await api.post(`/v3/tenants/${tenantId}/cancel`);
+      const res = await api.post(`/tenants/${tenantId}/cancel`);
       return unwrapApiResponse(res);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] })
@@ -1948,7 +1948,7 @@ const useUpdateTenant = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ tenantId, data }: { tenantId: string; data: Partial<Tenant> }) => {
-      const res = await api.put(`/v3/tenants/${tenantId}`, data);
+      const res = await api.put(`/tenants/${tenantId}`, data);
       return unwrapApiResponse(res);
     },
     onSuccess: () => {

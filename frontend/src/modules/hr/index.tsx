@@ -134,7 +134,7 @@ const useHRDashboard = () => {
   return useQuery<HRDashboard | null, Error>({
     queryKey: ['hr', 'dashboard'],
     queryFn: async (): Promise<HRDashboard | null> => {
-      const response: any = await api.get('/v3/hr/dashboard');
+      const response: any = await api.get('/hr/dashboard');
       // Handle both direct response and wrapped { data: {...} }
       if (response?.pending_leave_requests !== undefined) {
         return response as HRDashboard;
@@ -151,7 +151,7 @@ const useDepartments = () => {
   return useQuery({
     queryKey: ['hr', 'departments'],
     queryFn: async () => {
-      const response = await api.get<{ data: Department[] } | Department[]>('/v3/hr/departments');
+      const response = await api.get<{ data: Department[] } | Department[]>('/hr/departments');
       // Handle both wrapped { data: [...] } and direct [...] responses
       if (Array.isArray(response)) {
         return response;
@@ -168,7 +168,7 @@ const usePositions = () => {
   return useQuery({
     queryKey: ['hr', 'positions'],
     queryFn: async () => {
-      const response = await api.get<{ data: Position[] } | Position[]>('/v3/hr/positions');
+      const response = await api.get<{ data: Position[] } | Position[]>('/hr/positions');
       // Handle both wrapped { data: [...] } and direct [...] responses
       if (Array.isArray(response)) {
         return response;
@@ -185,7 +185,7 @@ const useEmployees = (filters?: { department_id?: string; status?: string; contr
   return useQuery<Employee[], Error>({
     queryKey: ['hr', 'employees', filters],
     queryFn: async (): Promise<Employee[]> => {
-      const url = buildUrlWithParams('/v3/hr/employees', filters);
+      const url = buildUrlWithParams('/hr/employees', filters);
       const response: any = await api.get(url);
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
       if (response?.items) {
@@ -203,7 +203,7 @@ const useEmployee = (id: string) => {
   return useQuery<Employee | null, Error>({
     queryKey: ['hr', 'employee', id],
     queryFn: async (): Promise<Employee | null> => {
-      const response: any = await api.get(`/v3/hr/employees/${id}`);
+      const response: any = await api.get(`/hr/employees/${id}`);
       if (response?.data) {
         return response.data as Employee;
       }
@@ -220,7 +220,7 @@ const useLeaveRequests = (filters?: { status?: string; type?: string }) => {
   return useQuery<LeaveRequest[], Error>({
     queryKey: ['hr', 'leave-requests', filters],
     queryFn: async (): Promise<LeaveRequest[]> => {
-      const url = buildUrlWithParams('/v3/hr/leave-requests', filters);
+      const url = buildUrlWithParams('/hr/leave-requests', filters);
       const response: any = await api.get(url);
       // Handle both direct { items: [...] } and wrapped { data: { items: [...] } }
       if (response?.items) {
@@ -238,7 +238,7 @@ const useTimeEntries = (filters?: { employee_id?: string; from_date?: string; to
   return useQuery({
     queryKey: ['hr', 'time-entries', filters],
     queryFn: async () => {
-      const url = buildUrlWithParams('/v3/hr/time-entries', filters);
+      const url = buildUrlWithParams('/hr/time-entries', filters);
       const response = await api.get<TimeEntry[] | { items: TimeEntry[] }>(url).then(r => r.data);
       return Array.isArray(response) ? response : (response?.items || []);
     }
@@ -263,7 +263,7 @@ const useCreateTimeEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ employee_id, data }: { employee_id: string; data: TimeEntryCreateData }) => {
-      return api.post<TimeEntry>(`/v3/hr/employees/${employee_id}/time-entries`, data).then(r => r.data);
+      return api.post<TimeEntry>(`/hr/employees/${employee_id}/time-entries`, data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'time-entries'] })
   });
@@ -273,7 +273,7 @@ const useCreateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Employee>) => {
-      return api.post<Employee>('/v3/hr/employees', data).then(r => r.data);
+      return api.post<Employee>('/hr/employees', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });
@@ -291,7 +291,7 @@ const useCreateLeaveRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: LeaveRequestCreateData) => {
-      const response = await api.post<LeaveRequest>('/v3/hr/leave-requests', data);
+      const response = await api.post<LeaveRequest>('/hr/leave-requests', data);
       // Handle both wrapped and direct response
       return (response as { data?: LeaveRequest }).data || response;
     },
@@ -303,7 +303,7 @@ const useApproveLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response: any = await api.post(`/v3/hr/leave-requests/${id}/approve`);
+      const response: any = await api.post(`/hr/leave-requests/${id}/approve`);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -314,7 +314,7 @@ const useRejectLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const response: any = await api.post(`/v3/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
+      const response: any = await api.post(`/hr/leave-requests/${id}/reject?rejection_reason=${encodeURIComponent(reason)}`);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -335,7 +335,7 @@ const useUpdateLeaveRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: LeaveRequestUpdateData }) => {
-      const response: any = await api.put(`/v3/hr/leave-requests/${id}`, data);
+      const response: any = await api.put(`/hr/leave-requests/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -1475,7 +1475,7 @@ const useCreateDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Department>) => {
-      return api.post<Department>('/v3/hr/departments', data).then(r => r.data);
+      return api.post<Department>('/hr/departments', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1486,7 +1486,7 @@ const useCreatePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Position>) => {
-      return api.post<Position>('/v3/hr/positions', data).then(r => r.data);
+      return api.post<Position>('/hr/positions', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1497,7 +1497,7 @@ const useUpdateDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Department> }) => {
-      const response: any = await api.put(`/v3/hr/departments/${id}`, data);
+      const response: any = await api.put(`/hr/departments/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
@@ -1509,7 +1509,7 @@ const useUpdatePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Position> }) => {
-      const response: any = await api.put(`/v3/hr/positions/${id}`, data);
+      const response: any = await api.put(`/hr/positions/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
@@ -1521,7 +1521,7 @@ const useUpdateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Employee> }) => {
-      const response: any = await api.put(`/v3/hr/employees/${id}`, data);
+      const response: any = await api.put(`/hr/employees/${id}`, data);
       return response?.data || response;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
@@ -1533,7 +1533,7 @@ const useDeleteDepartment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v3/hr/departments/${id}`);
+      return api.delete(`/hr/departments/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'departments'] })
   });
@@ -1544,7 +1544,7 @@ const useDeletePosition = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v3/hr/positions/${id}`);
+      return api.delete(`/hr/positions/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr', 'positions'] })
   });
@@ -1555,7 +1555,7 @@ const useDeleteEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v3/hr/employees/${id}`);
+      return api.delete(`/hr/employees/${id}`);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hr'] })
   });

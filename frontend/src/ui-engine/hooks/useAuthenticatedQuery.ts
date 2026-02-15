@@ -9,7 +9,7 @@
  * ```tsx
  * const { data, isLoading, error } = useAuthenticatedQuery({
  *   queryKey: ['partners', page],
- *   queryFn: () => api.get('/v3/partners'),
+ *   queryFn: () => api.get('/partners'),
  * });
  * ```
  */

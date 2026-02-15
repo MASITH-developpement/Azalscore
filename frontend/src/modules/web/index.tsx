@@ -77,33 +77,33 @@ interface MenuItem {
 
 const useThemes = () => useQuery({
   queryKey: ['web', 'themes'],
-  queryFn: () => api.get<{ items: Theme[] }>('/v3/web/themes').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: Theme[] }>('/web/themes').then(r => r.data.items || [])
 });
 
 const useWidgets = () => useQuery({
   queryKey: ['web', 'widgets'],
-  queryFn: () => api.get<{ items: Widget[] }>('/v3/web/widgets').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: Widget[] }>('/web/widgets').then(r => r.data.items || [])
 });
 
 const useDashboards = () => useQuery({
   queryKey: ['web', 'dashboards'],
-  queryFn: () => api.get<{ items: Dashboard[] }>('/v3/web/dashboards').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: Dashboard[] }>('/web/dashboards').then(r => r.data.items || [])
 });
 
 const usePages = () => useQuery({
   queryKey: ['web', 'pages'],
-  queryFn: () => api.get<{ items: CustomPage[] }>('/v3/web/pages').then(r => r.data.items || [])
+  queryFn: () => api.get<{ items: CustomPage[] }>('/web/pages').then(r => r.data.items || [])
 });
 
 const useMenuItems = () => useQuery({
   queryKey: ['web', 'menu-items'],
-  queryFn: () => api.get<MenuItem[]>('/v3/web/menu-items').then(r => r.data || [])
+  queryFn: () => api.get<MenuItem[]>('/web/menu-items').then(r => r.data || [])
 });
 
 const useCreateTheme = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Theme>) => api.post('/v3/web/themes', data).then(r => r.data),
+    mutationFn: (data: Partial<Theme>) => api.post('/web/themes', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'themes'] })
   });
 };
@@ -111,7 +111,7 @@ const useCreateTheme = () => {
 const useCreatePage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<CustomPage>) => api.post('/v3/web/pages', data).then(r => r.data),
+    mutationFn: (data: Partial<CustomPage>) => api.post('/web/pages', data).then(r => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'pages'] })
   });
 };
@@ -119,7 +119,7 @@ const useCreatePage = () => {
 const useDeletePage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/v3/web/pages/${id}`),
+    mutationFn: (id: string) => api.delete(`/web/pages/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['web', 'pages'] })
   });
 };

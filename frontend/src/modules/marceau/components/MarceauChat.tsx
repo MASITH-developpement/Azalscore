@@ -81,7 +81,7 @@ export function MarceauChat({ position = 'bottom-right', defaultOpen = false }: 
         conversation_id: string;
         intent: string | null;
         confidence: number;
-      }>('/v3/marceau/chat/message', {
+      }>('/marceau/chat/message', {
         message: userMessage.content,
         conversation_id: conversationId,
       });

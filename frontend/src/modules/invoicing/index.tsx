@@ -211,7 +211,7 @@ const useDocuments = (
     queryKey: ['documents', type, page, pageSize, filters],
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Document>>(
-        `/v3/commercial/documents?${queryParams}`
+        `/commercial/documents?${queryParams}`
       );
       // api.get retourne déjà response.data
       return response as unknown as PaginatedResponse<Document>;
@@ -223,7 +223,7 @@ const useDocument = (id: string) => {
   return useQuery({
     queryKey: ['document', id],
     queryFn: async () => {
-      const response = await api.get<Document>(`/v3/commercial/documents/${id}`);
+      const response = await api.get<Document>(`/commercial/documents/${id}`);
       // api.get retourne déjà response.data
       return response as unknown as Document;
     },
@@ -235,9 +235,9 @@ const useCustomers = () => {
   return useQuery({
     queryKey: ['customers', 'list'],
     queryFn: async () => {
-      // Utiliser /v3/partners/clients au lieu de /v3/commercial/customers
+      // Utiliser /partners/clients au lieu de /commercial/customers
       const response = await api.get<PaginatedResponse<Customer>>(
-        '/v3/partners/clients?page_size=500&is_active=true'
+        '/partners/clients?page_size=500&is_active=true'
       );
       // api.get retourne déjà response.data
       return (response as unknown as PaginatedResponse<Customer>).items;
@@ -258,7 +258,7 @@ const useCreateDocument = () => {
       notes?: string;
       lines: Omit<LineFormData, 'id'>[];
     }) => {
-      const response = await api.post<Document>('/v3/commercial/documents', data);
+      const response = await api.post<Document>('/commercial/documents', data);
       // api.post retourne déjà response.data
       return response as unknown as Document;
     },
@@ -276,7 +276,7 @@ const useUpdateDocument = () => {
       id: string;
       data: Omit<Partial<Document>, 'lines'> & { lines?: LineFormData[] };
     }) => {
-      const response = await api.put<Document>(`/v3/commercial/documents/${id}`, data);
+      const response = await api.put<Document>(`/commercial/documents/${id}`, data);
       // api.put retourne déjà response.data
       return response as unknown as Document;
     },
@@ -292,7 +292,7 @@ const useDeleteDocument = () => {
 
   return useMutation({
     mutationFn: async ({ id, type }: { id: string; type: DocumentType }) => {
-      await api.delete(`/v3/commercial/documents/${id}`);
+      await api.delete(`/commercial/documents/${id}`);
       return { id, type };
     },
     onSuccess: (_, variables) => {
@@ -306,7 +306,7 @@ const useValidateDocument = () => {
 
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
-      const response = await api.post<Document>(`/v3/commercial/documents/${id}/validate`);
+      const response = await api.post<Document>(`/commercial/documents/${id}/validate`);
       // api.post retourne déjà response.data
       return response as unknown as Document;
     },
@@ -322,7 +322,7 @@ const useConvertQuoteToInvoice = () => {
 
   return useMutation({
     mutationFn: async ({ quoteId }: { quoteId: string }) => {
-      const response = await api.post<Document>(`/v3/commercial/quotes/${quoteId}/convert`);
+      const response = await api.post<Document>(`/commercial/quotes/${quoteId}/convert`);
       // api.post retourne déjà response.data
       return response as unknown as Document;
     },
@@ -356,7 +356,7 @@ const useDuplicateDocument = () => {
           tax_rate: l.tax_rate,
         })),
       };
-      const response = await api.post<Document>('/v3/commercial/documents', payload);
+      const response = await api.post<Document>('/commercial/documents', payload);
       return response as unknown as Document;
     },
     onSuccess: (data) => {
@@ -386,7 +386,7 @@ const useTransformDocument = () => {
           tax_rate: l.tax_rate,
         })),
       };
-      const response = await api.post<Document>('/v3/commercial/documents', payload);
+      const response = await api.post<Document>('/commercial/documents', payload);
       return response as unknown as Document;
     },
     onSuccess: (data, variables) => {
@@ -407,7 +407,7 @@ const useExportDocuments = () => {
       });
 
       const response = await api.get<Blob>(
-        `/v3/commercial/documents/export?${queryParams}`,
+        `/commercial/documents/export?${queryParams}`,
         { responseType: 'blob' }
       );
       // api.get retourne déjà response.data
@@ -1200,7 +1200,7 @@ const DocumentFormPage: React.FC<DocumentFormPageProps> = ({ type }) => {
                 secondaryField="code"
                 entityName="client"
                 entityIcon={<UserPlus size={16} />}
-                createEndpoint="/v3/partners/clients"
+                createEndpoint="/partners/clients"
                 createFields={CUSTOMER_CREATE_FIELDS}
                 createUrl="/partners/clients/new"
                 queryKeys={['customers', 'clients']}

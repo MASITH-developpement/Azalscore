@@ -99,7 +99,7 @@ const useSubscriptionStats = () => {
   return useQuery({
     queryKey: ['subscriptions', 'stats'],
     queryFn: async () => {
-      return api.get<SubscriptionStats>('/v3/subscriptions/stats').then(r => r.data);
+      return api.get<SubscriptionStats>('/subscriptions/stats').then(r => r.data);
     }
   });
 };
@@ -111,7 +111,7 @@ const usePlans = (filters?: { is_active?: boolean }) => {
       const params = new URLSearchParams();
       if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
       const queryString = params.toString();
-      const url = queryString ? `/v3/subscriptions/plans?${queryString}` : '/v3/subscriptions/plans';
+      const url = queryString ? `/subscriptions/plans?${queryString}` : '/subscriptions/plans';
       return api.get<Plan[]>(url).then(r => r.data);
     }
   });
@@ -125,7 +125,7 @@ const useSubscriptions = (filters?: { status?: string; plan_id?: string }) => {
       if (filters?.status) params.append('status', filters.status);
       if (filters?.plan_id) params.append('plan_id', filters.plan_id);
       const queryString = params.toString();
-      const url = queryString ? `/v3/subscriptions?${queryString}` : '/v3/subscriptions';
+      const url = queryString ? `/subscriptions?${queryString}` : '/subscriptions';
       return api.get<Subscription[]>(url).then(r => r.data);
     }
   });
@@ -135,7 +135,7 @@ const useSubscription = (id: string) => {
   return useQuery({
     queryKey: ['subscriptions', 'detail', id],
     queryFn: async () => {
-      return api.get<Subscription>(`/v3/subscriptions/${id}`).then(r => r.data);
+      return api.get<Subscription>(`/subscriptions/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -148,7 +148,7 @@ const useInvoices = (filters?: { status?: string }) => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       const queryString = params.toString();
-      const url = queryString ? `/v3/subscriptions/invoices?${queryString}` : '/v3/subscriptions/invoices';
+      const url = queryString ? `/subscriptions/invoices?${queryString}` : '/subscriptions/invoices';
       return api.get<SubscriptionInvoice[]>(url).then(r => r.data);
     }
   });
@@ -158,7 +158,7 @@ const useCancelSubscription = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, immediately }: { id: string; immediately?: boolean }) => {
-      return api.post<void>(`/v3/subscriptions/${id}/cancel`, { immediately }).then(r => r.data);
+      return api.post<void>(`/subscriptions/${id}/cancel`, { immediately }).then(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });

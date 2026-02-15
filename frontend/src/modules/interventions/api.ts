@@ -38,7 +38,7 @@ export const useInterventionStats = () => {
   return useQuery({
     queryKey: interventionKeys.stats(),
     queryFn: async () => {
-      const response = await api.get<InterventionStats>('/v3/interventions/stats');
+      const response = await api.get<InterventionStats>('/interventions/stats');
       return response as unknown as InterventionStats;
     },
   });
@@ -63,7 +63,7 @@ export const useInterventions = (filters?: {
       if (filters?.priorite) params.append('priorite', filters.priorite);
       if (filters?.client_id) params.append('client_id', filters.client_id);
       const queryString = params.toString();
-      const url = `/v3/interventions${queryString ? `?${queryString}` : ''}`;
+      const url = `/interventions${queryString ? `?${queryString}` : ''}`;
       const response = await api.get<{ items: Intervention[]; total: number }>(url);
       const data = unwrapApiResponse<{ items: Intervention[]; total: number }>(response);
       return data?.items || [];
@@ -75,7 +75,7 @@ export const useCreateIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Intervention>) => {
-      return api.post('/v3/interventions', data);
+      return api.post('/interventions', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.all });
@@ -87,7 +87,7 @@ export const useUpdateIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Intervention> }) => {
-      return api.put(`/v3/interventions/${id}`, data);
+      return api.put(`/interventions/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.all });
@@ -99,7 +99,7 @@ export const useDeleteIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v3/interventions/${id}`);
+      return api.delete(`/interventions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.all });
@@ -115,7 +115,7 @@ export const useDonneursOrdre = () => {
   return useQuery({
     queryKey: interventionKeys.donneursOrdre(),
     queryFn: async () => {
-      const response = await api.get<DonneurOrdre[]>('/v3/interventions/donneurs-ordre');
+      const response = await api.get<DonneurOrdre[]>('/interventions/donneurs-ordre');
       return response as unknown as DonneurOrdre[];
     },
   });
@@ -125,7 +125,7 @@ export const useUpdateDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<DonneurOrdre> }) => {
-      return api.put(`/v3/interventions/donneurs-ordre/${id}`, data);
+      return api.put(`/interventions/donneurs-ordre/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
@@ -137,7 +137,7 @@ export const useDeleteDonneurOrdre = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v3/interventions/donneurs-ordre/${id}`);
+      return api.delete(`/interventions/donneurs-ordre/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });
@@ -153,7 +153,7 @@ export const useClients = () => {
   return useQuery({
     queryKey: interventionKeys.clients(),
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/v3/commercial/customers');
+      const response = await api.get<{ items: { id: string; name: string; code?: string }[] }>('/commercial/customers');
       const data = unwrapApiResponse<{ items: { id: string; name: string; code?: string }[] }>(response);
       return data?.items || [];
     },
@@ -164,7 +164,7 @@ export const useIntervenants = () => {
   return useQuery({
     queryKey: interventionKeys.intervenants(),
     queryFn: async () => {
-      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/v3/hr/employees');
+      const response = await api.get<{ items: { id: string; first_name: string; last_name: string }[] }>('/hr/employees');
       const data = unwrapApiResponse<{ items: { id: string; first_name: string; last_name: string }[] }>(response);
       return data?.items || [];
     },
@@ -179,7 +179,7 @@ export const useAnalyseIA = (interventionId: string | undefined) => {
   return useQuery({
     queryKey: interventionKeys.analyseIA(interventionId!),
     queryFn: async () => {
-      const response = await api.get<AnalyseIA>(`/v3/interventions/${interventionId}/analyse-ia`);
+      const response = await api.get<AnalyseIA>(`/interventions/${interventionId}/analyse-ia`);
       return response as unknown as AnalyseIA;
     },
     enabled: !!interventionId,

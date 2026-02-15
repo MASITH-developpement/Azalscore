@@ -70,7 +70,7 @@ class TokenManager {
     }
 
     this.refreshPromise = axios
-      .post(`${API_BASE_URL}/v3/auth/refresh`, { refresh_token: refresh })
+      .post(`${API_BASE_URL}/auth/refresh`, { refresh_token: refresh })
       .then((response) => {
         const { access_token, refresh_token } = response.data;
         this.setTokens(access_token, refresh_token);

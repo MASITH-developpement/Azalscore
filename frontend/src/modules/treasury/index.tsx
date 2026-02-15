@@ -69,7 +69,7 @@ const useTreasurySummary = () => {
   return useQuery({
     queryKey: ['treasury', 'summary'],
     queryFn: async () => {
-      const response = await api.get<TreasurySummary>('/v3/treasury/summary');
+      const response = await api.get<TreasurySummary>('/treasury/summary');
       return response.data;
     },
   });
@@ -79,7 +79,7 @@ const useBankAccounts = () => {
   return useQuery({
     queryKey: ['treasury', 'accounts'],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<BankAccount>>('/v3/treasury/accounts');
+      const response = await api.get<PaginatedResponse<BankAccount>>('/treasury/accounts');
       return response.data;
     },
   });
@@ -90,8 +90,8 @@ const useTransactions = (accountId?: string, page = 1, pageSize = 25) => {
     queryKey: ['treasury', 'transactions', accountId, page, pageSize],
     queryFn: async () => {
       const url = accountId
-        ? `/v3/treasury/accounts/${accountId}/transactions?page=${page}&page_size=${pageSize}`
-        : `/v3/treasury/transactions?page=${page}&page_size=${pageSize}`;
+        ? `/treasury/accounts/${accountId}/transactions?page=${page}&page_size=${pageSize}`
+        : `/treasury/transactions?page=${page}&page_size=${pageSize}`;
       const response = await api.get<PaginatedResponse<Transaction>>(url);
       return response.data;
     },
@@ -102,7 +102,7 @@ const useForecast = (days = 30) => {
   return useQuery({
     queryKey: ['treasury', 'forecast', days],
     queryFn: async () => {
-      const response = await api.get<ForecastData[]>(`/v3/treasury/forecast?days=${days}`);
+      const response = await api.get<ForecastData[]>(`/treasury/forecast?days=${days}`);
       return response.data;
     },
   });
@@ -117,7 +117,7 @@ const useReconcileTransaction = () => {
       documentType: string;
       documentId: string;
     }) => {
-      await api.post(`/v3/treasury/transactions/${transactionId}/reconcile`, {
+      await api.post(`/treasury/transactions/${transactionId}/reconcile`, {
         document_type: documentType,
         document_id: documentId,
       });
@@ -132,7 +132,7 @@ const useBankAccount = (id: string) => {
   return useQuery({
     queryKey: ['treasury', 'account', id],
     queryFn: async () => {
-      const response = await api.get<BankAccount>(`/v3/treasury/accounts/${id}`);
+      const response = await api.get<BankAccount>(`/treasury/accounts/${id}`);
       return response.data;
     },
     enabled: !!id,

@@ -16,7 +16,7 @@ export const useValiderIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/interventions/${id}/valider`, {});
+      return api.post(`/interventions/${id}/valider`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -28,7 +28,7 @@ export const useDemarrerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/interventions/${id}/arrivee`, {});
+      return api.post(`/interventions/${id}/arrivee`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -40,7 +40,7 @@ export const useTerminerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/interventions/${id}/terminer`, {});
+      return api.post(`/interventions/${id}/terminer`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -52,7 +52,7 @@ export const useBloquerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, motif }: { id: string; motif: string }) => {
-      return api.post(`/v3/interventions/${id}/bloquer`, { motif });
+      return api.post(`/interventions/${id}/bloquer`, { motif });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -64,7 +64,7 @@ export const useDebloquerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/interventions/${id}/debloquer`, {});
+      return api.post(`/interventions/${id}/debloquer`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });
@@ -76,7 +76,7 @@ export const useAnnulerIntervention = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/interventions/${id}/annuler`, {});
+      return api.post(`/interventions/${id}/annuler`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['interventions'] });

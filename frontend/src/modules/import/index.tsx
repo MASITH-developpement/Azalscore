@@ -84,31 +84,31 @@ const SOURCE_CONFIG: Record<ImportSource, { name: string; description: string; a
   odoo: {
     name: 'Odoo',
     description: 'Import depuis Odoo (versions 8-18) via XML-RPC',
-    apiPrefix: '/v3/odoo',
+    apiPrefix: '/odoo',
     fields: ['url', 'database', 'username', 'apiKey'],
   },
   axonaut: {
     name: 'Axonaut',
     description: 'Import depuis Axonaut via API REST',
-    apiPrefix: '/v3/axonaut',
+    apiPrefix: '/axonaut',
     fields: ['apiKey'],
   },
   pennylane: {
     name: 'Pennylane',
     description: 'Import depuis Pennylane via API REST',
-    apiPrefix: '/v3/pennylane',
+    apiPrefix: '/pennylane',
     fields: ['apiKey'],
   },
   sage: {
     name: 'Sage',
     description: 'Import depuis Sage via fichiers export',
-    apiPrefix: '/v3/sage',
+    apiPrefix: '/sage',
     fields: ['url', 'username', 'apiKey'],
   },
   chorus: {
     name: 'Chorus Pro',
     description: 'Import depuis Chorus Pro (factures publiques)',
-    apiPrefix: '/v3/chorus',
+    apiPrefix: '/chorus',
     fields: ['username', 'apiKey'],
   },
 };
@@ -154,7 +154,7 @@ export const OdooImportModule: React.FC = () => {
     queryKey: ['odoo', 'configs'],
     queryFn: async () => {
       try {
-        const response = await api.get('/v3/odoo/config');
+        const response = await api.get('/odoo/config');
         return Array.isArray(response) ? response : [];
       } catch {
         return [];
@@ -219,9 +219,9 @@ export const OdooImportModule: React.FC = () => {
         sync_interventions: data.sync_interventions,
       };
       if (data.id) {
-        return api.put(`/v3/odoo/config/${data.id}`, payload);
+        return api.put(`/odoo/config/${data.id}`, payload);
       } else {
-        return api.post('/v3/odoo/config', payload);
+        return api.post('/odoo/config', payload);
       }
     },
     onSuccess: () => {
@@ -233,9 +233,9 @@ export const OdooImportModule: React.FC = () => {
   const testMutation = useMutation({
     mutationFn: async () => {
       if (config.id) {
-        return api.post(`/v3/odoo/config/${config.id}/test`);
+        return api.post(`/odoo/config/${config.id}/test`);
       } else {
-        return api.post('/v3/odoo/test', {
+        return api.post('/odoo/test', {
           odoo_url: config.odoo_url,
           odoo_database: config.database,
           username: config.username,
@@ -260,7 +260,7 @@ export const OdooImportModule: React.FC = () => {
   // Mutation pour lancer l'import
   const importMutation = useMutation({
     mutationFn: async (type: ImportType) => {
-      return api.post(`/v3/odoo/import/${type}?config_id=${config.id}`);
+      return api.post(`/odoo/import/${type}?config_id=${config.id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['odoo', 'history'] });
@@ -272,7 +272,7 @@ export const OdooImportModule: React.FC = () => {
     queryKey: ['odoo', 'history'],
     queryFn: async () => {
       try {
-        const response = await api.get('/v3/odoo/history');
+        const response = await api.get('/odoo/history');
         return Array.isArray(response) ? response : [];
       } catch {
         return [];
@@ -300,7 +300,7 @@ export const OdooImportModule: React.FC = () => {
   // Mutation pour supprimer
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/v3/odoo/config/${id}`);
+      return api.delete(`/odoo/config/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['odoo', 'configs'] });

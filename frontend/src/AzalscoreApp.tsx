@@ -81,7 +81,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         // Search clients
         try {
-          const clientsRes = await api.get<{ items: any[] }>(`/v3/partners/clients?search=${encodeURIComponent(query)}&page_size=5`);
+          const clientsRes = await api.get<{ items: any[] }>(`/partners/clients?search=${encodeURIComponent(query)}&page_size=5`);
           const clients = (clientsRes as any)?.items || [];
           clients.forEach((c: any) => {
             searchResults.push({
@@ -96,7 +96,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         // Search documents (invoices/quotes)
         try {
-          const docsRes = await api.get<{ items: any[] }>(`/v3/commercial/documents?search=${encodeURIComponent(query)}&page_size=5`);
+          const docsRes = await api.get<{ items: any[] }>(`/commercial/documents?search=${encodeURIComponent(query)}&page_size=5`);
           const docs = (docsRes as any)?.items || [];
           docs.forEach((d: any) => {
             searchResults.push({
@@ -111,7 +111,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate, isOpen, onClose
 
         // Search products
         try {
-          const productsRes = await api.get<{ items: any[] }>(`/v3/inventory/products?search=${encodeURIComponent(query)}&page_size=5`);
+          const productsRes = await api.get<{ items: any[] }>(`/inventory/products?search=${encodeURIComponent(query)}&page_size=5`);
           const products = (productsRes as any)?.items || [];
           products.forEach((p: any) => {
             searchResults.push({
@@ -467,10 +467,10 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ type, onClose, onSu
 
   const getEndpoint = () => {
     switch (type) {
-      case 'client': return '/v3/commercial/customers';
-      case 'supplier': return '/v3/commercial/suppliers';
-      case 'article': return '/v3/inventory/products';
-      case 'intervenant': return '/v3/hr/employees';
+      case 'client': return '/commercial/customers';
+      case 'supplier': return '/commercial/suppliers';
+      case 'article': return '/inventory/products';
+      case 'intervenant': return '/hr/employees';
     }
   };
 
@@ -663,7 +663,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/v3/auth/login', {
+      const response = await fetch('/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

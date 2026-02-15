@@ -52,7 +52,7 @@ interface ModuleOption {
 const useBreakGlassChallenge = () => {
   return useMutation({
     mutationFn: async (scope: BreakGlassScope) => {
-      const response = await api.post<BreakGlassChallenge>('/v3/admin/break-glass/challenge', scope);
+      const response = await api.post<BreakGlassChallenge>('/admin/break-glass/challenge', scope);
       return response.data;
     },
   });
@@ -61,7 +61,7 @@ const useBreakGlassChallenge = () => {
 const useExecuteBreakGlass = () => {
   return useMutation({
     mutationFn: async (request: BreakGlassRequest) => {
-      await api.post('/v3/admin/break-glass/execute', request);
+      await api.post('/admin/break-glass/execute', request);
     },
   });
 };
@@ -70,7 +70,7 @@ const useTenantsList = () => {
   return useQuery({
     queryKey: ['break-glass', 'tenants'],
     queryFn: async () => {
-      const response = await api.get<{ items: TenantOption[] }>('/v3/admin/tenants?page_size=1000');
+      const response = await api.get<{ items: TenantOption[] }>('/admin/tenants?page_size=1000');
       return response.data.items;
     },
   });
@@ -80,7 +80,7 @@ const useModulesList = () => {
   return useQuery({
     queryKey: ['break-glass', 'modules'],
     queryFn: async () => {
-      const response = await api.get<{ items: ModuleOption[] }>('/v3/admin/modules');
+      const response = await api.get<{ items: ModuleOption[] }>('/admin/modules');
       return response.data.items;
     },
   });

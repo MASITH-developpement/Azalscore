@@ -19,7 +19,7 @@ import { formatCurrency, formatDate } from '@/utils/formatters';
 export const PaymentDocumentsTab: React.FC<TabContentProps<Payment>> = ({ data: payment }) => {
   const handleDownloadReceipt = async () => {
     try {
-      const response = await fetch(`/api/v3/payments/${payment.id}/receipt`, {
+      const response = await fetch(`/api/payments/${payment.id}/receipt`, {
         method: 'GET',
         headers: { 'Accept': 'application/pdf' }
       });
@@ -43,7 +43,7 @@ export const PaymentDocumentsTab: React.FC<TabContentProps<Payment>> = ({ data: 
   const handleSendReceipt = async () => {
     if (!payment.customer_email) return;
     try {
-      await fetch(`/api/v3/payments/${payment.id}/send-receipt`, {
+      await fetch(`/api/payments/${payment.id}/send-receipt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: payment.customer_email })

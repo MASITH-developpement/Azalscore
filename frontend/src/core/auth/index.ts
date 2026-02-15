@@ -179,7 +179,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     try {
-      const response = await api.post<LoginResponse>('/v3/auth/login', credentials, {
+      const response = await api.post<LoginResponse>('/auth/login', credentials, {
         skipAuth: true,
       });
 
@@ -220,7 +220,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   logout: async (): Promise<void> => {
     try {
-      await api.post('/v3/auth/logout', {});
+      await api.post('/auth/logout', {});
     } catch {
       // Ignorer les erreurs de logout
     } finally {
@@ -281,7 +281,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     try {
-      const response = await api.get<User>('/v3/auth/me');
+      const response = await api.get<User>('/auth/me');
       set({
         user: response.data,
         isAuthenticated: true,
@@ -307,7 +307,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await api.post<LoginResponse>('/v3/auth/verify-2fa', { totp_code: code });
+      const response = await api.post<LoginResponse>('/auth/verify-2fa', { totp_code: code });
       const { user, tokens, tenant_id } = response.data;
 
       tokenManager.setTokens(tokens.access_token, tokens.refresh_token);

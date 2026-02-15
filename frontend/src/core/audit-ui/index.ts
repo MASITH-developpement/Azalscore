@@ -78,7 +78,7 @@ const flushEvents = async (): Promise<void> => {
   eventQueue.length = 0;
 
   try {
-    await api.post('/v3/audit/ui-events', { events: eventsToSend });
+    await api.post('/audit/ui-events', { events: eventsToSend });
   } catch (error) {
     // En cas d'échec, on ne réinjecte PAS dans la queue
     // Les événements sont perdus - conformité charte (pas de stockage local)

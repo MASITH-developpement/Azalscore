@@ -73,7 +73,7 @@ const useClients = () => {
     queryKey: ['clients', 'lookup'],
     queryFn: async () => {
       const response = await api.get<{ items: Client[] }>(
-        '/v3/commercial/customers?page_size=100&is_active=true'
+        '/commercial/customers?page_size=100&is_active=true'
       );
       const data = unwrapApiResponse<{ items: Client[] }>(response);
       return data?.items || [];
@@ -88,8 +88,8 @@ const useSaveDocument = () => {
   return useMutation({
     mutationFn: async (data: DocumentData) => {
       const endpoint = data.type === 'INTERVENTION'
-        ? '/v3/interventions'
-        : '/v3/commercial/documents';
+        ? '/interventions'
+        : '/commercial/documents';
 
       const payload = data.type === 'INTERVENTION'
         ? {
@@ -125,7 +125,7 @@ const useCreateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Client>) => {
-      const response = await api.post<Client>('/v3/commercial/customers', data);
+      const response = await api.post<Client>('/commercial/customers', data);
       return response as unknown as Client;
     },
     onSuccess: () => {
@@ -139,7 +139,7 @@ const useProducts = () => {
     queryKey: ['products', 'lookup'],
     queryFn: async () => {
       const response = await api.get<{ items: Product[] }>(
-        '/v3/inventory/products?page_size=100&is_active=true'
+        '/inventory/products?page_size=100&is_active=true'
       );
       const data = unwrapApiResponse<{ items: Product[] }>(response);
       return data?.items || [];
@@ -152,7 +152,7 @@ const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Product>) => {
-      const response = await api.post<Product>('/v3/inventory/products', data);
+      const response = await api.post<Product>('/inventory/products', data);
       return response as unknown as Product;
     },
     onSuccess: () => {

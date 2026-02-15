@@ -65,7 +65,7 @@ const PRIORITY_OPTIONS = [
 
 // Configuration du sélecteur de client
 const CLIENT_ENTITY: EntityConfig = {
-  endpoint: '/v3/partners/clients',
+  endpoint: '/partners/clients',
   displayField: 'name',
   secondaryField: 'code',
   searchField: 'search',
@@ -87,7 +87,7 @@ const useAffaires = (search?: string) => useQuery({
   queryKey: ['affaires', search],
   queryFn: async () => {
     const params = search ? `?search=${search}&limit=100` : '?limit=100';
-    const res = await api.get<{ items: Affaire[] }>(`/v3/projects${params}`);
+    const res = await api.get<{ items: Affaire[] }>(`/projects${params}`);
     const data = unwrapApiResponse<{ items: Affaire[] }>(res);
     return data?.items || [];
   },
@@ -95,7 +95,7 @@ const useAffaires = (search?: string) => useQuery({
 
 const useAffaire = (id?: string) => useQuery({
   queryKey: ['affaire', id],
-  queryFn: () => api.get(`/v3/projects/${id}`),
+  queryFn: () => api.get(`/projects/${id}`),
   enabled: !!id,
 });
 
@@ -108,8 +108,8 @@ const useSaveAffaire = () => {
         code: data.code || `AFF-${Date.now().toString(36).toUpperCase()}`,
       };
       const res = id
-        ? await api.put<Affaire>(`/v3/projects/${id}`, payload)
-        : await api.post<Affaire>('/v3/projects', payload);
+        ? await api.put<Affaire>(`/projects/${id}`, payload)
+        : await api.post<Affaire>('/projects', payload);
       return unwrapApiResponse<Affaire>(res);
     },
     onSuccess: () => {

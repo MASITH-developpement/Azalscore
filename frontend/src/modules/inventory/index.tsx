@@ -91,7 +91,7 @@ const useInventoryDashboard = () => {
   return useQuery({
     queryKey: ['inventory', 'dashboard'],
     queryFn: async () => {
-      return api.get<InventoryDashboard>('/v3/inventory/dashboard').then(r => r.data);
+      return api.get<InventoryDashboard>('/inventory/dashboard').then(r => r.data);
     }
   });
 };
@@ -100,7 +100,7 @@ const useCategories = () => {
   return useQuery({
     queryKey: ['inventory', 'categories'],
     queryFn: async () => {
-      const response = await api.get<{ items: Category[] }>('/v3/inventory/categories').then(r => r.data);
+      const response = await api.get<{ items: Category[] }>('/inventory/categories').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -110,7 +110,7 @@ const useWarehouses = () => {
   return useQuery({
     queryKey: ['inventory', 'warehouses'],
     queryFn: async () => {
-      const response = await api.get<{ items: Warehouse[] }>('/v3/inventory/warehouses').then(r => r.data);
+      const response = await api.get<{ items: Warehouse[] }>('/inventory/warehouses').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -121,8 +121,8 @@ const useLocations = (warehouseId?: string) => {
     queryKey: ['inventory', 'locations', warehouseId],
     queryFn: async () => {
       const url = warehouseId
-        ? `/v3/inventory/locations?warehouse_id=${encodeURIComponent(warehouseId)}`
-        : '/v3/inventory/locations';
+        ? `/inventory/locations?warehouse_id=${encodeURIComponent(warehouseId)}`
+        : '/inventory/locations';
       const response = await api.get<{ items: Location[] }>(url).then(r => r.data);
       return response?.items || [];
     }
@@ -133,7 +133,7 @@ const useProducts = () => {
   return useQuery({
     queryKey: ['inventory', 'products'],
     queryFn: async () => {
-      const response = await api.get<{ items: Product[] }>('/v3/inventory/products').then(r => r.data);
+      const response = await api.get<{ items: Product[] }>('/inventory/products').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -143,7 +143,7 @@ const useProduct = (id: string) => {
   return useQuery({
     queryKey: ['inventory', 'products', id],
     queryFn: async () => {
-      return api.get<Product>(`/v3/inventory/products/${id}`).then(r => r.data);
+      return api.get<Product>(`/inventory/products/${id}`).then(r => r.data);
     },
     enabled: !!id
   });
@@ -153,7 +153,7 @@ const useMovements = () => {
   return useQuery({
     queryKey: ['inventory', 'movements'],
     queryFn: async () => {
-      const response = await api.get<{ items: Movement[] }>('/v3/inventory/movements').then(r => r.data);
+      const response = await api.get<{ items: Movement[] }>('/inventory/movements').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -163,7 +163,7 @@ const usePickings = () => {
   return useQuery({
     queryKey: ['inventory', 'pickings'],
     queryFn: async () => {
-      const response = await api.get<{ items: Picking[] }>('/v3/inventory/pickings').then(r => r.data);
+      const response = await api.get<{ items: Picking[] }>('/inventory/pickings').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -173,7 +173,7 @@ const useInventoryCounts = () => {
   return useQuery({
     queryKey: ['inventory', 'counts'],
     queryFn: async () => {
-      const response = await api.get<{ items: InventoryCount[] }>('/v3/inventory/counts').then(r => r.data);
+      const response = await api.get<{ items: InventoryCount[] }>('/inventory/counts').then(r => r.data);
       return response?.items || [];
     }
   });
@@ -183,7 +183,7 @@ const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Product>) => {
-      return api.post('/v3/inventory/products', data).then(r => r.data);
+      return api.post('/inventory/products', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory', 'products'] })
   });
@@ -193,7 +193,7 @@ const useCreateMovement = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Movement>) => {
-      return api.post('/v3/inventory/movements', data).then(r => r.data);
+      return api.post('/inventory/movements', data).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory'] })
   });
@@ -203,7 +203,7 @@ const useValidateMovement = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      return api.post(`/v3/inventory/movements/${id}/validate`).then(r => r.data);
+      return api.post(`/inventory/movements/${id}/validate`).then(r => r.data);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory'] })
   });

@@ -843,7 +843,7 @@ const DonneursOrdreView: React.FC = () => {
 
   const createDonneur = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return api.post('/v3/interventions/donneurs-ordre', data);
+      return api.post('/interventions/donneurs-ordre', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interventionKeys.donneursOrdre() });

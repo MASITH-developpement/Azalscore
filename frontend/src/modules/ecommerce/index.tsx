@@ -126,7 +126,7 @@ const useEcommerceStats = () => {
   return useQuery({
     queryKey: ['ecommerce', 'stats'],
     queryFn: async () => {
-      const response = await api.get<EcommerceStats>('/v3/ecommerce/summary');
+      const response = await api.get<EcommerceStats>('/ecommerce/summary');
       return response.data;
     }
   });
@@ -139,7 +139,7 @@ const useProducts = (filters?: { status?: string; category_id?: string }) => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.category_id) params.append('category_id', filters.category_id);
-      const response = await api.get<{ items: Product[] } | Product[]>(`/v3/ecommerce/products?${params}`);
+      const response = await api.get<{ items: Product[] } | Product[]>(`/ecommerce/products?${params}`);
       const data = response.data;
       return Array.isArray(data) ? data : data.items || [];
     }
@@ -150,7 +150,7 @@ const useProduct = (id: string) => {
   return useQuery({
     queryKey: ['ecommerce', 'product', id],
     queryFn: async () => {
-      const response = await api.get<Product>(`/v3/ecommerce/products/${id}`);
+      const response = await api.get<Product>(`/ecommerce/products/${id}`);
       return response.data;
     },
     enabled: !!id
@@ -164,7 +164,7 @@ const useOrders = (filters?: { status?: string; payment_status?: string }) => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.payment_status) params.append('payment_status', filters.payment_status);
-      const response = await api.get<{ items: Order[] } | Order[]>(`/v3/ecommerce/orders?${params}`);
+      const response = await api.get<{ items: Order[] } | Order[]>(`/ecommerce/orders?${params}`);
       const data = response.data;
       return Array.isArray(data) ? data : data.items || [];
     }
@@ -175,7 +175,7 @@ const useOrder = (id: string) => {
   return useQuery({
     queryKey: ['ecommerce', 'order', id],
     queryFn: async () => {
-      const response = await api.get<Order>(`/v3/ecommerce/orders/${id}`);
+      const response = await api.get<Order>(`/ecommerce/orders/${id}`);
       return response.data;
     },
     enabled: !!id
@@ -186,7 +186,7 @@ const useCategories = () => {
   return useQuery({
     queryKey: ['ecommerce', 'categories'],
     queryFn: async () => {
-      const response = await api.get<Category[]>('/v3/ecommerce/categories');
+      const response = await api.get<Category[]>('/ecommerce/categories');
       return response.data;
     }
   });
@@ -198,7 +198,7 @@ const useShippings = (filters?: { status?: string }) => {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
-      const response = await api.get<Shipping[]>(`/v3/ecommerce/shippings?${params}`);
+      const response = await api.get<Shipping[]>(`/ecommerce/shippings?${params}`);
       return response.data;
     }
   });
@@ -208,7 +208,7 @@ const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return api.patch(`/v3/ecommerce/orders/${id}/status`, { status });
+      return api.patch(`/ecommerce/orders/${id}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ecommerce', 'orders'] });

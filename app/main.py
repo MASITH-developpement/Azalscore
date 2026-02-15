@@ -30,18 +30,7 @@ from app.api.webhooks import router as webhooks_router
 # Module COCKPIT - Tableau de bord dirigeant
 from app.api.cockpit import router as cockpit_router
 
-# Module COMMERCIAL - CRM complet (router_crud v3)
-from app.modules.commercial.router_crud import router as commercial_router
-
-# Module PROJECTS - Gestion de projets (router_crud)
-from app.modules.projects.router_crud import router as projects_router
-
-# Module INTERVENTIONS - Gestion interventions terrain
-try:
-    from app.modules.interventions.router_crud import router as interventions_router
-    INTERVENTIONS_AVAILABLE = True
-except ImportError:
-    INTERVENTIONS_AVAILABLE = False
+# Modules COMMERCIAL, PROJECTS, INTERVENTIONS -> v3 uniquement (voir app/api/v3.py)
 from app.api.decision import router as decision_router
 from app.api.hr import router as hr_router
 from app.api.invoicing import router as invoicing_router
@@ -596,8 +585,8 @@ app.include_router(auth_router)
 # Le frontend a ete migre vers /v3/
 # Ces lignes sont commentees - a supprimer apres validation complete
 #
-# api_v1 = APIRouter(prefix="/v1")
-api_v1 = APIRouter(prefix="/v1")  # Garde pour routes legacy essentielles
+# API sans version - URLs directes
+api_v1 = APIRouter()  # Legacy routes (cockpit, auth, etc.) - sans prefixe de version
 
 # Routes authentification (necessitent X-Tenant-ID mais pas JWT)
 api_v1.include_router(auth_router)
@@ -619,10 +608,7 @@ api_v1.include_router(admin_sequences_router)  # Administration des sequences de
 api_v1.include_router(admin_dashboard_router)  # Administration dashboard (stats systeme)
 api_v1.include_router(partners_router)  # Alias vers module commercial (clients, fournisseurs, contacts)
 api_v1.include_router(invoicing_router)  # Alias vers module commercial (devis, factures, avoirs)
-api_v1.include_router(commercial_router)  # Module commercial complet /v1/commercial/*
-api_v1.include_router(projects_router)  # Module projets /v1/projects/*
-if INTERVENTIONS_AVAILABLE:
-    api_v1.include_router(interventions_router)  # Module interventions /v1/interventions/*
+# commercial_router, projects_router, interventions_router -> v3 uniquement
 api_v1.include_router(branding_router)  # Gestion favicon, logo, branding
 
 # ===========================================================================
@@ -961,19 +947,19 @@ app.include_router(trial_router)
 # ==================== V2 SUPPRIMÉ ====================
 # Migration v3 complète - v2 supprimé le 2026-02-15
 
-# ==================== API V3 - CRUDROUTER ====================
+# ==================== API MODULES - CRUDROUTER ====================
 # Routers CRUDRouter avec code minimal (~60% reduction boilerplate)
-# Tous les modules sous /v3/{module}
+# URLs directes sans version: /commercial, /accounting, /projects, etc.
 if API_V3_AVAILABLE:
     app.include_router(api_v3_router)
     logger.info(
-        "[API V3] CRUDRouter activé — 41 modules disponibles sous /v3",
-        extra={"modules_count": 41, "reduction": "60%"}
+        "[API] CRUDRouter activé — 41 modules disponibles (URLs sans version)",
+        extra={"modules_count": 41, "reduction": "60%", "versioning": "none"}
     )
 else:
     logger.warning(
-        "[API V3] Non disponible — erreur d'import",
-        extra={"error": _api_v3_error, "consequence": "v3_disabled"}
+        "[API] Modules CRUDRouter non disponibles — erreur d'import",
+        extra={"error": _api_v3_error, "consequence": "modules_disabled"}
     )
 
 # ==================== THEO VOICE API ====================

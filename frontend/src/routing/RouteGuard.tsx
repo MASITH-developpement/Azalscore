@@ -43,7 +43,7 @@ function logViolation(type: ViolationType, moduleCode: string): void {
 
   // Envoi au backend (si disponible)
   if (typeof window !== 'undefined') {
-    fetch('/api/v3/frontend-violations', {
+    fetch('/api/frontend-violations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,13 +1,14 @@
 """
-AZALS API v3 - CRUDRouter Edition
-==================================
+AZALS API - CRUDRouter Edition
+===============================
 
-API v3 utilisant les routers CRUDRouter pour un code minimal.
+API sans version - URLs directes (ex: /commercial/customers).
 Reduction de ~60% du boilerplate CRUD.
 
 Architecture:
-- v1/v2: router_unified.py (compatibilite)
-- v3: router_crud.py (CRUDRouter minimal)
+- Tous les modules sous router_crud.py
+- Pas de prefixe de version (/v1, /v2, /v3)
+- URLs simples et stables
 
 NOTE: Chargement resilient - les modules avec erreurs sont ignores.
 """
@@ -110,7 +111,7 @@ def load_module_router(module_name: str, display_name: str) -> Tuple[bool, objec
 # ROUTER PRINCIPAL V3
 # =============================================================================
 
-router = APIRouter(prefix="/v3", tags=["API v3 - CRUDRouter"])
+router = APIRouter(tags=["API - CRUDRouter"])  # Sans prefixe de version
 
 # Compteurs pour le logging
 loaded_modules: List[str] = []
@@ -142,14 +143,14 @@ if failed_modules:
 # ENDPOINT DE STATUT V3
 # =============================================================================
 
-@router.get("/status")
-def get_v3_status():
+@router.get("/api/status")
+def get_api_status():
     """
-    Retourne le statut de l'API v3.
+    Retourne le statut de l'API.
     Liste les modules charges et ceux en erreur.
     """
     return {
-        "version": "v3",
+        "version": "unversioned",
         "engine": "CRUDRouter",
         "loaded_modules": loaded_modules,
         "loaded_count": len(loaded_modules),
@@ -157,5 +158,5 @@ def get_v3_status():
             {"module": m, "error": e[:100]} for m, e in failed_modules
         ],
         "failed_count": len(failed_modules),
-        "reduction": "~60% boilerplate CRUD",
+        "principle": "No version prefix - stable URLs",
     }
