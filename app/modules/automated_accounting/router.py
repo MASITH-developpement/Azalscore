@@ -209,6 +209,67 @@ async def list_documents_assistante(
     )
 
 
+# SÉCURITÉ: Configuration upload documents
+ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".tif"}
+MAX_DOCUMENT_SIZE = 20 * 1024 * 1024  # 20 MB pour documents comptables
+DOCUMENT_MAGIC_BYTES = {
+    ".pdf": [b'%PDF'],
+    ".png": [b'\x89PNG\r\n\x1a\n'],
+    ".jpg": [b'\xff\xd8\xff'],
+    ".jpeg": [b'\xff\xd8\xff'],
+    ".tiff": [b'II*\x00', b'MM\x00*'],  # Little-endian et Big-endian
+    ".tif": [b'II*\x00', b'MM\x00*'],
+}
+
+
+def _validate_document_upload(filename: str, content: bytes) -> str:
+    """
+    SÉCURITÉ: Valide un fichier document uploadé.
+
+    Args:
+        filename: Nom du fichier
+        content: Contenu du fichier
+
+    Returns:
+        Extension normalisée
+
+    Raises:
+        HTTPException si validation échoue
+    """
+    import os.path
+    from pathlib import Path
+
+    if not filename:
+        raise HTTPException(status_code=400, detail="Nom de fichier manquant")
+
+    # Valider l'extension
+    ext = Path(filename).suffix.lower()
+    if ext not in ALLOWED_DOCUMENT_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type de fichier non autorisé. Types valides: {', '.join(ALLOWED_DOCUMENT_EXTENSIONS)}"
+        )
+
+    # Valider la taille
+    if len(content) > MAX_DOCUMENT_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Fichier trop volumineux. Taille max: {MAX_DOCUMENT_SIZE // 1024 // 1024} MB"
+        )
+
+    # SÉCURITÉ: Valider les magic bytes
+    expected_magic = DOCUMENT_MAGIC_BYTES.get(ext, [])
+    if expected_magic:
+        content_start = content[:10]
+        if not any(content_start.startswith(m) for m in expected_magic):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Le contenu du fichier ne correspond pas à un fichier {ext} valide"
+            )
+
+    return ext
+
+
 @router.post(
     "/assistante/documents/upload",
     response_model=DocumentResponse,
@@ -226,27 +287,38 @@ async def upload_document(
 
     Le traitement OCR -> IA -> Comptabilisation est lancé automatiquement.
     L'utilisateur n'a rien d'autre à faire.
+
+    Types acceptés: PDF, PNG, JPG, TIFF
+    Taille max: 20 MB
     """
-    # Sauvegarde temporaire du fichier
     import os
     import tempfile
+    import uuid
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
-        content = await file.read()
+    # Lire le contenu
+    content = await file.read()
+
+    # SÉCURITÉ: Validation du fichier
+    ext = _validate_document_upload(file.filename, content)
+
+    # SÉCURITÉ: Utiliser un nom de fichier sécurisé (pas le nom utilisateur)
+    safe_suffix = ext  # Extension validée
+    with tempfile.NamedTemporaryFile(delete=False, suffix=safe_suffix, prefix=f"doc_{uuid.uuid4().hex[:8]}_") as tmp:
         tmp.write(content)
         tmp_path = tmp.name
 
-    document = service.create_document(
-        document_type=document_type,
-        source=DocumentSource.UPLOAD,
-        file_path=tmp_path,
-        original_filename=file.filename,
-        created_by=current_user.id if current_user else None
-    )
-
-    # Nettoie le fichier temporaire
-    if os.path.exists(tmp_path):
-        os.unlink(tmp_path)
+    try:
+        document = service.create_document(
+            document_type=document_type,
+            source=DocumentSource.UPLOAD,
+            file_path=tmp_path,
+            original_filename=file.filename,
+            created_by=current_user.id if current_user else None
+        )
+    finally:
+        # Nettoie le fichier temporaire
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
     return DocumentResponse.from_orm(document)
 
