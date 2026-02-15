@@ -60,8 +60,18 @@ def require_admin_role(user: User) -> None:
         )
 
 
-def validate_image_file(file: UploadFile) -> None:
-    """Valide le fichier image uploadé."""
+def validate_image_file(file: UploadFile, content: bytes) -> str:
+    """
+    Valide le fichier image uploadé.
+
+    SÉCURITÉ:
+    - Vérifie l'extension du fichier
+    - Vérifie les magic bytes pour confirmer le type réel
+    - Empêche l'upload de fichiers malveillants déguisés
+
+    Returns:
+        Extension normalisée du fichier
+    """
     if not file.filename:
         raise HTTPException(status_code=400, detail="Nom de fichier manquant")
 
@@ -71,6 +81,40 @@ def validate_image_file(file: UploadFile) -> None:
             status_code=400,
             detail=f"Extension non autorisée. Extensions valides: {', '.join(ALLOWED_EXTENSIONS)}"
         )
+
+    # SÉCURITÉ: Vérifier les magic bytes pour confirmer le type réel
+    magic_bytes = {
+        ".png": [b'\x89PNG\r\n\x1a\n'],
+        ".jpg": [b'\xff\xd8\xff'],
+        ".jpeg": [b'\xff\xd8\xff'],
+        ".ico": [b'\x00\x00\x01\x00', b'\x00\x00\x02\x00'],  # ICO et CUR
+        ".svg": [b'<?xml', b'<svg', b'<!DOCTYPE svg'],  # SVG peut commencer de plusieurs façons
+    }
+
+    expected_magic = magic_bytes.get(ext, [])
+    if expected_magic:
+        content_start = content[:20]  # Premiers octets
+
+        # Pour SVG, vérifier aussi après le BOM potentiel
+        if ext == ".svg":
+            # Retirer BOM UTF-8 si présent
+            if content_start.startswith(b'\xef\xbb\xbf'):
+                content_start = content[3:23]
+            # SVG peut avoir des espaces au début
+            content_str = content[:100].decode('utf-8', errors='ignore').strip().lower()
+            if not any(content_str.startswith(m.decode('utf-8', errors='ignore').lower()) for m in expected_magic):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Le contenu du fichier ne correspond pas à un fichier {ext} valide"
+                )
+        else:
+            if not any(content_start.startswith(m) for m in expected_magic):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Le contenu du fichier ne correspond pas à un fichier {ext} valide"
+                )
+
+    return ext
 
 
 # ============================================================================
@@ -117,9 +161,8 @@ async def upload_favicon(
     Taille recommandée: 32x32 ou 64x64 pixels
     """
     require_admin_role(current_user)
-    validate_image_file(file)
 
-    # Lire le contenu du fichier
+    # Lire le contenu du fichier d'abord pour la validation complète
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(
@@ -127,8 +170,8 @@ async def upload_favicon(
             detail=f"Fichier trop volumineux. Taille max: {MAX_FILE_SIZE // 1024 // 1024} MB"
         )
 
-    # Sauvegarder le favicon
-    ext = Path(file.filename).suffix.lower()
+    # SÉCURITÉ: Valider extension ET contenu (magic bytes)
+    ext = validate_image_file(file, content)
 
     # Convertir en PNG si nécessaire (garder l'original pour l'instant)
     favicon_path = UPLOAD_DIR / "favicon-custom.png" if ext in [".png", ".ico"] else UPLOAD_DIR / f"favicon-custom{ext}"
@@ -166,7 +209,6 @@ async def upload_logo(
     Taille recommandée: 200x50 pixels (format horizontal)
     """
     require_admin_role(current_user)
-    validate_image_file(file)
 
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
@@ -175,7 +217,8 @@ async def upload_logo(
             detail=f"Fichier trop volumineux. Taille max: {MAX_FILE_SIZE // 1024 // 1024} MB"
         )
 
-    ext = Path(file.filename).suffix.lower()
+    # SÉCURITÉ: Valider extension ET contenu (magic bytes)
+    ext = validate_image_file(file, content)
     logo_path = UPLOAD_DIR / f"logo-custom{ext}"
 
     # Backup
