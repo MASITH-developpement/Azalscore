@@ -485,14 +485,43 @@ async def handle_webhook(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    """Endpoint webhook Stripe (PUBLIC - pas de SaaSContext)."""
+    """
+    Endpoint webhook Stripe (PUBLIC - pas de SaaSContext).
+
+    SÉCURITÉ: Vérifie la signature Stripe AVANT tout traitement.
+    """
     import json
+    import os
 
     payload = await request.body()
     signature = request.headers.get("stripe-signature")
 
+    # SÉCURITÉ: Signature obligatoire
+    if not signature:
+        raise HTTPException(status_code=400, detail="Missing Stripe-Signature header")
+
+    # SÉCURITÉ: Vérifier la signature Stripe
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    if webhook_secret:
+        try:
+            import stripe
+            event = stripe.Webhook.construct_event(payload, signature, webhook_secret)
+        except stripe.error.SignatureVerificationError:
+            raise HTTPException(status_code=400, detail="Invalid signature")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Webhook verification failed")
+    else:
+        # En développement sans secret, parser mais logger un warning
+        import logging
+        logging.getLogger(__name__).warning(
+            "[WEBHOOK] STRIPE_WEBHOOK_SECRET not configured - signature not verified"
+        )
+        try:
+            event = json.loads(payload)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
     try:
-        event = json.loads(payload)
         event_id = event.get("id")
         event_type = event.get("type")
 
@@ -504,12 +533,15 @@ async def handle_webhook(
             raise ValueError("tenant_id not found in webhook metadata")
 
         service = StripeService(db, tenant_id)
-        webhook = service.process_webhook(event_id, event_type, event, signature)
+        webhook = service.process_webhook(event_id, event_type, dict(event), signature)
 
         return {"received": True, "webhook_id": webhook.id}
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Webhook error: {str(e)}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        # SÉCURITÉ: Ne pas exposer les détails d'erreur
+        raise HTTPException(status_code=400, detail="Webhook processing failed")
 
 # ============================================================================
 # DASHBOARD & STATS
