@@ -177,12 +177,16 @@ def get_admin_dashboard(
 # ============================================================================
 
 @router.get("/modules/available")
-def get_available_modules():
+def get_available_modules(
+    current_user: User = Depends(get_current_user)
+):
     """
     Liste tous les modules disponibles groupes par categorie.
 
     C'est la SOURCE UNIQUE DE VERITE pour les modules.
     Le frontend doit utiliser cet endpoint au lieu de listes codees en dur.
+
+    SÉCURITÉ: Authentification requise.
     """
     return {
         "categories": get_categories(),
@@ -192,6 +196,12 @@ def get_available_modules():
 
 
 @router.get("/modules/list")
-def get_modules_list():
-    """Liste simple des modules (pour compatibilite)."""
+def get_modules_list(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Liste simple des modules (pour compatibilite).
+
+    SÉCURITÉ: Authentification requise.
+    """
     return {"items": get_all_modules()}

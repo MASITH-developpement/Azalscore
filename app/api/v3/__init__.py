@@ -148,15 +148,16 @@ def get_api_status():
     """
     Retourne le statut de l'API.
     Liste les modules charges et ceux en erreur.
+
+    SÉCURITÉ: Endpoint public mais informations limitées.
+    Les erreurs détaillées ne sont PAS exposées.
     """
     return {
         "version": "unversioned",
         "engine": "CRUDRouter",
         "loaded_modules": loaded_modules,
         "loaded_count": len(loaded_modules),
-        "failed_modules": [
-            {"module": m, "error": e[:100]} for m, e in failed_modules
-        ],
+        # SÉCURITÉ: Ne pas exposer les détails d'erreur des modules
         "failed_count": len(failed_modules),
         "principle": "No version prefix - stable URLs",
     }
