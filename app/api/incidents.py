@@ -24,8 +24,17 @@ import uuid as uuid_module
 
 router = APIRouter(prefix="/incidents", tags=["Incidents"])
 
-# Dossier pour stocker les captures d'écran
-SCREENSHOT_DIR = os.environ.get("GUARDIAN_SCREENSHOT_DIR", "/tmp/guardian_screenshots")
+# SÉCURITÉ: Dossier pour stocker les captures d'écran
+# IMPORTANT: Ne PAS utiliser /tmp en production (accessible par tous les utilisateurs)
+# Utiliser un dossier dédié avec permissions restrictives
+_default_screenshot_dir = os.path.join(
+    os.environ.get("AZALS_DATA_DIR", "/var/lib/azalscore"),
+    "guardian_screenshots"
+)
+SCREENSHOT_DIR = os.environ.get("GUARDIAN_SCREENSHOT_DIR", _default_screenshot_dir)
+
+# SÉCURITÉ: Limite de taille des screenshots (5MB max)
+MAX_SCREENSHOT_SIZE_BYTES = 5 * 1024 * 1024
 
 logger = get_logger(__name__)
 
@@ -50,17 +59,49 @@ async def create_incident(
 
         if data.screenshot_data:
             try:
-                os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+                # SÉCURITÉ: Créer le dossier avec permissions restrictives (700)
+                os.makedirs(SCREENSHOT_DIR, mode=0o700, exist_ok=True)
+
+                # SÉCURITÉ: Valider le tenant_id pour éviter path traversal
+                import re
+                if not re.match(r'^[a-zA-Z0-9_-]+$', tenant_id):
+                    raise ValueError("Invalid tenant_id format")
+
                 screenshot_filename = f"{tenant_id}_{uuid_module.uuid4()}.jpg"
                 screenshot_path = os.path.join(SCREENSHOT_DIR, screenshot_filename)
+
+                # SÉCURITÉ: Vérifier que le path résolu est dans SCREENSHOT_DIR
+                resolved_path = os.path.realpath(screenshot_path)
+                resolved_dir = os.path.realpath(SCREENSHOT_DIR)
+                if not resolved_path.startswith(resolved_dir + os.sep):
+                    raise ValueError("Path traversal detected")
 
                 if "," in data.screenshot_data:
                     _, base64_data = data.screenshot_data.split(",", 1)
                 else:
                     base64_data = data.screenshot_data
 
+                # SÉCURITÉ: Valider la taille avant décodage
+                # Base64 encode ~33% plus grand que les données originales
+                estimated_size = len(base64_data) * 3 // 4
+                if estimated_size > MAX_SCREENSHOT_SIZE_BYTES:
+                    logger.warning(
+                        "[GUARDIAN] Screenshot too large: %s bytes (max %s)",
+                        estimated_size, MAX_SCREENSHOT_SIZE_BYTES
+                    )
+                    raise ValueError(f"Screenshot too large (max {MAX_SCREENSHOT_SIZE_BYTES // 1024 // 1024}MB)")
+
+                decoded_data = base64.b64decode(base64_data)
+
+                # SÉCURITÉ: Double vérification de la taille après décodage
+                if len(decoded_data) > MAX_SCREENSHOT_SIZE_BYTES:
+                    raise ValueError("Screenshot exceeds maximum size")
+
                 with open(screenshot_path, "wb") as f:
-                    f.write(base64.b64decode(base64_data))
+                    f.write(decoded_data)
+
+                # SÉCURITÉ: Restreindre les permissions du fichier (600)
+                os.chmod(screenshot_path, 0o600)
 
                 has_screenshot = True
                 logger.info("[GUARDIAN] Screenshot saved: %s", screenshot_path)
@@ -230,6 +271,25 @@ async def get_incident_screenshot(
 
     if not incident.has_screenshot or not incident.screenshot_path:
         raise HTTPException(status_code=404, detail="Pas de capture d'écran pour cet incident")
+
+    # SÉCURITÉ: Valider que le chemin est bien dans SCREENSHOT_DIR
+    # Prévient les attaques de path traversal si screenshot_path a été manipulé
+    try:
+        resolved_path = os.path.realpath(incident.screenshot_path)
+        resolved_dir = os.path.realpath(SCREENSHOT_DIR)
+        if not resolved_path.startswith(resolved_dir + os.sep):
+            logger.warning(
+                "[GUARDIAN] Path traversal attempt detected",
+                extra={
+                    "incident_id": incident_id,
+                    "tenant_id": tenant_id,
+                    "screenshot_path": incident.screenshot_path[:100]
+                }
+            )
+            raise HTTPException(status_code=404, detail="Fichier de capture non trouvé")
+    except Exception as e:
+        logger.warning("[GUARDIAN] Path validation failed: %s", e)
+        raise HTTPException(status_code=404, detail="Fichier de capture non trouvé")
 
     if not os.path.exists(incident.screenshot_path):
         raise HTTPException(status_code=404, detail="Fichier de capture non trouvé")
