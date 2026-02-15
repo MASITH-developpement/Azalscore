@@ -31,6 +31,7 @@ class FiscalYearStatus(str, enum.Enum):
 class EntryStatus(str, enum.Enum):
     """Statuts d'écriture comptable."""
     DRAFT = "DRAFT"          # Brouillon (modifiable)
+    PENDING = "PENDING"      # En attente de validation
     POSTED = "POSTED"        # Comptabilisée (validée)
     VALIDATED = "VALIDATED"  # Validée définitivement
     CANCELLED = "CANCELLED"  # Annulée
