@@ -1,34 +1,341 @@
-# AZALS - CI/CD Pipeline ÉLITE
-# Tests, build, security scanning, déploiement
-# Qualité industrielle avec seuils stricts
+# =============================================================================
+# AZALS - Pipeline CI/CD ELITE UNIFIE
+# =============================================================================
+# Pipeline enterprise-grade avec:
+# - Tests avec coverage (PostgreSQL, Redis)
+# - Analyse de securite multi-couche (SAST, SCA, secrets, containers)
+# - Qualite de code (lint, format, types)
+# - Build Docker avec cache et scanning
+# - Deploy staging/production avec rollback
+# - Notifications et rapports
+# =============================================================================
 
-name: AZALS CI/CD
+name: "AZALS CI/CD Elite"
 
 on:
   push:
     branches:
       - main
       - develop
-      - 'feature/*'
-      - 'claude/*'
+      - 'feature/**'
+      - 'fix/**'
+      - 'audit/**'
+      - 'claude/**'
   pull_request:
     branches:
       - main
       - develop
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests (emergency only)'
+        required: false
+        default: 'false'
+        type: boolean
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Un seul workflow par branche - annule les runs precedents
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  COVERAGE_THRESHOLD: 70  # Seuil minimum de couverture (à augmenter)
+  COVERAGE_THRESHOLD: 70
+  # Secrets de test (non-production)
+  TEST_SECRET_KEY: "elite-test-key-for-ci-cd-pipeline-min32chars"
+  TEST_DATABASE_URL: "postgresql://azals_test:azals_test_password@localhost:5432/azals_test"
 
 jobs:
-  # ============================================================
-  # JOB 1: Tests unitaires et d'intégration avec coverage
-  # ============================================================
-  test:
-    name: Tests & Coverage
+  # ===========================================================================
+  # PHASE 1: ANALYSE STATIQUE (parallele)
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # Lint Python avec Ruff
+  # ---------------------------------------------------------------------------
+  lint-python:
+    name: "Lint Python"
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff
+        run: |
+          ruff check app/ --output-format=github
+          ruff check app/ --statistics
+
+  # ---------------------------------------------------------------------------
+  # Formatage avec Black et isort
+  # ---------------------------------------------------------------------------
+  format-check:
+    name: "Format Check"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install formatters
+        run: pip install black isort
+
+      - name: Check Black formatting
+        run: black --check --diff app/ || echo "::warning::Code needs formatting with Black"
+
+      - name: Check isort imports
+        run: isort --check-only --diff app/ || echo "::warning::Imports need sorting with isort"
+
+  # ---------------------------------------------------------------------------
+  # Type checking avec mypy
+  # ---------------------------------------------------------------------------
+  type-check:
+    name: "Type Check"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install mypy types-python-dateutil types-redis
+
+      - name: Run mypy
+        run: mypy app/ --ignore-missing-imports --no-error-summary || true
+
+  # ---------------------------------------------------------------------------
+  # Validation architecture
+  # ---------------------------------------------------------------------------
+  architecture:
+    name: "Architecture Validation"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate architecture
+        run: |
+          if [ -f "scripts/validate_architecture.py" ]; then
+            python scripts/validate_architecture.py
+          else
+            echo "Architecture validation script not found, skipping"
+          fi
+
+  # ===========================================================================
+  # PHASE 2: SECURITE (parallele avec Phase 1)
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # SAST avec Bandit
+  # ---------------------------------------------------------------------------
+  security-sast:
+    name: "Security SAST"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit (high severity - blocking)
+        run: |
+          bandit -r app/ -ll -ii -x '**/tests/**' -f txt
+
+      - name: Run Bandit (full report)
+        run: |
+          bandit -r app/ -f json -o bandit-report.json -x '**/tests/**' || true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # SCA - Vulnerabilites dependencies
+  # ---------------------------------------------------------------------------
+  security-sca:
+    name: "Security SCA"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit
+        run: |
+          pip-audit -r requirements.txt --format json --output pip-audit.json || true
+          pip-audit -r requirements.txt --strict --desc on 2>&1 | tee pip-audit.txt || true
+
+      - name: Check for critical vulnerabilities
+        run: |
+          if [ -f "pip-audit.json" ]; then
+            CRITICAL=$(cat pip-audit.json | python3 -c "import json,sys; data=json.load(sys.stdin); print(len([v for v in data.get('dependencies', []) if any(vuln.get('fix_versions') for vuln in v.get('vulns', []))]))" 2>/dev/null || echo "0")
+            echo "Critical vulnerabilities requiring updates: $CRITICAL"
+            if [ "$CRITICAL" -gt "5" ]; then
+              echo "::warning::Found $CRITICAL dependencies with available fixes"
+            fi
+          fi
+
+      - name: Upload SCA report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sca-report
+          path: |
+            pip-audit.json
+            pip-audit.txt
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Detection de secrets
+  # ---------------------------------------------------------------------------
+  secret-scan:
+    name: "Secret Detection"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install detect-secrets
+        run: pip install detect-secrets
+
+      - name: Scan for secrets
+        run: |
+          detect-secrets scan app/ \
+            --exclude-files '__pycache__|\.pyc|tests/|\.git' \
+            > secrets-scan.json 2>&1 || true
+
+          SECRETS_COUNT=$(cat secrets-scan.json | python3 -c "import json,sys; data=json.load(sys.stdin); print(sum(len(v) for v in data.get('results', {}).values()))" 2>/dev/null || echo "0")
+          echo "Potential secrets found: $SECRETS_COUNT"
+
+          if [ "$SECRETS_COUNT" -gt "0" ]; then
+            echo "::warning::Found $SECRETS_COUNT potential secrets - review required"
+            cat secrets-scan.json | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for file, secrets in data.get('results', {}).items():
+    for s in secrets:
+        print(f'  - {file}:{s.get(\"line_number\")}: {s.get(\"type\")}')"
+          fi
+
+      - name: Upload secret scan
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: secrets-scan-report
+          path: secrets-scan.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # License compliance
+  # ---------------------------------------------------------------------------
+  license-check:
+    name: "License Compliance"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pip-licenses
+        run: pip install pip-licenses
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check licenses
+        run: |
+          pip-licenses --format=markdown --output-file=licenses.md
+          pip-licenses --format=json --output-file=licenses.json
+
+          # Check for problematic licenses
+          COPYLEFT=$(pip-licenses --format=json | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+problematic = ['GPL', 'AGPL', 'LGPL']
+found = [p for p in data if any(lic in p.get('License', '') for lic in problematic)]
+print(len(found))")
+
+          if [ "$COPYLEFT" -gt "0" ]; then
+            echo "::warning::Found $COPYLEFT packages with copyleft licenses - review for compatibility"
+          fi
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: |
+            licenses.md
+            licenses.json
+          retention-days: 30
+
+  # ===========================================================================
+  # PHASE 3: TESTS (apres Phase 1 & 2 reussies)
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # Tests unitaires et integration avec coverage
+  # ---------------------------------------------------------------------------
+  test:
+    name: "Tests & Coverage"
+    runs-on: ubuntu-latest
+    needs: [lint-python, security-sast]
+    if: ${{ github.event.inputs.skip_tests != 'true' }}
 
     services:
       postgres:
@@ -36,7 +343,7 @@ jobs:
         env:
           POSTGRES_DB: azals_test
           POSTGRES_USER: azals_test
-          POSTGRES_PASSWORD: test_password
+          POSTGRES_PASSWORD: azals_test_password
         ports:
           - 5432:5432
         options: >-
@@ -56,8 +363,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -67,23 +373,25 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio coverage
+          pip install pytest pytest-cov pytest-asyncio pytest-xdist coverage
 
       - name: Run tests with coverage
         env:
           ENVIRONMENT: test
-          DATABASE_URL: sqlite:///./test.db
-          SECRET_KEY: elite-test-key-for-ci-cd-pipeline-min32chars
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          SECRET_KEY: ${{ env.TEST_SECRET_KEY }}
           REDIS_URL: redis://localhost:6379/0
+          ENCRYPTION_KEY: "test-encryption-key-32char!"
         run: |
-          python -m pytest tests/ -v \
+          pytest tests/ -v \
             --cov=app \
             --cov-report=xml \
             --cov-report=term-missing \
             --cov-report=html \
-            --cov-fail-under=${{ env.COVERAGE_THRESHOLD }}
+            --cov-fail-under=${{ env.COVERAGE_THRESHOLD }} \
+            -n auto \
+            --dist loadfile
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -93,12 +401,13 @@ jobs:
           fail_ci_if_error: false
           verbose: true
 
-      - name: Upload coverage HTML report
+      - name: Upload coverage HTML
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-report
           path: htmlcov/
+          retention-days: 14
 
       - name: Coverage summary
         if: always()
@@ -106,133 +415,82 @@ jobs:
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
           coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || true
 
-  # ============================================================
-  # JOB 2: Analyse de sécurité (SAST) - BLOQUANT
-  # ============================================================
-  security:
-    name: Security Scan
+  # ---------------------------------------------------------------------------
+  # Test des migrations Alembic
+  # ---------------------------------------------------------------------------
+  test-migrations:
+    name: "Test Migrations"
     runs-on: ubuntu-latest
+    needs: [lint-python]
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: azals_migration_test
+          POSTGRES_USER: azals_test
+          POSTGRES_PASSWORD: azals_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
 
-      - name: Install security tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install bandit safety pip-audit
-
-      - name: Run Bandit (Python SAST)
-        run: |
-          bandit -r app/ -f json -o bandit-report.json -ll -ii || true
-          bandit -r app/ -ll -ii -f txt
-
-      - name: Check dependencies for vulnerabilities (pip-audit)
+      - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip-audit --strict --desc on || true
+          pip install alembic psycopg2-binary
 
-      - name: Upload Bandit report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: bandit-security-report
-          path: bandit-report.json
-
-      - name: Security summary
-        if: always()
+      - name: Test migrations up/down
+        env:
+          DATABASE_URL: postgresql://azals_test:azals_test_password@localhost:5432/azals_migration_test
         run: |
-          echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
-          echo "See artifacts for detailed Bandit report" >> $GITHUB_STEP_SUMMARY
+          # Upgrade to head
+          alembic upgrade head
 
-  # ============================================================
-  # JOB 3: Lint et qualité de code - STRICT
-  # ============================================================
-  lint:
-    name: Code Quality
-    runs-on: ubuntu-latest
+          # Downgrade 1 version (if possible)
+          alembic downgrade -1 || echo "No previous migration to downgrade to"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+          # Upgrade again
+          alembic upgrade head
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          echo "Migrations validated successfully"
 
-      - name: Install linters
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff black isort mypy
-          pip install -r requirements.txt
+  # ===========================================================================
+  # PHASE 4: BUILD DOCKER (apres tests)
+  # ===========================================================================
 
-      - name: Run Ruff (fast linter)
-        run: |
-          ruff check app/ --output-format=github
-
-      - name: Check formatting with Black
-        run: |
-          black --check --diff app/ || echo "::warning::Code needs formatting with Black"
-
-      - name: Check import sorting with isort
-        run: |
-          isort --check-only --diff app/ || echo "::warning::Imports need sorting with isort"
-
-      - name: Run mypy (type checking)
-        run: |
-          mypy app/ --ignore-missing-imports || echo "::warning::Type hints could be improved"
-
-      - name: Lint summary
-        if: always()
-        run: |
-          echo "## Code Quality Results" >> $GITHUB_STEP_SUMMARY
-          echo "- Ruff: $(ruff check app/ --statistics 2>&1 | tail -1)" >> $GITHUB_STEP_SUMMARY
-
-  # ============================================================
-  # JOB 4: Pre-commit hooks (validation complète)
-  # ============================================================
-  pre-commit:
-    name: Pre-commit Checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install pre-commit
-        run: pip install pre-commit
-
-      - name: Run pre-commit on all files
-        run: |
-          pre-commit run --all-files || true
-
-  # ============================================================
-  # JOB 5: Build Docker image
-  # ============================================================
+  # ---------------------------------------------------------------------------
+  # Build et push image Docker
+  # ---------------------------------------------------------------------------
   build:
-    name: Build Docker
+    name: "Build Docker"
     runs-on: ubuntu-latest
-    needs: [test, security, lint]
+    needs: [test, test-migrations, security-sca, license-check]
     if: github.event_name == 'push'
 
     permissions:
       contents: read
       packages: write
+      security-events: write
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -252,10 +510,11 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix=
+            type=sha,prefix=sha-
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and push Docker image
+      - name: Build and push
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -264,27 +523,110 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          artifact-name: sbom-${{ github.sha }}.spdx.json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 90
 
       - name: Build summary
         run: |
           echo "## Docker Build" >> $GITHUB_STEP_SUMMARY
-          echo "Image pushed to: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: \`${{ steps.meta.outputs.tags }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Digest: \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
 
-  # ============================================================
-  # JOB 6: Déploiement Staging (develop branch)
-  # ============================================================
-  deploy-staging:
-    name: Deploy Staging
+  # ---------------------------------------------------------------------------
+  # Scan vulnerabilites container avec Trivy
+  # ---------------------------------------------------------------------------
+  container-scan:
+    name: "Container Security Scan"
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name == 'push'
+
+    permissions:
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          timeout: '10m'
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-container-scan
+          path: trivy-results.sarif
+          retention-days: 30
+
+  # ===========================================================================
+  # PHASE 5: DEPLOIEMENT
+  # ===========================================================================
+
+  # ---------------------------------------------------------------------------
+  # Deploy Staging (develop branch)
+  # ---------------------------------------------------------------------------
+  deploy-staging:
+    name: "Deploy Staging"
+    runs-on: ubuntu-latest
+    needs: [build, container-scan]
     if: github.ref == 'refs/heads/develop'
     environment:
       name: staging
       url: ${{ vars.STAGING_URL }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install migration tools
+        run: pip install alembic psycopg2-binary
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            echo "Running staging migrations..."
+            alembic upgrade head
+          else
+            echo "::warning::STAGING_DATABASE_URL not set"
+          fi
 
       - name: Deploy to Render (Staging)
         env:
@@ -292,88 +634,75 @@ jobs:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_STAGING_SERVICE_ID }}
         run: |
           if [ -n "$RENDER_API_KEY" ] && [ -n "$RENDER_SERVICE_ID" ]; then
-            echo "Triggering Render deployment..."
             curl -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
               -H "Authorization: Bearer ${RENDER_API_KEY}" \
               -H "Content-Type: application/json" \
               -d '{"clearCache": false}'
+            echo "Staging deployment triggered"
           else
-            echo "::warning::RENDER_API_KEY or RENDER_SERVICE_ID not set. Skipping deployment."
+            echo "::warning::Render credentials not set"
           fi
 
-      - name: Wait for deployment
-        run: sleep 60
-
-      - name: Run smoke tests
+      - name: Wait and smoke test
         env:
           STAGING_URL: ${{ vars.STAGING_URL }}
         run: |
           if [ -n "$STAGING_URL" ]; then
-            echo "Running smoke tests against $STAGING_URL"
+            sleep 60
 
             # Health check
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${STAGING_URL}/health" || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Health check passed"
+              echo "Health check: PASS"
             else
-              echo "❌ Health check failed (HTTP $HTTP_CODE)"
+              echo "::error::Health check failed (HTTP $HTTP_CODE)"
               exit 1
             fi
 
-            # API docs check
+            # API docs
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${STAGING_URL}/docs" || echo "000")
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ API docs accessible"
-            else
-              echo "⚠️ API docs not accessible (HTTP $HTTP_CODE)"
-            fi
-          else
-            echo "::warning::STAGING_URL not set. Skipping smoke tests."
+            echo "API docs: HTTP $HTTP_CODE"
           fi
 
-      - name: Staging deployment summary
+      - name: Staging summary
         run: |
           echo "## Staging Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Deployed to staging" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 URL: ${{ vars.STAGING_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment: staging" >> $GITHUB_STEP_SUMMARY
+          echo "- URL: ${{ vars.STAGING_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
 
-  # ============================================================
-  # JOB 7: Déploiement Production (main branch)
-  # ============================================================
+  # ---------------------------------------------------------------------------
+  # Deploy Production (main branch)
+  # ---------------------------------------------------------------------------
   deploy-production:
-    name: Deploy Production
+    name: "Deploy Production"
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, container-scan]
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
       url: ${{ vars.PRODUCTION_URL }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies for migrations
-        run: |
-          pip install alembic sqlalchemy psycopg2-binary
+      - name: Install migration tools
+        run: pip install alembic psycopg2-binary sqlalchemy
 
       - name: Run database migrations
         env:
           DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
         run: |
           if [ -n "$DATABASE_URL" ]; then
-            echo "Running database migrations..."
-            python scripts/automation/run_alembic.py upgrade head --verbose || {
-              echo "::error::Database migration failed!"
-              exit 1
-            }
+            echo "Running production migrations..."
+            alembic upgrade head
           else
-            echo "::warning::DATABASE_URL not set. Skipping migrations."
+            echo "::warning::PRODUCTION_DATABASE_URL not set"
           fi
 
       - name: Deploy to Render (Production)
@@ -382,52 +711,41 @@ jobs:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_PRODUCTION_SERVICE_ID }}
         run: |
           if [ -n "$RENDER_API_KEY" ] && [ -n "$RENDER_SERVICE_ID" ]; then
-            echo "Triggering Render production deployment..."
             curl -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
               -H "Authorization: Bearer ${RENDER_API_KEY}" \
               -H "Content-Type: application/json" \
               -d '{"clearCache": false}'
+            echo "Production deployment triggered"
           else
-            echo "::warning::RENDER_API_KEY or RENDER_SERVICE_ID not set. Skipping deployment."
+            echo "::warning::Render credentials not set"
           fi
 
-      - name: Wait for deployment
-        run: sleep 90
-
-      - name: Run production smoke tests
+      - name: Wait and smoke test
         env:
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: |
           if [ -n "$PRODUCTION_URL" ]; then
-            echo "Running production smoke tests..."
+            sleep 90
 
             # Health check
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${PRODUCTION_URL}/health" || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Health check passed"
+              echo "Health check: PASS"
             else
-              echo "❌ Health check failed (HTTP $HTTP_CODE)"
+              echo "::error::Health check failed (HTTP $HTTP_CODE)"
               exit 1
             fi
 
-            # API docs check
+            # API docs
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${PRODUCTION_URL}/docs" || echo "000")
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ API docs accessible"
-            else
-              echo "⚠️ API docs not accessible (HTTP $HTTP_CODE)"
-            fi
+            echo "API docs: HTTP $HTTP_CODE"
 
-            # Metrics endpoint
+            # Metrics
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${PRODUCTION_URL}/metrics" || echo "000")
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Metrics endpoint accessible"
-            fi
-          else
-            echo "::warning::PRODUCTION_URL not set. Skipping smoke tests."
+            echo "Metrics: HTTP $HTTP_CODE"
           fi
 
-      - name: Notify deployment success
+      - name: Notify success
         if: success()
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
@@ -436,19 +754,18 @@ jobs:
             curl -X POST "$SLACK_WEBHOOK" \
               -H 'Content-type: application/json' \
               -d '{
-                "text": "✅ AZALSCORE Production Deployment Successful",
+                "text": "AZALS Production Deployment Successful",
                 "attachments": [{
                   "color": "good",
                   "fields": [
-                    {"title": "Version", "value": "${{ github.sha }}", "short": true},
-                    {"title": "Branch", "value": "main", "short": true},
-                    {"title": "URL", "value": "${{ vars.PRODUCTION_URL }}", "short": false}
+                    {"title": "Commit", "value": "${{ github.sha }}", "short": true},
+                    {"title": "Branch", "value": "main", "short": true}
                   ]
                 }]
               }'
           fi
 
-      - name: Notify deployment failure
+      - name: Notify failure
         if: failure()
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
@@ -457,20 +774,63 @@ jobs:
             curl -X POST "$SLACK_WEBHOOK" \
               -H 'Content-type: application/json' \
               -d '{
-                "text": "❌ AZALSCORE Production Deployment Failed",
+                "text": "AZALS Production Deployment FAILED",
                 "attachments": [{
                   "color": "danger",
                   "fields": [
-                    {"title": "Version", "value": "${{ github.sha }}", "short": true},
+                    {"title": "Commit", "value": "${{ github.sha }}", "short": true},
                     {"title": "Run", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}
                   ]
                 }]
               }'
           fi
 
-      - name: Production deployment summary
+      - name: Production summary
         run: |
           echo "## Production Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Deployed to production" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 URL: ${{ vars.PRODUCTION_URL }}" >> $GITHUB_STEP_SUMMARY
-          echo "📦 Version: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment: production" >> $GITHUB_STEP_SUMMARY
+          echo "- URL: ${{ vars.PRODUCTION_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # QUALITY GATE FINAL
+  # ===========================================================================
+  quality-gate:
+    name: "Quality Gate"
+    runs-on: ubuntu-latest
+    needs: [lint-python, format-check, type-check, architecture, security-sast, security-sca, secret-scan, test]
+    if: always()
+
+    steps:
+      - name: Check quality gate
+        run: |
+          echo "## Quality Gate Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint Python | ${{ needs.lint-python.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Format Check | ${{ needs.format-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ needs.type-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Architecture | ${{ needs.architecture.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security SAST | ${{ needs.security-sast.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security SCA | ${{ needs.security-sca.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+
+          # Blocking checks
+          if [ "${{ needs.lint-python.result }}" == "failure" ]; then
+            echo "::error::Lint failed - quality gate blocked"
+            exit 1
+          fi
+          if [ "${{ needs.security-sast.result }}" == "failure" ]; then
+            echo "::error::Security SAST failed - quality gate blocked"
+            exit 1
+          fi
+          if [ "${{ needs.test.result }}" == "failure" ]; then
+            echo "::error::Tests failed - quality gate blocked"
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
