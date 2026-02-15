@@ -41,6 +41,12 @@ class BackupService:
 
     def __init__(self, db: Session, tenant_id: str, user_id: str = None):
         self.db = db
+        # SÉCURITÉ: Validation du tenant_id pour éviter path traversal
+        import re
+        if not tenant_id or not re.match(r'^[a-zA-Z0-9_-]+$', tenant_id):
+            raise ValueError("Invalid tenant_id format")
+        if len(tenant_id) > 255:
+            raise ValueError("tenant_id too long")
         self.tenant_id = tenant_id
         self.user_id = user_id
         self.base_path = os.environ.get("BACKUP_PATH", "/var/azals/backups")
