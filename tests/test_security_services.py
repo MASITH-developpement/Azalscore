@@ -27,8 +27,9 @@ class TestAuditTrailService:
 
     @pytest.fixture
     def sample_event_data(self):
+        from app.core.audit_trail import AuditEventCategory
         return {
-            "category": "authentication",
+            "category": AuditEventCategory.AUTHENTICATION,
             "action": "login_success",
             "description": "Connexion réussie",
             "tenant_id": "tenant_001",
@@ -54,7 +55,7 @@ class TestAuditTrailService:
 
         assert event is not None
         assert event.id is not None
-        assert event.category.value == sample_event_data["category"]
+        assert event.category.value == "authentication"
         assert event.action == sample_event_data["action"]
         assert event.tenant_id == sample_event_data["tenant_id"]
         assert event.hash_chain is not None
@@ -73,7 +74,7 @@ class TestAuditTrailService:
     @pytest.mark.asyncio
     async def test_verify_chain_integrity_valid(self, audit_service, sample_event_data):
         """Test vérification d'intégrité de chaîne valide"""
-        from app.core.audit_trail import AuditCategory
+        from app.core.audit_trail import AuditEventCategory
 
         events = []
         for i in range(5):
@@ -83,7 +84,7 @@ class TestAuditTrailService:
 
         is_valid, errors = audit_service.verify_chain_integrity(
             tenant_id=sample_event_data["tenant_id"],
-            category=AuditCategory.AUTHENTICATION,
+            category=AuditEventCategory.AUTHENTICATION,
             events=events
         )
 
@@ -97,7 +98,7 @@ class TestAuditTrailService:
 
         events = await audit_service.search_events(
             tenant_id=sample_event_data["tenant_id"],
-            categories=["authentication"]
+            categories=[sample_event_data["category"]]
         )
 
         assert len(events) >= 1
@@ -114,11 +115,11 @@ class TestThreatDetectionEngine:
 
     @pytest.fixture
     def login_failure_event(self):
-        from app.core.audit_trail import AuditEvent, AuditCategory, AuditActor
+        from app.core.audit_trail import AuditEvent, AuditEventCategory, AuditEventSeverity, AuditEventOutcome, AuditActor
         return AuditEvent(
             id="evt_001",
             timestamp=datetime.utcnow(),
-            category=AuditCategory.AUTHENTICATION,
+            category=AuditEventCategory.AUTHENTICATION,
             action="login_failure",
             description="Échec de connexion",
             tenant_id="tenant_001",
@@ -126,8 +127,8 @@ class TestThreatDetectionEngine:
                 user_id="user_123",
                 ip_address="192.168.1.100"
             ),
-            outcome="failure",
-            severity="warning",
+            outcome=AuditEventOutcome.FAILURE,
+            severity=AuditEventSeverity.WARNING,
             hash_chain="abc123"
         )
 
@@ -148,16 +149,16 @@ class TestSIEMExporter:
 
     @pytest.fixture
     def sample_audit_event(self):
-        from app.core.audit_trail import AuditEvent, AuditCategory, AuditActor
+        from app.core.audit_trail import AuditEvent, AuditEventCategory, AuditEventSeverity, AuditActor
         return AuditEvent(
             id="evt_001",
             timestamp=datetime.utcnow(),
-            category=AuditCategory.DATA_ACCESS,
+            category=AuditEventCategory.DATA_ACCESS,
             action="read",
             description="Lecture de données",
             tenant_id="tenant_001",
             actor=AuditActor(user_id="user_123", ip_address="10.0.0.1"),
-            severity="info",
+            severity=AuditEventSeverity.INFO,
             hash_chain="hash123"
         )
 
@@ -303,16 +304,39 @@ class TestTokenizationService:
 
     @pytest.fixture
     def tokenization_service(self):
-        from app.core.encryption_advanced import TokenizationService
-        return TokenizationService()
+        from app.core.encryption_advanced import TokenizationService, TokenizationType
+
+        # Create a simple in-memory token store for testing
+        class InMemoryTokenStore:
+            def __init__(self):
+                self._tokens = {}
+
+            def store(self, token: str, data: dict) -> None:
+                self._tokens[token] = data
+
+            def retrieve(self, token: str) -> dict | None:
+                return self._tokens.get(token)
+
+            def delete(self, token: str) -> bool:
+                if token in self._tokens:
+                    del self._tokens[token]
+                    return True
+                return False
+
+        return TokenizationService(
+            token_store=InMemoryTokenStore(),
+            secret_key=b"test-secret-key-for-tokenization"
+        )
 
     def test_tokenize_credit_card(self, tokenization_service):
         """Test tokenisation carte bancaire"""
+        from app.core.encryption_advanced import TokenizationType
+
         cc_number = "4111111111111111"
 
         token = tokenization_service.tokenize(
             value=cc_number,
-            data_type="credit_card",
+            token_type=TokenizationType.CREDIT_CARD,
             tenant_id="tenant_001"
         )
 
@@ -322,11 +346,13 @@ class TestTokenizationService:
 
     def test_detokenize_returns_original(self, tokenization_service):
         """Test détokenisation retourne valeur originale"""
+        from app.core.encryption_advanced import TokenizationType
+
         original = "secret_value_123"
 
         token = tokenization_service.tokenize(
             value=original,
-            data_type="generic",
+            token_type=TokenizationType.GENERIC,
             tenant_id="tenant_001"
         )
 
@@ -335,16 +361,18 @@ class TestTokenizationService:
 
     def test_format_preserving_tokenization(self, tokenization_service):
         """Test tokenisation préservant le format"""
+        from app.core.encryption_advanced import TokenizationType
+
         phone = "0612345678"
 
         token = tokenization_service.tokenize(
             value=phone,
-            data_type="phone",
+            token_type=TokenizationType.PHONE,
             tenant_id="tenant_001",
             format_preserving=True
         )
 
-        assert len(token) == len(phone) or token.startswith("tok_")
+        assert token.startswith("tok_")
 
 
 # ============================================================================
