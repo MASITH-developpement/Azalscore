@@ -665,7 +665,7 @@ def test_get_audit_stats(test_client, client, auth_headers, sample_audit_logs_ba
     # Vérifier structure statistiques
     assert isinstance(data, dict)
     # Les stats devraient contenir des counts ou métriques
-    assert any(key in data for key in ["total_logs", "total", "stats", "summary"])
+    assert any(key in data for key in ["total_logs_24h", "failed_24h", "active_sessions", "unique_users_24h"])
 
 
 def test_get_audit_dashboard(test_client, client, auth_headers, sample_audit_logs_batch):

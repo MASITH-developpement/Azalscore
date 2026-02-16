@@ -390,7 +390,8 @@ def test_client(mock_auth_global, test_db_session):
             if "X-Tenant-ID" not in headers:
                 headers["X-Tenant-ID"] = tenant_id
             if "Authorization" not in headers:
-                headers["Authorization"] = f"Bearer mock-jwt-{user_id}"
+                # Token > 20 chars requis par CSRF middleware
+                headers["Authorization"] = f"Bearer mock-jwt-token-for-testing-{user_id}-with-extra-length"
 
             kwargs["headers"] = headers
             return super().request(method, url, **kwargs)

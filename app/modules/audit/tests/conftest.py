@@ -34,7 +34,8 @@ def client(test_client):
 def auth_headers(tenant_id):
     """Headers d'authentification avec tenant ID."""
     return {
-        "Authorization": "Bearer test-token",
+        # Token > 20 chars requis par CSRF middleware
+        "Authorization": "Bearer mock-jwt-token-for-testing-audit-module-with-extra-length",
         "X-Tenant-ID": tenant_id
     }
 
@@ -101,13 +102,18 @@ def sample_metric(db_session, tenant_id):
     from app.modules.audit.models import MetricDefinition, MetricType
 
     metric = MetricDefinition(
+        id=uuid4(),
         tenant_id=tenant_id,
+        code="TEST_METRIC_001",
         name="test_metric",
         description="Test metric for unit tests",
         metric_type=MetricType.COUNTER,
         unit="count",
-        category="test",
-        is_active=True
+        module="test",
+        aggregation_period="HOUR",
+        retention_days=90,
+        is_active=True,
+        is_system=False
     )
     db_session.add(metric)
     db_session.commit()
@@ -122,18 +128,27 @@ def sample_metric(db_session, tenant_id):
 
 
 @pytest.fixture
-def sample_benchmark(db_session, tenant_id):
+def sample_benchmark(db_session, tenant_id, user_uuid):
     """Cree un benchmark de test."""
     from app.modules.audit.models import Benchmark, BenchmarkStatus
 
     benchmark = Benchmark(
+        id=uuid4(),
         tenant_id=tenant_id,
+        code="TEST_BENCHMARK_001",
         name="test_benchmark",
         description="Test benchmark for unit tests",
+        version="1.0",
         benchmark_type="PERFORMANCE",
+        module="test",
         config="{}",
         baseline="{}",
-        is_active=True
+        is_scheduled=False,
+        status=BenchmarkStatus.PENDING,
+        is_active=True,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+        created_by=user_uuid
     )
     db_session.add(benchmark)
     db_session.commit()
@@ -208,11 +223,20 @@ def sample_dashboard(db_session, tenant_id, user_uuid):
     from app.modules.audit.models import AuditDashboard
 
     dashboard = AuditDashboard(
+        id=uuid4(),
         tenant_id=tenant_id,
+        code="TEST_DASHBOARD_001",
         name="test_dashboard",
         description="Test dashboard",
-        config='{"widgets": []}',
-        created_by=user_uuid
+        widgets='[]',
+        layout='{}',
+        refresh_interval=60,
+        is_public=False,
+        owner_id=user_uuid,
+        is_default=False,
+        is_active=True,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
     )
     db_session.add(dashboard)
     db_session.commit()
@@ -224,3 +248,303 @@ def sample_dashboard(db_session, tenant_id, user_uuid):
         db_session.commit()
     except Exception:
         pass
+
+
+@pytest.fixture
+def sample_audit_log(db_session, tenant_id, user_uuid):
+    """Cree un seul log d'audit pour les tests."""
+    from app.modules.audit.models import AuditLog, AuditAction, AuditLevel, AuditCategory
+
+    log = AuditLog(
+        id=uuid4(),
+        tenant_id=tenant_id,
+        action=AuditAction.CREATE,
+        level=AuditLevel.INFO,
+        category=AuditCategory.BUSINESS,
+        module="finance",
+        entity_type="Invoice",
+        entity_id=str(uuid4()),
+        user_id=user_uuid,
+        user_email="test@example.com",
+        user_role="ADMIN",
+        session_id=str(uuid4()),
+        request_id=str(uuid4()),
+        ip_address="192.168.1.100",
+        user_agent="pytest-test-agent",
+        description="Test single audit log",
+        success=True,
+        created_at=datetime.utcnow()
+    )
+    db_session.add(log)
+    db_session.commit()
+
+    yield log
+
+    try:
+        db_session.delete(log)
+        db_session.commit()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def sample_session(db_session, tenant_id, user_uuid):
+    """Cree une session d'audit de test."""
+    from app.modules.audit.models import AuditSession
+
+    session = AuditSession(
+        id=uuid4(),
+        tenant_id=tenant_id,
+        session_id=str(uuid4()),
+        user_id=user_uuid,
+        user_email="test@example.com",
+        login_at=datetime.utcnow() - timedelta(hours=1),
+        last_activity_at=datetime.utcnow(),
+        ip_address="192.168.1.100",
+        device_type="Desktop",
+        browser="Chrome",
+        os="Linux",
+        country="FR",
+        city="Paris",
+        actions_count=10,
+        reads_count=5,
+        writes_count=5,
+        is_active=True
+    )
+    db_session.add(session)
+    db_session.commit()
+
+    yield session
+
+    try:
+        db_session.delete(session)
+        db_session.commit()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def sample_export_data():
+    """Donnees pour creer un export."""
+    return {
+        "export_type": "AUDIT_LOGS",
+        "format": "CSV",
+        "date_from": (datetime.utcnow() - timedelta(days=7)).isoformat(),
+        "date_to": datetime.utcnow().isoformat(),
+        "filters": {"level": "INFO"}
+    }
+
+
+@pytest.fixture
+def sample_metric_data():
+    """Donnees pour creer une metrique."""
+    return {
+        "code": "TEST_METRIC_CREATE",
+        "name": "Test Metric Create",
+        "description": "Metric for creation tests",
+        "metric_type": "COUNTER",
+        "unit": "count",
+        "module": "test",
+        "aggregation_period": "HOUR",
+        "retention_days": 90
+    }
+
+
+@pytest.fixture
+def sample_metric_values(db_session, tenant_id, sample_metric):
+    """Cree des valeurs de metrique pour les tests."""
+    from app.modules.audit.models import MetricValue
+
+    values = []
+    for i in range(10):
+        value = MetricValue(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            metric_id=sample_metric.id,
+            metric_code=sample_metric.code,
+            value=float(i * 10),
+            min_value=float(i * 5),
+            max_value=float(i * 15),
+            avg_value=float(i * 10),
+            count=i + 1,
+            period_start=datetime.utcnow() - timedelta(hours=i+1),
+            period_end=datetime.utcnow() - timedelta(hours=i)
+        )
+        db_session.add(value)
+        values.append(value)
+
+    db_session.commit()
+
+    yield values
+
+    for val in values:
+        try:
+            db_session.delete(val)
+        except Exception:
+            pass
+    db_session.commit()
+
+
+@pytest.fixture
+def sample_benchmark_data():
+    """Donnees pour creer un benchmark."""
+    return {
+        "code": "TEST_BENCHMARK_CREATE",
+        "name": "Test Benchmark Create",
+        "description": "Benchmark for creation tests",
+        "version": "1.0",
+        "benchmark_type": "PERFORMANCE",
+        "module": "test",
+        "config": {"threshold": 100},
+        "baseline": {"value": 50},
+        "is_scheduled": False
+    }
+
+
+@pytest.fixture
+def sample_benchmark_result(db_session, tenant_id, sample_benchmark, user_uuid):
+    """Cree un resultat de benchmark pour les tests."""
+    from app.modules.audit.models import BenchmarkResult, BenchmarkStatus
+
+    result = BenchmarkResult(
+        id=uuid4(),
+        tenant_id=tenant_id,
+        benchmark_id=sample_benchmark.id,
+        started_at=datetime.utcnow() - timedelta(minutes=5),
+        completed_at=datetime.utcnow(),
+        duration_ms=1500.0,
+        status=BenchmarkStatus.COMPLETED,
+        score=85.5,
+        passed=True,
+        results='{"tests": 10, "passed": 9}',
+        summary="Test benchmark completed",
+        executed_by=str(user_uuid)
+    )
+    db_session.add(result)
+    db_session.commit()
+
+    yield result
+
+    try:
+        db_session.delete(result)
+        db_session.commit()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def sample_compliance_data():
+    """Donnees pour creer un controle de conformite."""
+    return {
+        "framework": "GDPR",
+        "control_id": "GDPR-TEST-001",
+        "control_name": "Test Control",
+        "control_description": "Test compliance control for unit tests",
+        "category": "privacy",
+        "check_type": "MANUAL",
+        "severity": "MEDIUM"
+    }
+
+
+@pytest.fixture
+def sample_retention_data():
+    """Donnees pour creer une regle de retention."""
+    return {
+        "name": "test_retention_create",
+        "description": "Retention rule for creation tests",
+        "target_table": "audit_logs",
+        "policy": "SHORT",
+        "retention_days": 30,
+        "action": "DELETE"
+    }
+
+
+@pytest.fixture
+def sample_dashboard_data():
+    """Donnees pour creer un dashboard."""
+    return {
+        "code": "TEST_DASHBOARD_CREATE",
+        "name": "Test Dashboard Create",
+        "description": "Dashboard for creation tests",
+        "widgets": [
+            {
+                "id": "widget_1",
+                "type": "audit_stats",
+                "title": "Audit Statistics",
+                "config": {},
+                "size": "medium"
+            }
+        ],
+        "layout": {"columns": 2},
+        "refresh_interval": 60,
+        "is_public": False,
+        "is_default": False
+    }
+
+
+@pytest.fixture
+def sample_export(db_session, tenant_id, user_uuid):
+    """Cree un export de test."""
+    from app.modules.audit.models import AuditExport
+
+    export = AuditExport(
+        id=uuid4(),
+        tenant_id=tenant_id,
+        export_type="AUDIT_LOGS",
+        format="CSV",
+        date_from=datetime.utcnow() - timedelta(days=7),
+        date_to=datetime.utcnow(),
+        filters='{"level": "INFO"}',
+        status="PENDING",
+        progress=0,
+        requested_by=user_uuid,
+        requested_at=datetime.utcnow(),
+        expires_at=datetime.utcnow() + timedelta(days=7)
+    )
+    db_session.add(export)
+    db_session.commit()
+
+    yield export
+
+    try:
+        db_session.delete(export)
+        db_session.commit()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def benchmark():
+    """
+    Fixture de benchmark dummy pour les tests de performance.
+
+    Remplace pytest-benchmark si non installé.
+    """
+    class DummyBenchmark:
+        def __call__(self, func, *args, **kwargs):
+            return func(*args, **kwargs)
+    return DummyBenchmark()
+
+
+@pytest.fixture
+def assert_audit_trail():
+    """
+    Fixture helper pour valider les champs d'audit trail.
+
+    Retourne une fonction qui vérifie qu'un dictionnaire
+    contient les champs requis pour l'audit trail.
+    """
+    def _assert_audit_trail(data: dict, required_fields: list[str] = None):
+        """Vérifie que les champs d'audit trail sont présents."""
+        default_fields = [
+            "id", "tenant_id", "action", "module",
+            "user_id", "created_at"
+        ]
+        fields_to_check = required_fields or default_fields
+
+        for field in fields_to_check:
+            assert field in data, f"Champ audit trail manquant: {field}"
+
+        return True
+
+    return _assert_audit_trail

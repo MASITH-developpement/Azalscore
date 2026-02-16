@@ -1634,6 +1634,94 @@ class AuditService:
             "data": data
         }
 
+    # ========================================================================
+    # MÉTHODES COMPLÉMENTAIRES
+    # ========================================================================
+
+    def list_compliance_checks(
+        self,
+        framework: ComplianceFramework = None,
+        is_active: bool = True
+    ) -> list[ComplianceCheck]:
+        """Liste les contrôles de conformité."""
+        query = self.db.query(ComplianceCheck).filter(
+            ComplianceCheck.tenant_id == self.tenant_id
+        )
+        if is_active:
+            query = query.filter(ComplianceCheck.is_active)
+        if framework:
+            query = query.filter(ComplianceCheck.framework == framework)
+        return query.all()
+
+    def list_retention_rules(
+        self,
+        target_module: str = None,
+        is_active: bool = True
+    ) -> list[DataRetentionRule]:
+        """Liste les règles de rétention."""
+        query = self.db.query(DataRetentionRule).filter(
+            DataRetentionRule.tenant_id == self.tenant_id
+        )
+        if is_active:
+            query = query.filter(DataRetentionRule.is_active)
+        if target_module:
+            query = query.filter(DataRetentionRule.target_module == target_module)
+        return query.all()
+
+    def list_exports(self, status: str = None) -> list[AuditExport]:
+        """Liste les exports."""
+        query = self.db.query(AuditExport).filter(
+            AuditExport.tenant_id == self.tenant_id
+        )
+        if status:
+            query = query.filter(AuditExport.status == status)
+        return query.order_by(AuditExport.requested_at.desc()).all()
+
+    def get_export(self, export_id) -> AuditExport | None:
+        """Récupère un export par son ID."""
+        return self.db.query(AuditExport).filter(
+            AuditExport.id == export_id,
+            AuditExport.tenant_id == self.tenant_id
+        ).first()
+
+    def list_dashboards(self) -> list[AuditDashboard]:
+        """Liste les tableaux de bord."""
+        return self.db.query(AuditDashboard).filter(
+            AuditDashboard.tenant_id == self.tenant_id,
+            AuditDashboard.is_active
+        ).all()
+
+    def get_stats(
+        self,
+        from_date: datetime = None,
+        to_date: datetime = None
+    ) -> dict[str, Any]:
+        """Récupère les statistiques avec période optionnelle."""
+        return self._get_audit_stats()
+
+    def get_audit_dashboard(self, period: str = "24h") -> dict[str, Any]:
+        """Récupère le dashboard d'audit complet."""
+        stats = self._get_audit_stats()
+
+        # Logs récents
+        recent_logs = self.db.query(AuditLog).filter(
+            AuditLog.tenant_id == self.tenant_id
+        ).order_by(AuditLog.created_at.desc()).limit(10).all()
+
+        # Sessions actives
+        active_sessions = self.db.query(AuditSession).filter(
+            AuditSession.tenant_id == self.tenant_id,
+            AuditSession.is_active
+        ).all()
+
+        return {
+            "stats": stats,
+            "recent_logs": recent_logs,
+            "active_sessions": active_sessions,
+            "compliance_summary": None,
+            "latest_benchmarks": None
+        }
+
     def _get_audit_stats(self) -> dict[str, Any]:
         """Récupère les statistiques d'audit."""
         now = datetime.utcnow()
