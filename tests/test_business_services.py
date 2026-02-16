@@ -619,6 +619,109 @@ class TestConditionEvaluator:
         assert result is True
 
 
+class TestWorkflowSecurity:
+    """Tests de sécurité pour le workflow engine"""
+
+    def test_http_handler_blocks_localhost(self):
+        """Test que les requêtes localhost sont bloquées"""
+        from app.services.workflow_automation import HttpRequestHandler
+
+        handler = HttpRequestHandler()
+
+        # Test localhost
+        is_safe, error = handler._is_safe_url("http://localhost/api")
+        assert is_safe is False
+        assert "bloqué" in error.lower()
+
+        # Test 127.0.0.1
+        is_safe, error = handler._is_safe_url("http://127.0.0.1:8080/test")
+        assert is_safe is False
+
+    def test_http_handler_blocks_private_networks(self):
+        """Test que les réseaux privés sont bloqués"""
+        from app.services.workflow_automation import HttpRequestHandler
+
+        handler = HttpRequestHandler()
+
+        # Test réseau 10.x
+        is_safe, error = handler._is_safe_url("http://10.0.0.1/api")
+        assert is_safe is False
+
+        # Test réseau 192.168.x
+        is_safe, error = handler._is_safe_url("http://192.168.1.1/api")
+        assert is_safe is False
+
+    def test_http_handler_blocks_cloud_metadata(self):
+        """Test que les endpoints cloud metadata sont bloqués"""
+        from app.services.workflow_automation import HttpRequestHandler
+
+        handler = HttpRequestHandler()
+
+        # AWS metadata
+        is_safe, error = handler._is_safe_url("http://169.254.169.254/latest/meta-data")
+        assert is_safe is False
+
+        # GCP metadata
+        is_safe, error = handler._is_safe_url("http://metadata.google.internal/computeMetadata")
+        assert is_safe is False
+
+    def test_http_handler_allows_external_urls(self):
+        """Test que les URLs externes sont autorisées"""
+        from app.services.workflow_automation import HttpRequestHandler
+
+        handler = HttpRequestHandler()
+
+        is_safe, error = handler._is_safe_url("https://api.example.com/webhook")
+        assert is_safe is True
+
+    def test_script_handler_blocks_dangerous_keywords(self):
+        """Test que les mots-clés dangereux sont bloqués"""
+        from app.services.workflow_automation import ExecuteScriptHandler
+
+        handler = ExecuteScriptHandler()
+
+        # Test import
+        is_valid, error = handler._validate_script("import os")
+        assert is_valid is False
+        assert "import" in error.lower()
+
+        # Test __builtins__
+        is_valid, error = handler._validate_script("x = __builtins__")
+        assert is_valid is False
+
+        # Test exec
+        is_valid, error = handler._validate_script("exec('print(1)')")
+        assert is_valid is False
+
+    def test_script_handler_allows_safe_code(self):
+        """Test que le code sûr est autorisé"""
+        from app.services.workflow_automation import ExecuteScriptHandler
+
+        handler = ExecuteScriptHandler()
+
+        # Code simple
+        is_valid, error = handler._validate_script("result = 1 + 2")
+        assert is_valid is True
+
+        # Code avec variables
+        is_valid, error = handler._validate_script(
+            "result = sum([x for x in range(10)])"
+        )
+        assert is_valid is True
+
+    def test_script_handler_limits_size(self):
+        """Test limite de taille du script"""
+        from app.services.workflow_automation import ExecuteScriptHandler
+
+        handler = ExecuteScriptHandler()
+
+        # Script trop long
+        long_script = "x = 1\n" * 10000
+        is_valid, error = handler._validate_script(long_script)
+        assert is_valid is False
+        assert "trop long" in error.lower()
+
+
 class TestApprovalWorkflow:
     """Tests pour les workflows d'approbation"""
 

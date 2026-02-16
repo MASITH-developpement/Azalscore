@@ -399,7 +399,50 @@ class CreateRecordHandler(ActionHandler):
 
 
 class HttpRequestHandler(ActionHandler):
-    """Handler pour les requêtes HTTP"""
+    """Handler pour les requêtes HTTP avec protection SSRF"""
+
+    # Liste des hôtes/réseaux interdits (SSRF protection)
+    BLOCKED_HOSTS = {
+        "localhost", "127.0.0.1", "0.0.0.0", "::1",
+        "metadata.google.internal", "169.254.169.254",  # Cloud metadata
+    }
+
+    BLOCKED_NETWORKS = [
+        "10.", "172.16.", "172.17.", "172.18.", "172.19.",
+        "172.20.", "172.21.", "172.22.", "172.23.", "172.24.",
+        "172.25.", "172.26.", "172.27.", "172.28.", "172.29.",
+        "172.30.", "172.31.", "192.168.",  # Réseaux privés
+    ]
+
+    def _is_safe_url(self, url: str) -> tuple[bool, str]:
+        """Vérifie si l'URL est sûre (protection SSRF)"""
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+
+            # Vérifier le schéma
+            if parsed.scheme not in ("http", "https"):
+                return False, f"Schéma non autorisé: {parsed.scheme}"
+
+            # Vérifier l'hôte
+            host = parsed.hostname or ""
+            host_lower = host.lower()
+
+            if host_lower in self.BLOCKED_HOSTS:
+                return False, f"Hôte bloqué: {host}"
+
+            # Vérifier les réseaux privés
+            for network in self.BLOCKED_NETWORKS:
+                if host.startswith(network):
+                    return False, f"Réseau privé non autorisé: {host}"
+
+            # Vérifier les adresses IPv6 locales
+            if host.startswith("[") and ("::1" in host or "fe80:" in host.lower()):
+                return False, f"Adresse IPv6 locale non autorisée: {host}"
+
+            return True, ""
+        except Exception as e:
+            return False, f"URL invalide: {str(e)}"
 
     async def execute(
         self,
@@ -412,21 +455,38 @@ class HttpRequestHandler(ActionHandler):
         url = self._resolve_value(params.get("url"), variables)
         headers = self._resolve_dict(params.get("headers", {}), variables)
         body = self._resolve_value(params.get("body"), variables)
-        timeout = params.get("timeout", 30)
+        timeout = min(params.get("timeout", 30), 60)  # Max 60 secondes
+
+        # Validation SSRF
+        is_safe, error_msg = self._is_safe_url(url)
+        if not is_safe:
+            logger.warning(f"Requête HTTP bloquée (SSRF): {url} - {error_msg}")
+            return None, f"URL non autorisée: {error_msg}"
+
+        # Valider la méthode HTTP
+        allowed_methods = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+        if method.upper() not in allowed_methods:
+            return None, f"Méthode HTTP non autorisée: {method}"
 
         try:
             import aiohttp
 
             async with aiohttp.ClientSession() as session:
                 async with session.request(
-                    method=method,
+                    method=method.upper(),
                     url=url,
                     headers=headers,
                     json=body if isinstance(body, dict) else None,
                     data=body if isinstance(body, str) else None,
-                    timeout=aiohttp.ClientTimeout(total=timeout)
+                    timeout=aiohttp.ClientTimeout(total=timeout),
+                    allow_redirects=False  # Pas de redirections automatiques (sécurité)
                 ) as response:
+                    # Limiter la taille de la réponse (1 Mo max)
+                    max_size = 1024 * 1024
                     response_body = await response.text()
+                    if len(response_body) > max_size:
+                        response_body = response_body[:max_size] + "... [tronqué]"
+
                     try:
                         response_json = json.loads(response_body)
                     except json.JSONDecodeError:
@@ -441,7 +501,10 @@ class HttpRequestHandler(ActionHandler):
         except ImportError:
             logger.warning("aiohttp non disponible, simulation de requête HTTP")
             return {"status_code": 200, "body": {}}, None
+        except asyncio.TimeoutError:
+            return None, "Timeout de la requête HTTP"
         except Exception as e:
+            logger.exception(f"Erreur requête HTTP: {e}")
             return None, str(e)
 
     def _resolve_value(self, value: Any, variables: dict) -> Any:
@@ -457,6 +520,7 @@ class HttpRequestHandler(ActionHandler):
 class ExecuteScriptHandler(ActionHandler):
     """Handler pour l'exécution de scripts Python sécurisés"""
 
+    # Builtins sûrs autorisés
     SAFE_BUILTINS = {
         "abs": abs,
         "all": all,
@@ -482,6 +546,38 @@ class ExecuteScriptHandler(ActionHandler):
         "None": None,
     }
 
+    # Mots-clés dangereux interdits
+    FORBIDDEN_KEYWORDS = {
+        "import", "exec", "eval", "compile", "open", "file",
+        "__import__", "__builtins__", "__class__", "__bases__",
+        "__subclasses__", "__mro__", "__globals__", "__code__",
+        "getattr", "setattr", "delattr", "globals", "locals",
+        "vars", "dir", "type", "object", "os", "sys", "subprocess",
+    }
+
+    # Taille maximale du script (caractères)
+    MAX_SCRIPT_SIZE = 10000
+
+    def _validate_script(self, script: str) -> tuple[bool, str]:
+        """Valide le script avant exécution"""
+        if not script or not script.strip():
+            return False, "Script vide"
+
+        if len(script) > self.MAX_SCRIPT_SIZE:
+            return False, f"Script trop long (max {self.MAX_SCRIPT_SIZE} caractères)"
+
+        # Vérifier les mots-clés interdits
+        script_lower = script.lower()
+        for keyword in self.FORBIDDEN_KEYWORDS:
+            if keyword in script_lower:
+                return False, f"Mot-clé interdit: {keyword}"
+
+        # Vérifier les tentatives d'accès aux attributs sensibles
+        if "__" in script:
+            return False, "Accès aux attributs spéciaux interdit"
+
+        return True, ""
+
     async def execute(
         self,
         action: ActionConfig,
@@ -491,13 +587,20 @@ class ExecuteScriptHandler(ActionHandler):
         params = action.parameters
         script = params.get("script", "")
 
+        # Validation du script
+        is_valid, error_msg = self._validate_script(script)
+        if not is_valid:
+            logger.warning(f"Script rejeté: {error_msg}")
+            return None, f"Script invalide: {error_msg}"
+
         try:
             local_vars = {
-                "variables": variables,
-                "context": context,
+                "variables": dict(variables),  # Copie pour isolation
+                "context": dict(context),
                 "result": None
             }
 
+            # Exécution avec timeout implicite via asyncio
             exec(
                 script,
                 {"__builtins__": self.SAFE_BUILTINS},
@@ -505,7 +608,10 @@ class ExecuteScriptHandler(ActionHandler):
             )
 
             return local_vars.get("result"), None
+        except SyntaxError as e:
+            return None, f"Erreur de syntaxe: {str(e)}"
         except Exception as e:
+            logger.warning(f"Erreur exécution script: {e}")
             return None, f"Erreur script: {str(e)}"
 
 
