@@ -680,10 +680,10 @@ class TestWorkflowSecurity:
 
         handler = ExecuteScriptHandler()
 
-        # Test import
+        # Test import - le script "import os" contient deux mots-clés interdits
         is_valid, error = handler._validate_script("import os")
         assert is_valid is False
-        assert "import" in error.lower()
+        assert "import" in error.lower() or "os" in error.lower()
 
         # Test __builtins__
         is_valid, error = handler._validate_script("x = __builtins__")
@@ -833,6 +833,171 @@ class TestApprovalWorkflow:
                 comment="Approuvé"
             )
             assert result is True
+
+
+# ============================================================================
+# Tests de Sécurité Data Import/Export
+# ============================================================================
+
+class TestDataImportExportSecurity:
+    """Tests de sécurité pour le service d'import/export"""
+
+    def test_csv_size_limit(self):
+        """Test que les fichiers CSV trop volumineux sont rejetés"""
+        from app.services.data_import_export import CSVParser
+
+        parser = CSVParser()
+
+        # Simuler un fichier trop volumineux (au-delà de la limite)
+        original_limit = parser.MAX_CSV_SIZE
+        parser.MAX_CSV_SIZE = 100  # 100 bytes pour le test
+
+        large_content = b"a;b;c\n" + b"1;2;3\n" * 20  # Plus de 100 bytes
+
+        try:
+            with pytest.raises(ValueError, match="trop volumineux"):
+                list(parser.parse(large_content, {}))
+        finally:
+            parser.MAX_CSV_SIZE = original_limit
+
+    def test_json_size_limit(self):
+        """Test que les fichiers JSON trop volumineux sont rejetés"""
+        from app.services.data_import_export import JSONParser
+
+        parser = JSONParser()
+
+        # Simuler un fichier trop volumineux
+        original_limit = parser.MAX_JSON_SIZE
+        parser.MAX_JSON_SIZE = 20  # 20 bytes pour le test
+
+        large_json = b'[{"key": "value"}, {"key": "another_value"}]'  # > 20 bytes
+
+        try:
+            with pytest.raises(ValueError, match="trop volumineux"):
+                list(parser.parse(large_json, {}))
+        finally:
+            parser.MAX_JSON_SIZE = original_limit
+
+    def test_xml_xxe_protection_defusedxml(self):
+        """Test protection XXE - defusedxml bloque les entités"""
+        from app.services.data_import_export import XMLParser
+
+        parser = XMLParser()
+
+        # XML avec DOCTYPE et entité externe (tentative XXE)
+        xxe_xml = b"""<?xml version="1.0"?>
+<!DOCTYPE root [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<root><record>&xxe;</record></root>"""
+
+        # defusedxml lève une exception spécifique
+        try:
+            from defusedxml.common import EntitiesForbidden
+            with pytest.raises(EntitiesForbidden):
+                list(parser.parse(xxe_xml, {"root_element": "record"}))
+        except ImportError:
+            # Si defusedxml n'est pas installé, la protection manuelle devrait lever ValueError
+            with pytest.raises(ValueError):
+                list(parser.parse(xxe_xml, {"root_element": "record"}))
+
+    def test_xml_valid_without_entities(self):
+        """Test que le XML valide sans entités fonctionne"""
+        from app.services.data_import_export import XMLParser
+
+        parser = XMLParser()
+
+        # XML valide sans entités
+        valid_xml = b"""<?xml version="1.0"?>
+<root><record><name>Test</name><value>123</value></record></root>"""
+
+        records = list(parser.parse(valid_xml, {"root_element": "record"}))
+        assert len(records) == 1
+        assert records[0]["name"] == "Test"
+
+    def test_xml_size_limit(self):
+        """Test que les fichiers XML trop volumineux sont rejetés"""
+        from app.services.data_import_export import XMLParser
+
+        parser = XMLParser()
+
+        # Simuler limite de taille
+        original_limit = parser.MAX_XML_SIZE
+        parser.MAX_XML_SIZE = 50  # 50 bytes pour le test
+
+        large_xml = b"<root>" + b"<record>data</record>" * 10 + b"</root>"
+
+        try:
+            with pytest.raises(ValueError, match="trop volumineux"):
+                list(parser.parse(large_xml, {"root_element": "record"}))
+        finally:
+            parser.MAX_XML_SIZE = original_limit
+
+    def test_path_traversal_protection(self):
+        """Test protection contre path traversal"""
+        from app.services.data_import_export import DataImportExportService, ExportFormat
+        import tempfile
+        import os
+
+        service = DataImportExportService()
+        data = [{"name": "test", "value": 123}]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Tentative de path traversal
+            malicious_path = os.path.join(tmpdir, "..", "outside", "file.csv")
+
+            with pytest.raises(ValueError, match="non autorisé"):
+                service.export_to_file(
+                    data=data,
+                    format=ExportFormat.CSV,
+                    file_path=malicious_path,
+                    allowed_base_path=tmpdir
+                )
+
+    def test_archive_file_limit(self):
+        """Test limite de fichiers dans l'archive"""
+        from app.services.data_import_export import DataImportExportService
+
+        service = DataImportExportService()
+
+        # Simuler limite de fichiers
+        original_limit = service.MAX_ARCHIVE_FILES
+        service.MAX_ARCHIVE_FILES = 3
+
+        # Plus de fichiers que la limite
+        files = [(f"file_{i}.txt", b"content") for i in range(5)]
+
+        try:
+            with pytest.raises(ValueError, match="Trop de fichiers"):
+                service.create_archive(files)
+        finally:
+            service.MAX_ARCHIVE_FILES = original_limit
+
+    def test_archive_path_injection(self):
+        """Test protection contre injection de chemin dans l'archive"""
+        from app.services.data_import_export import DataImportExportService
+
+        service = DataImportExportService()
+
+        # Tentative d'injection de chemin
+        malicious_files = [("../../../etc/passwd", b"malicious")]
+
+        with pytest.raises(ValueError, match="non autorisé"):
+            service.create_archive(malicious_files)
+
+    def test_custom_transform_no_eval(self):
+        """Test que la transformation custom n'utilise pas eval"""
+        from app.services.data_import_export import FieldTransformer
+
+        # Tentative d'injection via expression (l'ancienne méthode)
+        # La nouvelle implémentation devrait ignorer l'expression et utiliser operation
+        result = FieldTransformer._custom("test", {"expression": "__import__('os').system('ls')"})
+        # Doit retourner la valeur originale car pas d'opération valide
+        assert result == "test"
+
+        # Test d'une opération valide
+        result = FieldTransformer._custom("  hello world  ", {"operation": "normalize_spaces"})
+        assert result == "hello world"
 
 
 # ============================================================================

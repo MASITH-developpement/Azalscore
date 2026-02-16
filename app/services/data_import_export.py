@@ -560,24 +560,62 @@ class FieldTransformer:
 
     @staticmethod
     def _custom(value: Any, params: dict) -> Any:
-        """Transformation personnalisée via expression"""
-        expression = params.get("expression")
-        if not expression:
+        """Transformation personnalisée via opérations prédéfinies sécurisées
+
+        IMPORTANT: N'utilise PAS eval() pour des raisons de sécurité.
+        Supporte uniquement des opérations prédéfinies et sûres.
+        """
+        operation = params.get("operation")
+        if not operation:
             return value
 
         try:
-            safe_builtins = {
-                "str": str,
-                "int": int,
-                "float": float,
-                "len": len,
-                "upper": str.upper,
-                "lower": str.lower,
-                "strip": str.strip,
-                "replace": str.replace,
-            }
-            local_vars = {"value": value, "params": params}
-            return eval(expression, {"__builtins__": safe_builtins}, local_vars)
+            # Opérations sécurisées prédéfinies
+            if operation == "substring":
+                start = params.get("start", 0)
+                end = params.get("end")
+                if value and isinstance(value, str):
+                    return value[start:end] if end else value[start:]
+
+            elif operation == "pad_left":
+                width = params.get("width", 0)
+                char = params.get("char", " ")[:1] or " "
+                return str(value or "").rjust(width, char)
+
+            elif operation == "pad_right":
+                width = params.get("width", 0)
+                char = params.get("char", " ")[:1] or " "
+                return str(value or "").ljust(width, char)
+
+            elif operation == "replace_chars":
+                old_char = params.get("old", "")
+                new_char = params.get("new", "")
+                if value and isinstance(value, str):
+                    return value.replace(old_char, new_char)
+
+            elif operation == "extract_digits":
+                if value:
+                    return "".join(c for c in str(value) if c.isdigit())
+
+            elif operation == "extract_alpha":
+                if value:
+                    return "".join(c for c in str(value) if c.isalpha())
+
+            elif operation == "format_phone":
+                # Format téléphone français
+                if value:
+                    digits = "".join(c for c in str(value) if c.isdigit())
+                    if len(digits) == 10:
+                        return " ".join([digits[i:i+2] for i in range(0, 10, 2)])
+
+            elif operation == "normalize_spaces":
+                if value and isinstance(value, str):
+                    return " ".join(value.split())
+
+            else:
+                logger.warning(f"Opération custom non reconnue: {operation}")
+
+            return value
         except Exception as e:
             logger.warning(f"Erreur transformation custom: {e}")
             return value
@@ -602,9 +640,19 @@ class BaseParser(ABC):
 
 
 class CSVParser(BaseParser):
-    """Parser CSV"""
+    """Parser CSV avec protection DoS"""
+
+    # Limite de taille CSV (50 Mo)
+    MAX_CSV_SIZE = 50 * 1024 * 1024
+    # Limite de colonnes
+    MAX_COLUMNS = 500
+    # Limite de lignes par défaut
+    MAX_ROWS = 1_000_000
 
     def parse(self, content: bytes, options: dict) -> Generator[dict, None, None]:
+        # Vérification limite de taille
+        if len(content) > self.MAX_CSV_SIZE:
+            raise ValueError(f"Fichier CSV trop volumineux (max {self.MAX_CSV_SIZE // (1024*1024)} Mo)")
         encoding = options.get("encoding", "utf-8")
         delimiter = options.get("delimiter", ";")
         quotechar = options.get("quotechar", '"')
@@ -639,10 +687,18 @@ class CSVParser(BaseParser):
         if has_header:
             try:
                 headers = [h.strip() for h in next(reader)]
+                # Limite de colonnes
+                if len(headers) > self.MAX_COLUMNS:
+                    raise ValueError(f"Trop de colonnes ({len(headers)} > {self.MAX_COLUMNS})")
             except StopIteration:
                 return
 
+        row_count = 0
         for row_num, row in enumerate(reader, start=skip_rows + 2 if has_header else skip_rows + 1):
+            row_count += 1
+            if row_count > self.MAX_ROWS:
+                logger.warning(f"Limite de lignes atteinte ({self.MAX_ROWS})")
+                break
             if not any(row):
                 continue
 
@@ -775,9 +831,18 @@ class ExcelParser(BaseParser):
 
 
 class JSONParser(BaseParser):
-    """Parser JSON"""
+    """Parser JSON avec protection DoS"""
+
+    # Limite de taille JSON (50 Mo)
+    MAX_JSON_SIZE = 50 * 1024 * 1024
+    # Limite de profondeur de parsing
+    MAX_DEPTH = 50
 
     def parse(self, content: bytes, options: dict) -> Generator[dict, None, None]:
+        # Vérification limite de taille
+        if len(content) > self.MAX_JSON_SIZE:
+            raise ValueError(f"Fichier JSON trop volumineux (max {self.MAX_JSON_SIZE // (1024*1024)} Mo)")
+
         encoding = options.get("encoding", "utf-8")
         root_path = options.get("root_path")
 
@@ -817,16 +882,47 @@ class JSONParser(BaseParser):
 
 
 class XMLParser(BaseParser):
-    """Parser XML"""
+    """Parser XML avec protection XXE"""
+
+    # Limite de taille XML (10 Mo)
+    MAX_XML_SIZE = 10 * 1024 * 1024
+
+    def _safe_parse_xml(self, xml_content: bytes) -> ET.Element:
+        """Parse XML de manière sécurisée (protection XXE)"""
+        import defusedxml.ElementTree as DefusedET
+
+        # Limite de taille
+        if len(xml_content) > self.MAX_XML_SIZE:
+            raise ValueError(f"Fichier XML trop volumineux (max {self.MAX_XML_SIZE // (1024*1024)} Mo)")
+
+        try:
+            return DefusedET.fromstring(xml_content)
+        except ImportError:
+            # Fallback si defusedxml non installé: désactiver les entités
+            logger.warning("defusedxml non installé - utilisation du parser sécurisé manuel")
+
+            # Vérification basique anti-XXE
+            xml_str = xml_content.decode("utf-8", errors="replace")
+            dangerous_patterns = [
+                "<!ENTITY", "<!DOCTYPE", "SYSTEM", "PUBLIC",
+                "file://", "http://", "https://", "ftp://"
+            ]
+            xml_upper = xml_str.upper()
+            for pattern in dangerous_patterns:
+                if pattern.upper() in xml_upper:
+                    raise ValueError(f"Contenu XML potentiellement dangereux détecté: {pattern}")
+
+            return ET.fromstring(xml_content)
 
     def parse(self, content: bytes, options: dict) -> Generator[dict, None, None]:
         root_element = options.get("root_element", "record")
         encoding = options.get("encoding", "utf-8")
 
         try:
-            root = ET.fromstring(content.decode(encoding))
+            xml_content = content if isinstance(content, bytes) else content.encode(encoding)
+            root = self._safe_parse_xml(xml_content)
         except UnicodeDecodeError:
-            root = ET.fromstring(content.decode("latin-1"))
+            root = self._safe_parse_xml(content)
 
         records = root.findall(f".//{root_element}")
 
@@ -858,8 +954,9 @@ class XMLParser(BaseParser):
         root_element = options.get("root_element", "record")
 
         try:
-            root = ET.fromstring(content)
-        except ET.ParseError:
+            root = self._safe_parse_xml(content)
+        except (ET.ParseError, ValueError) as e:
+            logger.warning(f"Erreur parsing XML headers: {e}")
             return []
 
         records = root.findall(f".//{root_element}")
@@ -1621,34 +1718,91 @@ class DataImportExportService:
         data: list[dict],
         format: ExportFormat,
         file_path: str,
-        options: dict = None
+        options: dict = None,
+        allowed_base_path: str = None
     ) -> ExportResult:
-        """Exporte les données directement vers un fichier"""
+        """Exporte les données directement vers un fichier
+
+        Args:
+            data: Données à exporter
+            format: Format d'export
+            file_path: Chemin du fichier de sortie
+            options: Options d'export
+            allowed_base_path: Répertoire de base autorisé (protection path traversal)
+        """
         result = self.export_data(data, format, options)
 
-        Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+        # Protection path traversal
+        target_path = Path(file_path).resolve()
 
-        with open(file_path, "wb") as f:
+        if allowed_base_path:
+            base_path = Path(allowed_base_path).resolve()
+            try:
+                target_path.relative_to(base_path)
+            except ValueError:
+                raise ValueError(
+                    f"Chemin de fichier non autorisé: {file_path} "
+                    f"(doit être sous {allowed_base_path})"
+                )
+
+        # Vérification des caractères dangereux dans le nom de fichier
+        dangerous_chars = ['..', '\x00', '|', '>', '<', '&', ';', '$', '`']
+        file_name = target_path.name
+        for char in dangerous_chars:
+            if char in file_name:
+                raise ValueError(f"Caractère non autorisé dans le nom de fichier: {char}")
+
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(target_path, "wb") as f:
             f.write(result.file_content)
 
-        result.file_path = file_path
+        result.file_path = str(target_path)
         result.file_content = None
 
         return result
+
+    # Limites pour la création d'archives
+    MAX_ARCHIVE_FILES = 1000
+    MAX_ARCHIVE_SIZE = 500 * 1024 * 1024  # 500 Mo
+    MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 Mo par fichier
 
     def create_archive(
         self,
         exports: list[tuple[str, bytes]],
         archive_format: str = "zip"
     ) -> bytes:
-        """Crée une archive contenant plusieurs exports"""
+        """Crée une archive contenant plusieurs exports (avec protections)"""
         if archive_format != "zip":
             raise ValueError(f"Format d'archive non supporté: {archive_format}")
+
+        # Protection contre trop de fichiers
+        if len(exports) > self.MAX_ARCHIVE_FILES:
+            raise ValueError(f"Trop de fichiers ({len(exports)} > {self.MAX_ARCHIVE_FILES})")
+
+        # Calcul de la taille totale
+        total_size = sum(len(content) for _, content in exports)
+        if total_size > self.MAX_ARCHIVE_SIZE:
+            raise ValueError(
+                f"Taille totale trop importante "
+                f"({total_size // (1024*1024)} Mo > {self.MAX_ARCHIVE_SIZE // (1024*1024)} Mo)"
+            )
 
         output = io.BytesIO()
 
         with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zf:
             for filename, content in exports:
+                # Validation du nom de fichier
+                if '..' in filename or filename.startswith('/'):
+                    raise ValueError(f"Nom de fichier non autorisé: {filename}")
+
+                # Limite par fichier
+                if len(content) > self.MAX_FILE_SIZE:
+                    raise ValueError(
+                        f"Fichier trop volumineux: {filename} "
+                        f"({len(content) // (1024*1024)} Mo > {self.MAX_FILE_SIZE // (1024*1024)} Mo)"
+                    )
+
                 zf.writestr(filename, content)
 
         return output.getvalue()
