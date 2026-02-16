@@ -487,11 +487,69 @@ class FCMPushProvider(NotificationProvider):
 
 
 class WebhookProvider(NotificationProvider):
-    """Provider Webhook."""
+    """Provider Webhook avec protection SSRF."""
 
-    def __init__(self, default_headers: Optional[dict] = None, timeout: int = 30):
+    # Liste des hôtes/réseaux bloqués (protection SSRF)
+    BLOCKED_HOSTS = {
+        "localhost", "127.0.0.1", "0.0.0.0", "::1",
+        "metadata.google.internal", "169.254.169.254",
+    }
+
+    BLOCKED_NETWORKS = [
+        "10.", "172.16.", "172.17.", "172.18.", "172.19.",
+        "172.20.", "172.21.", "172.22.", "172.23.", "172.24.",
+        "172.25.", "172.26.", "172.27.", "172.28.", "172.29.",
+        "172.30.", "172.31.", "192.168.",
+    ]
+
+    def __init__(
+        self,
+        default_headers: Optional[dict] = None,
+        timeout: int = 30,
+        signing_secret: Optional[str] = None
+    ):
         self.default_headers = default_headers or {}
-        self.timeout = timeout
+        self.timeout = min(timeout, 60)  # Max 60 secondes
+        self.signing_secret = signing_secret
+
+    def _is_safe_url(self, url: str) -> tuple[bool, str]:
+        """Vérifie si l'URL est sûre (protection SSRF)."""
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+
+            # Vérifier le schéma
+            if parsed.scheme not in ("http", "https"):
+                return False, f"Schéma non autorisé: {parsed.scheme}"
+
+            # Vérifier l'hôte
+            host = parsed.hostname or ""
+            host_lower = host.lower()
+
+            if host_lower in self.BLOCKED_HOSTS:
+                return False, f"Hôte bloqué: {host}"
+
+            # Vérifier les réseaux privés
+            for network in self.BLOCKED_NETWORKS:
+                if host.startswith(network):
+                    return False, f"Réseau privé non autorisé: {host}"
+
+            return True, ""
+        except Exception as e:
+            return False, f"URL invalide: {str(e)}"
+
+    def _generate_signature(self, payload: str, timestamp: str) -> str:
+        """Génère une signature HMAC pour le webhook."""
+        if not self.signing_secret:
+            return ""
+        import hmac
+        message = f"{timestamp}.{payload}"
+        signature = hmac.new(
+            self.signing_secret.encode(),
+            message.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        return f"sha256={signature}"
 
     async def send(
         self,
@@ -504,15 +562,17 @@ class WebhookProvider(NotificationProvider):
             if not url:
                 return False, None, "No webhook URL"
 
-            headers = {
-                "Content-Type": "application/json",
-                **self.default_headers
-            }
+            # Validation SSRF
+            is_safe, error_msg = self._is_safe_url(url)
+            if not is_safe:
+                logger.warning(f"Webhook URL bloquée (SSRF): {url} - {error_msg}")
+                return False, None, f"URL non autorisée: {error_msg}"
 
-            # Générer signature pour validation
+            timestamp = datetime.utcnow().isoformat()
+
             payload = {
                 "notification_id": notification.notification_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": timestamp,
                 "event": notification.category.value,
                 "data": notification.content.data,
                 "content": {
@@ -523,12 +583,25 @@ class WebhookProvider(NotificationProvider):
 
             payload_str = json.dumps(payload, sort_keys=True)
 
+            # Signature pour validation
+            signature = self._generate_signature(payload_str, timestamp)
+
+            headers = {
+                "Content-Type": "application/json",
+                "X-Webhook-Timestamp": timestamp,
+                **self.default_headers
+            }
+
+            if signature:
+                headers["X-Webhook-Signature"] = signature
+
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     url,
                     headers=headers,
                     data=payload_str,
-                    timeout=aiohttp.ClientTimeout(total=self.timeout)
+                    timeout=aiohttp.ClientTimeout(total=self.timeout),
+                    allow_redirects=False  # Pas de redirections (sécurité)
                 ) as resp:
                     if resp.status in range(200, 300):
                         return True, f"webhook_{resp.status}", None
@@ -543,10 +616,35 @@ class WebhookProvider(NotificationProvider):
 
 
 class SlackProvider(NotificationProvider):
-    """Provider Slack via Webhooks."""
+    """Provider Slack via Webhooks avec validation URL."""
+
+    # URLs Slack autorisées (protection SSRF)
+    ALLOWED_SLACK_DOMAINS = {
+        "hooks.slack.com",
+        "hooks.slack-gov.com",
+    }
 
     def __init__(self, default_webhook_url: Optional[str] = None):
         self.default_webhook_url = default_webhook_url
+
+    def _is_valid_slack_url(self, url: str) -> tuple[bool, str]:
+        """Vérifie que l'URL est un webhook Slack valide."""
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+
+            # Doit être HTTPS
+            if parsed.scheme != "https":
+                return False, "Les webhooks Slack doivent utiliser HTTPS"
+
+            # Doit être un domaine Slack officiel
+            hostname = parsed.hostname or ""
+            if hostname not in self.ALLOWED_SLACK_DOMAINS:
+                return False, f"Domaine non autorisé: {hostname}. Domaines Slack valides: {', '.join(self.ALLOWED_SLACK_DOMAINS)}"
+
+            return True, ""
+        except Exception as e:
+            return False, f"URL invalide: {str(e)}"
 
     async def send(
         self,
@@ -559,47 +657,74 @@ class SlackProvider(NotificationProvider):
             if not url:
                 return False, None, "No Slack webhook URL"
 
+            # Validation de l'URL Slack
+            is_valid, error_msg = self._is_valid_slack_url(url)
+            if not is_valid:
+                logger.warning(f"URL Slack invalide: {url} - {error_msg}")
+                return False, None, f"URL Slack invalide: {error_msg}"
+
+            # Limiter la taille du contenu pour éviter les abus
+            body_text = notification.content.body or ""
+            if len(body_text) > 3000:
+                body_text = body_text[:2997] + "..."
+
+            title_text = notification.content.title or "Notification"
+            if len(title_text) > 150:
+                title_text = title_text[:147] + "..."
+
             payload = {
-                "text": notification.content.body,
+                "text": body_text,
                 "blocks": [
                     {
                         "type": "header",
                         "text": {
                             "type": "plain_text",
-                            "text": notification.content.title or "Notification"
+                            "text": title_text
                         }
                     },
                     {
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": notification.content.body
+                            "text": body_text
                         }
                     }
                 ]
             }
 
             if notification.content.action_url:
-                payload["blocks"].append({
-                    "type": "actions",
-                    "elements": [{
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": notification.content.action_label or "Voir"
-                        },
-                        "url": notification.content.action_url
-                    }]
-                })
+                # Validation basique de l'URL d'action
+                action_url = notification.content.action_url
+                if action_url.startswith(("http://", "https://")):
+                    action_label = notification.content.action_label or "Voir"
+                    if len(action_label) > 75:
+                        action_label = action_label[:72] + "..."
+                    payload["blocks"].append({
+                        "type": "actions",
+                        "elements": [{
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": action_label
+                            },
+                            "url": action_url
+                        }]
+                    })
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload) as resp:
+                async with session.post(
+                    url,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as resp:
                     if resp.status == 200:
                         return True, f"slack_{uuid.uuid4().hex[:8]}", None
                     else:
                         error = await resp.text()
-                        return False, None, f"Slack error: {error}"
+                        return False, None, f"Slack error: {error[:200]}"
 
+        except asyncio.TimeoutError:
+            return False, None, "Slack webhook timeout"
         except Exception as e:
             return False, None, str(e)
 

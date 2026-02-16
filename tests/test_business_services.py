@@ -1004,6 +1004,98 @@ class TestDataImportExportSecurity:
 # Tests d'Intégration
 # ============================================================================
 
+class TestNotificationSecurity:
+    """Tests de sécurité pour le service de notifications"""
+
+    def test_webhook_blocks_localhost(self):
+        """Test que les webhooks vers localhost sont bloqués"""
+        from app.services.notification_service import WebhookProvider
+
+        provider = WebhookProvider()
+
+        # Test localhost
+        is_safe, _ = provider._is_safe_url("http://localhost:8080/webhook")
+        assert is_safe is False
+
+        # Test 127.0.0.1
+        is_safe, _ = provider._is_safe_url("http://127.0.0.1/webhook")
+        assert is_safe is False
+
+    def test_webhook_blocks_private_networks(self):
+        """Test que les webhooks vers réseaux privés sont bloqués"""
+        from app.services.notification_service import WebhookProvider
+
+        provider = WebhookProvider()
+
+        # Test réseaux privés
+        is_safe, _ = provider._is_safe_url("http://10.0.0.1/webhook")
+        assert is_safe is False
+
+        is_safe, _ = provider._is_safe_url("http://192.168.1.1/webhook")
+        assert is_safe is False
+
+        is_safe, _ = provider._is_safe_url("http://172.16.0.1/webhook")
+        assert is_safe is False
+
+    def test_webhook_blocks_cloud_metadata(self):
+        """Test que les webhooks vers metadata cloud sont bloqués"""
+        from app.services.notification_service import WebhookProvider
+
+        provider = WebhookProvider()
+
+        # AWS/GCP metadata
+        is_safe, _ = provider._is_safe_url("http://169.254.169.254/latest/meta-data/")
+        assert is_safe is False
+
+        is_safe, _ = provider._is_safe_url("http://metadata.google.internal/computeMetadata/v1/")
+        assert is_safe is False
+
+    def test_webhook_allows_external_urls(self):
+        """Test que les webhooks externes sont autorisés"""
+        from app.services.notification_service import WebhookProvider
+
+        provider = WebhookProvider()
+
+        # URLs externes valides
+        is_safe, _ = provider._is_safe_url("https://api.example.com/webhook")
+        assert is_safe is True
+
+        is_safe, _ = provider._is_safe_url("https://hooks.zapier.com/webhook")
+        assert is_safe is True
+
+    def test_slack_only_allows_slack_domains(self):
+        """Test que seuls les domaines Slack officiels sont autorisés"""
+        from app.services.notification_service import SlackProvider
+
+        provider = SlackProvider()
+
+        # Domaine Slack officiel
+        is_valid, _ = provider._is_valid_slack_url("https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXX")
+        assert is_valid is True
+
+        # Domaine non-Slack
+        is_valid, _ = provider._is_valid_slack_url("https://evil.com/fake-slack")
+        assert is_valid is False
+
+        # HTTP non autorisé
+        is_valid, _ = provider._is_valid_slack_url("http://hooks.slack.com/services/T00000000/B00000000/XXXXXXXX")
+        assert is_valid is False
+
+    def test_webhook_signature_generation(self):
+        """Test que les signatures webhook sont générées correctement"""
+        from app.services.notification_service import WebhookProvider
+
+        provider = WebhookProvider(signing_secret="test_secret_key")
+
+        payload = '{"test": "data"}'
+        timestamp = "2024-01-01T00:00:00"
+
+        signature = provider._generate_signature(payload, timestamp)
+
+        assert signature.startswith("sha256=")
+        assert len(signature) > 10
+
+
 class TestBusinessServicesIntegration:
     """Tests d'intégration des services métier"""
 
