@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -41,6 +41,68 @@ class AdminDashboard(BaseModel):
     storage_used_gb: float = 0
     api_calls_today: int = 0
     errors_today: int = 0
+
+
+class AdminUserCreate(BaseModel):
+    """
+    Schéma de création d'utilisateur via l'interface admin.
+
+    Conformité:
+    - AZA-SEC-001: Validation stricte des entrées
+    - AZA-BE-003: Contrat backend obligatoire
+
+    Note: Ce schéma est moins strict que IAM.UserCreate (8 vs 12 caractères)
+    car il est utilisé par des admins pour créer des comptes initiaux.
+    """
+    email: EmailStr = Field(..., description="Adresse email unique")
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Mot de passe (8-128 caractères)"
+    )
+    roles: list[str] = Field(
+        default=["EMPLOYE"],
+        description="Liste des rôles (EMPLOYE, COMPTABLE, ADMIN, DIRIGEANT)"
+    )
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """
+        Validation basique du mot de passe.
+        Pour une validation complète, utiliser le module IAM.
+        """
+        if len(v) < 8:
+            raise ValueError("Le mot de passe doit contenir au moins 8 caractères")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins une majuscule")
+        if not any(c.islower() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins une minuscule")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Le mot de passe doit contenir au moins un chiffre")
+        return v
+
+    @field_validator('roles')
+    @classmethod
+    def validate_roles(cls, v: list[str]) -> list[str]:
+        """Validation des rôles."""
+        valid_roles = {"EMPLOYE", "COMPTABLE", "ADMIN", "DIRIGEANT"}
+        for role in v:
+            if role not in valid_roles:
+                raise ValueError(f"Rôle invalide: {role}. Valeurs autorisées: {valid_roles}")
+        return v
+
+
+class AdminUserResponse(BaseModel):
+    """Réponse après création d'utilisateur admin."""
+    id: str
+    email: str
+    name: str
+    roles: list[str]
+    is_active: bool
 
 
 # ============================================================================

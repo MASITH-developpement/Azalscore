@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from app.api.admin import router as admin_dashboard_router
+from app.api.admin import AdminUserCreate, AdminUserResponse, router as admin_dashboard_router
 from app.api.admin_migration import router as admin_migration_router
 from app.api.admin_sequences import router as admin_sequences_router
 from app.api.auth import router as auth_router
@@ -123,11 +123,22 @@ from app.modules.odoo_import import odoo_import_router
 # Import conditionnel pour compatibilite si modules pas encore migres
 # ===========================================================================
 try:
-    from app.api.v3 import router as api_v3_router
+    from app.api.v3 import router as api_v3_router, _metrics as api_v3_metrics
     API_V3_AVAILABLE = True
+    _api_v3_error = None
 except ImportError as e:
     API_V3_AVAILABLE = False
     _api_v3_error = str(e)
+    api_v3_metrics = None
+
+    # SÉCURITÉ: En production, l'API V3 est OBLIGATOIRE
+    # Fail-fast pour éviter de démarrer avec seulement 6 modules au lieu de 43
+    _settings_check = get_settings()
+    if _settings_check.is_production:
+        raise RuntimeError(
+            f"[FATAL] API V3 import failed in PRODUCTION mode. "
+            f"Cannot start without core modules. Error: {e}"
+        ) from e
 
 from app.services.scheduler import scheduler_service
 
@@ -874,13 +885,31 @@ def get_admin_user(
     }
 
 
-@api_v1.post("/admin/users")
+@api_v1.post("/admin/users", response_model=AdminUserResponse)
 def create_admin_user(
-    data: dict,
+    data: AdminUserCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Crée un nouvel utilisateur."""
+    """
+    Crée un nouvel utilisateur.
+
+    Conformité:
+    - AZA-SEC-001: Validation Pydantic stricte
+    - AZA-BE-003: Contrat backend obligatoire
+
+    Args:
+        data: Données validées par AdminUserCreate
+        current_user: Utilisateur authentifié (admin requis)
+        db: Session base de données
+
+    Returns:
+        AdminUserResponse avec les informations du nouvel utilisateur
+
+    Raises:
+        HTTPException 400: Email déjà utilisé
+        HTTPException 403: Droits insuffisants pour créer un DIRIGEANT
+    """
     from fastapi import HTTPException
 
     from app.core.security import get_password_hash
@@ -889,12 +918,12 @@ def create_admin_user(
     require_admin_role(current_user)
 
     # Vérifier si l'email existe déjà
-    existing = db.query(User).filter(User.email == data.get("email")).first()
+    existing = db.query(User).filter(User.email == data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email déjà utilisé")
 
-    # SÉCURITÉ: Validation et restriction des rôles assignables
-    role_value = data.get("roles", ["EMPLOYE"])[0] if isinstance(data.get("roles"), list) else data.get("roles", "EMPLOYE")
+    # SÉCURITÉ: Extraction du rôle depuis la liste validée
+    role_value = data.roles[0] if data.roles else "EMPLOYE"
 
     # Seul un DIRIGEANT peut créer un autre DIRIGEANT
     current_role = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
@@ -904,22 +933,10 @@ def create_admin_user(
             detail="Seul un DIRIGEANT peut créer un autre DIRIGEANT"
         )
 
-    # Validation du rôle
-    valid_roles = [r.value for r in UserRole]
-    if role_value not in valid_roles:
-        role_value = "EMPLOYE"
-
-    # Validation du mot de passe
-    password = data.get("password")
-    if not password or len(password) < 8:
-        raise HTTPException(
-            status_code=400,
-            detail="Le mot de passe doit contenir au moins 8 caractères"
-        )
-
+    # Création de l'utilisateur (données déjà validées par Pydantic)
     new_user = User(
-        email=data.get("email"),
-        password_hash=get_password_hash(password),
+        email=data.email,
+        password_hash=get_password_hash(data.password),
         tenant_id=current_user.tenant_id,
         role=UserRole(role_value),
         is_active=1,
@@ -929,13 +946,13 @@ def create_admin_user(
     db.commit()
     db.refresh(new_user)
 
-    return {
-        "id": str(new_user.id),
-        "email": new_user.email,
-        "name": new_user.email,
-        "roles": [new_user.role.value],
-        "is_active": True,
-    }
+    return AdminUserResponse(
+        id=str(new_user.id),
+        email=new_user.email,
+        name=new_user.email,
+        roles=[new_user.role.value],
+        is_active=True,
+    )
 
 
 # Monter l'API v1 sur l'app principale

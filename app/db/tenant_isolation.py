@@ -196,19 +196,42 @@ def setup_tenant_filtering(session_factory):
         # Récupérer le statement
         statement = orm_execute_state.statement
 
-        # Analyser les entités dans la requête
-        # Note: Cette logique est simplifiée - une implémentation complète
-        # nécessiterait d'inspecter toutes les clauses FROM et JOIN
+        # SÉCURITÉ P1: Vérifier que les requêtes sur modèles tenant-scoped
+        # incluent bien un filtre tenant_id (mode AUDIT, pas blocage)
         try:
-            from sqlalchemy.orm import Query
+            # Extraire les entités de la requête
+            statement = orm_execute_state.statement
 
-            # Pour les requêtes simples, on peut extraire l'entité principale
-            # et ajouter un filtre si nécessaire
-            # Cette approche est conservative et ne modifie pas les requêtes
-            # existantes qui ont déjà un filtre tenant_id
-            pass
+            # Vérifier les colonnes dans la clause WHERE
+            has_tenant_filter = False
+            if hasattr(statement, 'whereclause') and statement.whereclause is not None:
+                # Rechercher tenant_id dans la clause WHERE
+                whereclause_str = str(statement.whereclause)
+                if 'tenant_id' in whereclause_str:
+                    has_tenant_filter = True
+
+            # Extraire les entités (tables) de la requête
+            if hasattr(statement, 'froms'):
+                for from_clause in statement.froms:
+                    table_name = getattr(from_clause, 'name', None)
+                    if table_name:
+                        # Vérifier si cette table a une colonne tenant_id
+                        # et si le filtre est absent
+                        if hasattr(from_clause, 'c') and 'tenant_id' in from_clause.c:
+                            if not has_tenant_filter:
+                                # AUDIT WARNING: Requête sans filtre tenant_id
+                                # Ne bloque pas (code existant peut avoir raison)
+                                # mais log pour audit de sécurité
+                                logger.warning(
+                                    "[TENANT_AUDIT] Query on tenant-scoped table '%s' "
+                                    "without tenant_id filter. Context tenant: %s. "
+                                    "Verify this is intentional.",
+                                    table_name,
+                                    tenant_id
+                                )
         except Exception as e:
-            logger.warning("[TENANT_FILTER] Error in tenant filter: %s", e)
+            # Ne jamais bloquer sur une erreur d'audit
+            logger.debug("[TENANT_FILTER] Audit check error (non-blocking): %s", e)
 
     logger.info("[TENANT_ISOLATION] Automatic tenant filtering configured")
 
@@ -244,7 +267,7 @@ def tenant_required(func: Callable) -> Callable:
 # VALIDATION
 # =============================================================================
 
-def validate_tenant_isolation(db: Session, model_class, tenant_id: str) -> bool:
+def validate_tenant_isolation(db: Session, model_class, tenant_id: str) -> dict:
     """
     Valide que l'isolation tenant fonctionne pour un modèle.
 
@@ -257,22 +280,225 @@ def validate_tenant_isolation(db: Session, model_class, tenant_id: str) -> bool:
         tenant_id: ID du tenant pour le test
 
     Returns:
-        True si l'isolation fonctionne correctement
+        Dict avec résultats de validation:
+        {
+            'valid': bool,
+            'model': str,
+            'has_tenant_id': bool,
+            'checks': list[str],
+            'errors': list[str]
+        }
     """
+    result = {
+        'valid': True,
+        'model': model_class.__name__,
+        'has_tenant_id': False,
+        'checks': [],
+        'errors': []
+    }
+
+    # Vérifier si le modèle a tenant_id
     if not has_tenant_id(model_class):
-        logger.warning(
+        result['checks'].append("Model has no tenant_id column (OK for shared tables)")
+        logger.info(
             "[TENANT_VALIDATION] Model %s has no tenant_id column",
             model_class.__name__
         )
-        return True  # Pas de violation si pas de tenant_id
+        return result
 
+    result['has_tenant_id'] = True
+    result['checks'].append("Model has tenant_id column")
+
+    # Vérifier que la colonne tenant_id est NOT NULL
+    try:
+        mapper = inspect(model_class)
+        for col in mapper.columns:
+            if col.key == 'tenant_id':
+                if col.nullable:
+                    result['errors'].append("tenant_id column is NULLABLE (should be NOT NULL)")
+                    result['valid'] = False
+                else:
+                    result['checks'].append("tenant_id column is NOT NULL")
+
+                if not col.index:
+                    result['errors'].append("tenant_id column has no index (performance issue)")
+                else:
+                    result['checks'].append("tenant_id column is indexed")
+                break
+    except Exception as e:
+        result['errors'].append(f"Could not inspect model: {e}")
+        result['valid'] = False
+
+    # Vérifier l'isolation avec TenantContext
     with TenantContext(db, tenant_id):
-        # Vérifier que les requêtes sont filtrées
-        # Cette validation est basique - une version complète
-        # utiliserait les logs SQL pour confirmer
-        pass
+        try:
+            # Test 1: Vérifier que le contexte est actif
+            current = get_current_tenant_id()
+            if current != tenant_id:
+                result['errors'].append(f"TenantContext not set correctly: expected {tenant_id}, got {current}")
+                result['valid'] = False
+            else:
+                result['checks'].append("TenantContext correctly sets tenant_id")
 
-    return True
+            # Test 2: Vérifier que RLS PostgreSQL est configuré
+            from sqlalchemy import text
+            rls_result = db.execute(
+                text("SELECT current_setting('app.current_tenant_id', true)")
+            ).scalar()
+            if rls_result == tenant_id:
+                result['checks'].append("PostgreSQL RLS context is set")
+            else:
+                result['errors'].append(f"PostgreSQL RLS context mismatch: expected {tenant_id}, got {rls_result}")
+                # Note: Ceci n'est pas une erreur fatale si RLS n'est pas activé
+                result['checks'].append("PostgreSQL RLS context may not be enabled (defense-in-depth layer)")
+
+        except Exception as e:
+            result['errors'].append(f"Isolation test failed: {e}")
+            result['valid'] = False
+
+    # Vérifier que le contexte est bien nettoyé après
+    after_context = get_current_tenant_id()
+    if after_context is not None:
+        result['errors'].append(f"TenantContext not cleaned up: {after_context}")
+        result['valid'] = False
+    else:
+        result['checks'].append("TenantContext properly cleaned up after exit")
+
+    logger.info(
+        "[TENANT_VALIDATION] Model %s: valid=%s, checks=%d, errors=%d",
+        model_class.__name__,
+        result['valid'],
+        len(result['checks']),
+        len(result['errors'])
+    )
+
+    return result
+
+
+# =============================================================================
+# AUDIT FUNCTIONS
+# =============================================================================
+
+def audit_all_models(db: Session, tenant_id: str, models: list) -> dict:
+    """
+    Audite l'isolation tenant pour une liste de modèles.
+
+    SÉCURITÉ P1: Fonction d'audit pour vérifier l'isolation sur tous les modèles.
+    À exécuter périodiquement ou dans les tests CI/CD.
+
+    Args:
+        db: Session SQLAlchemy
+        tenant_id: ID du tenant pour le test
+        models: Liste des classes de modèles à auditer
+
+    Returns:
+        Dict avec résultats globaux:
+        {
+            'total_models': int,
+            'tenant_scoped': int,
+            'valid': int,
+            'invalid': int,
+            'results': list[dict],
+            'summary': str
+        }
+    """
+    results = []
+    valid_count = 0
+    invalid_count = 0
+    tenant_scoped_count = 0
+
+    for model_class in models:
+        result = validate_tenant_isolation(db, model_class, tenant_id)
+        results.append(result)
+
+        if result['has_tenant_id']:
+            tenant_scoped_count += 1
+            if result['valid']:
+                valid_count += 1
+            else:
+                invalid_count += 1
+
+    audit_result = {
+        'total_models': len(models),
+        'tenant_scoped': tenant_scoped_count,
+        'valid': valid_count,
+        'invalid': invalid_count,
+        'results': results,
+        'summary': f"Audited {len(models)} models: {tenant_scoped_count} tenant-scoped, "
+                   f"{valid_count} valid, {invalid_count} invalid"
+    }
+
+    if invalid_count > 0:
+        logger.error(
+            "[TENANT_AUDIT] ALERT: %d models failed tenant isolation validation",
+            invalid_count
+        )
+    else:
+        logger.info("[TENANT_AUDIT] All %d tenant-scoped models passed validation", tenant_scoped_count)
+
+    return audit_result
+
+
+def require_tenant_context(func: Callable) -> Callable:
+    """
+    Décorateur qui GARANTIT qu'un tenant_id est défini et valide.
+
+    Plus strict que tenant_required: vérifie aussi que le tenant_id
+    n'est pas une chaîne vide.
+
+    SÉCURITÉ P1: À utiliser sur les fonctions critiques.
+
+    Usage:
+        @require_tenant_context
+        def process_payment(db: Session):
+            # Garanti d'avoir un tenant_id valide
+            ...
+
+    Raises:
+        RuntimeError: Si aucun tenant n'est défini ou si tenant_id invalide
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        tenant_id = get_current_tenant_id()
+        if tenant_id is None:
+            raise RuntimeError(
+                f"[TENANT_REQUIRED] Function {func.__name__} requires tenant context. "
+                "Use TenantContext or set_current_tenant_id() before calling."
+            )
+        if not tenant_id or not tenant_id.strip():
+            raise RuntimeError(
+                f"[TENANT_REQUIRED] Function {func.__name__} requires valid tenant_id. "
+                f"Got empty or whitespace-only value: '{tenant_id}'"
+            )
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def assert_tenant_isolation(db: Session, model_class, tenant_id: str) -> None:
+    """
+    Assertion pour tests: lève une exception si l'isolation échoue.
+
+    SÉCURITÉ P1: À utiliser dans les tests unitaires et d'intégration.
+
+    Args:
+        db: Session SQLAlchemy
+        model_class: Classe du modèle à tester
+        tenant_id: ID du tenant pour le test
+
+    Raises:
+        AssertionError: Si l'isolation tenant échoue
+
+    Usage:
+        def test_invoice_isolation():
+            assert_tenant_isolation(db, Invoice, "tenant-123")
+    """
+    result = validate_tenant_isolation(db, model_class, tenant_id)
+
+    if not result['valid']:
+        errors = '\n'.join(f"  - {e}" for e in result['errors'])
+        raise AssertionError(
+            f"Tenant isolation validation failed for {model_class.__name__}:\n{errors}"
+        )
 
 
 # =============================================================================
@@ -280,12 +506,19 @@ def validate_tenant_isolation(db: Session, model_class, tenant_id: str) -> bool:
 # =============================================================================
 
 __all__ = [
+    # Context management
     'TenantContext',
     'TenantMixin',
     'get_current_tenant_id',
     'set_current_tenant_id',
+    # Query utilities
     'has_tenant_id',
     'setup_tenant_filtering',
+    # Decorators
     'tenant_required',
+    'require_tenant_context',
+    # Validation & Audit
     'validate_tenant_isolation',
+    'audit_all_models',
+    'assert_tenant_isolation',
 ]
