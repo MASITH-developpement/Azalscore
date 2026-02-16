@@ -24,6 +24,7 @@ import io
 import json
 import logging
 import os
+import re
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -748,10 +749,57 @@ class DataSource(ABC):
 
 
 class SQLDataSource(DataSource):
-    """Source de données SQL."""
+    """Source de données SQL avec protection injection SQL."""
 
-    def __init__(self, db_session_factory):
+    # Pattern pour valider les identifiants SQL (noms de colonnes/tables)
+    IDENTIFIER_PATTERN = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+
+    # Opérateurs autorisés
+    ALLOWED_OPERATORS = {"eq", "ne", "gt", "gte", "lt", "lte", "in", "between", "like"}
+
+    # Mots-clés SQL dangereux interdits dans les requêtes
+    DANGEROUS_KEYWORDS = {
+        "DROP", "DELETE", "TRUNCATE", "INSERT", "UPDATE", "ALTER",
+        "CREATE", "GRANT", "REVOKE", "EXECUTE", "EXEC", "XP_",
+        "SP_", "SHUTDOWN", "BACKUP", "RESTORE", "--", ";",
+        "UNION", "INTO OUTFILE", "LOAD_FILE"
+    }
+
+    # Tables système interdites
+    FORBIDDEN_TABLES = {
+        "pg_catalog", "information_schema", "sys", "mysql",
+        "sqlite_master", "users", "user_credentials", "api_keys"
+    }
+
+    def __init__(self, db_session_factory, allowed_tables: Optional[set] = None):
         self._db_session_factory = db_session_factory
+        self._allowed_tables = allowed_tables or set()
+
+    def _validate_identifier(self, identifier: str) -> bool:
+        """Valide qu'un identifiant SQL est sûr."""
+        if not identifier or len(identifier) > 128:
+            return False
+        return bool(self.IDENTIFIER_PATTERN.match(identifier))
+
+    def _validate_query(self, query: str) -> tuple[bool, str]:
+        """Valide qu'une requête SQL ne contient pas d'éléments dangereux."""
+        query_upper = query.upper()
+
+        # Vérifier les mots-clés dangereux
+        for keyword in self.DANGEROUS_KEYWORDS:
+            if keyword.upper() in query_upper:
+                return False, f"Mot-clé SQL interdit: {keyword}"
+
+        # Vérifier les tables système
+        for table in self.FORBIDDEN_TABLES:
+            if table.upper() in query_upper:
+                return False, f"Accès à la table système interdit: {table}"
+
+        # Vérifier qu'il n'y a qu'un seul statement
+        if query.count(";") > 0:
+            return False, "Plusieurs statements SQL non autorisés"
+
+        return True, ""
 
     async def fetch(
         self,
@@ -760,40 +808,72 @@ class SQLDataSource(DataSource):
         filters: list[ReportFilter],
         tenant_id: str
     ) -> list[dict]:
-        """Exécute une requête SQL."""
+        """Exécute une requête SQL de manière sécurisée."""
+        import re as regex_module
         from sqlalchemy import text
 
+        # Valider la requête de base
+        is_valid, error_msg = self._validate_query(query)
+        if not is_valid:
+            logger.warning(f"Requête SQL rejetée: {error_msg}")
+            raise ValueError(f"Requête SQL non autorisée: {error_msg}")
+
         # Construire la requête avec filtres
-        where_clauses = [f"tenant_id = :tenant_id"]
-        params = {"tenant_id": tenant_id, **parameters}
+        where_clauses = ["tenant_id = :tenant_id"]
+        params = {"tenant_id": tenant_id}
+
+        # Ajouter les paramètres fournis après validation
+        for key, value in parameters.items():
+            if self._validate_identifier(key):
+                params[key] = value
 
         for i, f in enumerate(filters):
+            # Valider l'opérateur
+            if f.operator not in self.ALLOWED_OPERATORS:
+                logger.warning(f"Opérateur non autorisé: {f.operator}")
+                continue
+
+            # Valider le nom de champ (CRITIQUE pour éviter injection SQL)
+            if not self._validate_identifier(f.field):
+                logger.warning(f"Nom de champ invalide: {f.field}")
+                continue
+
             param_name = f"filter_{i}"
+            # Utiliser des noms de colonnes validés
+            safe_field = f.field
+
             if f.operator == "eq":
-                where_clauses.append(f"{f.field} = :{param_name}")
+                where_clauses.append(f"{safe_field} = :{param_name}")
+                params[param_name] = f.value
+            elif f.operator == "ne":
+                where_clauses.append(f"{safe_field} != :{param_name}")
                 params[param_name] = f.value
             elif f.operator == "like":
-                where_clauses.append(f"{f.field} LIKE :{param_name}")
-                params[param_name] = f"%{f.value}%"
+                where_clauses.append(f"{safe_field} LIKE :{param_name}")
+                # Échapper les caractères spéciaux LIKE
+                safe_value = str(f.value).replace("%", "\\%").replace("_", "\\_")
+                params[param_name] = f"%{safe_value}%"
             elif f.operator == "gt":
-                where_clauses.append(f"{f.field} > :{param_name}")
+                where_clauses.append(f"{safe_field} > :{param_name}")
                 params[param_name] = f.value
             elif f.operator == "gte":
-                where_clauses.append(f"{f.field} >= :{param_name}")
+                where_clauses.append(f"{safe_field} >= :{param_name}")
                 params[param_name] = f.value
             elif f.operator == "lt":
-                where_clauses.append(f"{f.field} < :{param_name}")
+                where_clauses.append(f"{safe_field} < :{param_name}")
                 params[param_name] = f.value
             elif f.operator == "lte":
-                where_clauses.append(f"{f.field} <= :{param_name}")
+                where_clauses.append(f"{safe_field} <= :{param_name}")
                 params[param_name] = f.value
             elif f.operator == "in":
-                where_clauses.append(f"{f.field} IN :{param_name}")
-                params[param_name] = tuple(f.value)
+                if isinstance(f.value, (list, tuple)) and len(f.value) <= 100:
+                    where_clauses.append(f"{safe_field} IN :{param_name}")
+                    params[param_name] = tuple(f.value)
             elif f.operator == "between":
-                where_clauses.append(f"{f.field} BETWEEN :{param_name}_1 AND :{param_name}_2")
-                params[f"{param_name}_1"] = f.value[0]
-                params[f"{param_name}_2"] = f.value[1]
+                if isinstance(f.value, (list, tuple)) and len(f.value) == 2:
+                    where_clauses.append(f"{safe_field} BETWEEN :{param_name}_1 AND :{param_name}_2")
+                    params[f"{param_name}_1"] = f.value[0]
+                    params[f"{param_name}_2"] = f.value[1]
 
         # Ajouter WHERE si nécessaire
         if "{WHERE}" in query:
