@@ -1271,3 +1271,308 @@ app/modules/odoo_import/
 **Activation:** Menu Administration > Acces Modules > Import de donnees
 
 **Note:** Ce module servira de base pour les futurs imports (Axonaut, Pennylane, Sage, Chorus, etc.)
+
+---
+
+## TODOLIST COMPLÈTE AZALSCORE — 123 TÂCHES
+
+**Mise à jour:** 2026-02-15
+**Référence:** `/home/ubuntu/azalscore/PROMPT_PHASE_CRITIQUE.md`
+
+> **ALERTE:** Audit du 2026-02-15 révèle que 98.5% des endpoints backend (1090/1107) ne sont PAS utilisés par le frontend.
+> Phase 0.5 ajoutée pour corriger cette situation.
+
+---
+
+### PHASE 0 — FONDATIONS TECHNIQUES (15 tâches) — BLOQUANT
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #117 | Pipeline CI/CD Complet | ⬜ |
+| #110 | Processus de Code Review | ⬜ |
+| #109 | Analyse Statique de Code (SonarQube) | ⬜ |
+| #113 | Environnement Staging Complet | ⬜ |
+| #96 | Analyse Vulnérabilités Dépendances (SCA) | ⬜ |
+| #97 | Audit Secrets et Credentials | ⬜ |
+| #27 | Négocier et signer contrats partenaires | ⬜ |
+| #28 | Validation juridique Finance Suite | ⬜ |
+| #2 | Créer les modèles SQLAlchemy Finance Suite | ⬜ |
+| #3 | Créer les schemas Pydantic Finance Suite | ⬜ |
+| #11 | Créer la migration Alembic Finance Suite | ⬜ |
+| #9 | Créer le router API Finance Suite | ⬜ |
+| #10 | Créer le service orchestrateur Finance Suite | ⬜ |
+| #21 | Implémenter la sécurité Finance Suite | ⬜ |
+| #93 | Implémenter Validations et Workflows Approbation | ⬜ |
+
+**Effort:** 5-6 semaines
+
+---
+
+### PHASE 0.5 — ACTIVATION FRONTEND BACKEND (7 tâches) — CRITIQUE [NOUVEAU]
+
+> **Contexte:** 1090 endpoints backend existent mais ne sont PAS appelés par le frontend.
+
+| # | Tâche | Endpoints | Statut |
+|---|-------|-----------|--------|
+| #118 | Créer frontend Country Packs France (FEC, DSN, TVA, RGPD) | 67 | ⬜ |
+| #119 | Créer frontend eCommerce complet (Panier, Checkout, Coupons) | 60 | ⬜ |
+| #120 | Créer frontend Helpdesk complet (Tickets, SLA, KB) | 60 | ⬜ |
+| #121 | Créer frontend Field Service (GPS, Tournées, Check-in) | 53 | ⬜ |
+| #122 | Créer frontend Compliance (Audits, Politiques, Incidents) | 52 | ⬜ |
+| #123 | Créer frontend BI complet (Dashboards, Analytics, KPIs) | 49 | ⬜ |
+| #124 | Consolider les routers backend (v1 → v2, supprimer doublons) | - | ⬜ |
+
+**Impact:** Active 341 endpoints backend actuellement inutilisés.
+**Effort:** 4-6 semaines
+
+---
+
+### PHASE 1 — CONFORMITÉ LÉGALE (9 tâches) — CRITIQUE
+
+| # | Tâche | Priorité | Statut |
+|---|-------|----------|--------|
+| #49 | Facturation Électronique PDP | CRITIQUE | ⬜ |
+| #52 | FEC conforme formats 2025 | CRITIQUE | ⬜ |
+| #104 | Audit Conformité RGPD | CRITIQUE | ⬜ |
+| #106 | Vérification Conformité NF525 (Caisse) | CRITIQUE | ⬜ |
+| #50 | EDI-TVA automatique | HAUTE | ⬜ |
+| #51 | Liasses Fiscales automatiques | HAUTE | ⬜ |
+| #53 | Plan de Paie conforme France | HAUTE | ⬜ |
+| #37 | Conformité Fiscale Avancée France | HAUTE | ⬜ |
+| #108 | Vérification Conformité Normes AZALSCORE | HAUTE | ⬜ |
+
+**Deadline:** Septembre 2026
+**Effort:** 8-10 semaines
+
+---
+
+### PHASE 2 — FINANCE SUITE CORE (27 tâches) — HAUTE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #1 | Créer le module Finance Suite AZALSCORE | ⬜ |
+| #4 | Implémenter le provider Swan (Banking) | ⬜ |
+| #5 | Implémenter le provider NMI (Paiements) | ⬜ |
+| #6 | Implémenter le provider Defacto (Affacturage) | ⬜ |
+| #7 | Implémenter le provider Solaris (Crédit) | ⬜ |
+| #8 | Implémenter les webhooks Finance Suite | ⬜ |
+| #12 | Créer le frontend Finance Dashboard | ⬜ |
+| #13 | Créer le frontend Banking (Swan) | ⬜ |
+| #14 | Créer le frontend Payments (NMI) | ⬜ |
+| #15 | Créer le frontend Tap to Pay | ⬜ |
+| #16 | Créer le frontend Affacturage (Defacto) | ⬜ |
+| #17 | Créer le frontend Crédit (Solaris) | ⬜ |
+| #18 | Créer le frontend Settings Finance | ⬜ |
+| #65 | Implémenter Cartes Virtuelles | ⬜ |
+| #30 | Rapprochement Bancaire Automatique | ⬜ |
+| #66 | Catégorisation Auto Opérations Bancaires | ⬜ |
+| #67 | Prévisionnel Trésorerie avec Scénarios | ⬜ |
+| #22 | Intégrer Finance Suite avec Comptabilité | ⬜ |
+| #23 | Intégrer Finance Suite avec Facturation | ⬜ |
+| #24 | Intégrer Finance Suite avec POS | ⬜ |
+| #25 | Intégrer Finance Suite avec Trésorerie | ⬜ |
+| #19 | Tests unitaires Finance Suite | ⬜ |
+| #20 | Tests d'intégration Finance Suite | ⬜ |
+| #105 | Audit Conformité PCI DSS | ⬜ |
+| #98 | Audit Authentification et Autorisation | ⬜ |
+| #94 | Audit Sécurité OWASP Top 10 | ⬜ |
+
+**Effort:** 12-14 semaines
+
+---
+
+### PHASE 2.5 — TESTS & QUALITÉ (3 tâches) — HAUTE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #99 | Tests Unitaires - Couverture 80% | ⬜ |
+| #100 | Tests d'Intégration API | ⬜ |
+| #103 | Tests de Régression Automatisés | ⬜ |
+
+**Effort:** 2-3 semaines
+
+---
+
+### PHASE 3 — MODULES MÉTIER (16 tâches) — HAUTE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #29 | OCR Factures Fournisseurs | ⬜ |
+| #31 | Collaboration Comptable Temps Réel | ⬜ |
+| #55 | Abonnements et Facturation Récurrente | ⬜ |
+| #47 | Relances Clients Automatiques | ⬜ |
+| #75 | Bons de Livraison | ⬜ |
+| #78 | Gestion Lots et Numéros de Série | ⬜ |
+| #76 | Contrôle Fabrication/Production | ⬜ |
+| #77 | PLM (Product Lifecycle Management) | ⬜ |
+| #38 | Suivi Temps et Feuilles d'Heures | ⬜ |
+| #39 | Notes de Frais | ⬜ |
+| #79 | Indemnités Kilométriques | ⬜ |
+| #80 | Module Recrutement | ⬜ |
+| #81 | Évaluations Employés | ⬜ |
+| #82 | Gestion Parc Automobile | ⬜ |
+| #36 | Multi-Sociétés et Consolidation | ⬜ |
+
+**Effort:** 8-10 semaines
+
+---
+
+### PHASE 4 — INTERVENTIONS & MAINTENANCE (9 tâches) — MOYENNE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #32 | Gestion Interventions Terrain avec GPS | ⬜ |
+| #33 | Planification Visuelle Techniciens | ⬜ |
+| #61 | Optimisation Tournées et Routes | ⬜ |
+| #64 | Photos dans Interventions | ⬜ |
+| #34 | Maintenance Préventive GMAO | ⬜ |
+| #35 | Gestion Équipements et Parc Matériel | ⬜ |
+| #62 | Capteurs IoT intégrés | ⬜ |
+| #63 | Maintenance Prédictive | ⬜ |
+| #92 | Réalité Augmentée Maintenance | ⬜ |
+
+**Effort:** 6-8 semaines
+
+---
+
+### PHASE 5 — CROISSANCE & E-COMMERCE (10 tâches) — MOYENNE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #54 | eCommerce intégré | ⬜ |
+| #56 | Site Web Builder | ⬜ |
+| #59 | POS Restaurant | ⬜ |
+| #83 | Module Location/Leasing | ⬜ |
+| #57 | Campagnes E-mail Marketing | ⬜ |
+| #60 | Campagnes SMS Marketing | ⬜ |
+| #58 | Marketing Automation | ⬜ |
+| #68 | Marketing Social | ⬜ |
+| #45 | Portail Client Self-Service | ⬜ |
+| #73 | Segmentation Clients Intelligente | ⬜ |
+
+**Effort:** 8-10 semaines
+
+---
+
+### PHASE 6 — COMMUNICATION & CRM (7 tâches) — NORMALE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #69 | WhatsApp Business | ⬜ |
+| #70 | Live Chat Site Web | ⬜ |
+| #84 | Discussion/Chat Interne | ⬜ |
+| #71 | Extension LinkedIn | ⬜ |
+| #72 | Extensions Gmail et Outlook | ⬜ |
+| #74 | VOIP intégrée | ⬜ |
+| #48 | Import Données Concurrents | ⬜ |
+
+**Effort:** 4-6 semaines
+
+---
+
+### PHASE 7 — MOBILE & APPS (2 tâches) — NORMALE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #46 | App Mobile Native Complète (iOS/Android) | ⬜ |
+| #26 | Créer l'app mobile Tap to Pay | ⬜ |
+
+**Effort:** 6-8 semaines
+
+---
+
+### PHASE 8 — AVANCÉ & PERSONNALISATION (6 tâches) — BASSE
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #42 | Personnalisation No-Code Formulaires | ⬜ |
+| #43 | Automatisations et Workflows | ⬜ |
+| #44 | Signature Électronique Intégrée | ⬜ |
+| #40 | Tableau de Bord Dirigeant Intelligent | ⬜ |
+| #111 | Documentation Technique Complète | ⬜ |
+| #112 | Gestion de la Dette Technique | ⬜ |
+
+**Effort:** 6 semaines
+
+---
+
+### PHASE 9 — OPTIONNEL (7 tâches) — OPTIONNEL
+
+| # | Tâche | Statut |
+|---|-------|--------|
+| #85 | Base de Connaissances/Wiki | ⬜ |
+| #86 | Rendez-vous en Ligne | ⬜ |
+| #87 | Sondages et Enquêtes | ⬜ |
+| #88 | Gestion Événements | ⬜ |
+| #91 | Module eLearning | ⬜ |
+| #89 | Module Blog | ⬜ |
+| #90 | Module Forum | ⬜ |
+
+**Effort:** 6 semaines (si ressources disponibles)
+
+---
+
+### PHASE 10 — PRÉ-PRODUCTION (7 tâches) — CRITIQUE
+
+| # | Tâche | Priorité | Statut |
+|---|-------|----------|--------|
+| #95 | Tests de Pénétration (Pentest) | CRITIQUE | ⬜ |
+| #115 | Monitoring et Alerting Complet | CRITIQUE | ⬜ |
+| #114 | Plan de Rollback et Procédures | CRITIQUE | ⬜ |
+| #101 | Tests End-to-End (E2E) | HAUTE | ⬜ |
+| #102 | Tests de Charge et Performance | HAUTE | ⬜ |
+| #116 | Tests de Disaster Recovery | HAUTE | ⬜ |
+| #107 | Audit Accessibilité RGAA/WCAG | MOYENNE | ⬜ |
+
+**Effort:** 4-6 semaines
+
+---
+
+### RÉCAPITULATIF
+
+| Phase | Tâches | Effort | Priorité |
+|-------|--------|--------|----------|
+| 0 | 15 | 5-6 sem | BLOQUANT |
+| 0.5 | 7 | 4-6 sem | CRITIQUE |
+| 1 | 9 | 8-10 sem | CRITIQUE |
+| 2 | 27 | 12-14 sem | HAUTE |
+| 2.5 | 3 | 2-3 sem | HAUTE |
+| 3 | 16 | 8-10 sem | HAUTE |
+| 4 | 9 | 6-8 sem | MOYENNE |
+| 5 | 10 | 8-10 sem | MOYENNE |
+| 6 | 7 | 4-6 sem | NORMALE |
+| 7 | 2 | 6-8 sem | NORMALE |
+| 8 | 6 | 6 sem | BASSE |
+| 9 | 7 | 6 sem | OPTIONNEL |
+| 10 | 7 | 4-6 sem | CRITIQUE |
+| **TOTAL** | **123** | **~80-100 sem** | |
+
+---
+
+### TIMELINE
+
+```
+2026
+├── Février-Mars     │ PHASE 0   │ Fondations
+├── Mars-Avril       │ PHASE 0.5 │ Activation Frontend [NOUVEAU]
+├── Mai-Juillet      │ PHASE 1   │ Conformité Légale ← DEADLINE 09/2026
+├── Août-Octobre     │ PHASE 2   │ Finance Suite
+├── Novembre         │ PHASE 2.5 │ Tests & Qualité
+├── Nov-Décembre     │ PHASE 10  │ Pré-Production V1
+└── Décembre         │ 🚀 V1     │ MISE EN PRODUCTION V1
+
+2027
+├── Janvier-Mars     │ PHASE 3   │ Modules Métier
+├── Février-Avril    │ PHASE 4   │ Interventions (parallèle)
+├── Avril-Juin       │ PHASE 5   │ E-Commerce
+├── Juin-Juillet     │ PHASE 10  │ Pré-Production V2
+├── Juillet          │ 🚀 V2     │ MISE EN PRODUCTION V2
+├── Août-Septembre   │ PHASE 6   │ Communication
+├── Octobre-Novembre │ PHASE 7   │ Mobile
+├── Décembre         │ PHASE 8   │ Avancé
+└── Janvier 2028     │ PHASE 9   │ Optionnel
+```
+
+---
+
+**Document de référence complet:** `/home/ubuntu/azalscore/PROMPT_PHASE_CRITIQUE.md`

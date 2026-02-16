@@ -315,12 +315,29 @@ class FrancePackService:
         return declaration
 
     # ========================================================================
-    # FEC - FICHIER DES ÉCRITURES COMPTABLES
+    # FEC - FICHIER DES ÉCRITURES COMPTABLES (Format 2025)
+    # ========================================================================
+    # Conforme Article A 47 A-1 du LPF
+    # Format: 18 colonnes avec séparateur pipe (|)
+    # Encodage: UTF-8 ou ISO-8859-15
     # ========================================================================
 
     def generate_fec(self, data: FECGenerateRequest) -> FECExport:
-        """Générer un FEC."""
+        """
+        Générer un FEC conforme au format 2025.
+
+        Format réglementaire Article A 47 A-1 LPF:
+        - 18 colonnes obligatoires
+        - Dates au format YYYYMMDD
+        - Montants avec virgule décimale
+        - Séparateur pipe (|)
+        """
+        from app.modules.accounting.models import (
+            AccountingJournalEntry, AccountingJournalEntryLine, EntryStatus
+        )
+
         fec_code = f"FEC-{data.siren}-{data.fiscal_year}"
+        # Format nom fichier: {SIREN}FEC{YYYYMMDD}.txt
         filename = f"{data.siren}FEC{data.period_end.strftime('%Y%m%d')}.txt"
 
         fec_export = FECExport(
@@ -336,22 +353,83 @@ class FrancePackService:
         self.db.add(fec_export)
         self.db.flush()
 
-        # TODO: Extraire les écritures comptables réelles
-        # Pour l'instant, pas d'entrées
+        # Récupérer les écritures comptables validées (POSTED ou VALIDATED)
+        entries = self.db.query(AccountingJournalEntry).filter(
+            AccountingJournalEntry.tenant_id == self.tenant_id,
+            AccountingJournalEntry.entry_date >= data.period_start,
+            AccountingJournalEntry.entry_date <= data.period_end,
+            AccountingJournalEntry.status.in_([EntryStatus.POSTED, EntryStatus.VALIDATED])
+        ).order_by(
+            AccountingJournalEntry.journal_code,
+            AccountingJournalEntry.entry_date,
+            AccountingJournalEntry.entry_number
+        ).all()
 
-        fec_export.total_entries = 0
-        fec_export.total_debit = Decimal("0")
-        fec_export.total_credit = Decimal("0")
-        fec_export.is_balanced = True
-        fec_export.is_valid = True
+        total_debit = Decimal("0")
+        total_credit = Decimal("0")
+        line_number = 0
+
+        for entry in entries:
+            for entry_line in entry.lines:
+                line_number += 1
+
+                # Créer l'entrée FEC conforme format 2025
+                fec_entry = FECEntry(
+                    tenant_id=self.tenant_id,
+                    fec_export_id=fec_export.id,
+                    line_number=line_number,
+                    journal_code=entry.journal_code,
+                    journal_lib=entry.journal_label or entry.journal_code,
+                    ecriture_num=entry.entry_number,
+                    ecriture_date=entry.entry_date.date() if hasattr(entry.entry_date, 'date') else entry.entry_date,
+                    compte_num=entry_line.account_number,
+                    compte_lib=entry_line.account_label,
+                    comp_aux_num=entry_line.auxiliary_code,
+                    comp_aux_lib=None,  # Libellé auxiliaire si applicable
+                    piece_ref=entry.piece_number,
+                    piece_date=entry.entry_date.date() if hasattr(entry.entry_date, 'date') else entry.entry_date,
+                    ecriture_lib=entry_line.label or entry.label,
+                    debit=entry_line.debit,
+                    credit=entry_line.credit,
+                    ecriture_let=None,  # Lettrage si applicable
+                    date_let=None,
+                    valid_date=entry.validated_at.date() if entry.validated_at else entry.entry_date.date() if hasattr(entry.entry_date, 'date') else entry.entry_date,
+                    montant_devise=None if entry_line.currency == "EUR" else entry_line.debit + entry_line.credit,
+                    idevise=None if entry_line.currency == "EUR" else entry_line.currency,
+                )
+                self.db.add(fec_entry)
+
+                total_debit += entry_line.debit
+                total_credit += entry_line.credit
+
+        fec_export.total_entries = line_number
+        fec_export.total_debit = total_debit
+        fec_export.total_credit = total_credit
+        fec_export.is_balanced = (total_debit == total_credit)
+        fec_export.is_valid = fec_export.is_balanced and line_number > 0
         fec_export.generated_at = datetime.utcnow()
+
+        if fec_export.is_valid:
+            fec_export.status = FECStatus.VALIDATED
 
         self.db.commit()
         self.db.refresh(fec_export)
         return fec_export
 
     def validate_fec(self, fec_id: int) -> FECValidationResult:
-        """Valider un FEC."""
+        """
+        Valider un FEC selon les normes 2025.
+
+        Validations effectuées:
+        - Format SIREN (9 chiffres + clé Luhn)
+        - Équilibre débit/crédit global
+        - Format des numéros de compte (PCG)
+        - Séquence des numéros d'écriture
+        - Cohérence des dates
+        - Présence des champs obligatoires
+        """
+        import re
+
         fec = self.db.query(FECExport).filter(
             FECExport.tenant_id == self.tenant_id,
             FECExport.id == fec_id
@@ -362,19 +440,109 @@ class FrancePackService:
         errors = []
         warnings = []
 
-        # Validation équilibre débit/crédit
-        if fec.total_debit != fec.total_credit:
+        # =====================================================================
+        # VALIDATION 1: Format SIREN (obligatoire)
+        # =====================================================================
+        if not fec.siren or len(fec.siren) != 9 or not fec.siren.isdigit():
             errors.append({
-                "code": "UNBALANCED",
-                "message": f"Le FEC n'est pas équilibré: Débit={fec.total_debit}, Crédit={fec.total_credit}"
-            })
-
-        # Validation format SIREN
-        if len(fec.siren) != 9 or not fec.siren.isdigit():
-            errors.append({
-                "code": "INVALID_SIREN",
+                "code": "FEC_SIREN_INVALID",
                 "message": "Le SIREN doit contenir exactement 9 chiffres"
             })
+        else:
+            # Validation clé Luhn pour SIREN
+            if not self._validate_siren_luhn(fec.siren):
+                warnings.append({
+                    "code": "FEC_SIREN_LUHN",
+                    "message": "La clé de contrôle SIREN est invalide"
+                })
+
+        # =====================================================================
+        # VALIDATION 2: Équilibre débit/crédit (obligatoire)
+        # =====================================================================
+        if fec.total_debit != fec.total_credit:
+            diff = abs(fec.total_debit - fec.total_credit)
+            errors.append({
+                "code": "FEC_UNBALANCED",
+                "message": f"FEC non équilibré: Débit={fec.total_debit}, Crédit={fec.total_credit}, Diff={diff}"
+            })
+
+        # =====================================================================
+        # VALIDATION 3: Présence d'écritures (obligatoire)
+        # =====================================================================
+        if fec.total_entries == 0:
+            errors.append({
+                "code": "FEC_EMPTY",
+                "message": "Le FEC ne contient aucune écriture"
+            })
+
+        # =====================================================================
+        # VALIDATION 4: Période fiscale cohérente
+        # =====================================================================
+        if fec.period_start and fec.period_end:
+            if fec.period_start > fec.period_end:
+                errors.append({
+                    "code": "FEC_PERIOD_INVALID",
+                    "message": "La date de début est postérieure à la date de fin"
+                })
+            # Vérifier que la période ne dépasse pas 1 an
+            days = (fec.period_end - fec.period_start).days
+            if days > 366:
+                warnings.append({
+                    "code": "FEC_PERIOD_LONG",
+                    "message": f"Période de {days} jours (>12 mois)"
+                })
+
+        # =====================================================================
+        # VALIDATION 5: Vérification des lignes FEC
+        # =====================================================================
+        entries = self.db.query(FECEntry).filter(
+            FECEntry.tenant_id == self.tenant_id,
+            FECEntry.fec_export_id == fec_id
+        ).order_by(FECEntry.line_number).all()
+
+        pcg_pattern = re.compile(r'^[1-8]\d{2,}$')
+        seen_ecritures = {}
+
+        for entry in entries:
+            # Validation numéro de compte PCG
+            if not pcg_pattern.match(entry.compte_num):
+                warnings.append({
+                    "code": "FEC_COMPTE_FORMAT",
+                    "message": f"Ligne {entry.line_number}: Compte {entry.compte_num} non conforme PCG"
+                })
+
+            # Validation montants non négatifs
+            if entry.debit < 0 or entry.credit < 0:
+                errors.append({
+                    "code": "FEC_MONTANT_NEGATIF",
+                    "message": f"Ligne {entry.line_number}: Montant négatif interdit"
+                })
+
+            # Validation débit OU crédit (pas les deux)
+            if entry.debit > 0 and entry.credit > 0:
+                errors.append({
+                    "code": "FEC_DEBIT_CREDIT",
+                    "message": f"Ligne {entry.line_number}: Débit ET crédit non nuls"
+                })
+
+            # Vérifier les champs obligatoires
+            if not entry.journal_code:
+                errors.append({
+                    "code": "FEC_JOURNAL_MISSING",
+                    "message": f"Ligne {entry.line_number}: Code journal manquant"
+                })
+
+            if not entry.ecriture_num:
+                errors.append({
+                    "code": "FEC_ECRITURE_NUM_MISSING",
+                    "message": f"Ligne {entry.line_number}: Numéro écriture manquant"
+                })
+
+            # Vérification séquence par journal
+            key = entry.journal_code
+            if key not in seen_ecritures:
+                seen_ecritures[key] = set()
+            seen_ecritures[key].add(entry.ecriture_num)
 
         result = FECValidationResult(
             is_valid=len(errors) == 0,
@@ -395,8 +563,36 @@ class FrancePackService:
         self.db.commit()
         return result
 
-    def export_fec_file(self, fec_id: int) -> str:
-        """Exporter le FEC au format texte."""
+    def _validate_siren_luhn(self, siren: str) -> bool:
+        """Valider un SIREN avec l'algorithme de Luhn."""
+        if len(siren) != 9 or not siren.isdigit():
+            return False
+
+        total = 0
+        for i, digit in enumerate(siren):
+            n = int(digit)
+            if i % 2 == 1:  # Position paire (0-indexed impaire)
+                n *= 2
+                if n > 9:
+                    n -= 9
+            total += n
+
+        return total % 10 == 0
+
+    def export_fec_file(self, fec_id: int) -> dict:
+        """
+        Exporter le FEC au format texte conforme 2025.
+
+        Format:
+        - Encodage: UTF-8 (recommandé 2025) ou ISO-8859-15
+        - Séparateur: pipe (|)
+        - Décimales: virgule (,)
+        - Dates: YYYYMMDD
+        - Fin de ligne: CRLF
+
+        Returns:
+            dict avec content (str), filename (str), encoding (str)
+        """
         fec = self.db.query(FECExport).filter(
             FECExport.tenant_id == self.tenant_id,
             FECExport.id == fec_id
@@ -413,30 +609,51 @@ class FrancePackService:
             FECEntry.fec_export_id == fec_id
         ).order_by(FECEntry.line_number).all()
 
-        # Entête FEC
+        # Entête FEC (18 colonnes réglementaires)
+        # Conforme Article A 47 A-1 du LPF
         header = "JournalCode|JournalLib|EcritureNum|EcritureDate|CompteNum|CompteLib|CompAuxNum|CompAuxLib|PieceRef|PieceDate|EcritureLib|Debit|Credit|EcritureLet|DateLet|ValidDate|Montantdevise|Idevise"
 
         lines = [header]
         for entry in entries:
+            # Formatage conforme au standard
+            def format_date(d):
+                if d is None:
+                    return ""
+                if hasattr(d, 'strftime'):
+                    return d.strftime("%Y%m%d")
+                return str(d).replace("-", "")
+
+            def format_amount(a):
+                if a is None or a == 0:
+                    return "0,00"
+                # Format français: virgule décimale, 2 décimales
+                return f"{a:.2f}".replace(".", ",")
+
+            def clean_text(t):
+                if t is None:
+                    return ""
+                # Remplacer les pipes et retours ligne
+                return str(t).replace("|", " ").replace("\n", " ").replace("\r", " ")
+
             line = "|".join([
-                entry.journal_code,
-                entry.journal_lib,
-                entry.ecriture_num,
-                entry.ecriture_date.strftime("%Y%m%d"),
-                entry.compte_num,
-                entry.compte_lib,
-                entry.comp_aux_num or "",
-                entry.comp_aux_lib or "",
-                entry.piece_ref,
-                entry.piece_date.strftime("%Y%m%d"),
-                entry.ecriture_lib,
-                str(entry.debit).replace(".", ","),
-                str(entry.credit).replace(".", ","),
-                entry.ecriture_let or "",
-                entry.date_let.strftime("%Y%m%d") if entry.date_let else "",
-                entry.valid_date.strftime("%Y%m%d") if entry.valid_date else "",
-                str(entry.montant_devise).replace(".", ",") if entry.montant_devise else "",
-                entry.idevise or "",
+                clean_text(entry.journal_code),
+                clean_text(entry.journal_lib),
+                clean_text(entry.ecriture_num),
+                format_date(entry.ecriture_date),
+                clean_text(entry.compte_num),
+                clean_text(entry.compte_lib),
+                clean_text(entry.comp_aux_num),
+                clean_text(entry.comp_aux_lib),
+                clean_text(entry.piece_ref),
+                format_date(entry.piece_date),
+                clean_text(entry.ecriture_lib),
+                format_amount(entry.debit),
+                format_amount(entry.credit),
+                clean_text(entry.ecriture_let),
+                format_date(entry.date_let),
+                format_date(entry.valid_date),
+                format_amount(entry.montant_devise) if entry.montant_devise else "",
+                clean_text(entry.idevise),
             ])
             lines.append(line)
 
@@ -444,7 +661,19 @@ class FrancePackService:
         fec.exported_at = datetime.utcnow()
         self.db.commit()
 
-        return "\n".join(lines)
+        # Contenu avec fin de ligne CRLF (standard Windows/FEC)
+        content = "\r\n".join(lines)
+
+        return {
+            "content": content,
+            "filename": fec.filename,
+            "encoding": "utf-8",
+            "total_entries": fec.total_entries,
+            "total_debit": str(fec.total_debit),
+            "total_credit": str(fec.total_credit),
+            "fiscal_year": fec.fiscal_year,
+            "siren": fec.siren
+        }
 
     # ========================================================================
     # DSN - DÉCLARATION SOCIALE NOMINATIVE

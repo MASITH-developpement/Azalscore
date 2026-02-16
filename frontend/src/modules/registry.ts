@@ -17,6 +17,7 @@ import { moduleMeta as cockpit } from './cockpit/meta';
 import { moduleMeta as commandes } from './commandes/meta';
 import { moduleMeta as compliance } from './compliance/meta';
 import { moduleMeta as comptabilite } from './comptabilite/meta';
+import { moduleMeta as country_packs_france } from './country-packs-france/meta';
 import { moduleMeta as crm } from './crm/meta';
 import { moduleMeta as devis } from './devis/meta';
 import { moduleMeta as ecommerce } from './ecommerce/meta';
@@ -82,6 +83,7 @@ export const moduleRegistry: Record<string, ModuleMeta> = {
   'commandes': commandes,
   'compliance': compliance,
   'comptabilite': comptabilite,
+  'country-packs-france': country_packs_france,
   'crm': crm,
   'devis': devis,
   'ecommerce': ecommerce,
