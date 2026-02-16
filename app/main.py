@@ -78,6 +78,9 @@ from app.ai.api import router as ai_orchestration_router
 # API Audit - UI Events endpoint
 from app.api.audit import router as audit_api_router
 
+# Audit Module v2 - Full Audit & Benchmark API
+from app.modules.audit.router_v2 import router as audit_v2_router
+
 # Guardian middleware and logging
 from app.modules.guardian.middleware import setup_guardian_middleware
 from app.core.request_logging import setup_request_logging
@@ -626,6 +629,9 @@ api_v1.include_router(branding_router)  # Gestion favicon, logo, branding
 # ROUTES LEGACY SOUS /v1 (non migrées vers v3)
 # ===========================================================================
 api_v1.include_router(audit_api_router)        # Audit UI Events
+
+# Monter directement sur app avec /api prefix pour cohérence avec tests
+app.include_router(audit_v2_router, prefix="/api")  # Audit v2 Full API -> /api/v2/audit/*
 api_v1.include_router(france_pack_router)      # France Country Pack
 api_v1.include_router(ai_orchestration_router) # IA Orchestration
 api_v1.include_router(guardian_ai_router)      # Guardian AI

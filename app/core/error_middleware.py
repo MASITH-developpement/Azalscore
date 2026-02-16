@@ -26,6 +26,27 @@ from app.core.logging_config import get_correlation_id
 logger = logging.getLogger(__name__)
 
 
+def _serialize_pydantic_errors(errors: list) -> list:
+    """
+    Serialise les erreurs Pydantic en JSON-safe.
+
+    Convertit les objets non serialisables (UUID, etc.) en strings.
+    """
+    import json
+
+    def default_serializer(obj):
+        if hasattr(obj, '__str__'):
+            return str(obj)
+        return repr(obj)
+
+    # Re-serialize via JSON pour nettoyer les types
+    try:
+        return json.loads(json.dumps(errors, default=default_serializer))
+    except Exception:
+        # Fallback: convertir tout en strings
+        return [{"msg": str(e)} for e in errors]
+
+
 class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     """
     Middleware de gestion centralisée des erreurs
@@ -72,7 +93,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                 content={
                     "error": "Validation Error",
                     "message": "Les données fournies sont invalides",
-                    "details": e.errors()
+                    "details": _serialize_pydantic_errors(e.errors())
                 }
             )
 
@@ -93,7 +114,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
                 content={
                     "error": "Validation Error",
                     "message": "Les données fournies sont invalides",
-                    "details": e.errors()
+                    "details": _serialize_pydantic_errors(e.errors())
                 }
             )
 

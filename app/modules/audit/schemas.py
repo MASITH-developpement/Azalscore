@@ -9,6 +9,7 @@ Schémas Pydantic pour validation et sérialisation.
 import json
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -51,8 +52,10 @@ class AuditLogCreateSchema(BaseModel):
 
 
 class AuditLogResponseSchema(BaseModel):
-    """Réponse pour un log d'audit."""
-    id: int
+    """Reponse pour un log d'audit."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
     tenant_id: str
 
     action: AuditAction
@@ -60,35 +63,33 @@ class AuditLogResponseSchema(BaseModel):
     category: AuditCategory
 
     module: str
-    entity_type: str | None
-    entity_id: str | None
+    entity_type: str | None = None
+    entity_id: str | None = None
 
-    user_id: int | None
-    user_email: str | None
-    user_role: str | None
+    user_id: UUID | None = None
+    user_email: str | None = None
+    user_role: str | None = None
 
-    session_id: str | None
-    request_id: str | None
-    ip_address: str | None
+    session_id: str | None = None
+    request_id: str | None = None
+    ip_address: str | None = None
 
-    description: str | None
-    old_value: dict[str, Any] | None
-    new_value: dict[str, Any] | None
-    diff: dict[str, Any] | None
-    extra_data: dict[str, Any] | None
+    description: str | None = None
+    old_value: dict[str, Any] | None = None
+    new_value: dict[str, Any] | None = None
+    diff: dict[str, Any] | None = None
+    extra_data: dict[str, Any] | None = None
 
-    success: bool
-    error_message: str | None
-    error_code: str | None
+    success: bool = True
+    error_message: str | None = None
+    error_code: str | None = None
 
-    duration_ms: float | None
+    duration_ms: float | None = None
 
-    retention_policy: RetentionPolicy
-    expires_at: datetime | None
+    retention_policy: RetentionPolicy | None = None
+    expires_at: datetime | None = None
 
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
+    created_at: datetime | None = None
 
     @classmethod
     def from_orm_custom(cls, obj):
@@ -129,6 +130,7 @@ class AuditLogListResponseSchema(BaseModel):
     total: int
     page: int
     page_size: int
+    total_pages: int
 
 
 class AuditSearchSchema(BaseModel):
@@ -139,7 +141,7 @@ class AuditSearchSchema(BaseModel):
     module: str | None = None
     entity_type: str | None = None
     entity_id: str | None = None
-    user_id: int | None = None
+    user_id: str | None = None
     session_id: str | None = None
     success: bool | None = None
     from_date: datetime | None = None
@@ -152,11 +154,13 @@ class AuditSearchSchema(BaseModel):
 # ============================================================================
 
 class AuditSessionResponseSchema(BaseModel):
-    """Réponse pour une session."""
-    id: int
+    """Reponse pour une session."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
     tenant_id: str
     session_id: str
-    user_id: int
+    user_id: UUID
     user_email: str | None
 
     login_at: datetime
@@ -176,8 +180,6 @@ class AuditSessionResponseSchema(BaseModel):
 
     is_active: bool
     terminated_reason: str | None
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 # ============================================================================
@@ -202,8 +204,10 @@ class MetricCreateSchema(BaseModel):
 
 
 class MetricResponseSchema(BaseModel):
-    """Réponse pour une métrique."""
-    id: int
+    """Reponse pour une metrique."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
     tenant_id: str
     code: str
     name: str
@@ -224,8 +228,6 @@ class MetricResponseSchema(BaseModel):
 
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
-
 
 class MetricValueSchema(BaseModel):
     """Valeur de métrique à enregistrer."""
@@ -236,7 +238,7 @@ class MetricValueSchema(BaseModel):
 
 class MetricValueResponseSchema(BaseModel):
     """Réponse pour une valeur de métrique."""
-    id: int
+    id: UUID
     metric_code: str
     value: float
     min_value: float | None
@@ -288,7 +290,7 @@ class BenchmarkCreateSchema(BaseModel):
 
 class BenchmarkResponseSchema(BaseModel):
     """Réponse pour un benchmark."""
-    id: int
+    id: UUID
     tenant_id: str
     code: str
     name: str
@@ -311,7 +313,7 @@ class BenchmarkResponseSchema(BaseModel):
 
     created_at: datetime
     updated_at: datetime
-    created_by: int | None
+    created_by: str | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -342,9 +344,9 @@ class BenchmarkResponseSchema(BaseModel):
 
 class BenchmarkResultResponseSchema(BaseModel):
     """Réponse pour un résultat de benchmark."""
-    id: int
+    id: UUID
     tenant_id: str
-    benchmark_id: int
+    benchmark_id: UUID
 
     started_at: datetime
     completed_at: datetime | None
@@ -363,7 +365,7 @@ class BenchmarkResultResponseSchema(BaseModel):
     error_message: str | None
     warnings: list[str] | None
 
-    executed_by: int | None
+    executed_by: str | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -414,7 +416,7 @@ class ComplianceCheckCreateSchema(BaseModel):
 
 class ComplianceCheckResponseSchema(BaseModel):
     """Réponse pour un contrôle de conformité."""
-    id: int
+    id: UUID
     tenant_id: str
 
     framework: ComplianceFramework
@@ -428,7 +430,7 @@ class ComplianceCheckResponseSchema(BaseModel):
     check_type: str
     status: str
     last_checked_at: datetime | None
-    checked_by: int | None
+    checked_by: str | None
 
     actual_result: str | None
     evidence: dict[str, Any] | None
@@ -513,7 +515,7 @@ class RetentionRuleCreateSchema(BaseModel):
 
 class RetentionRuleResponseSchema(BaseModel):
     """Réponse pour une règle de rétention."""
-    id: int
+    id: UUID
     tenant_id: str
     name: str
     description: str | None
@@ -556,7 +558,7 @@ class ExportCreateSchema(BaseModel):
 
 class ExportResponseSchema(BaseModel):
     """Réponse pour un export."""
-    id: int
+    id: UUID
     tenant_id: str
 
     export_type: str
@@ -575,7 +577,7 @@ class ExportResponseSchema(BaseModel):
 
     error_message: str | None
 
-    requested_by: int
+    requested_by: UUID
     requested_at: datetime
     completed_at: datetime | None
 
@@ -637,7 +639,7 @@ class DashboardCreateSchema(BaseModel):
 
 class DashboardResponseSchema(BaseModel):
     """Réponse pour un tableau de bord."""
-    id: int
+    id: UUID
     tenant_id: str
     code: str
     name: str
@@ -648,7 +650,7 @@ class DashboardResponseSchema(BaseModel):
     refresh_interval: int
 
     is_public: bool
-    owner_id: int
+    owner_id: UUID
     shared_with: list[str] | None
 
     is_default: bool
