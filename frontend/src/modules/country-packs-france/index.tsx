@@ -434,7 +434,7 @@ const PCGView: React.FC = () => {
       id: 'pcg_class',
       header: 'Classe',
       accessor: 'pcg_class',
-      render: (v) => <Badge color="blue">Classe {v}</Badge>
+      render: (v) => <Badge color="blue">Classe {v as string}</Badge>
     },
     { id: 'pcg_category', header: 'Categorie', accessor: 'pcg_category', render: (v) => (v as string) || '-' },
     {
@@ -728,18 +728,20 @@ const FECView: React.FC = () => {
           <Grid cols={2}>
             <div className="azals-field">
               <label className="azals-field__label">Date debut</label>
-              <Input
+              <input
                 type="date"
+                className="azals-input"
                 value={formData.period_start}
-                onChange={(v) => setFormData({ ...formData, period_start: v })}
+                onChange={(e) => setFormData({ ...formData, period_start: e.target.value })}
               />
             </div>
             <div className="azals-field">
               <label className="azals-field__label">Date fin</label>
-              <Input
+              <input
                 type="date"
+                className="azals-input"
                 value={formData.period_end}
-                onChange={(v) => setFormData({ ...formData, period_end: v })}
+                onChange={(e) => setFormData({ ...formData, period_end: e.target.value })}
               />
             </div>
           </Grid>
