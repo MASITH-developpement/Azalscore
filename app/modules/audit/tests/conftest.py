@@ -41,7 +41,7 @@ def auth_headers(tenant_id):
 
 
 @pytest.fixture
-def sample_audit_logs_batch(db_session, tenant_id, user_uuid):
+def sample_audit_logs_batch(test_db_session, tenant_id, user_uuid):
     """
     Cree un batch de logs d'audit pour les tests.
 
@@ -80,24 +80,24 @@ def sample_audit_logs_batch(db_session, tenant_id, user_uuid):
             success=(i % 3 != 0),  # ~66% success
             created_at=datetime.utcnow() - timedelta(hours=i)
         )
-        db_session.add(log)
+        test_db_session.add(log)
         logs.append(log)
 
-    db_session.commit()
+    test_db_session.commit()
 
     yield logs
 
     # Cleanup
     for log in logs:
         try:
-            db_session.delete(log)
+            test_db_session.delete(log)
         except Exception:
             pass
-    db_session.commit()
+    test_db_session.commit()
 
 
 @pytest.fixture
-def sample_metric(db_session, tenant_id):
+def sample_metric(test_db_session, tenant_id):
     """Cree une metrique de test."""
     from app.modules.audit.models import MetricDefinition, MetricType
 
@@ -115,20 +115,20 @@ def sample_metric(db_session, tenant_id):
         is_active=True,
         is_system=False
     )
-    db_session.add(metric)
-    db_session.commit()
+    test_db_session.add(metric)
+    test_db_session.commit()
 
     yield metric
 
     try:
-        db_session.delete(metric)
-        db_session.commit()
+        test_db_session.delete(metric)
+        test_db_session.commit()
     except Exception:
         pass
 
 
 @pytest.fixture
-def sample_benchmark(db_session, tenant_id, user_uuid):
+def sample_benchmark(test_db_session, tenant_id, user_uuid):
     """Cree un benchmark de test."""
     from app.modules.audit.models import Benchmark, BenchmarkStatus
 
@@ -150,20 +150,20 @@ def sample_benchmark(db_session, tenant_id, user_uuid):
         updated_at=datetime.utcnow(),
         created_by=user_uuid
     )
-    db_session.add(benchmark)
-    db_session.commit()
+    test_db_session.add(benchmark)
+    test_db_session.commit()
 
     yield benchmark
 
     try:
-        db_session.delete(benchmark)
-        db_session.commit()
+        test_db_session.delete(benchmark)
+        test_db_session.commit()
     except Exception:
         pass
 
 
 @pytest.fixture
-def sample_compliance_check(db_session, tenant_id):
+def sample_compliance_check(test_db_session, tenant_id):
     """Cree un controle de conformite de test."""
     from app.modules.audit.models import ComplianceCheck, ComplianceFramework
 
@@ -178,20 +178,20 @@ def sample_compliance_check(db_session, tenant_id):
         severity="MEDIUM",
         status="PENDING"
     )
-    db_session.add(check)
-    db_session.commit()
+    test_db_session.add(check)
+    test_db_session.commit()
 
     yield check
 
     try:
-        db_session.delete(check)
-        db_session.commit()
+        test_db_session.delete(check)
+        test_db_session.commit()
     except Exception:
         pass
 
 
 @pytest.fixture
-def sample_retention_rule(db_session, tenant_id):
+def sample_retention_rule(test_db_session, tenant_id):
     """Cree une regle de retention de test."""
     from app.modules.audit.models import DataRetentionRule, RetentionPolicy
 
@@ -205,20 +205,20 @@ def sample_retention_rule(db_session, tenant_id):
         action="DELETE",
         is_active=True
     )
-    db_session.add(rule)
-    db_session.commit()
+    test_db_session.add(rule)
+    test_db_session.commit()
 
     yield rule
 
     try:
-        db_session.delete(rule)
-        db_session.commit()
+        test_db_session.delete(rule)
+        test_db_session.commit()
     except Exception:
         pass
 
 
 @pytest.fixture
-def sample_dashboard(db_session, tenant_id, user_uuid):
+def sample_dashboard(test_db_session, tenant_id, user_uuid):
     """Cree un dashboard de test."""
     from app.modules.audit.models import AuditDashboard
 
@@ -238,20 +238,20 @@ def sample_dashboard(db_session, tenant_id, user_uuid):
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
     )
-    db_session.add(dashboard)
-    db_session.commit()
+    test_db_session.add(dashboard)
+    test_db_session.commit()
 
     yield dashboard
 
     try:
-        db_session.delete(dashboard)
-        db_session.commit()
+        test_db_session.delete(dashboard)
+        test_db_session.commit()
     except Exception:
         pass
 
 
 @pytest.fixture
-def sample_audit_log(db_session, tenant_id, user_uuid):
+def sample_audit_log(test_db_session, tenant_id, user_uuid):
     """Cree un seul log d'audit pour les tests."""
     from app.modules.audit.models import AuditLog, AuditAction, AuditLevel, AuditCategory
 
@@ -275,20 +275,20 @@ def sample_audit_log(db_session, tenant_id, user_uuid):
         success=True,
         created_at=datetime.utcnow()
     )
-    db_session.add(log)
-    db_session.commit()
+    test_db_session.add(log)
+    test_db_session.commit()
 
     yield log
 
     try:
-        db_session.delete(log)
-        db_session.commit()
+        test_db_session.delete(log)
+        test_db_session.commit()
     except Exception:
         pass
 
 
 @pytest.fixture
-def sample_session(db_session, tenant_id, user_uuid):
+def sample_session(test_db_session, tenant_id, user_uuid):
     """Cree une session d'audit de test."""
     from app.modules.audit.models import AuditSession
 
@@ -311,14 +311,14 @@ def sample_session(db_session, tenant_id, user_uuid):
         writes_count=5,
         is_active=True
     )
-    db_session.add(session)
-    db_session.commit()
+    test_db_session.add(session)
+    test_db_session.commit()
 
     yield session
 
     try:
-        db_session.delete(session)
-        db_session.commit()
+        test_db_session.delete(session)
+        test_db_session.commit()
     except Exception:
         pass
 
@@ -351,7 +351,7 @@ def sample_metric_data():
 
 
 @pytest.fixture
-def sample_metric_values(db_session, tenant_id, sample_metric):
+def sample_metric_values(test_db_session, tenant_id, sample_metric):
     """Cree des valeurs de metrique pour les tests."""
     from app.modules.audit.models import MetricValue
 
@@ -370,19 +370,19 @@ def sample_metric_values(db_session, tenant_id, sample_metric):
             period_start=datetime.utcnow() - timedelta(hours=i+1),
             period_end=datetime.utcnow() - timedelta(hours=i)
         )
-        db_session.add(value)
+        test_db_session.add(value)
         values.append(value)
 
-    db_session.commit()
+    test_db_session.commit()
 
     yield values
 
     for val in values:
         try:
-            db_session.delete(val)
+            test_db_session.delete(val)
         except Exception:
             pass
-    db_session.commit()
+    test_db_session.commit()
 
 
 @pytest.fixture
@@ -402,7 +402,7 @@ def sample_benchmark_data():
 
 
 @pytest.fixture
-def sample_benchmark_result(db_session, tenant_id, sample_benchmark, user_uuid):
+def sample_benchmark_result(test_db_session, tenant_id, sample_benchmark, user_uuid):
     """Cree un resultat de benchmark pour les tests."""
     from app.modules.audit.models import BenchmarkResult, BenchmarkStatus
 
@@ -420,14 +420,14 @@ def sample_benchmark_result(db_session, tenant_id, sample_benchmark, user_uuid):
         summary="Test benchmark completed",
         executed_by=str(user_uuid)
     )
-    db_session.add(result)
-    db_session.commit()
+    test_db_session.add(result)
+    test_db_session.commit()
 
     yield result
 
     try:
-        db_session.delete(result)
-        db_session.commit()
+        test_db_session.delete(result)
+        test_db_session.commit()
     except Exception:
         pass
 
@@ -483,7 +483,7 @@ def sample_dashboard_data():
 
 
 @pytest.fixture
-def sample_export(db_session, tenant_id, user_uuid):
+def sample_export(test_db_session, tenant_id, user_uuid):
     """Cree un export de test."""
     from app.modules.audit.models import AuditExport
 
@@ -501,14 +501,14 @@ def sample_export(db_session, tenant_id, user_uuid):
         requested_at=datetime.utcnow(),
         expires_at=datetime.utcnow() + timedelta(days=7)
     )
-    db_session.add(export)
-    db_session.commit()
+    test_db_session.add(export)
+    test_db_session.commit()
 
     yield export
 
     try:
-        db_session.delete(export)
-        db_session.commit()
+        test_db_session.delete(export)
+        test_db_session.commit()
     except Exception:
         pass
 

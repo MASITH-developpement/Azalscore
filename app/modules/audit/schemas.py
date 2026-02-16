@@ -388,6 +388,25 @@ class BenchmarkResultResponseSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator('results', 'warnings', mode='before')
+    @classmethod
+    def parse_json_fields(cls, v):
+        """Parse JSON string to dict/list."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return None
+        return v
+
+    @field_validator('executed_by', mode='before')
+    @classmethod
+    def stringify_uuid(cls, v):
+        """Convert UUID to string."""
+        if hasattr(v, 'hex'):
+            return str(v)
+        return v
+
     @classmethod
     def from_orm_custom(cls, obj):
         return cls(
@@ -464,6 +483,25 @@ class ComplianceCheckResponseSchema(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator('checked_by', mode='before')
+    @classmethod
+    def stringify_uuid(cls, v):
+        """Convert UUID to string."""
+        if hasattr(v, 'hex'):
+            return str(v)
+        return v
+
+    @field_validator('evidence', mode='before')
+    @classmethod
+    def parse_json_evidence(cls, v):
+        """Parse JSON string to dict."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return None
+        return v
 
     @classmethod
     def from_orm_custom(cls, obj):

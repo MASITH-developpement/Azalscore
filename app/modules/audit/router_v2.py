@@ -300,12 +300,13 @@ async def record_metric_value(
     - request.state.tenant_id → context.tenant_id
     """
     service = get_audit_service(db, context.tenant_id)
-    value = service.record_metric_value(
+    value = service.record_metric(
         metric_code=data.metric_code,
         value=data.value,
-        dimensions=data.dimensions,
-        timestamp=data.timestamp
+        dimensions=data.dimensions
     )
+    if not value:
+        raise HTTPException(status_code=404, detail=f"Métrique {data.metric_code} non trouvée")
     return value
 
 
