@@ -6,8 +6,10 @@ pip install stripe
 """
 
 import os
+import re
 from datetime import datetime
 from typing import Optional, Dict, Any, List
+from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 
 try:
@@ -94,6 +96,14 @@ AZALSCORE_PLANS = {
 class StripeServiceLive:
     """Service Stripe pour production."""
 
+    # Domaines autorisés pour les redirections (protection open redirect)
+    ALLOWED_REDIRECT_DOMAINS = {
+        "app.azalscore.com",
+        "azalscore.com",
+        "staging.azalscore.com",
+        "localhost",  # Pour développement
+    }
+
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
@@ -102,6 +112,47 @@ class StripeServiceLive:
             logger.warning("[STRIPE] Module stripe non installé")
         elif not STRIPE_API_KEY:
             logger.warning("[STRIPE] STRIPE_API_KEY non configurée")
+
+    def _validate_redirect_url(self, url: str) -> bool:
+        """
+        Valide qu'une URL de redirection est sûre (protection open redirect).
+
+        SÉCURITÉ: Empêche les redirections vers des domaines malveillants.
+        """
+        if not url:
+            return False
+
+        try:
+            parsed = urlparse(url)
+
+            # Doit être HTTPS en production (HTTP autorisé pour localhost)
+            if parsed.scheme not in ("https", "http"):
+                return False
+
+            if parsed.scheme == "http" and parsed.hostname != "localhost":
+                return False
+
+            # Vérifier le domaine
+            hostname = parsed.hostname or ""
+
+            # Domaines autorisés ou sous-domaines
+            for allowed_domain in self.ALLOWED_REDIRECT_DOMAINS:
+                if hostname == allowed_domain or hostname.endswith(f".{allowed_domain}"):
+                    return True
+
+            return False
+
+        except Exception:
+            return False
+
+    def _get_safe_redirect_url(self, url: Optional[str], default_path: str) -> str:
+        """Retourne une URL de redirection sûre ou la valeur par défaut."""
+        app_url = os.getenv("APP_URL", "https://app.azalscore.com")
+
+        if url and self._validate_redirect_url(url):
+            return url
+
+        return f"{app_url}{default_path}"
 
     # ========================================================================
     # CUSTOMERS
@@ -188,13 +239,21 @@ class StripeServiceLive:
 
         price_key = f"stripe_price_{billing_period}"
         price_id = plan_config.get(price_key)
-        
+
         if not price_id:
             logger.error(f"[STRIPE] Prix non configuré pour {plan}/{billing_period}")
             return None
 
-        app_url = os.getenv("APP_URL", "https://app.azalscore.com")
-        
+        # Valider les URLs de redirection (protection open redirect)
+        safe_success_url = self._get_safe_redirect_url(
+            success_url,
+            "/billing/success?session_id={CHECKOUT_SESSION_ID}"
+        )
+        safe_cancel_url = self._get_safe_redirect_url(
+            cancel_url,
+            "/billing/cancel"
+        )
+
         try:
             session = stripe.checkout.Session.create(
                 customer=customer_id,
@@ -204,8 +263,8 @@ class StripeServiceLive:
                     "quantity": 1
                 }],
                 mode="subscription",
-                success_url=success_url or f"{app_url}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=cancel_url or f"{app_url}/billing/cancel",
+                success_url=safe_success_url,
+                cancel_url=safe_cancel_url,
                 subscription_data={
                     "trial_period_days": trial_days if trial_days > 0 else None,
                     "metadata": {
@@ -372,12 +431,13 @@ class StripeServiceLive:
         if not STRIPE_AVAILABLE:
             return None
 
-        app_url = os.getenv("APP_URL", "https://app.azalscore.com")
+        # Valider l'URL de retour (protection open redirect)
+        safe_return_url = self._get_safe_redirect_url(return_url, "/billing")
 
         try:
             session = stripe.billing_portal.Session.create(
                 customer=customer_id,
-                return_url=return_url or f"{app_url}/billing"
+                return_url=safe_return_url
             )
             return session.url
         except stripe.error.StripeError as e:
