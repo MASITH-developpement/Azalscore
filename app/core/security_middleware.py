@@ -543,13 +543,64 @@ class IPBlocklistMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
     def _get_client_ip(self, request: Request) -> str:
-        """Extrait l'IP client."""
+        """
+        Extrait l'IP client de manière SÉCURISÉE.
+
+        SÉCURITÉ: Même logique que RateLimitMiddleware pour éviter le bypass
+        de blocklist via X-Forwarded-For forgé.
+        """
+        import ipaddress
+        import os
+
+        # IP directe (toujours fiable)
+        direct_ip = request.client.host if request.client else None
+
+        if not direct_ip:
+            return "unknown"
+
+        # Récupérer les proxies de confiance depuis la configuration
+        trusted_proxies_str = os.getenv("TRUSTED_PROXIES", "")
+
+        # Si aucun proxy de confiance configuré, utiliser l'IP directe uniquement
+        if not trusted_proxies_str:
+            return direct_ip
+
+        # Parser les réseaux de confiance
+        try:
+            trusted_networks = []
+            for cidr in trusted_proxies_str.split(","):
+                cidr = cidr.strip()
+                if cidr:
+                    trusted_networks.append(ipaddress.ip_network(cidr, strict=False))
+        except ValueError:
+            return direct_ip
+
+        # Vérifier si l'IP directe vient d'un proxy de confiance
+        try:
+            direct_ip_obj = ipaddress.ip_address(direct_ip)
+            is_trusted_proxy = any(
+                direct_ip_obj in network for network in trusted_networks
+            )
+        except ValueError:
+            return direct_ip
+
+        if not is_trusted_proxy:
+            return direct_ip
+
+        # L'IP vient d'un proxy de confiance - on peut lire X-Forwarded-For
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
-            return forwarded.split(",")[0].strip()
-        if request.client:
-            return request.client.host
-        return "unknown"
+            ips = [ip.strip() for ip in forwarded.split(",")]
+            for ip in reversed(ips):
+                try:
+                    ip_obj = ipaddress.ip_address(ip)
+                    if not any(ip_obj in network for network in trusted_networks):
+                        return ip
+                except ValueError:
+                    continue
+            return ips[0] if ips else direct_ip
+
+        return direct_ip
 
     def block_ip(self, ip: str) -> None:
         """Ajoute une IP à la blocklist."""

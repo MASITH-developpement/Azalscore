@@ -881,16 +881,91 @@ class WAFMiddleware(BaseHTTPMiddleware):
         return response
 
     def _get_client_ip(self, request: Request) -> str:
-        """Extraire l'IP client."""
+        """
+        Extrait l'IP client de manière SÉCURISÉE.
+
+        SÉCURITÉ: Les headers X-Forwarded-For et X-Real-IP peuvent être forgés
+        par des attaquants pour bypasser le WAF. On ne fait confiance à ces
+        headers QUE si:
+        1. TRUSTED_PROXIES est configuré
+        2. L'IP directe du client est dans la liste des proxies de confiance
+
+        Configuration via variable d'environnement:
+        TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+        """
+        import os
+
+        # IP directe (toujours fiable)
+        direct_ip = request.client.host if request.client else None
+
+        if not direct_ip:
+            return "unknown"
+
+        # Récupérer les proxies de confiance depuis la configuration
+        trusted_proxies_str = os.getenv("TRUSTED_PROXIES", "")
+
+        # Si aucun proxy de confiance configuré, utiliser l'IP directe uniquement
+        if not trusted_proxies_str:
+            # WAF critique: on ne fait PAS confiance aux headers proxy non vérifiés
+            forwarded = request.headers.get("X-Forwarded-For")
+            if forwarded:
+                logger.warning(
+                    "[WAF] X-Forwarded-For ignoré - TRUSTED_PROXIES non configuré",
+                    extra={
+                        "direct_ip": direct_ip,
+                        "x_forwarded_for": forwarded[:100],
+                    }
+                )
+            return direct_ip
+
+        # Parser les réseaux de confiance
+        try:
+            trusted_networks = []
+            for cidr in trusted_proxies_str.split(","):
+                cidr = cidr.strip()
+                if cidr:
+                    trusted_networks.append(ipaddress.ip_network(cidr, strict=False))
+        except ValueError:
+            logger.error("[WAF] TRUSTED_PROXIES invalide, utilisation IP directe")
+            return direct_ip
+
+        # Vérifier si l'IP directe vient d'un proxy de confiance
+        try:
+            direct_ip_obj = ipaddress.ip_address(direct_ip)
+            is_trusted_proxy = any(
+                direct_ip_obj in network for network in trusted_networks
+            )
+        except ValueError:
+            return direct_ip
+
+        if not is_trusted_proxy:
+            # L'IP directe n'est pas un proxy de confiance, on l'utilise
+            return direct_ip
+
+        # IP vient d'un proxy de confiance, on peut faire confiance aux headers
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
-            return forwarded.split(",")[0].strip()
+            # X-Forwarded-For: client, proxy1, proxy2
+            # Le premier est l'IP du client original
+            client_ip = forwarded.split(",")[0].strip()
+            # Validation basique de l'IP
+            try:
+                ipaddress.ip_address(client_ip)
+                return client_ip
+            except ValueError:
+                logger.warning(f"[WAF] X-Forwarded-For invalide: {client_ip[:50]}")
+                return direct_ip
+
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
-            return real_ip
-        if request.client:
-            return request.client.host
-        return "unknown"
+            try:
+                ipaddress.ip_address(real_ip)
+                return real_ip
+            except ValueError:
+                logger.warning(f"[WAF] X-Real-IP invalide: {real_ip[:50]}")
+                return direct_ip
+
+        return direct_ip
 
 
 # ============================================================================
