@@ -26,6 +26,7 @@ class UserBase(BaseModel):
     department: str | None = Field(None, max_length=200)
     locale: str = Field(default="fr", max_length=10)
     timezone: str = Field(default="Europe/Paris", max_length=50)
+    default_view: str | None = Field(None, max_length=50, description="Vue par défaut après connexion")
 
 
 class UserCreate(UserBase):
@@ -55,6 +56,7 @@ class UserUpdate(BaseModel):
     department: str | None = Field(None, max_length=200)
     locale: str | None = Field(None, max_length=10)
     timezone: str | None = Field(None, max_length=50)
+    default_view: str | None = Field(None, max_length=50, description="Vue par défaut après connexion")
     is_active: bool | None = None
 
 
@@ -72,6 +74,7 @@ class UserResponse(BaseModel):
     department: str | None
     locale: str
     timezone: str
+    default_view: str | None = None  # Vue par défaut après connexion
     is_active: bool
     is_verified: bool
     is_locked: bool

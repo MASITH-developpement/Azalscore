@@ -84,6 +84,7 @@ def _build_user_response(user) -> UserResponse:
         department=user.department,
         locale=user.locale,
         timezone=user.timezone,
+        default_view=getattr(user, 'default_view', None),
         is_active=user.is_active,
         is_verified=user.is_verified,
         is_locked=user.is_locked,
@@ -808,3 +809,21 @@ async def update_password_policy(
         max_failed_attempts=policy.max_failed_attempts,
         lockout_duration_minutes=policy.lockout_duration_minutes
     )
+
+
+# =============================================================================
+# CAPABILITIES PAR MODULE
+# =============================================================================
+
+# Import de la constante CAPABILITIES_BY_MODULE depuis router.py
+from app.modules.iam.router import CAPABILITIES_BY_MODULE
+
+
+@router.get("/capabilities/modules")
+@require_permission("iam.permission.read")
+async def get_capabilities_by_module(
+    context: SaaSContext = Depends(get_context),
+    service: IAMService = Depends(get_service_protected)
+):
+    """Retourne toutes les capabilities groupées par module."""
+    return CAPABILITIES_BY_MODULE

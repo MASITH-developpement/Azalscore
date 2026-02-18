@@ -4,11 +4,20 @@ AZALS MODULE - Odoo Import - Connector
 
 Client XML-RPC pour communiquer avec Odoo (versions 8-18).
 Gere l'authentification, les requetes et les erreurs.
+
+SÉCURITÉ: defusedxml monkey-patch appliqué pour protéger
+contre les attaques XML (XXE, billion laughs, etc.)
 """
 
 import logging
 import ssl
-import xmlrpc.client
+
+# SÉCURITÉ: Monkey-patch xmlrpc.client AVANT import
+# Protection contre XXE et autres attaques XML (bandit B411)
+import defusedxml.xmlrpc
+defusedxml.xmlrpc.monkey_patch()
+
+import xmlrpc.client  # noqa: E402  # nosec B411 - monkey-patch appliqué ligne 15-16
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse

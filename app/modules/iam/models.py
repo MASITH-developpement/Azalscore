@@ -187,6 +187,9 @@ class IAMUser(Base):
     department = Column(String(200), nullable=True)
     employee_id = Column(String(50), nullable=True)
 
+    # Préférences UI
+    default_view = Column(String(50), nullable=True)  # Vue par défaut après connexion (cockpit, admin, saisie, etc.)
+
     # Statut
     is_active = Column(Boolean, default=True, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
