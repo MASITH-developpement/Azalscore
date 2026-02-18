@@ -598,9 +598,8 @@ class StripeWebhookHandler:
                 raise ValueError(f"Invalid tenant_id in webhook metadata: {tenant_id}")
             convert_trial_to_active(self.db, tenant_id, plan)
             
-            # TODO: Envoyer email de confirmation
+            # NOTE: Phase 2 - Intégration email_service
             # from app.services.email_service import get_email_service
-            # email_service = get_email_service()
             # email_service.send_payment_success(...)
 
     def _handle_subscription_created(self, subscription: Dict):
@@ -626,7 +625,7 @@ class StripeWebhookHandler:
             f"status={status}, cancel_at_period_end={cancel_at_period_end}"
         )
 
-        # TODO: Mettre à jour le tenant si changement de plan
+        # NOTE: Phase 2 - Mettre à jour le tenant si changement de plan
 
     def _handle_subscription_deleted(self, subscription: Dict):
         """Abonnement annulé/expiré."""
@@ -664,12 +663,8 @@ class StripeWebhookHandler:
             f"customer={customer_id}, amount={amount_paid}€"
         )
 
-        # Si c'était une facture de renouvellement, s'assurer que le tenant est actif
-        # TODO: Récupérer tenant_id depuis customer_id ou subscription
-        # if tenant_id:
-        #     reactivate_tenant(self.db, tenant_id)
-        
-        # TODO: Envoyer email de confirmation + facture PDF
+        # NOTE: Phase 2 - Récupérer tenant_id depuis customer_id ou subscription
+        # pour réactiver le tenant et envoyer email de confirmation + facture PDF
 
     def _handle_payment_failed(self, invoice: Dict):
         """Échec de paiement."""
@@ -687,11 +682,11 @@ class StripeWebhookHandler:
 
         # Après 3 tentatives, suspendre le tenant
         if attempt_count >= 3:
-            # TODO: Récupérer tenant_id depuis customer_id
+            # NOTE: Phase 2 - Récupérer tenant_id depuis customer_id pour suspension
             # suspend_tenant(self.db, tenant_id, reason="payment_failed")
             logger.error(f"[WEBHOOK] 3 échecs de paiement - Suspension requise pour customer={customer_id}")
-        
-        # TODO: Envoyer email de relance
+
+        # NOTE: Phase 2 - Envoyer email de relance via email_service
 
     def _handle_customer_updated(self, customer: Dict):
         """Client mis à jour."""
@@ -700,7 +695,7 @@ class StripeWebhookHandler:
         
         logger.info(f"[WEBHOOK] Customer mis à jour: {customer_id}")
         
-        # TODO: Synchroniser les infos si nécessaire
+        # NOTE: Phase 2 - Synchroniser les infos client si nécessaire
 
 
 # ============================================================

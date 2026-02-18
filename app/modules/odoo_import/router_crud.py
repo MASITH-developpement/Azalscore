@@ -46,36 +46,25 @@ async def get_module_status():
     }
 
 
-@router.get("/odooconnectionconfigs", response_model=List[OdooConnectionConfigResponse])
-async def list_odooconnectionconfigs(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+@router.get("/configs", response_model=List[OdooConnectionConfigResponse])
+async def list_connection_configs(
+    active_only: bool = Query(False, description="Filtrer les configs actives uniquement"),
     context: SaaSContext = Depends(get_context),
     db: Session = Depends(get_db),
 ):
-    """Liste les odooconnectionconfigs."""
-    # TODO: Implementer avec service
-    return []
+    """Liste les configurations de connexion Odoo."""
+    service = OdooImportService(db, context.tenant_id)
+    return service.list_configs(active_only=active_only)
 
-@router.get("/odootestconnections", response_model=List[OdooTestConnectionResponse])
-async def list_odootestconnections(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    context: SaaSContext = Depends(get_context),
-    db: Session = Depends(get_db),
-):
-    """Liste les odootestconnections."""
-    # TODO: Implementer avec service
-    return []
 
-@router.get("/odooimporthistorys", response_model=List[OdooImportHistoryResponse])
-async def list_odooimporthistorys(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+@router.get("/history", response_model=List[OdooImportHistoryResponse])
+async def list_import_history(
+    config_id: Optional[UUID] = Query(None, description="Filtrer par config"),
+    limit: int = Query(50, ge=1, le=200),
     context: SaaSContext = Depends(get_context),
     db: Session = Depends(get_db),
 ):
-    """Liste les odooimporthistorys."""
-    # TODO: Implementer avec service
-    return []
+    """Liste l'historique des imports Odoo."""
+    service = OdooImportService(db, context.tenant_id)
+    return service.get_import_history(config_id=config_id, limit=limit)
 

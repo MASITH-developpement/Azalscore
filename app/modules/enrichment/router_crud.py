@@ -43,36 +43,16 @@ async def get_module_status():
     }
 
 
-@router.get("/enrichmentaccepts", response_model=List[EnrichmentAcceptResponse])
-async def list_enrichmentaccepts(
+@router.get("/history", response_model=List[EnrichmentHistoryResponse])
+async def list_enrichment_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     context: SaaSContext = Depends(get_context),
     db: Session = Depends(get_db),
 ):
-    """Liste les enrichmentaccepts."""
-    # TODO: Implementer avec service
-    return []
-
-@router.get("/enrichmentlookups", response_model=List[EnrichmentLookupResponse])
-async def list_enrichmentlookups(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    context: SaaSContext = Depends(get_context),
-    db: Session = Depends(get_db),
-):
-    """Liste les enrichmentlookups."""
-    # TODO: Implementer avec service
-    return []
-
-@router.get("/enrichmenthistorys", response_model=List[EnrichmentHistoryResponse])
-async def list_enrichmenthistorys(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    context: SaaSContext = Depends(get_context),
-    db: Session = Depends(get_db),
-):
-    """Liste les enrichmenthistorys."""
-    # TODO: Implementer avec service
-    return []
+    """Liste l'historique des enrichissements."""
+    service = EnrichmentService(db, context.tenant_id)
+    offset = (page - 1) * page_size
+    history_list, _ = service.get_history(limit=page_size, offset=offset)
+    return [EnrichmentHistoryResponse.from_orm_custom(h) for h in history_list]
 

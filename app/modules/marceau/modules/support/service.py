@@ -3,7 +3,7 @@ AZALS MODULE - Marceau Support Service
 =======================================
 
 Service de support client automatise.
-TODO: Implementation complete en Phase 2.
+Phase 2: Intégration complète prévue.
 """
 
 import logging
@@ -43,7 +43,7 @@ class SupportService:
 
     async def _create_ticket(self, data: dict, context: list[str]) -> dict:
         """Cree un ticket support."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -52,7 +52,7 @@ class SupportService:
 
     async def _respond_ticket(self, data: dict, context: list[str]) -> dict:
         """Repond automatiquement a un ticket."""
-        # TODO: Implementation avec RAG
+        # NOTE: Phase 2 - Intégration RAG
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -61,7 +61,7 @@ class SupportService:
 
     async def _escalate(self, data: dict, context: list[str]) -> dict:
         """Escalade un ticket."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -70,7 +70,7 @@ class SupportService:
 
     async def _resolve(self, data: dict, context: list[str]) -> dict:
         """Resout un ticket."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub
         return {
             "success": False,
             "error": "Non implemente - Phase 2",

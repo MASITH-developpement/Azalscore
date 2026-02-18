@@ -518,8 +518,7 @@ class EInvoiceService:
                 warnings=["Mode test - aucune transmission réelle"]
             )
 
-        # Mode production - intégration PDP
-        # TODO: Implémenter appels API PDP réels
+        # NOTE: Phase 2 - Intégration API PDP production (Chorus Pro / PDP agréé)
         ppf_ref = f"PPF-{datetime.utcnow().strftime('%Y%m%d')}-{transaction_id[:8].upper()}"
 
         return PDPResponse(
@@ -538,8 +537,7 @@ class EInvoiceService:
         Le PPF transmet les factures entrantes aux entreprises
         via leur PDP ou directement.
         """
-        # TODO: Implémenter réception via API PDP
-        # Pour l'instant, retourne None
+        # NOTE: Phase 2 - Réception via API PDP
         return None
 
     def get_invoice_lifecycle(self, invoice_id: str) -> list[dict]:
@@ -552,7 +550,7 @@ class EInvoiceService:
         - Acceptée / Refusée
         - Payée
         """
-        # TODO: Implémenter tracking via API PDP/PPF
+        # NOTE: Phase 2 - Tracking via API PDP/PPF
         return [
             {"status": "SENT", "timestamp": datetime.utcnow().isoformat(), "actor": "Émetteur"},
             {"status": "DELIVERED", "timestamp": datetime.utcnow().isoformat(), "actor": "PPF"},

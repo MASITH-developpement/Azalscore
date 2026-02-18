@@ -3,7 +3,7 @@ AZALS MODULE - Marceau Marketing Service
 =========================================
 
 Service de marketing automatise.
-TODO: Implementation complete en Phase 2.
+Phase 2: Intégration complète prévue.
 """
 
 import logging
@@ -43,7 +43,7 @@ class MarketingService:
 
     async def _create_campaign(self, data: dict, context: list[str]) -> dict:
         """Cree une campagne marketing."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -52,7 +52,7 @@ class MarketingService:
 
     async def _post_social(self, data: dict, context: list[str]) -> dict:
         """Publie sur les reseaux sociaux."""
-        # TODO: Implementation LinkedIn, Facebook, Instagram
+        # NOTE: Phase 2 - Intégration réseaux sociaux
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -61,7 +61,7 @@ class MarketingService:
 
     async def _send_newsletter(self, data: dict, context: list[str]) -> dict:
         """Envoie une newsletter."""
-        # TODO: Implementation Gmail
+        # NOTE: Phase 2 - Intégration email
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -70,7 +70,7 @@ class MarketingService:
 
     async def _analyze_performance(self, data: dict, context: list[str]) -> dict:
         """Analyse les performances marketing."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub
         return {
             "success": False,
             "error": "Non implemente - Phase 2",

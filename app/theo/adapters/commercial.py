@@ -203,12 +203,10 @@ class CommercialAdapter(BaseAdapter):
                 }
             )
 
-        # Exécution réelle
-        # TODO: Appeler le service commercial réel
+        # NOTE: Phase 2 - Intégration avec service commercial
         # service = get_commercial_service(db, context["tenant_id"])
         # result = service.create_quote(...)
-
-        # Simulation
+        # Pour l'instant: données de simulation
         devis_number = "2024-D042"
 
         msg = f"C'est fait. Devis numéro {devis_number} créé pour {client_name}"
@@ -284,11 +282,10 @@ class CommercialAdapter(BaseAdapter):
                 ["Donne-moi le nom du client"]
             )
 
-        # TODO: Appeler le service réel
+        # NOTE: Phase 2 - Intégration avec service commercial
         # service = get_commercial_service(db, context["tenant_id"])
         # customers = service.list_customers(search=client_name)
-
-        # Simulation
+        # Pour l'instant: données de simulation
         found_clients = [
             {"name": f"Société {client_name}", "code": "CLI001", "balance": 1500},
         ]

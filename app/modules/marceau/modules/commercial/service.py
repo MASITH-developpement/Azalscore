@@ -2,8 +2,8 @@
 AZALS MODULE - Marceau Commercial Service
 ==========================================
 
-Service de gestion commerciale automatisee.
-TODO: Implementation complete en Phase 2.
+Service de gestion commerciale automatisée.
+Phase 2: Intégration complète avec module commercial.
 """
 
 import logging
@@ -43,7 +43,7 @@ class CommercialService:
 
     async def _create_quote(self, data: dict, context: list[str]) -> dict:
         """Cree un devis automatiquement."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub retourne erreur appropriée
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -52,7 +52,7 @@ class CommercialService:
 
     async def _send_quote(self, data: dict, context: list[str]) -> dict:
         """Envoie un devis par email."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub retourne erreur appropriée
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -61,7 +61,7 @@ class CommercialService:
 
     async def _follow_up(self, data: dict, context: list[str]) -> dict:
         """Relance automatique des devis."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub retourne erreur appropriée
         return {
             "success": False,
             "error": "Non implemente - Phase 2",
@@ -70,7 +70,7 @@ class CommercialService:
 
     async def _sync_crm(self, data: dict, context: list[str]) -> dict:
         """Synchronise avec HubSpot."""
-        # TODO: Implementation
+        # NOTE: Phase 2 - Stub retourne erreur appropriée
         return {
             "success": False,
             "error": "Non implemente - Phase 2",

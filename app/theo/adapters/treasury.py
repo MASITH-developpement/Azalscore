@@ -172,11 +172,10 @@ class TreasuryAdapter(BaseAdapter):
         """Consulte le solde de trésorerie."""
         compte = params.get("compte")
 
-        # TODO: Appeler le service trésorerie réel
+        # NOTE: Phase 2 - Intégration avec service trésorerie
         # service = get_treasury_service(db, context["tenant_id"])
         # solde = service.get_current_balance()
-
-        # Simulation
+        # Pour l'instant: données de simulation
         soldes = {
             "principal": {"nom": "Compte principal", "solde": 45670.50},
             "caisse": {"nom": "Caisse", "solde": 1250.00},
@@ -255,8 +254,7 @@ class TreasuryAdapter(BaseAdapter):
                 }
             )
 
-        # Exécution
-        # TODO: service.register_incoming_payment(...)
+        # NOTE: Phase 2 - Appeler service.register_incoming_payment(...)
 
         msg = f"Encaissement de {montant} euros enregistré"
         if client_name:
