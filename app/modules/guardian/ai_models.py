@@ -8,6 +8,7 @@ MODE B: ai_audit_reports - Rapports d'audit mensuels
 MODE C: ai_sla_metrics - Métriques SLA/Enterprise
 """
 
+import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Optional
@@ -26,6 +27,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from app.core.types import UniversalUUID
 from app.db import Base
 
 
@@ -85,7 +87,7 @@ class AIIncident(Base):
     """
     __tablename__ = "ai_incidents"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, index=True)
 
     # Identification
     incident_uid = Column(String(64), unique=True, nullable=False, index=True)
@@ -155,7 +157,7 @@ class AIModuleScore(Base):
     """
     __tablename__ = "ai_module_scores"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, index=True)
 
     # Identification
     tenant_id = Column(String(64), nullable=True, index=True)
@@ -204,7 +206,7 @@ class AIAuditReport(Base):
     """
     __tablename__ = "ai_audit_reports"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, index=True)
 
     # Identification
     report_uid = Column(String(64), unique=True, nullable=False, index=True)
@@ -257,7 +259,7 @@ class AISLAMetric(Base):
     """
     __tablename__ = "ai_sla_metrics"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, index=True)
 
     # Identification
     metric_uid = Column(String(64), unique=True, nullable=False, index=True)
@@ -309,7 +311,7 @@ class AIConfig(Base):
     """
     __tablename__ = "ai_config"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UniversalUUID(), primary_key=True, default=uuid.uuid4, index=True)
 
     key = Column(String(100), unique=True, nullable=False, index=True)
     value = Column(Text, nullable=True)

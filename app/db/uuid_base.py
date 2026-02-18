@@ -28,8 +28,9 @@ Pour les FK:
 import uuid as uuid_module
 
 from sqlalchemy import Column, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import declared_attr
+
+from app.core.types import UniversalUUID
 
 
 def uuid_column(primary_key: bool = False,
@@ -52,7 +53,7 @@ def uuid_column(primary_key: bool = False,
     """
     if primary_key:
         return Column(
-            PG_UUID(as_uuid=True),
+            UniversalUUID(),
             primary_key=True,
             default=default or uuid_module.uuid4,
             nullable=False,
@@ -60,7 +61,7 @@ def uuid_column(primary_key: bool = False,
         )
 
     return Column(
-        PG_UUID(as_uuid=True),
+        UniversalUUID(),
         default=default,
         nullable=nullable,
         index=index,
@@ -90,7 +91,7 @@ def uuid_fk_column(foreign_key: str,
         tenant_id = uuid_fk_column("tenants.id", nullable=False, ondelete="CASCADE")
     """
     return Column(
-        PG_UUID(as_uuid=True),
+        UniversalUUID(),
         ForeignKey(foreign_key, ondelete=ondelete),
         nullable=nullable,
         index=index
@@ -118,7 +119,7 @@ class UUIDMixin:
         Générée automatiquement avec uuid4.
         """
         return Column(
-            PG_UUID(as_uuid=True),
+            UniversalUUID(),
             primary_key=True,
             default=uuid_module.uuid4,
             nullable=False,
@@ -158,4 +159,4 @@ class UUIDForeignKey:
 
 
 # Aliases pour compatibilité
-UUID = PG_UUID(as_uuid=True)
+UUID = UniversalUUID

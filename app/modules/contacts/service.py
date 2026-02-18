@@ -162,7 +162,7 @@ class ContactsService:
 
     def get_contact(self, contact_id: UUID) -> Optional[UnifiedContact]:
         """Récupérer un contact par ID (isolé par tenant)."""
-        return self.db.query(Contact).filter(
+        return self.db.query(UnifiedContact).filter(
             UnifiedContact.tenant_id == self.tenant_id,
             UnifiedContact.id == contact_id,
             UnifiedContact.deleted_at.is_(None)
@@ -170,7 +170,7 @@ class ContactsService:
 
     def get_contact_by_code(self, code: str) -> Optional[UnifiedContact]:
         """Récupérer un contact par code (isolé par tenant)."""
-        return self.db.query(Contact).filter(
+        return self.db.query(UnifiedContact).filter(
             UnifiedContact.tenant_id == self.tenant_id,
             UnifiedContact.code == code,
             UnifiedContact.deleted_at.is_(None)
@@ -201,7 +201,7 @@ class ContactsService:
         Returns:
             Tuple (liste contacts, total)
         """
-        query = self.db.query(Contact).filter(
+        query = self.db.query(UnifiedContact).filter(
             UnifiedContact.tenant_id == self.tenant_id,
             UnifiedContact.deleted_at.is_(None)
         )
@@ -605,7 +605,7 @@ class ContactsService:
 
         Retourne une liste simplifiée pour les dropdowns/autocomplete.
         """
-        query = self.db.query(Contact).filter(
+        query = self.db.query(UnifiedContact).filter(
             UnifiedContact.tenant_id == self.tenant_id,
             UnifiedContact.is_active == True,
             UnifiedContact.deleted_at.is_(None)
@@ -643,7 +643,7 @@ class ContactsService:
 
         Utile pour éviter les doublons lors de la création.
         """
-        query = self.db.query(Contact).filter(
+        query = self.db.query(UnifiedContact).filter(
             UnifiedContact.tenant_id == self.tenant_id,
             UnifiedContact.deleted_at.is_(None)
         )

@@ -795,8 +795,9 @@ class CommercialService:
         if not document or document.status != DocumentStatus.DRAFT:
             return None
 
-        # Numéro de ligne
+        # Numéro de ligne (avec isolation tenant)
         max_line = self.db.query(func.max(DocumentLine.line_number)).filter(
+            DocumentLine.tenant_id == self.tenant_id,
             DocumentLine.document_id == document_id
         ).scalar() or 0
 
@@ -1011,10 +1012,17 @@ class CommercialService:
         return product
 
     def get_product(self, product_id: UUID) -> CatalogProduct | None:
-        """Récupérer un produit."""
+        """Récupérer un produit par ID."""
         return self.db.query(CatalogProduct).filter(
             CatalogProduct.tenant_id == self.tenant_id,
             CatalogProduct.id == product_id
+        ).first()
+
+    def get_product_by_code(self, code: str) -> CatalogProduct | None:
+        """Récupérer un produit par code (isolé par tenant)."""
+        return self.db.query(CatalogProduct).filter(
+            CatalogProduct.tenant_id == self.tenant_id,
+            CatalogProduct.code == code
         ).first()
 
     def list_products(

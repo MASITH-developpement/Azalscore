@@ -50,10 +50,9 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Session, relationship
 
-from app.core.types import UniversalUUID
+from app.core.types import JSONB, UniversalUUID
 from app.db import Base
 
 logger = logging.getLogger(__name__)

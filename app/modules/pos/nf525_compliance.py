@@ -17,6 +17,7 @@ import hmac
 import json
 import logging
 import secrets
+import uuid as uuid_module
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -69,7 +70,7 @@ class NF525EventLog(Base):
     """Journal d'événements NF525 (immuable)."""
     __tablename__ = "nf525_event_log"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UniversalUUID] = mapped_column(UniversalUUID, primary_key=True, default=uuid_module.uuid4)
     tenant_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
 
     # Séquence (inaltérable)
@@ -123,7 +124,7 @@ class NF525Certificate(Base):
     """Certificat de conformité NF525."""
     __tablename__ = "nf525_certificates"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UniversalUUID] = mapped_column(UniversalUUID, primary_key=True, default=uuid_module.uuid4)
     tenant_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
 
     # Identification logiciel
@@ -157,7 +158,7 @@ class NF525Archive(Base):
     """Archive périodique NF525."""
     __tablename__ = "nf525_archives"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UniversalUUID] = mapped_column(UniversalUUID, primary_key=True, default=uuid_module.uuid4)
     tenant_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
 
     # Période
@@ -199,7 +200,7 @@ class NF525GrandTotal(Base):
     """Totaux cumulatifs par terminal (Grand Total NF525)."""
     __tablename__ = "nf525_grand_totals"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UniversalUUID] = mapped_column(UniversalUUID, primary_key=True, default=uuid_module.uuid4)
     tenant_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     terminal_id: Mapped[str] = mapped_column(String(50), nullable=False)
 
