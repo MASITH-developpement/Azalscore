@@ -1,0 +1,1 @@
+"""Providers d'agrégation bancaire."""
