@@ -218,7 +218,7 @@ def _validate_redirect_url(url: str) -> str:
         raise ValueError(f"Invalid URL scheme: {parsed.scheme}")
 
     # SÉCURITÉ: Exiger HTTPS en production
-    env = os.getenv("AZALS_ENV", "development")
+    env = os.getenv("ENVIRONMENT", os.getenv("AZALS_ENV", "development"))
     if env == "production" and parsed.scheme.lower() != "https":
         raise ValueError("HTTPS required for redirect URLs in production")
 

@@ -67,7 +67,7 @@ def _get_csrf_secret() -> str:
         return getattr(settings, 'csrf_secret', None) or settings.secret_key
     except Exception as e:
         # SÉCURITÉ: En production, JAMAIS de fallback - lever une exception
-        env = os.getenv("AZALS_ENV", "development")
+        env = os.getenv("ENVIRONMENT", os.getenv("AZALS_ENV", "development"))
         if env == "production":
             logger.error(
                 "[CSRF_CONFIG] CRITICAL: Impossible de charger le secret CSRF en production",

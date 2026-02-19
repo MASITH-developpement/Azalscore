@@ -81,7 +81,7 @@ class AIConfig:
 
     def _detect_environment(self) -> Environment:
         """Détecte l'environnement actuel"""
-        env = os.getenv("AZALSCORE_ENV", "development").lower()
+        env = os.getenv("ENVIRONMENT", os.getenv("AZALS_ENV", "development")).lower()
         return {
             "development": Environment.DEVELOPMENT,
             "staging": Environment.STAGING,
